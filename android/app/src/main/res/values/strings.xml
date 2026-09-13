@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_connection_failed">Could not reach the Termux bridge. Check that it is running in Termux.</string>
+    <string name="error_input_busy">Input is queued up. Please try again shortly.</string>
+    <string name="install_termux_first">Install Termux first.</string>
+    <string name="browser_required">A browser is needed to open the installation guide.</string>
+    <string name="clipboard_label">Bibimer setup command</string>
+    <string name="command_copied">Command copied. Paste and run it in Termux.</string>
+    <string name="file_picker_failed">Could not open the file picker.</string>
+    <string name="installer_saved">Setup file saved. Continue with the next step in Setup.</string>
+    <string name="installer_save_failed">Could not save the setup file.</string>
+</resources>

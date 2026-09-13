@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Bibimer</title>
+  <link rel="stylesheet" href="vendor/xterm.css">
+  <link rel="stylesheet" href="app.css">
+  <script src="vendor/xterm.js" defer></script>
+  <script src="vendor/addon-fit.js" defer></script>
+  <script src="i18n.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">b.</span><div><strong>Bibimer</strong><small data-i18n="tagline">Coding agents at your fingertips</small></div></div>
+    <span id="connection" class="badge" role="status">Not connected</span>
+  </header>
+  <div id="notice" class="notice" role="status" hidden></div>
+  <main id="work" class="page">
+    <div id="welcome" class="welcome">
+      <span class="eyebrow" data-i18n="welcome_eyebrow">START ON THIS PHONE</span>
+      <h1 data-i18n="welcome_title">Your projects.<br>In your hands.</h1>
+      <p data-i18n="welcome_body">Run coding agents in Termux on this phone and keep your work moving.</p>
+      <button class="primary" id="go-setup"><span data-i18n="setup_device">Set up this phone</span><span aria-hidden="true">↗</span></button>
+      <button id="reconnect-welcome" class="secondary" data-i18n="reconnect_existing" hidden>Reconnect to your bridge</button>
+    </div>
+    <section id="workspace" hidden>
+      <div class="project-summary">
+        <div class="project-label"><span class="eyebrow" data-i18n="project_eyebrow">PROJECT</span><strong id="project-name">Add a project</strong><small id="project-path">A working folder in Termux</small></div>
+        <button class="quiet" id="edit-project" data-i18n="edit_project">Edit</button>
+      </div>
+      <form id="project-form" class="card" hidden>
+        <label for="path" data-i18n="project_folder">Project folder</label>
+        <input id="path" placeholder="~/projects/my-project" autocomplete="off" spellcheck="false">
+        <label class="check"><input type="checkbox" id="create-folder"><span data-i18n="create_folder">Create the folder if it does not exist</span></label>
+        <button class="primary" type="submit" data-i18n="save_project">Save project</button>
+      </form>
+      <div class="session-bar"><span id="process" class="badge">Not started</span><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
+      <div id="launch-controls" class="launch-controls">
+        <label class="sr-only" for="agent" data-i18n="program_label">Program to run</label>
+        <select id="agent"><option value="shell">Terminal</option></select>
+        <button id="launch" class="primary" data-i18n="start_session">Start session</button>
+      </div>
+      <div id="terminal-area">
+        <div id="terminal" aria-label="Agent terminal output" data-i18n-aria-label="terminal_label"></div>
+        <div id="terminal-empty"><span aria-hidden="true">›_</span><strong data-i18n="terminal_ready">Ready when you are</strong><p data-i18n="terminal_intro">Add a project and choose a program to run.</p></div>
+      </div>
+      <div id="session-note" class="session-note">Closing the app does not stop your session.</div>
+      <div class="keys" aria-label="Terminal keys" data-i18n-aria-label="special_keys">
+        <button data-key="escape">Esc</button><button data-key="tab">Tab</button><button data-key="up" aria-label="Up arrow" data-i18n-aria-label="arrow_up">↑</button><button data-key="down" aria-label="Down arrow" data-i18n-aria-label="arrow_down">↓</button><button data-key="interrupt">Ctrl+C</button><button data-key="enter" aria-label="Enter">↵</button>
+      </div>
+      <form id="input-form" class="composer">
+        <label for="input" class="sr-only" data-i18n="input_label">Input for the agent</label>
+        <textarea id="input" rows="1" placeholder="Type an instruction or reply" data-i18n-placeholder="input_placeholder" autocomplete="off" spellcheck="false"></textarea>
+        <button id="send" class="primary" type="submit" data-i18n="send">Send</button>
+      </form>
+      <button id="stop" class="stop" data-i18n="stop_session">Stop this session</button>
+    </section>
+  </main>
+  <main id="setup" class="page scroll" hidden>
+    <div class="section-heading"><span class="eyebrow" data-i18n="setup_eyebrow">GET YOUR PHONE READY</span><h1 data-i18n="setup_title">A workspace on your phone.</h1><p data-i18n="setup_intro">Follow these steps to install Termux and connect the app.</p></div>
+    <section class="card language-card">
+      <div><label for="language" data-i18n="language_label">Language</label><p class="hint" data-i18n="language_hint">Choose your app language.</p></div>
+      <select id="language" aria-label="Language" data-i18n-aria-label="language_label"><option value="en" lang="en">English</option><option value="ko" lang="ko">한국어</option></select>
+    </section>
+    <section class="card setup-step">
+      <div class="step-heading"><span class="step-number">1</span><h2 data-i18n="termux_install">Install Termux</h2><span id="termux-status" class="badge">Checking</span></div>
+      <p data-i18n="termux_body">Termux stores your projects and runs development commands on this phone. Open it once after installation to finish its initial setup.</p>
+      <div class="button-row"><button data-guide="termux" class="secondary" data-i18n="termux_guide">Installation guide</button><button id="open-termux" class="quiet" data-i18n="termux_open">Open Termux ↗</button></div>
+      <p class="hint" data-i18n="termux_hint">Use the same distribution source for Termux and its plugins. Complete installation on the linked page and in Android's installer.</p>
+    </section>
+    <section class="card setup-step">
+      <div class="step-heading"><span class="step-number">2</span><h2 data-i18n="bridge_setup">Set up the bridge</h2></div>
+      <p data-i18n="bridge_body">Save the setup file as bibimer-setup.sh in your Download folder. It connects this app to Termux.</p>
+      <button id="export-installer" class="secondary full" data-i18n="save_installer">Save setup file</button>
+      <p data-i18n="commands_body">Run these commands one at a time in Termux. Finish granting file access before running the installation command.</p>
+      <div class="command"><code>termux-setup-storage</code><button data-command="storage" aria-label="Copy file access command" data-i18n-aria-label="copy_storage" data-i18n="copy">Copy</button></div>
+      <div class="command"><code id="install-command">bash ~/storage/downloads/bibimer-setup.sh</code><button data-command="install" aria-label="Copy bridge installation command" data-i18n-aria-label="copy_install" data-i18n="copy">Copy</button></div>
+      <p class="hint" data-i18n="bridge_hint">The setup file installs Python if needed, then installs the bridge in your Termux home. Adjust the command if you saved the file under another name or folder.</p>
+    </section>
+    <section class="card setup-step">
+      <div class="step-heading"><span class="step-number">3</span><h2 data-i18n="pair_title">Connect this app</h2></div>
+      <p data-i18n="pair_body">Enter the 8-digit pairing code shown in Termux. It can be used once within five minutes.</p>
+      <form id="pair-form" class="pair-form"><label for="pair-code" class="sr-only" data-i18n="pair_label">8-digit pairing code</label><input id="pair-code" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" placeholder="00000000" autocomplete="off"><button id="pair" class="primary" type="submit" data-i18n="pair">Connect</button></form>
+      <div class="button-row"><button data-command="start" class="quiet" data-i18n="copy_start">Copy start command</button><button data-command="pair" class="quiet" data-i18n="copy_pair">Copy new-code command</button></div>
+    </section>
+    <section class="card setup-step">
+      <div class="step-heading"><span class="step-number">4</span><h2 data-i18n="agent_setup">Prepare an agent</h2></div>
+      <p data-i18n="agent_body">Start with Terminal to check input and output. To use Codex or Claude Code, install a version that runs in Termux and complete any required sign-in.</p>
+      <div class="button-row"><button data-guide="codex" class="quiet" data-i18n="codex_guide">Codex guide ↗</button><button data-guide="claude" class="quiet" data-i18n="claude_guide">Claude Code guide ↗</button></div>
+      <p class="hint" data-i18n="agent_hint">Finding a program does not confirm Android compatibility or account access. Check each agent's Termux installation and runtime requirements.</p>
+    </section>
+    <section class="card setup-step">
+      <h2 data-i18n="return_title">When you come back</h2>
+      <p data-i18n="return_body">Reopen the app to reconnect to a live bridge. If it is unavailable, run the start command in Termux. If Android stopped the environment, the previous process may no longer be recoverable.</p>
+      <button id="forget" class="quiet" data-i18n="forget">Forget this app's connection</button>
+    </section>
+    <p id="version" class="version">Bibimer 0.1.1 · Termux on this phone</p>
+  </main>
+  <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button></nav>
+  <dialog id="stop-dialog"><h2 data-i18n="stop_title">Stop this session?</h2><p data-i18n="stop_body">This stops the agent and commands running in this session.</p><div class="button-row"><button id="cancel-stop" class="secondary" data-i18n="stop_cancel">Keep working</button><button id="confirm-stop" class="danger" data-i18n="stop_confirm">Stop session</button></div></dialog>
+</div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_connection_failed">Termux 브리지에 연결하지 못했습니다. Termux에서 브리지가 실행 중인지 확인해 주세요.</string>
+    <string name="error_input_busy">입력 처리가 밀렸습니다. 잠시 후 다시 시도해 주세요.</string>
+    <string name="install_termux_first">먼저 Termux를 설치해 주세요.</string>
+    <string name="browser_required">설치 안내를 열 수 있는 브라우저가 필요합니다.</string>
+    <string name="clipboard_label">Bibimer 설정 명령</string>
+    <string name="command_copied">명령을 복사했습니다. Termux에 붙여 넣어 실행해 주세요.</string>
+    <string name="file_picker_failed">파일 저장 앱을 열 수 없습니다.</string>
+    <string name="installer_saved">설정 파일을 저장했습니다. 준비 안내의 다음 단계를 진행해 주세요.</string>
+    <string name="installer_save_failed">설정 파일을 저장하지 못했습니다.</string>
+</resources>
