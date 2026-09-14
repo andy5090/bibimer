@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bibimer's loopback-only, authenticated Termux PTY bridge (stdlib only)."""
+"""Bibimer's authenticated Termux PTY and structured chat bridge (stdlib only)."""
 
 import argparse
 import base64
@@ -30,13 +30,20 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.1.1"
+VERSION = "0.2.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
+    "error_bridge_stopping": "The bridge is restarting. Reconnect shortly.",
+    "error_chat_mode": "Chat mode requires Codex and an updated bridge. Other programs use Terminal mode.",
+    "error_chat_start": "Could not initialize Codex Chat. Check the Codex installation and configuration in Termux.",
+    "error_chat_busy": "Wait for the current response or interrupt it before sending another message.",
+    "error_chat_transport": "The agent connection failed. Check the session before sending again.",
+    "error_chat_request": "This request is no longer pending. Refresh the session.",
+    "error_chat_answer": "Complete the requested answers or choose a valid decision.",
     "error_timeout": "The connection request timed out.",
     "error_android_required": "Connect from the Android app.",
     "error_request_failed": "Could not process the request.",
@@ -78,6 +85,8 @@ ERROR_MESSAGES = {
 }
 
 CLI_MESSAGES = {
+    "restart_busy": ["Stop the active session in Bibimer before restarting the bridge.", "브리지를 재시작하기 전에 Bibimer에서 실행 중인 세션을 종료해 주세요."],
+    "restart_unverified": ["Could not verify the old bridge process. Stop that bridge manually in Termux, then run start.", "이전 브리지 프로세스를 확인하지 못했습니다. Termux에서 해당 브리지를 수동 종료한 뒤 start를 실행하세요."],
     "state_symlink": [
         "The state folder cannot be a symbolic link.",
         "상태 폴더는 심볼릭 링크일 수 없습니다."
@@ -236,6 +245,7 @@ class Session:
             return {
                 "id": self.id, "launch_id": self.launch_id, "project": self.project,
                 "agent": self.agent, "state": self.state, "exit_code": self.exit_code,
+                "mode": "terminal",
                 "started_at": self.started_at, "cols": self.cols, "rows": self.rows,
                 "output_start": self.offset, "output_end": self.offset + len(self.buffer),
             }
@@ -370,6 +380,340 @@ class Session:
             self._signal_members(signal.SIGKILL)
 
 
+class ChatSession(Session):
+    """One Codex app-server over stdio. Display content stays only in memory.
+
+    Reuses the PTY session's scoped process stop, but never opens a PTY or
+    derives messages by scraping a terminal screen. No arbitrary RPC passthrough.
+    """
+    def __init__(self, project, agent, argv, cols, rows, launch_id, changed):
+        self.id, self.launch_id = str(uuid.uuid4()), launch_id
+        self.project, self.agent = project.copy(), agent
+        self.cols, self.rows = cols, rows
+        self.started_at = time.time()
+        self.state, self.exit_code = "running", None
+        self.turn_state, self.turn_id, self.thread_id = "initializing", None, None
+        self.condition = threading.Condition(threading.RLock())
+        self.io_lock = threading.Lock()
+        self.changed = changed
+        self.items, self.requests, self.inputs = collections.OrderedDict(), {}, collections.OrderedDict()
+        self.revision, self.floor, self.total = 0, 0, 0
+        self.rpc_serial, self.rpc_pending = 0, {}
+        self.process = subprocess.Popen(argv + ["app-server", "--listen", "stdio://"],
+            cwd=project["path"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
+        os.set_blocking(self.process.stdin.fileno(), False)
+
+    def snapshot(self):
+        # This is also persisted as metadata: no prompts, answers or tool output.
+        with self.condition:
+            return {"id": self.id, "launch_id": self.launch_id, "project": self.project,
+                    "agent": self.agent, "mode": "chat", "state": self.state,
+                    "ready": self.thread_id is not None,
+                    "turn_state": self.turn_state, "exit_code": self.exit_code,
+                    "started_at": self.started_at, "output_start": self.floor,
+                    "output_end": self.revision}
+
+    def _bump(self):
+        self.revision += 1
+        self.condition.notify_all()
+
+    def _put(self, item):
+        self._bump()
+        item = dict(item, revision=self.revision)
+        previous = self.items.get(item["id"])
+        if previous:
+            self.total -= len(json.dumps(previous).encode())
+        self.items[item["id"]] = item
+        self.total += len(json.dumps(item).encode())
+        while self.total > BUFFER_LIMIT or len(self.items) > 200:
+            _, removed = self.items.popitem(last=False)
+            self.total -= len(json.dumps(removed).encode())
+            self.floor = max(self.floor, removed["revision"])
+
+    @staticmethod
+    def _text(value):
+        value = value if isinstance(value, str) else ""
+        return value[:32768] + ("\n[…]" if len(value) > 32768 else "")
+
+    def _send(self, message):
+        wire = json.dumps(message, ensure_ascii=False).encode() + b"\n"
+        with self.io_lock:
+            offset, deadline = 0, time.monotonic() + 2
+            while offset < len(wire):
+                if time.monotonic() >= deadline:
+                    raise Problem(409, "error_chat_transport")
+                try:
+                    offset += os.write(self.process.stdin.fileno(), wire[offset:offset + 4096])
+                except BlockingIOError:
+                    select.select([], [self.process.stdin], [], 0.05)
+                except (OSError, ValueError):
+                    raise Problem(409, "error_chat_transport") from None
+
+    def _rpc(self, method, params, kind):
+        self.rpc_serial += 1
+        key = "bibimer-" + str(self.rpc_serial)
+        self.rpc_pending[key] = kind
+        self._send({"id": key, "method": method, "params": params})
+
+    def start_reading(self):
+        self.reader = threading.Thread(target=self._read, daemon=True)
+        self.reader.start()
+        threading.Thread(target=self._watch, daemon=True).start()
+        try:
+            with self.condition:
+                self._rpc("initialize", {"clientInfo": {"name": "bibimer", "title": "Bibimer", "version": VERSION},
+                          "capabilities": {"experimentalApi": True}}, "initialize")
+        except Problem:
+            self._fault("error_chat_start")
+        threading.Thread(target=self._startup_deadline, daemon=True).start()
+
+    def _startup_deadline(self):
+        with self.condition:
+            ready = self.condition.wait_for(lambda: self.thread_id is not None or self.state != "running", timeout=20)
+        if not ready:
+            self._fault("error_chat_start")
+
+    def _fault(self, code):
+        with self.condition:
+            self._put({"id": "connection-error", "kind": "notice", "code": code})
+        self.stop()
+
+    def _watch(self):
+        code = self.process.wait()
+        self._signal_members(signal.SIGKILL)
+        self.reader.join(timeout=1)
+        with self.io_lock:
+            self.process.stdin.close()
+        with self.condition:
+            if self.thread_id is None:
+                self._put({"id": "connection-error", "kind": "notice", "code": "error_chat_start"})
+            self.requests.clear()
+            self.rpc_pending.clear()
+            self.state, self.exit_code = "exited", code
+            self._bump()
+        self.changed()
+
+    def _read(self):
+        try:
+            while True:
+                line = self.process.stdout.readline(2 * 1024 * 1024 + 1)
+                if not line:
+                    if self.state == "running" and self.process.poll() is None:
+                        self._fault("error_chat_transport")
+                    return
+                if len(line) > 2 * 1024 * 1024:
+                    raise ValueError()
+                message = json.loads(line)
+                if not isinstance(message, dict):
+                    raise ValueError()
+                with self.condition:
+                    self._handle(message)
+        except (OSError, ValueError, TypeError, KeyError, AttributeError, Problem):
+            self._fault("error_chat_transport")
+        finally:
+            self.process.stdout.close()
+
+    def _handle(self, message):
+        method, params = message.get("method"), message.get("params") or {}
+        if not method:
+            kind = self.rpc_pending.pop(message.get("id"), None)
+            if not kind:
+                return
+            if "error" in message:
+                self._put({"id": str(uuid.uuid4()), "kind": "notice", "code": "error_chat_start" if kind in {"initialize", "thread"} else "error_chat_transport",
+                           "text": self._text(message["error"].get("message"))})
+                if kind in {"initialize", "thread"} or (kind == "turn" and self.turn_id is None):
+                    self.turn_state = "failed"
+                self._bump()
+                return
+            result = message.get("result") or {}
+            if kind == "initialize":
+                self._send({"method": "initialized", "params": {}})
+                # Inherit the user's model and permission settings; never disable
+                # sandboxing to make an unsupported Android configuration work.
+                self._rpc("thread/start", {"cwd": self.project["path"], "ephemeral": True}, "thread")
+            elif kind == "thread":
+                self.thread_id = result["thread"]["id"]
+                self.turn_state = "ready"
+                self._bump()
+            elif kind == "turn" and self.turn_state == "sending":
+                self.turn_id = result["turn"]["id"]
+                self.turn_state = "running"
+                self._bump()
+            return
+        if params.get("threadId") and self.thread_id and params["threadId"] != self.thread_id:
+            if "id" in message:
+                self._send({"id": message["id"], "error": {"code": -32602, "message": "Wrong thread"}})
+            return
+        if "id" in message:
+            self._request(message)
+        elif method == "turn/started":
+            if self.turn_id != params["turn"]["id"]:
+                self.requests.clear()
+            self.turn_id = params["turn"]["id"]
+            self.turn_state = "running"
+            self._bump()
+        elif method == "turn/completed":
+            turn = params["turn"]
+            if self.turn_id and turn["id"] != self.turn_id:
+                return
+            self.turn_state, self.turn_id = "ready", None
+            self.requests.clear()
+            self._put({"id": "turn-" + turn["id"], "kind": "turn", "status": turn.get("status", "completed"),
+                       "text": self._text((turn.get("error") or {}).get("message"))})
+        elif method == "serverRequest/resolved":
+            for key, request in list(self.requests.items()):
+                if request["rpc_id"] == params.get("requestId"):
+                    del self.requests[key]
+            if not self.requests and self.turn_id:
+                self.turn_state = "running"
+            self._bump()
+        elif method in {"item/started", "item/completed"}:
+            self._item(params["item"], params.get("turnId", ""), method == "item/completed")
+        elif method in {"item/agentMessage/delta", "item/plan/delta", "item/commandExecution/outputDelta"}:
+            key = params.get("turnId", "") + ":" + params["itemId"]
+            item = dict(self.items.get(key, {"id": key, "kind": "command" if "outputDelta" in method else "assistant", "text": "", "status": "inProgress"}))
+            item["text"] = self._text(item.get("text", "") + params.get("delta", ""))
+            self._put(item)
+        elif method == "turn/plan/updated":
+            self._put({"id": "plan-" + params["turnId"], "kind": "plan",
+                       "text": self._text("\n".join(("[x] " if step.get("status") == "completed" else "[ ] ") + step.get("step", "") for step in params.get("plan", [])))})
+        elif method == "turn/diff/updated":
+            self._put({"id": "diff-" + params["turnId"], "kind": "diff", "text": self._text(params.get("diff"))})
+        elif method == "error":
+            self._put({"id": str(uuid.uuid4()), "kind": "notice", "text": self._text((params.get("error") or {}).get("message"))})
+
+    def _item(self, source, turn, complete):
+        key, kind = turn + ":" + source["id"], source.get("type")
+        item = {"id": key, "status": source.get("status", "completed" if complete else "inProgress")}
+        if kind == "userMessage":
+            item.update(kind="user", text=self._text("\n".join(x.get("text", "") for x in source.get("content", []) if x.get("type") == "text")))
+        elif kind in {"agentMessage", "plan"}:
+            item.update(kind="assistant" if kind == "agentMessage" else "plan", text=self._text(source.get("text")))
+        elif kind == "commandExecution":
+            item.update(kind="command", title=self._text(source.get("command")), text=self._text(source.get("aggregatedOutput")), exit_code=source.get("exitCode"))
+        elif kind == "fileChange":
+            item.update(kind="diff", text=self._text("\n".join(change.get("path", "") + "\n" + change.get("diff", "") for change in source.get("changes", []))))
+        elif kind == "reasoning":
+            # Display only summaries explicitly provided for clients, not raw reasoning.
+            item.update(kind="plan", text=self._text("\n".join(source.get("summary", []))))
+        else:
+            item.update(kind="tool", title=self._text(source.get("tool") or kind),
+                        text=self._text(json.dumps(source.get("result") or source.get("error") or source.get("query") or "", ensure_ascii=False)))
+        self._put(item)
+
+    def _request(self, message):
+        params, method = message["params"], message["method"]
+        supported = {"item/commandExecution/requestApproval": "command", "item/fileChange/requestApproval": "file",
+                     "item/tool/requestUserInput": "questions"}
+        if method not in supported or len(self.requests) >= 16:
+            self._send({"id": message["id"], "error": {"code": -32601, "message": "This request is not supported by Bibimer"}})
+            self._put({"id": str(uuid.uuid4()), "kind": "notice", "code": "chat_unsupported_request"})
+            return
+        if params.get("turnId") != self.turn_id:
+            self._send({"id": message["id"], "error": {"code": -32602, "message": "Inactive turn"}})
+            return
+        if len(json.dumps(params).encode()) > 65536 or len(json.dumps(self.requests).encode()) > 256 * 1024:
+            self._send({"id": message["id"], "error": {"code": -32602, "message": "Request too large to review"}})
+            return
+        key = str(uuid.uuid4())
+        related = self.items.get(params["turnId"] + ":" + params.get("itemId", ""), {})
+        self.requests[key] = {"id": key, "rpc_id": message["id"], "kind": supported[method], "params": params,
+                              "preview": related.get("text", "")}
+        self.turn_state = "waiting"
+        self._bump()
+
+    def events(self, cursor, wait):
+        with self.condition:
+            if cursor > self.revision:
+                raise Problem(409, "error_cursor_changed")
+            if cursor == self.revision and self.state in ACTIVE and wait:
+                self.condition.wait(timeout=wait)
+            gap = cursor < self.floor
+            return {"session": self.snapshot(), "cursor": self.revision, "gap": gap,
+                    "items": [dict(item) for item in self.items.values() if gap or item["revision"] > cursor],
+                    "retained": list(self.items),
+                    "requests": [{k: v for k, v in value.items() if k != "rpc_id"} for value in self.requests.values()]}
+
+    def _duplicate(self, key, data):
+        digest = hashlib.sha256(json.dumps(data, sort_keys=True).encode()).digest()
+        if key in self.inputs:
+            previous, complete = self.inputs[key]
+            if previous != digest:
+                raise Problem(409, "error_input_conflict")
+            if not complete:
+                raise Problem(409, "error_input_uncertain")
+            return digest, True
+        return digest, False
+
+    def _remember(self, key, digest, complete):
+        self.inputs[key] = (digest, complete)
+        if len(self.inputs) > 512:
+            self.inputs.popitem(last=False)
+
+    def message(self, data):
+        key, text = request_id(data.get("request_id")), data.get("text")
+        if not isinstance(text, str) or not text.strip() or len(text.encode()) > 16384:
+            raise Problem(400, "error_input_size")
+        with self.condition:
+            digest, duplicate = self._duplicate(key, {"text": text})
+            if duplicate:
+                return
+            if self.state != "running" or not self.thread_id:
+                raise Problem(409, "error_session_not_running")
+            if self.turn_state not in {"ready", "failed"}:
+                raise Problem(409, "error_chat_busy")
+            self._remember(key, digest, False)
+            self.turn_state = "sending"
+            self._bump()
+            self._rpc("turn/start", {"threadId": self.thread_id, "input": [{"type": "text", "text": text}]}, "turn")
+            self._remember(key, digest, True)
+
+    def respond(self, data):
+        key = request_id(data.get("request_id"))
+        with self.condition:
+            digest, duplicate = self._duplicate(key, data)
+            if duplicate:
+                return
+            request = self.requests.get(data.get("prompt_id"))
+            if self.state != "running" or not request or request["params"]["turnId"] != self.turn_id:
+                raise Problem(409, "error_chat_request")
+            if request["kind"] == "questions":
+                answers = data.get("answers")
+                if not isinstance(answers, dict):
+                    raise Problem(400, "error_chat_answer")
+                result = {"answers": {}}
+                for question in request["params"]["questions"]:
+                    answer = answers.get(question["id"])
+                    if not isinstance(answer, str) or not answer.strip() or len(answer.encode()) > 8192:
+                        raise Problem(400, "error_chat_answer")
+                    result["answers"][question["id"]] = {"answers": [answer]}
+            else:
+                decision = data.get("decision")
+                available = request["params"].get("availableDecisions")
+                if decision not in {"accept", "decline"} or (available and decision not in available):
+                    raise Problem(400, "error_chat_answer")
+                result = {"decision": decision}
+            self._remember(key, digest, False)
+            self._send({"id": request["rpc_id"], "result": result})
+            self._remember(key, digest, True)
+            self.requests.pop(request["id"], None)
+            self.turn_state = "waiting" if self.requests else "running"
+            self._bump()
+
+    def interrupt(self):
+        with self.condition:
+            if self.state == "running" and self.turn_id:
+                self._rpc("turn/interrupt", {"threadId": self.thread_id, "turnId": self.turn_id}, "interrupt")
+
+    def write(self, data, key):
+        raise Problem(400, "error_chat_mode")
+
+    def resize(self, cols, rows):
+        raise Problem(400, "error_chat_mode")
+
+
 class Bridge:
     def __init__(self, state):
         self.state = private_dir(state)
@@ -388,6 +732,7 @@ class Bridge:
                 self.previous["state"] = "lost"
                 self.previous["exit_code"] = None
         self.session = None
+        self.closing = False
         self.persist()
 
     def persist(self):
@@ -400,7 +745,7 @@ class Bridge:
     def agents(self):
         return [
             {"id": "shell", "name": "Terminal", "installed": bool(shutil.which("bash") or shutil.which("sh"))},
-            {"id": "codex", "name": "Codex", "installed": bool(shutil.which("codex"))},
+            {"id": "codex", "name": "Codex", "installed": bool(shutil.which("codex")), "modes": ["terminal", "chat"]},
             {"id": "claude", "name": "Claude Code", "installed": bool(shutil.which("claude"))},
         ]
 
@@ -451,12 +796,17 @@ class Bridge:
         cols = integer(data.get("cols", 80), 20, 300)
         rows = integer(data.get("rows", 24), 4, 200)
         agent = data.get("agent")
+        mode = data.get("mode", "terminal")
+        if mode not in {"terminal", "chat"} or (mode == "chat" and agent != "codex"):
+            raise Problem(400, "error_chat_mode")
         if agent not in {"shell", "codex", "claude"}:
             raise Problem(400, "error_program")
         with self.lock:
+            if self.closing:
+                raise Problem(409, "error_bridge_stopping")
             current = self.session.snapshot() if self.session else self.previous
             if current and current.get("launch_id") == key:
-                if current["agent"] != agent:
+                if current["agent"] != agent or current.get("mode", "terminal") != mode:
                     raise Problem(409, "error_launch_conflict")
                 return current
             if self.session and self.session.state in ACTIVE:
@@ -468,7 +818,7 @@ class Bridge:
                 raise Problem(400, "error_program_missing")
             argv = [executable, "-i"] if agent == "shell" else [executable]
             try:
-                session = Session(self.project, agent, argv, cols, rows, key, self.persist)
+                session = (ChatSession if mode == "chat" else Session)(self.project, agent, argv, cols, rows, key, self.persist)
             except OSError:
                 raise Problem(400, "error_launch_failed") from None
             self.session = session
@@ -481,6 +831,12 @@ class Bridge:
             if not self.session or self.session.id != session_id:
                 raise Problem(404, "error_session_missing")
             return self.session
+
+    def begin_shutdown(self):
+        with self.lock:
+            if self.session and self.session.state in ACTIVE:
+                raise Problem(409, "error_session_exists")
+            self.closing = True
 
 
 class Server(http.server.ThreadingHTTPServer):
@@ -591,6 +947,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = {"project": bridge.register(data)}
         elif method == "POST" and parsed.path == "/v1/sessions":
             result = {"session": bridge.launch(data)}
+        elif method == "POST" and parsed.path == "/v1/shutdown":
+            bridge.begin_shutdown()
+            result = {"ok": True}
+            threading.Thread(target=self.server.shutdown, daemon=True).start()
         elif parsed.path.startswith("/v1/sessions/"):
             parts = parsed.path.strip("/").split("/")
             if len(parts) != 4:
@@ -619,6 +979,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
             elif method == "POST" and action == "stop":
                 session.stop()
                 result = {"session": session.snapshot()}
+            elif method == "POST" and action in {"message", "respond", "interrupt"}:
+                if not isinstance(session, ChatSession):
+                    raise Problem(400, "error_chat_mode")
+                if action == "message":
+                    session.message(data)
+                elif action == "respond":
+                    session.respond(data)
+                else:
+                    session.interrupt()
+                result = {"session": session.snapshot()}
             else:
                 raise Problem(404, "error_route")
         else:
@@ -630,18 +1000,118 @@ def default_state():
     return Path.home() / ".local" / "state" / "bibimer"
 
 
-def is_running(state, port):
+def bridge_health(state, port):
     try:
         token = read_json(state / "token.json")
         if not token:
-            return False
+            return None
         request = urllib.request.Request(f"http://127.0.0.1:{port}/v1/health",
                                          headers={"Authorization": "Bearer " + token})
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         with opener.open(request, timeout=0.5) as response:
-            return json.load(response).get("protocol") == 1
+            health = json.load(response)
+            return health if health.get("protocol") == 1 else None
+    except urllib.error.HTTPError as error:
+        error.close()
+        return None
     except (OSError, ValueError):
-        return False
+        return None
+
+
+def is_running(state, port):
+    return bridge_health(state, port) is not None
+
+
+def owns_bridge_lock(pid, state):
+    """Legacy upgrade only: identify this user's Python server by its state lock."""
+    try:
+        process = Path("/proc") / str(pid)
+        if process.stat().st_uid != os.getuid():
+            return False
+        args = process.joinpath("cmdline").read_bytes().split(b"\0")
+        if len(args) < 3 or Path(os.fsdecode(args[1])).name != "bibimer_bridge.py" or args[2] != b"serve":
+            return False
+        if not os.path.samefile(process / "exe", sys.executable):
+            return False
+        lock = (state / "bridge.lock").stat()
+        for fd in (process / "fd").iterdir():
+            with contextlib.suppress(OSError):
+                candidate = fd.stat()
+                if (candidate.st_dev, candidate.st_ino) == (lock.st_dev, lock.st_ino):
+                    return True
+    except (OSError, ValueError):
+        pass
+    return False
+
+
+def pidfd_call(name, *arguments):
+    # CPython's Android build omits these APIs although Bionic exposes them.
+    # Use the public libc wrappers, never numeric syscalls or a PID-only fallback.
+    import ctypes
+    try:
+        function = getattr(ctypes.CDLL(None, use_errno=True), name)
+    except (AttributeError, OSError):
+        raise RuntimeError(cli("restart_unverified")) from None
+    function.argtypes = [ctypes.c_int, ctypes.c_uint] if name == "pidfd_open" else [ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_uint]
+    function.restype = ctypes.c_int
+    result = function(*arguments)
+    if result < 0:
+        raise RuntimeError(cli("restart_unverified"))
+    return result
+
+
+def restart_bridge(state, port):
+    def active(health):
+        return health and (health.get("session") or {}).get("state") in ACTIVE
+    health = bridge_health(state, port)
+    if active(health):
+        raise RuntimeError(cli("restart_busy"))
+    if not health:
+        return
+    request = urllib.request.Request(f"http://127.0.0.1:{port}/v1/shutdown", data=b"{}",
+        headers={"Authorization": "Bearer " + read_json(state / "token.json"), "Content-Type": "application/json"})
+    try:
+        with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(request, timeout=3):
+            pass
+    except urllib.error.HTTPError as error:
+        error.close()
+        if error.code == 409:
+            raise RuntimeError(cli("restart_busy")) from None
+        if error.code != 404:
+            raise RuntimeError(cli("restart_unverified")) from None
+        # Version 0.1.x has no shutdown API. Never match a process by name alone,
+        # and use a pidfd so a recycled PID cannot signal an unrelated process.
+        candidates = [int(item.name) for item in Path("/proc").iterdir()
+                      if item.name.isdigit() and owns_bridge_lock(int(item.name), state)]
+        if len(candidates) != 1:
+            raise RuntimeError(cli("restart_unverified"))
+        pid = candidates[0]
+        try:
+            fd = os.pidfd_open(pid) if hasattr(os, "pidfd_open") else pidfd_call("pidfd_open", pid, 0)
+        except OSError:
+            raise RuntimeError(cli("restart_unverified")) from None
+        try:
+            if not owns_bridge_lock(pid, state):
+                raise RuntimeError(cli("restart_unverified"))
+            if active(bridge_health(state, port)):
+                raise RuntimeError(cli("restart_busy"))
+            if hasattr(signal, "pidfd_send_signal"):
+                signal.pidfd_send_signal(fd, signal.SIGTERM)
+            else:
+                pidfd_call("pidfd_send_signal", fd, signal.SIGTERM, None, 0)
+        finally:
+            os.close(fd)
+    # Wait for the state lock, not just a closed socket, before starting again.
+    deadline = time.monotonic() + 5
+    with open(state / "bridge.lock", "a") as lock:
+        while time.monotonic() < deadline:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fcntl.flock(lock, fcntl.LOCK_UN)
+                return
+            except BlockingIOError:
+                time.sleep(0.05)
+    raise RuntimeError(cli("restart_unverified"))
 
 
 def show_pairing(state):
@@ -659,7 +1129,7 @@ def main():
         fcntl.ioctl(0, termios.TIOCSCTTY, 0)
         os.execvpe(sys.argv[2], sys.argv[2:], os.environ)
     parser = argparse.ArgumentParser(description="Bibimer Termux bridge")
-    parser.add_argument("command", choices=["start", "serve", "pair", "status"], nargs="?", default="start")
+    parser.add_argument("command", choices=["start", "serve", "pair", "status", "restart"], nargs="?", default="start")
     parser.add_argument("--port", type=int, default=PORT)
     parser.add_argument("--state-dir", type=Path, default=default_state())
     parser.add_argument("--language", choices=["en", "ko"],
@@ -677,6 +1147,9 @@ def main():
             raise RuntimeError(cli("start_first"))
         show_pairing(state)
         return
+    if args.command == "restart":
+        restart_bridge(state, args.port)
+        args.command = "start"
     if args.command == "start":
         if not is_running(state, args.port):
             child = subprocess.Popen(

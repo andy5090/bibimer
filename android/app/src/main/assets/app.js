@@ -10,8 +10,16 @@
   let project = null, inputQueue = Promise.resolve(), currentTab = "work";
   let projectInitialized = false, connectionError = null;
   let noticeData = null, knownAgents = [];
+  let submitting = false;
+  const conversation = new BibimerConversation($("conversation"), $("chat-requests"), t, async data => {
+    try {
+      await api("POST", `/v1/sessions/${session.id}/respond`, data);
+    } catch (error) { notice(error.key || "error_request_failed"); }
+  });
   const term = new Terminal({fontSize:13, fontFamily:"monospace", cursorBlink:true,
-    scrollback:2000, theme:{background:"#111512", foreground:"#e3e9db", cursor:"#d7e8aa"}});
+    scrollback:2000, drawBoldTextInBrightColors:true, theme:{background:"#111512", foreground:"#e3e9db", cursor:"#d7e8aa",
+      black:"#1c211d", red:"#ed7777", green:"#a8d18d", yellow:"#e3c878", blue:"#80aeee", magenta:"#c999e5", cyan:"#79cbd2", white:"#d5decf",
+      brightBlack:"#778373", brightRed:"#ff9b91", brightGreen:"#d7e8aa", brightYellow:"#ffdfa0", brightBlue:"#aac9ff", brightMagenta:"#ebbcff", brightCyan:"#a1edf0", brightWhite:"#ffffff"}});
   const fit = new FitAddon.FitAddon();
   term.loadAddon(fit);
   term.open($("terminal"));
@@ -72,16 +80,25 @@
       $("agent").append(option);
     }
     if ([...$("agent").options].some(option => option.value === selected && !option.disabled)) $("agent").value = selected;
+    updateMode();
   }
+  function supportsChat() { return !!knownAgents.find(agent => agent.id === $("agent").value)?.modes?.includes("chat"); }
+  function updateMode() {
+    $("mode").querySelector('[value="chat"]').disabled = !supportsChat();
+    if (!supportsChat()) $("mode").value = "terminal";
+    $("mode-hint").textContent = t(supportsChat() ? "mode_hint" : "mode_terminal_hint");
+  }
+  function isChat() { return session?.mode === "chat"; }
   function renderLanguage() {
     i18n.apply();
     $("language").value = i18n.language();
     $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
-    $("version").textContent = t("version_note", {version:environment().version || "0.1.1"});
+    $("version").textContent = t("version_note", {version:environment().version || "0.2.0"});
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
     renderAgents(); updateEnvironment(); renderSession(); renderNotice();
+    conversation.localize();
     setTimeout(resize, 30);
   }
   function tab(name) {
@@ -107,21 +124,37 @@
     $("process").dataset.state = session ? session.state : "idle";
     $("process").className = "badge " + (session ? session.state : "");
     $("launch-controls").hidden = !!live;
+    $("mode-controls").hidden = !!live;
+    $("mode-hint").hidden = !!live;
     $("launch").disabled = !online || !project || busy;
     $("edit-project").disabled = !!live || !online;
-    $("input").disabled = !online || !session || session.state !== "running";
-    $("send").disabled = $("input").disabled;
+    $("input").disabled = !online || !session || session.state !== "running" || (isChat() && !session.ready);
+    $("send").disabled = $("input").disabled || submitting || (isChat() && !["ready", "failed"].includes(session.turn_state));
     $("stop").disabled = !online || !session || session.state !== "running";
     $("stop").hidden = !live;
     for (const button of document.querySelectorAll("[data-key]")) button.disabled = $("input").disabled;
     $("terminal-empty").hidden = !!session;
+    $("terminal-area").hidden = isChat();
+    $("terminal-keys").hidden = isChat();
+    $("chat-panel").hidden = !isChat();
+    $("chat-state").hidden = !isChat();
+    $("chat-empty").hidden = conversation.items.size > 0;
+    $("workspace").classList.toggle("chat-mode", isChat());
+    $("workspace").classList.toggle("has-requests", isChat() && conversation.requests.size > 0);
+    $("turn-status").textContent = isChat() ? (session.state === "running" ? t("chat_state_" + session.turn_state) : label) : "";
+    $("interrupt-turn").hidden = !isChat() || !["running", "waiting"].includes(session.turn_state);
+    $("interrupt-turn").disabled = !online || !live;
+    $("input").placeholder = t(isChat() ? "chat_placeholder" : "input_placeholder");
+    conversation.enable(online && live);
     $("session-note").textContent = t(!online && session ? "session_unknown" :
       session && session.state === "lost" ? "session_lost_note" : "session_kept");
   }
   function setSession(value) {
+    if (isChat() && value?.id === session.id && value.output_end < session.output_end) return;
     if ((session && session.id) !== (value && value.id)) {
       cursor = 0;
       term.reset();
+      conversation.clear();
     }
     session = value;
     renderSession();
@@ -140,6 +173,7 @@
       if (health.protocol !== 1) throw appError("error_protocol");
       if (instance && health.instance !== instance) {
         cursor = 0; term.reset();
+        conversation.clear();
         notice("bridge_restarted");
       }
       instance = health.instance;
@@ -184,8 +218,10 @@
       if (ticket !== generation || paused || !session || id !== session.id) return;
       if (event.gap) {
         term.reset();
+        conversation.clear(true);
         notice("output_gap");
       }
+      if (event.items) conversation.update(event);
       if (event.data) {
         const bytes = Uint8Array.from(atob(event.data), c => c.charCodeAt(0));
         await new Promise(resolve => term.write(bytes, resolve));
@@ -207,7 +243,7 @@
     }
   }
   function resize() {
-    if (currentTab !== "work" || $("workspace").hidden) return;
+    if (currentTab !== "work" || $("workspace").hidden || isChat()) return;
     fit.fit();
     if (online && session && session.state === "running") {
       api("POST", `/v1/sessions/${session.id}/resize`, {
@@ -218,7 +254,7 @@
   let resizeTimer;
   new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 180); }).observe($("terminal-area"));
   function sendRaw(text) {
-    if (!online || !session || session.state !== "running" || !text) return Promise.resolve(false);
+    if (!online || !session || session.state !== "running" || isChat() || !text) return Promise.resolve(false);
     const id = session.id;
     const bytes = new TextEncoder().encode(text);
     if (bytes.length > 16384) { notice("paste_too_large"); return Promise.resolve(false); }
@@ -241,11 +277,37 @@
   $("input-form").addEventListener("submit", async event => {
     event.preventDefault();
     const text = $("input").value;
-    if (!text) return;
-    $("send").disabled = true;
-    const ok = await sendRaw(text.replace(/\r?\n/g, "\r") + "\r");
-    if (ok && $("input").value === text) $("input").value = "";
-    renderSession();
+    if (!text || submitting || $("send").disabled) return;
+    submitting = true; renderSession();
+    let ok = false;
+    try {
+      if (isChat()) {
+        const id = session.id;
+        const result = await api("POST", `/v1/sessions/${id}/message`, {text, request_id:uuid()});
+        if (session?.id === id) setSession(result.session);
+        ok = true;
+      } else ok = await sendRaw(text.replace(/\r?\n/g, "\r") + "\r");
+      if (ok && $("input").value === text) $("input").value = "";
+    } catch (error) { notice(error.key || "error_request_failed", "check_delivery"); }
+    finally { submitting = false; resizeInput(); renderSession(); }
+  });
+  function resizeInput() {
+    $("input").style.height = "auto";
+    $("input").style.height = Math.min(100, $("input").scrollHeight) + "px";
+  }
+  $("input").addEventListener("input", resizeInput);
+  $("input").addEventListener("keydown", event => {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !event.isComposing) {
+      event.preventDefault(); $("input-form").requestSubmit();
+    }
+  });
+  $("interrupt-turn").addEventListener("click", async () => {
+    if (!isChat() || !online) return;
+    try { await api("POST", `/v1/sessions/${session.id}/interrupt`); }
+    catch (error) { notice(error.key || "error_request_failed"); }
+  });
+  $("agent").addEventListener("change", () => {
+    updateMode(); $("mode").value = supportsChat() ? "chat" : "terminal";
   });
   $("project-form").addEventListener("submit", async event => {
     event.preventDefault();
@@ -259,7 +321,7 @@
     if (busy) return;
     busy = true; renderSession(); notice("");
     try {
-      const data = await api("POST", "/v1/sessions", {agent:$("agent").value,
+      const data = await api("POST", "/v1/sessions", {agent:$("agent").value, mode:$("mode").value,
         cols:Math.max(20, term.cols), rows:Math.max(4, term.rows), request_id:uuid()});
       ++generation; setSession(data.session); resize(); startPoll();
     } catch (error) { notice(error.key || "error_request_failed"); await connect(); }

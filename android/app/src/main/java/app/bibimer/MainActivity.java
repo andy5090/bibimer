@@ -37,7 +37,7 @@ public final class MainActivity extends Activity {
     private static final String PAGE = "https://" + ASSET_HOST + "/index.html";
     private static final int EXPORT_INSTALLER = 10;
     private static final Set<String> ASSETS = new HashSet<>(Arrays.asList(
-        "index.html", "app.js", "app.css", "i18n.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
+        "index.html", "app.js", "app.css", "i18n.js", "conversation.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
     private final ExecutorService actions = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<Runnable>(128));
     private final ExecutorService events = Executors.newSingleThreadExecutor();
@@ -129,7 +129,7 @@ public final class MainActivity extends Activity {
             try {
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
-                    .put("version", "0.1.1").toString();
+                    .put("version", "0.2.0").toString();
             } catch (Exception ignored) { return "{}"; }
         }
 
@@ -183,11 +183,21 @@ public final class MainActivity extends Activity {
             if (name.equals("storage")) command = "termux-setup-storage";
             else if (name.equals("install")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
             else if (name.equals("start")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge start";
+            else if (name.equals("restart")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge restart";
             else if (name.equals("pair")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge pair";
             else return;
             runOnUiThread(() -> {
                 ClipboardManager clipboard = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
                 clipboard.setPrimaryClip(ClipData.newPlainText(language.text(R.string.clipboard_label), command));
+                toast(R.string.command_copied);
+            });
+        }
+
+        @JavascriptInterface public void copyText(String text) {
+            if (text == null || text.length() > 65536) return;
+            runOnUiThread(() -> {
+                ClipboardManager clipboard = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                clipboard.setPrimaryClip(ClipData.newPlainText("Bibimer", text));
                 toast(R.string.command_copied);
             });
         }

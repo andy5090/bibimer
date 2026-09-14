@@ -21,7 +21,7 @@ module = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(module)
 
 
-class BridgeTests(unittest.TestCase):
+class BridgeTestCase(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.root = Path(self.directory.name)
@@ -86,8 +86,10 @@ class BridgeTests(unittest.TestCase):
             time.sleep(0.03)
         self.fail("Controlled terminal output did not arrive")
 
+class BridgeTests(BridgeTestCase):
     def test_no_unauthenticated_execution_or_output(self):
         for method, path, data in [("GET","/v1/health",None), ("POST","/v1/sessions",{}),
+                                    ("POST","/v1/shutdown",{}),
                                     ("POST","/v1/project",{"path":str(self.root / 'forbidden'),"create":True})]:
             status, result = self.api(method, path, data, auth=False)
             self.assertEqual(401, status)
@@ -266,6 +268,19 @@ class BridgeTests(unittest.TestCase):
             self.api("GET", "/v1/health")
             self.api("GET", "/bad-path", auth=False)
         self.assertEqual("", capture.getvalue())
+
+    def test_shutdown_is_atomic_with_launch_and_rejects_active_session(self):
+        self.launch()
+        self.assertEqual(409, self.api("POST", "/v1/shutdown", {})[0])
+        self.assertFalse(self.bridge.closing)
+        self.bridge.session.stop()
+        self.bridge.session.process.wait(timeout=5)
+        with self.bridge.session.condition:
+            self.bridge.session.condition.wait_for(lambda: self.bridge.session.state == "exited", timeout=3)
+        self.bridge.begin_shutdown()
+        with self.assertRaises(module.Problem) as caught:
+            self.bridge.launch({"agent": "shell", "request_id": str(uuid.uuid4())})
+        self.assertEqual("error_bridge_stopping", caught.exception.code)
 
 
 if __name__ == "__main__":

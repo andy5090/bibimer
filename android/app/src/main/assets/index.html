@@ -10,6 +10,7 @@
   <script src="vendor/xterm.js" defer></script>
   <script src="vendor/addon-fit.js" defer></script>
   <script src="i18n.js" defer></script>
+  <script src="conversation.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -39,17 +40,21 @@
         <button class="primary" type="submit" data-i18n="save_project">Save project</button>
       </form>
       <div class="session-bar"><span id="process" class="badge">Not started</span><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
+      <div id="mode-controls" class="mode-controls"><label for="mode" data-i18n="mode_label">Session interface</label><select id="mode"><option value="terminal" data-i18n="mode_terminal">Terminal · PTY</option><option value="chat" data-i18n="mode_chat">Chat · formatted text</option></select></div>
       <div id="launch-controls" class="launch-controls">
         <label class="sr-only" for="agent" data-i18n="program_label">Program to run</label>
         <select id="agent"><option value="shell">Terminal</option></select>
         <button id="launch" class="primary" data-i18n="start_session">Start session</button>
       </div>
+      <p id="mode-hint" class="mode-hint"></p>
+      <div id="chat-panel" hidden><div id="chat-empty" data-i18n="chat_empty">Send a message to start working with Codex.</div><div id="conversation" role="log" aria-label="Conversation" data-i18n-aria-label="chat_conversation"></div><div id="chat-requests"></div></div>
+      <div id="chat-state" hidden><span id="turn-status" role="status"></span><button id="interrupt-turn" class="quiet" data-i18n="chat_interrupt">Interrupt response</button></div>
       <div id="terminal-area">
         <div id="terminal" aria-label="Agent terminal output" data-i18n-aria-label="terminal_label"></div>
         <div id="terminal-empty"><span aria-hidden="true">›_</span><strong data-i18n="terminal_ready">Ready when you are</strong><p data-i18n="terminal_intro">Add a project and choose a program to run.</p></div>
       </div>
       <div id="session-note" class="session-note">Closing the app does not stop your session.</div>
-      <div class="keys" aria-label="Terminal keys" data-i18n-aria-label="special_keys">
+      <div id="terminal-keys" class="keys" aria-label="Terminal keys" data-i18n-aria-label="special_keys">
         <button data-key="escape">Esc</button><button data-key="tab">Tab</button><button data-key="up" aria-label="Up arrow" data-i18n-aria-label="arrow_up">↑</button><button data-key="down" aria-label="Down arrow" data-i18n-aria-label="arrow_down">↓</button><button data-key="interrupt">Ctrl+C</button><button data-key="enter" aria-label="Enter">↵</button>
       </div>
       <form id="input-form" class="composer">
@@ -96,9 +101,11 @@
     <section class="card setup-step">
       <h2 data-i18n="return_title">When you come back</h2>
       <p data-i18n="return_body">Reopen the app to reconnect to a live bridge. If it is unavailable, run the start command in Termux. If Android stopped the environment, the previous process may no longer be recoverable.</p>
+      <p data-i18n="bridge_update_hint">After installing an updated setup file, stop your active session and run the restart command in Termux.</p>
+      <button data-command="restart" class="quiet" data-i18n="copy_restart">Copy bridge restart command</button>
       <button id="forget" class="quiet" data-i18n="forget">Forget this app's connection</button>
     </section>
-    <p id="version" class="version">Bibimer 0.1.1 · Termux on this phone</p>
+    <p id="version" class="version">Bibimer 0.2.0 · Termux on this phone</p>
   </main>
   <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button></nav>
   <dialog id="stop-dialog"><h2 data-i18n="stop_title">Stop this session?</h2><p data-i18n="stop_body">This stops the agent and commands running in this session.</p><div class="button-row"><button id="cancel-stop" class="secondary" data-i18n="stop_cancel">Keep working</button><button id="confirm-stop" class="danger" data-i18n="stop_confirm">Stop session</button></div></dialog>

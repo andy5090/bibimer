@@ -17,6 +17,7 @@ const source = path.join(root, 'android/app/src/main/assets');
 const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'bibimer-ui-'));
 const state = path.join(temporary, 'state');
 const errors = [];
+const fixtureMode = !process.argv.includes('--probe-codex');
 let bridge, browser, assets, legacyProjectError = false;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -34,7 +35,15 @@ async function main() {
   await new Promise(resolve => portProbe.listen(0, '127.0.0.1', resolve));
   const port = portProbe.address().port;
   await new Promise(resolve => portProbe.close(resolve));
-  bridge = spawn('python', [path.join(root,'bridge/bibimer_bridge.py'), 'serve', '--state-dir',state, '--port',String(port)], {stdio:'ignore'});
+  const bridgeEnv = {...process.env};
+  if (fixtureMode) {
+    const binaries = path.join(temporary,'bin');
+    fs.mkdirSync(binaries);
+    const python = execFileSync('which',['python'],{encoding:'utf8'}).trim();
+    fs.writeFileSync(path.join(binaries,'codex'),'#!'+python+'\n'+fs.readFileSync(path.join(root,'bridge/tests/fake_codex.py'),'utf8'),{mode:0o700});
+    bridgeEnv.PATH = binaries+':'+process.env.PATH;
+  }
+  bridge = spawn('python', [path.join(root,'bridge/bibimer_bridge.py'), 'serve', '--state-dir',state, '--port',String(port)], {stdio:'ignore',env:bridgeEnv});
   for (let i=0; i<100 && !fs.existsSync(path.join(state,'token.json')); i++) await delay(50);
   const token = JSON.parse(fs.readFileSync(path.join(state,'token.json')));
   const code = execFileSync('python', ['-c',
@@ -69,12 +78,13 @@ async function main() {
       // Browser-only stand-in for native preferences; Android persistence is
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.1.1'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.2.0'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),
       openGuide:guide=>window.setupActions.push('guide:'+guide),
       copyCommand:name=>window.setupActions.push('copy:'+name),
+      copyText:text=>{window.testClipboard=text;},
       exportInstaller:()=>window.setupActions.push('export')
     };
   });
@@ -141,6 +151,12 @@ async function main() {
   const output = (await call('GET',`/v1/sessions/${initial}/events?cursor=0&wait=0`)).data;
   const text = Buffer.from(output.data,'base64').toString('utf8');
   assert.ok(text.includes('PHONE_DEVELOPMENT') && text.includes('비비머'));
+  await page.locator('#input').fill("printf '\\033[31mANSI_RED\\033[0m \\033[1;32mBOLD_GREEN\\033[0m\\n\\033[38;5;208mCOLOR_256\\033[0m \\033[38;2;12;180;220mTRUE_COLOR\\033[0m\\n+-------+\\n| ASCII |\\n+-------+\\n'");
+  await page.locator('#send').click();
+  await page.waitForFunction(()=>[...document.querySelectorAll('.xterm-rows span')].some(node=>node.textContent==='ANSI_RED' && getComputedStyle(node).color==='rgb(237, 119, 119)'));
+  assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.xterm-rows span')].some(node=>node.textContent==='TRUE_COLOR' && getComputedStyle(node).color==='rgb(12, 180, 220)')));
+  assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.xterm-rows span')].some(node=>node.textContent.includes('BOLD_GREEN') && Number(getComputedStyle(node).fontWeight)>=700)));
+  assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.xterm-rows span')].some(node=>node.textContent==='COLOR_256' && getComputedStyle(node).color==='rgb(255, 135, 0)')));
   await page.screenshot({path:path.join(root,'dist/screenshots/session-en.png')});
   const draft = 'Draft instruction · 작성 중';
   await page.locator('#input').fill(draft);
@@ -184,8 +200,64 @@ async function main() {
   await page.locator('#confirm-stop').click();
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
   assert.equal((await call('GET','/v1/health')).data.session.state,'exited');
+  if (fixtureMode) {
+    await page.locator('#agent').selectOption('codex');
+    assert.equal(await page.locator('#mode').inputValue(),'chat');
+    await page.locator('#launch').click();
+    await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message');
+    const chatId = (await call('GET','/v1/health')).data.session.id;
+    assert.equal(await page.locator('#terminal-area').isVisible(),false);
+    await page.locator('#input').fill('hello'); await page.locator('#send').click();
+    await page.locator('.markdown h2').waitFor();
+    assert.equal(await page.locator('.markdown h2').innerText(),'Result');
+    assert.equal(await page.locator('.markdown table td').first().innerText(),'Task');
+    assert.equal(await page.locator('.markdown script').count(),0);
+    assert.equal(await page.evaluate(()=>window.untrusted),undefined);
+    await page.locator('.markdown .code-heading button').click();
+    assert.ok((await page.evaluate(()=>window.testClipboard)).includes("print('hello')"));
+    await page.screenshot({path:path.join(root,'dist/screenshots/chat-en.png')});
+    await page.locator('#input').fill('approval'); await page.locator('#send').click();
+    await page.locator('.request-card').waitFor();
+    assert.equal(fs.existsSync(path.join(temporary,'project/approved')),false);
+    const pendingBefore = (await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.requests[0].id;
+    await page.reload();
+    await page.locator('.request-card').waitFor();
+    assert.equal((await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.requests[0].id,pendingBefore);
+    await page.screenshot({path:path.join(root,'dist/screenshots/chat-approval.png')});
+    await page.locator('[data-request-action="chat_decline"]').click();
+    await page.locator('.request-card').waitFor({state:'hidden'});
+    assert.equal(fs.existsSync(path.join(temporary,'project/approved')),false);
+    await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+    await page.locator('#input').fill('question'); await page.locator('#send').click();
+    await page.locator('.request-card input').fill('한국어 · draft');
+    await page.locator('#tab-setup').click(); await page.locator('#language').selectOption('ko'); await page.locator('#tab-work').click();
+    assert.equal(await page.locator('.request-card input').inputValue(),'한국어 · draft');
+    await page.setViewportSize({width:360,height:460});
+    await page.locator('[data-request-action="chat_answer"]').scrollIntoViewIfNeeded();
+    const answerBox = await page.locator('[data-request-action="chat_answer"]').boundingBox();
+    assert.ok(answerBox.y>=0 && answerBox.y+answerBox.height<=460);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await page.screenshot({path:path.join(root,'dist/screenshots/chat-question-ko.png')});
+    await page.locator('[data-request-action="chat_answer"]').click();
+    await page.locator('.request-card').waitFor({state:'hidden'});
+    await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+    await page.locator('#input').fill('wait'); await page.locator('#send').click();
+    await page.locator('#interrupt-turn').waitFor({state:'visible'});
+    await page.locator('#input').fill('Unsent follow-up · 다음 작업');
+    await page.locator('#interrupt-turn').click();
+    await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='메시지 입력 대기');
+    assert.equal(await page.locator('#input').inputValue(),'Unsent follow-up · 다음 작업');
+    assert.equal((await call('GET','/v1/health')).data.session.id,chatId);
+    assert.equal((await call('GET','/v1/health')).data.session.state,'running');
+    await page.setViewportSize({width:393,height:780});
+    await page.screenshot({path:path.join(root,'dist/screenshots/chat-ko.png')});
+    await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+    await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
+    console.log('PASS: structured chat fixture, Markdown/code/table/ASCII, inert HTML, copy, approval reconnect and decline, question draft/language switch, interrupt keeps session, small-screen chat composer; no model task sent');
+  }
   if (process.argv.includes('--probe-codex')) {
     await page.locator('#agent').selectOption('codex');
+    await page.locator('#mode').selectOption('terminal');
     await page.locator('#launch').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='running');
     await delay(2000);
@@ -202,6 +274,19 @@ async function main() {
     await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
     console.log('PASS: installed Codex startup through xterm, reconnect, explicit stop; no model task sent');
+    await page.locator('#mode').selectOption('chat');
+    await page.locator('#launch').click();
+    await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message',{},{timeout:25000});
+    const actualChat = (await call('GET','/v1/health')).data.session;
+    assert.equal(actualChat.mode,'chat');
+    await page.evaluate(()=>window.BibimerPause());
+    await page.evaluate(()=>window.BibimerResume());
+    await page.waitForFunction(()=>document.querySelector('#connection').textContent==='Connected');
+    assert.equal((await call('GET','/v1/health')).data.session.id,actualChat.id);
+    await page.locator('#stop').click();
+    await page.locator('#confirm-stop').click();
+    await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
+    console.log('PASS: installed Codex App Server initializes a chat through the UI, reconnects and stops; no model task sent');
   }
   assert.deepEqual(errors,[]);
   console.log('PASS: English default with Korean device locale, Korean selection, localized errors including legacy bridge, language changes preserve session and draft, setup guidance, pairing, PTY input/output, reconnect, mobile layout, explicit stop');
