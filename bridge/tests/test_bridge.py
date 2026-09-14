@@ -262,6 +262,36 @@ class BridgeTests(BridgeTestCase):
         self.assertGreaterEqual(data["cursor"], 1004)
         self.assertEqual(409, self.api("GET", f"/v1/sessions/{session_id}/events?cursor=999999&wait=0")[0])
 
+    def test_previous_session_events_are_read_only_and_require_authentication(self):
+        self.register()
+        for mode in ("terminal", "chat"):
+            for previous_state, restored_state in (("exited", "exited"), ("running", "lost")):
+                with self.subTest(mode=mode, state=previous_state):
+                    session_id = str(uuid.uuid4())
+                    module.save_json(self.state / "metadata.json", {"project": self.bridge.project,
+                        "session": {"id": session_id, "mode": mode, "state": previous_state,
+                                    "exit_code": 0, "output_start": 0, "output_end": 123}})
+                    self.bridge = module.Bridge(self.state)
+                    self.server.bridge = self.bridge
+                    endpoint = f"/v1/sessions/{session_id}"
+                    status, event = self.api("GET", endpoint + "/events?cursor=0&wait=20")
+                    self.assertEqual(200, status)
+                    self.assertEqual(restored_state, event["session"]["state"])
+                    self.assertEqual(0, event["cursor"])
+                    self.assertEqual(0, event["session"]["output_end"])
+                    if mode == "chat":
+                        self.assertEqual([], event["items"])
+                        self.assertEqual([], event["requests"])
+                        self.assertEqual([], event["retained"])
+                    else:
+                        self.assertEqual("", event["data"])
+                    self.assertEqual(401, self.api("GET", endpoint + "/events", auth=False)[0])
+                    self.assertEqual(400, self.api("GET", endpoint + "/events?cursor=-1")[0])
+                    self.assertEqual(404, self.api("GET", "/v1/sessions/unknown/events")[0])
+                    for action in ("input", "resize", "stop", "message", "respond", "interrupt"):
+                        self.assertEqual(404, self.api("POST", endpoint + "/" + action, {})[0])
+                    self.assertIsNone(self.bridge.session)
+
     def test_request_logging_is_silent(self):
         capture = io.StringIO()
         with contextlib.redirect_stderr(capture):

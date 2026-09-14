@@ -1,3 +1,4 @@
+import base64
 import json
 from pathlib import Path
 import socket
@@ -6,6 +7,7 @@ import sys
 import tempfile
 import time
 import unittest
+import urllib.error
 import urllib.request
 import uuid
 
@@ -55,12 +57,56 @@ class RestartTests(unittest.TestCase):
             time.sleep(0.03)
         self.fail("Temporary bridge did not start")
 
-    def post(self, path, data):
+    def request(self, method, path, data=None):
         token = json.loads((self.state / "token.json").read_text())
-        request = urllib.request.Request(f"http://127.0.0.1:{self.port}" + path, data=json.dumps(data).encode(),
+        request = urllib.request.Request(f"http://127.0.0.1:{self.port}" + path, method=method,
+            data=None if data is None else json.dumps(data).encode(),
             headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"})
-        with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(request, timeout=3) as response:
-            return json.load(response)
+        try:
+            response = urllib.request.build_opener(urllib.request.ProxyHandler({})).open(request, timeout=3)
+        except urllib.error.HTTPError as error:
+            response = error
+        with response:
+            return response.status, json.load(response)
+
+    def post(self, path, data):
+        status, result = self.request("POST", path, data)
+        self.assertEqual(200, status)
+        return result
+
+    def test_exited_session_after_restart_allows_reconnect_and_new_launch(self):
+        process = self.server()
+        self.post("/v1/project", {"path": str(self.root / "project"), "create": True})
+        session = self.post("/v1/sessions", {"agent": "shell", "request_id": str(uuid.uuid4())})["session"]
+        endpoint = f"/v1/sessions/{session['id']}"
+        self.post(endpoint + "/input", {"data": base64.b64encode(b"printf 'BEFORE_''RESTART\\n'; exit 7\r").decode(),
+            "request_id": str(uuid.uuid4())})
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            session = module.bridge_health(self.state, self.port)["session"]
+            if session["state"] == "exited":
+                break
+            time.sleep(0.03)
+        self.assertEqual("exited", session["state"])
+        self.assertGreater(session["output_end"], 0)
+        token = (self.state / "token.json").read_bytes()
+        module.restart_bridge(self.state, self.port)
+        process.wait(timeout=4)
+        self.server()
+        self.assertEqual(token, (self.state / "token.json").read_bytes())
+        for cursor in (0, session["output_end"]):
+            status, event = self.request("GET", endpoint + f"/events?cursor={cursor}&wait=20")
+            self.assertEqual(200, status)
+            self.assertEqual("exited", event["session"]["state"])
+            self.assertEqual(7, event["session"]["exit_code"])
+            self.assertEqual(0, event["cursor"])
+            self.assertEqual("", event["data"])
+            self.assertEqual(cursor > 0, event["gap"])
+        self.assertEqual(404, self.request("POST", endpoint + "/stop", {})[0])
+        next_session = self.post("/v1/sessions", {"agent": "shell", "request_id": str(uuid.uuid4())})["session"]
+        self.assertNotEqual(session["id"], next_session["id"])
+        self.assertEqual("running", next_session["state"])
+        self.assertEqual(404, self.request("GET", endpoint + "/events?cursor=0&wait=0")[0])
 
     def test_idle_shutdown_and_legacy_pidfd_keep_unrelated_process(self):
         for legacy in [False, True]:

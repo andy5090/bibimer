@@ -18,7 +18,7 @@ const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'bibimer-ui-'));
 const state = path.join(temporary, 'state');
 const errors = [];
 const fixtureMode = !process.argv.includes('--probe-codex');
-let bridge, browser, assets, legacyProjectError = false;
+let bridge, browser, assets, legacyProjectError = false, failedEventRequests = 0;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function main() {
@@ -43,7 +43,8 @@ async function main() {
     fs.writeFileSync(path.join(binaries,'codex'),'#!'+python+'\n'+fs.readFileSync(path.join(root,'bridge/tests/fake_codex.py'),'utf8'),{mode:0o700});
     bridgeEnv.PATH = binaries+':'+process.env.PATH;
   }
-  bridge = spawn('python', [path.join(root,'bridge/bibimer_bridge.py'), 'serve', '--state-dir',state, '--port',String(port)], {stdio:'ignore',env:bridgeEnv});
+  const startBridge = () => spawn('python', [path.join(root,'bridge/bibimer_bridge.py'), 'serve', '--state-dir',state, '--port',String(port)], {stdio:'ignore',env:bridgeEnv});
+  bridge = startBridge();
   for (let i=0; i<100 && !fs.existsSync(path.join(state,'token.json')); i++) await delay(50);
   const token = JSON.parse(fs.readFileSync(path.join(state,'token.json')));
   const code = execFileSync('python', ['-c',
@@ -65,6 +66,7 @@ async function main() {
       const result = legacyProjectError && endpoint === '/v1/project'
         ? {ok:false,status:400,data:{error:'읽고 쓸 수 있는 프로젝트 폴더가 필요합니다.'}}
         : await call(method, endpoint.replace('wait=20','wait=1'), JSON.parse(body));
+      if (endpoint.includes('/events?') && !result.ok) failedEventRequests++;
       if (endpoint === '/v1/pair' && result.ok) {
         delete result.data.token;
         await page.evaluate(() => { localStorage.setItem('testPaired','yes'); });
@@ -78,7 +80,7 @@ async function main() {
       // Browser-only stand-in for native preferences; Android persistence is
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.2.0'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.2.1'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),
@@ -88,6 +90,35 @@ async function main() {
       exportInstaller:()=>window.setupActions.push('export')
     };
   });
+  async function verifyRestartAfterExit() {
+    const before = (await call('GET','/v1/health')).data;
+    assert.equal(before.session.state,'exited');
+    await page.evaluate(()=>window.BibimerPause());
+    const stopped = new Promise(resolve=>bridge.once('exit',resolve));
+    assert.equal((await call('POST','/v1/shutdown',{})).ok,true);
+    await stopped;
+    bridge = startBridge();
+    let after;
+    for (let i=0;i<50;i++) {
+      try { after = (await call('GET','/v1/health')).data; } catch (_) {}
+      if (after?.instance && after.instance !== before.instance) break;
+      await delay(100);
+    }
+    assert.ok(after?.instance && after.instance !== before.instance);
+    assert.equal(after.session.id,before.session.id);
+    assert.equal(after.session.output_end,0);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(state,'token.json'))),token);
+    const failuresBefore = failedEventRequests;
+    await page.reload();
+    await page.waitForFunction(()=>!document.querySelector('#launch').disabled);
+    await delay(3500); // Cross the periodic health refresh, not a transient enable.
+    assert.equal(await page.locator('#launch').isEnabled(),true);
+    assert.equal(await page.locator('#connection').evaluate(node=>node.classList.contains('connected')),true);
+    assert.equal(failedEventRequests,failuresBefore);
+    await page.locator('#agent').selectOption('codex');
+    assert.equal(await page.locator('#mode option[value="chat"]').isEnabled(),true);
+    console.log('PASS: bridge restart after exited '+(before.session.mode || 'terminal')+' keeps connection and Start session enabled; pairing retained');
+  }
   await page.goto(`http://127.0.0.1:${assets.address().port}/`);
   assert.equal(await page.locator('html').getAttribute('lang'),'en');
   assert.equal(await page.locator('#go-setup [data-i18n]').innerText(),'Set up this phone');
@@ -200,6 +231,7 @@ async function main() {
   await page.locator('#confirm-stop').click();
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
   assert.equal((await call('GET','/v1/health')).data.session.state,'exited');
+  await verifyRestartAfterExit();
   if (fixtureMode) {
     await page.locator('#agent').selectOption('codex');
     assert.equal(await page.locator('#mode').inputValue(),'chat');
@@ -253,6 +285,12 @@ async function main() {
     await page.screenshot({path:path.join(root,'dist/screenshots/chat-ko.png')});
     await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
+    await verifyRestartAfterExit();
+    await page.locator('#launch').click();
+    await page.waitForFunction(()=>!document.querySelector('#input').disabled);
+    assert.equal((await call('GET','/v1/health')).data.session.mode,'chat');
+    await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+    await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
     console.log('PASS: structured chat fixture, Markdown/code/table/ASCII, inert HTML, copy, approval reconnect and decline, question draft/language switch, interrupt keeps session, small-screen chat composer; no model task sent');
   }
   if (process.argv.includes('--probe-codex')) {
@@ -292,9 +330,17 @@ async function main() {
   console.log('PASS: English default with Korean device locale, Korean selection, localized errors including legacy bridge, language changes preserve session and draft, setup guidance, pairing, PTY input/output, reconnect, mobile layout, explicit stop');
 }
 
-main().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(async()=>{
+main().catch(error=>{
+  console.error(error.message);
+  const location = String(error.stack).split('\n').find(line=>line.includes('smoke_ui.cjs:'));
+  if(location)console.error(location.trim());
+  process.exitCode=1;
+}).finally(async()=>{
   if(browser)await browser.close();
-  if(bridge){bridge.kill('SIGTERM');await new Promise(resolve=>bridge.once('exit',resolve));}
+  if(bridge && bridge.exitCode === null && bridge.signalCode === null){
+    const stopped = new Promise(resolve=>bridge.once('exit',resolve));
+    bridge.kill('SIGTERM');await stopped;
+  }
   if(assets)await new Promise(resolve=>assets.close(resolve));
   fs.rmSync(temporary,{recursive:true,force:true});
 });

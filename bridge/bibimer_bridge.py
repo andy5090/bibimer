@@ -30,7 +30,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -832,6 +832,23 @@ class Bridge:
                 raise Problem(404, "error_session_missing")
             return self.session
 
+    def session_events(self, session_id, cursor, wait):
+        with self.lock:
+            if not self.session and self.previous and self.previous["id"] == session_id:
+                # Health retains the last session after a restart, but its output
+                # only lived in the old process. Keep that snapshot readable so
+                # clients can stay connected and launch their next session.
+                snapshot = dict(self.previous)
+                result = {"session": snapshot, "cursor": 0, "gap": cursor > 0}
+                if snapshot.get("mode") == "chat":
+                    result.update(items=[], retained=[], requests=[])
+                else:
+                    result["data"] = ""
+                return result
+            session = self.get_session(session_id)
+        # Never hold the bridge lock during an active session's long poll.
+        return session.events(cursor, wait)
+
     def begin_shutdown(self):
         with self.lock:
             if self.session and self.session.state in ACTIVE:
@@ -955,7 +972,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
             parts = parsed.path.strip("/").split("/")
             if len(parts) != 4:
                 raise Problem(404, "error_route")
-            session = bridge.get_session(parts[2])
             action = parts[3]
             if method == "GET" and action == "events":
                 query = urllib.parse.parse_qs(parsed.query)
@@ -964,8 +980,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     wait = integer(int(query.get("wait", ["20"])[0]), 0, 20)
                 except ValueError:
                     raise Problem(400, "error_cursor") from None
-                result = session.events(cursor, wait)
-            elif method == "POST" and action == "input":
+                self.reply(200, bridge.session_events(parts[2], cursor, wait))
+                return
+            session = bridge.get_session(parts[2])
+            if method == "POST" and action == "input":
                 key = request_id(data.get("request_id"))
                 try:
                     content = base64.b64decode(data.get("data", ""), validate=True)
