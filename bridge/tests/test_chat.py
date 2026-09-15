@@ -40,6 +40,35 @@ class ChatTests(BridgeTestCase):
     def message(self, text, key=None):
         return self.api("POST", f"/v1/sessions/{self.session_id}/message", {"text": text, "request_id": key or str(uuid.uuid4())})
 
+    def test_two_project_chats_keep_messages_and_approvals_isolated(self):
+        first = self.chat()
+        project_a = first.project
+        self.message("approval")
+        request = self.until(lambda event: bool(event["requests"]))["requests"][0]
+        status, result = self.api("POST", "/v1/project", {
+            "path": str(self.root / "second"), "create": True, "add": True})
+        self.assertEqual(200, status)
+        status, result = self.api("POST", "/v1/sessions", {"project_id": result["project"]["id"],
+            "agent": "codex", "mode": "chat", "request_id": str(uuid.uuid4())})
+        self.assertEqual(200, status)
+        second = result["session"]["id"]
+        self.session_id = second
+        self.until(lambda event: event["session"]["turn_state"] == "ready")
+        self.message("only in project B")
+        event = self.until(lambda event: any(item["kind"] == "turn" for item in event["items"]))
+        self.assertFalse(event["requests"])
+        self.assertEqual(409, self.api("POST", f"/v1/sessions/{second}/respond", {
+            "prompt_id": request["id"], "decision": "accept", "request_id": str(uuid.uuid4())})[0])
+        self.assertEqual(200, self.api("POST", "/v1/project", {"project_id": project_a["id"]})[0])
+        self.session_id = first.id
+        event = self.until(lambda event: bool(event["requests"]))
+        self.assertEqual(request["id"], event["requests"][0]["id"])
+        self.assertFalse(any(item.get("text") == "only in project B" for item in event["items"]))
+        self.assertEqual(200, self.api("POST", f"/v1/sessions/{first.id}/respond", {
+            "prompt_id": request["id"], "decision": "decline", "request_id": str(uuid.uuid4())})[0])
+        self.assertFalse((self.root / "project/approved").exists())
+        self.assertEqual(2, self.bridge.active_count())
+
     def test_messages_replay_idempotency_and_follow_up(self):
         session = self.chat()
         key = str(uuid.uuid4())

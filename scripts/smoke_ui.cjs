@@ -19,6 +19,7 @@ const state = path.join(temporary, 'state');
 const errors = [];
 const fixtureMode = !process.argv.includes('--probe-codex');
 let bridge, browser, assets, legacyProjectError = false, failedEventRequests = 0;
+let heldReply = null;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function main() {
@@ -67,6 +68,9 @@ async function main() {
         ? {ok:false,status:400,data:{error:'읽고 쓸 수 있는 프로젝트 폴더가 필요합니다.'}}
         : await call(method, endpoint.replace('wait=20','wait=1'), JSON.parse(body));
       if (endpoint.includes('/events?') && !result.ok) failedEventRequests++;
+      if (heldReply?.endpoint === endpoint) {
+        const held = heldReply; heldReply = null; held.entered(); await held.promise;
+      }
       if (endpoint === '/v1/pair' && result.ok) {
         delete result.data.token;
         await page.evaluate(() => { localStorage.setItem('testPaired','yes'); });
@@ -80,9 +84,9 @@ async function main() {
       // Browser-only stand-in for native preferences; Android persistence is
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.2.1'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.3.0'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
-      request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
+      cancelPoll:()=>{}, request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),
       openGuide:guide=>window.setupActions.push('guide:'+guide),
       copyCommand:name=>window.setupActions.push('copy:'+name),
@@ -143,12 +147,12 @@ async function main() {
   await page.locator('#pair').click();
   await page.locator('#project-form').waitFor({state:'visible'});
   await page.locator('#path').fill('relative/project');
-  await page.locator('#project-form button').click();
+  await page.locator('#project-form button[type=submit]').click();
   await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Enter an absolute path or a path starting with ~/.');
   // Older live bridges have Korean errors without a code. Updating the app
   // must localize those responses without requiring a bridge restart.
   legacyProjectError = true;
-  await page.locator('#project-form button').click();
+  await page.locator('#project-form button[type=submit]').click();
   await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Choose a project folder with read and write access.');
   await page.locator('#tab-setup').click();
   await page.locator('#language').selectOption('ko');
@@ -163,17 +167,64 @@ async function main() {
   await page.setViewportSize({width:360,height:460});
   await delay(3300); // A health refresh must not erase an unfinished project path.
   assert.equal(await page.locator('#path').inputValue(),path.join(temporary,'project'));
-  const registerBox = await page.locator('#project-form button').boundingBox();
+  const registerBox = await page.locator('#project-form button[type=submit]').boundingBox();
   assert.ok(registerBox.y>=0 && registerBox.y+registerBox.height<=460);
   await page.setViewportSize({width:393,height:780});
   await page.locator('#create-folder').check();
-  await page.locator('#project-form button').click();
+  await page.locator('#project-form button[type=submit]').click();
   await page.locator('#project-form').waitFor({state:'hidden'});
   await page.locator('#launch').click();
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='running');
   const initial = (await call('GET','/v1/health')).data.session.id;
+  const projectA = (await call('GET','/v1/health')).data.project.id;
+  await page.locator('#input').fill('Draft A · 한글');
+  await page.locator('#edit-project').click();
+  await page.locator('#path').fill(path.join(temporary,'second-project'));
+  await page.locator('#project-form button[type=submit]').click();
+  await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
+  const projectB = (await call('GET','/v1/health')).data.project.id;
+  assert.notEqual(projectA,projectB);
+  await page.locator('#launch').click();
+  await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='running');
+  const secondSession = (await call('GET','/v1/health')).data.session.id;
+  await page.locator('#input').fill("printf 'PROJECT_''B_ONLY\\n'");
+  await page.locator('#input').press('Enter');
+  await page.waitForFunction(()=>document.querySelector('#input').value==='');
+  await page.locator('#input').fill('Draft B');
+  await page.locator('#project-switch').selectOption(projectA);
+  await page.waitForFunction(()=>document.querySelector('#input').value==='Draft A · 한글');
+  assert.equal((await call('GET','/v1/health')).data.active_sessions,2);
+  const heldText = "printf 'PROJECT_''A_ONLY\\n'";
+  let releaseReply, inputAccepted;
+  const accepted = new Promise(resolve=>{inputAccepted=resolve;});
+  heldReply = {endpoint:`/v1/sessions/${initial}/input`, entered:inputAccepted,
+    promise:new Promise(resolve=>{releaseReply=resolve;})};
+  await page.locator('#input').fill(heldText);
+  await page.locator('#input').press('Enter');
+  await accepted;
+  await page.locator('#project-switch').selectOption(projectB);
+  await page.waitForFunction(()=>document.querySelector('#input').value==='Draft B');
+  await page.locator('#input').fill(heldText);
+  releaseReply(); await delay(100);
+  assert.equal(await page.locator('#input').inputValue(),heldText);
+  const aOutput = (await call('GET',`/v1/sessions/${initial}/events?cursor=0&wait=0`)).data;
+  const bOutput = (await call('GET',`/v1/sessions/${secondSession}/events?cursor=0&wait=0`)).data;
+  assert.ok(Buffer.from(aOutput.data,'base64').toString().includes('PROJECT_A_ONLY'));
+  assert.ok(!Buffer.from(aOutput.data,'base64').toString().includes('PROJECT_B_ONLY'));
+  assert.ok(Buffer.from(bOutput.data,'base64').toString().includes('PROJECT_B_ONLY'));
+  assert.ok(!Buffer.from(bOutput.data,'base64').toString().includes('PROJECT_A_ONLY'));
+  await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+  await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited');
+  assert.equal((await call('GET','/v1/health')).data.active_sessions,1);
+  await page.locator('#project-switch').selectOption(projectA);
+  await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/project'));
+  await page.waitForFunction(()=>!document.querySelector('#input').disabled);
+  assert.equal(await page.locator('#input').inputValue(),'');
+  assert.equal((await call('GET','/v1/health')).data.session.id,initial);
+  await page.screenshot({path:path.join(root,'dist/screenshots/projects-en.png')});
+  console.log('PASS: two active projects, draft restore, delayed send reply isolation, separate terminal output and scoped stop');
   await page.locator('#input').fill("printf 'PHONE_''DEVELOPMENT\\n'");
-  await page.locator('#send').click();
+  await page.locator('#input').press('Enter');
   await page.waitForFunction(()=>document.querySelector('#input').value==='');
   // Render xterm output and ensure Korean input survives the roundtrip.
   await page.locator('#input').fill("printf '비비''머\\n'");
@@ -239,10 +290,33 @@ async function main() {
     await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message');
     const chatId = (await call('GET','/v1/health')).data.session.id;
     assert.equal(await page.locator('#terminal-area').isVisible(),false);
-    await page.locator('#input').fill('hello'); await page.locator('#send').click();
+    assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'send');
+    await page.locator('#input').fill('firstsecond');
+    await page.locator('#input').evaluate(node=>node.setSelectionRange(5,5));
+    await page.locator('#input').press('Shift+Enter');
+    assert.equal(await page.locator('#input').inputValue(),'first\nsecond');
+    await page.locator('#input').evaluate(node=>node.setSelectionRange(0,5));
+    await page.locator('#input').press('Control+Enter');
+    assert.equal(await page.locator('#input').inputValue(),'\n\nsecond');
+    await page.locator('#input').press('Meta+Enter');
+    assert.equal(await page.locator('#input').inputValue(),'\n\n\nsecond');
+    await page.locator('#input').fill('한글 · first\nsecond');
+    await page.locator('#input').evaluate(node=>{
+      node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',isComposing:true,bubbles:true,cancelable:true}));
+      node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',keyCode:229,bubbles:true,cancelable:true}));
+      node.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));
+      node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));
+      node.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true}));
+      node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',repeat:true,bubbles:true,cancelable:true}));
+    });
+    assert.equal(await page.locator('#input').inputValue(),'한글 · first\nsecond');
+    assert.equal((await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.items.filter(item=>item.kind==='user').length,0);
+    await page.locator('#input').press('Enter');
     await page.locator('.markdown h2').waitFor();
     assert.equal(await page.locator('.markdown h2').innerText(),'Result');
     assert.equal(await page.locator('.markdown table td').first().innerText(),'Task');
+    const sent = (await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.items.filter(item=>item.kind==='user');
+    assert.equal(sent.length,1); assert.equal(sent[0].text,'한글 · first\nsecond');
     assert.equal(await page.locator('.markdown script').count(),0);
     assert.equal(await page.evaluate(()=>window.untrusted),undefined);
     await page.locator('.markdown .code-heading button').click();
@@ -252,6 +326,11 @@ async function main() {
     await page.locator('.request-card').waitFor();
     assert.equal(fs.existsSync(path.join(temporary,'project/approved')),false);
     const pendingBefore = (await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.requests[0].id;
+    await page.locator('#project-switch').selectOption(projectB);
+    await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
+    assert.equal((await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.requests[0].id,pendingBefore);
+    await page.locator('#project-switch').selectOption(projectA);
+    await page.locator('.request-card').waitFor();
     await page.reload();
     await page.locator('.request-card').waitFor();
     assert.equal((await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.requests[0].id,pendingBefore);
@@ -262,6 +341,10 @@ async function main() {
     await page.waitForFunction(()=>!document.querySelector('#send').disabled);
     await page.locator('#input').fill('question'); await page.locator('#send').click();
     await page.locator('.request-card input').fill('한국어 · draft');
+    await page.locator('#project-switch').selectOption(projectB);
+    await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
+    await page.locator('#project-switch').selectOption(projectA);
+    await page.waitForFunction(()=>document.querySelector('.request-card input')?.value==='한국어 · draft');
     await page.locator('#tab-setup').click(); await page.locator('#language').selectOption('ko'); await page.locator('#tab-work').click();
     assert.equal(await page.locator('.request-card input').inputValue(),'한국어 · draft');
     await page.setViewportSize({width:360,height:460});
@@ -276,6 +359,8 @@ async function main() {
     await page.locator('#input').fill('wait'); await page.locator('#send').click();
     await page.locator('#interrupt-turn').waitFor({state:'visible'});
     await page.locator('#input').fill('Unsent follow-up · 다음 작업');
+    await page.locator('#input').press('Enter');
+    assert.equal(await page.locator('#input').inputValue(),'Unsent follow-up · 다음 작업');
     await page.locator('#interrupt-turn').click();
     await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='메시지 입력 대기');
     assert.equal(await page.locator('#input').inputValue(),'Unsent follow-up · 다음 작업');
@@ -291,7 +376,7 @@ async function main() {
     assert.equal((await call('GET','/v1/health')).data.session.mode,'chat');
     await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
-    console.log('PASS: structured chat fixture, Markdown/code/table/ASCII, inert HTML, copy, approval reconnect and decline, question draft/language switch, interrupt keeps session, small-screen chat composer; no model task sent');
+    console.log('PASS: Enter sends, Shift/Ctrl/Meta+Enter newline, selection replacement, IME/repeat/busy guards; project switches preserve approval and question drafts; structured chat, formatting and interrupt; no model task sent');
   }
   if (process.argv.includes('--probe-codex')) {
     await page.locator('#agent').selectOption('codex');

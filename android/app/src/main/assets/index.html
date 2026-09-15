@@ -30,14 +30,15 @@
     </div>
     <section id="workspace" hidden>
       <div class="project-summary">
-        <div class="project-label"><span class="eyebrow" data-i18n="project_eyebrow">PROJECT</span><strong id="project-name">Add a project</strong><small id="project-path">A working folder in Termux</small></div>
+        <div class="project-label"><span class="eyebrow" data-i18n="project_eyebrow">PROJECT</span><strong id="project-name">Add a project</strong><select id="project-switch" aria-label="Switch project" data-i18n-aria-label="switch_project" hidden></select><small id="project-path">A working folder in Termux</small></div>
         <button class="quiet" id="edit-project" data-i18n="edit_project">Edit</button>
       </div>
+      <button id="project-update" class="quiet" data-i18n="projects_update" hidden>Update the bridge to use multiple projects</button>
       <form id="project-form" class="card" hidden>
         <label for="path" data-i18n="project_folder">Project folder</label>
         <input id="path" placeholder="~/projects/my-project" autocomplete="off" spellcheck="false">
         <label class="check"><input type="checkbox" id="create-folder"><span data-i18n="create_folder">Create the folder if it does not exist</span></label>
-        <button class="primary" type="submit" data-i18n="save_project">Save project</button>
+        <div class="button-row"><button class="primary" type="submit" data-i18n="save_project">Save project</button><button id="cancel-project" class="quiet" type="button" data-i18n="cancel_project">Cancel</button></div>
       </form>
       <div class="session-bar"><span id="process" class="badge">Not started</span><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
       <div id="mode-controls" class="mode-controls"><label for="mode" data-i18n="mode_label">Session interface</label><select id="mode"><option value="terminal" data-i18n="mode_terminal">Terminal · PTY</option><option value="chat" data-i18n="mode_chat">Chat · formatted text</option></select></div>
@@ -59,7 +60,7 @@
       </div>
       <form id="input-form" class="composer">
         <label for="input" class="sr-only" data-i18n="input_label">Input for the agent</label>
-        <textarea id="input" rows="1" placeholder="Type an instruction or reply" data-i18n-placeholder="input_placeholder" autocomplete="off" spellcheck="false"></textarea>
+        <textarea id="input" rows="1" placeholder="Type an instruction or reply" data-i18n-placeholder="input_placeholder" autocomplete="off" spellcheck="false" enterkeyhint="send"></textarea>
         <button id="send" class="primary" type="submit" data-i18n="send">Send</button>
       </form>
       <button id="stop" class="stop" data-i18n="stop_session">Stop this session</button>
@@ -105,7 +106,7 @@
       <button data-command="restart" class="quiet" data-i18n="copy_restart">Copy bridge restart command</button>
       <button id="forget" class="quiet" data-i18n="forget">Forget this app's connection</button>
     </section>
-    <p id="version" class="version">Bibimer 0.2.1 · Termux on this phone</p>
+    <p id="version" class="version">Bibimer 0.3.0 · Termux on this phone</p>
   </main>
   <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button></nav>
   <dialog id="stop-dialog"><h2 data-i18n="stop_title">Stop this session?</h2><p data-i18n="stop_body">This stops the agent and commands running in this session.</p><div class="button-row"><button id="cancel-stop" class="secondary" data-i18n="stop_cancel">Keep working</button><button id="confirm-stop" class="danger" data-i18n="stop_confirm">Stop session</button></div></dialog>

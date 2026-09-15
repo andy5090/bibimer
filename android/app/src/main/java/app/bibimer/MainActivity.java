@@ -129,7 +129,7 @@ public final class MainActivity extends Activity {
             try {
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
-                    .put("version", "0.2.1").toString();
+                    .put("version", "0.3.0").toString();
             } catch (Exception ignored) { return "{}"; }
         }
 
@@ -155,6 +155,10 @@ public final class MainActivity extends Activity {
         @JavascriptInterface public void forget() {
             bridge.cancelPoll();
             tokens.clear();
+        }
+
+        @JavascriptInterface public void cancelPoll() {
+            bridge.cancelPoll();
         }
 
         @JavascriptInterface public void openTermux() {

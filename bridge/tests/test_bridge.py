@@ -32,12 +32,12 @@ class BridgeTestCase(unittest.TestCase):
         self.thread.start()
 
     def tearDown(self):
-        if self.bridge.session:
-            self.bridge.session.stop()
-            self.bridge.session.process.wait(timeout=5)
-            self.bridge.session.reader.join(timeout=2)
+        for session in list(self.bridge.sessions.values()):
+            session.stop()
+            session.process.wait(timeout=5)
+            session.reader.join(timeout=2)
             deadline = time.monotonic() + 2
-            while self.bridge.session.state != "exited" and time.monotonic() < deadline:
+            while session.state != "exited" and time.monotonic() < deadline:
                 time.sleep(0.01)
         self.server.shutdown()
         self.server.server_close()

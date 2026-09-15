@@ -72,25 +72,29 @@ node scripts/smoke_ui.cjs
 
 UI 테스트는 임시 폴더의 실제 브리지에 연결하며 Android 네이티브 API를 명시적인 테스트 어댑터로 대체한다. 한국어 브라우저 로캘에서도 영어로 시작하는지, 한국어 전환·저장값 복원, 오류 번역과 0.1.0 응답 호환, 언어 전환 시 세션·입력 유지까지 확인한다. 어댑터의 설정 저장은 브라우저 테스트용이며 실제 앱의 Android 환경 설정 저장을 검증한 것은 아니다. 화면 캡처는 통제된 셸 출력과 모의 대화만 포함하고 `dist/screenshots/*-en.png`, `*-ko.png`에 저장한다. 실제 앱의 Keystore, WebView 리소스 로딩, 기기 간 앱 격리 경계는 APK로 따로 확인해야 한다.
 
-## 2026-09-14 검증 결과
+## 2026-09-15 검증 결과
 
 | 항목 | 결과 |
 | --- | --- |
 | 현재 환경 | Android 16 / API 36 / arm64, Termux 0.118.3 F-Droid, Python 3.14.6, OpenJDK 21 |
-| APK 빌드 | 0.2.1 / versionCode 4 성공, 영어·한국어 리소스 포함 및 APK v2/v3 서명 검증 통과 |
-| 브리지 테스트 | 27개 통과: 인증, 페어링 만료·시도 제한, 경로 검증, 입출력·재접속, 중복 실행·입력 방지, resize, Ctrl+C, 종료 코드, 대상 작업만 중지, 유실 상태, 출력 미저장, 영어 기본·한국어 CLI 선택, 구조화된 대화·승인·질문·중단, 종료/실행 경쟁 방지, 이전 브리지 교체 시 대상 프로세스만 종료, 재시작 후 종료 기록 조회·새 세션 시작 |
+| APK 빌드 | 0.3.0 / versionCode 5 성공, 영어·한국어 리소스 포함 및 APK v2/v3 서명 검증 통과 |
+| 브리지 테스트 | 33개 통과: 기존 인증·PTY·Chat·재시작 검증, 여러 프로젝트의 경로·입력·출력·종료 분리, 두 Chat 메시지·승인 분리, 다른 프로젝트 실행 중 재시작 거절, 전체 메타데이터 복원·단일 프로젝트 이동 |
 | 화면 + 실제 브리지 | 영어·한국어 안내, 언어 전환 시 세션·입력 유지, 오류 번역·기존 브리지 호환, 코드 연결·프로젝트 생성·한글 입출력·재접속·명시적 종료, Markdown·표·코드·복사, 승인 복구·거절·질문, HTML 비실행, 응답 중단, PTY/Chat 종료 후 브리지 재시작·Start session 활성 유지·새 Chat 시작 통과 |
 | 작은 화면 | 393×780과 360×460에서 대화·PTY 전송 및 질문 응답 버튼 확인. 언어 변경 시 일반 입력·질문 답변 유지 |
+| 프로젝트 전환 | 두 프로젝트 동시 실행, 초안 복원, 지연된 전송 응답 분리, 다른 프로젝트 실행 유지, 승인·질문 대기 복구 통과 |
+| 입력 키 | Enter 전송, Shift/Ctrl/Meta+Enter 줄바꿈, 선택 영역 치환, 합성 IME·키 반복·응답 중 전송 방지 통과. 실제 Android 키보드 입력은 미검증 |
 | PTY 표시 | 실제 PTY → xterm에서 ANSI 16색·256색·RGB 트루컬러·굵기 및 ASCII 도형 확인 |
 | 설치된 Codex | PTY 시작 및 App Server 대화 초기화·재접속·명시적 종료 확인. 모델 요청·실제 코드 수정은 수행하지 않음 |
 | 설정 파일 | APK asset·별도 설치 파일·브리지 원본 일치, 셸 문법 검사 통과, 터미널 라이선스 포함 확인 |
-| Android 설치 | 앱 0.2.0(versionCode 3) 설치 확인. 브리지 0.2.1 실제 적용 및 이전 세션 출력 조회 200 확인. 최신 APK는 `Download/Bibimer-0.2.1.apk`; 0.2.1 APK 설치·실제 화면 확인은 남음 |
+| Android 설치 | 앱 0.2.0(versionCode 3) 설치 확인. 0.3.0 브리지 파일은 설치했으며 실행 중인 0.2.1 세션을 유지 중. 최신 APK는 `Download/Bibimer-0.3.0.apk`; 업데이트 적용·실제 화면 확인은 남음 |
 | 새 사용자 준비 | 설치 가이드·설정 파일 생성 구현. Termux·Python이 없는 기기의 전체 과정은 미검증 |
 
 Codex 확인에 사용한 현재 기기의 패키지는 `@mmmbuto/codex-cli-termux` 0.153.3이다. 일반 Codex 배포본이나 Claude Code의 Android 동작을 확인한 것으로 확대하지 않는다.
 
 ## 공식 문서 확인 근거
 
+- [MDN keydown과 IME](https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event#keydown_events_with_ime): 조합 시작·종료 경계에서는 `isComposing`과 IME 키 코드 229를 함께 확인한다. 구현은 브라우저 합성 이벤트로 확인했으며 기기의 실제 조합 동작은 별도 검증한다.
+- [MDN enterkeyhint](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/enterkeyhint): 공통 입력창의 가상 키보드 동작 힌트를 `send`로 설정한다. 표시 방식은 키보드와 사용자 언어에 따라 달라질 수 있다.
 - [Termux RUN_COMMAND Intent](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent): 외부 실행에는 별도 권한과 `allow-external-apps` 설정이 필요하다. 첫 버전은 수동 설정 파일 실행을 사용하며 해당 권한을 요구하지 않는다.
 - [Android 앱 내 콘텐츠 로드](https://developer.android.com/develop/ui/views/layout/webapps/load-local-content): 앱에 포함한 리소스를 사용한다. 이 구현은 허용 목록의 리소스만 `shouldInterceptRequest`로 제공한다.
 - [Android WebView 네이티브 브리지](https://developer.android.com/privacy-and-security/risks/insecure-webview-native-bridges): 외부 콘텐츠가 JavaScript 인터페이스에 접근하지 못하도록 탐색·파일 접근·외부 리소스를 차단한다.

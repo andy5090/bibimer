@@ -30,13 +30,14 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.2.1"
+VERSION = "0.3.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
+    "error_project_missing": "This project is no longer registered. Refresh the project list.",
     "error_bridge_stopping": "The bridge is restarting. Reconnect shortly.",
     "error_chat_mode": "Chat mode requires Codex and an updated bridge. Other programs use Terminal mode.",
     "error_chat_start": "Could not initialize Codex Chat. Check the Codex installation and configuration in Termux.",
@@ -85,7 +86,7 @@ ERROR_MESSAGES = {
 }
 
 CLI_MESSAGES = {
-    "restart_busy": ["Stop the active session in Bibimer before restarting the bridge.", "브리지를 재시작하기 전에 Bibimer에서 실행 중인 세션을 종료해 주세요."],
+    "restart_busy": ["Stop all active sessions in Bibimer before restarting the bridge.", "브리지를 재시작하기 전에 Bibimer에서 모든 실행 세션을 종료해 주세요."],
     "restart_unverified": ["Could not verify the old bridge process. Stop that bridge manually in Termux, then run start.", "이전 브리지 프로세스를 확인하지 못했습니다. Termux에서 해당 브리지를 수동 종료한 뒤 start를 실행하세요."],
     "state_symlink": [
         "The state folder cannot be a symbolic link.",
@@ -725,21 +726,58 @@ class Bridge:
             self.token = secrets.token_urlsafe(32)
             save_json(state / "token.json", self.token)
         saved = read_json(state / "metadata.json", {})
-        self.project, self.previous = saved.get("project"), saved.get("session")
-        if self.previous:
-            self.previous["output_start"] = self.previous["output_end"] = 0
-            if self.previous["state"] in ACTIVE:
-                self.previous["state"] = "lost"
-                self.previous["exit_code"] = None
-        self.session = None
+        self.projects, self.sessions, self.previous_sessions = {}, {}, {}
+        records = saved.get("projects") or ([saved["project"]] if saved.get("project") else [])
+        for record in records:
+            project = dict(record)
+            project.setdefault("id", str(uuid.uuid4()))
+            self.projects[project["id"]] = project
+        self.active_project_id = saved.get("active_project_id")
+        if self.active_project_id not in self.projects:
+            self.active_project_id = next(iter(self.projects), None)
+        previous = saved.get("sessions") or ([saved["session"]] if saved.get("session") else [])
+        for record in previous:
+            snapshot = dict(record)
+            location = snapshot.get("project") or saved.get("project") or {}
+            project_id = next((key for key, project in self.projects.items()
+                               if key == location.get("id") or project["path"] == location.get("path")), None)
+            if project_id is None:
+                continue
+            snapshot["project"] = dict(self.projects[project_id])
+            snapshot["output_start"] = snapshot["output_end"] = 0
+            if snapshot["state"] in ACTIVE:
+                snapshot["state"], snapshot["exit_code"] = "lost", None
+            self.previous_sessions[project_id] = snapshot
         self.closing = False
         self.persist()
+
+    @property
+    def project(self):
+        return self.projects.get(self.active_project_id)
+
+    @property
+    def session(self):
+        return self.sessions.get(self.active_project_id)
+
+    @property
+    def previous(self):
+        return self.previous_sessions.get(self.active_project_id)
+
+    def snapshot_for(self, project_id):
+        session = self.sessions.get(project_id)
+        return session.snapshot() if session else self.previous_sessions.get(project_id)
+
+    def active_count(self):
+        return sum(session.state in ACTIVE for session in self.sessions.values())
 
     def persist(self):
         with self.lock:
             save_json(self.state / "metadata.json", {
+                "format": 2, "projects": list(self.projects.values()),
+                "active_project_id": self.active_project_id,
+                "sessions": [snapshot for key in self.projects if (snapshot := self.snapshot_for(key))],
                 "project": self.project,
-                "session": self.session.snapshot() if self.session else self.previous,
+                "session": self.snapshot_for(self.active_project_id),
             })
 
     def agents(self):
@@ -753,8 +791,10 @@ class Bridge:
         with self.lock:
             return {"version": VERSION, "protocol": 1, "instance": self.instance,
                     "home": str(Path.home()), "project": self.project,
+                    "projects": [dict(project, session=self.snapshot_for(key)) for key, project in self.projects.items()],
+                    "features": ["multiple_projects"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
-                    "session": self.session.snapshot() if self.session else self.previous}
+                    "session": self.snapshot_for(self.active_project_id)}
 
     def pair(self, code):
         with self.lock:
@@ -771,7 +811,16 @@ class Bridge:
 
     def register(self, data):
         with self.lock:
-            if self.session and self.session.state in ACTIVE:
+            if "project_id" in data:
+                key = data["project_id"]
+                if not isinstance(key, str) or key not in self.projects:
+                    raise Problem(404, "error_project_missing")
+                self.active_project_id = key
+                self.persist()
+                return self.project
+            # Old clients replace the displayed project and cannot switch back.
+            # New clients explicitly add to the project list, keeping every job.
+            if data.get("add") is not True and self.session and self.session.state in ACTIVE:
                 raise Problem(409, "error_project_busy")
             raw = data.get("path")
             if not isinstance(raw, str) or not raw.strip() or "\0" in raw:
@@ -787,7 +836,11 @@ class Bridge:
                     raise OSError()
             except (OSError, RuntimeError):
                 raise Problem(400, "error_project_access") from None
-            self.project = {"name": path.name or str(path), "path": str(path)}
+            key = next((key for key, project in self.projects.items() if project["path"] == str(path)), None)
+            if key is None:
+                key = str(uuid.uuid4())
+                self.projects[key] = {"id": key, "name": path.name or str(path), "path": str(path)}
+            self.active_project_id = key
             self.persist()
             return self.project
 
@@ -804,41 +857,54 @@ class Bridge:
         with self.lock:
             if self.closing:
                 raise Problem(409, "error_bridge_stopping")
-            current = self.session.snapshot() if self.session else self.previous
+            project_id = data.get("project_id", self.active_project_id)
+            if project_id is not None and (not isinstance(project_id, str) or project_id not in self.projects):
+                raise Problem(404, "error_project_missing")
+            project = self.projects.get(project_id)
+            current = self.snapshot_for(project_id)
+            for key_id in self.projects:
+                other = self.snapshot_for(key_id)
+                if other and other.get("launch_id") == key and key_id != project_id:
+                    raise Problem(409, "error_launch_conflict")
             if current and current.get("launch_id") == key:
                 if current["agent"] != agent or current.get("mode", "terminal") != mode:
                     raise Problem(409, "error_launch_conflict")
                 return current
-            if self.session and self.session.state in ACTIVE:
+            owned = self.sessions.get(project_id)
+            if owned and owned.state in ACTIVE:
                 raise Problem(409, "error_session_exists")
-            if not self.project:
+            if not project:
                 raise Problem(400, "error_project_required")
             executable = shutil.which("bash") or shutil.which("sh") if agent == "shell" else shutil.which(agent)
             if not executable:
                 raise Problem(400, "error_program_missing")
             argv = [executable, "-i"] if agent == "shell" else [executable]
             try:
-                session = (ChatSession if mode == "chat" else Session)(self.project, agent, argv, cols, rows, key, self.persist)
+                session = (ChatSession if mode == "chat" else Session)(project, agent, argv, cols, rows, key, self.persist)
             except OSError:
                 raise Problem(400, "error_launch_failed") from None
-            self.session = session
+            self.sessions[project_id] = session
+            self.previous_sessions.pop(project_id, None)
             self.persist()
             session.start_reading()
             return session.snapshot()
 
     def get_session(self, session_id):
         with self.lock:
-            if not self.session or self.session.id != session_id:
-                raise Problem(404, "error_session_missing")
-            return self.session
+            for session in self.sessions.values():
+                if session.id == session_id:
+                    return session
+            raise Problem(404, "error_session_missing")
 
     def session_events(self, session_id, cursor, wait):
         with self.lock:
-            if not self.session and self.previous and self.previous["id"] == session_id:
+            previous = next((snapshot for key, snapshot in self.previous_sessions.items()
+                             if key not in self.sessions and snapshot["id"] == session_id), None)
+            if previous:
                 # Health retains the last session after a restart, but its output
                 # only lived in the old process. Keep that snapshot readable so
                 # clients can stay connected and launch their next session.
-                snapshot = dict(self.previous)
+                snapshot = dict(previous)
                 result = {"session": snapshot, "cursor": 0, "gap": cursor > 0}
                 if snapshot.get("mode") == "chat":
                     result.update(items=[], retained=[], requests=[])
@@ -851,7 +917,7 @@ class Bridge:
 
     def begin_shutdown(self):
         with self.lock:
-            if self.session and self.session.state in ACTIVE:
+            if self.active_count():
                 raise Problem(409, "error_session_exists")
             self.closing = True
 
@@ -1080,7 +1146,7 @@ def pidfd_call(name, *arguments):
 
 def restart_bridge(state, port):
     def active(health):
-        return health and (health.get("session") or {}).get("state") in ACTIVE
+        return health and (health.get("active_sessions", 0) > 0 or (health.get("session") or {}).get("state") in ACTIVE)
     health = bridge_health(state, port)
     if active(health):
         raise RuntimeError(cli("restart_busy"))
@@ -1200,10 +1266,11 @@ def main():
         try:
             server.serve_forever(poll_interval=0.2)
         finally:
-            if bridge.session:
-                bridge.session.stop()
+            for session in list(bridge.sessions.values()):
+                session.stop()
+            for session in list(bridge.sessions.values()):
                 with contextlib.suppress(subprocess.TimeoutExpired):
-                    bridge.session.process.wait(timeout=4)
+                    session.process.wait(timeout=4)
             server.server_close()
 
 

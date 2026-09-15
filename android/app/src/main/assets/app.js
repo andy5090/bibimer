@@ -10,11 +10,14 @@
   let project = null, inputQueue = Promise.resolve(), currentTab = "work";
   let projectInitialized = false, connectionError = null;
   let noticeData = null, knownAgents = [];
-  let submitting = false;
+  const sending = new Set(), views = new Map();
+  let knownProjects = [], selectedProjectId = null, multipleProjects = false, switchingProject = false;
+  let stopTarget = null, catalogRequest = false;
   const conversation = new BibimerConversation($("conversation"), $("chat-requests"), t, async data => {
+    const id = session?.id;
     try {
-      await api("POST", `/v1/sessions/${session.id}/respond`, data);
-    } catch (error) { notice(error.key || "error_request_failed"); }
+      await api("POST", `/v1/sessions/${id}/respond`, data);
+    } catch (error) { if (session?.id === id) notice(error.key || "error_request_failed"); }
   });
   const term = new Terminal({fontSize:13, fontFamily:"monospace", cursorBlink:true,
     scrollback:2000, drawBoldTextInBrightColors:true, theme:{background:"#111512", foreground:"#e3e9db", cursor:"#d7e8aa",
@@ -83,6 +86,66 @@
     updateMode();
   }
   function supportsChat() { return !!knownAgents.find(agent => agent.id === $("agent").value)?.modes?.includes("chat"); }
+  function projectKey(value = project) { return value?.id || value?.path || null; }
+  function rememberView() {
+    const key = projectKey();
+    if (!key) return;
+    const questions = {...views.get(key)?.questions};
+    for (const [id, request] of conversation.requests) {
+      questions[id] = Object.fromEntries([...request.fields].map(([name,input]) => [name,input.value]));
+    }
+    views.set(key, {text:$("input").value, start:$("input").selectionStart, end:$("input").selectionEnd,
+      agent:$("agent").value, mode:$("mode").value, questions});
+  }
+  function restoreQuestions(event) {
+    const view = views.get(projectKey());
+    if (!view) return;
+    for (const [id, request] of conversation.requests) {
+      for (const [name, input] of request.fields) {
+        const value = view.questions?.[id]?.[name];
+        if (typeof value === "string") input.value = value;
+      }
+    }
+    view.questions = Object.fromEntries(Object.entries(view.questions || {}).filter(([id]) =>
+      (event.requests || []).some(request => request.id === id)));
+  }
+  function renderProjects() {
+    const picker = $("project-switch");
+    picker.hidden = !multipleProjects || !knownProjects.length;
+    $("project-name").hidden = !picker.hidden;
+    $("edit-project").textContent = t(multipleProjects ? "add_project" : "edit_project");
+    $("cancel-project").hidden = !project;
+    if (document.activeElement === picker) return;
+    const entries = knownProjects.map(item => {
+      const state = item.session?.state;
+      const label = state === "running" && item.session?.turn_state === "waiting" ? t("chat_state_waiting") :
+        state === "running" ? t("process_running") : state === "stopping" ? t("process_stopping") :
+        state === "lost" ? t("process_lost") : state === "exited" ? t("process_exited", {code:item.session.exit_code}) : t("process_idle");
+      const name = knownProjects.some(other => other.id !== item.id && other.name === item.name) ? item.path : item.name;
+      return {id:item.id, label:name + " · " + label};
+    });
+    const signature = JSON.stringify(entries);
+    if (picker.dataset.entries !== signature) {
+      picker.replaceChildren(...entries.map(item => new Option(item.label, item.id)));
+      picker.dataset.entries = signature;
+    }
+    picker.value = selectedProjectId || "";
+  }
+  function adoptProject(next) {
+    if (projectKey(next) !== projectKey()) {
+      rememberView();
+      project = next;
+      setSession(null);
+      const view = views.get(projectKey());
+      $("input").value = view?.text || "";
+      $("input").setSelectionRange(view?.start || 0, view?.end || 0);
+      $("agent").value = view?.agent || "shell";
+      updateMode();
+      $("mode").value = view?.mode === "chat" && supportsChat() ? "chat" : "terminal";
+      resizeInput();
+    } else project = next;
+  }
+  function resetTerminal() { term.write("", () => term.reset()); }
   function updateMode() {
     $("mode").querySelector('[value="chat"]').disabled = !supportsChat();
     if (!supportsChat()) $("mode").value = "terminal";
@@ -95,9 +158,9 @@
     $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
-    $("version").textContent = t("version_note", {version:environment().version || "0.2.1"});
+    $("version").textContent = t("version_note", {version:environment().version || "0.3.0"});
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
-    renderAgents(); updateEnvironment(); renderSession(); renderNotice();
+    renderAgents(); renderProjects(); updateEnvironment(); renderSession(); renderNotice();
     conversation.localize();
     setTimeout(resize, 30);
   }
@@ -126,10 +189,12 @@
     $("launch-controls").hidden = !!live;
     $("mode-controls").hidden = !!live;
     $("mode-hint").hidden = !!live;
-    $("launch").disabled = !online || !project || busy;
-    $("edit-project").disabled = !!live || !online;
+    $("launch").disabled = !online || !project || busy || switchingProject;
+    $("edit-project").disabled = (!multipleProjects && !!live) || !online || switchingProject || busy;
+    $("project-switch").disabled = !online || switchingProject || busy;
+    $("project-update").hidden = !online || multipleProjects;
     $("input").disabled = !online || !session || session.state !== "running" || (isChat() && !session.ready);
-    $("send").disabled = $("input").disabled || submitting || (isChat() && !["ready", "failed"].includes(session.turn_state));
+    $("send").disabled = $("input").disabled || sending.has(session?.id) || (isChat() && !["ready", "failed"].includes(session.turn_state));
     $("stop").disabled = !online || !session || session.state !== "running";
     $("stop").hidden = !live;
     for (const button of document.querySelectorAll("[data-key]")) button.disabled = $("input").disabled;
@@ -153,7 +218,7 @@
     if (isChat() && value?.id === session.id && value.output_end < session.output_end) return;
     if ((session && session.id) !== (value && value.id)) {
       cursor = 0;
-      term.reset();
+      resetTerminal();
       conversation.clear();
     }
     session = value;
@@ -172,16 +237,21 @@
       if (ticket !== generation || paused) return;
       if (health.protocol !== 1) throw appError("error_protocol");
       if (instance && health.instance !== instance) {
-        cursor = 0; term.reset();
+        cursor = 0; resetTerminal();
         conversation.clear();
         notice("bridge_restarted");
       }
       instance = health.instance;
-      const projectChanged = !projectInitialized || (project && project.path) !== (health.project && health.project.path);
-      project = health.project;
+      multipleProjects = health.features?.includes("multiple_projects") === true;
+      knownProjects = health.projects || [];
+      if (multipleProjects && !knownProjects.some(item => item.id === selectedProjectId)) selectedProjectId = health.project?.id || knownProjects[0]?.id || null;
+      const entry = multipleProjects ? knownProjects.find(item => item.id === selectedProjectId) : null;
+      const nextProject = entry ? {id:entry.id, name:entry.name, path:entry.path} : health.project;
+      const selectedChanged = !projectInitialized || projectKey(nextProject) !== projectKey();
+      adoptProject(nextProject);
       $("project-name").textContent = project ? project.name : t("project_empty");
       $("project-path").textContent = project ? project.path : t("project_location");
-      if (projectChanged) {
+      if (selectedChanged) {
         $("path").value = project ? project.path : "~/projects/my-project";
         projectForm(!project);
         projectInitialized = true;
@@ -192,7 +262,8 @@
       }
       $("welcome").hidden = true;
       $("workspace").hidden = false;
-      setSession(health.session);
+      setSession(entry ? entry.session : health.session);
+      renderProjects();
       connected(true);
       if (connectionError && noticeData && noticeData.key === connectionError) notice("");
       connectionError = null;
@@ -206,7 +277,7 @@
     }
   }
   async function startPoll() {
-    if (activePoll || paused || !online) return;
+    if (activePoll || paused || !online || switchingProject) return;
     if (!session || session.state === "lost") {
       clearTimeout(retryTimer); retryTimer = setTimeout(connect, 3000); return;
     }
@@ -217,17 +288,21 @@
       const event = await api("GET", `/v1/sessions/${id}/events?cursor=${cursor}&wait=20`);
       if (ticket !== generation || paused || !session || id !== session.id) return;
       if (event.gap) {
-        term.reset();
+        resetTerminal();
         conversation.clear(true);
         notice("output_gap");
       }
-      if (event.items) conversation.update(event);
+      if (event.items) { rememberView(); conversation.update(event); restoreQuestions(event); }
       if (event.data) {
         const bytes = Uint8Array.from(atob(event.data), c => c.charCodeAt(0));
         await new Promise(resolve => term.write(bytes, resolve));
       }
+      if (ticket !== generation || paused || !session || id !== session.id) return;
       cursor = event.cursor;
       setSession(event.session);
+      const entry = knownProjects.find(item => item.id === projectKey());
+      if (entry) entry.session = event.session;
+      renderProjects();
       if (session.state === "exited" && cursor >= session.output_end) {
         retryTimer = setTimeout(connect, 3000);
       } else {
@@ -242,6 +317,26 @@
       if (ticket !== generation && !paused && online) setTimeout(startPoll, 0);
     }
   }
+  async function refreshCatalog() {
+    if (!multipleProjects || !online || paused || switchingProject || catalogRequest) return;
+    catalogRequest = true;
+    const ticket = generation;
+    try {
+      const health = await api("GET", "/v1/health");
+      if (ticket !== generation || paused || switchingProject) return;
+      if (health.instance !== instance) { await connect(); return; }
+      knownProjects = health.projects || [];
+      const entry = knownProjects.find(item => item.id === selectedProjectId);
+      if (entry && (entry.session?.id || null) !== (session?.id || null)) {
+        ++generation;
+        if (native.cancelPoll) native.cancelPoll();
+      }
+      if (entry) setSession(entry.session);
+      renderProjects(); startPoll();
+    } catch (_) { /* The session poll handles connection loss and reconnects. */ }
+    finally { catalogRequest = false; }
+  }
+  setInterval(refreshCatalog, 5000);
   function resize() {
     if (currentTab !== "work" || $("workspace").hidden || isChat()) return;
     fit.fit();
@@ -265,8 +360,10 @@
         await api("POST", `/v1/sessions/${id}/input`, request);
         return true;
       } catch (error) {
-        notice(error.key || "error_request_failed", "check_delivery");
-        if (!error.status) connected(false);
+        if (session?.id === id) {
+          notice(error.key || "error_request_failed", "check_delivery");
+          if (!error.status) connected(false);
+        }
         return false;
       }
     });
@@ -277,28 +374,39 @@
   $("input-form").addEventListener("submit", async event => {
     event.preventDefault();
     const text = $("input").value;
-    if (!text || submitting || $("send").disabled) return;
-    submitting = true; renderSession();
+    if (!text || sending.has(session?.id) || $("send").disabled) return;
+    const id = session.id, key = projectKey();
+    rememberView();
+    sending.add(id); renderSession();
     let ok = false;
     try {
       if (isChat()) {
-        const id = session.id;
         const result = await api("POST", `/v1/sessions/${id}/message`, {text, request_id:uuid()});
         if (session?.id === id) setSession(result.session);
         ok = true;
       } else ok = await sendRaw(text.replace(/\r?\n/g, "\r") + "\r");
-      if (ok && $("input").value === text) $("input").value = "";
-    } catch (error) { notice(error.key || "error_request_failed", "check_delivery"); }
-    finally { submitting = false; resizeInput(); renderSession(); }
+      if (ok && views.get(key)?.text === text) Object.assign(views.get(key), {text:"", start:0, end:0});
+      if (ok && key === projectKey() && $("input").value === text) $("input").value = "";
+    } catch (error) { if (session?.id === id) notice(error.key || "error_request_failed", "check_delivery"); }
+    finally { sending.delete(id); resizeInput(); renderSession(); }
   });
   function resizeInput() {
     $("input").style.height = "auto";
     $("input").style.height = Math.min(100, $("input").scrollHeight) + "px";
   }
-  $("input").addEventListener("input", resizeInput);
+  $("input").addEventListener("input", () => { resizeInput(); rememberView(); });
+  let composing = false;
+  $("input").addEventListener("compositionstart", () => { composing = true; });
+  $("input").addEventListener("compositionend", () => { composing = false; });
   $("input").addEventListener("keydown", event => {
-    if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !event.isComposing) {
-      event.preventDefault(); $("input-form").requestSubmit();
+    if (event.key !== "Enter" || event.isComposing || composing || event.keyCode === 229) return;
+    event.preventDefault();
+    if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
+      const input = $("input");
+      input.setRangeText("\n", input.selectionStart, input.selectionEnd, "end");
+      input.dispatchEvent(new Event("input", {bubbles:true}));
+    } else if (!event.repeat) {
+      $("input-form").requestSubmit();
     }
   });
   $("interrupt-turn").addEventListener("click", async () => {
@@ -308,22 +416,40 @@
   });
   $("agent").addEventListener("change", () => {
     updateMode(); $("mode").value = supportsChat() ? "chat" : "terminal";
+    rememberView();
   });
-  $("project-form").addEventListener("submit", async event => {
-    event.preventDefault();
+  $("mode").addEventListener("change", rememberView);
+  async function changeProject(data) {
+    if (switchingProject) return;
+    switchingProject = true; ++generation; clearTimeout(retryTimer); renderSession();
+    if (native.cancelPoll) native.cancelPoll();
     try {
-      await api("POST", "/v1/project", {path:$("path").value, create:$("create-folder").checked});
+      const result = await api("POST", "/v1/project", data);
+      selectedProjectId = result.project.id || null;
       projectInitialized = false;
       notice(""); await connect();
     } catch (error) { notice(error.key || "error_request_failed"); }
+    finally { switchingProject = false; renderSession(); renderProjects(); startPoll(); }
+  }
+  $("project-switch").addEventListener("change", () => {
+    const id = $("project-switch").value;
+    $("project-switch").blur();
+    changeProject({project_id:id});
+  });
+  $("project-switch").addEventListener("blur", renderProjects);
+  $("project-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    await changeProject({path:$("path").value, create:$("create-folder").checked, add:multipleProjects});
   });
   $("launch").addEventListener("click", async () => {
     if (busy) return;
+    const key = projectKey();
     busy = true; renderSession(); notice("");
     try {
       const data = await api("POST", "/v1/sessions", {agent:$("agent").value, mode:$("mode").value,
+        ...(multipleProjects ? {project_id:selectedProjectId} : {}),
         cols:Math.max(20, term.cols), rows:Math.max(4, term.rows), request_id:uuid()});
-      ++generation; setSession(data.session); resize(); startPoll();
+      if (projectKey() === key) { ++generation; setSession(data.session); resize(); startPoll(); }
     } catch (error) { notice(error.key || "error_request_failed"); await connect(); }
     finally { busy = false; renderSession(); }
   });
@@ -338,25 +464,33 @@
     } catch (error) { notice(error.key || "error_request_failed"); }
     finally { $("pair").disabled = false; }
   });
-  $("stop").addEventListener("click", () => $("stop-dialog").showModal());
+  $("stop").addEventListener("click", () => { stopTarget = session?.id; $("stop-dialog").showModal(); });
   $("cancel-stop").addEventListener("click", () => $("stop-dialog").close());
   $("confirm-stop").addEventListener("click", async () => {
     $("stop-dialog").close();
-    if (!session) return;
+    const id = stopTarget; stopTarget = null;
+    if (!id) return;
     try {
-      const data = await api("POST", `/v1/sessions/${session.id}/stop`);
-      setSession(data.session);
-    } catch (error) { notice(error.key || "error_request_failed"); }
+      const data = await api("POST", `/v1/sessions/${id}/stop`);
+      if (session?.id === id) setSession(data.session);
+    } catch (error) { if (session?.id === id) notice(error.key || "error_request_failed"); }
   });
   $("forget").addEventListener("click", () => {
     ++generation; clearTimeout(retryTimer); native.forget();
     connected(false); $("workspace").hidden = true; $("welcome").hidden = false;
     setSession(null); instance = null; projectInitialized = false; updateEnvironment();
+    views.clear(); selectedProjectId = null; knownProjects = []; $("input").value = "";
     notice("connection_forgotten");
   });
   for (const name of ["work", "setup"]) $("tab-" + name).addEventListener("click", () => tab(name));
   $("go-setup").addEventListener("click", () => tab("setup"));
-  $("edit-project").addEventListener("click", () => projectForm($("project-form").hidden));
+  $("edit-project").addEventListener("click", () => {
+    const visible = $("project-form").hidden;
+    if (visible && multipleProjects) { $("path").value = "~/projects/"; $("create-folder").checked = true; }
+    projectForm(visible);
+  });
+  $("cancel-project").addEventListener("click", () => projectForm(false));
+  $("project-update").addEventListener("click", () => tab("setup"));
   for (const id of ["reconnect", "reconnect-welcome"]) $(id).addEventListener("click", () => { notice(""); connect(); });
   $("open-termux").addEventListener("click", () => native.openTermux());
   $("export-installer").addEventListener("click", () => native.exportInstaller());
