@@ -86,7 +86,7 @@ UI 테스트는 임시 폴더의 실제 브리지에 연결하며 Android 네이
 | PTY 표시 | 실제 PTY → xterm에서 ANSI 16색·256색·RGB 트루컬러·굵기 및 ASCII 도형 확인 |
 | 설치된 Codex | PTY 시작 및 App Server 대화 초기화·재접속·명시적 종료 확인. 모델 요청·실제 코드 수정은 수행하지 않음 |
 | 설정 파일 | APK asset·별도 설치 파일·브리지 원본 일치, 셸 문법 검사 통과, 터미널 라이선스 포함 확인 |
-| Android 설치 | 앱 0.2.0(versionCode 3) 설치 확인. 0.3.0 브리지 파일은 설치했으며 실행 중인 0.2.1 세션을 유지 중. 최신 APK는 `Download/Bibimer-0.3.0.apk`; 업데이트 적용·실제 화면 확인은 남음 |
+| Android 설치 | 앱 0.2.0(versionCode 3) 설치 확인. 사용자 승인으로 기존 Codex 세션을 종료하고 브리지 0.3.0 적용 완료. 인증 토큰·프로젝트 설정 유지와 프로젝트 ID 마이그레이션·멀티 프로젝트 기능 응답 확인. 최신 APK는 `Download/Bibimer-0.3.0.apk`; APK 업데이트·실제 화면 확인은 남음 |
 | 새 사용자 준비 | 설치 가이드·설정 파일 생성 구현. Termux·Python이 없는 기기의 전체 과정은 미검증 |
 
 Codex 확인에 사용한 현재 기기의 패키지는 `@mmmbuto/codex-cli-termux` 0.153.3이다. 일반 Codex 배포본이나 Claude Code의 Android 동작을 확인한 것으로 확대하지 않는다.
