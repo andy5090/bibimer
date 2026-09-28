@@ -88,7 +88,7 @@ async function main() {
       // Browser-only stand-in for native preferences; Android persistence is
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.6.0'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.6.1'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       cancelPoll:()=>{}, request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),

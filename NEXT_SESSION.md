@@ -35,6 +35,13 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 - 첫 구현 스택: Java Android 앱 + 앱에 포함한 WebView/xterm.js 화면, Python 표준 라이브러리 HTTP 브리지, PTY. 현재 기기에서 APK를 직접 빌드하는 경로를 확보했다.
 - 기본 표시 언어는 영어이며 한국어를 추가 지원한다. 기기 언어와 관계없이 영어로 시작하고 **Setup → Language → 한국어**에서 선택한 언어를 저장한다. 사용자와의 설명·프로젝트 문서는 한국어를 유지한다.
 
+## 0.6.1 입력창 아래 여백 (2026-09-28)
+
+- 사용자 요청: 입력창과 하단 내비게이션 사이에 약간의 여백 추가. 공통 `.composer`의 아래 마진을 0에서 8px로 늘렸다. Chat·PTY에 함께 적용하며 기존 종료 버튼 위치와 작은 화면에서도 여백을 유지한다.
+- 앱만 **0.6.1(versionCode 10)**로 업데이트했다. 브리지는 0.6.0 그대로 사용하며 재시작하지 않았다.
+- 기존 `smoke_rendering.cjs` 통과. 393×780·360×460의 통제된 화면 캡처에서 입력창 아래 여백과 전송 버튼 위치를 확인했다. APK 빌드·v2/v3 서명 검증, 내장 CSS/JS와 원본 일치, 다운로드 복사본 일치를 확인했다. 브리지 변경이 없어 브리지 테스트는 재실행하지 않았다. 실제 Android 키보드·WebView 확인은 남아 있다.
+- 설치 파일: **`/storage/emulated/0/Download/Bibimer-0.6.1.apk`**. 현재 폰에 설치된 앱은 versionCode 7이며 APK 업데이트가 필요하다.
+
 ## 0.6.0 OpenCode·Claude 실행과 세션 가져오기 (2026-09-28)
 
 - 사용자 요청: “claude, opencode도 지원 할것”, “opencode 자체도 지원해야됨”. 가져오기뿐 아니라 OpenCode·Claude의 새 Chat·입력·승인·질문·중단·재접속과 PTY 실행을 추가했다. 앱·브리지 0.6.0, APK versionCode 9.
@@ -165,7 +172,7 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 
 ## 다음 작업
 
-1. `Download/Bibimer-0.6.0.apk`로 앱을 업데이트하고 Reconnect로 연결한다. 브리지 0.6.0은 이미 적용했다. OpenCode → Chat/PTY → Start session과 Import session → 에이전트 선택 → 복사/원본 이어하기·기록 표시·후속 지시를 실제 폰에서 확인한다. 외부 CLI에서 원본을 사용 중이면 복사한다. Claude는 설치된 CLI의 실행 파일 문제를 먼저 복구해야 한다. Chat 응답·도구·diff·계획·코드 복사/줄바꿈, 런처 아이콘, Add → Browse와 프로젝트 전환도 확인한다.
+1. `Download/Bibimer-0.6.1.apk`로 앱을 업데이트하고 Reconnect로 연결한다. 브리지 0.6.0은 이미 적용했다. OpenCode → Chat/PTY → Start session과 Import session → 에이전트 선택 → 복사/원본 이어하기·기록 표시·후속 지시를 실제 폰에서 확인한다. 외부 CLI에서 원본을 사용 중이면 복사한다. Claude는 설치된 CLI의 실행 파일 문제를 먼저 복구해야 한다. 입력창 아래 여백, Chat 응답·도구·diff·계획·코드 복사/줄바꿈, 런처 아이콘, Add → Browse와 프로젝트 전환도 확인한다.
 2. 기존 인증 토큰을 유지하므로 새 연결 코드가 필요한 경우에만 Termux에서 `~/.local/bin/bibimer-bridge pair`를 실행한다. 코드나 토큰은 저장소·일반 로그에 남기지 않는다.
 3. 실제 APK에서 Enter·줄바꿈·한글 조합, 여러 프로젝트 추가·전환·동시 실행·복수 선택 질문 초안 유지, Chat·PTY 선택, 영어·한국어, 모델 응답·승인·응답 중단·재접속을 검증한다. Bibimer 출력은 브리지 메모리만 유지하며 Codex 기본 임시 Chat은 종료 후 복원되지 않는다. OpenCode·Claude 새 대화와 세 에이전트의 저장 기록은 각 도구의 저장 규칙에 따라 Import session으로 다시 열 수 있다.
 4. Termux가 없는 기기에서 설치 안내 → 설정 파일 저장 → Python·브리지 설치 → 앱 연결을 별도로 검증한다.

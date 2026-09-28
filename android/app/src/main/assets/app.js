@@ -173,7 +173,7 @@
     $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
-    $("version").textContent = t("version_note", {version:environment().version || "0.6.0"});
+    $("version").textContent = t("version_note", {version:environment().version || "0.6.1"});
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
     renderAgents(); renderProjects(); updateEnvironment(); renderSession(); renderNotice();
     conversation.localize();
