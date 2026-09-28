@@ -1,85 +1,28 @@
 "use strict";
 (() => {
-  const make = (tag, text, className) => {
-    const node = document.createElement(tag);
-    if (text !== undefined) node.textContent = text;
-    if (className) node.className = className;
-    return node;
-  };
-  function inline(parent, text) {
-    // A small, inert Markdown subset: untrusted HTML and URLs are never loaded.
-    for (const part of text.split(/(`[^`\n]+`|\*\*[^*\n]+\*\*)/g)) {
-      if (part.startsWith("`") && part.endsWith("`")) parent.append(make("code", part.slice(1,-1)));
-      else if (part.startsWith("**") && part.endsWith("**")) parent.append(make("strong", part.slice(2,-2)));
-      else parent.append(document.createTextNode(part));
-    }
-  }
-  function codeBlock(text, language, t) {
-    const block = make("div", undefined, "code-block");
-    const heading = make("div", undefined, "code-heading");
-    heading.append(make("span", language || t("chat_code")));
-    const copy = make("button", t("copy"));
-    copy.type = "button";
-    copy.onclick = () => window.Bibimer.copyText(text);
-    heading.append(copy);
-    const pre = make("pre");
-    pre.append(make("code", text));
-    block.append(heading, pre);
-    return block;
-  }
-  function markdown(text, t) {
-    const result = make("div", undefined, "markdown");
-    const lines = text.split("\n");
-    for (let i = 0; i < lines.length;) {
-      let line = lines[i++];
-      const fence = line.match(/^\s*```([\w+-]*)\s*$/);
-      if (fence) {
-        const code = [];
-        while (i < lines.length && !/^\s*```\s*$/.test(lines[i])) code.push(lines[i++]);
-        if (i < lines.length) i++;
-        result.append(codeBlock(code.join("\n"), fence[1], t));
-      } else if (/^#{1,6}\s/.test(line)) {
-        const heading = make("h" + Math.min(4, line.match(/^#+/)[0].length + 1));
-        inline(heading, line.replace(/^#+\s+/, "")); result.append(heading);
-      } else if (/^\s*([-*]|\d+\.)\s/.test(line)) {
-        const list = make(/^\s*\d/.test(line) ? "ol" : "ul");
-        do {
-          const item = make("li"); inline(item, line.replace(/^\s*([-*]|\d+\.)\s+/, "")); list.append(item);
-          if (i >= lines.length || !/^\s*([-*]|\d+\.)\s/.test(lines[i])) break;
-          line = lines[i++];
-        } while (true);
-        result.append(list);
-      } else if (line.includes("|") && i < lines.length && /^\s*\|?\s*:?-{3,}/.test(lines[i])) {
-        const wrap = make("div", undefined, "table-scroll"), table = make("table");
-        const row = (text, header) => {
-          const tr = make("tr");
-          for (const value of text.replace(/^\s*\||\|\s*$/g, "").split("|")) {
-            const cell = make(header ? "th" : "td"); inline(cell, value.trim()); tr.append(cell);
-          }
-          table.append(tr);
-        };
-        row(line, true); i++;
-        while (i < lines.length && lines[i].includes("|")) row(lines[i++], false);
-        wrap.append(table); result.append(wrap);
-      } else if (line.trim()) {
-        const paragraph = make(line.startsWith("> ") ? "blockquote" : "p");
-        inline(paragraph, line.replace(/^> /, "")); result.append(paragraph);
-      }
-    }
-    return result;
-  }
+  const {make, markdown, codeBlock, copyButton, diffBlock, diffBadge} = window.BibimerRichText;
   class Conversation {
     constructor(root, prompts, t, respond) {
       this.root = root; this.prompts = prompts; this.t = t; this.respond = respond;
       this.items = new Map(); this.cards = new Map(); this.requests = new Map();
       this.online = false;
+      this.latest = document.getElementById("chat-latest");
+      this.root.addEventListener("scroll", () => this.scrollState());
+      this.latest.onclick = () => { this.root.scrollTop = this.root.scrollHeight; this.scrollState(); };
+    }
+    scrollState() {
+      this.latest.hidden = this.root.scrollHeight - this.root.scrollTop - this.root.clientHeight < 80;
     }
     clear(keepRequests = false) {
       this.items.clear(); this.cards.clear(); this.root.replaceChildren();
+      this.latest.hidden = true;
       if (!keepRequests) { this.requests.clear(); this.prompts.replaceChildren(); }
     }
     update(event) {
       const follow = this.root.scrollHeight - this.root.scrollTop - this.root.clientHeight < 80;
+      const edge = this.root.getBoundingClientRect().top;
+      const anchor = [...this.cards.values()].find(card => card.getBoundingClientRect().bottom > edge);
+      const anchorTop = anchor?.getBoundingClientRect().top;
       const retained = new Set(event.retained || []);
       if (event.retained) for (const key of this.items.keys()) {
         if (!retained.has(key)) { this.items.delete(key); this.cards.get(key).remove(); this.cards.delete(key); }
@@ -92,26 +35,95 @@
       for (const request of event.requests || []) if (!this.requests.has(request.id)) this.renderRequest(request);
       this.enable(this.online);
       if (follow) this.root.scrollTop = this.root.scrollHeight;
+      else if (anchor?.isConnected) this.root.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
+      this.scrollState();
     }
     renderItem(item) {
       let card = this.cards.get(item.id);
-      if (!card) { card = make("article", undefined, "message " + item.kind); this.cards.set(item.id, card); this.root.append(card); }
-      const wasOpen = card.querySelector("details")?.open;
-      card.replaceChildren();
-      const header = make("div", this.t("chat_" + item.kind), "message-heading");
-      if (item.status) header.append(make("span", this.t("chat_status_" + item.status), "item-status"));
-      card.append(header);
-      if (["command", "diff", "tool", "plan"].includes(item.kind)) {
-        const details = make("details"); details.open = wasOpen === undefined ? item.kind === "plan" : wasOpen;
-        details.append(make("summary", item.title || this.t("chat_details")));
-        details.append(codeBlock(item.text || "", item.kind === "diff" ? "diff" : "", this.t));
-        if (item.exit_code !== undefined && item.exit_code !== null) details.append(make("small", this.t("process_exited", {code:item.exit_code})));
-        card.append(details);
-      } else if (item.kind === "assistant") card.append(markdown(item.text || "", this.t));
-      else {
-        if (item.code) card.append(make("p", this.t(item.code)));
-        if (item.text) card.append(make("div", item.text, "plain-message"));
+      if (!card) {
+        const kind = ["user", "assistant", "command", "diff", "tool", "plan", "notice", "turn"].includes(item.kind) ? item.kind : "tool";
+        card = make("article", undefined, "message " + kind);
+        this.cards.set(item.id, card); this.root.append(card);
       }
+      const detailsState = new Map([...card.querySelectorAll("details")].map(node => [node.dataset.view, node.open]));
+      const codeState = [...card.querySelectorAll(".code-block")].map(node => ({wrapped:node.classList.contains("wrapped"), left:node.querySelector("pre").scrollLeft}));
+      card.replaceChildren();
+      card.dataset.status = item.status || "";
+      const status = () => make("span", item.status ? this.t("chat_status_" + item.status) : "", "item-status");
+      const detail = (key, title, opened = false) => {
+        const node = make("details"); node.dataset.view = key;
+        node.open = detailsState.has(key) ? detailsState.get(key) : opened;
+        const summary = make("summary"); summary.append(make("span", title, "activity-title"));
+        node.append(summary); return node;
+      };
+      if (["command", "tool"].includes(item.kind)) {
+        const details = detail("activity", item.title || this.t("chat_" + item.kind));
+        const summary = details.querySelector("summary");
+        summary.prepend(make("span", item.kind === "command" ? "›_" : "◇", "activity-icon"));
+        summary.append(status());
+        if (item.exit_code !== undefined && item.exit_code !== null) {
+          summary.append(make("span", this.t("exit_code", {code:item.exit_code}), "exit-code" + (item.exit_code ? " failed" : "")));
+        }
+        if (item.kind === "command" && item.title) details.append(codeBlock(item.title, "bash", this.t));
+        if (item.text) details.append(codeBlock(item.text, item.kind === "tool" && /^[{[]/.test(item.text.trim()) ? "json" : "", this.t));
+        else details.append(make("p", this.t("tool_no_output"), "activity-empty"));
+        card.append(details);
+      } else if (item.kind === "diff") {
+        const details = detail("changes", item.title || this.t("chat_diff"), true);
+        details.querySelector("summary").prepend(make("span", "±", "activity-icon"));
+        const changes = Array.isArray(item.changes) ? item.changes : [{path:this.t("chat_diff"), diff:item.text || ""}];
+        details.querySelector("summary").append(diffBadge(changes.map(change => change.diff).join("\n")), status());
+        for (const [index, change] of changes.entries()) {
+          const file = detail("file-"+index, change.path, changes.length === 1 && change.diff.split("\n").length < 16);
+          file.className = "file-change";
+          file.querySelector("summary").append(diffBadge(change.diff));
+          file.append(diffBlock(change.diff, this.t)); details.append(file);
+        }
+        if (item.truncated) details.append(make("p", this.t("diff_truncated"), "activity-empty"));
+        card.append(details);
+      } else if (item.kind === "plan") {
+        const steps = item.steps;
+        const details = detail("plan", this.t(item.summary ? "chat_summary" : "chat_plan"), !item.summary);
+        details.querySelector("summary").prepend(make("span", item.summary ? "◇" : "☷", "activity-icon"));
+        if (steps?.length) {
+          details.querySelector("summary").append(make("span", steps.filter(step=>step.status === "completed").length + "/" + steps.length, "plan-count"));
+          const list = make("ol", undefined, "plan-steps");
+          for (const step of steps) {
+            const state = ["completed", "in_progress"].includes(step.status) ? step.status : "pending";
+            const li = make("li", undefined, state);
+            const icon = make("span", state === "completed" ? "✓" : state === "in_progress" ? "◉" : "○", "plan-step-icon");
+            icon.setAttribute("aria-label", this.t("plan_"+state));
+            li.append(icon, make("span", step.step)); list.append(li);
+          }
+          details.append(list);
+          if (item.explanation) details.append(markdown(item.explanation, this.t));
+        } else details.append(markdown((item.text || "").replace(/^(\[[ xX]\] )/gm, "- $1"), this.t));
+        card.append(details);
+      } else if (item.kind === "turn") {
+        const row = make("div", undefined, "turn-result");
+        row.append(make("span", item.status === "completed" ? "✓" : "○"), status());
+        card.append(row);
+        if (item.text) card.append(make("div", item.text, "plain-message"));
+      } else {
+        const header = make("div", undefined, "message-heading");
+        const identity = make("span", undefined, "message-identity");
+        identity.append(make("span", item.kind === "assistant" ? "B" : item.kind === "user" ? "↑" : "!", "message-avatar"), make("span", this.t("chat_"+item.kind)));
+        header.append(identity);
+        if (item.status === "inProgress") header.append(status());
+        if (item.text) header.append(copyButton(item.text, this.t, "copy_message"));
+        card.append(header);
+        if (item.kind === "assistant") card.append(markdown(item.text || "", this.t));
+        else {
+          if (item.code) card.append(make("p", this.t(item.code)));
+          if (item.text) card.append(make("div", item.text, "plain-message"));
+        }
+      }
+      [...card.querySelectorAll(".code-block")].forEach((node, index) => {
+        if (codeState[index]?.wrapped) {
+          node.classList.add("wrapped"); node.querySelector("[aria-pressed]").setAttribute("aria-pressed", "true");
+        }
+        node.querySelector("pre").scrollLeft = codeState[index]?.left || 0;
+      });
     }
     renderRequest(request) {
       const card = make("form", undefined, "request-card"), params = request.params;
@@ -140,12 +152,12 @@
         card.onsubmit = event => { event.preventDefault(); this.answer(state, {answers:Object.fromEntries([...state.fields].map(([id,input])=>[id,input.value]))}); };
       } else {
         if (params.reason) card.append(make("p", params.reason));
-        if (params.command) card.append(codeBlock(params.command, this.t("chat_command"), this.t));
+        if (params.command) card.append(codeBlock(params.command, "bash", this.t));
         if (params.cwd || params.grantRoot) {
           const folder = make("p", this.t("chat_folder") + ": ");
           folder.append(make("code", params.cwd || params.grantRoot)); card.append(folder);
         }
-        if (request.preview) card.append(codeBlock(request.preview, request.kind === "file" ? "diff" : "", this.t));
+        if (request.preview) card.append(request.kind === "file" ? diffBlock(request.preview, this.t) : codeBlock(request.preview, "", this.t));
         // Extra requested access must remain reviewable before accepting.
         const extra = Object.fromEntries(Object.entries(params).filter(([key,value])=>
           !["threadId","turnId","itemId","approvalId","reason","command","cwd","grantRoot","startedAtMs","availableDecisions"].includes(key) && value !== null));
@@ -184,6 +196,11 @@
       for (const value of this.requests.values()) {
         value.node.querySelector("h2").textContent = this.t(value.request.kind === "questions" ? "chat_questions" : "chat_approval");
         for (const button of value.node.querySelectorAll("[data-request-action]")) button.textContent = this.t(button.dataset.requestAction);
+        for (const button of value.node.querySelectorAll("[data-label-key]")) {
+          clearTimeout(button.copyTimer);
+          button.textContent = this.t(button.dataset.labelKey);
+          if (button.hasAttribute("aria-label")) button.setAttribute("aria-label", this.t(button.dataset.labelKey));
+        }
       }
     }
   }

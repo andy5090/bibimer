@@ -87,6 +87,33 @@ class ChatTests(BridgeTestCase):
             self.assertNotIn("비비머", path.read_text())
             self.assertNotIn("Formatted", path.read_text())
 
+    def test_structured_plan_and_file_changes_replay_without_persisting_content(self):
+        session = self.chat()
+        with session.condition:
+            session._handle({"method": "turn/plan/updated", "params": {"turnId": "render-test",
+                "explanation": "Controlled plan", "plan": [
+                    {"step": "Inspect files", "status": "completed"},
+                    {"step": "Verify changes", "status": "in_progress"}]}})
+            session._item({"id": "files", "type": "fileChange", "status": "completed", "changes": [
+                {"path": "first.py", "diff": "@@ -1 +1 @@\n-old\n+new"},
+                {"path": "두 번째.py", "diff": "+added"}]}, "render-test", True)
+        event = self.until(lambda event: len(event["items"]) >= 2)
+        plan = next(item for item in event["items"] if item["kind"] == "plan")
+        change = next(item for item in event["items"] if item["kind"] == "diff")
+        self.assertEqual("in_progress", plan["steps"][1]["status"])
+        self.assertEqual("Controlled plan", plan["explanation"])
+        self.assertEqual(["first.py", "두 번째.py"], [file["path"] for file in change["changes"]])
+        self.assertFalse(change["truncated"])
+        self.assertIn("+added", change["text"])  # Older UI fallback remains usable.
+        with session.condition:
+            session._item({"id": "large-diff", "type": "fileChange", "changes": [
+                {"path": "large.py", "diff": "+line\n" * 10000}]}, "render-test", True)
+        event = self.until(lambda event: any(item.get("truncated") for item in event["items"]))
+        large = next(item for item in event["items"] if item.get("truncated"))
+        self.assertLessEqual(sum(len(file["path"])+len(file["diff"]) for file in large["changes"]), 32768)
+        self.bridge.persist()
+        self.assertNotIn("Controlled plan", (self.state / "metadata.json").read_text())
+
     def test_approval_requires_explicit_response_and_survives_reconnect(self):
         self.chat()
         self.message("approval")

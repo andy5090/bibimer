@@ -27,7 +27,7 @@ async function main() {
     const file = request.url === '/' ? 'index.html' : request.url.slice(1);
     if (!/^[a-zA-Z0-9_./-]+$/.test(file) || file.includes('..')) { response.writeHead(404).end(); return; }
     try {
-      const type = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
+      const type = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.svg') ? 'image/svg+xml' : 'text/html';
       response.writeHead(200, {'Content-Type':type}); response.end(fs.readFileSync(path.join(source, file)));
     } catch (_) { response.writeHead(404).end(); }
   });
@@ -85,13 +85,14 @@ async function main() {
       // Browser-only stand-in for native preferences; Android persistence is
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.3.1'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.4.0'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       cancelPoll:()=>{}, request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),
       openGuide:guide=>window.setupActions.push('guide:'+guide),
       copyCommand:name=>window.setupActions.push('copy:'+name),
       copyText:text=>{window.testClipboard=text;},
+      openLink:url=>{window.testOpenedLink=url;},
       exportInstaller:()=>window.setupActions.push('export')
     };
   });
@@ -406,7 +407,7 @@ async function main() {
     assert.equal(sent.length,1); assert.equal(sent[0].text,'한글 · first\nsecond');
     assert.equal(await page.locator('.markdown script').count(),0);
     assert.equal(await page.evaluate(()=>window.untrusted),undefined);
-    await page.locator('.markdown .code-heading button').click();
+    await page.locator('.markdown .code-heading .copy-button').click();
     assert.ok((await page.evaluate(()=>window.testClipboard)).includes("print('hello')"));
     await page.screenshot({path:path.join(root,'dist/screenshots/chat-en.png')});
     await page.locator('#input').fill('approval'); await page.locator('#send').click();

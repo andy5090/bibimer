@@ -22,7 +22,7 @@
     } catch (error) { if (session?.id === id) notice(error.key || "error_request_failed"); }
   });
   const term = new Terminal({fontSize:13, fontFamily:"monospace", cursorBlink:true,
-    scrollback:2000, drawBoldTextInBrightColors:true, theme:{background:"#111512", foreground:"#e3e9db", cursor:"#d7e8aa",
+    scrollback:2000, drawBoldTextInBrightColors:true, theme:{background:"#0e1215", foreground:"#e3e9db", cursor:"#d7e8aa",
       black:"#1c211d", red:"#ed7777", green:"#a8d18d", yellow:"#e3c878", blue:"#80aeee", magenta:"#c999e5", cyan:"#79cbd2", white:"#d5decf",
       brightBlack:"#778373", brightRed:"#ff9b91", brightGreen:"#d7e8aa", brightYellow:"#ffdfa0", brightBlue:"#aac9ff", brightMagenta:"#ebbcff", brightCyan:"#a1edf0", brightWhite:"#ffffff"}});
   const fit = new FitAddon.FitAddon();
@@ -160,7 +160,7 @@
     $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
-    $("version").textContent = t("version_note", {version:environment().version || "0.3.1"});
+    $("version").textContent = t("version_note", {version:environment().version || "0.4.0"});
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
     renderAgents(); renderProjects(); updateEnvironment(); renderSession(); renderNotice();
     conversation.localize();

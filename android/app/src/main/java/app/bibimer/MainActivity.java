@@ -37,7 +37,7 @@ public final class MainActivity extends Activity {
     private static final String PAGE = "https://" + ASSET_HOST + "/index.html";
     private static final int EXPORT_INSTALLER = 10;
     private static final Set<String> ASSETS = new HashSet<>(Arrays.asList(
-        "index.html", "app.js", "app.css", "i18n.js", "conversation.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
+        "index.html", "app.js", "app.css", "i18n.js", "conversation.js", "rich-text.js", "brand.svg", "vendor/marked.js", "vendor/highlight.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
     private final ExecutorService actions = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<Runnable>(128));
     private final ExecutorService events = Executors.newSingleThreadExecutor();
@@ -53,7 +53,7 @@ public final class MainActivity extends Activity {
         language = new AppLanguage(this);
         bridge = new LocalBridge(tokens);
         FrameLayout root = new FrameLayout(this);
-        root.setBackgroundColor(Color.rgb(23, 26, 24));
+        root.setBackgroundColor(Color.rgb(17, 20, 23));
         if (Build.VERSION.SDK_INT >= 30) getWindow().setDecorFitsSystemWindows(false);
         root.setOnApplyWindowInsetsListener((view, insets) -> {
             if (Build.VERSION.SDK_INT >= 30) {
@@ -67,7 +67,7 @@ public final class MainActivity extends Activity {
             return insets;
         });
         web = new WebView(this);
-        web.setBackgroundColor(Color.rgb(23, 26, 24));
+        web.setBackgroundColor(Color.rgb(17, 20, 23));
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setAllowFileAccess(false);
@@ -87,7 +87,7 @@ public final class MainActivity extends Activity {
                     "GET".equals(request.getMethod()) && ASSETS.contains(path)) {
                     try {
                         String type = path.endsWith(".js") ? "application/javascript" :
-                            path.endsWith(".css") ? "text/css" : "text/html";
+                            path.endsWith(".css") ? "text/css" : path.endsWith(".svg") ? "image/svg+xml" : "text/html";
                         return new WebResourceResponse(type, "UTF-8", getAssets().open(path));
                     } catch (Exception ignored) { }
                 }
@@ -129,7 +129,7 @@ public final class MainActivity extends Activity {
             try {
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
-                    .put("version", "0.3.1").toString();
+                    .put("version", "0.4.0").toString();
             } catch (Exception ignored) { return "{}"; }
         }
 
@@ -178,6 +178,17 @@ public final class MainActivity extends Activity {
             else return;
             runOnUiThread(() -> {
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
+                catch (Exception ignored) { toast(R.string.browser_required); }
+            });
+        }
+
+        @JavascriptInterface public void openLink(String url) {
+            if (url == null || url.length() > 8192 || url.matches("(?s).*[\\x00-\\x20].*")) return;
+            Uri uri = Uri.parse(url);
+            if (!("https".equals(uri.getScheme()) || "http".equals(uri.getScheme())) ||
+                uri.getHost() == null || uri.getUserInfo() != null) return;
+            runOnUiThread(() -> {
+                try { startActivity(new Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)); }
                 catch (Exception ignored) { toast(R.string.browser_required); }
             });
         }

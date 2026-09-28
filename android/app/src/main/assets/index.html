@@ -9,14 +9,17 @@
   <link rel="stylesheet" href="app.css">
   <script src="vendor/xterm.js" defer></script>
   <script src="vendor/addon-fit.js" defer></script>
+  <script src="vendor/marked.js" defer></script>
+  <script src="vendor/highlight.js" defer></script>
   <script src="i18n.js" defer></script>
+  <script src="rich-text.js" defer></script>
   <script src="conversation.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
 <div id="app">
   <header class="topbar">
-    <div class="brand"><span class="brand-mark" aria-hidden="true">b.</span><div><strong>Bibimer</strong><small data-i18n="tagline">Coding agents at your fingertips</small></div></div>
+    <div class="brand"><img class="brand-mark" src="brand.svg" alt=""><div><strong>Bibimer</strong><small data-i18n="tagline">Coding agents at your fingertips</small></div></div>
     <span id="connection" class="badge" role="status">Not connected</span>
   </header>
   <div id="notice" class="notice" role="status" hidden></div>
@@ -48,7 +51,7 @@
         <button id="launch" class="primary" data-i18n="start_session">Start session</button>
       </div>
       <p id="mode-hint" class="mode-hint"></p>
-      <div id="chat-panel" hidden><div id="chat-empty" data-i18n="chat_empty">Send a message to start working with Codex.</div><div id="conversation" role="log" aria-label="Conversation" data-i18n-aria-label="chat_conversation"></div><div id="chat-requests"></div></div>
+      <div id="chat-panel" hidden><div id="chat-empty" data-i18n="chat_empty">Send a message to start working with Codex.</div><div id="conversation" role="log" aria-label="Conversation" data-i18n-aria-label="chat_conversation"></div><button id="chat-latest" class="secondary" data-i18n="chat_latest" hidden>Jump to latest ↓</button><div id="chat-requests"></div></div>
       <div id="chat-state" hidden><span id="turn-status" role="status"></span><button id="interrupt-turn" class="quiet" data-i18n="chat_interrupt">Interrupt response</button></div>
       <div id="terminal-area">
         <div id="terminal" aria-label="Agent terminal output" data-i18n-aria-label="terminal_label"></div>
@@ -106,7 +109,7 @@
       <button data-command="restart" class="quiet" data-i18n="copy_restart">Copy bridge restart command</button>
       <button id="forget" class="quiet" data-i18n="forget">Forget this app's connection</button>
     </section>
-    <p id="version" class="version">Bibimer 0.3.1 · Termux on this phone</p>
+    <p id="version" class="version">Bibimer 0.4.0 · Termux on this phone</p>
   </main>
   <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button></nav>
   <dialog id="folder-dialog" aria-labelledby="folder-title">

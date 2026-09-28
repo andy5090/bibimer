@@ -2,6 +2,20 @@
 (() => {
   // Each entry is [English default, Korean]. Terminal output is never translated.
   const strings = {
+    copied: ["Copied", "복사됨"],
+    copy_message: ["Copy", "복사"],
+    copy_path: ["Copy file path", "파일 경로 복사"],
+    open_browser: ["Open in browser", "브라우저에서 열기"],
+    code_wrap: ["Wrap", "줄바꿈"],
+    image_reference: ["Image", "이미지"],
+    chat_latest: ["Jump to latest ↓", "최신 응답으로 ↓"],
+    chat_summary: ["Activity summary", "작업 요약"],
+    tool_no_output: ["No output reported.", "전달된 출력이 없습니다."],
+    exit_code: ["Exit {code}", "종료 {code}"],
+    plan_completed: ["Completed", "완료"],
+    plan_in_progress: ["In progress", "진행 중"],
+    plan_pending: ["Pending", "예정"],
+    diff_truncated: ["Only part of this change is available in the preview.", "미리보기에는 변경 내용의 일부만 포함되어 있습니다."],
     error_bridge_stopping: ["The bridge is restarting. Reconnect shortly.", "브리지를 재시작하고 있습니다. 잠시 후 다시 연결하세요."],
     bridge_update_hint: ["After installing an updated setup file, stop all active sessions and run the restart command in Termux. Restart is refused while any session is running.", "새 설정 파일로 브리지를 업데이트한 뒤 모든 실행 세션을 종료하고 Termux에서 재시작 명령을 실행하세요. 실행 중인 세션이 하나라도 있으면 재시작을 거부합니다."],
     copy_restart: ["Copy bridge restart command", "브리지 재시작 명령 복사"],

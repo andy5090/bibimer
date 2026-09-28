@@ -18,6 +18,12 @@ SRC = ROOT / "android" / "app" / "src" / "main"
 SDK_URL = "https://dl.google.com/android/repository/platform-36_r02.zip"
 SDK_SHA1 = "2c1a80dd4d9f7d0e6dd336ec603d9b5c55a6f576"
 VENDORS = [
+    ("https://registry.npmjs.org/marked/-/marked-15.0.12.tgz",
+     "8dD6FusOQSrpv9Z1rdNMdlSgQOIP880DHqnohobOmYLElGEqAL/JvxvuxZO16r4HtjTlfPRDC1hbvxC9dPN2nA==",
+     {"package/lib/marked.umd.js": "marked.js", "package/LICENSE.md": "marked-LICENSE.txt"}),
+    ("https://registry.npmjs.org/@highlightjs/cdn-assets/-/cdn-assets-11.11.1.tgz",
+     "VEPdHzwelZ12hEX18BHduqxMZGolcUsrbeokHYxOUIm8X2+M7nx5QPtPeQgRxR9XjhdLv4/7DD5BWOlSrJ3k7Q==",
+     {"package/highlight.min.js": "highlight.js", "package/LICENSE": "highlight-LICENSE.txt"}),
     ("https://registry.npmjs.org/@xterm/xterm/-/xterm-5.5.0.tgz",
      "hqJHYaQb5OptNunnyAnkHyM8aCjZ1MEIDTQu1iIbbTD/xops91NB5yq1ZK/dC2JDbVWtF23zUtl9JE2NqwT87A==",
      {"package/lib/xterm.js": "xterm.js", "package/css/xterm.css": "xterm.css", "package/LICENSE": "xterm-LICENSE.txt"}),

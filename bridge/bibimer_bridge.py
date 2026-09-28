@@ -31,7 +31,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -582,6 +582,8 @@ class ChatSession(Session):
             self._put(item)
         elif method == "turn/plan/updated":
             self._put({"id": "plan-" + params["turnId"], "kind": "plan",
+                       "steps": [{"step": self._text(step.get("step")), "status": step.get("status", "pending")} for step in params.get("plan", [])[:100]],
+                       "explanation": self._text(params.get("explanation")),
                        "text": self._text("\n".join(("[x] " if step.get("status") == "completed" else "[ ] ") + step.get("step", "") for step in params.get("plan", [])))})
         elif method == "turn/diff/updated":
             self._put({"id": "diff-" + params["turnId"], "kind": "diff", "text": self._text(params.get("diff"))})
@@ -598,10 +600,23 @@ class ChatSession(Session):
         elif kind == "commandExecution":
             item.update(kind="command", title=self._text(source.get("command")), text=self._text(source.get("aggregatedOutput")), exit_code=source.get("exitCode"))
         elif kind == "fileChange":
-            item.update(kind="diff", text=self._text("\n".join(change.get("path", "") + "\n" + change.get("diff", "") for change in source.get("changes", []))))
+            changes, remaining = [], 32768
+            truncated = len(source.get("changes", [])) > 100
+            for change in source.get("changes", [])[:100]:
+                path = self._text(change.get("path"))[:4096]
+                raw_diff = change.get("diff") if isinstance(change.get("diff"), str) else ""
+                remaining = max(0, remaining - len(path))
+                diff = raw_diff[:remaining]
+                truncated = truncated or len(raw_diff) > remaining
+                changes.append({"path": path, "diff": diff})
+                remaining -= len(diff)
+                if remaining <= 0:
+                    truncated = True
+                    break
+            item.update(kind="diff", changes=changes, truncated=truncated, text=self._text("\n".join(change["path"] + "\n" + change["diff"] for change in changes)))
         elif kind == "reasoning":
             # Display only summaries explicitly provided for clients, not raw reasoning.
-            item.update(kind="plan", text=self._text("\n".join(source.get("summary", []))))
+            item.update(kind="plan", summary=True, text=self._text("\n".join(source.get("summary", []))))
         else:
             item.update(kind="tool", title=self._text(source.get("tool") or kind),
                         text=self._text(json.dumps(source.get("result") or source.get("error") or source.get("query") or "", ensure_ascii=False)))
