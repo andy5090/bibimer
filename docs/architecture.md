@@ -23,6 +23,7 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 | `POST /v1/pair` | 일회용 연결 코드 교환 | `code` |
 | `GET /v1/health` | 인스턴스, 전체 프로젝트·세션 상태, 선택 프로젝트, 프로그램 탐지 | 없음 |
 | `POST /v1/project` | 폴더 추가·선택 | 추가: `path`, `create`, `add: true`; 전환: `project_id` |
+| `POST /v1/folders` | Termux 하위 폴더 탐색, 상태 변경 없음 | `path` (기본 `~`), `hidden` (기본 false), `after` (다음 페이지의 이름 커서) |
 | `POST /v1/sessions` | 지정 프로젝트의 세션 시작 | `project_id`, `agent` (`shell`, `codex`, `claude`), `mode` (`terminal` 기본 / `chat`), `request_id`, `cols`, `rows` |
 | `GET /v1/sessions/{id}/events` | 출력 및 실제 프로세스 상태 | `cursor` (PTY 바이트 위치 / Chat 변경 번호), `wait` (0~20초) |
 | `POST /v1/sessions/{id}/input` | 입력 바이트 전송 | `data` (base64), `request_id` (UUID) |
@@ -34,6 +35,8 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 | `POST /v1/sessions/{id}/stop` | 해당 실행 세션 중지 | 빈 객체 |
 
 여러 프로젝트를 등록하며 프로젝트당 실행 세션 하나를 허용한다. 프로젝트는 UUID로 식별하고 정규화한 폴더 경로가 같으면 기존 항목을 반환한다. 프로젝트 추가·전환은 다른 프로젝트의 실행을 종료하지 않는다. 새 앱은 실행 요청에 `project_id`를 명시하고 입력·응답·종료는 세션 ID로 전달한다. 실행 명령은 허용된 프로그램 ID에서 선택하고 셸 문자열로 조합하지 않는다.
+
+0.3.1은 `features` 배열의 `browse_folders` 항목으로 폴더 탐색 지원을 알린다. 폴더 API도 인증·로컬 Host·Origin 검사를 거치며 Android는 고정된 `/v1/folders` 경로만 허용한다. `path`·`parent`·`entries`(이름/경로)·`next`·`writable`을 반환한다. 한 단계의 폴더를 이름순으로 최대 100개씩 반환하고 스캔 메모리는 한 페이지로 제한한다. 파일 내용을 열거나 하위 폴더를 재귀 탐색하지 않는다. 심볼릭 링크는 열 때 실제 경로로 정규화하며 Termux가 접근 가능한 경로를 사용한다. 페이지 사이 폴더 변경은 새로 탐색할 때 반영된다. 선택 후 기존 프로젝트 등록 API에서 접근 권한을 다시 확인한다.
 
 `health.projects`는 각 프로젝트와 해당 세션 메타데이터를, `active_sessions`는 모든 프로젝트의 실행 중·종료 중 세션 수를 반환한다. `features`의 `multiple_projects`로 기능을 확인한다. 기존 앱용 `project`·`session` 필드를 유지하고 프로젝트 ID가 없는 실행은 마지막 선택 프로젝트를 사용한다. 기존 앱의 폴더 교체 요청(`add` 없음)은 현재 세션 실행 중 거절한다.
 

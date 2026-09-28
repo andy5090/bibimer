@@ -13,6 +13,8 @@
   const sending = new Set(), views = new Map();
   let knownProjects = [], selectedProjectId = null, multipleProjects = false, switchingProject = false;
   let stopTarget = null, catalogRequest = false;
+  let canBrowse = false, folderListing = null, folderPath = "~", folderLoading = false;
+  let folderTicket = 0, folderError = null;
   const conversation = new BibimerConversation($("conversation"), $("chat-requests"), t, async data => {
     const id = session?.id;
     try {
@@ -158,10 +160,11 @@
     $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
-    $("version").textContent = t("version_note", {version:environment().version || "0.3.0"});
+    $("version").textContent = t("version_note", {version:environment().version || "0.3.1"});
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
     renderAgents(); renderProjects(); updateEnvironment(); renderSession(); renderNotice();
     conversation.localize();
+    renderFolderBrowser();
     setTimeout(resize, 30);
   }
   function tab(name) {
@@ -192,6 +195,8 @@
     $("launch").disabled = !online || !project || busy || switchingProject;
     $("edit-project").disabled = (!multipleProjects && !!live) || !online || switchingProject || busy;
     $("project-switch").disabled = !online || switchingProject || busy;
+    $("browse-project").disabled = !online || switchingProject || busy;
+    renderFolderBrowser();
     $("project-update").hidden = !online || multipleProjects;
     $("input").disabled = !online || !session || session.state !== "running" || (isChat() && !session.ready);
     $("send").disabled = $("input").disabled || sending.has(session?.id) || (isChat() && !["ready", "failed"].includes(session.turn_state));
@@ -243,6 +248,7 @@
       }
       instance = health.instance;
       multipleProjects = health.features?.includes("multiple_projects") === true;
+      canBrowse = health.features?.includes("browse_folders") === true;
       knownProjects = health.projects || [];
       if (multipleProjects && !knownProjects.some(item => item.id === selectedProjectId)) selectedProjectId = health.project?.id || knownProjects[0]?.id || null;
       const entry = multipleProjects ? knownProjects.find(item => item.id === selectedProjectId) : null;
@@ -419,6 +425,76 @@
     rememberView();
   });
   $("mode").addEventListener("change", rememberView);
+  function renderFolderBrowser() {
+    $("folder-path").textContent = folderPath;
+    $("folder-home").disabled = !online;
+    $("folder-up").disabled = !online || folderLoading || !folderListing?.parent;
+    $("folder-hidden").disabled = !online;
+    $("folder-select").disabled = !online || folderLoading || !!folderError || !folderListing?.writable;
+    $("folder-more").hidden = !folderListing?.next || !!folderError;
+    $("folder-more").disabled = !online || folderLoading;
+    $("folder-retry").hidden = !folderError;
+    $("folder-retry").disabled = !online || folderLoading;
+    for (const button of $("folder-entries").children) button.disabled = !online || folderLoading;
+    const status = folderError || (folderLoading ? "folder_loading" :
+      folderListing && !folderListing.writable ? "folder_readonly" :
+      folderListing && !folderListing.entries.length ? "folder_empty" : null);
+    $("folder-status").textContent = status ? t(status) : "";
+    $("folder-status").hidden = !status;
+    $("folder-entries").setAttribute("aria-busy", String(folderLoading));
+  }
+  async function loadFolders(path, more = false, fallbackHome = false) {
+    const ticket = ++folderTicket;
+    const after = more ? folderListing?.next : null;
+    folderLoading = true; folderError = null; folderPath = path;
+    if (!more) { folderListing = null; $("folder-entries").replaceChildren(); }
+    renderFolderBrowser();
+    try {
+      const result = await api("POST", "/v1/folders", {path, hidden:$("folder-hidden").checked, ...(after ? {after} : {})});
+      if (ticket !== folderTicket || !$("folder-dialog").open) return;
+      folderListing = {...result, entries:more ? [...folderListing.entries, ...result.entries] : result.entries};
+      folderPath = result.path;
+      for (const entry of result.entries) {
+        const button = document.createElement("button");
+        button.type = "button"; button.className = "folder-entry";
+        const icon = document.createElement("span");
+        icon.setAttribute("aria-hidden", "true"); icon.textContent = "▸ ";
+        const name = document.createElement("span"); name.textContent = entry.name;
+        button.append(icon, name);
+        button.dir = "auto";
+        button.addEventListener("click", () => loadFolders(entry.path));
+        $("folder-entries").append(button);
+      }
+      if (!more) $("folder-entries").scrollTop = 0;
+    } catch (error) {
+      if (ticket !== folderTicket || !$("folder-dialog").open) return;
+      if (fallbackHome && error.key === "error_folder_access" && path !== "~") return loadFolders("~");
+      folderError = error.status === 404 ? "browse_update" : error.key || "error_folder_access";
+    } finally {
+      if (ticket === folderTicket) { folderLoading = false; renderFolderBrowser(); }
+    }
+  }
+  $("browse-project").addEventListener("click", () => {
+    if (!canBrowse) { notice("browse_update"); tab("setup"); return; }
+    $("path").blur();
+    $("folder-dialog").showModal();
+    // Fall back to Home if the add form names a folder not yet created.
+    loadFolders($("path").value.trim() || "~", false, true);
+  });
+  $("folder-home").addEventListener("click", () => loadFolders("~"));
+  $("folder-up").addEventListener("click", () => { if (folderListing?.parent) loadFolders(folderListing.parent); });
+  $("folder-hidden").addEventListener("change", () => loadFolders(folderPath));
+  $("folder-more").addEventListener("click", () => loadFolders(folderPath, true));
+  $("folder-retry").addEventListener("click", () => loadFolders(folderPath));
+  $("folder-cancel").addEventListener("click", () => $("folder-dialog").close());
+  $("folder-dialog").addEventListener("close", () => { ++folderTicket; folderLoading = false; });
+  $("folder-select").addEventListener("click", () => {
+    if ($("folder-select").disabled || !folderListing) return;
+    $("path").value = folderListing.path;
+    $("create-folder").checked = false;
+    $("folder-dialog").close();
+    $("project-form").querySelector("button[type=submit]").focus();
+  });
   async function changeProject(data) {
     if (switchingProject) return;
     switchingProject = true; ++generation; clearTimeout(retryTimer); renderSession();

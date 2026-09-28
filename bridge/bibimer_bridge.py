@@ -8,6 +8,7 @@ import collections
 import contextlib
 import fcntl
 import hashlib
+import heapq
 import hmac
 import http.server
 import json
@@ -30,13 +31,15 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
+    "error_folder_access": "Could not open this folder. Check that it exists and Termux has access.",
+    "error_folder_request": "The folder browsing request is invalid.",
     "error_project_missing": "This project is no longer registered. Refresh the project list.",
     "error_bridge_stopping": "The bridge is restarting. Reconnect shortly.",
     "error_chat_mode": "Chat mode requires Codex and an updated bridge. Other programs use Terminal mode.",
@@ -792,7 +795,7 @@ class Bridge:
             return {"version": VERSION, "protocol": 1, "instance": self.instance,
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, session=self.snapshot_for(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -808,6 +811,41 @@ class Bridge:
                 raise Problem(403, "error_pairing_invalid")
             (self.state / "pairing.json").unlink()
             return {"token": self.token, "version": VERSION, "protocol": 1}
+
+    def folders(self, data):
+        raw = data.get("path", "~")
+        after = data.get("after", "")
+        hidden = data.get("hidden", False)
+        if (not isinstance(raw, str) or not raw.strip() or "\0" in raw or
+                not isinstance(after, str) or "/" in after or "\0" in after or
+                not isinstance(hidden, bool)):
+            raise Problem(400, "error_folder_request")
+        try:
+            path = Path(raw).expanduser()
+            if not path.is_absolute():
+                raise Problem(400, "error_absolute_path")
+            path = path.resolve(strict=True)
+            if not os.access(path, os.R_OK | os.X_OK):
+                raise OSError()
+            # Scan only one level, keep at most one page in memory, and never
+            # read file contents. Symlinks resolve when their folder is opened.
+            def names(entries):
+                for entry in entries:
+                    if (not hidden and entry.name.startswith(".")) or entry.name <= after:
+                        continue
+                    try:
+                        if entry.is_dir():
+                            yield entry.name
+                    except OSError:
+                        continue  # A child may disappear during enumeration.
+            with os.scandir(path) as entries:
+                page = heapq.nsmallest(101, names(entries))
+        except (OSError, RuntimeError, ValueError):
+            raise Problem(400, "error_folder_access") from None
+        return {"path": str(path), "parent": str(path.parent) if path.parent != path else None,
+                "entries": [{"name": name, "path": str(path / name)} for name in page[:100]],
+                "next": page[99] if len(page) > 100 else None,
+                "writable": os.access(path, os.R_OK | os.W_OK | os.X_OK)}
 
     def register(self, data):
         with self.lock:
@@ -1028,6 +1066,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = bridge.pair(data.get("code"))
         elif method == "POST" and parsed.path == "/v1/project":
             result = {"project": bridge.register(data)}
+        elif method == "POST" and parsed.path == "/v1/folders":
+            result = bridge.folders(data)
         elif method == "POST" and parsed.path == "/v1/sessions":
             result = {"session": bridge.launch(data)}
         elif method == "POST" and parsed.path == "/v1/shutdown":

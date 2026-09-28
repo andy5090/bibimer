@@ -129,7 +129,7 @@ public final class MainActivity extends Activity {
             try {
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
-                    .put("version", "0.3.0").toString();
+                    .put("version", "0.3.1").toString();
             } catch (Exception ignored) { return "{}"; }
         }
 

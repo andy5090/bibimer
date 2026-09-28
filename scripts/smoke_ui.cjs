@@ -18,7 +18,7 @@ const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'bibimer-ui-'));
 const state = path.join(temporary, 'state');
 const errors = [];
 const fixtureMode = !process.argv.includes('--probe-codex');
-let bridge, browser, assets, legacyProjectError = false, failedEventRequests = 0;
+let bridge, browser, assets, legacyProjectError = false, legacyFolders = false, failedEventRequests = 0;
 let heldReply = null;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -67,6 +67,7 @@ async function main() {
       const result = legacyProjectError && endpoint === '/v1/project'
         ? {ok:false,status:400,data:{error:'읽고 쓸 수 있는 프로젝트 폴더가 필요합니다.'}}
         : await call(method, endpoint.replace('wait=20','wait=1'), JSON.parse(body));
+      if (legacyFolders && endpoint === '/v1/health' && result.ok) result.data.features = ['multiple_projects'];
       if (endpoint.includes('/events?') && !result.ok) failedEventRequests++;
       if (heldReply?.endpoint === endpoint) {
         const held = heldReply; heldReply = null; held.entered(); await held.promise;
@@ -84,7 +85,7 @@ async function main() {
       // Browser-only stand-in for native preferences; Android persistence is
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.3.0'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.3.1'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       cancelPoll:()=>{}, request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),
@@ -179,11 +180,97 @@ async function main() {
   const projectA = (await call('GET','/v1/health')).data.project.id;
   await page.locator('#input').fill('Draft A · 한글');
   await page.locator('#edit-project').click();
-  await page.locator('#path').fill(path.join(temporary,'second-project'));
+  // Browse existing folders while project A continues running.
+  const browseRoot = path.join(temporary, 'existing projects');
+  fs.mkdirSync(browseRoot);
+  for (let i=0;i<103;i++) fs.mkdirSync(path.join(browseRoot,'folder-'+String(i).padStart(3,'0')));
+  for (const name of ['.hidden', 'gone', 'second-project', '한글 & <tag>']) fs.mkdirSync(path.join(browseRoot,name));
+  fs.writeFileSync(path.join(browseRoot,'not-a-folder.txt'),'CONTROLLED_TEST_FILE');
+  await page.locator('#path').fill(path.join(browseRoot,'not-created'));
+  await page.locator('#browse-project').click();
+  await page.waitForFunction(home=>document.querySelector('#folder-path').textContent===home && !document.querySelector('#folder-select').disabled, os.homedir());
+  await page.locator('#folder-cancel').click();
+  assert.equal(await page.locator('#path').inputValue(),path.join(browseRoot,'not-created'));
+  await page.locator('#path').fill(browseRoot);
+  await page.locator('#browse-project').click();
+  await page.waitForFunction(()=>document.querySelectorAll('.folder-entry').length===100 && !document.querySelector('#folder-more').disabled);
+  await page.screenshot({path:path.join(root,'dist/screenshots/folders-list-en.png')});
+  assert.equal(await page.locator('.folder-entry', {hasText:'.hidden'}).count(),0);
+  assert.equal(await page.locator('.folder-entry', {hasText:'not-a-folder.txt'}).count(),0);
+  await page.locator('#folder-more').click();
+  await page.waitForFunction(()=>document.querySelectorAll('.folder-entry').length===106);
+  await page.locator('#folder-hidden').check();
+  await page.getByRole('button',{name:'.hidden',exact:true}).waitFor();
+  await page.locator('#folder-more').click();
+  await page.getByRole('button',{name:'gone',exact:true}).waitFor();
+  fs.rmdirSync(path.join(browseRoot,'gone'));
+  await page.getByRole('button',{name:'gone',exact:true}).click();
+  await page.locator('#folder-retry').waitFor();
+  assert.equal(await page.locator('#folder-select').isEnabled(),false);
+  fs.mkdirSync(path.join(browseRoot,'gone'));
+  await page.locator('#folder-retry').click();
+  await page.waitForFunction(()=>!document.querySelector('#folder-select').disabled);
+  assert.equal(await page.locator('#folder-status').innerText(),'No subfolders to show. You can select this folder.');
+  await page.locator('#folder-up').click();
+  await page.waitForFunction(()=>!document.querySelector('#folder-more').disabled);
+  await page.locator('#folder-more').click();
+  await page.getByRole('button',{name:'한글 & <tag>',exact:true}).click();
+  await page.waitForFunction(()=>!document.querySelector('#folder-select').disabled);
+  assert.equal(await page.locator('#folder-path tag').count(),0);
+  await page.locator('#folder-up').click();
+  await page.waitForFunction(()=>!document.querySelector('#folder-more').disabled);
+  await page.locator('#folder-more').click();
+  await page.getByRole('button',{name:'second-project',exact:true}).click();
+  await page.waitForFunction(()=>!document.querySelector('#folder-select').disabled);
+  await page.setViewportSize({width:360,height:460});
+  const selectFolderBox = await page.locator('#folder-select').boundingBox();
+  assert.ok(selectFolderBox.y>=0 && selectFolderBox.y+selectFolderBox.height<=460);
+  await page.screenshot({path:path.join(root,'dist/screenshots/folders-en.png')});
+  await page.locator('#folder-select').click();
+  assert.equal(await page.locator('#path').inputValue(),path.join(browseRoot,'second-project'));
+  assert.equal(await page.locator('#create-folder').isChecked(),false);
+  assert.equal((await call('GET','/v1/health')).data.session.id,initial);
+  await page.setViewportSize({width:393,height:780});
+  // An older bridge gives upgrade guidance without preventing manual paths.
+  legacyFolders = true;
+  await page.evaluate(()=>document.querySelector('#reconnect').click());
+  await delay(150);
+  await page.locator('#browse-project').click();
+  await page.locator('#setup').waitFor({state:'visible'});
+  assert.ok((await page.locator('#notice').innerText()).includes('Update the bridge to browse folders'));
+  await page.locator('#language').selectOption('ko');
+  await page.locator('#tab-work').click();
+  legacyFolders = false;
+  await page.locator('#reconnect').evaluate(node=>node.click());
+  await delay(150);
+  await page.locator('#browse-project').click();
+  await page.waitForFunction(()=>!document.querySelector('#folder-select').disabled);
+  assert.equal(await page.locator('#folder-title').innerText(),'프로젝트 폴더 선택');
+  assert.equal(await page.locator('#folder-status').innerText(),'표시할 하위 폴더가 없습니다. 현재 폴더를 선택할 수 있습니다.');
+  await page.screenshot({path:path.join(root,'dist/screenshots/folders-ko.png')});
+  await page.locator('#folder-cancel').click();
+  await page.locator('#tab-setup').click();
+  await page.locator('#language').selectOption('en');
+  await page.locator('#tab-work').click();
+  // A canceled listing must not overwrite a newly opened browser.
+  let releaseFolders, foldersAccepted;
+  const folderAccepted = new Promise(resolve=>{foldersAccepted=resolve;});
+  heldReply = {endpoint:'/v1/folders', entered:foldersAccepted, promise:new Promise(resolve=>{releaseFolders=resolve;})};
+  await page.locator('#browse-project').click();
+  await folderAccepted;
+  await page.locator('#folder-cancel').click();
+  await page.locator('#path').fill(browseRoot);
+  await page.locator('#browse-project').click();
+  await page.waitForFunction(()=>!document.querySelector('#folder-select').disabled);
+  releaseFolders(); await delay(150);
+  assert.equal(await page.locator('#folder-path').innerText(),browseRoot);
+  await page.locator('#folder-cancel').click();
+  await page.locator('#path').fill(path.join(browseRoot,'second-project'));
   await page.locator('#project-form button[type=submit]').click();
   await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
   const projectB = (await call('GET','/v1/health')).data.project.id;
   assert.notEqual(projectA,projectB);
+  console.log('PASS: folder browsing, hidden folders, pagination, Unicode names, missing-folder retry, cancel/stale replies, existing project import, old bridge guidance and mobile layout in both languages');
   await page.locator('#launch').click();
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='running');
   const secondSession = (await call('GET','/v1/health')).data.session.id;

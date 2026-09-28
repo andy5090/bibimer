@@ -36,7 +36,7 @@
       <button id="project-update" class="quiet" data-i18n="projects_update" hidden>Update the bridge to use multiple projects</button>
       <form id="project-form" class="card" hidden>
         <label for="path" data-i18n="project_folder">Project folder</label>
-        <input id="path" placeholder="~/projects/my-project" autocomplete="off" spellcheck="false">
+        <div class="folder-input"><input id="path" placeholder="~/projects/my-project" autocomplete="off" spellcheck="false"><button id="browse-project" class="secondary" type="button" data-i18n="browse">Browse</button></div>
         <label class="check"><input type="checkbox" id="create-folder"><span data-i18n="create_folder">Create the folder if it does not exist</span></label>
         <div class="button-row"><button class="primary" type="submit" data-i18n="save_project">Save project</button><button id="cancel-project" class="quiet" type="button" data-i18n="cancel_project">Cancel</button></div>
       </form>
@@ -106,9 +106,20 @@
       <button data-command="restart" class="quiet" data-i18n="copy_restart">Copy bridge restart command</button>
       <button id="forget" class="quiet" data-i18n="forget">Forget this app's connection</button>
     </section>
-    <p id="version" class="version">Bibimer 0.3.0 · Termux on this phone</p>
+    <p id="version" class="version">Bibimer 0.3.1 · Termux on this phone</p>
   </main>
   <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button></nav>
+  <dialog id="folder-dialog" aria-labelledby="folder-title">
+    <h2 id="folder-title" data-i18n="folder_title">Choose a project folder</h2>
+    <p class="hint" data-i18n="folder_hint">Browse folders in Termux on this phone.</p>
+    <div class="button-row"><button id="folder-home" class="secondary" data-i18n="folder_home">Home</button><button id="folder-up" class="secondary" data-i18n="folder_up">Up one level</button></div>
+    <div id="folder-path" dir="auto"></div>
+    <label class="check"><input id="folder-hidden" type="checkbox"><span data-i18n="folder_hidden">Show hidden folders</span></label>
+    <div id="folder-entries" role="group" aria-label="Folders" data-i18n-aria-label="folders"></div>
+    <p id="folder-status" role="status"></p>
+    <div class="button-row"><button id="folder-more" class="quiet" data-i18n="folder_more" hidden>Load more</button><button id="folder-retry" class="quiet" data-i18n="folder_retry" hidden>Try again</button></div>
+    <div class="button-row folder-actions"><button id="folder-cancel" class="secondary" data-i18n="cancel_project">Cancel</button><button id="folder-select" class="primary" data-i18n="folder_select">Select folder</button></div>
+  </dialog>
   <dialog id="stop-dialog"><h2 data-i18n="stop_title">Stop this session?</h2><p data-i18n="stop_body">This stops the agent and commands running in this session.</p><div class="button-row"><button id="cancel-stop" class="secondary" data-i18n="stop_cancel">Keep working</button><button id="confirm-stop" class="danger" data-i18n="stop_confirm">Stop session</button></div></dialog>
 </div>
 </body>
