@@ -101,7 +101,10 @@
     <section class="card setup-step">
       <div class="step-heading"><span class="step-number">4</span><h2 data-i18n="agent_setup">Prepare an agent</h2></div>
       <p data-i18n="agent_body">Start with Terminal to check input and output. To use Codex or Claude Code, install a version that runs in Termux and complete any required sign-in.</p>
-      <div class="button-row"><button data-guide="codex" class="quiet" data-i18n="codex_guide">Codex guide ↗</button><button data-guide="claude" class="quiet" data-i18n="claude_guide">Claude Code guide ↗</button></div>
+      <div class="button-row"><button data-guide="codex" class="quiet" data-i18n="codex_guide">Codex guide ↗</button><button data-guide="claude" class="quiet" data-i18n="claude_guide">Claude Code guide ↗</button><button data-guide="opencode" class="quiet" data-i18n="opencode_guide">OpenCode guide ↗</button></div>
+      <div id="agent-diagnostics" aria-live="polite"></div>
+      <p class="hint" data-i18n="claude_adapter_hint">For Claude chat and import, export the latest setup file, then run the adapter setup command in Termux. Node.js and the official Agent SDK will be installed. A working Claude CLI is required separately.</p>
+      <button data-command="claude-adapter" class="secondary full" data-i18n="claude_adapter_setup">Copy Claude adapter setup command</button>
       <p class="hint" data-i18n="agent_hint">Finding a program does not confirm Android compatibility or account access. Check each agent's Termux installation and runtime requirements.</p>
     </section>
     <section class="card setup-step">
@@ -111,7 +114,7 @@
       <button data-command="restart" class="quiet" data-i18n="copy_restart">Copy bridge restart command</button>
       <button id="forget" class="quiet" data-i18n="forget">Forget this app's connection</button>
     </section>
-    <p id="version" class="version">Bibimer 0.5.0 · Termux on this phone</p>
+    <p id="version" class="version">Bibimer 0.6.0 · Termux on this phone</p>
   </main>
   <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button></nav>
   <dialog id="folder-dialog" aria-labelledby="folder-title">
@@ -126,7 +129,8 @@
     <div class="button-row folder-actions"><button id="folder-cancel" class="secondary" data-i18n="cancel_project">Cancel</button><button id="folder-select" class="primary" data-i18n="folder_select">Select folder</button></div>
   </dialog>
   <dialog id="import-dialog" aria-labelledby="import-title">
-    <div class="import-heading"><div><span class="eyebrow">CODEX</span><h2 id="import-title" data-i18n="import_session">Import session</h2></div><button id="import-cancel" class="quiet" data-i18n="cancel_project">Cancel</button></div>
+    <div class="import-heading"><h2 id="import-title" data-i18n="import_session">Import session</h2><button id="import-cancel" class="quiet" data-i18n="cancel_project">Cancel</button></div>
+    <div class="import-provider"><label for="import-agent" data-i18n="program_label">Program to run</label><select id="import-agent"><option value="codex">Codex</option></select></div>
     <p id="import-project"></p>
     <form id="import-search-form" class="folder-input"><input id="import-search" type="search" maxlength="200" autocomplete="off" data-i18n-placeholder="import_search" data-i18n-aria-label="import_search" placeholder="Search titles (case-sensitive)"><button id="import-refresh" class="secondary" type="submit" data-i18n="import_search_button">Search</button></form>
     <div id="import-entries" role="group" data-i18n-aria-label="import_saved" aria-label="Saved sessions"></div>

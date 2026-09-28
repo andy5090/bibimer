@@ -24,8 +24,8 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 | `GET /v1/health` | 인스턴스, 전체 프로젝트·세션 상태, 선택 프로젝트, 프로그램 탐지 | 없음 |
 | `POST /v1/project` | 폴더 추가·선택 | 추가: `path`, `create`, `add: true`; 전환: `project_id` |
 | `POST /v1/folders` | Termux 하위 폴더 탐색, 상태 변경 없음 | `path` (기본 `~`), `hidden` (기본 false), `after` (다음 페이지의 이름 커서) |
-| `POST /v1/session-history` | 현재 프로젝트의 저장된 Codex 세션 조회 | `project_id`, `search` (제목), `cursor` |
-| `POST /v1/sessions` | 지정 프로젝트의 세션 시작·가져오기 | `project_id`, `agent` (`shell`, `codex`, `claude`), `mode` (`terminal` 기본 / `chat`), `request_id`, `cols`, `rows`; 가져오기: `source_thread_id`, `import_mode` (`fork` / `resume`), `agent: codex`, `mode: chat` |
+| `POST /v1/session-history` | 현재 프로젝트의 저장된 에이전트 세션 조회 | `project_id`, `agent` (`codex` 기본 / `opencode` / `claude`), `search` (제목), `cursor` |
+| `POST /v1/sessions` | 지정 프로젝트의 세션 시작·가져오기 | `project_id`, `agent` (`shell`, `codex`, `claude`, `opencode`), `mode` (`terminal` 기본 / `chat`), `request_id`, `cols`, `rows`; 가져오기: `source_thread_id`, `import_mode` (`fork` / `resume`), `mode: chat` |
 | `GET /v1/sessions/{id}/events` | 출력 및 실제 프로세스 상태 | `cursor` (PTY 바이트 위치 / Chat 변경 번호), `wait` (0~20초) |
 | `POST /v1/sessions/{id}/input` | 입력 바이트 전송 | `data` (base64), `request_id` (UUID) |
 | `POST /v1/sessions/{id}/resize` | PTY 크기 변경 | `cols` (20~300), `rows` (4~200) |
@@ -59,9 +59,9 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 
 ## 구조화된 대화
 
-`ChatSession`은 Codex App Server를 stdio로 실행하고 `initialize → initialized → thread/start` 순서로 연결한다. `ephemeral: true`로 새 대화를 만들고 사용자 모델·권한 설정을 상속한다. 원격 주소나 임의 JSON-RPC 메서드를 앱에서 전달할 수 없으며, 입력과 승인 응답은 한 스레드·현재 턴으로 제한한다.
+`ChatSession`은 `provider_command`가 선택한 프로그램과 stdio로 연결한다. Codex는 App Server를 직접 사용하며 `initialize → initialized → thread/start` 순서로 초기화한다. OpenCode·Claude 어댑터는 해당 내부 프로토콜의 허용된 메서드와 구조화된 이벤트를 구현해 기존 대화 렌더러를 사용한다. 이는 OpenCode·Claude의 공개 API 이름을 뜻하지 않는다. Codex만 `ephemeral: true`로 새 대화를 만들며 사용자 모델·권한 설정을 상속한다. 원격 주소나 임의 JSON-RPC 메서드를 앱에서 전달할 수 없으며, 입력과 승인 응답은 한 스레드·현재 턴으로 제한한다.
 
-프로세스의 `state`와 응답의 `turn_state`(준비·전송·응답·사용자 대기·실패)를 분리한다. `turn/interrupt`는 응답만 중단한다. 명령·파일 승인은 한 번 승인 또는 거절만 지원하며, 질문에는 선택지와 자유 입력을 제공한다. 미지원 서버 요청은 오류로 응답하고 승인하지 않는다. 종료·해결된 요청에 대한 늦은 응답을 거부하고 재전송 ID로 중복을 막는다.
+프로세스의 `state`와 응답의 `turn_state`(준비·전송·응답·사용자 대기·실패)를 분리한다. `turn/interrupt`는 응답만 중단한다. 명령·파일 승인은 한 번 승인 또는 거절만 지원하며, 질문에는 단일·복수 선택과 요청이 허용한 자유 입력을 제공한다. 미지원 서버 요청은 오류로 응답하고 승인하지 않는다. 종료·해결된 요청에 대한 늦은 응답을 거부하고 재전송 ID로 중복을 막는다. 프로젝트 전환·언어 변경 시 복수 선택 초안도 유지한다.
 
 대화 이벤트는 `items`, `retained`, `requests`를 반환한다. 항목은 변경 번호를 가지며 전체 항목은 최대 1MiB·200개, 항목별 텍스트는 32768자로 제한한다. 오래된 내용이 제거되면 `gap`을 알리고 남은 항목으로 복구한다. 승인·질문은 별도 메모리 상태로 유지해 재접속 시 다시 표시한다. 디스크 메타데이터에는 대화·질문·답변을 저장하지 않는다.
 
@@ -83,14 +83,26 @@ Chat 이벤트의 파일 변경에는 `changes: [{path, diff}]`와 `truncated`, 
 
 `rich-text.js`는 고정 버전 marked의 lexer 토큰을 DOM 요소로 바꾸고 코드만 highlight.js로 강조한다. HTML·이미지·외부 콘텐츠는 대화 DOM에서 실행하거나 자동 로드하지 않는다. 명시적인 HTTP(S) 링크 클릭은 URL 형식을 JavaScript와 네이티브에서 확인한 뒤 외부 브라우저로 전달한다. 내부 WebView의 탐색 차단과 고정 asset 허용 목록은 유지한다. 파일 경로 링크는 복사 기능만 제공한다.
 
-## 저장된 Codex 세션 (0.5.0)
+## OpenCode·Claude 어댑터 (0.6.0)
 
-`import_codex_session` 기능을 health에 광고한다. `HistoryClient`는 프로젝트 cwd에서 별도 App Server를 열고 초기화한 뒤 `thread/list` 또는 `thread/read`만 호출하며 끝나면 종료한다. 전역 세션 잠금을 보유하지 않아 목록 조회가 다른 프로젝트의 입력·상태 폴링을 막지 않는다. 조회는 동시에 하나만 허용하고 RPC당 8초·응답 2MiB로 제한한다.
+`provider_opencode.py`는 설치된 `opencode serve`를 세션별 별도 자식 프로세스로 시작한다. 임의 루프백 포트와 메모리에서 생성한 Basic 인증 비밀번호를 사용하며 HTTP 프록시·리다이렉트를 금지한다. 비밀번호는 자식 환경으로만 전달하고 로그·명령 인수에 넣지 않는다. 자동 업데이트·자동 공유를 끄고 기존 모델·권한 설정을 사용한다.
 
-목록은 cwd 일치·비보관·비임시 세션, CLI·VS Code·App Server 출처, 모든 모델 제공자를 대상으로 최근 수정 순 25개와 다음 커서를 반환한다. 제목은 240자로 제한하고 내용은 저장하지 않는다. 시작 시 목록의 경로나 제목을 신뢰하지 않고 `thread/read(includeTurns: false)`로 ID·cwd·저장 여부를 재검증한다. 조회 전후에 해당 프로젝트의 실행 상태·요청 중복을 확인하므로 동시에 시작한 세션을 덮어쓰지 않는다. 가져오는 동안 프로젝트가 변경되어도 원래 프로젝트로 실행한다.
+OpenCode의 공개 서버 API로 세션 생성·조회·복사·메시지·권한·질문을 처리한다. 사용자 전송에서만 `prompt_async`를 호출하며 활성 응답 동안 메시지·상태를 약 350ms 간격으로 확인한다. 동일 세션의 권한·질문만 앱에 전달하며 한 번 승인과 거절을 대응시킨다. 응답 전송 여부가 불확실하면 재전송하지 않고 안내한다. 반복 통신 실패 또는 자식 서버 종료 시 해당 어댑터를 종료한다. 종료·목록 조회 완료 시 소유한 서버만 정리한다. PTY는 서버 어댑터를 거치지 않고 `opencode`를 직접 실행한다.
+
+`provider_claude.mjs`는 Node.js와 공식 `@anthropic-ai/claude-agent-sdk` 0.3.283을 사용한다. SDK는 `~/.local/share/bibimer/claude/`에 별도로 설치하며 개발 테스트에서만 `BIBIMER_CLAUDE_SDK_PATH`로 경로를 대체할 수 있다. 새 대화는 첫 입력에서 SDK `query`를 시작하고 이후 입력은 같은 세션 ID로 재개한다. 사용자·프로젝트·로컬 설정을 읽으며 권한 우회 옵션을 설정하지 않는다. `canUseTool`과 `AskUserQuestion`을 앱의 승인·질문으로 전달하고 명시적인 답변을 기다린다. 응답 종료·중단 시 남은 대기 요청은 거절 처리한다. 텍스트·Bash·파일 편집·TodoWrite를 구조화된 항목으로 바꾸며 내부 추론과 하위 에이전트 기록은 표시하지 않는다.
+
+Claude의 명령 존재와 실제 실행 가능 여부를 구분한다. `claude --version`을 제한 시간 2초로 확인하고 결과를 60초 캐시한다. 명령 실패와 SDK 누락을 health 및 준비 화면에 각각 알린다. SDK 설치는 Claude CLI 설치·Android 호환성을 보장하지 않는다.
+
+프로토콜 근거: [OpenCode 서버 API](https://opencode.ai/docs/server/), [OpenCode CLI](https://opencode.ai/docs/cli/), [Claude SDK 세션](https://code.claude.com/docs/en/agent-sdk/sessions), [Claude SDK 사용자 입력](https://code.claude.com/docs/en/agent-sdk/user-input). 설치된 OpenCode 1.17.13의 `/doc` 스키마와 SDK 0.3.283의 타입 정의도 대조했다.
+
+## 저장된 에이전트 세션 (0.5.0 / 0.6.0 확장)
+
+`import_agent_session` 기능을 health에 광고하며 이전 앱용 `import_codex_session`도 유지한다. `HistoryClient`는 프로젝트 cwd에서 해당 에이전트의 별도 App Server 또는 어댑터를 열고 초기화한 뒤 `thread/list` 또는 `thread/read`만 호출하며 끝나면 소유한 프로세스 그룹을 정리한다. 전역 세션 잠금을 보유하지 않아 목록 조회가 다른 프로젝트의 입력·상태 폴링을 막지 않는다. 조회는 동시에 하나만 허용하고 RPC당 8초·응답 2MiB로 제한한다.
+
+목록은 cwd 일치·비보관·비임시 세션을 최근 수정 순 25개와 다음 커서로 반환한다. Codex는 CLI·VS Code·App Server 출처와 모든 모델 제공자를 포함한다. OpenCode는 `directory` 필터와 정규화한 실제 경로를 확인한다(`path` 필드는 작업 폴더와 다름). Claude는 공식 SDK `listSessions`·`getSessionInfo`·`getSessionMessages`를 사용하며 worktree·숨김 기록을 제외한다. OpenCode·Claude 목록은 최대 10,000건으로 제한하며 Claude의 64MiB 초과 기록은 CLI 사용 안내로 거절한다. 제목은 240자로 제한하고 내용은 저장하지 않는다. 시작 시 목록의 경로나 제목을 신뢰하지 않고 `thread/read(includeTurns: false)`로 ID·cwd·저장 여부를 재검증한다. 조회 전후에 해당 프로젝트의 실행 상태·요청 중복을 확인하므로 동시에 시작한 세션을 덮어쓰지 않는다. 가져오는 동안 프로젝트가 변경되어도 원래 프로젝트로 실행한다.
 
 가져오기 ChatSession은 `thread/resume` 또는 `thread/fork`를 `excludeTurns: true`로 호출하고 모델·권한·cwd 설정을 덮어쓰지 않는다. 실제 응답의 cwd도 다시 확인한다. 이후 `thread/items/list(limit: 50, sortDirection: desc)`를 읽어 시간 순으로 표시한다. 기록의 `inProgress` 항목은 중단 상태로 표시하고 승인 RPC로 재구성하지 않는다. 미리보기만 실패하면 안내 후 입력을 허용하며, 복원이 실패하면 이번에 만든 프로세스만 종료한다. 초기화·미리보기까지 20초 안에 완료되지 않으면 오류로 종료한다.
 
-`source_thread_id`, `import_mode`, `external_thread_id`만 기존 세션 메타데이터에 추가한다. 원본·복사본은 Codex의 영속 기록이며 기본 새 Chat의 `ephemeral: true`와 구분한다. Bibimer의 대화 미리보기·새 출력은 기존 메모리 한도만 유지한다. 외부 CLI 활성 상태를 완전히 탐지할 수 없으므로 복사가 기본이며 원본 이어하기는 외부 작업을 마친 뒤 선택하도록 안내한다. 실행 중인 PTY 연결·Claude 가져오기·전체 기록 탐색은 구현하지 않았다.
+`source_thread_id`, `import_mode`, `external_thread_id`만 기존 세션 메타데이터에 추가한다. 가져온 원본·복사본과 OpenCode·Claude의 새 대화는 각 도구의 영속 기록이며 Codex 기본 새 Chat의 `ephemeral: true`와 구분한다. Claude 복사는 SDK `forkSession`, OpenCode 복사는 공개 서버의 fork API를 사용하고 가져오기만으로 모델 턴을 시작하지 않는다. Bibimer의 대화 미리보기·새 출력은 기존 메모리 한도만 유지한다. 외부 CLI 활성 상태를 완전히 탐지할 수 없으므로 복사가 기본이며 원본 이어하기는 외부 작업을 마친 뒤 선택하도록 안내한다. 실행 중인 PTY 연결·전체 기록 탐색은 구현하지 않았다.
 
 프로토콜 근거: [Codex App Server 공식 문서](https://learn.chatgpt.com/docs/app-server). 현재 폰의 Codex 0.156.1 생성 JSON Schema와 실제 RPC로 목록·읽기·복사·원본 이어하기를 확인했다. 실제 프로브는 새로 만든 테스트 스레드에 통제된 항목만 주입하고 모델 턴을 시작하지 않았으며 해당 테스트 기록만 보관 처리했다.

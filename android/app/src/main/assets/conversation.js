@@ -136,20 +136,36 @@
           const field = make("label", question.question), input = make("input");
           input.type = question.isSecret ? "password" : "text"; input.required = true;
           input.autocomplete = "off"; input.maxLength = 8192;
+          input.readOnly = question.isOther === false;
+          input.bibimerSelections = [];
+          if (question.multiple) {
+            const hint = make("small", this.t("question_multiple")); hint.dataset.i18n = "question_multiple"; field.append(hint);
+          }
           if (question.options?.length) {
             const choices = make("div", undefined, "question-options");
             for (const option of question.options) {
               const button = make("button", option.label); button.type = "button";
               if (option.description) button.append(make("small", option.description));
-              button.onclick = () => { input.value = option.label; input.focus(); };
+              if (question.multiple) { button.dataset.option = option.label; button.setAttribute("aria-pressed", "false"); }
+              button.onclick = () => {
+                if (question.multiple) {
+                  const selected = new Set(input.bibimerSelections);
+                  if (selected.has(option.label)) selected.delete(option.label); else selected.add(option.label);
+                  input.bibimerSelections = [...selected]; input.value = input.bibimerSelections.join(", ");
+                  input.bibimerRefresh();
+                } else input.value = option.label;
+                input.focus();
+              };
               choices.append(button);
             }
             field.append(choices);
           }
+          input.bibimerRefresh = () => { for (const button of field.querySelectorAll("[data-option]")) button.setAttribute("aria-pressed", String(input.bibimerSelections.includes(button.dataset.option))); };
+          input.addEventListener("input", () => { input.bibimerSelections = []; input.bibimerRefresh(); });
           field.append(input); card.append(field); state.fields.set(question.id, input);
         }
         const send = make("button", this.t("chat_answer"), "primary"); send.type = "submit"; send.dataset.requestAction = "chat_answer"; card.append(send);
-        card.onsubmit = event => { event.preventDefault(); this.answer(state, {answers:Object.fromEntries([...state.fields].map(([id,input])=>[id,input.value]))}); };
+        card.onsubmit = event => { event.preventDefault(); this.answer(state, {answers:Object.fromEntries([...state.fields].map(([id,input])=>[id,input.bibimerSelections.length ? input.bibimerSelections : input.value]))}); };
       } else {
         if (params.reason) card.append(make("p", params.reason));
         if (params.command) card.append(codeBlock(params.command, "bash", this.t));

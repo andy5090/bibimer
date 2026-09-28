@@ -35,6 +35,20 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 - 첫 구현 스택: Java Android 앱 + 앱에 포함한 WebView/xterm.js 화면, Python 표준 라이브러리 HTTP 브리지, PTY. 현재 기기에서 APK를 직접 빌드하는 경로를 확보했다.
 - 기본 표시 언어는 영어이며 한국어를 추가 지원한다. 기기 언어와 관계없이 영어로 시작하고 **Setup → Language → 한국어**에서 선택한 언어를 저장한다. 사용자와의 설명·프로젝트 문서는 한국어를 유지한다.
 
+## 0.6.0 OpenCode·Claude 실행과 세션 가져오기 (2026-09-28)
+
+- 사용자 요청: “claude, opencode도 지원 할것”, “opencode 자체도 지원해야됨”. 가져오기뿐 아니라 OpenCode·Claude의 새 Chat·입력·승인·질문·중단·재접속과 PTY 실행을 추가했다. 앱·브리지 0.6.0, APK versionCode 9.
+- `provider_opencode.py`: 설치된 OpenCode의 인증된 전용 루프백 서버와 공개 HTTP API를 사용한다. 생성·목록·복사·원본 이어하기·기록·도구·승인·질문을 기존 구조화된 대화로 연결한다. 자동 승인·권한 우회·가져오기 시 모델 실행은 하지 않는다. PTY는 `opencode`를 직접 실행한다.
+- `provider_claude.mjs`: 공식 Claude Agent SDK 0.3.283과 설치된 CLI를 연결한다. SDK의 저장 기록 API 및 fork를 사용하고, 새 입력에서만 streaming query를 시작한다. 구조화된 텍스트·명령·편집·계획과 `canUseTool`·복수 선택 질문을 대응시켰다. 준비 화면의 설치 명령은 `BIBIMER_CLAUDE=1 bash ~/storage/downloads/bibimer-setup.sh`이며 Node.js·SDK를 별도 설치한다. Claude CLI는 교체하지 않는다.
+- `POST /v1/session-history`에 `agent`(기본 codex), health에 `import_agent_session`을 추가했다. 기존 Codex 앱/API 호환을 유지한다. 목록은 현재 프로젝트의 실제 폴더로 제한하며 다른 프로젝트의 세션·승인을 유지한다. OpenCode·Claude 목록은 최대 10,000건, 기록 미리보기는 최근 50항목, Claude 기록은 64MiB까지 지원한다. 외부 CLI 활성 상태를 완전히 탐지하지 못하므로 복사가 기본이다.
+- UI에 에이전트별 새 Chat·PTY·가져오기 선택, 실제 응답 에이전트 이름, 복수 선택 질문과 초안 유지, CLI 없음/실행 실패/SDK 누락 진단 및 영어·한국어 안내를 추가했다. 재접속 시 실행 중인 에이전트·모드가 Codex 기본값으로 바뀌던 문제도 수정했다.
+- 브리지 테스트 **48개 통과**, 두 제공자 테스트 3개 후속 재검증 통과. `smoke_ui.cjs`와 `smoke_rendering.cjs` 통과: 기존 기능과 세 에이전트 새 Chat·승인 거절·복수 선택·재접속·프로젝트/언어 전환·가져오기·후속 입력·작은 화면·OpenCode PTY. 실제 Android 네이티브 API는 브라우저 테스트 어댑터로 대체했으므로 APK 실기기 검증과 구분한다.
+- 설치된 **OpenCode 1.17.13**으로 새 Chat 초기화, 실제 목록·복사·원본 이어하기·통제된 과거 기록 표시를 확인했다. `Session.path`는 cwd가 아니므로 서버 `directory` 필터와 실제 폴더 비교를 사용한다. 실제 PTY 시작·같은 세션 재접속·명시적 종료도 통과했다. 모델 요청은 보내지 않았으며 별도 생성한 테스트 기록만 삭제했다.
+- 공식 **Claude SDK 0.3.283**을 `~/.local/share/bibimer/claude/`에 설치했다. 임시 설정 폴더에서 합성 기록의 실제 SDK 조회·읽기·복사와 원본 보존을 확인했다. **현재 폰의 Claude CLI는 네이티브 실행 파일 누락으로 `claude --version`이 실패한다.** 앱은 `Needs repair`로 표시하고 실행을 비활성화한다. CLI를 복구하기 전 실제 Claude 대화는 검증할 수 없다. SDK 설치 성공을 CLI 실행 성공으로 간주하지 않는다.
+- APK 빌드·v2/v3 서명·기존 인증서 일치·앱 asset 일치·설정 스크립트의 세 소스 체크섬·격리 추출·0700 권한을 확인했다. 설치 파일: **`/storage/emulated/0/Download/Bibimer-0.6.0.apk`**, 설정 파일: `Download/bibimer-setup-0.6.0.sh`. `dist/`에도 최신 파일이 있다. 현재 폰의 설치 앱은 여전히 **0.4.0(versionCode 7)** 이므로 업데이트가 필요하다.
+- 실행 세션 0개를 확인하고 운영 브리지를 **0.6.0으로 적용 완료**했다. 인증 토큰·전체 프로젝트 설정 보존, 운영 health, 세 에이전트 목록 조회를 확인했다. CLI 실패 안내 외 연결 오류는 없으며 현재 사용자 세션을 종료하지 않았다.
+- 남은 검증: APK에서 OpenCode 새 Chat·PTY·가져오기와 실제 모델 응답, Claude CLI 복구 후 실제 SDK 실행·승인·중단, 실제 키보드·WebView·백그라운드 복귀, Termux가 없는 신규 설치 흐름. 이번 작업에서는 실제 모델 요청을 보내지 않았다.
+
 ## 0.5.0 Codex 세션 가져오기 (2026-09-28)
 
 - 사용자 요청: “import session 기능이 있어야 겠는데”. 우선 같은 폰의 Termux에 저장된 Codex 기록을 프로젝트별로 가져온다. Claude·실행 중인 외부 CLI 연결은 현재 범위 밖이다. 앱·브리지 0.5.0, APK versionCode 8.
@@ -151,9 +165,9 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 
 ## 다음 작업
 
-1. `Download/Bibimer-0.5.0.apk`로 앱을 업데이트하고 Reconnect로 연결한다. 브리지 0.5.0은 이미 적용했다. 프로젝트 선택 → Import session → 세션 선택 → 복사/원본 이어하기·기록 표시·후속 지시를 실제 폰에서 확인한다. 외부 CLI에서 원본을 사용 중이면 복사한다. Chat 응답·도구·diff·계획·코드 복사/줄바꿈, 런처 아이콘, Add → Browse와 프로젝트 전환도 확인한다.
+1. `Download/Bibimer-0.6.0.apk`로 앱을 업데이트하고 Reconnect로 연결한다. 브리지 0.6.0은 이미 적용했다. OpenCode → Chat/PTY → Start session과 Import session → 에이전트 선택 → 복사/원본 이어하기·기록 표시·후속 지시를 실제 폰에서 확인한다. 외부 CLI에서 원본을 사용 중이면 복사한다. Claude는 설치된 CLI의 실행 파일 문제를 먼저 복구해야 한다. Chat 응답·도구·diff·계획·코드 복사/줄바꿈, 런처 아이콘, Add → Browse와 프로젝트 전환도 확인한다.
 2. 기존 인증 토큰을 유지하므로 새 연결 코드가 필요한 경우에만 Termux에서 `~/.local/bin/bibimer-bridge pair`를 실행한다. 코드나 토큰은 저장소·일반 로그에 남기지 않는다.
-3. 실제 APK에서 Enter·줄바꿈·한글 조합, 여러 프로젝트 추가·전환·동시 실행·질문 초안 유지, Chat·PTY 선택, 영어·한국어, 모델 응답·승인·응답 중단·재접속을 검증한다. Bibimer 출력은 브리지 메모리만 유지하며 기본 임시 Chat은 종료 후 복원되지 않는다. Codex에 저장된 가져오기 세션은 Import session으로 다시 열 수 있다.
+3. 실제 APK에서 Enter·줄바꿈·한글 조합, 여러 프로젝트 추가·전환·동시 실행·복수 선택 질문 초안 유지, Chat·PTY 선택, 영어·한국어, 모델 응답·승인·응답 중단·재접속을 검증한다. Bibimer 출력은 브리지 메모리만 유지하며 Codex 기본 임시 Chat은 종료 후 복원되지 않는다. OpenCode·Claude 새 대화와 세 에이전트의 저장 기록은 각 도구의 저장 규칙에 따라 Import session으로 다시 열 수 있다.
 4. Termux가 없는 기기에서 설치 안내 → 설정 파일 저장 → Python·브리지 설치 → 앱 연결을 별도로 검증한다.
 
 빌드 및 테스트 명령은 `docs/development.md`를 따른다. 변경 내용은 `main`에서 커밋하고 `origin/main`과 동기화한다. 빌드 결과·도구 캐시·로컬 서명 키는 Git에서 제외되어 있다.

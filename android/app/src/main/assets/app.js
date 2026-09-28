@@ -15,9 +15,9 @@
   let stopTarget = null, catalogRequest = false;
   let canBrowse = false, folderListing = null, folderPath = "~", folderLoading = false;
   let folderTicket = 0, folderError = null;
-  let canImport = false, importProject = null, importEntries = [], importSelection = null;
+  let canImport = false, multiImport = false, importProject = null, importEntries = [], importSelection = null;
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
-  const conversation = new BibimerConversation($("conversation"), $("chat-requests"), t, async data => {
+  const conversation = new BibimerConversation($("conversation"), $("chat-requests"), (key, values) => key === "chat_assistant" ? t("agent_" + (session?.agent || "codex")) : t(key, values), async data => {
     const id = session?.id;
     try {
       await api("POST", `/v1/sessions/${id}/respond`, data);
@@ -82,13 +82,19 @@
     for (const agent of knownAgents.length ? knownAgents : [{id:"shell", installed:true}]) {
       const option = document.createElement("option");
       option.value = agent.id;
-      option.textContent = t("agent_" + agent.id) + (agent.installed ? "" : t("install_required_suffix"));
-      option.disabled = !agent.installed;
+      option.textContent = t("agent_" + agent.id) + (!agent.installed ? t("install_required_suffix") : agent.available === false ? t("repair_required_suffix") : "");
+      option.disabled = !agent.installed || agent.available === false;
       $("agent").append(option);
     }
     if ([...$("agent").options].some(option => option.value === selected && !option.disabled)) $("agent").value = selected;
     updateMode();
+    $("agent-diagnostics").replaceChildren(...knownAgents.filter(agent => agent.id !== "shell").map(agent => {
+      const row = document.createElement("p"); row.className = "hint";
+      row.textContent = t("agent_" + agent.id) + " · " + t(!agent.installed ? "install_needed" : agent.issue || "installed");
+      return row;
+    }));
   }
+  function importable(agent) { return canImport && (multiImport || agent.id === "codex") && agent.installed && agent.available !== false && agent.modes?.includes("chat"); }
   function supportsChat() { return !!knownAgents.find(agent => agent.id === $("agent").value)?.modes?.includes("chat"); }
   function projectKey(value = project) { return value?.id || value?.path || null; }
   function rememberView() {
@@ -96,7 +102,7 @@
     if (!key) return;
     const questions = {...views.get(key)?.questions};
     for (const [id, request] of conversation.requests) {
-      questions[id] = Object.fromEntries([...request.fields].map(([name,input]) => [name,input.value]));
+      questions[id] = Object.fromEntries([...request.fields].map(([name,input]) => [name,{value:input.value,selections:input.bibimerSelections || []}]));
     }
     views.set(key, {text:$("input").value, start:$("input").selectionStart, end:$("input").selectionEnd,
       agent:$("agent").value, mode:$("mode").value, questions});
@@ -107,7 +113,11 @@
     for (const [id, request] of conversation.requests) {
       for (const [name, input] of request.fields) {
         const value = view.questions?.[id]?.[name];
-        if (typeof value === "string") input.value = value;
+        if (value !== undefined) {
+          input.value = typeof value === "string" ? value : value.value;
+          input.bibimerSelections = value.selections || [];
+          input.bibimerRefresh?.();
+        }
       }
     }
     view.questions = Object.fromEntries(Object.entries(view.questions || {}).filter(([id]) =>
@@ -163,7 +173,7 @@
     $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
-    $("version").textContent = t("version_note", {version:environment().version || "0.5.0"});
+    $("version").textContent = t("version_note", {version:environment().version || "0.6.0"});
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
     renderAgents(); renderProjects(); updateEnvironment(); renderSession(); renderNotice();
     conversation.localize();
@@ -197,8 +207,8 @@
     $("mode-controls").hidden = !!live;
     $("mode-hint").hidden = !!live;
     $("launch").disabled = !online || !project || busy || switchingProject;
-    $("import-session").disabled = $("launch").disabled || !canImport || !knownAgents.some(agent => agent.id === "codex" && agent.installed);
-    $("import-update").hidden = !online || !!live || canImport;
+    $("import-session").disabled = $("launch").disabled || !knownAgents.some(importable);
+    $("import-update").hidden = !online || !!live || (canImport && multiImport);
     renderImport();
     $("edit-project").disabled = (!multipleProjects && !!live) || !online || switchingProject || busy;
     $("project-switch").disabled = !online || switchingProject || busy;
@@ -234,6 +244,9 @@
       conversation.clear();
     }
     session = value;
+    if (value && ["running", "stopping"].includes(value.state)) {
+      $("agent").value = value.agent; updateMode(); $("mode").value = value.mode || "terminal";
+    }
     renderSession();
   }
   function projectForm(visible) {
@@ -257,6 +270,7 @@
       multipleProjects = health.features?.includes("multiple_projects") === true;
       canBrowse = health.features?.includes("browse_folders") === true;
       canImport = health.features?.includes("import_codex_session") === true;
+      multiImport = health.features?.includes("import_agent_session") === true;
       knownProjects = health.projects || [];
       if (multipleProjects && !knownProjects.some(item => item.id === selectedProjectId)) selectedProjectId = health.project?.id || knownProjects[0]?.id || null;
       const entry = multipleProjects ? knownProjects.find(item => item.id === selectedProjectId) : null;
@@ -528,6 +542,7 @@
   function renderImport(rebuild = false) {
     if (!$("import-dialog").open) return;
     const disabled = importLoading || busy;
+    $("import-agent").disabled = disabled;
     $("import-search").disabled = disabled;
     $("import-refresh").disabled = disabled || !online;
     $("import-mode").disabled = busy;
@@ -566,7 +581,7 @@
     }
     importLoading = true; importError = null; renderImport(!more);
     try {
-      const result = await api("POST", "/v1/session-history", {project_id:target, search:importSearch, cursor:more ? importCursor : null});
+      const result = await api("POST", "/v1/session-history", {agent:$("import-agent").value, project_id:target, search:importSearch, cursor:more ? importCursor : null});
       if (ticket !== importTicket || !$("import-dialog").open || projectKey() !== target) return;
       const entries = new Map(importEntries.map(entry => [entry.id, entry]));
       for (const entry of result.sessions) entries.set(entry.id, entry);
@@ -581,11 +596,17 @@
   $("import-session").addEventListener("click", () => {
     if ($("import-session").disabled) return;
     importProject = projectKey(); importEntries = []; importSelection = null; importCursor = null; importError = null;
+    $("import-agent").replaceChildren(...knownAgents.filter(agent => ["codex","claude","opencode"].includes(agent.id)).map(agent => {
+      const option = new Option(t("agent_" + agent.id), agent.id);
+      option.disabled = !importable(agent); return option;
+    }));
+    $("import-agent").value = knownAgents.find(agent => agent.id === $("agent").value && importable(agent))?.id || knownAgents.find(importable)?.id || "codex";
     $("import-search").value = ""; $("import-mode").value = "fork";
     $("import-project").textContent = project.path;
     $("import-dialog").showModal(); loadImports();
   });
   $("import-search-form").addEventListener("submit", event => { event.preventDefault(); loadImports(); });
+  $("import-agent").addEventListener("change", () => { $("import-search").value = ""; loadImports(); });
   $("import-more").addEventListener("click", () => loadImports(true));
   $("import-cancel").addEventListener("click", () => $("import-dialog").close());
   $("import-dialog").addEventListener("close", () => { ++importTicket; importLoading = false; });
@@ -594,11 +615,12 @@
     const key = importProject;
     busy = true; renderSession(); notice("");
     try {
-      const data = await api("POST", "/v1/sessions", {agent:"codex", mode:"chat", project_id:key,
+      const agent = $("import-agent").value;
+      const data = await api("POST", "/v1/sessions", {agent, mode:"chat", project_id:key,
         source_thread_id:importSelection, import_mode:$("import-mode").value, request_id:uuid()});
       $("import-dialog").close();
       if (projectKey() === key) {
-        $("agent").value = "codex"; updateMode(); $("mode").value = "chat";
+        $("agent").value = agent; updateMode(); $("mode").value = "chat";
         ++generation; setSession(data.session); resize(); startPoll();
       }
     } catch (error) {

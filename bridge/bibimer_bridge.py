@@ -32,27 +32,33 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
-    "error_history": "Could not load saved Codex sessions. Check Codex in Termux and try again.",
-    "error_history_unsupported": "Update Codex in Termux to use saved sessions.",
-    "error_import_invalid": "Choose a saved Codex session and an import mode.",
+    "error_agent_start": "Could not start the agent. Check its installation and setup in Termux.",
+    "error_agent_transport": "The agent connection failed. Check the agent in Termux before trying again.",
+    "error_agent_turn": "The agent could not complete this response. Check its login, model and configuration in Termux.",
+    "error_program_unavailable": "The CLI was found but could not run. Repair its installation in Termux.",
+    "error_claude_sdk": "Prepare the Claude adapter from Setup to enable chat and saved sessions.",
+    "error_history_large": "This saved session is too large to preview. Open it in the agent CLI.",
+    "error_history": "Could not load saved sessions. Check the selected agent in Termux and try again.",
+    "error_history_unsupported": "Update the selected agent in Termux to use saved sessions.",
+    "error_import_invalid": "Choose a saved session and an import mode.",
     "error_import_project": "This session belongs to another project. Open its project before importing.",
     "error_import_active": "This session is already in use. Import a copy or return to its running session.",
-    "error_import_failed": "Could not import this session. Check Codex and the saved session in Termux.",
+    "error_import_failed": "Could not import this session. Check the agent and saved session in Termux.",
     "history_preview_unavailable": "Session context restored, but its history preview is unavailable.",
     "history_imported": "Saved context restored. Only recent history is shown; previous approval requests are not active.",
     "error_folder_access": "Could not open this folder. Check that it exists and Termux has access.",
     "error_folder_request": "The folder browsing request is invalid.",
     "error_project_missing": "This project is no longer registered. Refresh the project list.",
     "error_bridge_stopping": "The bridge is restarting. Reconnect shortly.",
-    "error_chat_mode": "Chat mode requires Codex and an updated bridge. Other programs use Terminal mode.",
-    "error_chat_start": "Could not initialize Codex Chat. Check the Codex installation and configuration in Termux.",
+    "error_chat_mode": "This agent or interface is not supported by the bridge. Check Setup.",
+    "error_chat_start": "Could not initialize Chat. Check the agent installation and configuration in Termux.",
     "error_chat_busy": "Wait for the current response or interrupt it before sending another message.",
     "error_chat_transport": "The agent connection failed. Check the session before sending again.",
     "error_chat_request": "This request is no longer pending. Refresh the session.",
@@ -393,10 +399,28 @@ class Session:
             self._signal_members(signal.SIGKILL)
 
 
+def claude_sdk_path():
+    return Path(os.environ.get("BIBIMER_CLAUDE_SDK_PATH") or
+                Path.home() / ".local/share/bibimer/claude/node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs")
+
+
+def provider_command(executable, agent):
+    if agent == "codex":
+        return [executable, "app-server", "--listen", "stdio://"]
+    if agent == "opencode":
+        return [sys.executable, str(Path(__file__).with_name("provider_opencode.py")), executable]
+    if agent == "claude":
+        node = shutil.which("node")
+        if not node or not claude_sdk_path().is_file():
+            raise Problem(400, "error_claude_sdk")
+        return [node, str(Path(__file__).with_name("provider_claude.mjs")), executable, str(claude_sdk_path())]
+    raise Problem(400, "error_program")
+
+
 class HistoryClient:
     """Short-lived, read-only app-server RPC. Never starts or resumes a thread."""
-    def __init__(self, executable, cwd):
-        self.process = subprocess.Popen([executable, "app-server", "--listen", "stdio://"],
+    def __init__(self, executable, cwd, agent="codex"):
+        self.process = subprocess.Popen(provider_command(executable, agent),
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
             cwd=cwd, start_new_session=True, close_fds=True)
         self.buffer, self.serial = b"", 0
@@ -435,6 +459,8 @@ class HistoryClient:
                     continue
                 if "error" in response:
                     code = "error_history_unsupported" if response["error"].get("code") == -32601 else "error_history"
+                    if response["error"].get("message") in {"error_import_project", "error_import_invalid", "error_history_large", "error_import_active"}:
+                        code = response["error"]["message"]
                     raise Problem(400, code)
                 return response["result"]
         except (OSError, ValueError, KeyError, TypeError):
@@ -447,12 +473,18 @@ class HistoryClient:
         try:
             self.process.wait(timeout=0.5)
         except subprocess.TimeoutExpired:
-            self.process.terminate()
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(self.process.pid, signal.SIGTERM)
             try:
                 self.process.wait(timeout=1)
             except subprocess.TimeoutExpired:
-                self.process.kill()
+                with contextlib.suppress(ProcessLookupError):
+                    os.killpg(self.process.pid, signal.SIGKILL)
                 self.process.wait(timeout=1)
+        # A helper may exit before its native server finishes shutting down.
+        # Its process group was created exclusively for this catalog request.
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(self.process.pid, signal.SIGKILL)
         self.process.stdout.close()
 
 
@@ -461,13 +493,13 @@ def import_spec(data):
     if thread_id is None and mode is None:
         return None
     if (not isinstance(thread_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", thread_id) or
-            not isinstance(mode, str) or mode not in {"resume", "fork"} or data.get("agent") != "codex" or data.get("mode") != "chat"):
+            not isinstance(mode, str) or mode not in {"resume", "fork"} or data.get("agent") not in {"codex", "claude", "opencode"} or data.get("mode") != "chat"):
         raise Problem(400, "error_import_invalid")
     return {"source_thread_id": thread_id, "import_mode": mode}
 
 
 class ChatSession(Session):
-    """One Codex app-server over stdio. Display content stays only in memory.
+    """One Codex app-server or provider adapter over stdio. Output stays in memory.
 
     Reuses the PTY session's scoped process stop, but never opens a PTY or
     derives messages by scraping a terminal screen. No arbitrary RPC passthrough.
@@ -486,7 +518,7 @@ class ChatSession(Session):
         self.items, self.requests, self.inputs = collections.OrderedDict(), {}, collections.OrderedDict()
         self.revision, self.floor, self.total = 0, 0, 0
         self.rpc_serial, self.rpc_pending = 0, {}
-        self.process = subprocess.Popen(argv + ["app-server", "--listen", "stdio://"],
+        self.process = subprocess.Popen(provider_command(argv[0], agent),
             cwd=project["path"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
         os.set_blocking(self.process.stdin.fileno(), False)
@@ -628,7 +660,8 @@ class ChatSession(Session):
                     self._put({"id": "history-preview", "kind": "notice", "code": "history_preview_unavailable"})
                     return
                 self._put({"id": str(uuid.uuid4()), "kind": "notice", "code": "error_chat_start" if kind in {"initialize", "thread"} else "error_chat_transport",
-                           "text": self._text(message["error"].get("message"))})
+                           **({"text": self._text(message["error"].get("message"))} if self.agent == "codex" else
+                              {"code": message["error"].get("message") if message["error"].get("message") in ERROR_MESSAGES else "error_agent_transport"})})
                 if kind in {"initialize", "thread"} or (kind == "turn" and self.turn_id is None):
                     self.turn_state = "failed"
                 self._bump()
@@ -642,7 +675,7 @@ class ChatSession(Session):
                     self._rpc("thread/" + self.imported["import_mode"],
                         {"threadId": self.imported["source_thread_id"], "excludeTurns": True}, "import")
                 else:
-                    self._rpc("thread/start", {"cwd": self.project["path"], "ephemeral": True}, "thread")
+                    self._rpc("thread/start", {"cwd": self.project["path"], **({"ephemeral": True} if self.agent == "codex" else {})}, "thread")
             elif kind in {"thread", "import"}:
                 if kind == "import" and Path(result["thread"].get("cwd") or "/").resolve() != Path(self.project["path"]).resolve():
                     self._fault("error_import_project")
@@ -671,7 +704,9 @@ class ChatSession(Session):
             if "id" in message:
                 self._send({"id": message["id"], "error": {"code": -32602, "message": "Wrong thread"}})
             return
-        if "id" in message:
+        if method == "bibimer/notice" and self.agent != "codex":
+            self._put({"id": str(uuid.uuid4()), "kind": "notice", "code": params.get("code") if params.get("code") in ERROR_MESSAGES else "error_agent_transport"})
+        elif "id" in message:
             self._request(message)
         elif method == "turn/started":
             if self.turn_id != params["turn"]["id"]:
@@ -826,9 +861,12 @@ class ChatSession(Session):
                 result = {"answers": {}}
                 for question in request["params"]["questions"]:
                     answer = answers.get(question["id"])
-                    if not isinstance(answer, str) or not answer.strip() or len(answer.encode()) > 8192:
+                    values = answer if question.get("multiple") and isinstance(answer, list) else [answer]
+                    if not values or len(values) > 100 or any(not isinstance(value, str) or not value.strip() for value in values) or len(json.dumps(values).encode()) > 8192:
                         raise Problem(400, "error_chat_answer")
-                    result["answers"][question["id"]] = {"answers": [answer]}
+                    if question.get("isOther") is False and any(value not in {option.get("label") for option in question.get("options", [])} for value in values):
+                        raise Problem(400, "error_chat_answer")
+                    result["answers"][question["id"]] = {"answers": values}
             else:
                 decision = data.get("decision")
                 available = request["params"].get("availableDecisions")
@@ -860,6 +898,7 @@ class Bridge:
         state = self.state
         self.lock = threading.RLock()
         self.history_lock = threading.Lock()
+        self.program_checks = {}
         self.instance = str(uuid.uuid4())
         self.token = read_json(state / "token.json")
         if not self.token:
@@ -921,18 +960,38 @@ class Bridge:
             })
 
     def agents(self):
+        claude = shutil.which("claude")
+        available = self.check_program("claude", claude) if claude else False
+        sdk = bool(shutil.which("node") and claude_sdk_path().is_file())
         return [
             {"id": "shell", "name": "Terminal", "installed": bool(shutil.which("bash") or shutil.which("sh"))},
             {"id": "codex", "name": "Codex", "installed": bool(shutil.which("codex")), "modes": ["terminal", "chat"]},
-            {"id": "claude", "name": "Claude Code", "installed": bool(shutil.which("claude"))},
+            {"id": "claude", "name": "Claude Code", "installed": bool(claude), "available": available,
+             "modes": ["terminal", "chat"] if sdk else ["terminal"],
+             "issue": "error_program_unavailable" if claude and not available else "error_claude_sdk" if not sdk else None},
+            {"id": "opencode", "name": "OpenCode", "installed": bool(shutil.which("opencode")), "modes": ["terminal", "chat"]},
         ]
+
+    def check_program(self, agent, executable):
+        now = time.monotonic()
+        previous = self.program_checks.get(agent)
+        if previous and previous[0] == executable and now - previous[1] < 60:
+            return previous[2]
+        try:
+            result = subprocess.run([executable, "--version"], stdin=subprocess.DEVNULL,
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2)
+            ready = result.returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            ready = False
+        self.program_checks[agent] = executable, now, ready
+        return ready
 
     def health(self):
         with self.lock:
             return {"version": VERSION, "protocol": 1, "instance": self.instance,
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, session=self.snapshot_for(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -1019,15 +1078,17 @@ class Bridge:
             self.persist()
             return self.project
 
-    def history_call(self, project, method, params):
-        executable = shutil.which("codex")
+    def history_call(self, project, method, params, agent="codex"):
+        if agent not in {"codex", "claude", "opencode"}:
+            raise Problem(400, "error_program")
+        executable = shutil.which(agent)
         if not executable:
             raise Problem(400, "error_program_missing")
         # A catalog request must not hold up session input, events or health.
         if not self.history_lock.acquire(blocking=False):
             raise Problem(409, "error_history")
         try:
-            with HistoryClient(executable, project["path"]) as client:
+            with HistoryClient(executable, project["path"], agent) as client:
                 return client.call(method, params)
         except OSError:
             raise Problem(400, "error_history") from None
@@ -1051,7 +1112,7 @@ class Bridge:
             params["searchTerm"] = search.strip()
         if cursor:
             params["cursor"] = cursor
-        result = self.history_call(project, "thread/list", params)
+        result = self.history_call(project, "thread/list", params, data.get("agent", "codex"))
         entries = []
         for entry in result.get("data", [])[:25]:
             # Read only saved threads for this project, even if an older server
@@ -1070,9 +1131,9 @@ class Bridge:
         rows = integer(data.get("rows", 24), 4, 200)
         agent = data.get("agent")
         mode = data.get("mode", "terminal")
-        if mode not in {"terminal", "chat"} or (mode == "chat" and agent != "codex"):
+        if mode not in {"terminal", "chat"} or (mode == "chat" and agent not in {"codex", "claude", "opencode"}):
             raise Problem(400, "error_chat_mode")
-        if agent not in {"shell", "codex", "claude"}:
+        if agent not in {"shell", "codex", "claude", "opencode"}:
             raise Problem(400, "error_program")
         imported = import_spec(data)
 
@@ -1109,7 +1170,7 @@ class Bridge:
             data = dict(data, project_id=project_id)
             project = dict(project)
         if imported:
-            result = self.history_call(project, "thread/read", {"threadId": imported["source_thread_id"], "includeTurns": False})
+            result = self.history_call(project, "thread/read", {"threadId": imported["source_thread_id"], "includeTurns": False}, agent)
             source = result.get("thread", {})
             if source.get("id") != imported["source_thread_id"] or source.get("ephemeral"):
                 raise Problem(400, "error_import_invalid")
@@ -1124,6 +1185,8 @@ class Bridge:
             executable = shutil.which("bash") or shutil.which("sh") if agent == "shell" else shutil.which(agent)
             if not executable:
                 raise Problem(400, "error_program_missing")
+            if agent == "claude" and not self.check_program(agent, executable):
+                raise Problem(400, "error_program_unavailable")
             argv = [executable, "-i"] if agent == "shell" else [executable]
             try:
                 session = (ChatSession if mode == "chat" else Session)(project, agent, argv, cols, rows, key, self.persist,

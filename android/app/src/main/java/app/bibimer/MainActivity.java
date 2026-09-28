@@ -129,7 +129,7 @@ public final class MainActivity extends Activity {
             try {
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
-                    .put("version", "0.5.0").toString();
+                    .put("version", "0.6.0").toString();
             } catch (Exception ignored) { return "{}"; }
         }
 
@@ -175,6 +175,7 @@ public final class MainActivity extends Activity {
             else if (guide.equals("termux-help")) url = "https://github.com/termux/termux-app#installation";
             else if (guide.equals("codex")) url = "https://github.com/openai/codex";
             else if (guide.equals("claude")) url = "https://code.claude.com/docs/en/setup";
+            else if (guide.equals("opencode")) url = "https://opencode.ai/docs/";
             else return;
             runOnUiThread(() -> {
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
@@ -197,6 +198,7 @@ public final class MainActivity extends Activity {
             String command;
             if (name.equals("storage")) command = "termux-setup-storage";
             else if (name.equals("install")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
+            else if (name.equals("claude-adapter")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "BIBIMER_CLAUDE=1 bash ~/storage/downloads/bibimer-setup.sh";
             else if (name.equals("start")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge start";
             else if (name.equals("restart")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge restart";
             else if (name.equals("pair")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge pair";

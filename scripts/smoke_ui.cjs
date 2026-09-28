@@ -42,6 +42,9 @@ async function main() {
     fs.mkdirSync(binaries);
     const python = execFileSync('which',['python'],{encoding:'utf8'}).trim();
     fs.writeFileSync(path.join(binaries,'codex'),'#!'+python+'\n'+fs.readFileSync(path.join(root,'bridge/tests/fake_codex.py'),'utf8'),{mode:0o700});
+    fs.writeFileSync(path.join(binaries,'opencode'),'#!'+python+'\n'+fs.readFileSync(path.join(root,'bridge/tests/fake_opencode.py'),'utf8'),{mode:0o700});
+    fs.writeFileSync(path.join(binaries,'claude'),'#!'+python+'\nprint("2.1.283")\n',{mode:0o700});
+    bridgeEnv.BIBIMER_CLAUDE_SDK_PATH=path.join(root,'bridge/tests/fake_claude_sdk.mjs');
     bridgeEnv.PATH = binaries+':'+process.env.PATH;
   }
   const startBridge = () => spawn('python', [path.join(root,'bridge/bibimer_bridge.py'), 'serve', '--state-dir',state, '--port',String(port)], {stdio:'ignore',env:bridgeEnv});
@@ -85,7 +88,7 @@ async function main() {
       // Browser-only stand-in for native preferences; Android persistence is
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.5.0'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.6.0'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       cancelPoll:()=>{}, request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),
@@ -476,7 +479,7 @@ async function main() {
     assert.equal(await page.locator('.import-entry').count(),0);
     await page.locator('#import-search').fill('unsupported');
     await page.locator('#import-refresh').click();
-    await page.waitForFunction(()=>document.querySelector('#import-status').textContent.includes('Codex를 업데이트'));
+    await page.waitForFunction(()=>document.querySelector('#import-status').textContent.includes('에이전트를 업데이트'));
     await page.locator('#import-search').fill('');
     await page.locator('#import-refresh').click();
     await page.locator('.import-entry').waitFor();
@@ -526,6 +529,62 @@ async function main() {
     assert.equal(await page.locator('.import-entry').count(),0);
     await page.locator('#import-cancel').click();
     console.log('PASS: Codex import search, pagination, errors, literal titles, copy default, restored rich history, no automatic turn/approval, follow-up, canceled stale replies and English/Korean mobile layouts');
+    for (const agent of ['opencode','claude']) {
+      await page.locator('#agent').selectOption(agent);
+      assert.equal(await page.locator('#mode').inputValue(),'chat');
+      await page.locator('#launch').click();
+      await page.waitForFunction(()=>!document.querySelector('#input').disabled);
+      assert.equal((await call('GET','/v1/health')).data.session.agent,agent);
+      await page.locator('#input').fill('approval'); await page.locator('#send').click();
+      await page.locator('.request-card').waitFor();
+      assert.equal(fs.existsSync(path.join(temporary,`project/${agent}-approved`)),false);
+      await page.reload(); await page.locator('.request-card').waitFor();
+      await page.locator('[data-request-action="chat_decline"]').click();
+      await page.locator('.request-card').waitFor({state:'hidden'});
+      await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+      await page.locator('#input').fill('question'); await page.locator('#send').click();
+      await page.locator('.question-options button').first().click();
+      await page.locator('.question-options button').last().click();
+      assert.equal(await page.locator('.question-options [aria-pressed="true"]').count(),2);
+      await page.locator('#project-switch').selectOption(projectB);
+      await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
+      await page.locator('#project-switch').selectOption(projectA);
+      await page.waitForFunction(()=>document.querySelectorAll('.question-options [aria-pressed="true"]').length===2);
+      await page.locator('#tab-setup').click(); await page.locator('#language').selectOption('ko'); await page.locator('#tab-work').click();
+      await page.setViewportSize({width:360,height:460});
+      await page.locator('[data-request-action="chat_answer"]').scrollIntoViewIfNeeded();
+      await page.screenshot({path:path.join(root,`dist/screenshots/${agent}-question-ko.png`)});
+      await page.locator('[data-request-action="chat_answer"]').click();
+      await page.locator('.request-card').waitFor({state:'hidden'});
+      await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+      assert.equal(fs.readFileSync(path.join(temporary,`project/${agent}-answers`),'utf8'),'both');
+      await page.setViewportSize({width:393,height:780});
+      await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+      await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
+      await page.locator('#import-session').click();
+      assert.equal(await page.locator('#import-agent').inputValue(),agent);
+      await page.locator('.import-entry').first().click();
+      await page.screenshot({path:path.join(root,`dist/screenshots/${agent}-import-ko.png`)});
+      await page.locator('#import-confirm').click();
+      await page.waitForFunction(()=>!document.querySelector('#input').disabled);
+      await page.waitForFunction(()=>document.querySelector('#conversation').textContent.includes('history'));
+      assert.equal((await call('GET','/v1/health')).data.session.agent,agent);
+      await page.locator('#input').fill('Follow up'); await page.locator('#input').press('Enter');
+      await page.waitForFunction(()=>document.querySelector('#conversation').textContent.includes('result'));
+      await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+      await page.screenshot({path:path.join(root,`dist/screenshots/${agent}-chat-ko.png`)});
+      await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+      await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
+      await page.locator('#tab-setup').click(); await page.locator('#language').selectOption('en'); await page.locator('#tab-work').click();
+    }
+    await page.locator('#agent').selectOption('opencode'); await page.locator('#mode').selectOption('terminal');
+    await page.locator('#launch').click();
+    await page.waitForFunction(()=>!document.querySelector('#input').disabled);
+    await page.locator('#input').fill('terminal check'); await page.locator('#input').press('Enter');
+    await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('OpenCode input: terminal check'));
+    await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+    await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
+    console.log('PASS: OpenCode and Claude new chat/import/follow-up, explicit approval, reconnect, multiple-choice drafts across projects/languages, small screens and OpenCode PTY');
   }
   if (process.argv.includes('--probe-codex')) {
     await page.locator('#agent').selectOption('codex');
