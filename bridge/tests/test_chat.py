@@ -8,7 +8,7 @@ from unittest.mock import patch
 from test_bridge import BridgeTestCase, module
 
 
-class ChatTests(BridgeTestCase):
+class ChatFixture(BridgeTestCase):
     def setUp(self):
         super().setUp()
         fixture = self.root / "codex"
@@ -40,6 +40,7 @@ class ChatTests(BridgeTestCase):
     def message(self, text, key=None):
         return self.api("POST", f"/v1/sessions/{self.session_id}/message", {"text": text, "request_id": key or str(uuid.uuid4())})
 
+class ChatTests(ChatFixture):
     def test_two_project_chats_keep_messages_and_approvals_isolated(self):
         first = self.chat()
         project_a = first.project

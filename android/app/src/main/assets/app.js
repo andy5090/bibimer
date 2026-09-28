@@ -15,6 +15,8 @@
   let stopTarget = null, catalogRequest = false;
   let canBrowse = false, folderListing = null, folderPath = "~", folderLoading = false;
   let folderTicket = 0, folderError = null;
+  let canImport = false, importProject = null, importEntries = [], importSelection = null;
+  let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
   const conversation = new BibimerConversation($("conversation"), $("chat-requests"), t, async data => {
     const id = session?.id;
     try {
@@ -135,6 +137,7 @@
   }
   function adoptProject(next) {
     if (projectKey(next) !== projectKey()) {
+      $("import-dialog").close();
       rememberView();
       project = next;
       setSession(null);
@@ -160,11 +163,12 @@
     $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
-    $("version").textContent = t("version_note", {version:environment().version || "0.4.0"});
+    $("version").textContent = t("version_note", {version:environment().version || "0.5.0"});
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
     renderAgents(); renderProjects(); updateEnvironment(); renderSession(); renderNotice();
     conversation.localize();
     renderFolderBrowser();
+    renderImport(true);
     setTimeout(resize, 30);
   }
   function tab(name) {
@@ -193,6 +197,9 @@
     $("mode-controls").hidden = !!live;
     $("mode-hint").hidden = !!live;
     $("launch").disabled = !online || !project || busy || switchingProject;
+    $("import-session").disabled = $("launch").disabled || !canImport || !knownAgents.some(agent => agent.id === "codex" && agent.installed);
+    $("import-update").hidden = !online || !!live || canImport;
+    renderImport();
     $("edit-project").disabled = (!multipleProjects && !!live) || !online || switchingProject || busy;
     $("project-switch").disabled = !online || switchingProject || busy;
     $("browse-project").disabled = !online || switchingProject || busy;
@@ -249,6 +256,7 @@
       instance = health.instance;
       multipleProjects = health.features?.includes("multiple_projects") === true;
       canBrowse = health.features?.includes("browse_folders") === true;
+      canImport = health.features?.includes("import_codex_session") === true;
       knownProjects = health.projects || [];
       if (multipleProjects && !knownProjects.some(item => item.id === selectedProjectId)) selectedProjectId = health.project?.id || knownProjects[0]?.id || null;
       const entry = multipleProjects ? knownProjects.find(item => item.id === selectedProjectId) : null;
@@ -516,6 +524,87 @@
   $("project-form").addEventListener("submit", async event => {
     event.preventDefault();
     await changeProject({path:$("path").value, create:$("create-folder").checked, add:multipleProjects});
+  });
+  function renderImport(rebuild = false) {
+    if (!$("import-dialog").open) return;
+    const disabled = importLoading || busy;
+    $("import-search").disabled = disabled;
+    $("import-refresh").disabled = disabled || !online;
+    $("import-mode").disabled = busy;
+    $("import-cancel").disabled = busy;
+    $("import-confirm").disabled = disabled || !online || !importSelection || importProject !== projectKey();
+    $("import-confirm").textContent = t(busy ? "import_starting" : "import_selected");
+    $("import-more").hidden = !importCursor;
+    $("import-more").disabled = disabled || !online;
+    $("import-status").textContent = t(importError || (importLoading ? "import_loading" :
+      importEntries.length ? "import_count" : importSearch ? "import_no_results" : "import_empty"), {count:importEntries.length});
+    if (rebuild) {
+      $("import-entries").replaceChildren(...importEntries.map(entry => {
+        const button = document.createElement("button");
+        button.type = "button"; button.className = "import-entry"; button.dataset.id = entry.id;
+        const title = document.createElement("strong");
+        title.textContent = entry.title || t("import_untitled"); title.dir = "auto";
+        const detail = document.createElement("small");
+        const date = Number.isFinite(entry.updated_at) ? new Date(entry.updated_at * 1000) : null;
+        detail.textContent = [date && !Number.isNaN(date.getTime()) ? date.toLocaleString(i18n.language() === "ko" ? "ko-KR" : "en-US", {dateStyle:"medium",timeStyle:"short"}) : "", entry.id.slice(0,8)].filter(Boolean).join(" · ");
+        button.append(title, detail);
+        button.addEventListener("click", () => { importSelection = entry.id; renderImport(); });
+        return button;
+      }));
+    }
+    for (const button of $("import-entries").children) {
+      button.disabled = disabled;
+      button.setAttribute("aria-pressed", String(button.dataset.id === importSelection));
+    }
+  }
+  async function loadImports(more = false) {
+    if (importLoading || busy || !online) return;
+    const ticket = ++importTicket, target = importProject;
+    if (!more) {
+      importEntries = []; importSelection = null; importCursor = null;
+      importSearch = $("import-search").value.trim();
+    }
+    importLoading = true; importError = null; renderImport(!more);
+    try {
+      const result = await api("POST", "/v1/session-history", {project_id:target, search:importSearch, cursor:more ? importCursor : null});
+      if (ticket !== importTicket || !$("import-dialog").open || projectKey() !== target) return;
+      const entries = new Map(importEntries.map(entry => [entry.id, entry]));
+      for (const entry of result.sessions) entries.set(entry.id, entry);
+      importEntries = [...entries.values()]; importCursor = result.next_cursor;
+    } catch (error) {
+      if (ticket !== importTicket || !$("import-dialog").open) return;
+      importError = error.key || "error_history";
+    } finally {
+      if (ticket === importTicket) { importLoading = false; renderImport(true); }
+    }
+  }
+  $("import-session").addEventListener("click", () => {
+    if ($("import-session").disabled) return;
+    importProject = projectKey(); importEntries = []; importSelection = null; importCursor = null; importError = null;
+    $("import-search").value = ""; $("import-mode").value = "fork";
+    $("import-project").textContent = project.path;
+    $("import-dialog").showModal(); loadImports();
+  });
+  $("import-search-form").addEventListener("submit", event => { event.preventDefault(); loadImports(); });
+  $("import-more").addEventListener("click", () => loadImports(true));
+  $("import-cancel").addEventListener("click", () => $("import-dialog").close());
+  $("import-dialog").addEventListener("close", () => { ++importTicket; importLoading = false; });
+  $("import-confirm").addEventListener("click", async () => {
+    if ($("import-confirm").disabled) return;
+    const key = importProject;
+    busy = true; renderSession(); notice("");
+    try {
+      const data = await api("POST", "/v1/sessions", {agent:"codex", mode:"chat", project_id:key,
+        source_thread_id:importSelection, import_mode:$("import-mode").value, request_id:uuid()});
+      $("import-dialog").close();
+      if (projectKey() === key) {
+        $("agent").value = "codex"; updateMode(); $("mode").value = "chat";
+        ++generation; setSession(data.session); resize(); startPoll();
+      }
+    } catch (error) {
+      importError = error.key || "error_import_failed";
+      notice(importError); await connect();
+    } finally { busy = false; renderSession(); }
   });
   $("launch").addEventListener("click", async () => {
     if (busy) return;

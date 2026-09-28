@@ -14,6 +14,7 @@ import http.server
 import json
 import os
 from pathlib import Path
+import re
 import secrets
 import select
 import shutil
@@ -31,13 +32,21 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
+    "error_history": "Could not load saved Codex sessions. Check Codex in Termux and try again.",
+    "error_history_unsupported": "Update Codex in Termux to use saved sessions.",
+    "error_import_invalid": "Choose a saved Codex session and an import mode.",
+    "error_import_project": "This session belongs to another project. Open its project before importing.",
+    "error_import_active": "This session is already in use. Import a copy or return to its running session.",
+    "error_import_failed": "Could not import this session. Check Codex and the saved session in Termux.",
+    "history_preview_unavailable": "Session context restored, but its history preview is unavailable.",
+    "history_imported": "Saved context restored. Only recent history is shown; previous approval requests are not active.",
     "error_folder_access": "Could not open this folder. Check that it exists and Termux has access.",
     "error_folder_request": "The folder browsing request is invalid.",
     "error_project_missing": "This project is no longer registered. Refresh the project list.",
@@ -384,19 +393,93 @@ class Session:
             self._signal_members(signal.SIGKILL)
 
 
+class HistoryClient:
+    """Short-lived, read-only app-server RPC. Never starts or resumes a thread."""
+    def __init__(self, executable, cwd):
+        self.process = subprocess.Popen([executable, "app-server", "--listen", "stdio://"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            cwd=cwd, start_new_session=True, close_fds=True)
+        self.buffer, self.serial = b"", 0
+
+    def __enter__(self):
+        try:
+            self.call("initialize", {"clientInfo": {"name": "bibimer-history", "version": VERSION},
+                      "capabilities": {"experimentalApi": True}})
+            self.process.stdin.write(b'{"method":"initialized","params":{}}\n')
+            self.process.stdin.flush()
+            return self
+        except BaseException:
+            self.__exit__(None, None, None)
+            raise
+
+    def call(self, method, params):
+        if method not in {"initialize", "thread/list", "thread/read"}:
+            raise Problem(400, "error_import_invalid")
+        try:
+            self.serial += 1
+            self.process.stdin.write((json.dumps({"id": self.serial, "method": method, "params": params}) + "\n").encode())
+            self.process.stdin.flush()
+            deadline = time.monotonic() + 8
+            while time.monotonic() < deadline:
+                if b"\n" not in self.buffer:
+                    if not select.select([self.process.stdout], [], [], 0.1)[0]:
+                        continue
+                    chunk = os.read(self.process.stdout.fileno(), 65536)
+                    if not chunk or len(self.buffer) + len(chunk) > 2 * 1024 * 1024:
+                        break
+                    self.buffer += chunk
+                    continue
+                line, self.buffer = self.buffer.split(b"\n", 1)
+                response = json.loads(line)
+                if response.get("id") != self.serial or "method" in response:
+                    continue
+                if "error" in response:
+                    code = "error_history_unsupported" if response["error"].get("code") == -32601 else "error_history"
+                    raise Problem(400, code)
+                return response["result"]
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+        raise Problem(400, "error_history")
+
+    def __exit__(self, *_):
+        with contextlib.suppress(OSError):
+            self.process.stdin.close()
+        try:
+            self.process.wait(timeout=0.5)
+        except subprocess.TimeoutExpired:
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait(timeout=1)
+        self.process.stdout.close()
+
+
+def import_spec(data):
+    thread_id, mode = data.get("source_thread_id"), data.get("import_mode")
+    if thread_id is None and mode is None:
+        return None
+    if (not isinstance(thread_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", thread_id) or
+            not isinstance(mode, str) or mode not in {"resume", "fork"} or data.get("agent") != "codex" or data.get("mode") != "chat"):
+        raise Problem(400, "error_import_invalid")
+    return {"source_thread_id": thread_id, "import_mode": mode}
+
+
 class ChatSession(Session):
     """One Codex app-server over stdio. Display content stays only in memory.
 
     Reuses the PTY session's scoped process stop, but never opens a PTY or
     derives messages by scraping a terminal screen. No arbitrary RPC passthrough.
     """
-    def __init__(self, project, agent, argv, cols, rows, launch_id, changed):
+    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, imported=None):
         self.id, self.launch_id = str(uuid.uuid4()), launch_id
         self.project, self.agent = project.copy(), agent
         self.cols, self.rows = cols, rows
         self.started_at = time.time()
         self.state, self.exit_code = "running", None
         self.turn_state, self.turn_id, self.thread_id = "initializing", None, None
+        self.imported, self.history_pending, self.persist_thread = imported, bool(imported), False
         self.condition = threading.Condition(threading.RLock())
         self.io_lock = threading.Lock()
         self.changed = changed
@@ -413,7 +496,8 @@ class ChatSession(Session):
         with self.condition:
             return {"id": self.id, "launch_id": self.launch_id, "project": self.project,
                     "agent": self.agent, "mode": "chat", "state": self.state,
-                    "ready": self.thread_id is not None,
+                    "ready": self.thread_id is not None and not self.history_pending,
+                    "external_thread_id": self.thread_id, **(self.imported or {}),
                     "turn_state": self.turn_state, "exit_code": self.exit_code,
                     "started_at": self.started_at, "output_start": self.floor,
                     "output_end": self.revision}
@@ -474,14 +558,22 @@ class ChatSession(Session):
 
     def _startup_deadline(self):
         with self.condition:
-            ready = self.condition.wait_for(lambda: self.thread_id is not None or self.state != "running", timeout=20)
+            ready = self.condition.wait_for(lambda: (self.thread_id is not None and not self.history_pending) or self.state != "running", timeout=20)
         if not ready:
-            self._fault("error_chat_start")
+            self._fault("error_import_failed" if self.imported else "error_chat_start")
 
     def _fault(self, code):
         with self.condition:
             self._put({"id": "connection-error", "kind": "notice", "code": code})
-        self.stop()
+            if self.state != "running":
+                return
+            self.state = "stopping"
+        # _handle may own the condition. Persist outside that lock to preserve
+        # the bridge -> session lock order used by health and launch.
+        def finish():
+            self.changed()
+            self._terminate()
+        threading.Thread(target=finish, daemon=True).start()
 
     def _watch(self):
         code = self.process.wait()
@@ -490,7 +582,7 @@ class ChatSession(Session):
         with self.io_lock:
             self.process.stdin.close()
         with self.condition:
-            if self.thread_id is None:
+            if self.thread_id is None and "connection-error" not in self.items:
                 self._put({"id": "connection-error", "kind": "notice", "code": "error_chat_start"})
             self.requests.clear()
             self.rpc_pending.clear()
@@ -501,18 +593,21 @@ class ChatSession(Session):
     def _read(self):
         try:
             while True:
-                line = self.process.stdout.readline(2 * 1024 * 1024 + 1)
+                line = self.process.stdout.readline(8 * 1024 * 1024 + 1)
                 if not line:
                     if self.state == "running" and self.process.poll() is None:
                         self._fault("error_chat_transport")
                     return
-                if len(line) > 2 * 1024 * 1024:
+                if len(line) > 8 * 1024 * 1024:
                     raise ValueError()
                 message = json.loads(line)
                 if not isinstance(message, dict):
                     raise ValueError()
                 with self.condition:
                     self._handle(message)
+                if self.persist_thread:
+                    self.persist_thread = False
+                    self.changed()
         except (OSError, ValueError, TypeError, KeyError, AttributeError, Problem):
             self._fault("error_chat_transport")
         finally:
@@ -525,6 +620,13 @@ class ChatSession(Session):
             if not kind:
                 return
             if "error" in message:
+                if kind == "import":
+                    self._fault("error_import_failed")
+                    return
+                if kind == "history":
+                    self.history_pending, self.turn_state = False, "ready"
+                    self._put({"id": "history-preview", "kind": "notice", "code": "history_preview_unavailable"})
+                    return
                 self._put({"id": str(uuid.uuid4()), "kind": "notice", "code": "error_chat_start" if kind in {"initialize", "thread"} else "error_chat_transport",
                            "text": self._text(message["error"].get("message"))})
                 if kind in {"initialize", "thread"} or (kind == "turn" and self.turn_id is None):
@@ -536,11 +638,30 @@ class ChatSession(Session):
                 self._send({"method": "initialized", "params": {}})
                 # Inherit the user's model and permission settings; never disable
                 # sandboxing to make an unsupported Android configuration work.
-                self._rpc("thread/start", {"cwd": self.project["path"], "ephemeral": True}, "thread")
-            elif kind == "thread":
+                if self.imported:
+                    self._rpc("thread/" + self.imported["import_mode"],
+                        {"threadId": self.imported["source_thread_id"], "excludeTurns": True}, "import")
+                else:
+                    self._rpc("thread/start", {"cwd": self.project["path"], "ephemeral": True}, "thread")
+            elif kind in {"thread", "import"}:
+                if kind == "import" and Path(result["thread"].get("cwd") or "/").resolve() != Path(self.project["path"]).resolve():
+                    self._fault("error_import_project")
+                    return
                 self.thread_id = result["thread"]["id"]
-                self.turn_state = "ready"
+                self.persist_thread = True
+                if kind == "import":
+                    self._rpc("thread/items/list", {"threadId": self.thread_id, "sortDirection": "desc", "limit": 50}, "history")
+                else:
+                    self.turn_state = "ready"
                 self._bump()
+            elif kind == "history":
+                for entry in reversed(result.get("data", [])):
+                    source = dict(entry["item"])
+                    if source.get("status") == "inProgress":
+                        source["status"] = "interrupted"
+                    self._item(source, entry["turnId"], True)
+                self.history_pending, self.turn_state = False, "ready"
+                self._put({"id": "history-preview", "kind": "notice", "code": "history_imported"})
             elif kind == "turn" and self.turn_state == "sending":
                 self.turn_id = result["turn"]["id"]
                 self.turn_state = "running"
@@ -738,6 +859,7 @@ class Bridge:
         self.state = private_dir(state)
         state = self.state
         self.lock = threading.RLock()
+        self.history_lock = threading.Lock()
         self.instance = str(uuid.uuid4())
         self.token = read_json(state / "token.json")
         if not self.token:
@@ -810,7 +932,7 @@ class Bridge:
             return {"version": VERSION, "protocol": 1, "instance": self.instance,
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, session=self.snapshot_for(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -897,6 +1019,51 @@ class Bridge:
             self.persist()
             return self.project
 
+    def history_call(self, project, method, params):
+        executable = shutil.which("codex")
+        if not executable:
+            raise Problem(400, "error_program_missing")
+        # A catalog request must not hold up session input, events or health.
+        if not self.history_lock.acquire(blocking=False):
+            raise Problem(409, "error_history")
+        try:
+            with HistoryClient(executable, project["path"]) as client:
+                return client.call(method, params)
+        except OSError:
+            raise Problem(400, "error_history") from None
+        finally:
+            self.history_lock.release()
+
+    def session_history(self, data):
+        with self.lock:
+            project_id = data.get("project_id")
+            if not isinstance(project_id, str) or project_id not in self.projects:
+                raise Problem(404, "error_project_missing")
+            project = dict(self.projects[project_id])
+        search, cursor = data.get("search", ""), data.get("cursor")
+        if (not isinstance(search, str) or len(search) > 200 or
+                (cursor is not None and (not isinstance(cursor, str) or len(cursor) > 2048))):
+            raise Problem(400, "error_import_invalid")
+        params = {"cwd": project["path"], "limit": 25, "sortKey": "updated_at",
+                  "sortDirection": "desc", "sourceKinds": ["cli", "vscode", "appServer"],
+                  "archived": False, "modelProviders": []}
+        if search.strip():
+            params["searchTerm"] = search.strip()
+        if cursor:
+            params["cursor"] = cursor
+        result = self.history_call(project, "thread/list", params)
+        entries = []
+        for entry in result.get("data", [])[:25]:
+            # Read only saved threads for this project, even if an older server
+            # ignores the filter. Send a bounded preview, never a full rollout.
+            if (entry.get("ephemeral") or not isinstance(entry.get("id"), str) or
+                    not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", entry["id"]) or
+                    Path(entry.get("cwd") or "/").resolve() != Path(project["path"]).resolve()):
+                continue
+            entries.append({"id": entry["id"], "title": (entry.get("name") or entry.get("preview") or "")[:240],
+                            "updated_at": entry.get("updatedAt"), "source": entry.get("source")})
+        return {"sessions": entries, "next_cursor": result.get("nextCursor"), "project_id": project_id}
+
     def launch(self, data):
         key = request_id(data.get("request_id"))
         cols = integer(data.get("cols", 80), 20, 300)
@@ -907,7 +1074,9 @@ class Bridge:
             raise Problem(400, "error_chat_mode")
         if agent not in {"shell", "codex", "claude"}:
             raise Problem(400, "error_program")
-        with self.lock:
+        imported = import_spec(data)
+
+        def target():
             if self.closing:
                 raise Problem(409, "error_bridge_stopping")
             project_id = data.get("project_id", self.active_project_id)
@@ -920,20 +1089,45 @@ class Bridge:
                 if other and other.get("launch_id") == key and key_id != project_id:
                     raise Problem(409, "error_launch_conflict")
             if current and current.get("launch_id") == key:
-                if current["agent"] != agent or current.get("mode", "terminal") != mode:
+                if (current["agent"] != agent or current.get("mode", "terminal") != mode or
+                        any(current.get(field) != (imported or {}).get(field) for field in ("source_thread_id", "import_mode"))):
                     raise Problem(409, "error_launch_conflict")
-                return current
+                return project_id, project, current
             owned = self.sessions.get(project_id)
             if owned and owned.state in ACTIVE:
                 raise Problem(409, "error_session_exists")
             if not project:
                 raise Problem(400, "error_project_required")
+            return project_id, project, None
+
+        with self.lock:
+            project_id, project, current = target()
+            if current:
+                return current
+            # Pin the selected project while a separate read-only process validates
+            # the source. A later UI project switch cannot redirect this launch.
+            data = dict(data, project_id=project_id)
+            project = dict(project)
+        if imported:
+            result = self.history_call(project, "thread/read", {"threadId": imported["source_thread_id"], "includeTurns": False})
+            source = result.get("thread", {})
+            if source.get("id") != imported["source_thread_id"] or source.get("ephemeral"):
+                raise Problem(400, "error_import_invalid")
+            if Path(source.get("cwd") or "/").resolve() != Path(project["path"]).resolve():
+                raise Problem(400, "error_import_project")
+            if imported["import_mode"] == "resume" and (source.get("status") or {}).get("type") == "active":
+                raise Problem(409, "error_import_active")
+        with self.lock:
+            project_id, project, current = target()
+            if current:
+                return current
             executable = shutil.which("bash") or shutil.which("sh") if agent == "shell" else shutil.which(agent)
             if not executable:
                 raise Problem(400, "error_program_missing")
             argv = [executable, "-i"] if agent == "shell" else [executable]
             try:
-                session = (ChatSession if mode == "chat" else Session)(project, agent, argv, cols, rows, key, self.persist)
+                session = (ChatSession if mode == "chat" else Session)(project, agent, argv, cols, rows, key, self.persist,
+                    **({"imported": imported} if mode == "chat" else {}))
             except OSError:
                 raise Problem(400, "error_launch_failed") from None
             self.sessions[project_id] = session
@@ -1083,6 +1277,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = {"project": bridge.register(data)}
         elif method == "POST" and parsed.path == "/v1/folders":
             result = bridge.folders(data)
+        elif method == "POST" and parsed.path == "/v1/session-history":
+            result = bridge.session_history(data)
         elif method == "POST" and parsed.path == "/v1/sessions":
             result = {"session": bridge.launch(data)}
         elif method == "POST" and parsed.path == "/v1/shutdown":

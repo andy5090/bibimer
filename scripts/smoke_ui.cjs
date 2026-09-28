@@ -85,7 +85,7 @@ async function main() {
       // Browser-only stand-in for native preferences; Android persistence is
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.4.0'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.5.0'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       cancelPoll:()=>{}, request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),
@@ -465,6 +465,67 @@ async function main() {
     await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
     console.log('PASS: Enter sends, Shift/Ctrl/Meta+Enter newline, selection replacement, IME/repeat/busy guards; project switches preserve approval and question drafts; structured chat, formatting and interrupt; no model task sent');
+    const beforeImport = fs.readFileSync(path.join(temporary,'project/turn-count'),'utf8');
+    await page.locator('#import-session').click();
+    await page.locator('.import-entry').waitFor();
+    assert.equal(await page.locator('#import-mode').inputValue(),'fork');
+    assert.equal(await page.locator('#import-confirm').isDisabled(),true);
+    await page.locator('#import-search').fill('missing title');
+    await page.locator('#import-refresh').click();
+    await page.waitForFunction(()=>document.querySelector('#import-status').textContent.includes('일치하는 제목'));
+    assert.equal(await page.locator('.import-entry').count(),0);
+    await page.locator('#import-search').fill('unsupported');
+    await page.locator('#import-refresh').click();
+    await page.waitForFunction(()=>document.querySelector('#import-status').textContent.includes('Codex를 업데이트'));
+    await page.locator('#import-search').fill('');
+    await page.locator('#import-refresh').click();
+    await page.locator('.import-entry').waitFor();
+    await page.locator('#import-more').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.import-entry').length===2);
+    assert.equal(await page.locator('.import-entry b').count(),0);
+    assert.ok((await page.locator('.import-entry').last().textContent()).includes('<b>literal</b>'));
+    await page.locator('.import-entry').first().click();
+    await page.setViewportSize({width:360,height:460});
+    await page.locator('#import-confirm').scrollIntoViewIfNeeded();
+    const importBox = await page.locator('#import-confirm').boundingBox();
+    assert.ok(importBox.y>=0 && importBox.y+importBox.height<=460);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await page.screenshot({path:path.join(root,'dist/screenshots/import-ko.png')});
+    await page.locator('#import-confirm').click();
+    await page.locator('#import-dialog').waitFor({state:'hidden'});
+    await page.waitForFunction(()=>!document.querySelector('#input').disabled);
+    await page.waitForFunction(()=>document.querySelector('#conversation').textContent.includes('Restored context'));
+    assert.equal(fs.readFileSync(path.join(temporary,'project/turn-count'),'utf8'),beforeImport);
+    assert.equal(await page.locator('.request-card').count(),0);
+    const imported = (await call('GET','/v1/health')).data.session;
+    assert.equal(imported.external_thread_id,'saved-one-copy');
+    assert.equal(imported.import_mode,'fork');
+    assert.equal(await page.locator('#conversation .assistant .code-block').count(),1);
+    await page.setViewportSize({width:393,height:780});
+    await page.locator('#input').fill('Continue imported context');
+    await page.locator('#input').press('Enter');
+    await page.waitForFunction(()=>document.querySelector('#conversation').textContent.includes('Continue imported context'));
+    await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+    await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+    await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
+    await page.locator('#tab-setup').click(); await page.locator('#language').selectOption('en'); await page.locator('#tab-work').click();
+    await page.locator('#import-session').click();
+    await page.locator('.import-entry').waitFor();
+    await page.screenshot({path:path.join(root,'dist/screenshots/import-en.png')});
+    await page.locator('#import-cancel').click();
+    // A reply from a closed picker must not repopulate a newly opened picker.
+    let releaseImport, importEntered;
+    const catalogEntered = new Promise(resolve=>{importEntered=resolve;});
+    heldReply = {endpoint:'/v1/session-history',entered:importEntered,promise:new Promise(resolve=>{releaseImport=resolve;})};
+    await page.locator('#import-session').click(); await catalogEntered;
+    await page.locator('#import-cancel').click();
+    await page.locator('#import-session').click(); await page.locator('.import-entry').waitFor();
+    await page.locator('#import-search').fill('no match'); await page.locator('#import-refresh').click();
+    await page.waitForFunction(()=>document.querySelector('#import-status').textContent.includes('No matching titles'));
+    releaseImport(); await delay(100);
+    assert.equal(await page.locator('.import-entry').count(),0);
+    await page.locator('#import-cancel').click();
+    console.log('PASS: Codex import search, pagination, errors, literal titles, copy default, restored rich history, no automatic turn/approval, follow-up, canceled stale replies and English/Korean mobile layouts');
   }
   if (process.argv.includes('--probe-codex')) {
     await page.locator('#agent').selectOption('codex');

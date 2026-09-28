@@ -24,7 +24,8 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 | `GET /v1/health` | 인스턴스, 전체 프로젝트·세션 상태, 선택 프로젝트, 프로그램 탐지 | 없음 |
 | `POST /v1/project` | 폴더 추가·선택 | 추가: `path`, `create`, `add: true`; 전환: `project_id` |
 | `POST /v1/folders` | Termux 하위 폴더 탐색, 상태 변경 없음 | `path` (기본 `~`), `hidden` (기본 false), `after` (다음 페이지의 이름 커서) |
-| `POST /v1/sessions` | 지정 프로젝트의 세션 시작 | `project_id`, `agent` (`shell`, `codex`, `claude`), `mode` (`terminal` 기본 / `chat`), `request_id`, `cols`, `rows` |
+| `POST /v1/session-history` | 현재 프로젝트의 저장된 Codex 세션 조회 | `project_id`, `search` (제목), `cursor` |
+| `POST /v1/sessions` | 지정 프로젝트의 세션 시작·가져오기 | `project_id`, `agent` (`shell`, `codex`, `claude`), `mode` (`terminal` 기본 / `chat`), `request_id`, `cols`, `rows`; 가져오기: `source_thread_id`, `import_mode` (`fork` / `resume`), `agent: codex`, `mode: chat` |
 | `GET /v1/sessions/{id}/events` | 출력 및 실제 프로세스 상태 | `cursor` (PTY 바이트 위치 / Chat 변경 번호), `wait` (0~20초) |
 | `POST /v1/sessions/{id}/input` | 입력 바이트 전송 | `data` (base64), `request_id` (UUID) |
 | `POST /v1/sessions/{id}/resize` | PTY 크기 변경 | `cols` (20~300), `rows` (4~200) |
@@ -81,3 +82,15 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 Chat 이벤트의 파일 변경에는 `changes: [{path, diff}]`와 `truncated`, 계획에는 `steps: [{step, status}]`와 `explanation`을 전달한다. 이전 UI용 `text`도 유지한다. 파일별 diff 미리보기는 경로·변경 문자열을 합쳐 약 32Ki 문자로 제한하며 잘림을 표시한다. 에이전트가 제공한 요약에는 `summary: true`를 붙여 계획과 표시를 구분한다. 이 내용은 기존 메모리 출력 한도에 포함되며 디스크 메타데이터에는 저장하지 않는다.
 
 `rich-text.js`는 고정 버전 marked의 lexer 토큰을 DOM 요소로 바꾸고 코드만 highlight.js로 강조한다. HTML·이미지·외부 콘텐츠는 대화 DOM에서 실행하거나 자동 로드하지 않는다. 명시적인 HTTP(S) 링크 클릭은 URL 형식을 JavaScript와 네이티브에서 확인한 뒤 외부 브라우저로 전달한다. 내부 WebView의 탐색 차단과 고정 asset 허용 목록은 유지한다. 파일 경로 링크는 복사 기능만 제공한다.
+
+## 저장된 Codex 세션 (0.5.0)
+
+`import_codex_session` 기능을 health에 광고한다. `HistoryClient`는 프로젝트 cwd에서 별도 App Server를 열고 초기화한 뒤 `thread/list` 또는 `thread/read`만 호출하며 끝나면 종료한다. 전역 세션 잠금을 보유하지 않아 목록 조회가 다른 프로젝트의 입력·상태 폴링을 막지 않는다. 조회는 동시에 하나만 허용하고 RPC당 8초·응답 2MiB로 제한한다.
+
+목록은 cwd 일치·비보관·비임시 세션, CLI·VS Code·App Server 출처, 모든 모델 제공자를 대상으로 최근 수정 순 25개와 다음 커서를 반환한다. 제목은 240자로 제한하고 내용은 저장하지 않는다. 시작 시 목록의 경로나 제목을 신뢰하지 않고 `thread/read(includeTurns: false)`로 ID·cwd·저장 여부를 재검증한다. 조회 전후에 해당 프로젝트의 실행 상태·요청 중복을 확인하므로 동시에 시작한 세션을 덮어쓰지 않는다. 가져오는 동안 프로젝트가 변경되어도 원래 프로젝트로 실행한다.
+
+가져오기 ChatSession은 `thread/resume` 또는 `thread/fork`를 `excludeTurns: true`로 호출하고 모델·권한·cwd 설정을 덮어쓰지 않는다. 실제 응답의 cwd도 다시 확인한다. 이후 `thread/items/list(limit: 50, sortDirection: desc)`를 읽어 시간 순으로 표시한다. 기록의 `inProgress` 항목은 중단 상태로 표시하고 승인 RPC로 재구성하지 않는다. 미리보기만 실패하면 안내 후 입력을 허용하며, 복원이 실패하면 이번에 만든 프로세스만 종료한다. 초기화·미리보기까지 20초 안에 완료되지 않으면 오류로 종료한다.
+
+`source_thread_id`, `import_mode`, `external_thread_id`만 기존 세션 메타데이터에 추가한다. 원본·복사본은 Codex의 영속 기록이며 기본 새 Chat의 `ephemeral: true`와 구분한다. Bibimer의 대화 미리보기·새 출력은 기존 메모리 한도만 유지한다. 외부 CLI 활성 상태를 완전히 탐지할 수 없으므로 복사가 기본이며 원본 이어하기는 외부 작업을 마친 뒤 선택하도록 안내한다. 실행 중인 PTY 연결·Claude 가져오기·전체 기록 탐색은 구현하지 않았다.
+
+프로토콜 근거: [Codex App Server 공식 문서](https://learn.chatgpt.com/docs/app-server). 현재 폰의 Codex 0.156.1 생성 JSON Schema와 실제 RPC로 목록·읽기·복사·원본 이어하기를 확인했다. 실제 프로브는 새로 만든 테스트 스레드에 통제된 항목만 주입하고 모델 턴을 시작하지 않았으며 해당 테스트 기록만 보관 처리했다.

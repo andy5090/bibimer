@@ -7,6 +7,13 @@ thread, turn, pending = "test-thread", None, None
 count = 0
 
 
+def saved(key):
+    return {"id": key, "name": "Saved workspace" if key == "saved-one" else "Earlier fix <b>literal</b>",
+            "preview": "Private saved preview", "cwd": str(Path.cwd() / "other") if key == "foreign" else str(Path.cwd()),
+            "ephemeral": key == "temporary", "updatedAt": 1790564400, "source": "cli",
+            "status": {"type": "active" if key == "active" else "notLoaded"}}
+
+
 def emit(value):
     print(json.dumps(value, ensure_ascii=False), flush=True)
 
@@ -33,7 +40,40 @@ for line in sys.stdin:
         assert params["ephemeral"] is True
         assert "sandbox" not in params and "approvalPolicy" not in params
         emit({"id": message["id"], "result": {"thread": {"id": thread}}})
+    elif method == "thread/list":
+        assert params["cwd"] == str(Path.cwd()) and params["limit"] == 25
+        assert params["sourceKinds"] == ["cli", "vscode", "appServer"]
+        assert params["modelProviders"] == []
+        if params.get("searchTerm") == "unsupported":
+            emit({"id": message["id"], "error": {"code": -32601, "message": "Unsupported"}})
+            continue
+        data = [saved("saved-two")] if params.get("cursor") else [saved("saved-one")]
+        data = [entry for entry in data if params.get("searchTerm", "") in entry["name"]]
+        emit({"id": message["id"], "result": {"data": data, "nextCursor": None if params.get("cursor") or not data else "page-2"}})
+    elif method == "thread/read":
+        assert params["includeTurns"] is False
+        emit({"id": message["id"], "result": {"thread": saved(params["threadId"])}})
+    elif method in {"thread/resume", "thread/fork"}:
+        assert set(params) == {"threadId", "excludeTurns"} and params["excludeTurns"] is True
+        if params["threadId"] == "import-failure":
+            emit({"id": message["id"], "error": {"code": -32603, "message": "Do not expose private failure detail"}})
+            continue
+        thread = params["threadId"] + ("-copy" if method == "thread/fork" else "")
+        emit({"id": message["id"], "result": {"thread": {**saved(thread), "turns": []}}})
+    elif method == "thread/items/list":
+        assert params == {"threadId": thread, "sortDirection": "desc", "limit": 50}
+        if thread.startswith("no-preview"):
+            emit({"id": message["id"], "error": {"code": -32601, "message": "Unsupported preview"}})
+            continue
+        history = [
+            {"id": "old-user", "type": "userMessage", "content": [{"type": "text", "text": "Saved private prompt"}]},
+            {"id": "old-reply", "type": "agentMessage", "text": "## Restored context\n**Saved** reply\n```python\nprint('restored')\n```"},
+            {"id": "old-command", "type": "commandExecution", "command": "old command", "aggregatedOutput": "saved output", "status": "inProgress"},
+            {"id": "old-approval", "type": "approvalRequest", "command": "never execute"},
+        ]
+        emit({"id": message["id"], "result": {"data": [{"turnId": "old-turn", "item": entry} for entry in reversed(history)], "nextCursor": "older-history"}})
     elif method == "turn/start":
+        assert params["threadId"] == thread
         count += 1
         Path("turn-count").write_text(str(count))
         turn = "turn-" + str(count)

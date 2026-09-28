@@ -49,7 +49,9 @@
         <label class="sr-only" for="agent" data-i18n="program_label">Program to run</label>
         <select id="agent"><option value="shell">Terminal</option></select>
         <button id="launch" class="primary" data-i18n="start_session">Start session</button>
+        <button id="import-session" class="secondary" data-i18n="import_session">Import session</button>
       </div>
+      <p id="import-update" class="mode-hint" data-i18n="import_update" hidden>Update the bridge to import saved Codex sessions.</p>
       <p id="mode-hint" class="mode-hint"></p>
       <div id="chat-panel" hidden><div id="chat-empty" data-i18n="chat_empty">Send a message to start working with Codex.</div><div id="conversation" role="log" aria-label="Conversation" data-i18n-aria-label="chat_conversation"></div><button id="chat-latest" class="secondary" data-i18n="chat_latest" hidden>Jump to latest ↓</button><div id="chat-requests"></div></div>
       <div id="chat-state" hidden><span id="turn-status" role="status"></span><button id="interrupt-turn" class="quiet" data-i18n="chat_interrupt">Interrupt response</button></div>
@@ -109,7 +111,7 @@
       <button data-command="restart" class="quiet" data-i18n="copy_restart">Copy bridge restart command</button>
       <button id="forget" class="quiet" data-i18n="forget">Forget this app's connection</button>
     </section>
-    <p id="version" class="version">Bibimer 0.4.0 · Termux on this phone</p>
+    <p id="version" class="version">Bibimer 0.5.0 · Termux on this phone</p>
   </main>
   <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button></nav>
   <dialog id="folder-dialog" aria-labelledby="folder-title">
@@ -122,6 +124,17 @@
     <p id="folder-status" role="status"></p>
     <div class="button-row"><button id="folder-more" class="quiet" data-i18n="folder_more" hidden>Load more</button><button id="folder-retry" class="quiet" data-i18n="folder_retry" hidden>Try again</button></div>
     <div class="button-row folder-actions"><button id="folder-cancel" class="secondary" data-i18n="cancel_project">Cancel</button><button id="folder-select" class="primary" data-i18n="folder_select">Select folder</button></div>
+  </dialog>
+  <dialog id="import-dialog" aria-labelledby="import-title">
+    <div class="import-heading"><div><span class="eyebrow">CODEX</span><h2 id="import-title" data-i18n="import_session">Import session</h2></div><button id="import-cancel" class="quiet" data-i18n="cancel_project">Cancel</button></div>
+    <p id="import-project"></p>
+    <form id="import-search-form" class="folder-input"><input id="import-search" type="search" maxlength="200" autocomplete="off" data-i18n-placeholder="import_search" data-i18n-aria-label="import_search" placeholder="Search titles (case-sensitive)"><button id="import-refresh" class="secondary" type="submit" data-i18n="import_search_button">Search</button></form>
+    <div id="import-entries" role="group" data-i18n-aria-label="import_saved" aria-label="Saved sessions"></div>
+    <div class="import-status-row"><p id="import-status" role="status"></p><button id="import-more" class="quiet" data-i18n="folder_more" hidden>Load more</button></div>
+    <label for="import-mode" data-i18n="import_method">Import method</label>
+    <select id="import-mode"><option value="fork" data-i18n="import_fork">Import a copy</option><option value="resume" data-i18n="import_resume">Continue original</option></select>
+    <p class="hint" data-i18n="import_hint">Restores saved context, not a live terminal. Use a copy if the original is open in another CLI. No new work starts until you send a message.</p>
+    <button id="import-confirm" class="primary" data-i18n="import_selected" disabled>Import selected session</button>
   </dialog>
   <dialog id="stop-dialog"><h2 data-i18n="stop_title">Stop this session?</h2><p data-i18n="stop_body">This stops the agent and commands running in this session.</p><div class="button-row"><button id="cancel-stop" class="secondary" data-i18n="stop_cancel">Keep working</button><button id="confirm-stop" class="danger" data-i18n="stop_confirm">Stop session</button></div></dialog>
 </div>
