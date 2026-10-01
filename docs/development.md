@@ -80,6 +80,13 @@ node scripts/smoke_rendering.cjs
 
 UI 테스트는 임시 폴더의 실제 브리지에 연결하며 Android 네이티브 API를 명시적인 테스트 어댑터로 대체한다. 한국어 브라우저 로캘에서도 영어로 시작하는지, 한국어 전환·저장값 복원, 오류 번역과 0.1.0 응답 호환, 언어 전환 시 세션·입력 유지까지 확인한다. 어댑터의 설정 저장은 브라우저 테스트용이며 실제 앱의 Android 환경 설정 저장을 검증한 것은 아니다. 화면 캡처는 통제된 셸 출력과 모의 대화만 포함하고 `dist/screenshots/*-en.png`, `*-ko.png`에 저장한다. 실제 앱의 Keystore, WebView 리소스 로딩, 기기 간 앱 격리 경계는 APK로 따로 확인해야 한다.
 
+## 2026-10-02 Settings·Enter 동작 검증 (소스 반영 / 빌드 대기)
+
+- 별도 Settings와 언어 선택 이동, Enter 기본 줄바꿈·보내기 선택 및 저장 실패 시 이전 선택 유지를 구현했다. `InputPreferences`의 Android 저장값은 `newline`/`send`만 허용하며 기본값은 `newline`이다. 인증·프로젝트·세션과 독립적이다.
+- `node scripts/smoke_ui.cjs` 통과. 연결 전 설정, 영어/한국어, 두 선택의 재로드 복원, PTY·Chat 선택 영역 줄바꿈, IME 보호, 설정 왕복 후 초안·실행 세션 유지, 응답 중 Enter 오전송 없음과 Queue 버튼·보내기 선택 후 Enter 추가를 검증했다. 기존 멀티 프로젝트·가져오기·세 제공자·승인·대기열·Steer 검증도 통과했다.
+- 기존 렌더러 검증 통과. 320/360/393×460 Settings에서 가로 넘침 없이 두 선택 메뉴와 하단 내비게이션이 표시되고, 저장값 누락·알 수 없는 값은 줄바꿈으로 처리되는지 추가 확인했다.
+- Android API 36 jar와 기존 생성 R.java를 이용한 Java 소스 컴파일 통과. APK 패키징·빌드·설치, 운영 브리지 재시작은 하지 않았다. 브라우저 설정 저장은 네이티브 API 대역이므로 실제 Android SharedPreferences·WebView·소프트 키보드/IME 검증은 다음 요청 빌드 후 필요하다.
+
 ## 2026-10-01 Queue·Steer 검증 (소스 반영 / 빌드 대기)
 
 - Python 통합 67개 통과. 대기열 FIFO·취소·용량·중복·프로젝트 격리·승인 보존·실패/중단 후 재개·내용 미저장·Claude/OpenCode 연속 실행과 Codex Steer 응답 확인·거절·시간 초과 검증 포함. 최종 대기열 테스트 6개로 응답 유실 후 후속 작업 재개도 확인했다.
@@ -148,7 +155,7 @@ UI 테스트는 임시 폴더의 실제 브리지에 연결하며 Android 네이
 - [Android 앱 샌드박스](https://source.android.com/docs/security/app-sandbox): 앱마다 UID·권한을 분리하므로 앱이 Termux 전용 데이터를 직접 읽는 것으로 가정하지 않는다. 폴더 목록은 인증된 로컬 브리지가 Termux 권한으로 읽는다. 이 경계의 실제 WebView 동작은 APK로 별도 확인한다.
 
 - [MDN keydown과 IME](https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event#keydown_events_with_ime): 조합 시작·종료 경계에서는 `isComposing`과 IME 키 코드 229를 함께 확인한다. 구현은 브라우저 합성 이벤트로 확인했으며 기기의 실제 조합 동작은 별도 검증한다.
-- [MDN enterkeyhint](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/enterkeyhint): 공통 입력창의 가상 키보드 동작 힌트를 `send`로 설정한다. 표시 방식은 키보드와 사용자 언어에 따라 달라질 수 있다.
+- [MDN enterkeyhint](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/enterkeyhint): 공통 입력창의 가상 키보드 동작 힌트는 기본 `enter`이며 보내기 설정을 선택하면 `send`로 바뀐다. 표시 방식은 키보드와 사용자 언어에 따라 달라질 수 있다.
 - [Termux RUN_COMMAND Intent](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent): 외부 실행에는 별도 권한과 `allow-external-apps` 설정이 필요하다. 첫 버전은 수동 설정 파일 실행을 사용하며 해당 권한을 요구하지 않는다.
 - [Android 앱 내 콘텐츠 로드](https://developer.android.com/develop/ui/views/layout/webapps/load-local-content): 앱에 포함한 리소스를 사용한다. 이 구현은 허용 목록의 리소스만 `shouldInterceptRequest`로 제공한다.
 - [Android WebView 네이티브 브리지](https://developer.android.com/privacy-and-security/risks/insecure-webview-native-bridges): 외부 콘텐츠가 JavaScript 인터페이스에 접근하지 못하도록 탐색·파일 접근·외부 리소스를 차단한다.

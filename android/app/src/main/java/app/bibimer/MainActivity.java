@@ -45,6 +45,7 @@ public final class MainActivity extends Activity {
     private TokenStore tokens;
     private AppLanguage language;
     private AgentPreferences agentPreferences;
+    private InputPreferences inputPreferences;
     private LocalBridge bridge;
     private volatile boolean destroyed;
 
@@ -53,6 +54,7 @@ public final class MainActivity extends Activity {
         tokens = new TokenStore(this);
         language = new AppLanguage(this);
         agentPreferences = new AgentPreferences(this);
+        inputPreferences = new InputPreferences(this);
         bridge = new LocalBridge(tokens);
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(17, 20, 23));
@@ -133,12 +135,17 @@ public final class MainActivity extends Activity {
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
                     .put("agentOptions", agentPreferences.get())
+                    .put("enterBehavior", inputPreferences.getEnterBehavior())
                     .put("version", "0.8.2").toString();
             } catch (Exception ignored) { return "{}"; }
         }
 
         @JavascriptInterface public boolean setLanguage(String value) {
             return language.set(value);
+        }
+
+        @JavascriptInterface public boolean setEnterBehavior(String value) {
+            return inputPreferences.setEnterBehavior(value);
         }
 
         @JavascriptInterface public boolean setAgentOptions(String agent, String value) {

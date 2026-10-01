@@ -39,12 +39,20 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 - 실제 기기 검증 결과에 따라 구현 구조를 조정한다.
 - Termux와 개발 도구가 없는 사용자를 위해 앱 내 설치 안내·설정 파일·실행 명령 가이드를 제공한다. 새 기기에서 설치부터 실행까지 완주하는지는 나중에 실제 확인한다.
 - 첫 구현 스택: Java Android 앱 + 앱에 포함한 WebView/xterm.js 화면, Python 표준 라이브러리 HTTP 브리지, PTY. 현재 기기에서 APK를 직접 빌드하는 경로를 확보했다.
-- 기본 표시 언어는 영어이며 한국어를 추가 지원한다. 기기 언어와 관계없이 영어로 시작하고 **Setup → Language → 한국어**에서 선택한 언어를 저장한다. 사용자와의 설명·프로젝트 문서는 한국어를 유지한다.
+- 기본 표시 언어는 영어이며 한국어를 추가 지원한다. 기기 언어와 관계없이 영어로 시작하고 **Settings → Language → 한국어**에서 선택한 언어를 저장한다(소스 기준, 배포 0.8.2는 Setup). 사용자와의 설명·프로젝트 문서는 한국어를 유지한다.
+
+## 빌드 대기: 별도 Settings·Enter 기본 줄바꿈 (2026-10-02)
+
+- 사용자 요청으로 **Work / Setup / Settings** 하단 내비게이션과 별도 설정 페이지를 추가했다. **Language(언어)**도 Setup에서 Settings로 옮겼다. 연결 전에도 사용할 수 있고 Settings 왕복은 실행 세션·작성 중인 입력을 유지한다. 권한·Fast는 입력창 아래에 유지한다.
+- **Settings → Enter key**에서 **New line(줄바꿈)** 또는 **Send(보내기)**를 선택한다. 기본은 줄바꿈이며 기존 설치본에서도 저장한 선택이 없으면 줄바꿈이다. `InputPreferences`가 Android 전용 환경 설정에 저장해 프로젝트·세션·앱 재실행에 공통 적용한다. 저장 실패는 이전 동작·선택으로 되돌리고 영어/한국어 오류를 표시한다.
+- Chat·PTY 아래 공통 입력창에 적용한다. 줄바꿈 모드는 Send/Queue 버튼으로 전송하며 보내기 모드의 Enter는 전송 또는 응답 중 대기열 추가다. Shift/Ctrl/Meta/Alt+Enter는 항상 줄바꿈하며 한글 조합·키 코드 229·반복 전송 방지는 유지한다. 키보드 힌트도 `enter`/`send`로 바뀐다. PTY 직접 입력·특수 Enter 키는 기존 동작을 유지한다.
+- UI 통합·기존 렌더러 테스트 통과. 두 선택 저장/재로드, 저장 실패 복원/번역, Settings 전환 후 초안·세션 유지, Chat/PTY 줄바꿈·선택 영역 치환·IME 보호, 응답 중 오전송 없음과 Queue/Steer, 기존 멀티 프로젝트·세 제공자·가져오기/승인을 확인했다. 320/360/393×460 설정 화면과 저장값 누락·잘못된 값 기본 처리도 확인했다. 로그는 `.tools/ui-enter-settings.log`, `.tools/render-enter-settings.log`, 미리보기는 `dist/screenshots/app-settings-*-en.png`, `app-settings-*-ko.png`다.
+- Android Java 소스 컴파일 통과. **APK 미빌드·버전 유지·운영 브리지 미변경**이며 마지막 배포 파일은 **0.8.2/code 15**다. 이번 UI 설정은 브리지 변경이 필요 없다. 이전 Queue/Steer 변경은 여전히 브리지 적용 대기다. 실제 Android 설정 저장·앱 재실행·WebView 키보드/한글 조합 동작은 다음 빌드 후 확인한다.
 
 ## 빌드 대기: Project Add·Full Access / 응답 중 Queue·Steer (2026-10-01)
 
 - 표기 요청을 반영해 프로젝트 추가 버튼을 **Project Add / 프로젝트 추가**, Codex YOLO 선택 문구를 **Full Access / 전체 접근**으로 바꿨다. 내부 `yolo` 값과 권한 동작은 유지한다.
-- Chat 응답 중에도 작성하고 Enter 또는 **Queue(대기열)**로 전송할 수 있다. 입력창 위 대기 목록·개별 취소·중단/실패 후 **Resume queue**를 제공한다. Codex에는 **Steer(방향 수정)** 버튼으로 현재 턴에 추가 지시를 전달한다. Claude·OpenCode는 Queue를 사용한다. Ctrl/Shift+Enter·IME 보호와 프로젝트별 초안 유지도 검증했다.
+- Chat 응답 중에도 작성하고 **Queue(대기열)**로 전송할 수 있다. Enter 전송은 이후 추가한 Settings에서 보내기를 선택한 경우에 동작한다. 입력창 위 대기 목록·개별 취소·중단/실패 후 **Resume queue**를 제공한다. Codex에는 **Steer(방향 수정)** 버튼으로 현재 턴에 추가 지시를 전달한다. Claude·OpenCode는 Queue를 사용한다. Ctrl/Shift+Enter·IME 보호와 프로젝트별 초안 유지도 검증했다.
 - 브리지의 인증된 세션별 `queue`(add/remove/resume)·`steer` API와 `chat_queue`·`codex_steer` 기능 플래그를 추가했다. 최대 16건·건당 UTF-8 16KiB, FIFO·중복 방지·잘못된 입력/세션/턴 거절을 적용한다. 다음 작업을 시작할 때 현재 세션 권한·Fast를 사용하며 승인 요청은 그대로 둔다. 시작 거절 항목은 실패 상태로 남기고 중단/실패 이후 자동 진행하지 않는다.
 - 대기 내용은 브리지 메모리에만 두며 앱 재실행·프로젝트 전환 후 events로 복원한다. 에이전트 종료·브리지 종료 시에는 사라진다. 디스크 snapshot에는 내용 없이 건수·상태만 들어가며 브리지 재시작 시 건수·턴 ID도 초기화한다. 앱도 재시작 전 변경 번호·대기 목록을 초기화하고 대기열 유실을 알린다.
 - Codex는 네이티브 `turn/steer`에 `expectedTurnId`를 보내고 응답의 턴 ID 확인 후 성공 처리한다. 거절/전달 여부 불명 시 초안을 유지하며 자동 재전송하지 않는다. 확인 응답이 오지 않아도 다음 대기열을 영구 차단하지 않도록 처리했다. [공식 App Server 문서](https://learn.chatgpt.com/docs/app-server#steer-an-active-turn)와 설치된 0.156.1 스키마를 확인했다.

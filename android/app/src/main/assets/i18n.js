@@ -2,6 +2,16 @@
 (() => {
   // Each entry is [English default, Korean]. Terminal output is never translated.
   const strings = {
+    tab_settings: ["Settings", "설정"],
+    app_settings_intro: ["Choose your input behavior and app language.", "입력 방식과 표시 언어를 설정하세요."],
+    app_settings_saved: ["Saved on this phone for all projects and sessions.", "이 휴대폰에 저장하며 모든 프로젝트와 세션에 적용합니다."],
+    enter_behavior_label: ["Enter key", "Enter 키"],
+    enter_newline: ["New line", "줄바꿈"],
+    enter_send: ["Send", "보내기"],
+    enter_newline_hint: ["Enter inserts a new line by default. Use Send or Queue to submit your message.", "기본값은 줄바꿈입니다. 보내기 또는 대기열 버튼을 눌러 입력을 전송하세요."],
+    enter_send_hint: ["Enter sends your message, or queues it while the agent is responding.", "Enter로 전송합니다. 에이전트 응답 중에는 대기열에 추가합니다."],
+    enter_modifiers_hint: ["Shift+Enter and Ctrl+Enter always insert a new line. Applies to the message box in Chat and Terminal.", "Shift+Enter와 Ctrl+Enter는 항상 줄바꿈합니다. Chat·터미널 아래의 공통 입력창에 적용합니다."],
+    enter_save_failed: ["Could not save Enter key behavior. Your previous choice is still active. Please try again.", "Enter 키 동작을 저장하지 못했습니다. 이전 설정을 유지합니다. 다시 시도하세요."],
     agent_settings: ["Session settings", "세션 설정"],
     settings_done: ["Done", "완료"],
     settings_saving: ["Saving…", "저장 중…"],

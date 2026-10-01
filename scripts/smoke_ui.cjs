@@ -88,15 +88,21 @@ async function main() {
   });
   await page.addInitScript(() => {
     window.setupActions = [];
+    window.messageRequests = 0;
     window.Bibimer = {
       // Browser-only stand-in for native preferences; Android persistence is
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
         agentOptions:JSON.parse(localStorage.getItem('testAgentOptions') || '{}'),
+        enterBehavior:localStorage.getItem('testEnterBehavior') || 'newline',
         language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.8.2'}),
+      setEnterBehavior:value=>{if (window.failEnterSave) return false;localStorage.setItem('testEnterBehavior',value);return true;},
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       setAgentOptions:(agent,value)=>{const all=JSON.parse(localStorage.getItem('testAgentOptions') || '{}');all[agent]=JSON.parse(value);localStorage.setItem('testAgentOptions',JSON.stringify(all));return true;},
-      cancelPoll:()=>{}, request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
+      cancelPoll:()=>{}, request:(...args)=>{
+        if (args[1]==='POST' && /\/(input|message|queue|steer)$/.test(args[2])) window.messageRequests++;
+        return window.nativeRequest(...args);
+      }, forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),
       openGuide:guide=>window.setupActions.push('guide:'+guide),
       copyCommand:name=>window.setupActions.push('copy:'+name),
@@ -137,6 +143,45 @@ async function main() {
   await page.goto(`http://127.0.0.1:${assets.address().port}/`);
   assert.equal(await page.locator('html').getAttribute('lang'),'en');
   assert.equal(await page.locator('#go-setup [data-i18n]').innerText(),'Set up this phone');
+  fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
+  await page.locator('#tab-settings').click();
+  assert.equal(await page.locator('#settings').isVisible(),true);
+  assert.equal(await page.locator('#work').isVisible(),false);
+  assert.equal(await page.locator('#setup').isVisible(),false);
+  assert.equal(await page.locator('#tab-settings').getAttribute('aria-current'),'page');
+  assert.equal(await page.locator('#enter-behavior').inputValue(),'newline');
+  assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
+  for (const lang of ['en','ko']) {
+    await page.locator('#language').selectOption(lang);
+    await page.setViewportSize({width:360,height:460});
+    const settingBox = await page.locator('#enter-behavior').boundingBox(), navBox = await page.locator('.bottom-nav').boundingBox();
+    assert.ok(settingBox.y>=0 && settingBox.y+settingBox.height<navBox.y);
+    assert.ok(navBox.y+navBox.height<=460);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await page.screenshot({path:path.join(root,`dist/screenshots/app-settings-small-${lang}.png`)});
+  }
+  await page.setViewportSize({width:393,height:780});
+  await page.locator('#language').selectOption('en');
+  // Storage failures must not silently change the effective keyboard behavior.
+  await page.evaluate(()=>{window.failEnterSave=true;});
+  await page.locator('#enter-behavior').selectOption('send');
+  assert.equal(await page.locator('#enter-behavior').inputValue(),'newline');
+  assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
+  assert.ok((await page.locator('#notice').innerText()).includes('Your previous choice is still active'));
+  await page.locator('#language').selectOption('ko');
+  assert.ok((await page.locator('#notice').innerText()).includes('이전 설정을 유지'));
+  await page.locator('#language').selectOption('en');
+  await page.evaluate(()=>{window.failEnterSave=false;});
+  await page.locator('#enter-behavior').selectOption('send');
+  await page.reload();
+  await page.locator('#tab-settings').click();
+  assert.equal(await page.locator('#enter-behavior').inputValue(),'send');
+  assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'send');
+  await page.locator('#enter-behavior').selectOption('newline');
+  await page.reload();
+  assert.equal(await page.locator('#enter-behavior').inputValue(),'newline');
+  assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
+  console.log('PASS: separate Settings page before pairing, New line default, both saved choices restored, save failure rollback, localized copy and compact navigation');
   await page.locator('#go-setup').click();
   assert.equal(await page.locator('#termux-status').innerText(),'Not installed');
   await page.locator('[data-guide="termux"]').click();
@@ -145,15 +190,18 @@ async function main() {
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
   await page.locator('#setup').evaluate(node=>{node.scrollTop=0;});
   await page.screenshot({path:path.join(root,'dist/screenshots/setup-en.png')});
+  await page.locator('#tab-settings').click();
   await page.locator('#language').selectOption('ko');
   assert.equal(await page.locator('html').getAttribute('lang'),'ko');
   assert.equal(await page.locator('#termux-status').innerText(),'설치 필요');
   assert.ok((await page.locator('#install-command').innerText()).startsWith('BIBIMER_LANGUAGE=ko '));
+  await page.locator('#tab-setup').click();
   await page.screenshot({path:path.join(root,'dist/screenshots/setup-ko.png')});
   await page.reload();
   assert.equal(await page.locator('html').getAttribute('lang'),'ko');
-  await page.locator('#go-setup').click();
+  await page.locator('#tab-settings').click();
   await page.locator('#language').selectOption('en');
+  await page.locator('#tab-setup').click();
   await page.locator('#pair-code').fill(code);
   await page.locator('#pair').click();
   await page.locator('#project-form').waitFor({state:'visible'});
@@ -165,7 +213,7 @@ async function main() {
   legacyProjectError = true;
   await page.locator('#project-form button[type=submit]').click();
   await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Choose a project folder with read and write access.');
-  await page.locator('#tab-setup').click();
+  await page.locator('#tab-settings').click();
   await page.locator('#language').selectOption('ko');
   assert.equal(await page.locator('#notice').innerText(),'읽고 쓸 수 있는 프로젝트 폴더가 필요합니다.');
   assert.equal(await page.locator('#path').inputValue(),'relative/project');
@@ -188,6 +236,21 @@ async function main() {
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='running');
   const initial = (await call('GET','/v1/health')).data.session.id;
   const projectA = (await call('GET','/v1/health')).data.project.id;
+  const ptyRequests = await page.evaluate(()=>window.messageRequests);
+  await page.locator('#input').fill('firstsecond');
+  await page.locator('#input').evaluate(node=>node.setSelectionRange(5,5));
+  await page.locator('#input').press('Enter');
+  assert.equal(await page.locator('#input').inputValue(),'first\nsecond');
+  await page.locator('#input').evaluate(node=>node.setSelectionRange(0,5));
+  await page.locator('#input').press('Enter');
+  assert.equal(await page.locator('#input').inputValue(),'\n\nsecond');
+  await page.locator('#input').press('Shift+Enter');
+  await page.locator('#input').press('Control+Enter');
+  assert.equal(await page.locator('#input').inputValue(),'\n\n\n\nsecond');
+  assert.equal(await page.evaluate(()=>window.messageRequests),ptyRequests);
+  // The terminal's dedicated Enter key still sends a raw carriage return.
+  await page.locator('[data-key="enter"]').click();
+  await page.waitForFunction(before=>window.messageRequests===before+1,ptyRequests);
   await page.locator('#input').fill('Draft A · 한글');
   await page.locator('#edit-project').click();
   // Browse existing folders while project A continues running.
@@ -248,6 +311,7 @@ async function main() {
   await page.locator('#browse-project').click();
   await page.locator('#setup').waitFor({state:'visible'});
   assert.ok((await page.locator('#notice').innerText()).includes('Update the bridge to browse folders'));
+  await page.locator('#tab-settings').click();
   await page.locator('#language').selectOption('ko');
   await page.locator('#tab-work').click();
   legacyFolders = false;
@@ -259,7 +323,7 @@ async function main() {
   assert.equal(await page.locator('#folder-status').innerText(),'표시할 하위 폴더가 없습니다. 현재 폴더를 선택할 수 있습니다.');
   await page.screenshot({path:path.join(root,'dist/screenshots/folders-ko.png')});
   await page.locator('#folder-cancel').click();
-  await page.locator('#tab-setup').click();
+  await page.locator('#tab-settings').click();
   await page.locator('#language').selectOption('en');
   await page.locator('#tab-work').click();
   // A canceled listing must not overwrite a newly opened browser.
@@ -284,6 +348,14 @@ async function main() {
   await page.locator('#launch').click();
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='running');
   const secondSession = (await call('GET','/v1/health')).data.session.id;
+  assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
+  await page.locator('#input').fill('Keep this draft');
+  await page.locator('#tab-settings').click();
+  await page.locator('#enter-behavior').selectOption('send');
+  await page.locator('#tab-work').click();
+  assert.equal(await page.locator('#input').inputValue(),'Keep this draft');
+  assert.equal((await call('GET','/v1/health')).data.session.id,secondSession);
+  assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'send');
   await page.locator('#input').fill("printf 'PROJECT_''B_ONLY\\n'");
   await page.locator('#input').press('Enter');
   await page.waitForFunction(()=>document.querySelector('#input').value==='');
@@ -339,7 +411,7 @@ async function main() {
   await page.screenshot({path:path.join(root,'dist/screenshots/session-en.png')});
   const draft = 'Draft instruction · 작성 중';
   await page.locator('#input').fill(draft);
-  await page.locator('#tab-setup').click();
+  await page.locator('#tab-settings').click();
   await page.locator('#language').selectOption('ko');
   await page.locator('#tab-work').click();
   assert.equal(await page.locator('#input').inputValue(),draft);
@@ -360,7 +432,7 @@ async function main() {
   assert.ok(sendBox.y>=0 && sendBox.y+sendBox.height<=460);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:path.join(root,'dist/screenshots/keyboard-ko.png')});
-  await page.locator('#tab-setup').click();
+  await page.locator('#tab-settings').click();
   await page.locator('#language').selectOption('en');
   await page.locator('#tab-work').click();
   const englishSendBox = await page.locator('#send').boundingBox();
@@ -459,6 +531,29 @@ async function main() {
     await page.setViewportSize({width:393,height:780});
     await page.screenshot({path:path.join(root,'dist/screenshots/quick-settings-en.png')});
     assert.equal(await page.locator('#terminal-area').isVisible(),false);
+    await page.locator('#tab-settings').click();
+    await page.locator('#enter-behavior').selectOption('newline');
+    await page.reload();
+    await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+    assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
+    const chatRequests = await page.evaluate(()=>window.messageRequests);
+    await page.locator('#input').fill('Chat draft');
+    await page.locator('#input').press('Enter');
+    assert.equal(await page.locator('#input').inputValue(),'Chat draft\n');
+    await page.locator('#input').evaluate(node=>{
+      node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',isComposing:true,bubbles:true,cancelable:true}));
+      node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',keyCode:229,bubbles:true,cancelable:true}));
+      node.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));
+      node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));
+      node.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true}));
+    });
+    assert.equal(await page.locator('#input').inputValue(),'Chat draft\n');
+    assert.equal(await page.evaluate(()=>window.messageRequests),chatRequests);
+    await page.locator('#tab-settings').click();
+    await page.locator('#enter-behavior').selectOption('send');
+    await page.locator('#tab-work').click();
+    assert.equal(await page.locator('#input').inputValue(),'Chat draft\n');
+    assert.equal((await call('GET','/v1/health')).data.session.id,chatId);
     assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'send');
     await page.locator('#input').fill('firstsecond');
     await page.locator('#input').evaluate(node=>node.setSelectionRange(5,5));
@@ -520,7 +615,7 @@ async function main() {
     await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
     await page.locator('#project-switch').selectOption(projectA);
     await page.waitForFunction(()=>document.querySelector('.request-card input')?.value==='한국어 · draft');
-    await page.locator('#tab-setup').click(); await page.locator('#language').selectOption('ko'); await page.locator('#tab-work').click();
+    await page.locator('#tab-settings').click(); await page.locator('#language').selectOption('ko'); await page.locator('#tab-work').click();
     assert.equal(await page.locator('.request-card input').inputValue(),'한국어 · draft');
     await page.setViewportSize({width:360,height:460});
     await page.locator('[data-request-action="chat_answer"]').scrollIntoViewIfNeeded();
@@ -542,6 +637,23 @@ async function main() {
     await page.locator('#reconnect').click();
     await page.waitForFunction(()=>!document.querySelector('#send').disabled && !document.querySelector('#steer').hidden);
     const activeTurn = (await call('GET','/v1/health')).data.session.active_turn_id;
+    await page.locator('#tab-settings').click();
+    await page.locator('#enter-behavior').selectOption('newline');
+    await page.locator('#tab-work').click();
+    const queueRequests = await page.evaluate(()=>window.messageRequests);
+    await page.locator('#input').fill('Still writing');
+    await page.locator('#input').press('Enter');
+    assert.equal(await page.locator('#input').inputValue(),'Still writing\n');
+    assert.equal(await page.evaluate(()=>window.messageRequests),queueRequests);
+    assert.equal((await call('GET','/v1/health')).data.session.active_turn_id,activeTurn);
+    await page.locator('#input').fill('Queued follow-up · 다음 작업');
+    await page.locator('#send').click();
+    await page.locator('.queue-entry').waitFor();
+    await page.locator('.queue-entry button').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.queue-entry').length===0);
+    await page.locator('#tab-settings').click();
+    await page.locator('#enter-behavior').selectOption('send');
+    await page.locator('#tab-work').click();
     await page.locator('#input').fill('Queued follow-up · 다음 작업');
     await page.locator('#input').press('Enter');
     await page.waitForFunction(()=>document.querySelector('#input').value==='' && document.querySelectorAll('.queue-entry').length===1);
@@ -589,7 +701,7 @@ async function main() {
     assert.equal((await call('GET','/v1/health')).data.session.mode,'chat');
     await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
-    console.log('PASS: Enter sends, Shift/Ctrl/Meta+Enter newline, selection replacement, IME/repeat/busy guards; project switches preserve approval and question drafts; structured chat, formatting and interrupt; no model task sent');
+    console.log('PASS: Enter defaults to newline in Chat/PTY and during responses; Send setting queues, modifiers/selection/IME/repeat guards, preserved drafts and sessions; structured chat and interrupt; no model task sent');
     const beforeImport = fs.readFileSync(path.join(temporary,'project/turn-count'),'utf8');
     await page.locator('#import-session').click();
     await page.locator('.import-entry').waitFor();
@@ -643,7 +755,7 @@ async function main() {
     await page.waitForFunction(()=>!document.querySelector('#send').disabled);
     await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
-    await page.locator('#tab-setup').click(); await page.locator('#language').selectOption('en'); await page.locator('#tab-work').click();
+    await page.locator('#tab-settings').click(); await page.locator('#language').selectOption('en'); await page.locator('#tab-work').click();
     await page.locator('#import-session').click();
     await page.locator('.import-entry').waitFor();
     await page.screenshot({path:path.join(root,'dist/screenshots/import-en.png')});
@@ -682,7 +794,7 @@ async function main() {
       await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
       await page.locator('#project-switch').selectOption(projectA);
       await page.waitForFunction(()=>document.querySelectorAll('.question-options [aria-pressed="true"]').length===2);
-      await page.locator('#tab-setup').click(); await page.locator('#language').selectOption('ko'); await page.locator('#tab-work').click();
+      await page.locator('#tab-settings').click(); await page.locator('#language').selectOption('ko'); await page.locator('#tab-work').click();
       await page.setViewportSize({width:360,height:460});
       await page.locator('[data-request-action="chat_answer"]').scrollIntoViewIfNeeded();
       await page.screenshot({path:path.join(root,`dist/screenshots/${agent}-question-ko.png`)});
@@ -707,7 +819,7 @@ async function main() {
       await page.screenshot({path:path.join(root,`dist/screenshots/${agent}-chat-ko.png`)});
       await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
       await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
-      await page.locator('#tab-setup').click(); await page.locator('#language').selectOption('en'); await page.locator('#tab-work').click();
+      await page.locator('#tab-settings').click(); await page.locator('#language').selectOption('en'); await page.locator('#tab-work').click();
     }
     await page.locator('#agent').selectOption('opencode'); await page.locator('#mode').selectOption('terminal');
     await page.locator('#launch').click();

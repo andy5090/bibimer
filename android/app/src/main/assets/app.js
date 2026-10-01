@@ -20,6 +20,7 @@
   let canOptions = false, canLiveOptions = false, settingsBusy = false, pendingOptions = null;
   let canQueue = false, canSteer = false, queued = [], queueRevision = -1, queueSignature = "";
   const lastOptions = environment().agentOptions || {};
+  let enterBehavior = environment().enterBehavior === "send" ? "send" : "newline";
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
     claude:["inherit","default","acceptEdits","plan","bypassPermissions"], opencode:["inherit","ask","allow"]};
   const conversation = new BibimerConversation($("conversation"), $("chat-requests"), (key, values) => key === "chat_assistant" ? t("agent_" + (session?.agent || "codex")) : t(key, values), async data => {
@@ -246,6 +247,7 @@
   function renderLanguage() {
     i18n.apply();
     $("language").value = i18n.language();
+    renderInputPreferences();
     $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
@@ -259,10 +261,12 @@
   }
   function tab(name) {
     currentTab = name;
-    $("work").hidden = name !== "work";
-    $("setup").hidden = name !== "setup";
-    $("tab-work").classList.toggle("selected", name === "work");
-    $("tab-setup").classList.toggle("selected", name === "setup");
+    for (const page of ["work", "setup", "settings"]) {
+      $(page).hidden = name !== page;
+      $("tab-" + page).classList.toggle("selected", name === page);
+      if (name === page) $("tab-" + page).setAttribute("aria-current", "page");
+      else $("tab-" + page).removeAttribute("aria-current");
+    }
     if (name === "work") setTimeout(resize, 30);
     else updateEnvironment();
   }
@@ -581,7 +585,7 @@
   $("input").addEventListener("keydown", event => {
     if (event.key !== "Enter" || event.isComposing || composing || event.keyCode === 229) return;
     event.preventDefault();
-    if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
+    if (enterBehavior === "newline" || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
       const input = $("input");
       input.setRangeText("\n", input.selectionStart, input.selectionEnd, "end");
       input.dispatchEvent(new Event("input", {bubbles:true}));
@@ -823,7 +827,7 @@
     views.clear(); selectedProjectId = null; knownProjects = []; $("input").value = "";
     notice("connection_forgotten");
   });
-  for (const name of ["work", "setup"]) $("tab-" + name).addEventListener("click", () => tab(name));
+  for (const name of ["work", "setup", "settings"]) $("tab-" + name).addEventListener("click", () => tab(name));
   $("go-setup").addEventListener("click", () => tab("setup"));
   $("edit-project").addEventListener("click", () => {
     const visible = $("project-form").hidden;
@@ -850,7 +854,26 @@
       notice("language_save_failed");
     }
   });
-  window.BibimerResume = () => { paused = false; i18n.setLanguage(environment().language); renderLanguage(); connect(); };
+  function renderInputPreferences() {
+    $("enter-behavior").value = enterBehavior;
+    $("enter-behavior-hint").textContent = t("enter_" + enterBehavior + "_hint");
+    $("input").setAttribute("enterkeyhint", enterBehavior === "send" ? "send" : "enter");
+  }
+  $("enter-behavior").addEventListener("change", () => {
+    const value = $("enter-behavior").value;
+    try {
+      if (!["newline", "send"].includes(value) || !native.setEnterBehavior(value)) throw new Error();
+      enterBehavior = value;
+      if (noticeData?.key === "enter_save_failed") notice("");
+    } catch (_) { notice("enter_save_failed"); }
+    renderInputPreferences();
+  });
+  window.BibimerResume = () => {
+    paused = false;
+    const env = environment();
+    enterBehavior = env.enterBehavior === "send" ? "send" : "newline";
+    i18n.setLanguage(env.language); renderLanguage(); connect();
+  };
   i18n.setLanguage(environment().language);
   renderLanguage();
   if (environment().paired) connect();
