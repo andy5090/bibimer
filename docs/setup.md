@@ -70,9 +70,9 @@ Bibimer가 Termux를 대신 설치하거나 Android의 설치 확인을 자동�
 
 재시작은 실행 중인 세션이 있으면 거부한다. 0.1.x에서는 상태 파일 잠금과 프로세스 소유권을 확인한 뒤 해당 프로세스만 종료한다. 이때 다른 화면에서 새 세션을 시작하지 않는다. 기기가 이 확인을 지원하지 않으면 자동 종료하지 않고 수동 종료 안내를 표시한다.
 
-## 세션 권한·Fast 설정 (0.8.1)
+## 세션 권한·Fast 설정 (앱 0.8.2 / 브리지 0.8.1)
 
-프로그램을 고르면 **입력창 아래에 권한 선택과 Codex Fast 토글**이 나타난다. 설정 화면을 열 필요 없이 바로 바꿀 수 있다. 마지막 선택은 Android 앱에 에이전트별로 저장하여 다른 프로젝트·새 세션·Saved sessions 가져오기에 사용한다. ⓘ와 가져오기 팝업의 Session settings에서도 설명을 보고 선택할 수 있다.
+프로그램을 고르면 **입력창 아래에 권한 텍스트 메뉴와 번개 아이콘 Fast 칩**이 나타난다. Fast 칩을 누르면 켜짐(민트색·채워진 번개)과 꺼짐(회색·윤곽선 번개)이 전환된다. 설정 화면을 열 필요 없이 바로 바꿀 수 있다. 마지막 선택은 Android 앱에 에이전트별로 저장하여 다른 프로젝트·새 세션·Saved sessions 가져오기에 사용한다. ⓘ와 가져오기 팝업의 Session settings에서도 설명을 보고 선택할 수 있다.
 
 - Codex: Agent default, Read only, Workspace + approvals, YOLO · full access. 읽기·프로젝트 쓰기는 `on-request` 승인을 사용한다. YOLO는 승인과 샌드박스를 해제한다. 대화 중 변경 및 네이티브 기본 권한 복원을 지원한다.
 - Claude: Agent default, Ask for approval, Accept edits, Plan mode, Bypass permissions. 다음 SDK 요청에 선택한 모드를 적용한다.

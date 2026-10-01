@@ -92,7 +92,7 @@ async function main() {
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
         agentOptions:JSON.parse(localStorage.getItem('testAgentOptions') || '{}'),
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.8.1'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.8.2'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       setAgentOptions:(agent,value)=>{const all=JSON.parse(localStorage.getItem('testAgentOptions') || '{}');all[agent]=JSON.parse(value);localStorage.setItem('testAgentOptions',JSON.stringify(all));return true;},
       cancelPoll:()=>{}, request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},

@@ -69,7 +69,7 @@ async function main() {
   page.on('pageerror',e=>errors.push(e.message));
   page.on('request',request=>{if(!request.url().startsWith('http://127.0.0.1:'))external.push(request.url());});
   await page.addInitScript(()=>{
-    window.Bibimer={environment:()=>JSON.stringify({paired:false,language:'en',version:'0.8.1'}),copyText:text=>{window.copiedText=text;},openLink:url=>{window.openedLink=url;}};
+    window.Bibimer={environment:()=>JSON.stringify({paired:false,language:'en',version:'0.8.2'}),copyText:text=>{window.copiedText=text;},openLink:url=>{window.openedLink=url;}};
   });
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
   await page.evaluate(items=>{

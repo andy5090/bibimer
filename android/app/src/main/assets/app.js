@@ -17,7 +17,7 @@
   let folderTicket = 0, folderError = null;
   let canImport = false, multiImport = false, persistentCodex = false, importProject = null, importEntries = [], importSelection = null;
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
-  let canOptions = false, canLiveOptions = false, settingsBusy = false;
+  let canOptions = false, canLiveOptions = false, settingsBusy = false, pendingOptions = null;
   const lastOptions = environment().agentOptions || {};
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
     claude:["inherit","default","acceptEdits","plan","bypassPermissions"], opencode:["inherit","ask","allow"]};
@@ -51,7 +51,8 @@
     $(prefix ? "import-settings" : "agent-settings").hidden = !permissionModes[agent];
     if (!permissionModes[agent]) return;
     $(prefix + "settings-title").textContent = t("agent_" + agent) + " · " + t("agent_settings");
-    const options = chat ? session.options || {permission:"inherit"} : savedOptions(agent);
+    const pending = pendingOptions?.prefix === prefix && pendingOptions.agent === agent && pendingOptions.id === (chat ? session.id : null);
+    const options = pending ? pendingOptions.value : chat ? session.options || {permission:"inherit"} : savedOptions(agent);
     const updateNeeded = !canOptions || (chat && !canLiveOptions);
     const disabled = updateNeeded || busy || settingsBusy || (chat && (!online || !session.ready || session.state !== "running"));
     for (const id of prefix ? [prefix + "permission"] : ["permission", "quick-permission"]) {
@@ -86,6 +87,7 @@
     const value = {permission:$(source + "permission").value,
       ...(agent === "codex" ? {fast:$(source + "fast").checked} : {})};
     const id = chat ? session.id : null;
+    pendingOptions = {prefix, agent, id, value};
     settingsBusy = true; renderSession();
     try {
       if (id) {
@@ -98,7 +100,7 @@
       $(prefix + "settings-dialog").close();
       if (prefix) $("import-dialog").close();
       if (!id || session?.id === id) notice(error.key || "error_settings_save");
-    } finally { settingsBusy = false; renderSession(); }
+    } finally { pendingOptions = null; settingsBusy = false; renderSession(); }
   }
   for (const prefix of ["", "import-"]) {
     $(prefix + "settings-toggle").addEventListener("click", () => { renderSettings(prefix); $(prefix + "settings-dialog").showModal(); });
