@@ -81,7 +81,7 @@ async function main() {
     $('project-switch').hidden=false; $('project-switch').disabled=false;
     $('project-switch').append(new Option('bibimer · Running','project'));
     $('project-path').textContent='~/projects/bibimer';
-    $('edit-project').textContent='Add'; $('edit-project').disabled=false;
+    $('edit-project').textContent='Project Add'; $('edit-project').disabled=false;
     $('connection').textContent='Connected'; $('connection').classList.add('connected');
     $('process').textContent='Running'; $('process').classList.add('running');
     $('turn-status').textContent='Ready for your message'; $('stop').hidden=false;

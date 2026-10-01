@@ -134,6 +134,29 @@ class ProviderTests(ChatFixture):
                 self.assertEqual('5',(self.root/'project'/f'{agent}-turn-count').read_text())
                 self.end()
 
+    def test_provider_queue_waits_for_approval_and_runs_fifo_without_steer(self):
+        for agent in ['opencode', 'claude']:
+            with self.subTest(agent=agent):
+                session = self.begin(agent)
+                self.message('approval')
+                event = self.until(lambda e: bool(e['requests']))
+                prompt = event['requests'][0]['id']
+                self.assertFalse(event['session']['can_steer'])
+                for text in ['first queued task', 'second queued task']:
+                    self.assertEqual(200, self.api('POST', f'/v1/sessions/{session.id}/queue',
+                        {'action':'add', 'text':text, 'request_id':str(uuid.uuid4())})[0])
+                self.assertEqual('1', (self.root/'project'/f'{agent}-turn-count').read_text())
+                self.assertEqual(409, self.api('POST', f'/v1/sessions/{session.id}/steer',
+                    {'text':'not supported', 'turn_id':session.turn_id, 'request_id':str(uuid.uuid4())})[0])
+                self.assertEqual(200, self.api('POST', f'/v1/sessions/{session.id}/respond',
+                    {'prompt_id':prompt, 'decision':'decline', 'request_id':str(uuid.uuid4())})[0])
+                event = self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')
+                self.assertEqual(['approval', 'first queued task', 'second queued task'],
+                    [i['text'] for i in event['items'] if i['kind'] == 'user'])
+                self.assertEqual('3', (self.root/'project'/f'{agent}-turn-count').read_text())
+                self.assertFalse((self.root/'project'/f'{agent}-approved').exists())
+                self.end()
+
     def test_provider_checks_and_wrong_project_are_localized(self):
         agents={agent['id']:agent for agent in self.bridge.agents()}
         self.assertIn('chat',agents['opencode']['modes'])

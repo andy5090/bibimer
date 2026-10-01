@@ -62,6 +62,12 @@ ERROR_MESSAGES = {
     "error_permission_default": "OpenCode can switch between Ask and Bypass during a chat. Restore Agent default in a new session.",
     "error_chat_start": "Could not initialize Chat. Check the agent installation and configuration in Termux.",
     "error_chat_busy": "Wait for the current response or interrupt it before sending another message.",
+    "error_queue_full": "The queue is full. Remove a pending message before adding another.",
+    "error_queue_entry": "This message is no longer waiting in the queue.",
+    "error_queue_action": "Choose a valid queue action.",
+    "error_queue_send": "The queued message was not accepted. Review it and resume the queue.",
+    "error_steer_unavailable": "Steer is available only for an active Codex response. You can queue this message instead.",
+    "error_steer_rejected": "The agent did not accept this steer. Your draft is kept; you can queue it instead.",
     "error_chat_transport": "The agent connection failed. Check the session before sending again.",
     "error_chat_request": "This request is no longer pending. Refresh the session.",
     "error_chat_answer": "Complete the requested answers or choose a valid decision.",
@@ -583,6 +589,9 @@ class ChatSession(Session):
         self.items, self.requests, self.inputs = collections.OrderedDict(), {}, collections.OrderedDict()
         self.revision, self.floor, self.total = 0, 0, 0
         self.rpc_serial, self.rpc_pending = 0, {}
+        self.queue = collections.OrderedDict()
+        self.queue_paused, self.queue_inflight = False, None
+        self.steer_errors = collections.OrderedDict()
         self.process = subprocess.Popen(provider_command(argv[0], agent),
             cwd=project["path"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
@@ -596,7 +605,9 @@ class ChatSession(Session):
                     "options": self.options.copy(), "launch_options": self.launch_options.copy(),
                     "ready": self.thread_id is not None and not self.history_pending,
                     "external_thread_id": self.thread_id, "history_persisted": self.history_persisted, **(self.imported or {}),
-                    "turn_state": self.turn_state, "exit_code": self.exit_code,
+                    "turn_state": self.turn_state, "active_turn_id": self.turn_id,
+                    "queued_count": len(self.queue), "queue_paused": self.queue_paused,
+                    "can_steer": self.agent == "codex", "exit_code": self.exit_code,
                     "started_at": self.started_at, "output_start": self.floor,
                     "output_end": self.revision}
 
@@ -641,6 +652,7 @@ class ChatSession(Session):
         key = "bibimer-" + str(self.rpc_serial)
         self.rpc_pending[key] = kind
         self._send({"id": key, "method": method, "params": params})
+        return key
 
     def start_reading(self):
         self.reader = threading.Thread(target=self._read, daemon=True)
@@ -684,6 +696,8 @@ class ChatSession(Session):
                 self._put({"id": "connection-error", "kind": "notice", "code": "error_chat_start"})
             self.requests.clear()
             self.rpc_pending.clear()
+            self.queue.clear()
+            self.queue_inflight = None
             self.state, self.exit_code = "exited", code
             self._bump()
         self.changed()
@@ -703,6 +717,7 @@ class ChatSession(Session):
                     raise ValueError()
                 with self.condition:
                     self._handle(message)
+                    self._drain_queue()
                 if self.persist_thread:
                     self.persist_thread = False
                     self.changed()
@@ -717,7 +732,35 @@ class ChatSession(Session):
             kind = self.rpc_pending.pop(message.get("id"), None)
             if not kind:
                 return
+            if isinstance(kind, tuple):
+                if kind[0] == "steer":
+                    _, key, digest, expected = kind
+                    error = "error_steer_rejected" if "error" in message else (
+                        "error_input_uncertain" if (message.get("result") or {}).get("turnId") != expected else None)
+                    if error:
+                        self.steer_errors[key] = error
+                        if len(self.steer_errors) > 512:
+                            self.steer_errors.popitem(last=False)
+                    self._remember(key, digest, True)
+                elif kind[0] == "queue":
+                    entry = self.queue.get(kind[1])
+                    self.queue_inflight = None
+                    if entry:
+                        if "error" in message:
+                            entry.update(state="failed", code="error_queue_send")
+                            self.queue_paused = True
+                            if not self.turn_id:
+                                self.turn_state = "failed"
+                        else:
+                            self.queue.pop(kind[1])
+                            if self.turn_state == "sending":
+                                self.turn_id = message["result"]["turn"]["id"]
+                                self.turn_state = "running"
+                self._bump()
+                return
             if "error" in message:
+                if kind == "turn":
+                    self.queue_paused = True
                 if kind == "import":
                     self._fault("error_import_failed")
                     return
@@ -795,6 +838,8 @@ class ChatSession(Session):
             if self.turn_id and turn["id"] != self.turn_id:
                 return
             self.turn_state, self.turn_id = "ready", None
+            if turn.get("status", "completed") != "completed":
+                self.queue_paused = True
             self.requests.clear()
             self._put({"id": "turn-" + turn["id"], "kind": "turn", "status": turn.get("status", "completed"),
                        "text": self._text((turn.get("error") or {}).get("message"))})
@@ -885,6 +930,7 @@ class ChatSession(Session):
             return {"session": self.snapshot(), "cursor": self.revision, "gap": gap,
                     "items": [dict(item) for item in self.items.values() if gap or item["revision"] > cursor],
                     "retained": list(self.items),
+                    "queue": [dict(entry) for entry in self.queue.values()],
                     "requests": [{k: v for k, v in value.items() if k != "rpc_id"} for value in self.requests.values()]}
 
     def _duplicate(self, key, data):
@@ -949,7 +995,7 @@ class ChatSession(Session):
                 return
             if self.state != "running" or not self.thread_id:
                 raise Problem(409, "error_session_not_running")
-            if self.turn_state not in {"ready", "failed"}:
+            if self.turn_state not in {"ready", "failed"} or self.queue:
                 raise Problem(409, "error_chat_busy")
             self._remember(key, digest, False)
             self.turn_state = "sending"
@@ -958,6 +1004,95 @@ class ChatSession(Session):
             self._rpc("turn/start", {"threadId": self.thread_id, "input": [{"type": "text", "text": text}], **self.turn_options(chosen)}, "turn")
             self.options.update(speed)
             self._remember(key, digest, True)
+
+    def _drain_queue(self):
+        # Caller owns the condition. Prompts live only in memory, never snapshot metadata.
+        if (not self.queue or self.queue_paused or self.queue_inflight or self.requests or
+                self.state != "running" or not self.thread_id or self.history_pending or
+                self.turn_state not in {"ready", "failed"} or
+                "turn" in self.rpc_pending.values()):
+            return
+        entry = next(iter(self.queue.values()))
+        entry["state"] = "sending"
+        self.queue_inflight = entry["id"]
+        self.turn_state = "sending"
+        self._bump()
+        try:
+            self._rpc("turn/start", {"threadId": self.thread_id,
+                "input": [{"type": "text", "text": entry["text"]}], **self.turn_options(self.options)}, ("queue", entry["id"]))
+        except Problem:
+            entry.update(state="uncertain", code="error_input_uncertain")
+            self.queue_paused = True
+            self._fault("error_chat_transport")
+
+    def queue_action(self, data):
+        key, action = request_id(data.get("request_id")), data.get("action")
+        if not isinstance(action, str) or action not in {"add", "remove", "resume"}:
+            raise Problem(400, "error_queue_action")
+        payload = {"action": "queue_" + action}
+        if action == "add":
+            value = data.get("text")
+            if not isinstance(value, str) or not value.strip() or len(value.encode()) > 16384:
+                raise Problem(400, "error_input_size")
+            payload["text"] = value
+        elif action == "remove":
+            payload["entry_id"] = request_id(data.get("entry_id"))
+        with self.condition:
+            digest, duplicate = self._duplicate(key, payload)
+            if duplicate:
+                return
+            if self.state != "running" or not self.thread_id or self.history_pending:
+                raise Problem(409, "error_session_not_running")
+            if action == "add":
+                if len(self.queue) >= 16:
+                    raise Problem(409, "error_queue_full")
+                if not self.queue and self.turn_state in {"ready", "failed"}:
+                    self.queue_paused = False
+                self.queue[key] = {"id": key, "text": value, "state": "queued"}
+            elif action == "remove":
+                entry = self.queue.get(payload["entry_id"])
+                if not entry or entry["state"] == "sending":
+                    raise Problem(409, "error_queue_entry")
+                del self.queue[entry["id"]]
+            else:
+                if any(entry["state"] == "uncertain" for entry in self.queue.values()):
+                    raise Problem(409, "error_input_uncertain")
+                self.queue_paused = False
+                for entry in self.queue.values():
+                    if entry["state"] == "failed":
+                        entry["state"] = "queued"
+                        entry.pop("code", None)
+            self._remember(key, digest, True)
+            self._bump()
+            self._drain_queue()
+
+    def steer(self, data):
+        key, text, expected = request_id(data.get("request_id")), data.get("text"), data.get("turn_id")
+        if not isinstance(text, str) or not text.strip() or len(text.encode()) > 16384:
+            raise Problem(400, "error_input_size")
+        if not isinstance(expected, str) or not expected or len(expected) > 200:
+            raise Problem(400, "error_steer_unavailable")
+        with self.condition:
+            digest, duplicate = self._duplicate(key, {"action": "steer", "text": text, "turn_id": expected})
+            if not duplicate:
+                if (self.agent != "codex" or self.state != "running" or self.turn_id != expected or
+                        self.turn_state not in {"running", "waiting"}):
+                    raise Problem(409, "error_steer_unavailable")
+                self._remember(key, digest, False)
+                try:
+                    rpc_id = self._rpc("turn/steer", {"threadId": self.thread_id, "expectedTurnId": expected,
+                        "input": [{"type": "text", "text": text}]}, ("steer", key, digest, expected))
+                except Problem:
+                    self._fault("error_chat_transport")
+                    raise
+                self.condition.wait_for(lambda: self.inputs.get(key, (None, False))[1] or self.state != "running", timeout=4)
+                if not self.inputs.get(key, (None, False))[1]:
+                    # A late/absent receipt must neither replay the steer nor
+                    # block a later queued turn after this turn has ended.
+                    self.rpc_pending.pop(rpc_id, None)
+                    raise Problem(409, "error_input_uncertain")
+            if key in self.steer_errors:
+                raise Problem(409, self.steer_errors[key])
 
     def respond(self, data):
         key = request_id(data.get("request_id"))
@@ -996,6 +1131,8 @@ class ChatSession(Session):
 
     def interrupt(self):
         with self.condition:
+            self.queue_paused = True
+            self._bump()
             if self.state == "running" and self.turn_id:
                 self._rpc("turn/interrupt", {"threadId": self.thread_id, "turnId": self.turn_id}, "interrupt")
 
@@ -1038,6 +1175,8 @@ class Bridge:
                 continue
             snapshot["project"] = dict(self.projects[project_id])
             snapshot["output_start"] = snapshot["output_end"] = 0
+            if snapshot.get("mode") == "chat":
+                snapshot.update(queued_count=0, queue_paused=False, active_turn_id=None)
             if snapshot["state"] in ACTIVE:
                 snapshot["state"], snapshot["exit_code"] = "lost", None
             self.previous_sessions[project_id] = snapshot
@@ -1118,7 +1257,7 @@ class Bridge:
             return {"version": VERSION, "protocol": 1, "instance": self.instance,
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, session=self.snapshot_for(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -1346,7 +1485,7 @@ class Bridge:
                 snapshot = dict(previous)
                 result = {"session": snapshot, "cursor": 0, "gap": cursor > 0}
                 if snapshot.get("mode") == "chat":
-                    result.update(items=[], retained=[], requests=[])
+                    result.update(items=[], retained=[], requests=[], queue=[])
                 else:
                     result["data"] = ""
                 return result
@@ -1506,7 +1645,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             elif method == "POST" and action == "stop":
                 session.stop()
                 result = {"session": session.snapshot()}
-            elif method == "POST" and action in {"message", "respond", "interrupt", "options"}:
+            elif method == "POST" and action in {"message", "respond", "interrupt", "options", "queue", "steer"}:
                 if not isinstance(session, ChatSession):
                     raise Problem(400, "error_chat_mode")
                 if action == "message":
@@ -1515,9 +1654,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     session.respond(data)
                 elif action == "options":
                     session.configure(data)
+                elif action == "queue":
+                    session.queue_action(data)
+                elif action == "steer":
+                    session.steer(data)
                 else:
                     session.interrupt()
                 result = {"session": session.snapshot()}
+                if action == "queue":
+                    # Same revision for both queue and session, without persisted text.
+                    event = session.events(0, 0)
+                    result = {"session": event["session"], "queue": event["queue"]}
             else:
                 raise Problem(404, "error_route")
         else:

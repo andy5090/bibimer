@@ -35,7 +35,7 @@
     <section id="workspace" hidden>
       <div class="project-summary">
         <div class="project-label"><span class="eyebrow" data-i18n="project_eyebrow">PROJECT</span><strong id="project-name">Add a project</strong><select id="project-switch" aria-label="Switch project" data-i18n-aria-label="switch_project" hidden></select><small id="project-path">A working folder in Termux</small></div>
-        <button class="quiet" id="edit-project" data-i18n="edit_project">Edit</button>
+        <button class="quiet" id="edit-project" data-i18n="add_project">Project Add</button>
       </div>
       <button id="project-update" class="quiet" data-i18n="projects_update" hidden>Update the bridge to use multiple projects</button>
       <form id="project-form" class="card" hidden>
@@ -64,11 +64,16 @@
       <div id="terminal-keys" class="keys" aria-label="Terminal keys" data-i18n-aria-label="special_keys">
         <button data-key="escape">Esc</button><button data-key="tab">Tab</button><button data-key="up" aria-label="Up arrow" data-i18n-aria-label="arrow_up">↑</button><button data-key="down" aria-label="Down arrow" data-i18n-aria-label="arrow_down">↓</button><button data-key="interrupt">Ctrl+C</button><button data-key="enter" aria-label="Enter">↵</button>
       </div>
+      <section id="chat-queue" class="chat-queue" hidden aria-label="Queued messages" data-i18n-aria-label="queue_label">
+        <div class="queue-heading"><span id="queue-count" role="status"></span><button id="queue-resume" type="button" class="quiet" data-i18n="queue_resume" hidden>Resume queue</button></div>
+        <ol id="queue-list"></ol>
+      </section>
       <form id="input-form" class="composer">
         <label for="input" class="sr-only" data-i18n="input_label">Input for the agent</label>
         <textarea id="input" rows="1" placeholder="Type an instruction or reply" data-i18n-placeholder="input_placeholder" autocomplete="off" spellcheck="false" enterkeyhint="send"></textarea>
-        <button id="send" class="primary" type="submit" data-i18n="send">Send</button>
+        <div class="composer-actions"><button id="steer" class="quiet" type="button" data-i18n="steer" aria-describedby="delivery-hint" hidden>Steer</button><button id="send" class="primary" type="submit" data-i18n="send">Send</button></div>
       </form>
+      <p id="delivery-hint" class="delivery-hint" hidden></p>
       <div id="agent-settings" class="composer-options" hidden>
         <div class="quick-options"><label for="quick-permission" class="sr-only" data-i18n="permissions">Permissions</label><select id="quick-permission" aria-describedby="quick-hint"></select>
           <label id="quick-fast-label" class="quick-fast"><input id="quick-fast" type="checkbox" role="switch" aria-label="Codex Fast" data-i18n-aria-label="codex_fast" aria-describedby="quick-hint"><span class="fast-chip"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m13 2-9 12h7l-1 8 10-12h-7l1-8Z"/></svg><span>Fast</span></span></label>

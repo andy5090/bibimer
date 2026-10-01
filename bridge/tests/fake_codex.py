@@ -91,6 +91,9 @@ for line in sys.stdin:
         ]
         emit({"id": message["id"], "result": {"data": [{"turnId": "old-turn", "item": entry} for entry in reversed(history)], "nextCursor": "older-history"}})
     elif method == "turn/start":
+        if params["input"][0]["text"] == "start-error":
+            emit({"id": message["id"], "error": {"code": -32602, "message": "Controlled start rejection"}})
+            continue
         assert params["threadId"] == thread
         count += 1
         Path("turn-count").write_text(str(count))
@@ -123,6 +126,19 @@ for line in sys.stdin:
         else:
             item({"id": "command", "type": "commandExecution", "command": "printf example", "aggregatedOutput": "controlled output", "exitCode": 0, "status": "completed"})
             item({"id": "change", "type": "fileChange", "changes": [{"path": "example.py", "diff": "-old\n+new"}], "status": "completed"})
+            finish()
+    elif method == "turn/steer":
+        text = params["input"][0]["text"]
+        assert set(params) == {"threadId", "expectedTurnId", "input"}
+        if params["expectedTurnId"] != turn or text == "steer-reject":
+            emit({"id": message["id"], "error": {"code": -32602, "message": "Controlled steer rejection"}})
+            continue
+        if text == "steer-timeout":
+            continue
+        item({"id": message["id"], "type": "userMessage", "content": [{"type": "text", "text": text}]})
+        emit({"id": message["id"], "result": {"turnId": turn}})
+        if text == "finish":
+            pending = None
             finish()
     elif method == "turn/interrupt":
         if pending == "interrupt-error":

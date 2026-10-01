@@ -18,6 +18,7 @@
   let canImport = false, multiImport = false, persistentCodex = false, importProject = null, importEntries = [], importSelection = null;
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
   let canOptions = false, canLiveOptions = false, settingsBusy = false, pendingOptions = null;
+  let canQueue = false, canSteer = false, queued = [], queueRevision = -1, queueSignature = "";
   const lastOptions = environment().agentOptions || {};
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
     claude:["inherit","default","acceptEdits","plan","bypassPermissions"], opencode:["inherit","ask","allow"]};
@@ -295,7 +296,16 @@
     renderFolderBrowser();
     $("project-update").hidden = !online || multipleProjects;
     $("input").disabled = !online || !session || session.state !== "running" || (isChat() && !session.ready);
-    $("send").disabled = $("input").disabled || settingsBusy || sending.has(session?.id) || (isChat() && !["ready", "failed"].includes(session.turn_state));
+    const responding = isChat() && !["ready", "failed"].includes(session.turn_state);
+    const enqueue = isChat() && canQueue && (responding || session.queued_count > 0);
+    const steerable = isChat() && canSteer && session.can_steer && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state);
+    $("send").textContent = t(enqueue ? "queue_send" : "send");
+    $("send").disabled = $("input").disabled || settingsBusy || sending.has(session?.id) || (responding && !canQueue);
+    $("steer").hidden = !steerable;
+    $("steer").disabled = $("input").disabled || settingsBusy || sending.has(session?.id);
+    $("delivery-hint").hidden = !isChat() || !responding;
+    $("delivery-hint").textContent = t(!canQueue ? "delivery_update" : steerable ? "delivery_steer" : "delivery_queue");
+    renderQueue();
     $("stop").disabled = !online || !session || session.state !== "running";
     $("stop").hidden = !live;
     $("copy-resume").hidden = !(isChat() && session.agent === "codex" && session.history_persisted && session.external_thread_id);
@@ -328,6 +338,7 @@
       cursor = 0;
       resetTerminal();
       conversation.clear();
+      queued = []; queueRevision = -1; queueSignature = "";
     }
     session = value;
     if (value && ["running", "stopping"].includes(value.state)) {
@@ -348,9 +359,9 @@
       if (ticket !== generation || paused) return;
       if (health.protocol !== 1) throw appError("error_protocol");
       if (instance && health.instance !== instance) {
-        cursor = 0; resetTerminal();
-        conversation.clear();
-        notice("bridge_restarted");
+        const lostQueue = queued.length > 0 || session?.queued_count > 0;
+        setSession(null);
+        notice(lostQueue ? "queue_lost" : "bridge_restarted");
       }
       instance = health.instance;
       multipleProjects = health.features?.includes("multiple_projects") === true;
@@ -360,6 +371,8 @@
       persistentCodex = health.features?.includes("persistent_codex_sessions") === true;
       canOptions = health.features?.includes("agent_options") === true;
       canLiveOptions = health.features?.includes("live_agent_options") === true;
+      canQueue = health.features?.includes("chat_queue") === true;
+      canSteer = health.features?.includes("codex_steer") === true;
       knownProjects = health.projects || [];
       if (multipleProjects && !knownProjects.some(item => item.id === selectedProjectId)) selectedProjectId = health.project?.id || knownProjects[0]?.id || null;
       const entry = multipleProjects ? knownProjects.find(item => item.id === selectedProjectId) : null;
@@ -417,6 +430,7 @@
       if (ticket !== generation || paused || !session || id !== session.id) return;
       cursor = event.cursor;
       setSession(event.session);
+      updateQueue(event);
       const entry = knownProjects.find(item => item.id === projectKey());
       if (entry) entry.session = event.session;
       renderProjects();
@@ -488,25 +502,74 @@
     return job;
   }
   term.onData(sendRaw);
-  $("input-form").addEventListener("submit", async event => {
-    event.preventDefault();
+  function updateQueue(event) {
+    if (event.session?.id !== session?.id || !Array.isArray(event.queue) || event.session.output_end < queueRevision) return;
+    queued = event.queue;
+    queueRevision = event.session.output_end;
+    renderQueue();
+  }
+  function renderQueue() {
+    $("chat-queue").hidden = !isChat() || !queued.length;
+    $("queue-count").textContent = t(session?.queue_paused ? "queue_paused" : "queue_count", {count:queued.length});
+    $("queue-resume").hidden = !session?.queue_paused;
+    $("queue-resume").disabled = !online || session?.state !== "running" || sending.has(session?.id);
+    const signature = JSON.stringify([session?.id, queued, online, session?.state, sending.has(session?.id), i18n.language()]);
+    if (signature === queueSignature) return;
+    queueSignature = signature;
+    const target = session?.id;
+    $("queue-list").replaceChildren(...queued.map(entry => {
+      const row = document.createElement("li"), body = document.createElement("div"), text = document.createElement("p");
+      row.className = "queue-entry"; row.dataset.id = entry.id;
+      text.textContent = entry.text; body.append(text);
+      if (entry.state !== "queued") {
+        const state = document.createElement("small");
+        state.textContent = t("queue_" + entry.state); body.append(state);
+      }
+      const remove = document.createElement("button");
+      remove.type = "button"; remove.className = "quiet"; remove.textContent = t("queue_remove");
+      remove.disabled = !online || session?.state !== "running" || entry.state === "sending" || sending.has(target);
+      remove.addEventListener("click", () => changeQueue(target, "remove", entry.id));
+      row.append(body, remove); return row;
+    }));
+  }
+  async function changeQueue(id, action, entryId) {
+    if (!id || sending.has(id)) return;
+    sending.add(id); renderSession();
+    try {
+      const result = await api("POST", `/v1/sessions/${id}/queue`, {action, ...(entryId ? {entry_id:entryId} : {}), request_id:uuid()});
+      if (session?.id === id) { setSession(result.session); updateQueue(result); }
+    } catch (error) { if (session?.id === id) notice(error.key || "error_request_failed"); }
+    finally { sending.delete(id); renderSession(); }
+  }
+  $("queue-resume").addEventListener("click", () => changeQueue(session?.id, "resume"));
+  $("input-form").addEventListener("submit", event => { event.preventDefault(); submitInput(false); });
+  $("steer").addEventListener("click", () => submitInput(true));
+  async function submitInput(steer) {
     const text = $("input").value;
-    if (!text || sending.has(session?.id) || $("send").disabled) return;
+    if (!text.trim() || sending.has(session?.id) || $(steer ? "steer" : "send").disabled) return;
+    if (steer && $("steer").hidden) return;
     const id = session.id, key = projectKey();
+    const turn = session.active_turn_id;
     rememberView();
     sending.add(id); renderSession();
     let ok = false;
     try {
       if (isChat()) {
-        const result = await api("POST", `/v1/sessions/${id}/message`, {text, request_id:uuid()});
-        if (session?.id === id) setSession(result.session);
+        const action = steer ? "steer" : canQueue ? "queue" : "message";
+        const result = await api("POST", `/v1/sessions/${id}/${action}`, {text, request_id:uuid(),
+          ...(steer ? {turn_id:turn} : canQueue ? {action:"add"} : {})});
+        if (session?.id === id) { setSession(result.session); updateQueue(result); }
         ok = true;
       } else ok = await sendRaw(text.replace(/\r?\n/g, "\r") + "\r");
       if (ok && views.get(key)?.text === text) Object.assign(views.get(key), {text:"", start:0, end:0});
       if (ok && key === projectKey() && $("input").value === text) $("input").value = "";
-    } catch (error) { if (session?.id === id) notice(error.key || "error_request_failed", "check_delivery"); }
+      if (ok && session?.id === id && ["error_steer_rejected", "error_steer_unavailable", "error_queue_full", "error_input_uncertain"].includes(noticeData?.key)) notice("");
+    } catch (error) {
+      if (session?.id === id) notice(error.key || "error_request_failed",
+        !error.key || ["error_chat_transport", "error_input_uncertain", "error_connection_failed", "error_timeout"].includes(error.key) ? "check_delivery" : null);
+    }
     finally { sending.delete(id); resizeInput(); renderSession(); }
-  });
+  }
   function resizeInput() {
     $("input").style.height = "auto";
     $("input").style.height = Math.min(100, $("input").scrollHeight) + "px";

@@ -31,6 +31,8 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 | `POST /v1/sessions/{id}/resize` | PTY 크기 변경 | `cols` (20~300), `rows` (4~200) |
 | `POST /v1/sessions/{id}/options` | Chat의 다음 입력 설정 변경·보관 (0.8.1) | `options` (권한·Codex Fast의 부분 변경), `request_id` |
 | `POST /v1/sessions/{id}/message` | Chat의 새 메시지 | `text`, `request_id`, Codex 전용 `fast` (boolean, 선택) |
+| `POST /v1/sessions/{id}/queue` | Chat 대기열 추가·개별 취소·재개 (빌드 대기) | `action` (`add` / `remove` / `resume`), `request_id`; 추가: `text`, 취소: `entry_id` |
+| `POST /v1/sessions/{id}/steer` | 진행 중 Codex 턴에 추가 입력 (빌드 대기) | `text`, `turn_id` (현재 턴), `request_id` |
 | `POST /v1/sessions/{id}/respond` | 대기 중인 승인·질문에 응답 | `prompt_id`, `request_id`, `decision` 또는 `answers` |
 | `POST /v1/sessions/{id}/interrupt` | Chat의 현재 응답만 중단 | 빈 객체 |
 | `POST /v1/shutdown` | CLI 업데이트용 브리지 종료, 실행 세션이 있으면 거부 | 빈 객체 |
@@ -64,7 +66,14 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 
 프로세스의 `state`와 응답의 `turn_state`(준비·전송·응답·사용자 대기·실패)를 분리한다. `turn/interrupt`는 응답만 중단한다. 명령·파일 승인은 한 번 승인 또는 거절만 지원하며, 질문에는 단일·복수 선택과 요청이 허용한 자유 입력을 제공한다. 미지원 서버 요청은 오류로 응답하고 승인하지 않는다. 종료·해결된 요청에 대한 늦은 응답을 거부하고 재전송 ID로 중복을 막는다. 프로젝트 전환·언어 변경 시 복수 선택 초안도 유지한다.
 
-대화 이벤트는 `items`, `retained`, `requests`를 반환한다. 항목은 변경 번호를 가지며 전체 항목은 최대 1MiB·200개, 항목별 텍스트는 32768자로 제한한다. 오래된 내용이 제거되면 `gap`을 알리고 남은 항목으로 복구한다. 승인·질문은 별도 메모리 상태로 유지해 재접속 시 다시 표시한다. 디스크 메타데이터에는 대화·질문·답변을 저장하지 않는다.
+
+응답 중 입력은 `chat_queue`·`codex_steer` 기능 플래그로 알린다(소스 반영, 배포 대기). 새 앱은 Chat 입력을 `queue`의 `action: add` 동작으로 전송하고, 비어 있는 준비 상태에서는 곧바로 실행한다. 대기열은 세션별 최대 16건·건당 UTF-8 16KiB이며 `events.queue`와 queue API 응답으로만 내용을 전달한다. snapshot에는 건수·일시정지 상태·현재 턴 ID만 넣는다. 정상 완료 후 FIFO로 보내며, 중단/실패/시작 거절 시 후속 입력을 일시정지한다. 시작이 거절된 항목은 실패 상태로 남겨 취소·명시적 재개를 지원한다. 실제 전송 시점의 세션 권한·Fast를 적용한다.
+
+대기열은 브리지 메모리에 있으므로 앱 재실행·프로젝트 전환에는 유지되지만 에이전트 종료·브리지 종료에는 유지하지 않는다. 브리지 재시작 시 이전 건수·턴 ID도 초기화하고 앱은 미전송 대기열 유실을 알린다. 대기열 내용은 디스크 메타데이터·로그에 기록하지 않는다. 추가·취소·재개의 요청 ID도 기존 중복 처리 한도와 내용 충돌 검사를 사용하며, 변경 번호가 지난 응답은 현재 목록을 덮어쓰지 않는다.
+
+Codex [공식 `turn/steer`](https://learn.chatgpt.com/docs/app-server#steer-an-active-turn)에 `expectedTurnId`를 전달하고 네이티브 응답의 `turnId`가 일치한 뒤 성공 처리한다. 새 턴·interrupt·권한 변경 RPC로 대체하지 않는다. 거절 시 초안을 유지하며 응답 유실/시간 초과는 전달 여부 불명으로 처리해 자동 재전송하지 않는다. 확인이 끝나지 않은 Steer가 이후 대기열을 영구 차단하지 않도록 제한 시간 후 수신 대기를 해제한다. Claude·OpenCode에는 브리지 FIFO만 제공한다.
+
+대화 이벤트는 `items`, `retained`, `requests`, `queue`를 반환한다. 항목은 변경 번호를 가지며 전체 항목은 최대 1MiB·200개, 항목별 텍스트는 32768자로 제한한다. 오래된 내용이 제거되면 `gap`을 알리고 남은 항목으로 복구한다. 승인·질문은 별도 메모리 상태로 유지해 재접속 시 다시 표시한다. 디스크 메타데이터에는 대화·질문·답변을 저장하지 않는다.
 
 `conversation.js`는 DOM 노드로 제목·목록·표·코드 블록·굵은 글씨를 렌더링한다. HTML을 실행하지 않고 외부 링크·이미지를 로드하지 않는다. 터미널 화면을 파싱해 사용자·에이전트 메시지로 추정하지 않는다.
 

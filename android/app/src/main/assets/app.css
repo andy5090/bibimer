@@ -55,3 +55,18 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .quick-fast input:disabled + .fast-chip { opacity:.4; }
 .quick-options > button { min-width:32px; min-height:36px; padding:4px; font-size:16px; }
 .quick-hint { margin:3px 1px 0; font-size:10px; line-height:1.3; color:var(--muted); }
+
+.composer-actions { display:flex; flex:none; align-items:flex-end; justify-content:flex-end; gap:2px; }
+.composer-actions .primary { align-self:stretch; }
+.composer-actions .quiet { min-height:42px; padding:4px 7px; font-size:11px; color:var(--green); }
+.delivery-hint { flex:none; font-size:10px; line-height:1.3; margin:-3px 1px 7px; }
+.chat-queue { flex:none; margin:3px 0 0; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card); }
+.queue-heading { display:flex; align-items:center; justify-content:space-between; gap:4px; padding:3px 8px; min-height:26px; color:var(--muted); font-size:10px; }
+.queue-heading button { min-height:28px; padding:3px 5px; font-size:10px; color:var(--green); }
+#queue-list { list-style:none; padding:0; margin:0; max-height:84px; overflow:auto; overscroll-behavior:contain; }
+.queue-entry { display:flex; align-items:center; gap:6px; padding:3px 5px 3px 8px; border-top:1px solid var(--line); }
+.queue-entry > div { flex:1; min-width:0; }
+.queue-entry p { margin:0; font-size:11px; line-height:1.4; color:var(--text); white-space:pre-wrap; overflow-wrap:anywhere; max-height:48px; overflow:auto; }
+.queue-entry small { color:var(--muted); font-size:10px; }
+.queue-entry button { flex:none; min-height:32px; padding:4px 6px; font-size:10px; }
+@media(max-height:580px){#chat-panel{min-height:0}.delivery-hint{display:none}#queue-list{max-height:60px}}
