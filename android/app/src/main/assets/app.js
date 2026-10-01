@@ -17,9 +17,8 @@
   let folderTicket = 0, folderError = null;
   let canImport = false, multiImport = false, persistentCodex = false, importProject = null, importEntries = [], importSelection = null;
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
-  let canOptions = false;
+  let canOptions = false, canLiveOptions = false, settingsBusy = false;
   const lastOptions = environment().agentOptions || {};
-  const sessionFast = new Map();
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
     claude:["inherit","default","acceptEdits","plan","bypassPermissions"], opencode:["inherit","ask","allow"]};
   const conversation = new BibimerConversation($("conversation"), $("chat-requests"), (key, values) => key === "chat_assistant" ? t("agent_" + (session?.agent || "codex")) : t(key, values), async data => {
@@ -45,44 +44,61 @@
     return {permission:permissionModes[agent]?.includes(value.permission) ? value.permission : "inherit",
       ...(agent === "codex" ? {fast:value.fast === true} : {})};
   }
-  function nextFast() {
-    return sessionFast.has(session?.id) ? sessionFast.get(session.id) : session?.options?.fast === true;
-  }
   function renderSettings(prefix = "") {
     const live = !prefix && session && ["running","stopping"].includes(session.state);
+    const chat = live && isChat();
     const agent = prefix ? $("import-agent").value : live ? session.agent : $("agent").value;
     $(prefix ? "import-settings" : "agent-settings").hidden = !permissionModes[agent];
     if (!permissionModes[agent]) return;
     $(prefix + "settings-title").textContent = t("agent_" + agent) + " · " + t("agent_settings");
-    const options = live ? session.options || {permission:"inherit"} : savedOptions(agent);
-    const select = $(prefix + "permission");
-    // Keep the native select open during status polling.
-    if (select.dataset.agent !== agent || select.dataset.language !== i18n.language()) {
-      select.replaceChildren(...permissionModes[agent].map(mode => new Option(t("permission_" + mode), mode)));
-      select.dataset.agent = agent; select.dataset.language = i18n.language();
+    const options = chat ? session.options || {permission:"inherit"} : savedOptions(agent);
+    const updateNeeded = !canOptions || (chat && !canLiveOptions);
+    const disabled = updateNeeded || busy || settingsBusy || (chat && (!online || !session.ready || session.state !== "running"));
+    for (const id of prefix ? [prefix + "permission"] : ["permission", "quick-permission"]) {
+      const select = $(id);
+      // Do not replace an open native picker during status polling.
+      if (select.dataset.agent !== agent || select.dataset.language !== i18n.language()) {
+        select.replaceChildren(...permissionModes[agent].map(mode => new Option(t("permission_" + mode), mode)));
+        select.dataset.agent = agent; select.dataset.language = i18n.language();
+      }
+      select.value = options.permission; select.disabled = disabled;
+      for (const option of select.options) option.disabled = !!(chat && agent === "opencode" && option.value === "inherit" && options.permission !== "inherit");
     }
-    select.value = options.permission;
-    select.disabled = !!live || !canOptions || busy;
-    const fast = live ? nextFast() : options.fast;
-    $(prefix + "fast-label").hidden = agent !== "codex";
-    $(prefix + "fast").checked = fast === true;
-    $(prefix + "fast").disabled = !canOptions || busy || !!(live && (!isChat() || session.state !== "running"));
-    $(prefix + "settings-summary").textContent = !canOptions ? t("settings_update_short") : t("permission_" + options.permission) + (agent === "codex" ? " · " + t(fast ? "fast_on" : "fast_off") : "");
+    for (const name of prefix ? [prefix] : ["", "quick-"]) {
+      $(name + "fast-label").hidden = agent !== "codex";
+      $(name + "fast").checked = options.fast === true;
+      $(name + "fast").disabled = disabled;
+    }
+    $(prefix + "settings-summary").textContent = updateNeeded ? t("settings_update_short") : t("permission_" + options.permission) + (agent === "codex" ? " · " + t(options.fast ? "fast_on" : "fast_off") : "");
     $(prefix + "permission-hint").textContent = t("permission_hint_" + options.permission);
-    $(prefix + "settings-hint").textContent = !canOptions ? t("settings_update") :
-      t(live ? isChat() && agent === "codex" ? "settings_live_fast" : "settings_live" : "settings_saved") + (agent === "codex" ? " " + t("fast_hint") : "");
+    $(prefix + "settings-hint").textContent = updateNeeded ? t("settings_update") :
+      t(chat ? "settings_live_chat" : live ? "settings_live_terminal" : "settings_saved") +
+      (chat && agent === "opencode" && options.permission !== "inherit" ? " " + t("error_permission_default") : "") +
+      (agent === "codex" ? " " + t("fast_hint") : "");
+    if (!prefix) $("quick-hint").textContent = t(settingsBusy ? "settings_saving" : updateNeeded ? "settings_update_short" : chat ? "settings_next_message" : live ? "settings_next_session" : "settings_remembered");
   }
-  function saveOptions(prefix) {
+  async function saveOptions(prefix, quick = false) {
+    if (settingsBusy) return;
     const live = !prefix && session && ["running","stopping"].includes(session.state);
+    const chat = live && isChat();
     const agent = prefix ? $("import-agent").value : live ? session.agent : $("agent").value;
-    const value = {...savedOptions(agent), ...(!live ? {permission:$(prefix + "permission").value} : {}),
-      ...(agent === "codex" ? {fast:$(prefix + "fast").checked} : {})};
-    let saved = false;
-    try { saved = native.setAgentOptions(agent, JSON.stringify(value)); } catch (_) {}
-    if (!saved) { $(prefix + "settings-dialog").close(); notice("error_settings_save"); renderSettings(prefix); return; }
-    lastOptions[agent] = value;
-    if (live && agent === "codex") sessionFast.set(session.id, value.fast);
-    renderSettings(); renderSettings("import-");
+    const source = quick ? "quick-" : prefix;
+    const value = {permission:$(source + "permission").value,
+      ...(agent === "codex" ? {fast:$(source + "fast").checked} : {})};
+    const id = chat ? session.id : null;
+    settingsBusy = true; renderSession();
+    try {
+      if (id) {
+        const result = await api("POST", `/v1/sessions/${id}/options`, {options:value, request_id:uuid()});
+        if (session?.id === id) setSession(result.session);
+      }
+      if (!native.setAgentOptions(agent, JSON.stringify(value))) throw appError(id ? "error_settings_default_save" : "error_settings_save");
+      lastOptions[agent] = value;
+    } catch (error) {
+      $(prefix + "settings-dialog").close();
+      if (prefix) $("import-dialog").close();
+      if (!id || session?.id === id) notice(error.key || "error_settings_save");
+    } finally { settingsBusy = false; renderSession(); }
   }
   for (const prefix of ["", "import-"]) {
     $(prefix + "settings-toggle").addEventListener("click", () => { renderSettings(prefix); $(prefix + "settings-dialog").showModal(); });
@@ -90,6 +106,8 @@
     $(prefix + "permission").addEventListener("change", () => saveOptions(prefix));
     $(prefix + "fast").addEventListener("change", () => saveOptions(prefix));
   }
+  $("quick-permission").addEventListener("change", () => saveOptions("", true));
+  $("quick-fast").addEventListener("change", () => saveOptions("", true));
   function renderNotice() {
     $("notice").textContent = noticeData ? t(noticeData.key) + (noticeData.suffix ? " " + t(noticeData.suffix) : "") : "";
     $("notice").hidden = !noticeData;
@@ -228,7 +246,7 @@
     $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
-    $("version").textContent = t("version_note", {version:environment().version || "0.8.0"});
+    $("version").textContent = t("version_note", {version:environment().version || "0.8.1"});
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
     renderAgents(); renderProjects(); updateEnvironment(); renderSession(); renderNotice();
     conversation.localize();
@@ -275,7 +293,7 @@
     renderFolderBrowser();
     $("project-update").hidden = !online || multipleProjects;
     $("input").disabled = !online || !session || session.state !== "running" || (isChat() && !session.ready);
-    $("send").disabled = $("input").disabled || sending.has(session?.id) || (isChat() && !["ready", "failed"].includes(session.turn_state));
+    $("send").disabled = $("input").disabled || settingsBusy || sending.has(session?.id) || (isChat() && !["ready", "failed"].includes(session.turn_state));
     $("stop").disabled = !online || !session || session.state !== "running";
     $("stop").hidden = !live;
     $("copy-resume").hidden = !(isChat() && session.agent === "codex" && session.history_persisted && session.external_thread_id);
@@ -339,6 +357,7 @@
       multiImport = health.features?.includes("import_agent_session") === true;
       persistentCodex = health.features?.includes("persistent_codex_sessions") === true;
       canOptions = health.features?.includes("agent_options") === true;
+      canLiveOptions = health.features?.includes("live_agent_options") === true;
       knownProjects = health.projects || [];
       if (multipleProjects && !knownProjects.some(item => item.id === selectedProjectId)) selectedProjectId = health.project?.id || knownProjects[0]?.id || null;
       const entry = multipleProjects ? knownProjects.find(item => item.id === selectedProjectId) : null;
@@ -477,8 +496,7 @@
     let ok = false;
     try {
       if (isChat()) {
-        const result = await api("POST", `/v1/sessions/${id}/message`, {text, request_id:uuid(),
-          ...(canOptions && session.agent === "codex" ? {fast:nextFast()} : {})});
+        const result = await api("POST", `/v1/sessions/${id}/message`, {text, request_id:uuid()});
         if (session?.id === id) setSession(result.session);
         ok = true;
       } else ok = await sendRaw(text.replace(/\r?\n/g, "\r") + "\r");

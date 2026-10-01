@@ -39,9 +39,16 @@ class OptionsTests(ChatFixture):
                     captured = self.captures()[-1]
                     self.assertEqual("thread/" + (imported or "start"), captured.pop("method"))
                     expected = {"serviceTier": "fast", "config": {"features.fast_mode": True}}
+                    self.assertEqual(expected, captured)
+                    self.message('Controlled permission probe')
+                    self.until(lambda event:event['session']['turn_state']=='ready')
+                    captured = self.captures()[-1]
+                    expected = {"method":"turn/start", "serviceTier":"fast", "approvalsReviewer":"user"}
                     if mode != "inherit":
-                        expected.update(sandbox="danger-full-access" if mode == "yolo" else mode,
+                        expected.update(sandboxPolicy={"type":{"yolo":"dangerFullAccess", "read-only":"readOnly", "workspace-write":"workspaceWrite"}[mode]},
                                         approvalPolicy="never" if mode == "yolo" else "on-request", approvalsReviewer="user")
+                    else:
+                        expected.update(sandboxPolicy={"type":"workspaceWrite", "writableRoots":[], "networkAccess":False}, approvalPolicy="on-request")
                     self.assertEqual(expected, captured)
                     self.end()
 
@@ -55,6 +62,10 @@ class OptionsTests(ChatFixture):
         self.assertEqual(200, status, data)
         self.begin({"permission": "inherit", "fast": True})
         second = self.bridge.session
+        status, changed = self.api('POST',f'/v1/sessions/{first_id}/options',{'options':{'permission':'yolo'},'request_id':str(uuid.uuid4())})
+        self.assertEqual(200,status,changed)
+        self.assertEqual('inherit',second.options['permission'])
+        self.assertEqual('yolo',first.options['permission'])
         body = {"text": "test speed", "fast": False, "request_id": str(uuid.uuid4())}
         self.assertEqual(200, self.api("POST", f"/v1/sessions/{first_id}/message", body)[0])
         self.session_id = first_id
@@ -81,6 +92,44 @@ class OptionsTests(ChatFixture):
             self.assertEqual(400, status, data)
             self.assertEqual("error_agent_options", data["code"])
             self.assertFalse(self.bridge.sessions)
+
+    def test_live_options_queue_survive_reconnect_without_answering_approval(self):
+        self.register()
+        launch = self.begin({"permission":"inherit", "fast":True})
+        session = self.bridge.session
+        self.message('approval')
+        before = self.until(lambda event:bool(event['requests']))
+        request = {"options":{"permission":"yolo"}, "request_id":str(uuid.uuid4())}
+        status, result = self.api('POST', f'/v1/sessions/{session.id}/options', request)
+        self.assertEqual(200,status,result)
+        self.assertEqual({'permission':'yolo','fast':True},result['session']['options'])
+        after = self.until(lambda event:event['session']['options']['permission']=='yolo')
+        self.assertEqual(before['requests'],after['requests'])
+        self.assertEqual('waiting',after['session']['turn_state'])
+        self.assertEqual(1,len([row for row in self.captures() if row['method']=='turn/start']))
+        self.assertFalse((self.root/'project'/'approved').exists())
+        metadata = json.loads((self.state/'metadata.json').read_text())
+        self.assertEqual('yolo',metadata['sessions'][0]['options']['permission'])
+        self.assertEqual(200,self.api('POST',f'/v1/sessions/{session.id}/options',request)[0])
+        self.assertEqual(409,self.api('POST',f'/v1/sessions/{session.id}/options',dict(request,options={'permission':'read-only'}))[0])
+        self.assertEqual(200,self.api('POST',f'/v1/sessions/{session.id}/respond',{'prompt_id':before['requests'][0]['id'],'decision':'decline','request_id':str(uuid.uuid4())})[0])
+        self.until(lambda event:event['session']['turn_state']=='ready')
+        self.message('After permission change')
+        self.until(lambda event:event['session']['turn_state']=='ready')
+        self.assertEqual({'type':'dangerFullAccess'},self.captures()[-1]['sandboxPolicy'])
+        self.assertEqual('never',self.captures()[-1]['approvalPolicy'])
+        restore={'options':{'permission':'inherit','fast':False},'request_id':str(uuid.uuid4())}
+        self.assertEqual(200,self.api('POST',f'/v1/sessions/{session.id}/options',restore)[0])
+        self.message('Restore native defaults')
+        self.until(lambda event:event['session']['turn_state']=='ready')
+        self.assertEqual({'type':'workspaceWrite','writableRoots':[],'networkAccess':False},self.captures()[-1]['sandboxPolicy'])
+        self.assertEqual('on-request',self.captures()[-1]['approvalPolicy'])
+        self.assertEqual('default',self.captures()[-1]['serviceTier'])
+        self.assertEqual(200,self.api('POST','/v1/sessions',launch)[0])
+        for options in [None, {}, {'permission':'bypassPermissions'}, {'fast':'true'}, {'config':{}}]:
+            self.assertEqual(400,self.api('POST',f'/v1/sessions/{session.id}/options',{'options':options,'request_id':str(uuid.uuid4())})[0])
+        self.end()
+        self.assertEqual(409,self.api('POST',f'/v1/sessions/{session.id}/options',dict(restore,request_id=str(uuid.uuid4())))[0])
 
     def test_pty_receives_native_flags_and_scoped_environment(self):
         project = self.register()

@@ -177,6 +177,9 @@ async function call(method,params) {
   }
   if (method==='turn/start') {
     if (turn) throw Error('error_chat_busy');
+    const next=params.bibimerOptions?.permission ?? permissionMode;
+    if (!['inherit','default','acceptEdits','plan','bypassPermissions'].includes(next)) throw Error('error_agent_options');
+    permissionMode=next;
     turn=randomUUID(); interrupted=false;
     notify('turn/started',{turn:{id:turn,status:'inProgress'}});
     const identity=turn;

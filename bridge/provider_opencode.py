@@ -26,6 +26,7 @@ class Adapter:
     def __init__(self, executable):
         self.cwd = str(Path.cwd().resolve())
         self.thread, self.turn, self.message_id = None, None, None
+        self.permission_mode = 'inherit'
         self.lock, self.output_lock = threading.RLock(), threading.Lock()
         self.pending, self.seen = {}, {}
         self.closed = threading.Event()
@@ -261,6 +262,7 @@ class Adapter:
                 if policy:
                     source = self.http('PATCH', '/session/' + source['id'], policy)
             self.thread = source['id']
+            self.permission_mode = permission
             return {'thread': self.metadata(source)}
         if params.get('threadId') != self.thread or not self.thread:
             raise RuntimeError('error_chat_request')
@@ -270,6 +272,14 @@ class Adapter:
             with self.lock:
                 if self.turn:
                     raise RuntimeError('error_chat_busy')
+                permission = params.get('bibimerOptions', {}).get('permission', self.permission_mode)
+                if permission not in {'inherit', 'ask', 'allow'}:
+                    raise RuntimeError('error_agent_options')
+                if permission != self.permission_mode:
+                    if permission == 'inherit':
+                        raise RuntimeError('error_permission_default')
+                    self.http('PATCH', '/session/' + self.thread, {'permission': [{'permission': '*', 'pattern': '*', 'action': permission}]})
+                    self.permission_mode = permission
                 self.turn = str(uuid.uuid4())
                 self.message_id = 'msg_' + format(int(time.time()*1000), '012x') + secrets.token_hex(6)
                 self.notify('turn/started', {'turn': {'id': self.turn, 'status': 'inProgress'}})

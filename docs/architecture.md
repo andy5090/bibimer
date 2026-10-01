@@ -29,6 +29,7 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 | `GET /v1/sessions/{id}/events` | 출력 및 실제 프로세스 상태 | `cursor` (PTY 바이트 위치 / Chat 변경 번호), `wait` (0~20초) |
 | `POST /v1/sessions/{id}/input` | 입력 바이트 전송 | `data` (base64), `request_id` (UUID) |
 | `POST /v1/sessions/{id}/resize` | PTY 크기 변경 | `cols` (20~300), `rows` (4~200) |
+| `POST /v1/sessions/{id}/options` | Chat의 다음 입력 설정 변경·보관 (0.8.1) | `options` (권한·Codex Fast의 부분 변경), `request_id` |
 | `POST /v1/sessions/{id}/message` | Chat의 새 메시지 | `text`, `request_id`, Codex 전용 `fast` (boolean, 선택) |
 | `POST /v1/sessions/{id}/respond` | 대기 중인 승인·질문에 응답 | `prompt_id`, `request_id`, `decision` 또는 `answers` |
 | `POST /v1/sessions/{id}/interrupt` | Chat의 현재 응답만 중단 | 빈 객체 |
@@ -117,13 +118,17 @@ health의 `persistent_codex_sessions`는 새 Codex 대화의 영구 저장을 �
 
 Claude 실행 경로는 정상 사용자 CLI → Bibimer 전용 복구 런처 순서로 찾는다. 명시적인 `BIBIMER_CLAUDE_EXECUTABLE`은 이 선택보다 우선하며 HTTP 클라이언트에서 지정할 수 없다. 확인 캐시는 에이전트와 실행 경로별로 분리한다. `repair_claude_termux.py`는 공식 고정 패키지의 무결성·예상 일반 파일·실행 성공을 확인한 뒤 런처를 원자적으로 교체하고 이전 런처를 실패 시 유지한다. glibc 선행 설치나 사용자 로그인은 자동으로 처리하지 않는다.
 
-## 0.8.0 권한·속도 설정
+## 0.8.0 권한·속도 설정 / 0.8.1 대화 중 변경
 
 `options.permission`은 에이전트별 허용된 열거값만 받는다. `options.fast`는 Codex의 boolean만 허용한다. 임의 CLI 인수·설정 파일·환경 변수나 RPC를 앱에 개방하지 않는다. 값 생략은 기존 도구 설정을 상속하며 새 앱의 Codex Fast 기본값은 false다. `agent_options` 기능 표시가 없는 브리지에서는 새 앱의 에이전트 실행·가져오기를 막고 업데이트를 안내한다.
 
-- Codex Chat: `thread/start`, `thread/resume`, `thread/fork`의 `sandbox`, `approvalPolicy`, `approvalsReviewer`와 `serviceTier`에 전달한다. YOLO는 `danger-full-access`/`never`, 읽기·쓰기 모드는 `on-request`와 사용자 승인을 사용한다. Fast는 `features.fast_mode=true`, `fast`/`default` tier로 요청한다. 설치된 0.156.1의 `fast` 응답은 `priority`로 정규화된다. 각 메시지는 해당 세션의 선택을 `turn/start.serviceTier`에 전달한다.
+- Codex Chat: 0.8.1은 `thread/start`·`thread/resume`·`thread/fork`에서 네이티브 기본 `approvalPolicy`·`approvalsReviewer`·`sandbox`를 받아 보관한다. 명시한 권한은 첫 입력부터 매번 `turn/start.approvalPolicy/approvalsReviewer/sandboxPolicy`에 전달하고 기본값 선택 시 보관한 정책을 복원한다. 기본 정책을 받지 못하면 시작을 실패 처리한다. YOLO는 `dangerFullAccess`/`never`, 읽기·프로젝트 쓰기는 해당 sandbox와 `on-request`/사용자 승인이다. Fast는 `features.fast_mode=true`, `fast`/`default` tier를 사용하며 각 입력에서 적용한다. 설치된 0.156.1의 Fast는 `priority`로 정규화된다.
 - Codex PTY: 고정 인수로 sandbox/approval 또는 `--dangerously-bypass-approvals-and-sandbox`를 구성하고 프로세스 범위의 `-c service_tier=...`를 사용한다. 사용자의 `config.toml`은 편집하지 않는다.
 - Claude Chat: SDK의 `permissionMode`를 선택하고 bypass일 때만 `allowDangerouslySkipPermissions=true`를 추가한다. PTY는 `--permission-mode` 및 bypass의 `--dangerously-skip-permissions`를 사용한다.
-- OpenCode: 프로세스에만 `OPENCODE_PERMISSION`을 설정한다. Chat 새 세션은 생성 시 wildcard permission을 전달한다. 이어하기·복사는 원본 확인 후 해당 세션에 PATCH하며, 네이티브가 규칙을 추가하므로 마지막 일치 규칙이 선택된다. 복사에 적용한 규칙은 원본에 쓰지 않는다. 상속은 규칙을 덮어쓰지 않는다.
+- OpenCode: PTY 프로세스에만 `OPENCODE_PERMISSION`을 설정한다. Chat은 세션 API의 규칙을 사용한다. Chat 새 세션은 생성 시 wildcard permission을 전달한다. 이어하기·복사는 원본 확인 후 해당 세션에 PATCH하며, 네이티브가 규칙을 추가하므로 마지막 일치 규칙이 선택된다. 복사에 적용한 규칙은 원본에 쓰지 않는다. 상속은 규칙을 덮어쓰지 않는다.
 
 Android `AgentPreferences`는 에이전트별 마지막 선택만 `SharedPreferences`에 저장한다. 프로젝트별 입력 초안·실행 세션과 별개다. `options`는 세션의 다음 입력 설정, `launch_options`는 처음 실행한 설정이며 실행 요청 중복 판정에는 후자를 사용한다. Fast 메시지의 중복 판정에 속도를 포함한다. 다른 프로젝트의 세션·대기 승인에는 전달하지 않는다. 도구가 실제로 전달한 승인·질문 요청은 기존 명시적 응답 UI를 따른다.
+
+0.8.1의 `options` API는 현재 Chat의 **다음 입력** 설정을 메타데이터에 보관하고 변경 revision을 올린다. 진행 중인 응답의 네이티브 설정을 바꾸거나 대기 승인에 응답하지 않는다. 새 입력이 실제 전송될 때 선택한 정책을 적용한다. Claude는 각 SDK query의 permissionMode, OpenCode는 다음 prompt 전의 세션 permission PATCH로 전환한다. OpenCode PATCH는 기존 규칙을 병합하므로 상속으로 되돌리는 요청은 거절하고 새 세션을 안내한다. 값과 요청 ID를 검증하고 같은 요청의 재전송은 다시 적용하지 않는다. 종료 세션·PTY에는 이 API를 허용하지 않는다.
+
+`live_agent_options`가 있는 브리지에서만 현재 Chat의 하단 컨트롤을 활성화한다. 앱은 현재 세션 설정과 새 세션 기본값을 구분하고 입력창 아래에 다음 입력/다음 세션 적용 범위를 표시한다. 변경 요청은 선택한 세션 ID에 고정하며 응답 도착 전에 프로젝트가 바뀌면 다른 세션 화면을 덮어쓰지 않는다. 선택한 값을 브리지에 반영한 뒤 Android 기본값을 저장하고 실패를 표시한다.

@@ -45,7 +45,6 @@
       </form>
       <div class="session-bar"><span id="process" class="badge">Not started</span><button id="copy-resume" class="quiet" type="button" data-i18n="codex_resume_copy" hidden>Resume in CLI</button><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
       <div id="mode-controls" class="mode-controls"><label for="mode" data-i18n="mode_label">Session interface</label><select id="mode"><option value="terminal" data-i18n="mode_terminal">Terminal · PTY</option><option value="chat" data-i18n="mode_chat">Chat · formatted text</option></select></div>
-      <div id="agent-settings" class="agent-settings" hidden><button id="settings-toggle" class="settings-toggle" type="button"><span data-i18n="agent_settings">Session settings</span><span id="settings-summary"></span><span aria-hidden="true">›</span></button></div>
       <div id="launch-controls" class="launch-controls">
         <label class="sr-only" for="agent" data-i18n="program_label">Program to run</label>
         <select id="agent"><option value="shell">Terminal</option></select>
@@ -69,6 +68,12 @@
         <textarea id="input" rows="1" placeholder="Type an instruction or reply" data-i18n-placeholder="input_placeholder" autocomplete="off" spellcheck="false" enterkeyhint="send"></textarea>
         <button id="send" class="primary" type="submit" data-i18n="send">Send</button>
       </form>
+      <div id="agent-settings" class="composer-options" hidden>
+        <div class="quick-options"><label for="quick-permission" class="sr-only" data-i18n="permissions">Permissions</label><select id="quick-permission" aria-describedby="quick-hint"></select>
+          <label id="quick-fast-label" class="quick-fast"><input id="quick-fast" type="checkbox"><span>Fast</span></label>
+          <button id="settings-toggle" class="quiet" type="button" data-i18n-aria-label="agent_settings" aria-label="Session settings"><span aria-hidden="true">ⓘ</span><span id="settings-summary" class="sr-only"></span></button></div>
+        <p id="quick-hint" class="quick-hint" role="status"></p>
+      </div>
       <button id="stop" class="stop" data-i18n="stop_session">Stop this session</button>
     </section>
   </main>

@@ -54,7 +54,7 @@ class ProviderTests(ChatFixture):
                             self.assertEqual(True if mode=='bypassPermissions' else None, captured.get('allowDangerouslySkipPermissions'))
                         elif mode!='inherit':
                             self.assertEqual([{'permission':'*','pattern':'*','action':mode}],captured['body']['permission'])
-                            self.assertEqual({'*':mode},json.loads(captured['env']))
+                            self.assertEqual(os.environ.get('OPENCODE_PERMISSION'),captured['env'])
                         self.end()
 
     def test_each_provider_catalog_fork_and_original_history_without_model_turn(self):
@@ -72,6 +72,27 @@ class ProviderTests(ChatFixture):
                     self.assertFalse((self.root/'project'/f'{agent}-turn-count').exists())
                     self.assertNotIn('Saved '+('OpenCode' if agent=='opencode' else 'Claude')+' prompt',(self.state/'metadata.json').read_text())
                     self.end()
+
+    def test_provider_permission_changes_apply_only_on_next_input(self):
+        for agent, modes in [('claude',['bypassPermissions','acceptEdits','inherit']), ('opencode',['allow','ask','allow'])]:
+            with self.subTest(agent=agent):
+                session = self.begin(agent)
+                for mode in modes:
+                    status, result = self.api('POST', f'/v1/sessions/{session.id}/options', {'options':{'permission':mode},'request_id':str(uuid.uuid4())})
+                    self.assertEqual(200,status,result)
+                    self.message('permission transition')
+                    self.until(lambda event:event['session']['turn_state']=='ready')
+                    captured=json.loads((self.root/'project'/f'{agent}-options.json').read_text())
+                    if agent=='claude':
+                        self.assertEqual(None if mode=='inherit' else mode,captured.get('permissionMode'))
+                    else:
+                        self.assertEqual(mode,captured['body']['permission'][-1]['action'])
+                if agent=='opencode':
+                    status, result = self.api('POST',f'/v1/sessions/{session.id}/options', {'options':{'permission':'inherit'},'request_id':str(uuid.uuid4())})
+                    self.assertEqual(400,status)
+                    self.assertEqual('error_permission_default',result['code'])
+                    self.assertEqual('allow',session.options['permission'])
+                self.end()
 
     def test_each_provider_new_chat_explicit_approvals_multi_answers_interrupt_and_follow_up(self):
         for agent in ['opencode','claude']:

@@ -32,7 +32,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.8.0"
+VERSION = "0.8.1"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -59,6 +59,7 @@ ERROR_MESSAGES = {
     "error_bridge_stopping": "The bridge is restarting. Reconnect shortly.",
     "error_chat_mode": "This agent or interface is not supported by the bridge. Check Setup.",
     "error_agent_options": "Invalid permission or speed settings for this agent.",
+    "error_permission_default": "OpenCode can switch between Ask and Bypass during a chat. Restore Agent default in a new session.",
     "error_chat_start": "Could not initialize Chat. Check the agent installation and configuration in Termux.",
     "error_chat_busy": "Wait for the current response or interrupt it before sending another message.",
     "error_chat_transport": "The agent connection failed. Check the session before sending again.",
@@ -569,6 +570,7 @@ class ChatSession(Session):
         self.project, self.agent = project.copy(), agent
         self.options = agent_options(agent, options)
         self.launch_options = self.options.copy()
+        self.default_policy = {}
         self.cols, self.rows = cols, rows
         self.started_at = time.time()
         self.state, self.exit_code = "running", None
@@ -582,7 +584,7 @@ class ChatSession(Session):
         self.revision, self.floor, self.total = 0, 0, 0
         self.rpc_serial, self.rpc_pending = 0, {}
         self.process = subprocess.Popen(provider_command(argv[0], agent),
-            cwd=project["path"], env=launch_environment(agent, self.options), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            cwd=project["path"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
         os.set_blocking(self.process.stdin.fileno(), False)
 
@@ -733,7 +735,10 @@ class ChatSession(Session):
             result = message.get("result") or {}
             if kind == "initialize":
                 self._send({"method": "initialized", "params": {}})
-                overrides = codex_options(self.options) if self.agent == "codex" else {"bibimerOptions": self.options}
+                # Capture the native permission defaults before the first turn.
+                # Explicit choices are applied at every turn, including restores
+                # to Agent default after switching away from it.
+                overrides = codex_options({**self.options, "permission": "inherit"}) if self.agent == "codex" else {"bibimerOptions": self.options}
                 if self.imported:
                     self._rpc("thread/" + self.imported["import_mode"],
                         {"threadId": self.imported["source_thread_id"], "excludeTurns": True, **overrides}, "import")
@@ -744,6 +749,13 @@ class ChatSession(Session):
                     self._fault("error_import_project")
                     return
                 self.thread_id = result["thread"]["id"]
+                if self.agent == "codex":
+                    self.default_policy = {key: result[source] for key, source in
+                        [("approvalPolicy", "approvalPolicy"), ("approvalsReviewer", "approvalsReviewer"), ("sandboxPolicy", "sandbox")]
+                        if source in result}
+                    if not {"sandboxPolicy", "approvalPolicy"}.issubset(self.default_policy):
+                        self._fault("error_chat_start")
+                        return
                 self.history_persisted = result["thread"].get("ephemeral") is False
                 self.persist_thread = True
                 if kind == "import":
@@ -891,6 +903,39 @@ class ChatSession(Session):
         if len(self.inputs) > 512:
             self.inputs.popitem(last=False)
 
+    def configure(self, data):
+        key = request_id(data.get("request_id"))
+        change = data.get("options")
+        if not isinstance(change, dict) or not change:
+            raise Problem(400, "error_agent_options")
+        with self.condition:
+            options = agent_options(self.agent, {**self.options, **change})
+            digest, duplicate = self._duplicate(key, {"action": "options", "options": change})
+            if duplicate:
+                return
+            if self.state != "running" or not self.thread_id or self.history_pending:
+                raise Problem(409, "error_session_not_running")
+            if self.agent == "opencode" and options["permission"] == "inherit" and self.options["permission"] != "inherit":
+                raise Problem(400, "error_permission_default")
+            self.options = options
+            self._remember(key, digest, True)
+            self._bump()
+        # Persist outside the session lock (bridge -> session lock ordering).
+        self.changed()
+
+    def turn_options(self, chosen):
+        if self.agent != "codex":
+            return {"bibimerOptions": chosen}
+        mode = chosen["permission"]
+        if mode == "inherit":
+            policy = self.default_policy.copy()
+        else:
+            policy = {"approvalPolicy": "never" if mode == "yolo" else "on-request", "approvalsReviewer": "user",
+                      "sandboxPolicy": {"type": {"yolo": "dangerFullAccess", "read-only": "readOnly", "workspace-write": "workspaceWrite"}[mode]}}
+        if "fast" in chosen:
+            policy["serviceTier"] = "fast" if chosen["fast"] else "default"
+        return policy
+
     def message(self, data):
         key, text = request_id(data.get("request_id")), data.get("text")
         if "fast" in data and (self.agent != "codex" or type(data["fast"]) is not bool):
@@ -910,8 +955,7 @@ class ChatSession(Session):
             self.turn_state = "sending"
             self._bump()
             chosen = {**self.options, **speed}
-            tier = {"serviceTier": "fast" if chosen["fast"] else "default"} if "fast" in chosen else {}
-            self._rpc("turn/start", {"threadId": self.thread_id, "input": [{"type": "text", "text": text}], **tier}, "turn")
+            self._rpc("turn/start", {"threadId": self.thread_id, "input": [{"type": "text", "text": text}], **self.turn_options(chosen)}, "turn")
             self.options.update(speed)
             self._remember(key, digest, True)
 
@@ -1074,7 +1118,7 @@ class Bridge:
             return {"version": VERSION, "protocol": 1, "instance": self.instance,
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, session=self.snapshot_for(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -1462,13 +1506,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
             elif method == "POST" and action == "stop":
                 session.stop()
                 result = {"session": session.snapshot()}
-            elif method == "POST" and action in {"message", "respond", "interrupt"}:
+            elif method == "POST" and action in {"message", "respond", "interrupt", "options"}:
                 if not isinstance(session, ChatSession):
                     raise Problem(400, "error_chat_mode")
                 if action == "message":
                     session.message(data)
                 elif action == "respond":
                     session.respond(data)
+                elif action == "options":
+                    session.configure(data)
                 else:
                     session.interrupt()
                 result = {"session": session.snapshot()}

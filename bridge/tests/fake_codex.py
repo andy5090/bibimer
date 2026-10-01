@@ -8,6 +8,7 @@ thread, turn, pending = "test-thread", None, None
 count = 0
 store = Path(os.environ["BIBIMER_TEST_CODEX_STORE"]) if os.environ.get("BIBIMER_TEST_CODEX_STORE") else None
 history = []
+defaults = {"approvalPolicy": "on-request", "approvalsReviewer": "user", "sandbox": {"type": "workspaceWrite", "writableRoots": [], "networkAccess": False}}
 
 
 def saved(key):
@@ -42,12 +43,12 @@ for line in sys.stdin:
     method, params = message.get("method"), message.get("params", {})
     if method in {"thread/start", "thread/resume", "thread/fork", "turn/start"}:
         with Path("codex-options.jsonl").open("a") as capture:
-            capture.write(json.dumps({"method": method, **{key: params[key] for key in ("sandbox", "approvalPolicy", "serviceTier", "config", "approvalsReviewer") if key in params}}) + "\n")
+            capture.write(json.dumps({"method": method, **{key: params[key] for key in ("sandbox", "sandboxPolicy", "approvalPolicy", "serviceTier", "config", "approvalsReviewer") if key in params}}) + "\n")
     if method == "initialize":
         emit({"id": message["id"], "result": {"userAgent": "test"}})
     elif method == "thread/start":
         assert params["ephemeral"] is False
-        emit({"id": message["id"], "result": {"thread": {"id": thread, "ephemeral": False}}})
+        emit({"id": message["id"], "result": {**defaults, "thread": {"id": thread, "ephemeral": False}}})
     elif method == "thread/list":
         assert params["cwd"] == str(Path.cwd()) and params["limit"] == 25
         assert params["sourceKinds"] == ["cli", "vscode", "appServer"]
@@ -73,7 +74,7 @@ for line in sys.stdin:
         thread = params["threadId"] + ("-copy" if method == "thread/fork" else "")
         if store:
             history = json.loads(store.read_text())["history"]
-        emit({"id": message["id"], "result": {"thread": {**saved(thread), "turns": []}}})
+        emit({"id": message["id"], "result": {**defaults, "thread": {**saved(thread), "turns": []}}})
     elif method == "thread/items/list":
         assert params == {"threadId": thread, "sortDirection": "desc", "limit": 50}
         if store:

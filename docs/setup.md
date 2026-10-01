@@ -70,16 +70,18 @@ Bibimer가 Termux를 대신 설치하거나 Android의 설치 확인을 자동�
 
 재시작은 실행 중인 세션이 있으면 거부한다. 0.1.x에서는 상태 파일 잠금과 프로세스 소유권을 확인한 뒤 해당 프로세스만 종료한다. 이때 다른 화면에서 새 세션을 시작하지 않는다. 기기가 이 확인을 지원하지 않으면 자동 종료하지 않고 수동 종료 안내를 표시한다.
 
-## 세션 권한·Fast 설정 (0.8.0)
+## 세션 권한·Fast 설정 (0.8.1)
 
-프로그램을 고른 뒤 **Session settings → Permissions**를 연다. 마지막 선택은 앱의 전용 설정에 에이전트별로 저장하며, 프로젝트를 전환하거나 앱을 다시 열어도 다음 세션에서 사용한다. Saved sessions에도 같은 설정 버튼이 있다. 처음에는 Agent default로 기존 도구의 설정을 따른다.
+프로그램을 고르면 **입력창 아래에 권한 선택과 Codex Fast 토글**이 나타난다. 설정 화면을 열 필요 없이 바로 바꿀 수 있다. 마지막 선택은 Android 앱에 에이전트별로 저장하여 다른 프로젝트·새 세션·Saved sessions 가져오기에 사용한다. ⓘ와 가져오기 팝업의 Session settings에서도 설명을 보고 선택할 수 있다.
 
-- Codex: Agent default, Read only, Workspace + approvals, YOLO · full access. 읽기 전용·프로젝트 쓰기는 `on-request` 승인 정책과 함께 적용한다. YOLO는 승인 확인과 샌드박스를 해제한다.
-- Claude: Agent default, Ask for approval, Accept edits, Plan mode, Bypass permissions. bypass를 직접 선택했을 때만 SDK/CLI의 권한 생략 옵션을 적용한다.
-- OpenCode: Agent default, Ask for all tools, Bypass · allow tools. 네이티브 도구 규칙을 지정하며 OpenCode 자체 에이전트 규칙도 적용된다. 원본 이어하기에 명시한 규칙은 해당 OpenCode 세션에도 남는다.
-- Codex Fast: 기본 꺼짐. 새 Chat·PTY·가져오기에 적용하고 Chat 실행 중 변경은 다음 전송에 포함한다. 아직 전송하지 않고 앱을 재실행하면 현재 세션에는 마지막 전송에 사용한 값이 표시되고, 새 세션 기본값에는 마지막 선택이 남는다. 다른 실행 세션은 변경하지 않는다. PTY 실행 중에는 `/fast`를 사용한다. CLI의 직접 변경은 앱의 기본값으로 가져오지 않는다.
+- Codex: Agent default, Read only, Workspace + approvals, YOLO · full access. 읽기·프로젝트 쓰기는 `on-request` 승인을 사용한다. YOLO는 승인과 샌드박스를 해제한다. 대화 중 변경 및 네이티브 기본 권한 복원을 지원한다.
+- Claude: Agent default, Ask for approval, Accept edits, Plan mode, Bypass permissions. 다음 SDK 요청에 선택한 모드를 적용한다.
+- OpenCode: Agent default, Ask for all tools, Bypass · allow tools. 진행 중인 대화에서는 Ask↔Bypass를 전환한다. 네이티브 세션 API가 규칙을 추가하는 방식이므로 변경 후 Agent default 복원은 새 세션에서 제공한다. 원본 이어하기에 지정한 규칙은 해당 OpenCode 세션에도 남는다.
+- Codex Fast: 기본 꺼짐. Chat에서는 다음 입력부터 적용하고 그 선택은 브리지와 앱에 보관하므로 전송 전 앱을 다시 열어도 유지한다. 실제 제공 여부·사용량은 계정과 모델에 따라 다르다. [공식 안내](https://learn.chatgpt.com/docs/agent-configuration/speed)를 참고한다.
 
-권한은 세션 시작 시 결정한다. 실행 중에는 권한 선택을 잠그며 다음 세션에서 바꿀 수 있다. Fast는 처리 우선순위를 요청하며 실제 이용 가능 여부와 사용량은 계정·모델 정책을 따른다. [Codex Fast 공식 안내](https://learn.chatgpt.com/docs/agent-configuration/speed)를 참고한다. 새로운 권한·Fast 설정에는 앱·브리지 0.8.0이 필요하다. 기존 실행 세션은 업데이트 안내가 나타나도 유지한다.
+하단에 **Next message**가 표시된 Chat 설정은 다음 전송부터 적용한다. 현재 응답·대기 승인·질문·다른 프로젝트의 실행은 유지한다. **Next session**이 표시된 PTY 설정은 다음 세션용이다. 현재 터미널의 권한·속도는 CLI 자체 설정에서 변경하며 Codex는 `/fast`를 사용할 수 있다. CLI에서 직접 바꾼 값은 앱에 자동 동기화하지 않는다.
+
+현재 Chat 권한 변경에는 앱·브리지 0.8.1이 필요하다. 이전 브리지에서는 하단에 Update bridge가 표시되며 기존 메시지 송수신은 계속 사용할 수 있다.
 
 ## 서식 있는 대화
 

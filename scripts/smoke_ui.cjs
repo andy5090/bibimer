@@ -18,7 +18,7 @@ const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'bibimer-ui-'));
 const state = path.join(temporary, 'state');
 const errors = [];
 const fixtureMode = !process.argv.includes('--probe-codex');
-let bridge, browser, assets, legacyProjectError = false, legacyFolders = false, legacyPersistence = false, legacyOptions = false, failedEventRequests = 0;
+let bridge, browser, assets, legacyProjectError = false, legacyFolders = false, legacyPersistence = false, legacyOptions = false, legacyLiveOptions = false, failedEventRequests = 0;
 let heldReply = null;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -73,6 +73,7 @@ async function main() {
       if (legacyFolders && endpoint === '/v1/health' && result.ok) result.data.features = ['multiple_projects'];
       if (legacyPersistence && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>feature!=='persistent_codex_sessions');
       if (legacyOptions && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>feature!=='agent_options');
+      if (legacyLiveOptions && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>feature!=='live_agent_options');
       if (endpoint.includes('/events?') && !result.ok) failedEventRequests++;
       if (heldReply?.endpoint === endpoint) {
         const held = heldReply; heldReply = null; held.entered(); await held.promise;
@@ -91,7 +92,7 @@ async function main() {
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
         agentOptions:JSON.parse(localStorage.getItem('testAgentOptions') || '{}'),
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.8.0'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.8.1'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       setAgentOptions:(agent,value)=>{const all=JSON.parse(localStorage.getItem('testAgentOptions') || '{}');all[agent]=JSON.parse(value);localStorage.setItem('testAgentOptions',JSON.stringify(all));return true;},
       cancelPoll:()=>{}, request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
@@ -428,11 +429,32 @@ async function main() {
     await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message');
     const chatId = (await call('GET','/v1/health')).data.session.id;
     assert.deepEqual((await call('GET','/v1/health')).data.session.options,{permission:'workspace-write',fast:true});
-    await page.locator('#settings-toggle').click();
-    assert.equal(await page.locator('#permission').isDisabled(),true);
-    await page.locator('#fast').uncheck();
-    await page.screenshot({path:path.join(root,'dist/screenshots/settings-live-en.png')});
-    await page.locator('#settings-done').click();
+    legacyLiveOptions = true;
+    await page.locator('#reconnect').click();
+    await page.waitForFunction(()=>document.querySelector('#quick-hint').textContent==='Update bridge');
+    assert.equal(await page.locator('#quick-permission').isDisabled(),true);
+    assert.equal(await page.locator('#send').isDisabled(),false);
+    legacyLiveOptions = false;
+    await page.locator('#reconnect').click();
+    await page.waitForFunction(()=>!document.querySelector('#quick-permission').disabled);
+    assert.equal(await page.locator('#quick-permission').isDisabled(),false);
+    await page.locator('#quick-permission').selectOption('yolo');
+    await page.waitForFunction(()=>!document.querySelector('#quick-permission').disabled);
+    assert.equal((await call('GET','/v1/health')).data.session.options.permission,'yolo');
+    await page.reload();
+    await page.waitForFunction(()=>!document.querySelector('#quick-permission').disabled);
+    assert.equal(await page.locator('#quick-permission').inputValue(),'yolo');
+    assert.equal((await call('GET','/v1/health')).data.session.id,chatId);
+    await page.locator('#quick-permission').selectOption('workspace-write');
+    await page.waitForFunction(()=>!document.querySelector('#quick-fast').disabled);
+    await page.locator('#quick-fast').uncheck();
+    await page.waitForFunction(()=>!document.querySelector('#quick-fast').disabled);
+    await page.setViewportSize({width:360,height:460});
+    await page.screenshot({path:path.join(root,'dist/screenshots/quick-settings-small-en.png')});
+    const composerBox=await page.locator('#input-form').boundingBox(), quickBox=await page.locator('#agent-settings').boundingBox(), navBox=await page.locator('.bottom-nav').boundingBox();
+    assert.ok(quickBox.y>=composerBox.y+composerBox.height-4 && quickBox.y+quickBox.height<=navBox.y,'Quick settings stay below the input and above navigation');
+    await page.setViewportSize({width:393,height:780});
+    await page.screenshot({path:path.join(root,'dist/screenshots/quick-settings-en.png')});
     assert.equal(await page.locator('#terminal-area').isVisible(),false);
     assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'send');
     await page.locator('#input').fill('firstsecond');
@@ -471,6 +493,11 @@ async function main() {
     await page.locator('.request-card').waitFor();
     assert.equal(fs.existsSync(path.join(temporary,'project/approved')),false);
     const pendingBefore = (await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.requests[0].id;
+    await page.locator('#quick-permission').selectOption('read-only');
+    await page.waitForFunction(()=>!document.querySelector('#quick-permission').disabled);
+    assert.equal((await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.requests[0].id,pendingBefore);
+    await page.locator('#quick-permission').selectOption('workspace-write');
+    await page.waitForFunction(()=>!document.querySelector('#quick-permission').disabled);
     await page.locator('#project-switch').selectOption(projectB);
     await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
     assert.equal((await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.requests[0].id,pendingBefore);
