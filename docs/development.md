@@ -86,7 +86,7 @@ UI 테스트는 임시 폴더의 실제 브리지에 연결하며 Android 네이
 - UI 및 기존 응답 렌더러 테스트 통과. Android 설정 저장 API의 브라우저 대역을 통해 마지막 선택/재로드/에이전트 분리, 가져오기, 실행 중 권한 잠금·Fast 전환, 영어·한국어와 360×460 설정 팝업을 확인했다. 실제 Android 저장 검증과 구분한다.
 - 실제 Codex App Server 설정 수락과 로컬 HTTP 대역의 Fast on/off tier 전달을 확인했다. 실제 Claude SDK bypass 초기화, OpenCode 새/원본/복사 permission 규칙도 확인했다. 실제 모델 작업은 보내지 않았다.
 - 0.8.0/versionCode 13 빌드, v2/v3 서명 및 이전 인증서 일치, APK 내장 UI·설치 스크립트·네 소스와 격리 설치/0700 권한 검증. 배포: `Download/Bibimer-0.8.0.apk`, `Download/bibimer-setup-0.8.0.sh`.
-- 실제 설치 앱 0.6.1/code 10, 운영 브리지 0.6.0/활성 세션 1개 유지. 설치 경로의 소스만 0.8.0으로 준비했다. 모델 도구 정책·Fast 계정별 제공·Android 실기기 UI/저장 검증은 남는다.
+- 사용자 재시작 요청 후 실제 앱 0.8.0/code 13과 운영 브리지 0.8.0 적용 확인. 실행 세션 0개에서 표시 기록 65개를 비공개 보존한 뒤 재시작했고 기존 인증·프로젝트 3개·이전 세션 상태 조회 및 새 기능 플래그가 유지됨을 확인했다. 모델 도구 정책·Fast 계정별 제공·Android 실기기 UI/저장 검증은 남는다.
 - 근거: [Codex App Server](https://learn.chatgpt.com/docs/app-server), [Codex Fast](https://learn.chatgpt.com/docs/agent-configuration/speed), [Claude 권한](https://code.claude.com/docs/en/permissions), 설치된 Claude SDK `sdk.d.ts`, [OpenCode 권한](https://opencode.ai/docs/permissions/), [OpenCode CLI 환경 변수](https://opencode.ai/docs/cli/)와 설치된 서버 `/doc` 스키마.
 
 ## 2026-10-01 검증 결과 (0.7.0)
