@@ -41,6 +41,14 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 - 첫 구현 스택: Java Android 앱 + 앱에 포함한 WebView/xterm.js 화면, Python 표준 라이브러리 HTTP 브리지, PTY. 현재 기기에서 APK를 직접 빌드하는 경로를 확보했다.
 - 기본 표시 언어는 영어이며 한국어를 추가 지원한다. 기기 언어와 관계없이 영어로 시작하고 **Settings → Language → 한국어**에서 선택한 언어를 저장한다(0.9.0부터, 이전 0.8.2는 Setup). 사용자와의 설명·프로젝트 문서는 한국어를 유지한다.
 
+## 0.9.0 브리지 적용·현재 응답 후 재시작 준비 (2026-10-02)
+
+- 사용자가 브리지 재시작을 요청했다. 현재 이 Codex 대화 자체가 운영 브리지의 자식 프로세스여서 응답 도중 종료하면 도구 호출과 최종 답변도 끊긴다. 따라서 **현재 응답 완료 뒤 자동으로 재시작**하는 별도 POSIX 세션의 일회성 유지보수 프로세스를 실행했다.
+- 브리지·두 어댑터·Claude 복구 도구의 0.9.0 소스를 운영 설치 폴더에 원자적으로 반영하고 원본 일치·0700 권한을 확인했다. 기존 설치 파일은 별도 비공개 유지보수 폴더에 백업했다. 실행 중인 프로세스는 이 기록 시점까지 0.8.1이며 현재 응답을 처리하고 있다.
+- 준비 중 다른 프로젝트에 입력 없는 Codex Chat 하나가 추가된 것을 확인했다. 유지보수 프로세스는 현재 응답이 끝나고 준비 상태가 4초간 유지되면 현재 대화의 비공개 복구 사본을 보관하고, 완료된 현재 세션과 빈 세션만 종료한 뒤 재시작한다. 동일 Codex 스레드를 원본 이어하기로 복원하고, 빈 세션은 같은 프로젝트·권한/Fast로 다시 연다. 모델 입력은 새로 보내지 않는다. 추가 입력이나 세션 구성 변경을 감지하면 강제 종료하지 않고 실패 상태로 남긴다.
+- **이 기록 시점의 상태는 `waiting_for_current_turn`**이다. 실제 완료 여부는 `~/.local/state/bibimer/maintenance/latest-restart.json`의 `job` 경로 아래 `status.json`으로 확인한다. 이번 경로는 `~/.local/state/bibimer/maintenance/restart-0.9.0-0033b167/status.json`이다. 성공 시 `stage: complete`, `version: 0.9.0`, 동일 스레드·권한·인증 유지와 Queue/Steer 확인 결과를 기록한다. 복구 사본·작업 설정은 0700 폴더/0600 파일로 저장하며 저장소나 일반 로그에는 넣지 않는다.
+- 별도 임시 브리지·Codex 대역에서 응답 중 대기, 응답 완료 후 재시작, 인증·프로젝트·권한/Fast 보존, 같은 스레드와 두 번째 빈 세션 복원, 추가 모델 턴 없음 검증을 통과했다. 로그: `.tools/test-restart-after-turn.log`. 운영 완료 결과는 **다음 턴에 상태 파일과 `/v1/health`로 확인해야 한다**. APK를 다시 빌드하지 않았다.
+
 ## 0.9.0 APK 빌드 완료 (2026-10-02)
 
 - 사용자의 `apk build` 요청으로 누적 변경을 **앱 0.9.0 / versionCode 16**, 내장 브리지 **0.9.0**으로 빌드했다. BIBIMER 로고·Space Grotesk, Project Add/Full Access 표기, Queue·Steer, Settings·Enter 기본 줄바꿈/보내기 선택을 포함한다.
@@ -268,7 +276,7 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 
 ## 다음 작업
 
-1. `Download/Bibimer-0.9.0.apk`를 설치한 뒤 Settings·Enter 기본 줄바꿈/보내기 저장, BIBIMER 로고·하단 권한/Fast를 확인한다. 운영 브리지는 0.8.1이며 빌드 때 실행 세션 1개를 유지했다. Queue·Steer를 쓰려면 `Download/bibimer-setup-0.9.0.sh`로 설치하고 기존 실행 세션을 마친 뒤 브리지를 재시작한다. OpenCode → Chat/PTY → Start session과 Import session → 에이전트 선택 → 복사/원본 이어하기·기록 표시·후속 지시를 실제 폰에서 확인한다. 외부 CLI에서 원본을 사용 중이면 복사한다. 현재 폰의 Claude 전용 실행 환경은 복구 완료했으며 운영 브리지에 새 실행 경로 선택을 적용해야 한다. 입력창 아래 여백, Chat 응답·도구·diff·계획·코드 복사/줄바꿈, 런처 아이콘, Add → Browse와 프로젝트 전환도 확인한다.
+1. 먼저 `maintenance/latest-restart.json`이 가리키는 `status.json`과 운영 `/v1/health`를 읽어 응답 후 재시작 완료·0.9.0·Queue/Steer·동일 대화 복원을 확인한다. 재시작 프로세스가 대기 중이면 중복 실행하지 않는다. 이후 `Download/Bibimer-0.9.0.apk`에서 Settings·Enter 기본 줄바꿈/보내기 저장, BIBIMER 로고·하단 권한/Fast와 Queue/Steer를 확인한다. OpenCode → Chat/PTY → Start session과 Import session → 에이전트 선택 → 복사/원본 이어하기·기록 표시·후속 지시를 실제 폰에서 확인한다. 외부 CLI에서 원본을 사용 중이면 복사한다. 현재 폰의 Claude 전용 실행 환경은 복구 완료했으며 운영 브리지에 새 실행 경로 선택을 적용해야 한다. 입력창 아래 여백, Chat 응답·도구·diff·계획·코드 복사/줄바꿈, 런처 아이콘, Add → Browse와 프로젝트 전환도 확인한다.
 2. 기존 인증 토큰을 유지하므로 새 연결 코드가 필요한 경우에만 Termux에서 `~/.local/bin/bibimer-bridge pair`를 실행한다. 코드나 토큰은 저장소·일반 로그에 남기지 않는다.
 3. 실제 APK에서 Enter·줄바꿈·한글 조합, 여러 프로젝트 추가·전환·동시 실행·복수 선택 질문 초안 유지, Chat·PTY 선택, 영어·한국어, 모델 응답·승인·응답 중단·재접속을 검증한다. Bibimer 출력은 브리지 메모리만 유지하며 0.7.0부터 Codex 새 Chat도 영구 저장한다. 세 에이전트의 기록은 각 도구의 저장 규칙에 따라 Saved sessions에서 같은 ID로 이어갈 수 있다. 이전 임시 세션은 자동 변환되지 않는다.
 4. Termux가 없는 기기에서 설치 안내 → 설정 파일 저장 → Python·브리지 설치 → 앱 연결을 별도로 검증한다.
