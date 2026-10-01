@@ -27,7 +27,7 @@ async function main() {
     const file = request.url === '/' ? 'index.html' : request.url.slice(1);
     if (!/^[a-zA-Z0-9_./-]+$/.test(file) || file.includes('..')) { response.writeHead(404).end(); return; }
     try {
-      const type = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.svg') ? 'image/svg+xml' : 'text/html';
+      const type = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.svg') ? 'image/svg+xml' : file.endsWith('.woff2') ? 'font/woff2' : 'text/html';
       response.writeHead(200, {'Content-Type':type}); response.end(fs.readFileSync(path.join(source, file)));
     } catch (_) { response.writeHead(404).end(); }
   });

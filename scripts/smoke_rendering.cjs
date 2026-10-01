@@ -59,7 +59,7 @@ async function main() {
     const file = req.url === '/' ? 'index.html' : req.url.slice(1);
     if (!/^[\w./-]+$/.test(file) || file.includes('..')) return res.writeHead(404).end();
     try {
-      res.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.svg') ? 'image/svg+xml' : 'text/html');
+      res.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.svg') ? 'image/svg+xml' : file.endsWith('.woff2') ? 'font/woff2' : 'text/html');
       res.end(fs.readFileSync(path.join(assets,file)));
     } catch (_) { res.writeHead(404).end(); }
   });

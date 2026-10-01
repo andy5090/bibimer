@@ -243,7 +243,7 @@
     return_title: ["When you come back", "다시 이어서 작업할 때"],
     return_body: ["Reopen the app to reconnect to a live bridge. If it is unavailable, run the start command in Termux. If Android stopped the environment, the previous process may no longer be recoverable.", "브리지가 살아 있으면 앱을 다시 열어 같은 세션에 연결합니다. 연결이 안 되면 Termux에서 시작 명령을 다시 실행하세요. Android가 실행 환경을 종료했다면 이전 프로세스는 복구되지 않을 수 있습니다."],
     forget: ["Forget this app's connection", "이 앱의 연결 정보 지우기"],
-    version_note: ["Bibimer {version} · Termux on this phone", "Bibimer {version} · 이 휴대폰의 Termux에 연결"],
+    version_note: ["BIBIMER {version} · Termux on this phone", "BIBIMER {version} · 이 휴대폰의 Termux에 연결"],
     navigation: ["Main navigation", "주 메뉴"],
     tab_work: ["Work", "작업"],
     tab_setup: ["Setup", "준비"],

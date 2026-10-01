@@ -37,7 +37,7 @@ public final class MainActivity extends Activity {
     private static final String PAGE = "https://" + ASSET_HOST + "/index.html";
     private static final int EXPORT_INSTALLER = 10;
     private static final Set<String> ASSETS = new HashSet<>(Arrays.asList(
-        "index.html", "app.js", "app.css", "i18n.js", "conversation.js", "rich-text.js", "brand.svg", "vendor/marked.js", "vendor/highlight.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
+        "index.html", "app.js", "app.css", "i18n.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
     private final ExecutorService actions = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<Runnable>(128));
     private final ExecutorService events = Executors.newSingleThreadExecutor();
@@ -89,8 +89,9 @@ public final class MainActivity extends Activity {
                     "GET".equals(request.getMethod()) && ASSETS.contains(path)) {
                     try {
                         String type = path.endsWith(".js") ? "application/javascript" :
-                            path.endsWith(".css") ? "text/css" : path.endsWith(".svg") ? "image/svg+xml" : "text/html";
-                        return new WebResourceResponse(type, "UTF-8", getAssets().open(path));
+                            path.endsWith(".css") ? "text/css" : path.endsWith(".svg") ? "image/svg+xml" :
+                            path.endsWith(".woff2") ? "font/woff2" : "text/html";
+                        return new WebResourceResponse(type, path.endsWith(".woff2") ? null : "UTF-8", getAssets().open(path));
                     } catch (Exception ignored) { }
                 }
                 return new WebResourceResponse("text/plain", "UTF-8", new ByteArrayInputStream(new byte[0]));
