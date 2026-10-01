@@ -25,8 +25,9 @@ class ProviderTests(ChatFixture):
         env.start();self.addCleanup(env.stop)
         self.register()
 
-    def begin(self, agent, imported=False, mode='fork'):
+    def begin(self, agent, imported=False, mode='fork', options=None):
         data={'agent':agent,'mode':'chat','request_id':str(uuid.uuid4()),'project_id':self.bridge.project['id']}
+        if options is not None: data['options']=options
         if imported: data.update(source_thread_id='ses_saved_example' if agent=='opencode' else '11111111-1111-4111-8111-111111111111', import_mode=mode)
         status,result=self.api('POST','/v1/sessions',data)
         self.assertEqual(200,status,result)
@@ -38,6 +39,23 @@ class ProviderTests(ChatFixture):
         session=self.bridge.session
         session.stop();session.process.wait(timeout=6)
         self.until(lambda event:event['session']['state']=='exited')
+
+    def test_explicit_native_permissions_on_new_and_imported_sessions(self):
+        for agent, modes in [('claude', ['inherit','default','acceptEdits','plan','bypassPermissions']), ('opencode', ['inherit','ask','allow'])]:
+            for imported, import_mode in [(False,'fork'), (True,'fork'), (True,'resume')]:
+                for mode in modes:
+                    with self.subTest(agent=agent, mode=mode, imported=imported, import_mode=import_mode):
+                        self.begin(agent, imported, import_mode, {'permission':mode})
+                        self.message('controlled options probe')
+                        self.until(lambda event:event['session']['turn_state']=='ready')
+                        captured=json.loads((self.root/'project'/f'{agent}-options.json').read_text())
+                        if agent=='claude':
+                            self.assertEqual(None if mode=='inherit' else mode, captured.get('permissionMode'))
+                            self.assertEqual(True if mode=='bypassPermissions' else None, captured.get('allowDangerouslySkipPermissions'))
+                        elif mode!='inherit':
+                            self.assertEqual([{'permission':'*','pattern':'*','action':mode}],captured['body']['permission'])
+                            self.assertEqual({'*':mode},json.loads(captured['env']))
+                        self.end()
 
     def test_each_provider_catalog_fork_and_original_history_without_model_turn(self):
         for agent in ['opencode','claude']:

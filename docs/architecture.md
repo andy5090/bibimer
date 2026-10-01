@@ -25,11 +25,11 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 | `POST /v1/project` | 폴더 추가·선택 | 추가: `path`, `create`, `add: true`; 전환: `project_id` |
 | `POST /v1/folders` | Termux 하위 폴더 탐색, 상태 변경 없음 | `path` (기본 `~`), `hidden` (기본 false), `after` (다음 페이지의 이름 커서) |
 | `POST /v1/session-history` | 현재 프로젝트의 저장된 에이전트 세션 조회 | `project_id`, `agent` (`codex` 기본 / `opencode` / `claude`), `search` (제목), `cursor` |
-| `POST /v1/sessions` | 지정 프로젝트의 세션 시작·가져오기 | `project_id`, `agent` (`shell`, `codex`, `claude`, `opencode`), `mode` (`terminal` 기본 / `chat`), `request_id`, `cols`, `rows`; 가져오기: `source_thread_id`, `import_mode` (`fork` / `resume`), `mode: chat` |
+| `POST /v1/sessions` | 지정 프로젝트의 세션 시작·가져오기 | `project_id`, `agent` (`shell`, `codex`, `claude`, `opencode`), `mode` (`terminal` 기본 / `chat`), `request_id`, `cols`, `rows`, `options` (0.8.0); 가져오기: `source_thread_id`, `import_mode` (`fork` / `resume`), `mode: chat` |
 | `GET /v1/sessions/{id}/events` | 출력 및 실제 프로세스 상태 | `cursor` (PTY 바이트 위치 / Chat 변경 번호), `wait` (0~20초) |
 | `POST /v1/sessions/{id}/input` | 입력 바이트 전송 | `data` (base64), `request_id` (UUID) |
 | `POST /v1/sessions/{id}/resize` | PTY 크기 변경 | `cols` (20~300), `rows` (4~200) |
-| `POST /v1/sessions/{id}/message` | Chat의 새 메시지 | `text`, `request_id` |
+| `POST /v1/sessions/{id}/message` | Chat의 새 메시지 | `text`, `request_id`, Codex 전용 `fast` (boolean, 선택) |
 | `POST /v1/sessions/{id}/respond` | 대기 중인 승인·질문에 응답 | `prompt_id`, `request_id`, `decision` 또는 `answers` |
 | `POST /v1/sessions/{id}/interrupt` | Chat의 현재 응답만 중단 | 빈 객체 |
 | `POST /v1/shutdown` | CLI 업데이트용 브리지 종료, 실행 세션이 있으면 거부 | 빈 객체 |
@@ -116,3 +116,14 @@ health의 `persistent_codex_sessions`는 새 Codex 대화의 영구 저장을 �
 0.6.0의 기존 임시 대화는 메모리에서 찾았고 사용자 요청에 따라 남아 있는 UI 이벤트만 별도로 보존했다. `~/.local/state/bibimer/recovery/`는 0700, 파일은 0600이며 저장소·일반 로그에 포함하지 않는다. 이는 일회성 복구 작업이며 앱의 새로운 대화를 이 경로에 저장하는 기능이 아니다. 임시 대화에 대한 네이티브 `thread/fork`는 통제된 실험에서 거절되었으며 전체 모델 맥락을 복원했다고 표시하지 않는다.
 
 Claude 실행 경로는 정상 사용자 CLI → Bibimer 전용 복구 런처 순서로 찾는다. 명시적인 `BIBIMER_CLAUDE_EXECUTABLE`은 이 선택보다 우선하며 HTTP 클라이언트에서 지정할 수 없다. 확인 캐시는 에이전트와 실행 경로별로 분리한다. `repair_claude_termux.py`는 공식 고정 패키지의 무결성·예상 일반 파일·실행 성공을 확인한 뒤 런처를 원자적으로 교체하고 이전 런처를 실패 시 유지한다. glibc 선행 설치나 사용자 로그인은 자동으로 처리하지 않는다.
+
+## 0.8.0 권한·속도 설정
+
+`options.permission`은 에이전트별 허용된 열거값만 받는다. `options.fast`는 Codex의 boolean만 허용한다. 임의 CLI 인수·설정 파일·환경 변수나 RPC를 앱에 개방하지 않는다. 값 생략은 기존 도구 설정을 상속하며 새 앱의 Codex Fast 기본값은 false다. `agent_options` 기능 표시가 없는 브리지에서는 새 앱의 에이전트 실행·가져오기를 막고 업데이트를 안내한다.
+
+- Codex Chat: `thread/start`, `thread/resume`, `thread/fork`의 `sandbox`, `approvalPolicy`, `approvalsReviewer`와 `serviceTier`에 전달한다. YOLO는 `danger-full-access`/`never`, 읽기·쓰기 모드는 `on-request`와 사용자 승인을 사용한다. Fast는 `features.fast_mode=true`, `fast`/`default` tier로 요청한다. 설치된 0.156.1의 `fast` 응답은 `priority`로 정규화된다. 각 메시지는 해당 세션의 선택을 `turn/start.serviceTier`에 전달한다.
+- Codex PTY: 고정 인수로 sandbox/approval 또는 `--dangerously-bypass-approvals-and-sandbox`를 구성하고 프로세스 범위의 `-c service_tier=...`를 사용한다. 사용자의 `config.toml`은 편집하지 않는다.
+- Claude Chat: SDK의 `permissionMode`를 선택하고 bypass일 때만 `allowDangerouslySkipPermissions=true`를 추가한다. PTY는 `--permission-mode` 및 bypass의 `--dangerously-skip-permissions`를 사용한다.
+- OpenCode: 프로세스에만 `OPENCODE_PERMISSION`을 설정한다. Chat 새 세션은 생성 시 wildcard permission을 전달한다. 이어하기·복사는 원본 확인 후 해당 세션에 PATCH하며, 네이티브가 규칙을 추가하므로 마지막 일치 규칙이 선택된다. 복사에 적용한 규칙은 원본에 쓰지 않는다. 상속은 규칙을 덮어쓰지 않는다.
+
+Android `AgentPreferences`는 에이전트별 마지막 선택만 `SharedPreferences`에 저장한다. 프로젝트별 입력 초안·실행 세션과 별개다. `options`는 세션의 다음 입력 설정, `launch_options`는 처음 실행한 설정이며 실행 요청 중복 판정에는 후자를 사용한다. Fast 메시지의 중복 판정에 속도를 포함한다. 다른 프로젝트의 세션·대기 승인에는 전달하지 않는다. 도구가 실제로 전달한 승인·질문 요청은 기존 명시적 응답 UI를 따른다.

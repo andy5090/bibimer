@@ -17,6 +17,11 @@
   let folderTicket = 0, folderError = null;
   let canImport = false, multiImport = false, persistentCodex = false, importProject = null, importEntries = [], importSelection = null;
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
+  let canOptions = false;
+  const lastOptions = environment().agentOptions || {};
+  const sessionFast = new Map();
+  const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
+    claude:["inherit","default","acceptEdits","plan","bypassPermissions"], opencode:["inherit","ask","allow"]};
   const conversation = new BibimerConversation($("conversation"), $("chat-requests"), (key, values) => key === "chat_assistant" ? t("agent_" + (session?.agent || "codex")) : t(key, values), async data => {
     const id = session?.id;
     try {
@@ -34,6 +39,56 @@
   function environment() {
     try { return JSON.parse(native.environment()); }
     catch (_) { return {paired:false, termuxInstalled:false}; }
+  }
+  function savedOptions(agent) {
+    const value = lastOptions[agent] || {};
+    return {permission:permissionModes[agent]?.includes(value.permission) ? value.permission : "inherit",
+      ...(agent === "codex" ? {fast:value.fast === true} : {})};
+  }
+  function nextFast() {
+    return sessionFast.has(session?.id) ? sessionFast.get(session.id) : session?.options?.fast === true;
+  }
+  function renderSettings(prefix = "") {
+    const live = !prefix && session && ["running","stopping"].includes(session.state);
+    const agent = prefix ? $("import-agent").value : live ? session.agent : $("agent").value;
+    $(prefix ? "import-settings" : "agent-settings").hidden = !permissionModes[agent];
+    if (!permissionModes[agent]) return;
+    $(prefix + "settings-title").textContent = t("agent_" + agent) + " · " + t("agent_settings");
+    const options = live ? session.options || {permission:"inherit"} : savedOptions(agent);
+    const select = $(prefix + "permission");
+    // Keep the native select open during status polling.
+    if (select.dataset.agent !== agent || select.dataset.language !== i18n.language()) {
+      select.replaceChildren(...permissionModes[agent].map(mode => new Option(t("permission_" + mode), mode)));
+      select.dataset.agent = agent; select.dataset.language = i18n.language();
+    }
+    select.value = options.permission;
+    select.disabled = !!live || !canOptions || busy;
+    const fast = live ? nextFast() : options.fast;
+    $(prefix + "fast-label").hidden = agent !== "codex";
+    $(prefix + "fast").checked = fast === true;
+    $(prefix + "fast").disabled = !canOptions || busy || !!(live && (!isChat() || session.state !== "running"));
+    $(prefix + "settings-summary").textContent = !canOptions ? t("settings_update_short") : t("permission_" + options.permission) + (agent === "codex" ? " · " + t(fast ? "fast_on" : "fast_off") : "");
+    $(prefix + "permission-hint").textContent = t("permission_hint_" + options.permission);
+    $(prefix + "settings-hint").textContent = !canOptions ? t("settings_update") :
+      t(live ? isChat() && agent === "codex" ? "settings_live_fast" : "settings_live" : "settings_saved") + (agent === "codex" ? " " + t("fast_hint") : "");
+  }
+  function saveOptions(prefix) {
+    const live = !prefix && session && ["running","stopping"].includes(session.state);
+    const agent = prefix ? $("import-agent").value : live ? session.agent : $("agent").value;
+    const value = {...savedOptions(agent), ...(!live ? {permission:$(prefix + "permission").value} : {}),
+      ...(agent === "codex" ? {fast:$(prefix + "fast").checked} : {})};
+    let saved = false;
+    try { saved = native.setAgentOptions(agent, JSON.stringify(value)); } catch (_) {}
+    if (!saved) { $(prefix + "settings-dialog").close(); notice("error_settings_save"); renderSettings(prefix); return; }
+    lastOptions[agent] = value;
+    if (live && agent === "codex") sessionFast.set(session.id, value.fast);
+    renderSettings(); renderSettings("import-");
+  }
+  for (const prefix of ["", "import-"]) {
+    $(prefix + "settings-toggle").addEventListener("click", () => { renderSettings(prefix); $(prefix + "settings-dialog").showModal(); });
+    $(prefix + "settings-done").addEventListener("click", () => $(prefix + "settings-dialog").close());
+    $(prefix + "permission").addEventListener("change", () => saveOptions(prefix));
+    $(prefix + "fast").addEventListener("change", () => saveOptions(prefix));
   }
   function renderNotice() {
     $("notice").textContent = noticeData ? t(noticeData.key) + (noticeData.suffix ? " " + t(noticeData.suffix) : "") : "";
@@ -173,7 +228,7 @@
     $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
-    $("version").textContent = t("version_note", {version:environment().version || "0.7.0"});
+    $("version").textContent = t("version_note", {version:environment().version || "0.8.0"});
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
     renderAgents(); renderProjects(); updateEnvironment(); renderSession(); renderNotice();
     conversation.localize();
@@ -206,9 +261,12 @@
     $("launch-controls").hidden = !!live;
     $("mode-controls").hidden = !!live;
     $("mode-hint").hidden = !!live;
+    renderSettings(); renderSettings("import-");
     $("launch").disabled = !online || !project || busy || switchingProject;
     $("import-session").disabled = $("launch").disabled || !knownAgents.some(importable);
     if ($("agent").value === "codex" && $("mode").value === "chat" && !persistentCodex) $("launch").disabled = true;
+    if ($("agent").value !== "shell" && !canOptions) $("launch").disabled = true;
+    if (!canOptions) $("import-session").disabled = true;
     $("import-update").hidden = !online || !!live || (canImport && multiImport);
     renderImport();
     $("edit-project").disabled = (!multipleProjects && !!live) || !online || switchingProject || busy;
@@ -280,6 +338,7 @@
       canImport = health.features?.includes("import_codex_session") === true;
       multiImport = health.features?.includes("import_agent_session") === true;
       persistentCodex = health.features?.includes("persistent_codex_sessions") === true;
+      canOptions = health.features?.includes("agent_options") === true;
       knownProjects = health.projects || [];
       if (multipleProjects && !knownProjects.some(item => item.id === selectedProjectId)) selectedProjectId = health.project?.id || knownProjects[0]?.id || null;
       const entry = multipleProjects ? knownProjects.find(item => item.id === selectedProjectId) : null;
@@ -418,7 +477,8 @@
     let ok = false;
     try {
       if (isChat()) {
-        const result = await api("POST", `/v1/sessions/${id}/message`, {text, request_id:uuid()});
+        const result = await api("POST", `/v1/sessions/${id}/message`, {text, request_id:uuid(),
+          ...(canOptions && session.agent === "codex" ? {fast:nextFast()} : {})});
         if (session?.id === id) setSession(result.session);
         ok = true;
       } else ok = await sendRaw(text.replace(/\r?\n/g, "\r") + "\r");
@@ -612,10 +672,10 @@
     $("import-agent").value = knownAgents.find(agent => agent.id === $("agent").value && importable(agent))?.id || knownAgents.find(importable)?.id || "codex";
     $("import-search").value = ""; $("import-mode").value = "resume";
     $("import-project").textContent = project.path;
-    $("import-dialog").showModal(); loadImports();
+    renderSettings("import-"); $("import-dialog").showModal(); loadImports();
   });
   $("import-search-form").addEventListener("submit", event => { event.preventDefault(); loadImports(); });
-  $("import-agent").addEventListener("change", () => { $("import-search").value = ""; loadImports(); });
+  $("import-agent").addEventListener("change", () => { $("import-search").value = ""; renderSettings("import-"); loadImports(); });
   $("import-more").addEventListener("click", () => loadImports(true));
   $("import-cancel").addEventListener("click", () => $("import-dialog").close());
   $("import-dialog").addEventListener("close", () => { ++importTicket; importLoading = false; });
@@ -626,6 +686,7 @@
     try {
       const agent = $("import-agent").value;
       const data = await api("POST", "/v1/sessions", {agent, mode:"chat", project_id:key,
+        options:savedOptions(agent),
         source_thread_id:importSelection, import_mode:$("import-mode").value, request_id:uuid()});
       $("import-dialog").close();
       if (projectKey() === key) {
@@ -643,6 +704,7 @@
     busy = true; renderSession(); notice("");
     try {
       const data = await api("POST", "/v1/sessions", {agent:$("agent").value, mode:$("mode").value,
+        ...(canOptions ? {options:savedOptions($("agent").value)} : {}),
         ...(multipleProjects ? {project_id:selectedProjectId} : {}),
         cols:Math.max(20, term.cols), rows:Math.max(4, term.rows), request_id:uuid()});
       if (projectKey() === key) { ++generation; setSession(data.session); resize(); startPoll(); }

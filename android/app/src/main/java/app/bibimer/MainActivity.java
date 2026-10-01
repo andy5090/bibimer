@@ -44,6 +44,7 @@ public final class MainActivity extends Activity {
     private WebView web;
     private TokenStore tokens;
     private AppLanguage language;
+    private AgentPreferences agentPreferences;
     private LocalBridge bridge;
     private volatile boolean destroyed;
 
@@ -51,6 +52,7 @@ public final class MainActivity extends Activity {
         super.onCreate(saved);
         tokens = new TokenStore(this);
         language = new AppLanguage(this);
+        agentPreferences = new AgentPreferences(this);
         bridge = new LocalBridge(tokens);
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(17, 20, 23));
@@ -129,12 +131,17 @@ public final class MainActivity extends Activity {
             try {
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
-                    .put("version", "0.7.0").toString();
+                    .put("agentOptions", agentPreferences.get())
+                    .put("version", "0.8.0").toString();
             } catch (Exception ignored) { return "{}"; }
         }
 
         @JavascriptInterface public boolean setLanguage(String value) {
             return language.set(value);
+        }
+
+        @JavascriptInterface public boolean setAgentOptions(String agent, String value) {
+            return agentPreferences.set(agent, value);
         }
 
         @JavascriptInterface public void request(String id, String method, String path, String body) {

@@ -92,6 +92,7 @@ function respond(value) {
     request.finish({behavior:'allow',updatedInput:{...request.input,answers}});
   } else request.finish(result.decision==='accept'?{behavior:'allow',updatedInput:request.input}:{behavior:'deny',message:'User declined in Bibimer'});
 }
+let permissionMode = 'inherit';
 async function runTurn(prompt, identity) {
   let finishInput, failed=false;
   const done = new Promise(resolve=>{finishInput=resolve;});
@@ -102,6 +103,8 @@ async function runTurn(prompt, identity) {
   try {
     const options={cwd,pathToClaudeCodeExecutable:executable,settingSources:['user','project','local'],
       systemPrompt:{type:'preset',preset:'claude_code'},includePartialMessages:true,canUseTool:permission,
+      ...(permissionMode==='inherit'?{}:{permissionMode}),
+      ...(permissionMode==='bypassPermissions'?{allowDangerouslySkipPermissions:true}:{}),
       ...(persisted?{resume:thread}:{sessionId:thread}),stderr:()=>{}};
     active=sdk.query({prompt:input(),options});
     notify('item/completed',{item:{id:identity,type:'userMessage',content:[{type:'text',text:prompt}]}});
@@ -150,6 +153,8 @@ async function call(method,params) {
   if (method==='thread/read') return {thread:metadata(await source(params.threadId))};
   if (['thread/start','thread/resume','thread/fork'].includes(method)) {
     if (thread) throw Error('error_session_exists');
+    permissionMode=params.bibimerOptions?.permission || 'inherit';
+    if (!['inherit','default','acceptEdits','plan','bypassPermissions'].includes(permissionMode)) throw Error('error_agent_options');
     if (method==='thread/start') { thread=randomUUID(); return {thread:{id:thread,cwd,ephemeral:false}}; }
     let row=await source(params.threadId);
     if (method==='thread/fork') { const fork=await sdk.forkSession(row.sessionId,{dir:cwd}); row=await source(fork.sessionId); }

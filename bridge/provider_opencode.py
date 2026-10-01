@@ -246,14 +246,20 @@ class Adapter:
         if method in {'thread/start', 'thread/resume', 'thread/fork'}:
             if self.thread:
                 raise RuntimeError('error_session_exists')
+            permission = params.get('bibimerOptions', {}).get('permission', 'inherit')
+            if permission not in {'inherit', 'ask', 'allow'}:
+                raise RuntimeError('error_agent_options')
+            policy = {} if permission == 'inherit' else {'permission': [{'permission': '*', 'pattern': '*', 'action': permission}]}
             if method == 'thread/start':
-                source = self.http('POST', '/session', {})
+                source = self.http('POST', '/session', policy)
             else:
                 source = self.source(params['threadId'])
                 if method == 'thread/fork':
                     source = self.http('POST', '/session/' + source['id'] + '/fork', {})
                 elif self.http('GET', '/session/status').get(source['id'], {}).get('type', 'idle') != 'idle':
                     raise RuntimeError('error_import_active')
+                if policy:
+                    source = self.http('PATCH', '/session/' + source['id'], policy)
             self.thread = source['id']
             return {'thread': self.metadata(source)}
         if params.get('threadId') != self.thread or not self.thread:

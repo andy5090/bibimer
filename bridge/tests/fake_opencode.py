@@ -52,7 +52,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
         method=self.command
         if route=='/session' and method=='GET': self.reply(200,list(threads.values())); return
         if route=='/session' and method=='POST':
-            assert body=={}
+            assert set(body) <= {'permission'}
+            Path('opencode-options.json').write_text(json.dumps({'body': body, 'env': os.environ.get('OPENCODE_PERMISSION')}))
             key='ses_new_'+uuid.uuid4().hex; threads[key]=record(key,'New session'); messages[key]=[]
             self.reply(200,threads[key]); return
         if route=='/session/status': self.reply(200,states); return
@@ -60,7 +61,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.reply(200,list(pending.values())+[{'id':'per_foreign','sessionID':'ses_elsewhere','permission':'bash','patterns':['unrelated'],'metadata':{},'always':[]}]); return
         if route=='/question': self.reply(200,list(questions.values())); return
         parts=route.strip('/').split('/')
-        if len(parts)==2 and parts[0]=='session': self.reply(200,threads.get(parts[1],record(parts[1]))); return
+        if len(parts)==2 and parts[0]=='session':
+            if method=='PATCH':
+                assert set(body)=={'permission'}
+                Path('opencode-options.json').write_text(json.dumps({'body': body, 'env': os.environ.get('OPENCODE_PERMISSION')}))
+            self.reply(200,threads.get(parts[1],record(parts[1]))); return
         if len(parts)==3 and parts[0]=='session':
             _,key,action=parts
             if action=='fork':
@@ -101,6 +106,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_response(code);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
     do_GET=run
     do_POST=run
+    do_PATCH=run
 
 server=http.server.ThreadingHTTPServer(('127.0.0.1',0),Handler)
 print('opencode server listening on http://127.0.0.1:'+str(server.server_port),flush=True)

@@ -70,6 +70,17 @@ Bibimer가 Termux를 대신 설치하거나 Android의 설치 확인을 자동�
 
 재시작은 실행 중인 세션이 있으면 거부한다. 0.1.x에서는 상태 파일 잠금과 프로세스 소유권을 확인한 뒤 해당 프로세스만 종료한다. 이때 다른 화면에서 새 세션을 시작하지 않는다. 기기가 이 확인을 지원하지 않으면 자동 종료하지 않고 수동 종료 안내를 표시한다.
 
+## 세션 권한·Fast 설정 (0.8.0)
+
+프로그램을 고른 뒤 **Session settings → Permissions**를 연다. 마지막 선택은 앱의 전용 설정에 에이전트별로 저장하며, 프로젝트를 전환하거나 앱을 다시 열어도 다음 세션에서 사용한다. Saved sessions에도 같은 설정 버튼이 있다. 처음에는 Agent default로 기존 도구의 설정을 따른다.
+
+- Codex: Agent default, Read only, Workspace + approvals, YOLO · full access. 읽기 전용·프로젝트 쓰기는 `on-request` 승인 정책과 함께 적용한다. YOLO는 승인 확인과 샌드박스를 해제한다.
+- Claude: Agent default, Ask for approval, Accept edits, Plan mode, Bypass permissions. bypass를 직접 선택했을 때만 SDK/CLI의 권한 생략 옵션을 적용한다.
+- OpenCode: Agent default, Ask for all tools, Bypass · allow tools. 네이티브 도구 규칙을 지정하며 OpenCode 자체 에이전트 규칙도 적용된다. 원본 이어하기에 명시한 규칙은 해당 OpenCode 세션에도 남는다.
+- Codex Fast: 기본 꺼짐. 새 Chat·PTY·가져오기에 적용하고 Chat 실행 중 변경은 다음 전송에 포함한다. 아직 전송하지 않고 앱을 재실행하면 현재 세션에는 마지막 전송에 사용한 값이 표시되고, 새 세션 기본값에는 마지막 선택이 남는다. 다른 실행 세션은 변경하지 않는다. PTY 실행 중에는 `/fast`를 사용한다. CLI의 직접 변경은 앱의 기본값으로 가져오지 않는다.
+
+권한은 세션 시작 시 결정한다. 실행 중에는 권한 선택을 잠그며 다음 세션에서 바꿀 수 있다. Fast는 처리 우선순위를 요청하며 실제 이용 가능 여부와 사용량은 계정·모델 정책을 따른다. [Codex Fast 공식 안내](https://learn.chatgpt.com/docs/agent-configuration/speed)를 참고한다. 새로운 권한·Fast 설정에는 앱·브리지 0.8.0이 필요하다. 기존 실행 세션은 업데이트 안내가 나타나도 유지한다.
+
 ## 서식 있는 대화
 
 프로젝트를 등록한 뒤 **Codex / OpenCode / Claude Code → Chat · formatted text(대화 · 텍스트 서식) → Start session**을 선택한다. 설치된 에이전트의 새 대화를 앱에서 직접 시작한다. Termux의 CLI 설치·로그인·모델 및 권한 설정을 사용하며 앱이 권한 검사를 임의로 해제하지 않는다. Claude 대화에는 아래의 SDK 준비도 필요하다.

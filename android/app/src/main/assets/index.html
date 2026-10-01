@@ -45,6 +45,7 @@
       </form>
       <div class="session-bar"><span id="process" class="badge">Not started</span><button id="copy-resume" class="quiet" type="button" data-i18n="codex_resume_copy" hidden>Resume in CLI</button><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
       <div id="mode-controls" class="mode-controls"><label for="mode" data-i18n="mode_label">Session interface</label><select id="mode"><option value="terminal" data-i18n="mode_terminal">Terminal · PTY</option><option value="chat" data-i18n="mode_chat">Chat · formatted text</option></select></div>
+      <div id="agent-settings" class="agent-settings" hidden><button id="settings-toggle" class="settings-toggle" type="button"><span data-i18n="agent_settings">Session settings</span><span id="settings-summary"></span><span aria-hidden="true">›</span></button></div>
       <div id="launch-controls" class="launch-controls">
         <label class="sr-only" for="agent" data-i18n="program_label">Program to run</label>
         <select id="agent"><option value="shell">Terminal</option></select>
@@ -133,6 +134,7 @@
   <dialog id="import-dialog" aria-labelledby="import-title">
     <div class="import-heading"><h2 id="import-title" data-i18n="import_session">Import session</h2><button id="import-cancel" class="quiet" data-i18n="cancel_project">Cancel</button></div>
     <div class="import-provider"><label for="import-agent" data-i18n="program_label">Program to run</label><select id="import-agent"><option value="codex">Codex</option></select></div>
+    <div id="import-settings" class="agent-settings"><button id="import-settings-toggle" class="settings-toggle" type="button"><span data-i18n="agent_settings">Session settings</span><span id="import-settings-summary"></span><span aria-hidden="true">›</span></button></div>
     <p id="import-project"></p>
     <form id="import-search-form" class="folder-input"><input id="import-search" type="search" maxlength="200" autocomplete="off" data-i18n-placeholder="import_search" data-i18n-aria-label="import_search" placeholder="Search titles (case-sensitive)"><button id="import-refresh" class="secondary" type="submit" data-i18n="import_search_button">Search</button></form>
     <div id="import-entries" role="group" data-i18n-aria-label="import_saved" aria-label="Saved sessions"></div>
@@ -142,6 +144,12 @@
     <p class="hint" data-i18n="import_hint">Restores saved context, not a live terminal. Use a copy if the original is open in another CLI. No new work starts until you send a message.</p>
     <button id="import-confirm" class="primary" data-i18n="import_selected" disabled>Import selected session</button>
   </dialog>
+  <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title"><h2 id="settings-title">Session settings</h2><div class="settings-fields"><label for="permission" data-i18n="permissions">Permissions</label><select id="permission"></select>
+          <label id="fast-label" class="fast-option"><input id="fast" type="checkbox"><span data-i18n="codex_fast">Codex Fast</span></label></div>
+        <p id="permission-hint" class="hint"></p><p id="settings-hint" class="hint"></p><button id="settings-done" type="button" class="primary" data-i18n="settings_done">Done</button></dialog>
+  <dialog id="import-settings-dialog" class="settings-dialog" aria-labelledby="import-settings-title"><h2 id="import-settings-title">Session settings</h2><div class="settings-fields"><label for="import-permission" data-i18n="permissions">Permissions</label><select id="import-permission"></select>
+        <label id="import-fast-label" class="fast-option"><input id="import-fast" type="checkbox"><span data-i18n="codex_fast">Codex Fast</span></label></div>
+      <p id="import-permission-hint" class="hint"></p><p id="import-settings-hint" class="hint"></p><button id="import-settings-done" type="button" class="primary" data-i18n="settings_done">Done</button></dialog>
   <dialog id="stop-dialog"><h2 data-i18n="stop_title">Stop this session?</h2><p data-i18n="stop_body">This stops the agent and commands running in this session.</p><div class="button-row"><button id="cancel-stop" class="secondary" data-i18n="stop_cancel">Keep working</button><button id="confirm-stop" class="danger" data-i18n="stop_confirm">Stop session</button></div></dialog>
 </div>
 </body>

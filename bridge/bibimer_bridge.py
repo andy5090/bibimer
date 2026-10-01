@@ -32,7 +32,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.7.0"
+VERSION = "0.8.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -58,6 +58,7 @@ ERROR_MESSAGES = {
     "error_project_missing": "This project is no longer registered. Refresh the project list.",
     "error_bridge_stopping": "The bridge is restarting. Reconnect shortly.",
     "error_chat_mode": "This agent or interface is not supported by the bridge. Check Setup.",
+    "error_agent_options": "Invalid permission or speed settings for this agent.",
     "error_chat_start": "Could not initialize Chat. Check the agent installation and configuration in Termux.",
     "error_chat_busy": "Wait for the current response or interrupt it before sending another message.",
     "error_chat_transport": "The agent connection failed. Check the session before sending again.",
@@ -220,11 +221,70 @@ def issue_pairing(state):
     return code
 
 
+PERMISSION_MODES = {
+    "shell": {"inherit"},
+    "codex": {"inherit", "read-only", "workspace-write", "yolo"},
+    "claude": {"inherit", "default", "acceptEdits", "plan", "bypassPermissions"},
+    "opencode": {"inherit", "ask", "allow"},
+}
+
+
+def agent_options(agent, value=None):
+    value = {} if value is None else value
+    if not isinstance(value, dict) or set(value) - {"permission", "fast"}:
+        raise Problem(400, "error_agent_options")
+    mode = value.get("permission", "inherit")
+    if not isinstance(mode, str) or mode not in PERMISSION_MODES[agent]:
+        raise Problem(400, "error_agent_options")
+    if "fast" in value and (agent != "codex" or type(value["fast"]) is not bool):
+        raise Problem(400, "error_agent_options")
+    return {"permission": mode, **({"fast": value["fast"]} if "fast" in value else {})}
+
+
+def codex_options(options):
+    result = {}
+    mode = options["permission"]
+    if mode != "inherit":
+        result.update(sandbox="danger-full-access" if mode == "yolo" else mode,
+                      approvalPolicy="never" if mode == "yolo" else "on-request",
+                      approvalsReviewer="user")
+    if "fast" in options:
+        result.update(serviceTier="fast" if options["fast"] else "default", config={"features.fast_mode": True})
+    return result
+
+
+def launch_environment(agent, options):
+    env = os.environ.copy()
+    if agent == "opencode" and options["permission"] != "inherit":
+        env["OPENCODE_PERMISSION"] = json.dumps({"*": options["permission"]})
+    return env
+
+
+def terminal_command(argv, agent, options):
+    result = list(argv)
+    mode = options["permission"]
+    if agent == "codex":
+        if mode == "yolo":
+            result += ["--dangerously-bypass-approvals-and-sandbox"]
+        elif mode != "inherit":
+            result += ["--sandbox", mode, "--ask-for-approval", "on-request"]
+        if mode != "inherit":
+            result += ["-c", 'approvals_reviewer="user"']
+        if "fast" in options:
+            result += ["-c", 'service_tier="fast"' if options["fast"] else 'service_tier="default"', "-c", "features.fast_mode=true"]
+    elif agent == "claude" and mode != "inherit":
+        result += ["--permission-mode", mode]
+        if mode == "bypassPermissions":
+            result += ["--dangerously-skip-permissions"]
+    return result
+
+
 class Session:
-    def __init__(self, project, agent, argv, cols, rows, launch_id, changed):
+    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, options=None):
         self.id = str(uuid.uuid4())
         self.launch_id = launch_id
         self.project, self.agent = project.copy(), agent
+        self.options = agent_options(agent, options)
         self.cols, self.rows = cols, rows
         self.state, self.exit_code = "running", None
         self.started_at = time.time()
@@ -239,12 +299,12 @@ class Session:
         os.set_blocking(master, False)
         try:
             fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
-            env = os.environ.copy()
+            env = launch_environment(agent, self.options)
             env.update(TERM="xterm-256color", COLORTERM="truecolor")
             # Avoid preexec_fn in the multithreaded HTTP server. The small child
             # entry point claims its controlling terminal before exec'ing the CLI.
             self.process = subprocess.Popen(
-                [sys.executable, str(Path(__file__).resolve()), "_child", *argv],
+                [sys.executable, str(Path(__file__).resolve()), "_child", *terminal_command(argv, agent, self.options)],
                 cwd=project["path"], env=env, stdin=slave, stdout=slave, stderr=slave,
                 start_new_session=True, close_fds=True,
             )
@@ -264,7 +324,7 @@ class Session:
             return {
                 "id": self.id, "launch_id": self.launch_id, "project": self.project,
                 "agent": self.agent, "state": self.state, "exit_code": self.exit_code,
-                "mode": "terminal",
+                "mode": "terminal", "options": self.options.copy(),
                 "started_at": self.started_at, "cols": self.cols, "rows": self.rows,
                 "output_start": self.offset, "output_end": self.offset + len(self.buffer),
             }
@@ -504,9 +564,11 @@ class ChatSession(Session):
     Reuses the PTY session's scoped process stop, but never opens a PTY or
     derives messages by scraping a terminal screen. No arbitrary RPC passthrough.
     """
-    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, imported=None):
+    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, imported=None, options=None):
         self.id, self.launch_id = str(uuid.uuid4()), launch_id
         self.project, self.agent = project.copy(), agent
+        self.options = agent_options(agent, options)
+        self.launch_options = self.options.copy()
         self.cols, self.rows = cols, rows
         self.started_at = time.time()
         self.state, self.exit_code = "running", None
@@ -520,7 +582,7 @@ class ChatSession(Session):
         self.revision, self.floor, self.total = 0, 0, 0
         self.rpc_serial, self.rpc_pending = 0, {}
         self.process = subprocess.Popen(provider_command(argv[0], agent),
-            cwd=project["path"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            cwd=project["path"], env=launch_environment(agent, self.options), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
         os.set_blocking(self.process.stdin.fileno(), False)
 
@@ -529,6 +591,7 @@ class ChatSession(Session):
         with self.condition:
             return {"id": self.id, "launch_id": self.launch_id, "project": self.project,
                     "agent": self.agent, "mode": "chat", "state": self.state,
+                    "options": self.options.copy(), "launch_options": self.launch_options.copy(),
                     "ready": self.thread_id is not None and not self.history_pending,
                     "external_thread_id": self.thread_id, "history_persisted": self.history_persisted, **(self.imported or {}),
                     "turn_state": self.turn_state, "exit_code": self.exit_code,
@@ -670,13 +733,12 @@ class ChatSession(Session):
             result = message.get("result") or {}
             if kind == "initialize":
                 self._send({"method": "initialized", "params": {}})
-                # Inherit the user's model and permission settings; never disable
-                # sandboxing to make an unsupported Android configuration work.
+                overrides = codex_options(self.options) if self.agent == "codex" else {"bibimerOptions": self.options}
                 if self.imported:
                     self._rpc("thread/" + self.imported["import_mode"],
-                        {"threadId": self.imported["source_thread_id"], "excludeTurns": True}, "import")
+                        {"threadId": self.imported["source_thread_id"], "excludeTurns": True, **overrides}, "import")
                 else:
-                    self._rpc("thread/start", {"cwd": self.project["path"], **({"ephemeral": False} if self.agent == "codex" else {})}, "thread")
+                    self._rpc("thread/start", {"cwd": self.project["path"], **({"ephemeral": False} if self.agent == "codex" else {}), **overrides}, "thread")
             elif kind in {"thread", "import"}:
                 if kind == "import" and Path(result["thread"].get("cwd") or "/").resolve() != Path(self.project["path"]).resolve():
                     self._fault("error_import_project")
@@ -831,10 +893,13 @@ class ChatSession(Session):
 
     def message(self, data):
         key, text = request_id(data.get("request_id")), data.get("text")
+        if "fast" in data and (self.agent != "codex" or type(data["fast"]) is not bool):
+            raise Problem(400, "error_agent_options")
         if not isinstance(text, str) or not text.strip() or len(text.encode()) > 16384:
             raise Problem(400, "error_input_size")
         with self.condition:
-            digest, duplicate = self._duplicate(key, {"text": text})
+            speed = {"fast": data["fast"]} if "fast" in data else {}
+            digest, duplicate = self._duplicate(key, {"text": text, **speed})
             if duplicate:
                 return
             if self.state != "running" or not self.thread_id:
@@ -844,7 +909,10 @@ class ChatSession(Session):
             self._remember(key, digest, False)
             self.turn_state = "sending"
             self._bump()
-            self._rpc("turn/start", {"threadId": self.thread_id, "input": [{"type": "text", "text": text}]}, "turn")
+            chosen = {**self.options, **speed}
+            tier = {"serviceTier": "fast" if chosen["fast"] else "default"} if "fast" in chosen else {}
+            self._rpc("turn/start", {"threadId": self.thread_id, "input": [{"type": "text", "text": text}], **tier}, "turn")
+            self.options.update(speed)
             self._remember(key, digest, True)
 
     def respond(self, data):
@@ -1006,7 +1074,7 @@ class Bridge:
             return {"version": VERSION, "protocol": 1, "instance": self.instance,
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, session=self.snapshot_for(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -1151,6 +1219,7 @@ class Bridge:
         if agent not in {"shell", "codex", "claude", "opencode"}:
             raise Problem(400, "error_program")
         imported = import_spec(data)
+        options = agent_options(agent, data.get("options"))
 
         def target():
             if self.closing:
@@ -1166,6 +1235,7 @@ class Bridge:
                     raise Problem(409, "error_launch_conflict")
             if current and current.get("launch_id") == key:
                 if (current["agent"] != agent or current.get("mode", "terminal") != mode or
+                        current.get("launch_options", current.get("options", {"permission": "inherit"})) != options or
                         any(current.get(field) != (imported or {}).get(field) for field in ("source_thread_id", "import_mode"))):
                     raise Problem(409, "error_launch_conflict")
                 return project_id, project, current
@@ -1205,7 +1275,7 @@ class Bridge:
             argv = [executable, "-i"] if agent == "shell" else [executable]
             try:
                 session = (ChatSession if mode == "chat" else Session)(project, agent, argv, cols, rows, key, self.persist,
-                    **({"imported": imported} if mode == "chat" else {}))
+                    options=options, **({"imported": imported} if mode == "chat" else {}))
             except OSError:
                 raise Problem(400, "error_launch_failed") from None
             self.sessions[project_id] = session

@@ -18,7 +18,7 @@ const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'bibimer-ui-'));
 const state = path.join(temporary, 'state');
 const errors = [];
 const fixtureMode = !process.argv.includes('--probe-codex');
-let bridge, browser, assets, legacyProjectError = false, legacyFolders = false, legacyPersistence = false, failedEventRequests = 0;
+let bridge, browser, assets, legacyProjectError = false, legacyFolders = false, legacyPersistence = false, legacyOptions = false, failedEventRequests = 0;
 let heldReply = null;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -72,6 +72,7 @@ async function main() {
         : await call(method, endpoint.replace('wait=20','wait=1'), JSON.parse(body));
       if (legacyFolders && endpoint === '/v1/health' && result.ok) result.data.features = ['multiple_projects'];
       if (legacyPersistence && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>feature!=='persistent_codex_sessions');
+      if (legacyOptions && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>feature!=='agent_options');
       if (endpoint.includes('/events?') && !result.ok) failedEventRequests++;
       if (heldReply?.endpoint === endpoint) {
         const held = heldReply; heldReply = null; held.entered(); await held.promise;
@@ -89,8 +90,10 @@ async function main() {
       // Browser-only stand-in for native preferences; Android persistence is
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.7.0'}),
+        agentOptions:JSON.parse(localStorage.getItem('testAgentOptions') || '{}'),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.8.0'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
+      setAgentOptions:(agent,value)=>{const all=JSON.parse(localStorage.getItem('testAgentOptions') || '{}');all[agent]=JSON.parse(value);localStorage.setItem('testAgentOptions',JSON.stringify(all));return true;},
       cancelPoll:()=>{}, request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),
       openGuide:guide=>window.setupActions.push('guide:'+guide),
@@ -389,9 +392,47 @@ async function main() {
     await page.locator('#reconnect').click();
     await page.waitForFunction(()=>!document.querySelector('#launch').disabled);
     assert.equal(await page.locator('#mode').inputValue(),'chat');
+    legacyOptions = true;
+    await page.locator('#reconnect').click();
+    await page.waitForFunction(()=>document.querySelector('#settings-summary').textContent==='Update bridge');
+    assert.equal(await page.locator('#launch').isDisabled(),true);
+    assert.equal(await page.locator('#import-session').isDisabled(),true);
+    legacyOptions = false;
+    await page.locator('#reconnect').click();
+    await page.waitForFunction(()=>!document.querySelector('#launch').disabled);
+    await page.locator('#settings-toggle').click();
+    await page.locator('#permission').selectOption('yolo');
+    await page.locator('#fast').check();
+    await page.reload();
+    await page.waitForFunction(()=>!document.querySelector('#agent').disabled && document.querySelector('#agent option[value="codex"]'));
+    await page.locator('#agent').selectOption('codex');
+    await page.locator('#settings-toggle').click();
+    assert.equal(await page.locator('#permission').inputValue(),'yolo');
+    assert.equal(await page.locator('#fast').isChecked(),true);
+    await page.locator('#permission').selectOption('workspace-write');
+    await page.setViewportSize({width:360,height:460});
+    await page.screenshot({path:path.join(root,'dist/screenshots/settings-small-en.png')});
+    const settingsDone = await page.locator('#settings-done').boundingBox();
+    assert.ok(settingsDone.y + settingsDone.height < 460, 'Settings must fit a small screen');
+    assert.equal(await page.locator('#fast').isVisible(),true);
+    await page.locator('#settings-done').click();
+    await page.setViewportSize({width:393,height:780});
+    await page.locator('#agent').selectOption('claude');
+    await page.locator('#settings-toggle').click();
+    assert.equal(await page.locator('#permission').inputValue(),'inherit');
+    await page.locator('#permission').selectOption('acceptEdits');
+    await page.locator('#settings-done').click();
+    await page.locator('#agent').selectOption('codex');
+    assert.equal(await page.locator('#permission').inputValue(),'workspace-write');
     await page.locator('#launch').click();
     await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message');
     const chatId = (await call('GET','/v1/health')).data.session.id;
+    assert.deepEqual((await call('GET','/v1/health')).data.session.options,{permission:'workspace-write',fast:true});
+    await page.locator('#settings-toggle').click();
+    assert.equal(await page.locator('#permission').isDisabled(),true);
+    await page.locator('#fast').uncheck();
+    await page.screenshot({path:path.join(root,'dist/screenshots/settings-live-en.png')});
+    await page.locator('#settings-done').click();
     assert.equal(await page.locator('#terminal-area').isVisible(),false);
     assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'send');
     await page.locator('#input').fill('firstsecond');
@@ -420,6 +461,7 @@ async function main() {
     assert.equal(await page.locator('.markdown table td').first().innerText(),'Task');
     const sent = (await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.items.filter(item=>item.kind==='user');
     assert.equal(sent.length,1); assert.equal(sent[0].text,'한글 · first\nsecond');
+    assert.equal((await call('GET','/v1/health')).data.session.options.fast,false);
     assert.equal(await page.locator('.markdown script').count(),0);
     assert.equal(await page.evaluate(()=>window.untrusted),undefined);
     await page.locator('.markdown .code-heading .copy-button').click();
@@ -483,6 +525,12 @@ async function main() {
     const beforeImport = fs.readFileSync(path.join(temporary,'project/turn-count'),'utf8');
     await page.locator('#import-session').click();
     await page.locator('.import-entry').waitFor();
+    await page.locator('#import-settings-toggle').click();
+    assert.equal(await page.locator('#import-permission').inputValue(),'workspace-write');
+    assert.equal(await page.locator('#import-fast').isChecked(),false);
+    await page.locator('#import-permission').selectOption('read-only');
+    await page.screenshot({path:path.join(root,'dist/screenshots/settings-import-en.png')});
+    await page.locator('#import-settings-done').click();
     assert.equal(await page.locator('#import-mode').inputValue(),'resume');
     await page.locator('#import-mode').selectOption('fork');
     assert.equal(await page.locator('#import-confirm').isDisabled(),true);
