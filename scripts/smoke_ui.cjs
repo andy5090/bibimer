@@ -95,7 +95,7 @@ async function main() {
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
         agentOptions:JSON.parse(localStorage.getItem('testAgentOptions') || '{}'),
         enterBehavior:localStorage.getItem('testEnterBehavior') || 'newline',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.8.2'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.9.0'}),
       setEnterBehavior:value=>{if (window.failEnterSave) return false;localStorage.setItem('testEnterBehavior',value);return true;},
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       setAgentOptions:(agent,value)=>{const all=JSON.parse(localStorage.getItem('testAgentOptions') || '{}');all[agent]=JSON.parse(value);localStorage.setItem('testAgentOptions',JSON.stringify(all));return true;},

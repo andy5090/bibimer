@@ -136,7 +136,7 @@ public final class MainActivity extends Activity {
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
                     .put("agentOptions", agentPreferences.get())
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
-                    .put("version", "0.8.2").toString();
+                    .put("version", "0.9.0").toString();
             } catch (Exception ignored) { return "{}"; }
         }
 

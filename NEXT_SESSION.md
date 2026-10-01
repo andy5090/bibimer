@@ -16,7 +16,7 @@
 
 - 기능을 변경할 때마다 바로 APK를 빌드하지 않는다. 구현과 필요한 소스·동작 검증을 진행하며 기능 변경을 모아 둔다.
 - **사용자가 명시적으로 빌드를 요청할 때만 APK를 빌드한다.** 작업 보고에서는 소스 구현 완료와 마지막 APK에 포함된 내용을 구분한다.
-- 현재 마지막 빌드 파일은 `Download/Bibimer-0.8.2.apk`다. 이 원칙 기록 작업에서는 새 빌드를 하지 않았다.
+- 현재 마지막 빌드 파일은 `Download/Bibimer-0.9.0.apk`다. 2026-10-02의 명시적 `apk build` 요청으로 누적 변경을 빌드했다.
 
 ## 원래 요청
 
@@ -39,9 +39,18 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 - 실제 기기 검증 결과에 따라 구현 구조를 조정한다.
 - Termux와 개발 도구가 없는 사용자를 위해 앱 내 설치 안내·설정 파일·실행 명령 가이드를 제공한다. 새 기기에서 설치부터 실행까지 완주하는지는 나중에 실제 확인한다.
 - 첫 구현 스택: Java Android 앱 + 앱에 포함한 WebView/xterm.js 화면, Python 표준 라이브러리 HTTP 브리지, PTY. 현재 기기에서 APK를 직접 빌드하는 경로를 확보했다.
-- 기본 표시 언어는 영어이며 한국어를 추가 지원한다. 기기 언어와 관계없이 영어로 시작하고 **Settings → Language → 한국어**에서 선택한 언어를 저장한다(소스 기준, 배포 0.8.2는 Setup). 사용자와의 설명·프로젝트 문서는 한국어를 유지한다.
+- 기본 표시 언어는 영어이며 한국어를 추가 지원한다. 기기 언어와 관계없이 영어로 시작하고 **Settings → Language → 한국어**에서 선택한 언어를 저장한다(0.9.0부터, 이전 0.8.2는 Setup). 사용자와의 설명·프로젝트 문서는 한국어를 유지한다.
 
-## 빌드 대기: 별도 Settings·Enter 기본 줄바꿈 (2026-10-02)
+## 0.9.0 APK 빌드 완료 (2026-10-02)
+
+- 사용자의 `apk build` 요청으로 누적 변경을 **앱 0.9.0 / versionCode 16**, 내장 브리지 **0.9.0**으로 빌드했다. BIBIMER 로고·Space Grotesk, Project Add/Full Access 표기, Queue·Steer, Settings·Enter 기본 줄바꿈/보내기 선택을 포함한다.
+- 설치 파일: **`/storage/emulated/0/Download/Bibimer-0.9.0.apk`**, 309,402바이트. 브리지 설치 파일: **`/storage/emulated/0/Download/bibimer-setup-0.9.0.sh`**. `dist/bibimer-debug.apk`, `dist/bibimer-setup.sh`와 각각 동일하다.
+- APK SHA-256: `dd2758f1c48164be8bcef36ad515f912c98eca61534dc924645147f9a2d3705a`. 설치 스크립트 SHA-256: `33ae2a020e7e051b3de3d78a96573850d54b20ca15c5ade03e88f4e5ed35a10c`.
+- 빌드·APK v2/v3 서명, 0.8.2와 동일 인증서, 패키지/버전/대문자 이름, 내장 20개 asset의 소스 일치, DEX의 새 입력 설정 클래스 포함을 확인했다. 설치 스크립트 문법과 격리된 임시 폴더에서 네 소스 추출·체크섬·0700 권한도 검증했다. 로그: `.tools/build-0.9.0.log`. 기능 구현 때 통과한 UI/렌더러 및 브리지 67개 테스트의 범위는 아래 기록을 따른다.
+- 운영 브리지는 읽기 전용 확인 결과 **0.8.1 / 실행 세션 1개 / Queue 미지원**이다. 운영 설치·재시작과 APK 설치는 수행하지 않았다. Settings·Enter 설정·로고는 APK만 업데이트하면 되고, Queue·Steer는 기존 작업을 마친 뒤 0.9.0 브리지 설치·재시작이 필요하다.
+- 남은 검증: 실제 APK 설치, Android 환경 설정 저장·앱 재실행, WebView의 서체·키보드/IME, 실제 모델의 Queue·Steer와 승인 동작. 아래의 미빌드 기록은 각 기능 구현 당시 상태이며 누적 소스는 이번 APK에 포함했다.
+
+## 구현 기록: 별도 Settings·Enter 기본 줄바꿈 (2026-10-02, 이후 0.9.0에 포함)
 
 - 사용자 요청으로 **Work / Setup / Settings** 하단 내비게이션과 별도 설정 페이지를 추가했다. **Language(언어)**도 Setup에서 Settings로 옮겼다. 연결 전에도 사용할 수 있고 Settings 왕복은 실행 세션·작성 중인 입력을 유지한다. 권한·Fast는 입력창 아래에 유지한다.
 - **Settings → Enter key**에서 **New line(줄바꿈)** 또는 **Send(보내기)**를 선택한다. 기본은 줄바꿈이며 기존 설치본에서도 저장한 선택이 없으면 줄바꿈이다. `InputPreferences`가 Android 전용 환경 설정에 저장해 프로젝트·세션·앱 재실행에 공통 적용한다. 저장 실패는 이전 동작·선택으로 되돌리고 영어/한국어 오류를 표시한다.
@@ -49,7 +58,7 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 - UI 통합·기존 렌더러 테스트 통과. 두 선택 저장/재로드, 저장 실패 복원/번역, Settings 전환 후 초안·세션 유지, Chat/PTY 줄바꿈·선택 영역 치환·IME 보호, 응답 중 오전송 없음과 Queue/Steer, 기존 멀티 프로젝트·세 제공자·가져오기/승인을 확인했다. 320/360/393×460 설정 화면과 저장값 누락·잘못된 값 기본 처리도 확인했다. 로그는 `.tools/ui-enter-settings.log`, `.tools/render-enter-settings.log`, 미리보기는 `dist/screenshots/app-settings-*-en.png`, `app-settings-*-ko.png`다.
 - Android Java 소스 컴파일 통과. **APK 미빌드·버전 유지·운영 브리지 미변경**이며 마지막 배포 파일은 **0.8.2/code 15**다. 이번 UI 설정은 브리지 변경이 필요 없다. 이전 Queue/Steer 변경은 여전히 브리지 적용 대기다. 실제 Android 설정 저장·앱 재실행·WebView 키보드/한글 조합 동작은 다음 빌드 후 확인한다.
 
-## 빌드 대기: Project Add·Full Access / 응답 중 Queue·Steer (2026-10-01)
+## 구현 기록: Project Add·Full Access / 응답 중 Queue·Steer (2026-10-01, 이후 0.9.0에 포함)
 
 - 표기 요청을 반영해 프로젝트 추가 버튼을 **Project Add / 프로젝트 추가**, Codex YOLO 선택 문구를 **Full Access / 전체 접근**으로 바꿨다. 내부 `yolo` 값과 권한 동작은 유지한다.
 - Chat 응답 중에도 작성하고 **Queue(대기열)**로 전송할 수 있다. Enter 전송은 이후 추가한 Settings에서 보내기를 선택한 경우에 동작한다. 입력창 위 대기 목록·개별 취소·중단/실패 후 **Resume queue**를 제공한다. Codex에는 **Steer(방향 수정)** 버튼으로 현재 턴에 추가 지시를 전달한다. Claude·OpenCode는 Queue를 사용한다. Ctrl/Shift+Enter·IME 보호와 프로젝트별 초안 유지도 검증했다.
@@ -60,7 +69,7 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 - 실제 Codex 0.156.1과 통제된 로컬 HTTP 대역에서 같은 턴 Steer 수락·중복 억제, 응답 중 대기 보관, interrupt 후 일시정지·취소를 확인했다. 외부 모델 호출은 없었고 자체 테스트 기록만 보관 처리했다. 실제 모델이 지시를 반영하는 시점·Android WebView/키보드 검증은 남는다.
 - **소스 반영 완료 / APK 미빌드 / 운영 브리지 미적용**. 앱·브리지 버전도 이번 작업에서 올리지 않았다. 마지막 APK는 **0.8.2/code 15**, 운영 브리지는 **0.8.1**이며 새 기능은 다음 명시적 빌드·브리지 적용 시 제공한다. 운영 사용자 세션을 종료하지 않았다. 앞선 대문자 로고 변경과 함께 누적 반영한다.
 
-## 빌드 대기: BIBIMER 대문자 텍스트 로고·서체 (2026-10-01)
+## 구현 기록: BIBIMER 대문자 텍스트 로고·서체 (2026-10-01, 이후 0.9.0에 포함)
 
 - 사용자 요청에 따라 헤더 텍스트 로고를 `BIBIMER`로 바꾸고 Space Grotesk Bold 700·18px·0.065em 자간을 적용했다. 창 제목·런처 표시 이름·영어/한국어 버전 표기도 대문자로 맞췄다. 일반 UI와 코드/PTY 서체는 기존 가독성을 유지한다.
 - 원본 WOFF2(41,780바이트)와 SIL OFL 1.1 라이선스를 assets에 포함했다. 출처·고정 커밋·SHA-256은 `assets/fonts/README.md`에 기록했다. 네이티브 WebView에 해당 파일만 허용하고 MIME을 추가해 외부 네트워크 없이 불러온다.
@@ -259,7 +268,7 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 
 ## 다음 작업
 
-1. 운영 브리지는 0.8.1이다. `Download/Bibimer-0.8.2.apk`를 설치한 뒤 입력창 하단 권한 텍스트 메뉴·번개 Fast 칩, 다음 입력 적용, 재실행 후 보관을 확인한다. 이번 UI 변경에는 브리지 재시작이 필요 없다. 다른 환경은 0.8.1 설정 파일도 적용한다. OpenCode → Chat/PTY → Start session과 Import session → 에이전트 선택 → 복사/원본 이어하기·기록 표시·후속 지시를 실제 폰에서 확인한다. 외부 CLI에서 원본을 사용 중이면 복사한다. 현재 폰의 Claude 전용 실행 환경은 복구 완료했으며 운영 브리지에 새 실행 경로 선택을 적용해야 한다. 입력창 아래 여백, Chat 응답·도구·diff·계획·코드 복사/줄바꿈, 런처 아이콘, Add → Browse와 프로젝트 전환도 확인한다.
+1. `Download/Bibimer-0.9.0.apk`를 설치한 뒤 Settings·Enter 기본 줄바꿈/보내기 저장, BIBIMER 로고·하단 권한/Fast를 확인한다. 운영 브리지는 0.8.1이며 빌드 때 실행 세션 1개를 유지했다. Queue·Steer를 쓰려면 `Download/bibimer-setup-0.9.0.sh`로 설치하고 기존 실행 세션을 마친 뒤 브리지를 재시작한다. OpenCode → Chat/PTY → Start session과 Import session → 에이전트 선택 → 복사/원본 이어하기·기록 표시·후속 지시를 실제 폰에서 확인한다. 외부 CLI에서 원본을 사용 중이면 복사한다. 현재 폰의 Claude 전용 실행 환경은 복구 완료했으며 운영 브리지에 새 실행 경로 선택을 적용해야 한다. 입력창 아래 여백, Chat 응답·도구·diff·계획·코드 복사/줄바꿈, 런처 아이콘, Add → Browse와 프로젝트 전환도 확인한다.
 2. 기존 인증 토큰을 유지하므로 새 연결 코드가 필요한 경우에만 Termux에서 `~/.local/bin/bibimer-bridge pair`를 실행한다. 코드나 토큰은 저장소·일반 로그에 남기지 않는다.
 3. 실제 APK에서 Enter·줄바꿈·한글 조합, 여러 프로젝트 추가·전환·동시 실행·복수 선택 질문 초안 유지, Chat·PTY 선택, 영어·한국어, 모델 응답·승인·응답 중단·재접속을 검증한다. Bibimer 출력은 브리지 메모리만 유지하며 0.7.0부터 Codex 새 Chat도 영구 저장한다. 세 에이전트의 기록은 각 도구의 저장 규칙에 따라 Saved sessions에서 같은 ID로 이어갈 수 있다. 이전 임시 세션은 자동 변환되지 않는다.
 4. Termux가 없는 기기에서 설치 안내 → 설정 파일 저장 → Python·브리지 설치 → 앱 연결을 별도로 검증한다.

@@ -80,6 +80,13 @@ node scripts/smoke_rendering.cjs
 
 UI 테스트는 임시 폴더의 실제 브리지에 연결하며 Android 네이티브 API를 명시적인 테스트 어댑터로 대체한다. 한국어 브라우저 로캘에서도 영어로 시작하는지, 한국어 전환·저장값 복원, 오류 번역과 0.1.0 응답 호환, 언어 전환 시 세션·입력 유지까지 확인한다. 어댑터의 설정 저장은 브라우저 테스트용이며 실제 앱의 Android 환경 설정 저장을 검증한 것은 아니다. 화면 캡처는 통제된 셸 출력과 모의 대화만 포함하고 `dist/screenshots/*-en.png`, `*-ko.png`에 저장한다. 실제 앱의 Keystore, WebView 리소스 로딩, 기기 간 앱 격리 경계는 APK로 따로 확인해야 한다.
 
+## 2026-10-02 0.9.0 APK 빌드 검증
+
+- 명시적 빌드 요청으로 앱 0.9.0/code 16과 내장 브리지 0.9.0을 패키징했다. 이전 소스 검증을 마친 로고·Queue/Steer·Settings·Enter 동작 선택을 포함한다.
+- APK v2/v3 서명·0.8.2 인증서 일치, 패키지·버전·BIBIMER 이름·min/target SDK, 내장 20개 asset과 원본 일치 및 새 `InputPreferences` DEX 포함을 확인했다.
+- 설치 스크립트 문법·격리된 임시 폴더의 네 소스 추출/체크섬/0700 권한, `dist`와 Download 복사본 SHA-256 일치를 확인했다. 배포 파일은 `Download/Bibimer-0.9.0.apk`(309,402바이트)와 `Download/bibimer-setup-0.9.0.sh`다.
+- 운영 브리지 0.8.1·실행 세션 1개는 유지했다. 실제 APK 설치·Android 키보드/설정 보관·모델 동작은 별도 검증이다. Queue·Steer 사용에는 브리지 0.9.0 설치·재시작이 필요하다.
+
 ## 2026-10-02 Settings·Enter 동작 검증 (소스 반영 / 빌드 대기)
 
 - 별도 Settings와 언어 선택 이동, Enter 기본 줄바꿈·보내기 선택 및 저장 실패 시 이전 선택 유지를 구현했다. `InputPreferences`의 Android 저장값은 `newline`/`send`만 허용하며 기본값은 `newline`이다. 인증·프로젝트·세션과 독립적이다.
