@@ -59,7 +59,7 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 
 ## 구조화된 대화
 
-`ChatSession`은 `provider_command`가 선택한 프로그램과 stdio로 연결한다. Codex는 App Server를 직접 사용하며 `initialize → initialized → thread/start` 순서로 초기화한다. OpenCode·Claude 어댑터는 해당 내부 프로토콜의 허용된 메서드와 구조화된 이벤트를 구현해 기존 대화 렌더러를 사용한다. 이는 OpenCode·Claude의 공개 API 이름을 뜻하지 않는다. Codex만 `ephemeral: true`로 새 대화를 만들며 사용자 모델·권한 설정을 상속한다. 원격 주소나 임의 JSON-RPC 메서드를 앱에서 전달할 수 없으며, 입력과 승인 응답은 한 스레드·현재 턴으로 제한한다.
+`ChatSession`은 `provider_command`가 선택한 프로그램과 stdio로 연결한다. Codex는 App Server를 직접 사용하며 `initialize → initialized → thread/start` 순서로 초기화한다. OpenCode·Claude 어댑터는 해당 내부 프로토콜의 허용된 메서드와 구조화된 이벤트를 구현해 기존 대화 렌더러를 사용한다. 이는 OpenCode·Claude의 공개 API 이름을 뜻하지 않는다. 0.7.0부터 Codex는 `ephemeral: false`로 새 대화를 만들며 사용자 모델·권한 설정과 기존 `CODEX_HOME`을 상속한다. 별도 Codex 저장소나 이중 세션 색인을 만들지 않는다. 원격 주소나 임의 JSON-RPC 메서드를 앱에서 전달할 수 없으며, 입력과 승인 응답은 한 스레드·현재 턴으로 제한한다.
 
 프로세스의 `state`와 응답의 `turn_state`(준비·전송·응답·사용자 대기·실패)를 분리한다. `turn/interrupt`는 응답만 중단한다. 명령·파일 승인은 한 번 승인 또는 거절만 지원하며, 질문에는 단일·복수 선택과 요청이 허용한 자유 입력을 제공한다. 미지원 서버 요청은 오류로 응답하고 승인하지 않는다. 종료·해결된 요청에 대한 늦은 응답을 거부하고 재전송 ID로 중복을 막는다. 프로젝트 전환·언어 변경 시 복수 선택 초안도 유지한다.
 
@@ -103,6 +103,16 @@ Claude의 명령 존재와 실제 실행 가능 여부를 구분한다. `claude 
 
 가져오기 ChatSession은 `thread/resume` 또는 `thread/fork`를 `excludeTurns: true`로 호출하고 모델·권한·cwd 설정을 덮어쓰지 않는다. 실제 응답의 cwd도 다시 확인한다. 이후 `thread/items/list(limit: 50, sortDirection: desc)`를 읽어 시간 순으로 표시한다. 기록의 `inProgress` 항목은 중단 상태로 표시하고 승인 RPC로 재구성하지 않는다. 미리보기만 실패하면 안내 후 입력을 허용하며, 복원이 실패하면 이번에 만든 프로세스만 종료한다. 초기화·미리보기까지 20초 안에 완료되지 않으면 오류로 종료한다.
 
-`source_thread_id`, `import_mode`, `external_thread_id`만 기존 세션 메타데이터에 추가한다. 가져온 원본·복사본과 OpenCode·Claude의 새 대화는 각 도구의 영속 기록이며 Codex 기본 새 Chat의 `ephemeral: true`와 구분한다. Claude 복사는 SDK `forkSession`, OpenCode 복사는 공개 서버의 fork API를 사용하고 가져오기만으로 모델 턴을 시작하지 않는다. Bibimer의 대화 미리보기·새 출력은 기존 메모리 한도만 유지한다. 외부 CLI 활성 상태를 완전히 탐지할 수 없으므로 복사가 기본이며 원본 이어하기는 외부 작업을 마친 뒤 선택하도록 안내한다. 실행 중인 PTY 연결·전체 기록 탐색은 구현하지 않았다.
+`source_thread_id`, `import_mode`, `external_thread_id`만 기존 세션 메타데이터에 추가한다. 새 Codex Chat을 포함한 각 대화는 에이전트의 영속 기록이다. `history_persisted`는 thread 초기화 응답의 `ephemeral: false` 확인 결과로 메타데이터에 보관한다. Claude 복사는 SDK `forkSession`, OpenCode 복사는 공개 서버의 fork API를 사용하고 가져오기만으로 모델 턴을 시작하지 않는다. Bibimer의 대화 미리보기·새 출력은 기존 메모리 한도만 유지한다. 원본 이어하기가 기본이며 외부 CLI 활성 상태를 완전히 탐지할 수 없으므로 다른 클라이언트에서 작업을 마친 뒤 이어가거나 복사를 선택하도록 안내한다. 실행 중인 PTY 연결·전체 기록 탐색은 구현하지 않았다.
 
 프로토콜 근거: [Codex App Server 공식 문서](https://learn.chatgpt.com/docs/app-server). 현재 폰의 Codex 0.156.1 생성 JSON Schema와 실제 RPC로 목록·읽기·복사·원본 이어하기를 확인했다. 실제 프로브는 새로 만든 테스트 스레드에 통제된 항목만 주입하고 모델 턴을 시작하지 않았으며 해당 테스트 기록만 보관 처리했다.
+
+## 0.7.0 저장 통합과 이전 작업 복구
+
+health의 `persistent_codex_sessions`는 새 Codex 대화의 영구 저장을 알린다. 새 앱은 이 기능이 없는 브리지에서 Codex 새 Chat 시작을 막고 업데이트를 안내한다. 기존 세션 관찰·PTY·저장된 기록 가져오기는 유지한다. CLI 이어하기 버튼은 저장이 확인된 Codex 대화만 표시하며 같은 thread ID와 셸 이스케이프한 작업 폴더를 복사한다. 실제 명령을 자동 실행하지 않는다.
+
+설치된 Codex 0.156.1은 첫 사용자 입력이 있는 저장 세션을 기본 목록에 노출한다. 구조화된 항목 주입만으로는 목록에 나타나지 않으므로, 실제 검증에서는 임시 폴더와 로컬 HTTP 응답 대역으로 사용자 턴 하나를 생성했다. 외부 모델은 호출하지 않았으며 기본 목록·별도 프로세스의 읽기·같은 ID 재개와 기록 복원을 확인했다.
+
+0.6.0의 기존 임시 대화는 메모리에서 찾았고 사용자 요청에 따라 남아 있는 UI 이벤트만 별도로 보존했다. `~/.local/state/bibimer/recovery/`는 0700, 파일은 0600이며 저장소·일반 로그에 포함하지 않는다. 이는 일회성 복구 작업이며 앱의 새로운 대화를 이 경로에 저장하는 기능이 아니다. 임시 대화에 대한 네이티브 `thread/fork`는 통제된 실험에서 거절되었으며 전체 모델 맥락을 복원했다고 표시하지 않는다.
+
+Claude 실행 경로는 정상 사용자 CLI → Bibimer 전용 복구 런처 순서로 찾는다. 명시적인 `BIBIMER_CLAUDE_EXECUTABLE`은 이 선택보다 우선하며 HTTP 클라이언트에서 지정할 수 없다. 확인 캐시는 에이전트와 실행 경로별로 분리한다. `repair_claude_termux.py`는 공식 고정 패키지의 무결성·예상 일반 파일·실행 성공을 확인한 뒤 런처를 원자적으로 교체하고 이전 런처를 실패 시 유지한다. glibc 선행 설치나 사용자 로그인은 자동으로 처리하지 않는다.

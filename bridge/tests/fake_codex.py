@@ -1,10 +1,13 @@
 """Controlled app-server fixture. Never contacts a model or runs shell commands."""
 import json
+import os
 import sys
 from pathlib import Path
 
 thread, turn, pending = "test-thread", None, None
 count = 0
+store = Path(os.environ["BIBIMER_TEST_CODEX_STORE"]) if os.environ.get("BIBIMER_TEST_CODEX_STORE") else None
+history = []
 
 
 def saved(key):
@@ -23,6 +26,9 @@ def notify(method, params):
 
 
 def item(value, complete=True):
+    if store and complete and value.get("type") in {"userMessage", "agentMessage"}:
+        history.append({"turnId": turn, "item": value})
+        store.write_text(json.dumps({"thread": saved(thread), "history": history}))
     notify("item/completed" if complete else "item/started", {"item": value})
 
 
@@ -37,13 +43,17 @@ for line in sys.stdin:
     if method == "initialize":
         emit({"id": message["id"], "result": {"userAgent": "test"}})
     elif method == "thread/start":
-        assert params["ephemeral"] is True
+        assert params["ephemeral"] is False
         assert "sandbox" not in params and "approvalPolicy" not in params
-        emit({"id": message["id"], "result": {"thread": {"id": thread}}})
+        emit({"id": message["id"], "result": {"thread": {"id": thread, "ephemeral": False}}})
     elif method == "thread/list":
         assert params["cwd"] == str(Path.cwd()) and params["limit"] == 25
         assert params["sourceKinds"] == ["cli", "vscode", "appServer"]
         assert params["modelProviders"] == []
+        if store:
+            rows = [json.loads(store.read_text())["thread"]] if store.exists() else []
+            emit({"id": message["id"], "result": {"data": rows, "nextCursor": None}})
+            continue
         if params.get("searchTerm") == "unsupported":
             emit({"id": message["id"], "error": {"code": -32601, "message": "Unsupported"}})
             continue
@@ -59,9 +69,14 @@ for line in sys.stdin:
             emit({"id": message["id"], "error": {"code": -32603, "message": "Do not expose private failure detail"}})
             continue
         thread = params["threadId"] + ("-copy" if method == "thread/fork" else "")
+        if store:
+            history = json.loads(store.read_text())["history"]
         emit({"id": message["id"], "result": {"thread": {**saved(thread), "turns": []}}})
     elif method == "thread/items/list":
         assert params == {"threadId": thread, "sortDirection": "desc", "limit": 50}
+        if store:
+            emit({"id": message["id"], "result": {"data": list(reversed(history[-50:]))}})
+            continue
         if thread.startswith("no-preview"):
             emit({"id": message["id"], "error": {"code": -32601, "message": "Unsupported preview"}})
             continue

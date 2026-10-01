@@ -43,7 +43,7 @@
         <label class="check"><input type="checkbox" id="create-folder"><span data-i18n="create_folder">Create the folder if it does not exist</span></label>
         <div class="button-row"><button class="primary" type="submit" data-i18n="save_project">Save project</button><button id="cancel-project" class="quiet" type="button" data-i18n="cancel_project">Cancel</button></div>
       </form>
-      <div class="session-bar"><span id="process" class="badge">Not started</span><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
+      <div class="session-bar"><span id="process" class="badge">Not started</span><button id="copy-resume" class="quiet" type="button" data-i18n="codex_resume_copy" hidden>Resume in CLI</button><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
       <div id="mode-controls" class="mode-controls"><label for="mode" data-i18n="mode_label">Session interface</label><select id="mode"><option value="terminal" data-i18n="mode_terminal">Terminal · PTY</option><option value="chat" data-i18n="mode_chat">Chat · formatted text</option></select></div>
       <div id="launch-controls" class="launch-controls">
         <label class="sr-only" for="agent" data-i18n="program_label">Program to run</label>
@@ -105,6 +105,8 @@
       <div id="agent-diagnostics" aria-live="polite"></div>
       <p class="hint" data-i18n="claude_adapter_hint">For Claude chat and import, export the latest setup file, then run the adapter setup command in Termux. Node.js and the official Agent SDK will be installed. A working Claude CLI is required separately.</p>
       <button data-command="claude-adapter" class="secondary full" data-i18n="claude_adapter_setup">Copy Claude adapter setup command</button>
+      <p class="hint" data-i18n="claude_repair_hint">If Claude shows Needs repair, install a separate runtime. Requires arm64 Termux with glibc and ripgrep. Save the latest setup file first.</p>
+      <button data-command="claude-repair" class="secondary full" data-i18n="claude_repair_setup">Copy Claude repair command</button>
       <p class="hint" data-i18n="agent_hint">Finding a program does not confirm Android compatibility or account access. Check each agent's Termux installation and runtime requirements.</p>
     </section>
     <section class="card setup-step">
@@ -114,7 +116,7 @@
       <button data-command="restart" class="quiet" data-i18n="copy_restart">Copy bridge restart command</button>
       <button id="forget" class="quiet" data-i18n="forget">Forget this app's connection</button>
     </section>
-    <p id="version" class="version">Bibimer 0.6.0 · Termux on this phone</p>
+    <p id="version" class="version">Bibimer 0.6.2 · Termux on this phone</p>
   </main>
   <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button></nav>
   <dialog id="folder-dialog" aria-labelledby="folder-title">
@@ -136,7 +138,7 @@
     <div id="import-entries" role="group" data-i18n-aria-label="import_saved" aria-label="Saved sessions"></div>
     <div class="import-status-row"><p id="import-status" role="status"></p><button id="import-more" class="quiet" data-i18n="folder_more" hidden>Load more</button></div>
     <label for="import-mode" data-i18n="import_method">Import method</label>
-    <select id="import-mode"><option value="fork" data-i18n="import_fork">Import a copy</option><option value="resume" data-i18n="import_resume">Continue original</option></select>
+    <select id="import-mode"><option value="resume" data-i18n="import_resume">Continue original</option><option value="fork" data-i18n="import_fork">Import a copy</option></select>
     <p class="hint" data-i18n="import_hint">Restores saved context, not a live terminal. Use a copy if the original is open in another CLI. No new work starts until you send a message.</p>
     <button id="import-confirm" class="primary" data-i18n="import_selected" disabled>Import selected session</button>
   </dialog>

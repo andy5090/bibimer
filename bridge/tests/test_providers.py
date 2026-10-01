@@ -109,5 +109,32 @@ class ProviderTests(ChatFixture):
             self.assertEqual('error_claude_sdk',result['code'])
         (self.root/'claude').write_text('#!'+sys.executable+'\nraise SystemExit(1)\n')
         self.bridge.program_checks.clear()
-        self.assertFalse(next(agent for agent in self.bridge.agents() if agent['id']=='claude')['available'])
-        self.assertEqual('error_program_unavailable',self.api('POST','/v1/sessions',{'agent':'claude','mode':'terminal','request_id':str(uuid.uuid4())})[1]['code'])
+        with patch.object(module.Path, 'home', return_value=self.root):
+            self.assertFalse(next(agent for agent in self.bridge.agents() if agent['id']=='claude')['available'])
+            self.assertEqual('error_program_unavailable',self.api('POST','/v1/sessions',{'agent':'claude','mode':'terminal','request_id':str(uuid.uuid4())})[1]['code'])
+
+    def test_claude_repaired_runtime_is_shared_by_health_history_chat_and_terminal(self):
+        managed = self.root / '.local/share/bibimer/claude-runtime/claude'
+        managed.parent.mkdir(parents=True)
+        managed.write_text((self.root / 'claude').read_text())
+        managed.chmod(0o700)
+        with patch.object(module.Path, 'home', return_value=self.root):
+            # A working user installation keeps priority.
+            self.assertEqual(str(self.root / 'claude'), self.bridge.agent_executable('claude'))
+            (self.root / 'claude').write_text('#!' + sys.executable + '\nraise SystemExit(1)\n')
+            self.bridge.program_checks.clear()
+            self.assertEqual(str(managed), self.bridge.agent_executable('claude'))
+            self.assertTrue(next(row for row in self.bridge.agents() if row['id'] == 'claude')['available'])
+            session = self.begin('claude', imported=True)
+            self.assertEqual(str(managed), session.process.args[2])
+            self.message('follow up')
+            self.until(lambda event: event['session']['turn_state'] == 'ready')
+            self.end()
+            status, result = self.api('POST', '/v1/sessions', {
+                'agent': 'claude', 'mode': 'terminal', 'request_id': str(uuid.uuid4())})
+            self.assertEqual(200, status, result)
+            self.assertEqual(str(managed), self.bridge.session.process.args[-1])
+            with patch.dict(os.environ, {'BIBIMER_CLAUDE_EXECUTABLE': str(self.root / 'missing')}):
+                self.assertIsNone(self.bridge.agent_executable('claude'))
+            with patch.dict(os.environ, {'BIBIMER_CLAUDE_EXECUTABLE': str(managed)}):
+                self.assertEqual(str(managed), self.bridge.agent_executable('claude'))

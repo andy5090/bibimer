@@ -32,7 +32,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -511,6 +511,7 @@ class ChatSession(Session):
         self.started_at = time.time()
         self.state, self.exit_code = "running", None
         self.turn_state, self.turn_id, self.thread_id = "initializing", None, None
+        self.history_persisted = False
         self.imported, self.history_pending, self.persist_thread = imported, bool(imported), False
         self.condition = threading.Condition(threading.RLock())
         self.io_lock = threading.Lock()
@@ -529,7 +530,7 @@ class ChatSession(Session):
             return {"id": self.id, "launch_id": self.launch_id, "project": self.project,
                     "agent": self.agent, "mode": "chat", "state": self.state,
                     "ready": self.thread_id is not None and not self.history_pending,
-                    "external_thread_id": self.thread_id, **(self.imported or {}),
+                    "external_thread_id": self.thread_id, "history_persisted": self.history_persisted, **(self.imported or {}),
                     "turn_state": self.turn_state, "exit_code": self.exit_code,
                     "started_at": self.started_at, "output_start": self.floor,
                     "output_end": self.revision}
@@ -675,12 +676,13 @@ class ChatSession(Session):
                     self._rpc("thread/" + self.imported["import_mode"],
                         {"threadId": self.imported["source_thread_id"], "excludeTurns": True}, "import")
                 else:
-                    self._rpc("thread/start", {"cwd": self.project["path"], **({"ephemeral": True} if self.agent == "codex" else {})}, "thread")
+                    self._rpc("thread/start", {"cwd": self.project["path"], **({"ephemeral": False} if self.agent == "codex" else {})}, "thread")
             elif kind in {"thread", "import"}:
                 if kind == "import" and Path(result["thread"].get("cwd") or "/").resolve() != Path(self.project["path"]).resolve():
                     self._fault("error_import_project")
                     return
                 self.thread_id = result["thread"]["id"]
+                self.history_persisted = result["thread"].get("ephemeral") is False
                 self.persist_thread = True
                 if kind == "import":
                     self._rpc("thread/items/list", {"threadId": self.thread_id, "sortDirection": "desc", "limit": 50}, "history")
@@ -960,7 +962,7 @@ class Bridge:
             })
 
     def agents(self):
-        claude = shutil.which("claude")
+        claude = self.agent_executable("claude")
         available = self.check_program("claude", claude) if claude else False
         sdk = bool(shutil.which("node") and claude_sdk_path().is_file())
         return [
@@ -972,9 +974,22 @@ class Bridge:
             {"id": "opencode", "name": "OpenCode", "installed": bool(shutil.which("opencode")), "modes": ["terminal", "chat"]},
         ]
 
+    def agent_executable(self, agent):
+        executable = shutil.which(agent)
+        if agent != "claude":
+            return executable
+        override = os.environ.get("BIBIMER_CLAUDE_EXECUTABLE")
+        if override:
+            return shutil.which(override)
+        if executable and self.check_program(agent, executable):
+            return executable
+        managed = Path.home() / ".local/share/bibimer/claude-runtime/claude"
+        return str(managed) if managed.is_file() and os.access(managed, os.X_OK) else executable
+
     def check_program(self, agent, executable):
         now = time.monotonic()
-        previous = self.program_checks.get(agent)
+        key = (agent, executable)
+        previous = self.program_checks.get(key)
         if previous and previous[0] == executable and now - previous[1] < 60:
             return previous[2]
         try:
@@ -983,7 +998,7 @@ class Bridge:
             ready = result.returncode == 0
         except (OSError, subprocess.TimeoutExpired):
             ready = False
-        self.program_checks[agent] = executable, now, ready
+        self.program_checks[key] = executable, now, ready
         return ready
 
     def health(self):
@@ -991,7 +1006,7 @@ class Bridge:
             return {"version": VERSION, "protocol": 1, "instance": self.instance,
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, session=self.snapshot_for(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -1081,7 +1096,7 @@ class Bridge:
     def history_call(self, project, method, params, agent="codex"):
         if agent not in {"codex", "claude", "opencode"}:
             raise Problem(400, "error_program")
-        executable = shutil.which(agent)
+        executable = self.agent_executable(agent)
         if not executable:
             raise Problem(400, "error_program_missing")
         # A catalog request must not hold up session input, events or health.
@@ -1182,7 +1197,7 @@ class Bridge:
             project_id, project, current = target()
             if current:
                 return current
-            executable = shutil.which("bash") or shutil.which("sh") if agent == "shell" else shutil.which(agent)
+            executable = shutil.which("bash") or shutil.which("sh") if agent == "shell" else self.agent_executable(agent)
             if not executable:
                 raise Problem(400, "error_program_missing")
             if agent == "claude" and not self.check_program(agent, executable):

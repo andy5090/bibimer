@@ -59,7 +59,7 @@ def installer():
     digest = hashlib.sha256(source).hexdigest()
     adapters = {name: {"data": base64.b64encode((ROOT / "bridge" / name).read_bytes()).decode(),
                        "sha256": hashlib.sha256((ROOT / "bridge" / name).read_bytes()).hexdigest()}
-                for name in ("provider_opencode.py", "provider_claude.mjs")}
+                for name in ("provider_opencode.py", "provider_claude.mjs", "repair_claude_termux.py")}
     # No token or account credentials are embedded in this distributable script.
     script = '''#!/data/data/com.termux/files/usr/bin/bash
 set -eu
@@ -105,12 +105,15 @@ launcher.write_text('#!/data/data/com.termux/files/usr/bin/sh\\nexec python "$HO
 launcher.chmod(0o700)
 print("브리지 설치 완료" if is_korean else "Bridge installed")
 BIBIMER_PYTHON
-if [ "${BIBIMER_CLAUDE:-0}" = 1 ]; then
+if [ "${BIBIMER_CLAUDE:-0}" = 1 ] || [ "${BIBIMER_CLAUDE_TERMUX:-0}" = 1 ]; then
     if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
         pkg install -y nodejs-lts
     fi
     say 'Preparing the official Claude Agent SDK. A working Claude CLI is required separately.' '공식 Claude Agent SDK를 준비합니다. 실행 가능한 Claude CLI는 별도로 필요합니다.'
     npm install --prefix "$HOME/.local/share/bibimer/claude" --ignore-scripts --omit=optional --no-audit --no-fund @anthropic-ai/claude-agent-sdk@0.3.283
+fi
+if [ "${BIBIMER_CLAUDE_TERMUX:-0}" = 1 ]; then
+    python "$HOME/.local/share/bibimer/repair_claude_termux.py"
 fi
 "$HOME/.local/bin/bibimer-bridge" start
 '''.replace("ADAPTER_PAYLOAD", repr(adapters)).replace("PAYLOAD", encoded).replace("DIGEST", digest)

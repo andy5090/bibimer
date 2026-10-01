@@ -18,7 +18,7 @@ const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'bibimer-ui-'));
 const state = path.join(temporary, 'state');
 const errors = [];
 const fixtureMode = !process.argv.includes('--probe-codex');
-let bridge, browser, assets, legacyProjectError = false, legacyFolders = false, failedEventRequests = 0;
+let bridge, browser, assets, legacyProjectError = false, legacyFolders = false, legacyPersistence = false, failedEventRequests = 0;
 let heldReply = null;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -71,6 +71,7 @@ async function main() {
         ? {ok:false,status:400,data:{error:'읽고 쓸 수 있는 프로젝트 폴더가 필요합니다.'}}
         : await call(method, endpoint.replace('wait=20','wait=1'), JSON.parse(body));
       if (legacyFolders && endpoint === '/v1/health' && result.ok) result.data.features = ['multiple_projects'];
+      if (legacyPersistence && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>feature!=='persistent_codex_sessions');
       if (endpoint.includes('/events?') && !result.ok) failedEventRequests++;
       if (heldReply?.endpoint === endpoint) {
         const held = heldReply; heldReply = null; held.entered(); await held.promise;
@@ -88,7 +89,7 @@ async function main() {
       // Browser-only stand-in for native preferences; Android persistence is
       // verified separately on the installed APK, not by this adapter.
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.6.1'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.7.0'}),
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       cancelPoll:()=>{}, request:(...args)=>window.nativeRequest(...args), forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),
@@ -375,7 +376,18 @@ async function main() {
   assert.equal((await call('GET','/v1/health')).data.session.state,'exited');
   await verifyRestartAfterExit();
   if (fixtureMode) {
+    legacyPersistence = true;
+    await page.locator('#reconnect').click();
     await page.locator('#agent').selectOption('codex');
+    await page.waitForFunction(()=>document.querySelector('#mode-hint').textContent.includes('save new Codex chats'));
+    assert.equal(await page.locator('#launch').isDisabled(),true);
+    await page.locator('#mode').selectOption('terminal');
+    assert.equal(await page.locator('#launch').isDisabled(),false);
+    await page.locator('#mode').selectOption('chat');
+    assert.equal(await page.locator('#launch').isDisabled(),true);
+    legacyPersistence = false;
+    await page.locator('#reconnect').click();
+    await page.waitForFunction(()=>!document.querySelector('#launch').disabled);
     assert.equal(await page.locator('#mode').inputValue(),'chat');
     await page.locator('#launch').click();
     await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message');
@@ -471,7 +483,8 @@ async function main() {
     const beforeImport = fs.readFileSync(path.join(temporary,'project/turn-count'),'utf8');
     await page.locator('#import-session').click();
     await page.locator('.import-entry').waitFor();
-    assert.equal(await page.locator('#import-mode').inputValue(),'fork');
+    assert.equal(await page.locator('#import-mode').inputValue(),'resume');
+    await page.locator('#import-mode').selectOption('fork');
     assert.equal(await page.locator('#import-confirm').isDisabled(),true);
     await page.locator('#import-search').fill('missing title');
     await page.locator('#import-refresh').click();
@@ -503,6 +516,9 @@ async function main() {
     const imported = (await call('GET','/v1/health')).data.session;
     assert.equal(imported.external_thread_id,'saved-one-copy');
     assert.equal(imported.import_mode,'fork');
+    assert.equal(imported.history_persisted,true);
+    await page.locator('#copy-resume').click();
+    assert.equal(await page.evaluate(()=>window.testClipboard), `codex resume 'saved-one-copy' --cd '${path.join(temporary,'project')}'`);
     assert.equal(await page.locator('#conversation .assistant .code-block').count(),1);
     await page.setViewportSize({width:393,height:780});
     await page.locator('#input').fill('Continue imported context');
@@ -528,7 +544,7 @@ async function main() {
     releaseImport(); await delay(100);
     assert.equal(await page.locator('.import-entry').count(),0);
     await page.locator('#import-cancel').click();
-    console.log('PASS: Codex import search, pagination, errors, literal titles, copy default, restored rich history, no automatic turn/approval, follow-up, canceled stale replies and English/Korean mobile layouts');
+    console.log('PASS: Codex import search, pagination, errors, literal titles, resume default, explicit copy, restored rich history, no automatic turn/approval, follow-up, canceled stale replies and English/Korean mobile layouts');
     for (const agent of ['opencode','claude']) {
       await page.locator('#agent').selectOption(agent);
       assert.equal(await page.locator('#mode').inputValue(),'chat');

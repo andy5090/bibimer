@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import sys
 import time
@@ -41,6 +42,30 @@ class ChatFixture(BridgeTestCase):
         return self.api("POST", f"/v1/sessions/{self.session_id}/message", {"text": text, "request_id": key or str(uuid.uuid4())})
 
 class ChatTests(ChatFixture):
+    def test_new_chat_saved_by_codex_resumes_after_bridge_restart(self):
+        with patch.dict(os.environ, {"BIBIMER_TEST_CODEX_STORE": str(self.root / "codex-sessions.json")}):
+            first = self.chat()
+            key = first.thread_id
+            self.assertTrue(first.snapshot()["history_persisted"])
+            self.message("Keep this Codex context")
+            self.until(lambda event: any(item["kind"] == "turn" for item in event["items"]))
+            first.stop()
+            first.process.wait(timeout=5)
+            self.until(lambda event: event["session"]["state"] == "exited")
+            self.assertNotIn("Keep this Codex context", (self.state / "metadata.json").read_text())
+            self.bridge = module.Bridge(self.state)
+            self.server.bridge = self.bridge
+            catalog = self.api("POST", "/v1/session-history", {"project_id": self.bridge.project["id"]})[1]
+            self.assertEqual([key], [entry["id"] for entry in catalog["sessions"]])
+            status, result = self.api("POST", "/v1/sessions", {"agent": "codex", "mode": "chat",
+                "source_thread_id": key, "import_mode": "resume", "request_id": str(uuid.uuid4())})
+            self.assertEqual(200, status)
+            self.session_id = result["session"]["id"]
+            event = self.until(lambda event: event["session"]["ready"])
+            self.assertEqual(key, event["session"]["external_thread_id"])
+            self.assertTrue(any(item.get("text") == "Keep this Codex context" for item in event["items"]))
+            self.assertEqual("1", (self.root / "project/turn-count").read_text())
+
     def test_two_project_chats_keep_messages_and_approvals_isolated(self):
         first = self.chat()
         project_a = first.project

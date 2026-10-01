@@ -129,7 +129,7 @@ public final class MainActivity extends Activity {
             try {
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
-                    .put("version", "0.6.1").toString();
+                    .put("version", "0.7.0").toString();
             } catch (Exception ignored) { return "{}"; }
         }
 
@@ -199,6 +199,7 @@ public final class MainActivity extends Activity {
             if (name.equals("storage")) command = "termux-setup-storage";
             else if (name.equals("install")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
             else if (name.equals("claude-adapter")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "BIBIMER_CLAUDE=1 bash ~/storage/downloads/bibimer-setup.sh";
+            else if (name.equals("claude-repair")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "BIBIMER_CLAUDE_TERMUX=1 bash ~/storage/downloads/bibimer-setup.sh";
             else if (name.equals("start")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge start";
             else if (name.equals("restart")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge restart";
             else if (name.equals("pair")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge pair";

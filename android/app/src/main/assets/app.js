@@ -15,7 +15,7 @@
   let stopTarget = null, catalogRequest = false;
   let canBrowse = false, folderListing = null, folderPath = "~", folderLoading = false;
   let folderTicket = 0, folderError = null;
-  let canImport = false, multiImport = false, importProject = null, importEntries = [], importSelection = null;
+  let canImport = false, multiImport = false, persistentCodex = false, importProject = null, importEntries = [], importSelection = null;
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
   const conversation = new BibimerConversation($("conversation"), $("chat-requests"), (key, values) => key === "chat_assistant" ? t("agent_" + (session?.agent || "codex")) : t(key, values), async data => {
     const id = session?.id;
@@ -164,7 +164,7 @@
   function updateMode() {
     $("mode").querySelector('[value="chat"]').disabled = !supportsChat();
     if (!supportsChat()) $("mode").value = "terminal";
-    $("mode-hint").textContent = t(supportsChat() ? "mode_hint" : "mode_terminal_hint");
+    $("mode-hint").textContent = t($("agent").value === "codex" && !persistentCodex ? "codex_storage_update" : supportsChat() ? "mode_hint" : "mode_terminal_hint");
   }
   function isChat() { return session?.mode === "chat"; }
   function renderLanguage() {
@@ -173,7 +173,7 @@
     $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
-    $("version").textContent = t("version_note", {version:environment().version || "0.6.1"});
+    $("version").textContent = t("version_note", {version:environment().version || "0.7.0"});
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
     renderAgents(); renderProjects(); updateEnvironment(); renderSession(); renderNotice();
     conversation.localize();
@@ -208,6 +208,7 @@
     $("mode-hint").hidden = !!live;
     $("launch").disabled = !online || !project || busy || switchingProject;
     $("import-session").disabled = $("launch").disabled || !knownAgents.some(importable);
+    if ($("agent").value === "codex" && $("mode").value === "chat" && !persistentCodex) $("launch").disabled = true;
     $("import-update").hidden = !online || !!live || (canImport && multiImport);
     renderImport();
     $("edit-project").disabled = (!multipleProjects && !!live) || !online || switchingProject || busy;
@@ -219,6 +220,7 @@
     $("send").disabled = $("input").disabled || sending.has(session?.id) || (isChat() && !["ready", "failed"].includes(session.turn_state));
     $("stop").disabled = !online || !session || session.state !== "running";
     $("stop").hidden = !live;
+    $("copy-resume").hidden = !(isChat() && session.agent === "codex" && session.history_persisted && session.external_thread_id);
     for (const button of document.querySelectorAll("[data-key]")) button.disabled = $("input").disabled;
     $("terminal-empty").hidden = !!session;
     $("terminal-area").hidden = isChat();
@@ -236,6 +238,12 @@
     $("session-note").textContent = t(!online && session ? "session_unknown" :
       session && session.state === "lost" ? "session_lost_note" : "session_kept");
   }
+  $("copy-resume").addEventListener("click", () => {
+    if (!session?.history_persisted || session.agent !== "codex" || !session.external_thread_id) return;
+    const quote = value => "'" + String(value).replace(/'/g, "'\"'\"'") + "'";
+    window.Bibimer.copyText("codex resume " + quote(session.external_thread_id) + " --cd " + quote(session.project.path));
+    notice("codex_resume_copied");
+  });
   function setSession(value) {
     if (isChat() && value?.id === session.id && value.output_end < session.output_end) return;
     if ((session && session.id) !== (value && value.id)) {
@@ -271,6 +279,7 @@
       canBrowse = health.features?.includes("browse_folders") === true;
       canImport = health.features?.includes("import_codex_session") === true;
       multiImport = health.features?.includes("import_agent_session") === true;
+      persistentCodex = health.features?.includes("persistent_codex_sessions") === true;
       knownProjects = health.projects || [];
       if (multipleProjects && !knownProjects.some(item => item.id === selectedProjectId)) selectedProjectId = health.project?.id || knownProjects[0]?.id || null;
       const entry = multipleProjects ? knownProjects.find(item => item.id === selectedProjectId) : null;
@@ -444,9 +453,9 @@
   });
   $("agent").addEventListener("change", () => {
     updateMode(); $("mode").value = supportsChat() ? "chat" : "terminal";
-    rememberView();
+    rememberView(); renderSession();
   });
-  $("mode").addEventListener("change", rememberView);
+  $("mode").addEventListener("change", () => { rememberView(); renderSession(); });
   function renderFolderBrowser() {
     $("folder-path").textContent = folderPath;
     $("folder-home").disabled = !online;
@@ -601,7 +610,7 @@
       option.disabled = !importable(agent); return option;
     }));
     $("import-agent").value = knownAgents.find(agent => agent.id === $("agent").value && importable(agent))?.id || knownAgents.find(importable)?.id || "codex";
-    $("import-search").value = ""; $("import-mode").value = "fork";
+    $("import-search").value = ""; $("import-mode").value = "resume";
     $("import-project").textContent = project.path;
     $("import-dialog").showModal(); loadImports();
   });
