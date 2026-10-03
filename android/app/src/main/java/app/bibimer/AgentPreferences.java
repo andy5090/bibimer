@@ -25,11 +25,22 @@ final class AgentPreferences {
         if (!(mode instanceof String) || ((String) mode).contains("|") ||
                 !modes.contains("|" + mode + "|")) throw new IllegalArgumentException();
         JSONObject result = new JSONObject().put("permission", mode);
+        int expected = agent.equals("codex") ? 2 : 1;
         if (agent.equals("codex")) {
             Object fast = value.get("fast");
-            if (!(fast instanceof Boolean) || value.length() != 2) throw new IllegalArgumentException();
+            if (!(fast instanceof Boolean)) throw new IllegalArgumentException();
             result.put("fast", fast);
-        } else if (value.length() != 1) throw new IllegalArgumentException();
+        }
+        for (String key : new String[]{"model", "effort"}) {
+            if (!value.has(key)) continue;
+            Object item = value.get(key);
+            if (!(item instanceof String) || ((String) item).length() > 256) throw new IllegalArgumentException();
+            for (int i = 0; i < ((String) item).length(); i++)
+                if (((String) item).charAt(i) < 32) throw new IllegalArgumentException();
+            result.put(key, item); expected++;
+        }
+        if (value.length() != expected || (!result.optString("effort").isEmpty() && result.optString("model").isEmpty()))
+            throw new IllegalArgumentException();
         return result;
     }
 

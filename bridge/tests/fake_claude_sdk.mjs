@@ -17,9 +17,16 @@ export async function getSessionMessages(id,options) {
 export function query({prompt,options}) {
   assert.equal(options.cwd,process.cwd());
   assert.deepEqual(options.settingSources,['user','project','local']);
+  if (options.persistSession===false) return {
+    supportedModels:async()=>[
+      {value:'sonnet',displayName:'Test Sonnet',supportsEffort:true,supportedEffortLevels:['low','medium','high']},
+      {value:'opus',displayName:'Test Opus',supportsEffort:true,supportedEffortLevels:['low','medium','high','max']},
+      {value:'haiku',displayName:'Test Haiku',supportsEffort:false}],
+    close:()=>{}
+  };
   assert.ok([undefined,'default','acceptEdits','plan','bypassPermissions'].includes(options.permissionMode));
   assert.equal(options.allowDangerouslySkipPermissions,options.permissionMode==='bypassPermissions'?true:undefined);
-  writeFileSync('claude-options.json',JSON.stringify({permissionMode:options.permissionMode,allowDangerouslySkipPermissions:options.allowDangerouslySkipPermissions}));
+  writeFileSync('claude-options.json',JSON.stringify({permissionMode:options.permissionMode,allowDangerouslySkipPermissions:options.allowDangerouslySkipPermissions,model:options.model,effort:options.effort}));
   assert.ok(options.pathToClaudeCodeExecutable);
   assert.ok(options.resume || options.sessionId);
   let unblock, interrupted=false;

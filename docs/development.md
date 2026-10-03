@@ -83,6 +83,14 @@ node scripts/smoke_rendering.cjs
 
 UI 테스트는 임시 폴더의 실제 브리지에 연결하며 Android 네이티브 API를 명시적인 테스트 어댑터로 대체한다. 한국어 브라우저 로캘에서도 영어로 시작하는지, 한국어 전환·저장값 복원, 오류 번역과 0.1.0 응답 호환, 언어 전환 시 세션·입력 유지까지 확인한다. 어댑터의 설정 저장은 브라우저 테스트용이며 실제 앱의 Android 환경 설정 저장을 검증한 것은 아니다. 화면 캡처는 통제된 셸 출력과 모의 대화만 포함하고 `dist/screenshots/*-en.png`, `*-ko.png`에 저장한다. 실제 앱의 Keystore, WebView 리소스 로딩, 기기 간 앱 격리 경계는 APK로 따로 확인해야 한다.
 
+## 2026-10-03 모델·추론 수준·에이전트 전환 검증 (소스 반영 / APK·브리지 적용 대기)
+
+- Python 통합 **74개 통과**. `bridge/tests/test_models.py`의 7개 검증은 실제 모델 목록 형식·인증/입력 검증·잘못된 조합 차단, 세 제공자의 모델/effort/variant 전달, Codex 원래 모델 복원, PTY 인수와 OpenCode PTY 제한, 동시 목록 조회/실행 결과 공유, 프로젝트·에이전트별 실행/승인/대기열 격리와 메타데이터 이전을 다룬다. 기존 67개 검증도 통과했다.
+- UI 통합·선택 컨트롤·렌더러 통과. 자체 시트 15개, 모델 변경 시 지원 수준 갱신, 마지막 선택 저장/재로드, Codex·Claude·OpenCode 간 전환 후 각 초안/대기열 복원과 독립 종료, 가져오기 모델·수준 선택과 한국어 표시를 확인했다. 기존 Settings·Enter/IME·멀티 프로젝트·권한/Fast·Queue/Steer·가져오기·승인 검증도 통과했다. Java는 빌드 스크립트와 같은 `javac --release 8 -classpath .tools/android-36.jar`로 소스 컴파일했으며 APK는 만들지 않았다.
+- 실제 설치된 Codex 0.156.1, Claude SDK 0.3.283/CLI 2.1.283, OpenCode 1.17.13의 모델 목록과 수준을 조회했다. 실제 Codex는 외부 추론 요청 없이 로컬 HTTP 대역으로 두 모델·추론 선택의 네이티브 전달과 원래 모델 복원을 확인했다. 자체 검증 기록만 정리했으며 사용자 세션·운영 브리지는 변경하지 않았다.
+- 로그: `.tools/tests-models-final.log`, `.tools/ui-models.log`, `.tools/select-models.log`, `.tools/render-models.log`, `.tools/java-models.log`, `.tools/native-model-selection.log`. 화면 예시: `dist/screenshots/select-model-en.png`, `select-effort-en.png`, `quick-settings-small-en.png`. 테스트 데이터만 포함한다.
+- 마지막 APK와 운영 브리지는 **0.9.0**으로 유지한다. 현재 소스의 모델·전환 기능은 다음 명시적 빌드와 브리지 업데이트에 포함한다. 실제 WebView/Android 설정 저장·소프트 키보드와 실제 모델 응답·도구 동작은 설치 후 검증한다. OpenCode PTY는 자체 메뉴에서 추론 수준을 선택하고, Chat의 Agent default 모델 복원은 새 세션에서 진행한다.
+
 ## 2026-10-03 자체 선택 UI 검증 (소스 반영 / APK 빌드 대기)
 
 - `select.js` 공통 컨트롤을 10개 선택 메뉴에 적용하고 Android WebView 자산 허용 목록에 추가했다. 기존 select는 값·변경 이벤트의 내부 모델로만 사용한다. `.value` 변경 뒤 `sync()`로 표시를 맞추고 옵션/비활성 변경도 감지한다. 열린 목록은 소유 프로젝트·세션 문맥을 확인한 뒤 선택을 적용한다.

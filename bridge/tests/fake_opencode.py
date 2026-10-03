@@ -50,6 +50,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
         assert query.get('directory')==[cwd]
         body=json.loads(self.rfile.read(int(self.headers.get('Content-Length',0))) or b'{}')
         method=self.command
+        if route=='/provider':
+            self.reply(200,{'connected':['test'], 'all':[
+                {'id':'test','name':'Test provider','options':{'apiKey':'CATALOG_SECRET'},'models':{
+                    'coder':{'name':'Test Coder','variants':{'low':{},'high':{},'private':{'disabled':True}}},
+                    'simple':{'name':'Test Simple','variants':{}}}},
+                {'id':'disconnected','models':{'hidden':{'name':'Never shown'}}}]}); return
         if route=='/session' and method=='GET': self.reply(200,list(threads.values())); return
         if route=='/session' and method=='POST':
             assert set(body) <= {'permission'}
@@ -77,7 +83,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 if messages.get(key): finish(key)
                 self.reply(200,True); return
             if action=='prompt_async':
-                assert set(body)=={'messageID','parts'}
+                assert set(body)<={'messageID','parts','model','variant'}
+                Path('opencode-model.json').write_text(json.dumps({name:body[name] for name in ['model','variant'] if name in body}))
                 assert body['parts'][0]['type']=='text'
                 message=body['messageID']; text=body['parts'][0]['text']
                 Path('opencode-turn-count').write_text(str(int(Path('opencode-turn-count').read_text())+1) if Path('opencode-turn-count').exists() else '1')

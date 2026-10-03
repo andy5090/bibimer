@@ -227,6 +227,24 @@ class Adapter:
     def call(self, method, params):
         if method == 'initialize':
             return {'userAgent': 'bibimer-opencode'}
+        if method == 'model/list':
+            # Strip provider configuration/credentials; expose only picker metadata.
+            providers = self.http('GET', '/provider')
+            connected = set(providers.get('connected', []))
+            rows = []
+            for provider in providers.get('all', []):
+                if provider.get('id') not in connected:
+                    continue
+                for identity, model in provider.get('models', {}).items():
+                    if model.get('status') == 'deprecated':
+                        continue
+                    variants = model.get('variants') or {}
+                    rows.append({'id': provider['id'] + '/' + identity, 'displayName': model.get('name', identity),
+                        'description': provider.get('name', provider['id']),
+                        'supportedReasoningEfforts': [{'reasoningEffort': name, 'description': ''}
+                            for name, value in variants.items() if not value.get('disabled')]})
+            offset = int(params.get('cursor') or 0)
+            return {'data': rows[offset:offset+100], 'nextCursor': str(offset+100) if len(rows)>offset+100 else None}
         if method == 'thread/list':
             offset = int(params.get('cursor') or '0')
             if not 0 <= offset <= 10000:
@@ -285,7 +303,14 @@ class Adapter:
                 self.notify('turn/started', {'turn': {'id': self.turn, 'status': 'inProgress'}})
                 turn = self.turn
                 try:
-                    self.http('POST', '/session/' + self.thread + '/prompt_async', {'messageID': self.message_id, 'parts': [{'type': 'text', 'text': params['input'][0]['text']}]})
+                    options = params.get('bibimerOptions', {})
+                    body = {'messageID': self.message_id, 'parts': [{'type': 'text', 'text': params['input'][0]['text']}]}
+                    if options.get('model'):
+                        provider, model = options['model'].split('/', 1)
+                        body['model'] = {'providerID': provider, 'modelID': model}
+                    if options.get('effort'):
+                        body['variant'] = options['effort']
+                    self.http('POST', '/session/' + self.thread + '/prompt_async', body)
                 except urllib.error.HTTPError:
                     self.complete('failed')
                     raise RuntimeError('error_agent_turn') from None

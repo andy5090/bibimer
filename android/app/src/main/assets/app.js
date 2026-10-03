@@ -19,6 +19,8 @@
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
   let canOptions = false, canLiveOptions = false, settingsBusy = false, pendingOptions = null;
   let canQueue = false, canSteer = false, queued = [], queueRevision = -1, queueSignature = "";
+  let canModels = false, canSwitchAgents = false, selectedAgent = "shell";
+  const modelCatalogs = new Map();
   const lastOptions = environment().agentOptions || {};
   let enterBehavior = environment().enterBehavior === "send" ? "send" : "newline";
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
@@ -26,7 +28,7 @@
   const pickers = new BibimerSelect(t, {
     description: (select, option) => select.id.includes("permission") ? t("permission_hint_" + option.value) :
       select.id === "project-switch" ? knownProjects.find(item => item.id === option.value)?.path || "" :
-      select.id === "enter-behavior" ? t("enter_" + option.value + "_hint") : "",
+      select.id === "enter-behavior" ? t("enter_" + option.value + "_hint") : option.dataset.description || "",
     context: select => ["language", "enter-behavior"].includes(select.id) ? "app" :
       select.id === "project-switch" ? "projects/" + projectKey() :
       select.id.startsWith("import-") ? [projectKey(), importProject, $("import-agent").value].join("/") :
@@ -53,7 +55,67 @@
   function savedOptions(agent) {
     const value = lastOptions[agent] || {};
     return {permission:permissionModes[agent]?.includes(value.permission) ? value.permission : "inherit",
-      ...(agent === "codex" ? {fast:value.fast === true} : {})};
+      ...(agent === "codex" ? {fast:value.fast === true} : {}),
+      ...(canModels && permissionModes[agent] ? {model:typeof value.model === "string" ? value.model : "", effort:typeof value.effort === "string" ? value.effort : ""} : {})};
+  }
+  function modelContext(prefix = "") {
+    const live = !prefix && session && ["running", "stopping"].includes(session.state);
+    const agent = prefix ? $("import-agent").value : live ? session.agent : $("agent").value;
+    const key = (prefix ? importProject : projectKey()) + "/" + agent;
+    return {agent, key, live, chat:live && isChat(), mode:prefix ? "chat" : live ? session.mode : $("mode").value, project:prefix ? importProject : projectKey()};
+  }
+  async function loadModels(prefix = "", refresh = false) {
+    const ctx = modelContext(prefix);
+    if (!canModels || !online || !ctx.project || !permissionModes[ctx.agent]) return;
+    if (modelCatalogs.get(ctx.key)?.loading) return;
+    const state = {loading:true, models:modelCatalogs.get(ctx.key)?.models || [], error:null};
+    modelCatalogs.set(ctx.key, state);
+    const sourceInstance = instance;
+    try {
+      const result = await api("POST", "/v1/models", {project_id:ctx.project, agent:ctx.agent, refresh});
+      if (instance !== sourceInstance || modelCatalogs.get(ctx.key) !== state) return;
+      state.models = result.models; state.ready = true;
+    } catch (error) {
+      state.error = error.key || "error_models";
+    } finally { state.loading = false; renderSession(); }
+  }
+  function renderModels(prefix = "") {
+    const ctx = modelContext(prefix), source = prefix || "quick-", state = modelCatalogs.get(ctx.key);
+    const pending = pendingOptions?.prefix === prefix && pendingOptions.agent === ctx.agent && pendingOptions.id === (ctx.chat ? session.id : null);
+    const options = pending ? pendingOptions.value : ctx.chat ? session.options || {} : savedOptions(ctx.agent);
+    const rows = state?.models || [], model = rows.find(row => row.id === options.model);
+    const disabled = !canModels || !online || busy || switchingProject || settingsBusy || !state?.ready || state.loading ||
+      (ctx.chat && (!session.ready || session.state !== "running"));
+    function choices(id, entries, selected, empty) {
+      const select = $(id), list = [{id:"", name:t(empty)}, ...entries];
+      if (selected && !list.some(row => row.id === selected)) list.push({id:selected, name:selected, disabled:true});
+      const signature = JSON.stringify(list);
+      if (select.dataset.choices !== signature) {
+        select.replaceChildren(...list.map(row => {
+          const option = new Option(row.name || t("effort_" + row.id) || row.id, row.id);
+          option.disabled = !!row.disabled; option.dataset.description = row.description || ""; return option;
+        })); select.dataset.choices = signature;
+      }
+      select.dataset.agent = ctx.agent; select.value = selected || ""; select.disabled = disabled;
+    }
+    choices(source + "model", rows, options.model, "model_default");
+    $(source + "model").options[0].disabled = !!(ctx.chat && ctx.agent === "opencode" && options.model);
+    $(source + "model").options[0].dataset.description = ctx.chat && ctx.agent === "opencode" && options.model ? t("error_model_default") : "";
+    choices(source + "effort", (model?.efforts || []).map(row => ({...row,name:i18n.has?.("effort_"+row.id) ? t("effort_"+row.id) : row.id})), options.effort, "effort_default");
+    $(source + "effort").disabled = disabled || !model?.efforts?.length;
+    if (ctx.agent === "opencode" && ctx.mode === "terminal") {
+      $(source + "effort").disabled = true; $(source + "effort").value = "";
+    }
+    const supported = !!permissionModes[ctx.agent];
+    $(source + "model").hidden = !supported;
+    $(source + "effort").hidden = !supported;
+    $(prefix + "models-refresh").hidden = !supported;
+    $(prefix + "models-refresh").disabled = !canModels || !online || busy || state?.loading || switchingProject;
+    const hint = !supported ? null : !canModels ? "models_update" : state?.loading ? "models_loading" : state?.error ||
+      (state?.ready && !rows.length ? "models_empty" : state?.ready && options.model && !model ? "error_model_selection" : ctx.agent === "opencode" && ctx.mode === "terminal" ? "error_effort_terminal" : null);
+    $(prefix + "models-hint").textContent = hint ? t(hint) : "";
+    $(prefix + "models-hint").hidden = !hint;
+    if (!state && canModels && online && ctx.project && supported && (!prefix || $("import-dialog").open)) void loadModels(prefix);
   }
   function renderSettings(prefix = "") {
     const live = !prefix && session && ["running","stopping"].includes(session.state);
@@ -90,14 +152,17 @@
     if (!prefix) $("quick-hint").textContent = t(settingsBusy ? "settings_saving" : updateNeeded ? "settings_update_short" : chat ? "settings_next_message" : live ? "settings_next_session" : "settings_remembered");
     pickers.sync();
   }
-  async function saveOptions(prefix, quick = false) {
+  async function saveOptions(prefix, quick = false, changed = null) {
     if (settingsBusy) return;
     const live = !prefix && session && ["running","stopping"].includes(session.state);
     const chat = live && isChat();
     const agent = prefix ? $("import-agent").value : live ? session.agent : $("agent").value;
     const source = quick ? "quick-" : prefix;
-    const value = {permission:$(source + "permission").value,
+    const base = chat ? session.options || {} : savedOptions(agent);
+    const value = {...base, permission:$(source + "permission").value,
       ...(agent === "codex" ? {fast:$(source + "fast").checked} : {})};
+    if (changed === "model") { value.model = $(source + "model").value; value.effort = ""; }
+    if (changed === "effort") value.effort = $(source + "effort").value;
     const id = chat ? session.id : null;
     pendingOptions = {prefix, agent, id, value};
     settingsBusy = true; renderSession();
@@ -122,6 +187,10 @@
   }
   $("quick-permission").addEventListener("change", () => saveOptions("", true));
   $("quick-fast").addEventListener("change", () => saveOptions("", true));
+  for (const prefix of ["", "import-"]) {
+    for (const field of ["model", "effort"]) $( (prefix || "quick-") + field).addEventListener("change", () => saveOptions(prefix, !prefix, field));
+    $(prefix + "models-refresh").addEventListener("click", () => { void loadModels(prefix, true); renderSession(); });
+  }
   function renderNotice() {
     $("notice").textContent = noticeData ? t(noticeData.key) + (noticeData.suffix ? " " + t(noticeData.suffix) : "") : "";
     $("notice").hidden = !noticeData;
@@ -181,21 +250,26 @@
       return row;
     }));
   }
-  function importable(agent) { return canImport && (multiImport || agent.id === "codex") && agent.installed && agent.available !== false && agent.modes?.includes("chat"); }
+  function importable(agent) {
+    const owned = agent.id === session?.agent ? session : knownProjects.find(item => item.id === projectKey())?.sessions?.find(item => item.agent === agent.id);
+    return canImport && (multiImport || agent.id === "codex") && agent.installed && agent.available !== false && agent.modes?.includes("chat") &&
+      (!canSwitchAgents || !owned || !["running", "stopping"].includes(owned.state));
+  }
   function supportsChat() { return !!knownAgents.find(agent => agent.id === $("agent").value)?.modes?.includes("chat"); }
   function projectKey(value = project) { return value?.id || value?.path || null; }
+  function viewKey() { return canSwitchAgents ? projectKey() + "/" + selectedAgent : projectKey(); }
   function rememberView() {
-    const key = projectKey();
-    if (!key) return;
+    const key = viewKey();
+    if (!projectKey()) return;
     const questions = {...views.get(key)?.questions};
     for (const [id, request] of conversation.requests) {
       questions[id] = Object.fromEntries([...request.fields].map(([name,input]) => [name,{value:input.value,selections:input.bibimerSelections || []}]));
     }
     views.set(key, {text:$("input").value, start:$("input").selectionStart, end:$("input").selectionEnd,
-      agent:$("agent").value, mode:$("mode").value, questions});
+      agent:selectedAgent, mode:$("mode").value, questions});
   }
   function restoreQuestions(event) {
-    const view = views.get(projectKey());
+    const view = views.get(viewKey());
     if (!view) return;
     for (const [id, request] of conversation.requests) {
       for (const [name, input] of request.fields) {
@@ -237,15 +311,26 @@
       $("import-dialog").close();
       rememberView();
       project = next;
+      selectedAgent = next?.agent || "shell";
       setSession(null);
-      const view = views.get(projectKey());
+      const view = views.get(viewKey());
       $("input").value = view?.text || "";
       $("input").setSelectionRange(view?.start || 0, view?.end || 0);
-      $("agent").value = view?.agent || "shell";
+      $("agent").value = view?.agent || selectedAgent;
       updateMode();
-      $("mode").value = view?.mode === "chat" && supportsChat() ? "chat" : "terminal";
+      $("mode").value = supportsChat() && view?.mode !== "terminal" ? "chat" : "terminal";
       resizeInput();
     } else project = next;
+  }
+  function adoptAgent(agent) {
+    if (!agent || agent === selectedAgent) return;
+    rememberView(); selectedAgent = agent;
+    const view = views.get(viewKey());
+    $("input").value = view?.text || "";
+    $("input").setSelectionRange(view?.start || 0, view?.end || 0);
+    $("agent").value = agent; updateMode();
+    $("mode").value = view?.mode || (supportsChat() ? "chat" : "terminal");
+    resizeInput();
   }
   function resetTerminal() { term.write("", () => term.reset()); }
   function updateMode() {
@@ -299,11 +384,29 @@
     $("mode-controls").hidden = !!live;
     $("mode-hint").hidden = !!live;
     renderSettings(); renderSettings("import-");
+    renderModels(); renderModels("import-");
+    const agentSessions = knownProjects.find(item => item.id === projectKey())?.sessions || [];
+    const choices = [...$("agent").options].map(option => {
+      const owned = option.value === session?.agent ? session : agentSessions.find(item => item.agent === option.value);
+      return {id:option.value, label:option.label, disabled:option.disabled && !owned,
+        description:owned?.state === "running" ? t(owned.mode === "chat" ? "chat_state_" + owned.turn_state : "process_running") : ""};
+    });
+    const agentSignature = JSON.stringify(choices);
+    if ($("quick-agent").dataset.choices !== agentSignature) {
+      $("quick-agent").replaceChildren(...choices.map(row => {
+        const option = new Option(row.label, row.id); option.disabled = row.disabled; option.dataset.description = row.description; return option;
+      })); $("quick-agent").dataset.choices = agentSignature;
+    }
+    $("quick-agent").value = live ? session.agent : $("agent").value;
+    $("quick-agent").disabled = !online || !project || busy || switchingProject || settingsBusy || (!!live && !canSwitchAgents);
+    $("agent").disabled = $("quick-agent").disabled;
     $("launch").disabled = !online || !project || busy || switchingProject;
     $("import-session").disabled = $("launch").disabled || !knownAgents.some(importable);
     if ($("agent").value === "codex" && $("mode").value === "chat" && !persistentCodex) $("launch").disabled = true;
     if ($("agent").value !== "shell" && !canOptions) $("launch").disabled = true;
     if (!canOptions) $("import-session").disabled = true;
+    const selectedOption = $("agent").selectedOptions[0];
+    if (!selectedOption || selectedOption.disabled) $("launch").disabled = true;
     $("import-update").hidden = !online || !!live || (canImport && multiImport);
     renderImport();
     $("edit-project").disabled = (!multipleProjects && !!live) || !online || switchingProject || busy;
@@ -351,6 +454,7 @@
   });
   function setSession(value) {
     if (isChat() && value?.id === session.id && value.output_end < session.output_end) return;
+    if (value) adoptAgent(value.agent);
     if ((session && session.id) !== (value && value.id)) {
       cursor = 0;
       resetTerminal();
@@ -358,6 +462,8 @@
       queued = []; queueRevision = -1; queueSignature = "";
     }
     session = value;
+    const entry = knownProjects.find(item => item.id === value?.project?.id);
+    if (entry && value) entry.sessions = [...(entry.sessions || []).filter(item => item.agent !== value.agent), value];
     if (value && ["running", "stopping"].includes(value.state)) {
       $("agent").value = value.agent; updateMode(); $("mode").value = value.mode || "terminal";
     }
@@ -378,6 +484,7 @@
       if (instance && health.instance !== instance) {
         const lostQueue = queued.length > 0 || session?.queued_count > 0;
         setSession(null);
+        modelCatalogs.clear();
         notice(lostQueue ? "queue_lost" : "bridge_restarted");
       }
       instance = health.instance;
@@ -390,10 +497,15 @@
       canLiveOptions = health.features?.includes("live_agent_options") === true;
       canQueue = health.features?.includes("chat_queue") === true;
       canSteer = health.features?.includes("codex_steer") === true;
+      canModels = health.features?.includes("model_options") === true;
+      canSwitchAgents = health.features?.includes("agent_sessions") === true;
+      if (JSON.stringify(knownAgents) !== JSON.stringify(health.agents)) {
+        knownAgents = health.agents; renderAgents();
+      }
       knownProjects = health.projects || [];
       if (multipleProjects && !knownProjects.some(item => item.id === selectedProjectId)) selectedProjectId = health.project?.id || knownProjects[0]?.id || null;
       const entry = multipleProjects ? knownProjects.find(item => item.id === selectedProjectId) : null;
-      const nextProject = entry ? {id:entry.id, name:entry.name, path:entry.path} : health.project;
+      const nextProject = entry ? {id:entry.id, name:entry.name, path:entry.path, agent:entry.agent} : health.project;
       const selectedChanged = !projectInitialized || projectKey(nextProject) !== projectKey();
       adoptProject(nextProject);
       $("project-name").textContent = project ? project.name : t("project_empty");
@@ -403,12 +515,10 @@
         projectForm(!project);
         projectInitialized = true;
       }
-      if (JSON.stringify(knownAgents) !== JSON.stringify(health.agents)) {
-        knownAgents = health.agents;
-        renderAgents();
-      } else updateMode();
+      updateMode();
       $("welcome").hidden = true;
       $("workspace").hidden = false;
+      if (canSwitchAgents && entry) adoptAgent(entry.agent);
       setSession(entry ? entry.session : health.session);
       renderProjects();
       connected(true);
@@ -479,7 +589,7 @@
         ++generation;
         if (native.cancelPoll) native.cancelPoll();
       }
-      if (entry) setSession(entry.session);
+      if (entry) { if (canSwitchAgents) adoptAgent(entry.agent); setSession(entry.session); }
       renderProjects(); startPoll();
     } catch (_) { /* The session poll handles connection loss and reconnects. */ }
     finally { catalogRequest = false; }
@@ -565,7 +675,7 @@
     const text = $("input").value;
     if (!text.trim() || sending.has(session?.id) || $(steer ? "steer" : "send").disabled) return;
     if (steer && $("steer").hidden) return;
-    const id = session.id, key = projectKey();
+    const id = session.id, key = viewKey();
     const turn = session.active_turn_id;
     rememberView();
     sending.add(id); renderSession();
@@ -579,7 +689,7 @@
         ok = true;
       } else ok = await sendRaw(text.replace(/\r?\n/g, "\r") + "\r");
       if (ok && views.get(key)?.text === text) Object.assign(views.get(key), {text:"", start:0, end:0});
-      if (ok && key === projectKey() && $("input").value === text) $("input").value = "";
+      if (ok && key === viewKey() && $("input").value === text) $("input").value = "";
       if (ok && session?.id === id && ["error_steer_rejected", "error_steer_unavailable", "error_queue_full", "error_input_uncertain"].includes(noticeData?.key)) notice("");
     } catch (error) {
       if (session?.id === id) notice(error.key || "error_request_failed",
@@ -611,10 +721,28 @@
     try { await api("POST", `/v1/sessions/${session.id}/interrupt`); }
     catch (error) { notice(error.key || "error_request_failed"); }
   });
-  $("agent").addEventListener("change", () => {
-    updateMode(); $("mode").value = supportsChat() ? "chat" : "terminal";
-    rememberView(); renderSession();
-  });
+  async function changeAgent(agent) {
+    if (busy || switchingProject || settingsBusy) { $("agent").value = selectedAgent; renderSession(); return; }
+    if (!canSwitchAgents) {
+      $("agent").value = agent; selectedAgent = agent;
+      updateMode(); $("mode").value = supportsChat() ? "chat" : "terminal";
+      rememberView(); renderSession(); return;
+    }
+    $("agent").value = selectedAgent;
+    switchingProject = true; ++generation; clearTimeout(retryTimer); renderSession();
+    native.cancelPoll?.();
+    try {
+      const key = projectKey();
+      const result = await api("POST", "/v1/project-agent", {project_id:key, agent});
+      adoptAgent(agent); setSession(result.session);
+      const entry = knownProjects.find(item => item.id === key);
+      if (entry) { entry.agent = agent; entry.session = result.session; }
+      notice(""); resize();
+    } catch (error) { notice(error.key || "error_request_failed"); }
+    finally { switchingProject = false; renderSession(); renderProjects(); startPoll(); }
+  }
+  $("agent").addEventListener("change", () => changeAgent($("agent").value));
+  $("quick-agent").addEventListener("change", () => changeAgent($("quick-agent").value));
   $("mode").addEventListener("change", () => { rememberView(); renderSession(); });
   function renderFolderBrowser() {
     $("folder-path").textContent = folderPath;
@@ -805,7 +933,8 @@
     busy = true; renderSession(); notice("");
     try {
       const data = await api("POST", "/v1/sessions", {agent:$("agent").value, mode:$("mode").value,
-        ...(canOptions ? {options:savedOptions($("agent").value)} : {}),
+        ...(canOptions ? {options:{...savedOptions($("agent").value),
+          ...(canModels && $("agent").value === "opencode" && $("mode").value === "terminal" ? {effort:""} : {})}} : {}),
         ...(multipleProjects ? {project_id:selectedProjectId} : {}),
         cols:Math.max(20, term.cols), rows:Math.max(4, term.rows), request_id:uuid()});
       if (projectKey() === key) { ++generation; setSession(data.session); resize(); startPoll(); }
@@ -838,7 +967,7 @@
     ++generation; clearTimeout(retryTimer); native.forget();
     connected(false); $("workspace").hidden = true; $("welcome").hidden = false;
     setSession(null); instance = null; projectInitialized = false; updateEnvironment();
-    views.clear(); selectedProjectId = null; knownProjects = []; $("input").value = "";
+    views.clear(); modelCatalogs.clear(); selectedAgent = "shell"; selectedProjectId = null; knownProjects = []; $("input").value = "";
     notice("connection_forgotten");
   });
   for (const name of ["work", "setup", "settings"]) $("tab-" + name).addEventListener("click", () => tab(name));

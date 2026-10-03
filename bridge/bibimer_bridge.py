@@ -58,7 +58,11 @@ ERROR_MESSAGES = {
     "error_project_missing": "This project is no longer registered. Refresh the project list.",
     "error_bridge_stopping": "The bridge is restarting. Reconnect shortly.",
     "error_chat_mode": "This agent or interface is not supported by the bridge. Check Setup.",
-    "error_agent_options": "Invalid permission or speed settings for this agent.",
+    "error_agent_options": "Invalid settings for this agent.",
+    "error_models": "Could not load models. Check the agent in Termux and try again.",
+    "error_model_selection": "This model or reasoning level is unavailable. Refresh the model list and choose again.",
+    "error_model_default": "Restore the OpenCode agent default model in a new session. You can switch to any listed model here.",
+    "error_effort_terminal": "Select OpenCode reasoning levels in Chat. In Terminal, use OpenCode's own controls.",
     "error_permission_default": "OpenCode can switch between Ask and Bypass during a chat. Restore Agent default in a new session.",
     "error_chat_start": "Could not initialize Chat. Check the agent installation and configuration in Termux.",
     "error_chat_busy": "Wait for the current response or interrupt it before sending another message.",
@@ -238,14 +242,28 @@ PERMISSION_MODES = {
 
 def agent_options(agent, value=None):
     value = {} if value is None else value
-    if not isinstance(value, dict) or set(value) - {"permission", "fast"}:
+    if not isinstance(value, dict) or set(value) - {"permission", "fast", "model", "effort"}:
         raise Problem(400, "error_agent_options")
     mode = value.get("permission", "inherit")
     if not isinstance(mode, str) or mode not in PERMISSION_MODES[agent]:
         raise Problem(400, "error_agent_options")
     if "fast" in value and (agent != "codex" or type(value["fast"]) is not bool):
         raise Problem(400, "error_agent_options")
-    return {"permission": mode, **({"fast": value["fast"]} if "fast" in value else {})}
+    for name in ("model", "effort"):
+        if name in value and (agent == "shell" or not isinstance(value[name], str) or
+                len(value[name]) > 256 or any(ord(c) < 32 for c in value[name])):
+            raise Problem(400, "error_agent_options")
+    if value.get("effort") and not value.get("model"):
+        raise Problem(400, "error_model_selection")
+    return {"permission": mode, **{key: value[key] for key in ("fast", "model", "effort") if key in value}}
+
+
+def validate_model_selection(options, catalog):
+    if not options.get("model"):
+        return
+    model = next((row for row in catalog if row["id"] == options["model"]), None)
+    if not model or (options.get("effort") and options["effort"] not in {row["id"] for row in model["efforts"]}):
+        raise Problem(400, "error_model_selection")
 
 
 def codex_options(options):
@@ -283,6 +301,15 @@ def terminal_command(argv, agent, options):
         result += ["--permission-mode", mode]
         if mode == "bypassPermissions":
             result += ["--dangerously-skip-permissions"]
+    if options.get("model"):
+        result += ["--model", options["model"]]
+    if options.get("effort"):
+        if agent == "codex":
+            result += ["-c", "model_reasoning_effort=" + json.dumps(options["effort"])]
+        elif agent == "claude":
+            result += ["--effort", options["effort"]]
+        elif agent == "opencode":
+            raise Problem(400, "error_effort_terminal")
     return result
 
 
@@ -504,7 +531,7 @@ class HistoryClient:
             raise
 
     def call(self, method, params):
-        if method not in {"initialize", "thread/list", "thread/read"}:
+        if method not in {"initialize", "thread/list", "thread/read", "model/list"}:
             raise Problem(400, "error_import_invalid")
         try:
             self.serial += 1
@@ -571,12 +598,14 @@ class ChatSession(Session):
     Reuses the PTY session's scoped process stop, but never opens a PTY or
     derives messages by scraping a terminal screen. No arbitrary RPC passthrough.
     """
-    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, imported=None, options=None):
+    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, imported=None, options=None, catalog=None):
         self.id, self.launch_id = str(uuid.uuid4()), launch_id
         self.project, self.agent = project.copy(), agent
         self.options = agent_options(agent, options)
         self.launch_options = self.options.copy()
         self.default_policy = {}
+        self.model_catalog = catalog or []
+        self.default_model, self.default_effort = None, None
         self.cols, self.rows = cols, rows
         self.started_at = time.time()
         self.state, self.exit_code = "running", None
@@ -603,6 +632,7 @@ class ChatSession(Session):
             return {"id": self.id, "launch_id": self.launch_id, "project": self.project,
                     "agent": self.agent, "mode": "chat", "state": self.state,
                     "options": self.options.copy(), "launch_options": self.launch_options.copy(),
+                    "default_model": self.default_model, "default_effort": self.default_effort,
                     "ready": self.thread_id is not None and not self.history_pending,
                     "external_thread_id": self.thread_id, "history_persisted": self.history_persisted, **(self.imported or {}),
                     "turn_state": self.turn_state, "active_turn_id": self.turn_id,
@@ -793,6 +823,7 @@ class ChatSession(Session):
                     return
                 self.thread_id = result["thread"]["id"]
                 if self.agent == "codex":
+                    self.default_model, self.default_effort = result.get("model"), result.get("reasoningEffort")
                     self.default_policy = {key: result[source] for key, source in
                         [("approvalPolicy", "approvalPolicy"), ("approvalsReviewer", "approvalsReviewer"), ("sandboxPolicy", "sandbox")]
                         if source in result}
@@ -949,7 +980,7 @@ class ChatSession(Session):
         if len(self.inputs) > 512:
             self.inputs.popitem(last=False)
 
-    def configure(self, data):
+    def configure(self, data, catalog=None):
         key = request_id(data.get("request_id"))
         change = data.get("options")
         if not isinstance(change, dict) or not change:
@@ -959,11 +990,16 @@ class ChatSession(Session):
             digest, duplicate = self._duplicate(key, {"action": "options", "options": change})
             if duplicate:
                 return
+            validate_model_selection(options, catalog if catalog is not None else self.model_catalog)
             if self.state != "running" or not self.thread_id or self.history_pending:
                 raise Problem(409, "error_session_not_running")
             if self.agent == "opencode" and options["permission"] == "inherit" and self.options["permission"] != "inherit":
                 raise Problem(400, "error_permission_default")
+            if self.agent == "opencode" and "model" in change and not options.get("model") and self.options.get("model"):
+                raise Problem(400, "error_model_default")
             self.options = options
+            if catalog is not None:
+                self.model_catalog = catalog
             self._remember(key, digest, True)
             self._bump()
         # Persist outside the session lock (bridge -> session lock ordering).
@@ -980,6 +1016,14 @@ class ChatSession(Session):
                       "sandboxPolicy": {"type": {"yolo": "dangerFullAccess", "read-only": "readOnly", "workspace-write": "workspaceWrite"}[mode]}}
         if "fast" in chosen:
             policy["serviceTier"] = "fast" if chosen["fast"] else "default"
+        if "model" in chosen:
+            model = chosen["model"] or self.default_model
+            if model:
+                policy["model"] = model
+            row = next((row for row in self.model_catalog if row["id"] == model), {})
+            effort = chosen.get("effort") or (self.default_effort if not chosen["model"] else None) or row.get("default_effort")
+            if effort:
+                policy["effort"] = effort
         return policy
 
     def message(self, data):
@@ -1149,6 +1193,8 @@ class Bridge:
         state = self.state
         self.lock = threading.RLock()
         self.history_lock = threading.Lock()
+        self.model_locks = {}
+        self.model_cache = {}
         self.program_checks = {}
         self.instance = str(uuid.uuid4())
         self.token = read_json(state / "token.json")
@@ -1157,6 +1203,7 @@ class Bridge:
             save_json(state / "token.json", self.token)
         saved = read_json(state / "metadata.json", {})
         self.projects, self.sessions, self.previous_sessions = {}, {}, {}
+        self.selected_agents = dict(saved.get("selected_agents") or {})
         records = saved.get("projects") or ([saved["project"]] if saved.get("project") else [])
         for record in records:
             project = dict(record)
@@ -1179,7 +1226,9 @@ class Bridge:
                 snapshot.update(queued_count=0, queue_paused=False, active_turn_id=None)
             if snapshot["state"] in ACTIVE:
                 snapshot["state"], snapshot["exit_code"] = "lost", None
-            self.previous_sessions[project_id] = snapshot
+            agent = snapshot.get("agent", "shell")
+            self.previous_sessions[(project_id, agent)] = snapshot
+            self.selected_agents.setdefault(project_id, agent)
         self.closing = False
         self.persist()
 
@@ -1189,15 +1238,31 @@ class Bridge:
 
     @property
     def session(self):
-        return self.sessions.get(self.active_project_id)
+        return self.sessions.get((self.active_project_id, self.selected_agents.get(self.active_project_id, "shell")))
 
     @property
     def previous(self):
-        return self.previous_sessions.get(self.active_project_id)
+        return self.previous_sessions.get((self.active_project_id, self.selected_agents.get(self.active_project_id, "shell")))
 
-    def snapshot_for(self, project_id):
-        session = self.sessions.get(project_id)
-        return session.snapshot() if session else self.previous_sessions.get(project_id)
+    def snapshot_for(self, project_id, agent=None):
+        slot = (project_id, agent or self.selected_agents.get(project_id, "shell"))
+        session = self.sessions.get(slot)
+        return session.snapshot() if session else self.previous_sessions.get(slot)
+
+    def snapshots(self, project_id=None):
+        slots = self.sessions.keys() | self.previous_sessions.keys()
+        return [self.snapshot_for(key, agent) for key, agent in sorted(slots) if project_id is None or key == project_id]
+
+    def select_agent(self, data):
+        with self.lock:
+            key, agent = data.get("project_id"), data.get("agent")
+            if not isinstance(key, str) or key not in self.projects:
+                raise Problem(404, "error_project_missing")
+            if not isinstance(agent, str) or agent not in PERMISSION_MODES:
+                raise Problem(400, "error_program")
+            self.selected_agents[key] = agent
+            self.persist()
+            return {"project_id": key, "agent": agent, "session": self.snapshot_for(key)}
 
     def active_count(self):
         return sum(session.state in ACTIVE for session in self.sessions.values())
@@ -1205,9 +1270,10 @@ class Bridge:
     def persist(self):
         with self.lock:
             save_json(self.state / "metadata.json", {
-                "format": 2, "projects": list(self.projects.values()),
+                "format": 3, "projects": list(self.projects.values()),
                 "active_project_id": self.active_project_id,
-                "sessions": [snapshot for key in self.projects if (snapshot := self.snapshot_for(key))],
+                "selected_agents": self.selected_agents,
+                "sessions": self.snapshots(),
                 "project": self.project,
                 "session": self.snapshot_for(self.active_project_id),
             })
@@ -1256,8 +1322,9 @@ class Bridge:
         with self.lock:
             return {"version": VERSION, "protocol": 1, "instance": self.instance,
                     "home": str(Path.home()), "project": self.project,
-                    "projects": [dict(project, session=self.snapshot_for(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer"], "active_sessions": self.active_count(),
+                    "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
+                                      sessions=self.snapshots(key)) for key, project in self.projects.items()],
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "model_options", "agent_sessions"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -1391,6 +1458,73 @@ class Bridge:
                             "updated_at": entry.get("updatedAt"), "source": entry.get("source")})
         return {"sessions": entries, "next_cursor": result.get("nextCursor"), "project_id": project_id}
 
+    def models(self, data):
+        key, agent = data.get("project_id"), data.get("agent")
+        with self.lock:
+            if not isinstance(key, str) or key not in self.projects:
+                raise Problem(404, "error_project_missing")
+            project = dict(self.projects[key])
+        if not isinstance(agent, str) or agent not in {"codex", "claude", "opencode"}:
+            raise Problem(400, "error_program")
+        cache_key = (key, agent)
+        with self.lock:
+            model_lock = self.model_locks.setdefault(cache_key, threading.Lock())
+        cached = self.model_cache.get(cache_key)
+        if cached and not data.get("refresh") and time.monotonic() - cached[0] < 120:
+            return {"project_id": key, "agent": agent, "models": cached[1]}
+        if not model_lock.acquire(timeout=10):
+            raise Problem(409, "error_models")
+        try:
+            # Share a just-completed lookup with a concurrent launch/options request.
+            cached = self.model_cache.get(cache_key)
+            if cached and not data.get("refresh") and time.monotonic() - cached[0] < 120:
+                return {"project_id": key, "agent": agent, "models": cached[1]}
+            executable = self.agent_executable(agent)
+            if not executable:
+                raise Problem(400, "error_program_missing")
+            rows, cursor, cursors = [], None, set()
+            with HistoryClient(executable, project["path"], agent) as client:
+                for _ in range(10):
+                    result = client.call("model/list", {"limit": 100, "includeHidden": False, "cursor": cursor})
+                    rows.extend(result.get("data", [])[:1000 - len(rows)])
+                    cursor = result.get("nextCursor")
+                    if not cursor or cursor in cursors or len(rows) >= 1000:
+                        break
+                    cursors.add(cursor)
+            catalog, seen = [], set()
+            def clean(value, limit=256):
+                return value if isinstance(value, str) and 0 < len(value) <= limit and not any(ord(c) < 32 for c in value) else ""
+            for row in rows:
+                identity = clean(row.get("model") or row.get("id"))
+                if not identity or identity.startswith("-") or identity in seen or row.get("hidden"):
+                    continue
+                seen.add(identity)
+                efforts, levels = [], set()
+                for choice in row.get("supportedReasoningEfforts", [])[:64]:
+                    level = clean(choice.get("reasoningEffort"))
+                    if level and not level.startswith("-") and level not in levels:
+                        efforts.append({"id": level, "description": clean(choice.get("description"), 600)})
+                        levels.add(level)
+                default = row.get("defaultReasoningEffort")
+                catalog.append({"id": identity, "name": clean(row.get("displayName")) or identity,
+                    "description": clean(row.get("description"), 600), "efforts": efforts,
+                    "default_effort": default if default in levels else "", "is_default": row.get("isDefault") is True})
+            self.model_cache[cache_key] = time.monotonic(), catalog
+            return {"project_id": key, "agent": agent, "models": catalog}
+        except (Problem, OSError, ValueError, KeyError, TypeError, AttributeError):
+            raise Problem(400, "error_models") from None
+        finally:
+            model_lock.release()
+
+    def configure_session(self, session, data):
+        # Native catalog reads run outside all session/bridge locks.
+        with session.condition:
+            options = agent_options(session.agent, {**session.options, **data.get("options", {})}) if isinstance(data.get("options"), dict) else None
+        if options is None:
+            raise Problem(400, "error_agent_options")
+        catalog = self.models({"project_id": session.project["id"], "agent": session.agent})["models"] if options.get("model") else None
+        session.configure(data, catalog)
+
     def launch(self, data):
         key = request_id(data.get("request_id"))
         cols = integer(data.get("cols", 80), 20, 300)
@@ -1403,6 +1537,8 @@ class Bridge:
             raise Problem(400, "error_program")
         imported = import_spec(data)
         options = agent_options(agent, data.get("options"))
+        if mode == "terminal" and agent == "opencode" and options.get("effort"):
+            raise Problem(400, "error_effort_terminal")
 
         def target():
             if self.closing:
@@ -1411,10 +1547,9 @@ class Bridge:
             if project_id is not None and (not isinstance(project_id, str) or project_id not in self.projects):
                 raise Problem(404, "error_project_missing")
             project = self.projects.get(project_id)
-            current = self.snapshot_for(project_id)
-            for key_id in self.projects:
-                other = self.snapshot_for(key_id)
-                if other and other.get("launch_id") == key and key_id != project_id:
+            current = self.snapshot_for(project_id, agent)
+            for other in self.snapshots():
+                if other.get("launch_id") == key and other is not current and (other["project"]["id"] != project_id or other["agent"] != agent):
                     raise Problem(409, "error_launch_conflict")
             if current and current.get("launch_id") == key:
                 if (current["agent"] != agent or current.get("mode", "terminal") != mode or
@@ -1422,7 +1557,7 @@ class Bridge:
                         any(current.get(field) != (imported or {}).get(field) for field in ("source_thread_id", "import_mode"))):
                     raise Problem(409, "error_launch_conflict")
                 return project_id, project, current
-            owned = self.sessions.get(project_id)
+            owned = self.sessions.get((project_id, agent))
             if owned and owned.state in ACTIVE:
                 raise Problem(409, "error_session_exists")
             if not project:
@@ -1437,6 +1572,8 @@ class Bridge:
             # the source. A later UI project switch cannot redirect this launch.
             data = dict(data, project_id=project_id)
             project = dict(project)
+        catalog = self.models({"project_id": project_id, "agent": agent})["models"] if options.get("model") else []
+        validate_model_selection(options, catalog)
         if imported:
             result = self.history_call(project, "thread/read", {"threadId": imported["source_thread_id"], "includeTurns": False}, agent)
             source = result.get("thread", {})
@@ -1458,11 +1595,12 @@ class Bridge:
             argv = [executable, "-i"] if agent == "shell" else [executable]
             try:
                 session = (ChatSession if mode == "chat" else Session)(project, agent, argv, cols, rows, key, self.persist,
-                    options=options, **({"imported": imported} if mode == "chat" else {}))
+                    options=options, **({"imported": imported, "catalog": catalog} if mode == "chat" else {}))
             except OSError:
                 raise Problem(400, "error_launch_failed") from None
-            self.sessions[project_id] = session
-            self.previous_sessions.pop(project_id, None)
+            self.sessions[(project_id, agent)] = session
+            self.previous_sessions.pop((project_id, agent), None)
+            self.selected_agents[project_id] = agent
             self.persist()
             session.start_reading()
             return session.snapshot()
@@ -1610,6 +1748,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = bridge.folders(data)
         elif method == "POST" and parsed.path == "/v1/session-history":
             result = bridge.session_history(data)
+        elif method == "POST" and parsed.path == "/v1/models":
+            result = bridge.models(data)
+        elif method == "POST" and parsed.path == "/v1/project-agent":
+            result = bridge.select_agent(data)
         elif method == "POST" and parsed.path == "/v1/sessions":
             result = {"session": bridge.launch(data)}
         elif method == "POST" and parsed.path == "/v1/shutdown":
@@ -1653,7 +1795,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 elif action == "respond":
                     session.respond(data)
                 elif action == "options":
-                    session.configure(data)
+                    bridge.configure_session(session, data)
                 elif action == "queue":
                     session.queue_action(data)
                 elif action == "steer":

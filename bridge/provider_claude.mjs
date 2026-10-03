@@ -92,7 +92,7 @@ function respond(value) {
     request.finish({behavior:'allow',updatedInput:{...request.input,answers}});
   } else request.finish(result.decision==='accept'?{behavior:'allow',updatedInput:request.input}:{behavior:'deny',message:'User declined in Bibimer'});
 }
-let permissionMode = 'inherit';
+let permissionMode = 'inherit', modelOptions = {};
 async function runTurn(prompt, identity) {
   let finishInput, failed=false;
   const done = new Promise(resolve=>{finishInput=resolve;});
@@ -105,6 +105,8 @@ async function runTurn(prompt, identity) {
       systemPrompt:{type:'preset',preset:'claude_code'},includePartialMessages:true,canUseTool:permission,
       ...(permissionMode==='inherit'?{}:{permissionMode}),
       ...(permissionMode==='bypassPermissions'?{allowDangerouslySkipPermissions:true}:{}),
+      ...(Object.hasOwn(modelOptions,'model')?{model:modelOptions.model || 'default'}:{}),
+      ...(modelOptions.effort?{effort:modelOptions.effort}:{}),
       ...(persisted?{resume:thread}:{sessionId:thread}),stderr:()=>{}};
     active=sdk.query({prompt:input(),options});
     notify('item/completed',{item:{id:identity,type:'userMessage',content:[{type:'text',text:prompt}]}});
@@ -142,6 +144,20 @@ async function runTurn(prompt, identity) {
 }
 async function call(method,params) {
   if (method==='initialize') return {userAgent:'bibimer-claude'};
+  if (method==='model/list') {
+    // Initialize the CLI control protocol without yielding any user prompt.
+    let release;
+    const idle = new Promise(resolve=>{release=resolve;});
+    async function* input() { await idle; }
+    const probe=sdk.query({prompt:input(),options:{cwd,pathToClaudeCodeExecutable:executable,
+      settingSources:['user','project','local'],persistSession:false,stderr:()=>{}}});
+    try {
+      const rows=await probe.supportedModels();
+      return {data:rows.map(row=>({id:row.value,model:row.value,displayName:row.displayName,
+        description:row.description,hidden:row.disabled===true,
+        supportedReasoningEfforts:(row.supportsEffort===false?[]:row.supportedEffortLevels || []).map(level=>({reasoningEffort:level,description:''}))})),nextCursor:null};
+    } finally { release(); probe.close(); }
+  }
   if (method==='thread/list') {
     const offset=Number(params.cursor || 0);
     if (!Number.isSafeInteger(offset) || offset<0 || offset>10000) throw Error('error_import_invalid');
@@ -154,6 +170,7 @@ async function call(method,params) {
   if (['thread/start','thread/resume','thread/fork'].includes(method)) {
     if (thread) throw Error('error_session_exists');
     permissionMode=params.bibimerOptions?.permission || 'inherit';
+    modelOptions=params.bibimerOptions || {};
     if (!['inherit','default','acceptEdits','plan','bypassPermissions'].includes(permissionMode)) throw Error('error_agent_options');
     if (method==='thread/start') { thread=randomUUID(); return {thread:{id:thread,cwd,ephemeral:false}}; }
     let row=await source(params.threadId);
@@ -180,6 +197,7 @@ async function call(method,params) {
     const next=params.bibimerOptions?.permission ?? permissionMode;
     if (!['inherit','default','acceptEdits','plan','bypassPermissions'].includes(next)) throw Error('error_agent_options');
     permissionMode=next;
+    modelOptions=params.bibimerOptions || modelOptions;
     turn=randomUUID(); interrupted=false;
     notify('turn/started',{turn:{id:turn,status:'inProgress'}});
     const identity=turn;

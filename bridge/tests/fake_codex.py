@@ -8,7 +8,7 @@ thread, turn, pending = "test-thread", None, None
 count = 0
 store = Path(os.environ["BIBIMER_TEST_CODEX_STORE"]) if os.environ.get("BIBIMER_TEST_CODEX_STORE") else None
 history = []
-defaults = {"approvalPolicy": "on-request", "approvalsReviewer": "user", "sandbox": {"type": "workspaceWrite", "writableRoots": [], "networkAccess": False}}
+defaults = {"model":"test-codex", "reasoningEffort":"medium", "approvalPolicy": "on-request", "approvalsReviewer": "user", "sandbox": {"type": "workspaceWrite", "writableRoots": [], "networkAccess": False}}
 
 
 def saved(key):
@@ -43,9 +43,16 @@ for line in sys.stdin:
     method, params = message.get("method"), message.get("params", {})
     if method in {"thread/start", "thread/resume", "thread/fork", "turn/start"}:
         with Path("codex-options.jsonl").open("a") as capture:
-            capture.write(json.dumps({"method": method, **{key: params[key] for key in ("sandbox", "sandboxPolicy", "approvalPolicy", "serviceTier", "config", "approvalsReviewer") if key in params}}) + "\n")
+            capture.write(json.dumps({"method": method, **{key: params[key] for key in ("sandbox", "sandboxPolicy", "approvalPolicy", "serviceTier", "config", "approvalsReviewer", "model", "effort") if key in params}}) + "\n")
     if method == "initialize":
         emit({"id": message["id"], "result": {"userAgent": "test"}})
+    elif method == "model/list":
+        rows = [{"id":"test-codex", "model":"test-codex", "displayName":"Test Codex", "defaultReasoningEffort":"medium", "isDefault":True,
+                 "supportedReasoningEfforts":[{"reasoningEffort":level,"description":"Controlled "+level} for level in ["low","medium","high","xhigh"]]},
+                {"id":"test-small", "model":"test-small", "displayName":"Test Small", "defaultReasoningEffort":"low",
+                 "supportedReasoningEfforts":[{"reasoningEffort":"low"}]},
+                {"id":"hidden-model", "hidden":True}]
+        emit({"id":message["id"],"result":{"data":rows,"nextCursor":None}})
     elif method == "thread/start":
         assert params["ephemeral"] is False
         emit({"id": message["id"], "result": {**defaults, "thread": {"id": thread, "ephemeral": False}}})

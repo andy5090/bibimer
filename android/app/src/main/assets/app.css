@@ -104,3 +104,12 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .select-option[aria-selected="true"] { background:#223a31; border-color:#365b4a; }
 .select-check { flex:0 0 18px; color:var(--green); font-size:17px; visibility:hidden; }
 .select-option[aria-selected="true"] .select-check { visibility:visible; }
+.model-controls { display:flex; flex:none; align-items:center; gap:6px; min-height:36px; margin:-3px 0 3px; }
+.model-controls .select-control { flex:1 1 0; width:0; }
+.model-controls .select-control[data-select="quick-agent"] { flex:0 1 88px; }
+.model-controls .select-control[data-select="quick-effort"] { flex:0 1 102px; }
+.model-controls .select-trigger { min-height:36px; padding:4px 2px; border:0; background:transparent; font-size:11px; gap:4px; }
+#models-refresh { flex:none; min-height:36px; width:28px; padding:0; font-size:18px; }
+#models-hint { flex:none; margin:0 0 4px; font-size:10px; }
+#workspace.project-editing .model-controls, #workspace.project-editing #models-hint { display:none; }
+#import-settings-dialog > .select-control { margin:5px 0 10px; }

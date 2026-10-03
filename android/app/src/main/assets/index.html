@@ -75,6 +75,13 @@
         <div class="composer-actions"><button id="steer" class="quiet" type="button" data-i18n="steer" aria-describedby="delivery-hint" hidden>Steer</button><button id="send" class="primary" type="submit" data-i18n="send">Send</button></div>
       </form>
       <p id="delivery-hint" class="delivery-hint" hidden></p>
+      <div id="model-controls" class="model-controls">
+        <label for="quick-agent" class="sr-only" data-i18n="agent_label">Agent</label><select id="quick-agent"></select>
+        <label for="quick-model" class="sr-only" data-i18n="model_label">Model</label><select id="quick-model"></select>
+        <label for="quick-effort" class="sr-only" data-i18n="effort_label">Reasoning</label><select id="quick-effort"></select>
+        <button id="models-refresh" class="quiet" type="button" data-i18n-aria-label="models_refresh" aria-label="Refresh models">↻</button>
+      </div>
+      <p id="models-hint" class="quick-hint" role="status" hidden></p>
       <div id="agent-settings" class="composer-options" hidden>
         <div class="quick-options"><label for="quick-permission" class="sr-only" data-i18n="permissions">Permissions</label><select id="quick-permission" aria-describedby="quick-hint"></select>
           <label id="quick-fast-label" class="quick-fast"><input id="quick-fast" type="checkbox" role="switch" aria-label="Codex Fast" data-i18n-aria-label="codex_fast" aria-describedby="quick-hint"><span class="fast-chip"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m13 2-9 12h7l-1 8 10-12h-7l1-8Z"/></svg><span>Fast</span></span></label>
@@ -174,7 +181,11 @@
         <p id="permission-hint" class="hint"></p><p id="settings-hint" class="hint"></p><button id="settings-done" type="button" class="primary" data-i18n="settings_done">Done</button></dialog>
   <dialog id="import-settings-dialog" class="settings-dialog" aria-labelledby="import-settings-title"><h2 id="import-settings-title">Session settings</h2><div class="settings-fields"><label for="import-permission" data-i18n="permissions">Permissions</label><select id="import-permission"></select>
         <label id="import-fast-label" class="fast-option"><input id="import-fast" type="checkbox"><span data-i18n="codex_fast">Codex Fast</span></label></div>
-      <p id="import-permission-hint" class="hint"></p><p id="import-settings-hint" class="hint"></p><button id="import-settings-done" type="button" class="primary" data-i18n="settings_done">Done</button></dialog>
+      <p id="import-permission-hint" class="hint"></p>
+      <label for="import-model" data-i18n="model_label">Model</label><select id="import-model"></select>
+      <label for="import-effort" data-i18n="effort_label">Reasoning</label><select id="import-effort"></select>
+      <p id="import-models-hint" class="hint"></p><button id="import-models-refresh" class="quiet" type="button" data-i18n="models_refresh">Refresh models</button>
+      <p id="import-settings-hint" class="hint"></p><button id="import-settings-done" type="button" class="primary" data-i18n="settings_done">Done</button></dialog>
   <dialog id="stop-dialog"><h2 data-i18n="stop_title">Stop this session?</h2><p data-i18n="stop_body">This stops the agent and commands running in this session.</p><div class="button-row"><button id="cancel-stop" class="secondary" data-i18n="stop_cancel">Keep working</button><button id="confirm-stop" class="danger" data-i18n="stop_confirm">Stop session</button></div></dialog>
   <dialog id="select-dialog" class="select-sheet" aria-labelledby="select-title">
     <div class="select-handle" aria-hidden="true"></div>

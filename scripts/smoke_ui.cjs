@@ -75,6 +75,7 @@ async function main() {
     }
     await page.locator('#select-options [data-value='+JSON.stringify(value)+']').click();
     await page.locator('#select-dialog').waitFor({state:'hidden'});
+    if (id==='agent' || id==='quick-agent') await page.waitForFunction(()=>!document.querySelector('#quick-agent').disabled);
   }
 
   await page.exposeFunction('nativeRequest', async (id, method, endpoint, body) => {
@@ -164,7 +165,7 @@ async function main() {
   assert.equal(await page.locator('#enter-behavior').inputValue(),'newline');
   assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
   assert.equal(await page.locator('select:visible').count(),0);
-  assert.equal(await page.locator('.select-trigger').count(),10);
+  assert.equal(await page.locator('.select-trigger').count(),15);
   await page.locator('#enter-behavior').evaluate(node=>{
     window.enterChanges=0; node.addEventListener('change',()=>window.enterChanges++);
   });
@@ -565,8 +566,8 @@ async function main() {
     assert.equal(await page.locator('#permission').inputValue(),'workspace-write');
     await page.locator('#launch').click();
     await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message');
-    const chatId = (await call('GET','/v1/health')).data.session.id;
-    assert.deepEqual((await call('GET','/v1/health')).data.session.options,{permission:'workspace-write',fast:true});
+    let chatId = (await call('GET','/v1/health')).data.session.id;
+    assert.deepEqual((await call('GET','/v1/health')).data.session.options,{permission:'workspace-write',fast:true,model:'',effort:''});
     legacyLiveOptions = true;
     await page.locator('#reconnect').click();
     await page.waitForFunction(()=>document.querySelector('#quick-hint').textContent==='Update bridge');
@@ -598,6 +599,86 @@ async function main() {
     await page.waitForFunction(()=>!document.querySelector('#quick-fast').disabled);
     await page.locator('#quick-fast').uncheck();
     await page.waitForFunction(()=>!document.querySelector('#quick-fast').disabled);
+    // Model/effort use native catalog rows, persist per agent and affect later turns.
+    await choose('quick-model','test-codex');
+    await page.waitForFunction(()=>!document.querySelector('#quick-effort').disabled);
+    await choose('quick-effort','high');
+    await page.waitForFunction(()=>!document.querySelector('#quick-model').disabled);
+    assert.equal((await call('GET','/v1/health')).data.session.options.effort,'high');
+    await page.reload();
+    await page.waitForFunction(()=>!document.querySelector('#quick-model').disabled);
+    assert.equal(await page.locator('#quick-model').inputValue(),'test-codex');
+    assert.equal(await page.locator('#quick-effort').inputValue(),'high');
+    await choose('quick-model','test-small');
+    await page.waitForFunction(()=>!document.querySelector('#quick-effort').disabled);
+    assert.equal(await page.locator('#quick-effort').inputValue(),'');
+    assert.equal(await page.locator('#quick-effort option[value="high"]').count(),0);
+    await choose('quick-model','test-codex');
+    await page.waitForFunction(()=>!document.querySelector('#quick-effort').disabled);
+    await choose('quick-effort','high');
+    await page.waitForFunction(()=>!document.querySelector('#quick-model').disabled);
+    await page.locator('#input').fill('wait');await page.locator('#send').click();
+    await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Responding…');
+    await page.locator('#input').fill('Agent scoped queue');await page.locator('#send').click();
+    await page.locator('.queue-entry').waitFor();
+    await page.locator('#input').fill('Codex draft');
+    await choose('quick-agent','claude');
+    assert.equal(await page.locator('#input').inputValue(),'');
+    await page.locator('#launch').click();
+    await page.waitForFunction(()=>!document.querySelector('#input').disabled);
+    const alternate=(await call('GET','/v1/health')).data.session.id;
+    assert.notEqual(alternate,chatId);
+    assert.equal((await call('GET','/v1/health')).data.active_sessions,2);
+    await page.waitForFunction(()=>!document.querySelector('#quick-model').disabled);
+    await choose('quick-model','sonnet');
+    await page.waitForFunction(()=>!document.querySelector('#quick-effort').disabled);
+    await choose('quick-effort','medium');
+    await page.waitForFunction(()=>!document.querySelector('#quick-model').disabled);
+    await page.locator('#input').fill('Claude draft');
+    await choose('quick-agent','codex');
+    assert.equal(await page.locator('#input').inputValue(),'Codex draft');
+    assert.equal((await call('GET','/v1/health')).data.session.id,chatId);
+    await page.locator('.queue-entry').waitFor();
+    assert.equal(await page.locator('#quick-model').inputValue(),'test-codex');
+    await page.locator('#interrupt-turn').click();
+    await page.locator('#queue-resume').waitFor();
+    await page.locator('.queue-entry button').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.queue-entry').length===0);
+    await choose('quick-agent','claude');
+    assert.equal(await page.locator('#input').inputValue(),'Claude draft');
+    assert.equal(await page.locator('#quick-model').inputValue(),'sonnet');
+    await page.locator('#stop').click();await page.locator('#confirm-stop').click();
+    await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited');
+    await choose('quick-agent','opencode');
+    await page.locator('#launch').click();
+    await page.waitForFunction(()=>!document.querySelector('#input').disabled && !document.querySelector('#quick-model').disabled);
+    await choose('quick-model','test/coder');
+    await page.waitForFunction(()=>!document.querySelector('#quick-effort').disabled);
+    await choose('quick-effort','high');
+    await page.waitForFunction(()=>!document.querySelector('#quick-model').disabled);
+    await page.locator('#input').fill('Model probe');await page.locator('#send').click();
+    await page.waitForFunction(()=>document.querySelector('#input').value==='' && document.querySelector('#turn-status').textContent==='Ready for your message');
+    const providerChoice=JSON.parse(fs.readFileSync(path.join(temporary,'project/opencode-model.json'),'utf8'));
+    assert.deepEqual(providerChoice,{model:{providerID:'test',modelID:'coder'},variant:'high'});
+    await page.locator('#stop').click();await page.locator('#confirm-stop').click();
+    await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited');
+    await choose('quick-agent','codex');
+    assert.equal(await page.locator('#input').inputValue(),'Codex draft');
+    await page.locator('#input').fill('');
+    assert.equal((await call('GET','/v1/health')).data.active_sessions,1);
+    await page.locator('#quick-model-trigger').click();
+    await page.screenshot({path:path.join(root,'dist/screenshots/select-model-en.png')});
+    await page.locator('#select-close').click();
+    await page.locator('#quick-effort-trigger').click();
+    await page.screenshot({path:path.join(root,'dist/screenshots/select-effort-en.png')});
+    await page.locator('#select-close').click();
+    console.log('PASS: native model catalogs/effort choices, per-agent defaults/reload, next-turn settings, Codex/Claude/OpenCode switching with live process, isolated draft/queue restoration and scoped stop');
+    // Start a fresh fixture conversation for the existing first-message assertions.
+    await page.locator('#stop').click();await page.locator('#confirm-stop').click();
+    await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited');
+    await page.locator('#launch').click();
+    await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message');
+    chatId=(await call('GET','/v1/health')).data.session.id;
     await page.setViewportSize({width:360,height:460});
     await page.screenshot({path:path.join(root,'dist/screenshots/quick-settings-small-en.png')});
     const composerBox=await page.locator('#input-form').boundingBox(), quickBox=await page.locator('#agent-settings').boundingBox(), navBox=await page.locator('.bottom-nav').boundingBox();
@@ -788,6 +869,11 @@ async function main() {
     assert.equal(await page.locator('#import-permission').inputValue(),'workspace-write');
     assert.equal(await page.locator('#import-fast').isChecked(),false);
     await choose('import-permission','read-only');
+    await choose('import-model','test-small');
+    await page.waitForFunction(()=>!document.querySelector('#import-effort').disabled);
+    await choose('import-effort','low');
+    await page.waitForFunction(()=>!document.querySelector('#import-model').disabled);
+    assert.equal(await page.locator('#import-effort-trigger .select-value').innerText(),'낮음');
     await page.screenshot({path:path.join(root,'dist/screenshots/settings-import-en.png')});
     await page.locator('#import-settings-done').click();
     assert.equal(await page.locator('#import-mode').inputValue(),'resume');
