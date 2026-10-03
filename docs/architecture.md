@@ -33,7 +33,7 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 | `POST /v1/sessions/{id}/resize` | PTY 크기 변경 | `cols` (20~300), `rows` (4~200) |
 | `POST /v1/sessions/{id}/options` | Chat의 다음 입력 설정 변경·보관 (0.8.1) | `options` (권한·Codex Fast, 빌드 대기: `model`·`effort`), `request_id` |
 | `POST /v1/sessions/{id}/message` | Chat의 새 메시지 | `text`, `request_id`, Codex 전용 `fast` (boolean, 선택) |
-| `POST /v1/sessions/{id}/queue` | Chat 대기열 추가·개별 취소·재개 (빌드 대기) | `action` (`add` / `remove` / `resume`), `request_id`; 추가: `text`, 취소: `entry_id` |
+| `POST /v1/sessions/{id}/queue` | Chat 대기열 추가·개별 취소·재개·Steer (Steer는 빌드 대기) | `action` (`add` / `remove` / `resume` / `steer`), `request_id`; 추가: `text`, 취소: `entry_id`, Steer: `entry_id`·`turn_id` |
 | `POST /v1/sessions/{id}/steer` | 진행 중 Codex 턴에 추가 입력 (빌드 대기) | `text`, `turn_id` (현재 턴), `request_id` |
 | `POST /v1/sessions/{id}/respond` | 대기 중인 승인·질문에 응답 | `prompt_id`, `request_id`, `decision` 또는 `answers` |
 | `POST /v1/sessions/{id}/interrupt` | Chat의 현재 응답만 중단 | 빈 객체 |
@@ -75,6 +75,8 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 대기열은 브리지 메모리에 있으므로 앱 재실행·프로젝트 전환에는 유지되지만 에이전트 종료·브리지 종료에는 유지하지 않는다. 브리지 재시작 시 이전 건수·턴 ID도 초기화하고 앱은 미전송 대기열 유실을 알린다. 대기열 내용은 디스크 메타데이터·로그에 기록하지 않는다. 추가·취소·재개의 요청 ID도 기존 중복 처리 한도와 내용 충돌 검사를 사용하며, 변경 번호가 지난 응답은 현재 목록을 덮어쓰지 않는다.
 
 Codex [공식 `turn/steer`](https://learn.chatgpt.com/docs/app-server#steer-an-active-turn)에 `expectedTurnId`를 전달하고 네이티브 응답의 `turnId`가 일치한 뒤 성공 처리한다. 새 턴·interrupt·권한 변경 RPC로 대체하지 않는다. 거절 시 초안을 유지하며 응답 유실/시간 초과는 전달 여부 불명으로 처리해 자동 재전송하지 않는다. 확인이 끝나지 않은 Steer가 이후 대기열을 영구 차단하지 않도록 제한 시간 후 수신 대기를 해제한다. Claude·OpenCode에는 브리지 FIFO만 제공한다.
+
+대기 항목의 Steer는 `queue_steer` 기능 표시와 `queue`의 `action: steer`로 제공한다(빌드·운영 브리지 적용 대기). 세션 ID·항목 ID·현재 턴 ID를 고정하고 텍스트는 브리지 대기열에서 읽는다. 조건 잠금 안에서 항목을 `steering`으로 바꿔 새 FIFO 턴·해당 항목 삭제·재전송을 막는다. 현재 턴이 먼저 끝나도 확인 전에는 후속 대기열을 실행하지 않는다. 수락 확인 시 해당 항목만 제거하며 다른 항목의 순서를 유지한다. 거절은 `failed`, 응답 유실·잘못된 턴 확인은 `uncertain`으로 보존하고 대기열을 일시정지한다. `uncertain` 항목은 재개·Steer 재전송을 금지하며 사용자가 대화를 확인하고 취소한 뒤 재개한다. 요청 ID 중복 확인은 제거된 항목에도 적용한다. 앱은 작성 중인 입력을 건드리지 않고, 늦게 도착한 결과로 다른 프로젝트·에이전트 화면을 바꾸지 않는다.
 
 대화 이벤트는 `items`, `retained`, `requests`, `queue`를 반환한다. 항목은 변경 번호를 가지며 전체 항목은 최대 1MiB·200개, 항목별 텍스트는 32768자로 제한한다. 오래된 내용이 제거되면 `gap`을 알리고 남은 항목으로 복구한다. 승인·질문은 별도 메모리 상태로 유지해 재접속 시 다시 표시한다. 디스크 메타데이터에는 대화·질문·답변을 저장하지 않는다.
 

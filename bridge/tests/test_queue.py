@@ -1,4 +1,5 @@
 import json
+import threading
 import uuid
 
 from test_chat import ChatFixture
@@ -147,3 +148,103 @@ class QueueTests(ChatFixture):
         self.assertEqual(200, self.queue('resume')[0])
         self.until(lambda e: e['session']['turn_state'] == 'ready' and not e['queue'])
         self.assertEqual('2', (self.root/'project/turn-count').read_text())
+
+    def test_queue_steer_moves_selected_entry_once_and_preserves_approval(self):
+        self.chat()
+        self.message('approval')
+        event = self.until(lambda e: bool(e['requests']))
+        turn, prompt = event['session']['active_turn_id'], event['requests'][0]['id']
+        first, selected, request = (str(uuid.uuid4()) for _ in range(3))
+        self.queue(text='keep FIFO position', key=first)
+        self.queue(text='queued steer only once', key=selected)
+        for _ in range(2):
+            status, result = self.queue('steer', key=request, entry_id=selected, turn_id=turn)
+            self.assertEqual(200, status, result)
+            self.assertEqual([first], [row['id'] for row in result['queue']])
+        event = self.until(lambda e: any(i.get('text') == 'queued steer only once' for i in e['items']))
+        self.assertEqual(prompt, event['requests'][0]['id'])
+        self.assertEqual(turn, event['session']['active_turn_id'])
+        self.assertEqual(1, sum(i.get('text') == 'queued steer only once' for i in event['items']))
+        self.assertEqual('1', (self.root/'project/turn-count').read_text())
+        self.assertEqual(409, self.queue('steer', entry_id=selected, turn_id=turn)[0])
+        self.assertEqual(409, self.queue('steer', key=request, entry_id=first, turn_id=turn)[0])
+        self.api('POST', f'/v1/sessions/{self.session_id}/respond',
+            {'prompt_id':prompt, 'decision':'decline', 'request_id':str(uuid.uuid4())})
+        event = self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')
+        self.assertEqual('2', (self.root/'project/turn-count').read_text())
+        self.assertFalse((self.root/'project/approved').exists())
+
+    def test_queue_steer_rejection_stale_target_and_other_session_keep_entry(self):
+        first_session = self.chat()
+        self.message('wait')
+        turn = self.until(lambda e: e['session']['turn_state'] == 'running')['session']['active_turn_id']
+        entry, request = str(uuid.uuid4()), str(uuid.uuid4())
+        self.queue(text='steer-reject', key=entry)
+        self.assertEqual(409, self.queue('steer', entry_id=entry, turn_id='stale-turn')[0])
+        self.assertEqual('queued', first_session.events(0,0)['queue'][0]['state'])
+        for _ in range(2):
+            status, result = self.queue('steer', key=request, entry_id=entry, turn_id=turn)
+            self.assertEqual(409, status)
+            self.assertEqual('error_queue_steer_rejected', result['code'])
+        event = self.until(lambda e: e['queue'][0]['state'] == 'failed')
+        self.assertTrue(event['session']['queue_paused'])
+        self.assertEqual('steer-reject', event['queue'][0]['text'])
+        _, project = self.api('POST','/v1/project',{'path':str(self.root/'second'),'create':True,'add':True})
+        _, result = self.api('POST','/v1/sessions',{'agent':'codex','mode':'chat',
+            'project_id':project['project']['id'],'request_id':str(uuid.uuid4())})
+        self.session_id = result['session']['id']
+        self.until(lambda e: e['session']['ready'])
+        self.message('wait')
+        other_turn = self.until(lambda e: e['session']['turn_state'] == 'running')['session']['active_turn_id']
+        self.assertEqual(409,self.queue('steer',entry_id=entry,turn_id=other_turn)[0])
+        self.assertEqual(entry,first_session.events(0,0)['queue'][0]['id'])
+        self.session_id = first_session.id
+        self.api('POST', f'/v1/sessions/{self.session_id}/interrupt', {})
+        self.until(lambda e: e['session']['turn_state'] == 'ready')
+        self.assertEqual(200,self.queue('resume')[0])
+        self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')
+        self.assertEqual('2',(self.root/'project/turn-count').read_text())
+
+    def test_queue_steer_uncertain_delivery_cannot_be_replayed_or_resumed(self):
+        self.chat()
+        self.message('wait')
+        turn = self.until(lambda e: e['session']['turn_state'] == 'running')['session']['active_turn_id']
+        for text in ['steer-timeout','steer-wrong-receipt']:
+            with self.subTest(text=text):
+                entry, request = str(uuid.uuid4()), str(uuid.uuid4())
+                self.queue(text=text,key=entry)
+                for _ in range(2):
+                    status,result = self.queue('steer',key=request,entry_id=entry,turn_id=turn)
+                    self.assertEqual((409,'error_input_uncertain'),(status,result.get('code')))
+                event = self.until(lambda e: e['queue'][0]['state'] == 'uncertain')
+                self.assertTrue(event['session']['queue_paused'])
+                self.assertEqual(text,event['queue'][0]['text'])
+                self.assertEqual(409,self.queue('steer',entry_id=entry,turn_id=turn)[0])
+                self.assertEqual(409,self.queue('resume')[0])
+                self.assertEqual(200,self.queue('remove',entry_id=entry)[0])
+        self.assertEqual('1',(self.root/'project/turn-count').read_text())
+
+    def test_queue_steer_blocks_fifo_until_receipt_even_when_turn_finishes(self):
+        self.chat()
+        self.message('wait')
+        turn = self.until(lambda e: e['session']['turn_state'] == 'running')['session']['active_turn_id']
+        first, selected = str(uuid.uuid4()), str(uuid.uuid4())
+        self.queue(text='next response',key=first)
+        self.queue(text='steer-complete-before-receipt',key=selected)
+        result = []
+        worker = threading.Thread(target=lambda: result.append(self.queue('steer',entry_id=selected,turn_id=turn)))
+        worker.start()
+        try:
+            event = self.until(lambda e: e['session']['turn_state']=='ready' and any(row['state']=='steering' for row in e['queue']))
+            self.assertEqual([first,selected],[row['id'] for row in event['queue']])
+            self.assertEqual('1',(self.root/'project/turn-count').read_text())
+            self.assertEqual(409,self.queue('remove',entry_id=selected)[0])
+            self.assertEqual(409,self.queue('resume')[0])
+        finally:
+            (self.root/'project/release-steer-receipt').touch()
+            worker.join(timeout=5)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(200,result[0][0],result)
+        event = self.until(lambda e: not e['queue'] and e['session']['turn_state']=='ready')
+        self.assertEqual('2',(self.root/'project/turn-count').read_text())
+        self.assertEqual(1,sum(i.get('text')=='steer-complete-before-receipt' for i in event['items']))

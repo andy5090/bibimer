@@ -70,6 +70,7 @@ ERROR_MESSAGES = {
     "error_queue_entry": "This message is no longer waiting in the queue.",
     "error_queue_action": "Choose a valid queue action.",
     "error_queue_send": "The queued message was not accepted. Review it and resume the queue.",
+    "error_queue_steer_rejected": "Steer was not accepted. The message is kept and the queue is paused.",
     "error_steer_unavailable": "Steer is available only for an active Codex response. You can queue this message instead.",
     "error_steer_rejected": "The agent did not accept this steer. Your draft is kept; you can queue it instead.",
     "error_chat_transport": "The agent connection failed. Check the session before sending again.",
@@ -764,9 +765,13 @@ class ChatSession(Session):
                 return
             if isinstance(kind, tuple):
                 if kind[0] == "steer":
-                    _, key, digest, expected = kind
+                    _, key, digest, expected, entry_id = kind
                     error = "error_steer_rejected" if "error" in message else (
                         "error_input_uncertain" if (message.get("result") or {}).get("turnId") != expected else None)
+                    if entry_id:
+                        if error == "error_steer_rejected":
+                            error = "error_queue_steer_rejected"
+                        self._finish_queue_steer(entry_id, error)
                     if error:
                         self.steer_errors[key] = error
                         if len(self.steer_errors) > 512:
@@ -1052,6 +1057,7 @@ class ChatSession(Session):
     def _drain_queue(self):
         # Caller owns the condition. Prompts live only in memory, never snapshot metadata.
         if (not self.queue or self.queue_paused or self.queue_inflight or self.requests or
+                any(entry["state"] in {"steering", "uncertain"} for entry in self.queue.values()) or
                 self.state != "running" or not self.thread_id or self.history_pending or
                 self.turn_state not in {"ready", "failed"} or
                 "turn" in self.rpc_pending.values()):
@@ -1071,8 +1077,10 @@ class ChatSession(Session):
 
     def queue_action(self, data):
         key, action = request_id(data.get("request_id")), data.get("action")
-        if not isinstance(action, str) or action not in {"add", "remove", "resume"}:
+        if not isinstance(action, str) or action not in {"add", "remove", "resume", "steer"}:
             raise Problem(400, "error_queue_action")
+        if action == "steer":
+            return self.steer(data, from_queue=True)
         payload = {"action": "queue_" + action}
         if action == "add":
             value = data.get("text")
@@ -1095,12 +1103,14 @@ class ChatSession(Session):
                 self.queue[key] = {"id": key, "text": value, "state": "queued"}
             elif action == "remove":
                 entry = self.queue.get(payload["entry_id"])
-                if not entry or entry["state"] == "sending":
+                if not entry or entry["state"] in {"sending", "steering"}:
                     raise Problem(409, "error_queue_entry")
                 del self.queue[entry["id"]]
             else:
                 if any(entry["state"] == "uncertain" for entry in self.queue.values()):
                     raise Problem(409, "error_input_uncertain")
+                if any(entry["state"] == "steering" for entry in self.queue.values()):
+                    raise Problem(409, "error_chat_busy")
                 self.queue_paused = False
                 for entry in self.queue.values():
                     if entry["state"] == "failed":
@@ -1110,30 +1120,57 @@ class ChatSession(Session):
             self._bump()
             self._drain_queue()
 
-    def steer(self, data):
+    def _finish_queue_steer(self, entry_id, error):
+        # Called under the condition, before queue draining can begin a new turn.
+        entry = self.queue.get(entry_id)
+        if not entry:
+            return
+        if error:
+            entry.update(state="uncertain" if error == "error_input_uncertain" else "failed", code=error)
+            self.queue_paused = True
+        else:
+            del self.queue[entry_id]
+        self._bump()
+
+    def steer(self, data, from_queue=False):
         key, text, expected = request_id(data.get("request_id")), data.get("text"), data.get("turn_id")
-        if not isinstance(text, str) or not text.strip() or len(text.encode()) > 16384:
+        entry_id = request_id(data.get("entry_id")) if from_queue else None
+        if not from_queue and (not isinstance(text, str) or not text.strip() or len(text.encode()) > 16384):
             raise Problem(400, "error_input_size")
         if not isinstance(expected, str) or not expected or len(expected) > 200:
             raise Problem(400, "error_steer_unavailable")
         with self.condition:
-            digest, duplicate = self._duplicate(key, {"action": "steer", "text": text, "turn_id": expected})
+            payload = {"action": "queue_steer" if from_queue else "steer", "turn_id": expected,
+                       **({"entry_id": entry_id} if from_queue else {"text": text})}
+            digest, duplicate = self._duplicate(key, payload)
             if not duplicate:
                 if (self.agent != "codex" or self.state != "running" or self.turn_id != expected or
                         self.turn_state not in {"running", "waiting"}):
                     raise Problem(409, "error_steer_unavailable")
+                if from_queue:
+                    entry = self.queue.get(entry_id)
+                    if not entry or entry["state"] not in {"queued", "failed"}:
+                        raise Problem(409, "error_queue_entry")
+                    text = entry["text"]
+                    entry["state"] = "steering"
+                    entry.pop("code", None)
+                    self._bump()
                 self._remember(key, digest, False)
                 try:
                     rpc_id = self._rpc("turn/steer", {"threadId": self.thread_id, "expectedTurnId": expected,
-                        "input": [{"type": "text", "text": text}]}, ("steer", key, digest, expected))
+                        "input": [{"type": "text", "text": text}]}, ("steer", key, digest, expected, entry_id))
                 except Problem:
+                    if from_queue:
+                        self._finish_queue_steer(entry_id, "error_input_uncertain")
                     self._fault("error_chat_transport")
                     raise
                 self.condition.wait_for(lambda: self.inputs.get(key, (None, False))[1] or self.state != "running", timeout=4)
                 if not self.inputs.get(key, (None, False))[1]:
-                    # A late/absent receipt must neither replay the steer nor
-                    # block a later queued turn after this turn has ended.
+                    # Never replay an unconfirmed steer. A queue entry stays
+                    # paused/uncertain; a composer steer does not hold the queue.
                     self.rpc_pending.pop(rpc_id, None)
+                    if from_queue:
+                        self._finish_queue_steer(entry_id, "error_input_uncertain")
                     raise Problem(409, "error_input_uncertain")
             if key in self.steer_errors:
                 raise Problem(409, self.steer_errors[key])
@@ -1324,7 +1361,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "model_options", "agent_sessions"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 

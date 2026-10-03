@@ -2,6 +2,7 @@
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 thread, turn, pending = "test-thread", None, None
@@ -142,8 +143,13 @@ for line in sys.stdin:
             continue
         if text == "steer-timeout":
             continue
+        if text == "steer-complete-before-receipt":
+            finish()
+            deadline = time.monotonic() + 3
+            while not Path("release-steer-receipt").exists() and time.monotonic() < deadline:
+                time.sleep(.01)
         item({"id": message["id"], "type": "userMessage", "content": [{"type": "text", "text": text}]})
-        emit({"id": message["id"], "result": {"turnId": turn}})
+        emit({"id": message["id"], "result": {"turnId": "wrong-turn" if text == "steer-wrong-receipt" else turn}})
         if text == "finish":
             pending = None
             finish()

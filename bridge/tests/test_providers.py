@@ -148,6 +148,10 @@ class ProviderTests(ChatFixture):
                 self.assertEqual('1', (self.root/'project'/f'{agent}-turn-count').read_text())
                 self.assertEqual(409, self.api('POST', f'/v1/sessions/{session.id}/steer',
                     {'text':'not supported', 'turn_id':session.turn_id, 'request_id':str(uuid.uuid4())})[0])
+                entry = session.events(0,0)['queue'][0]['id']
+                self.assertEqual(409, self.api('POST', f'/v1/sessions/{session.id}/queue',
+                    {'action':'steer', 'entry_id':entry, 'turn_id':session.turn_id, 'request_id':str(uuid.uuid4())})[0])
+                self.assertEqual(['queued','queued'], [row['state'] for row in session.events(0,0)['queue']])
                 self.assertEqual(200, self.api('POST', f'/v1/sessions/{session.id}/respond',
                     {'prompt_id':prompt, 'decision':'decline', 'request_id':str(uuid.uuid4())})[0])
                 event = self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')

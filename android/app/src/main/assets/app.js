@@ -18,7 +18,7 @@
   let canImport = false, multiImport = false, persistentCodex = false, importProject = null, importEntries = [], importSelection = null;
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
   let canOptions = false, canLiveOptions = false, settingsBusy = false, pendingOptions = null;
-  let canQueue = false, canSteer = false, queued = [], queueRevision = -1, queueSignature = "";
+  let canQueue = false, canSteer = false, canQueueSteer = false, queued = [], queueRevision = -1, queueSignature = "";
   let canModels = false, canSwitchAgents = false, selectedAgent = "shell";
   const modelCatalogs = new Map();
   const lastOptions = environment().agentOptions || {};
@@ -497,6 +497,7 @@
       canLiveOptions = health.features?.includes("live_agent_options") === true;
       canQueue = health.features?.includes("chat_queue") === true;
       canSteer = health.features?.includes("codex_steer") === true;
+      canQueueSteer = health.features?.includes("queue_steer") === true;
       canModels = health.features?.includes("model_options") === true;
       canSwitchAgents = health.features?.includes("agent_sessions") === true;
       if (JSON.stringify(knownAgents) !== JSON.stringify(health.agents)) {
@@ -639,11 +640,14 @@
     $("chat-queue").hidden = !isChat() || !queued.length;
     $("queue-count").textContent = t(session?.queue_paused ? "queue_paused" : "queue_count", {count:queued.length});
     $("queue-resume").hidden = !session?.queue_paused;
-    $("queue-resume").disabled = !online || session?.state !== "running" || sending.has(session?.id);
-    const signature = JSON.stringify([session?.id, queued, online, session?.state, sending.has(session?.id), i18n.language()]);
+    $("queue-resume").disabled = !online || session?.state !== "running" || sending.has(session?.id) ||
+      queued.some(entry => ["steering", "uncertain"].includes(entry.state));
+    const steerable = isChat() && canSteer && session.can_steer && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state);
+    const signature = JSON.stringify([session?.id, queued, online, session?.state, session?.active_turn_id, steerable, canQueueSteer, canSteer, session?.can_steer,
+      settingsBusy, switchingProject, sending.has(session?.id), i18n.language()]);
     if (signature === queueSignature) return;
     queueSignature = signature;
-    const target = session?.id;
+    const target = session?.id, turn = session?.active_turn_id;
     $("queue-list").replaceChildren(...queued.map(entry => {
       const row = document.createElement("li"), body = document.createElement("div"), text = document.createElement("p");
       row.className = "queue-entry"; row.dataset.id = entry.id;
@@ -652,19 +656,34 @@
         const state = document.createElement("small");
         state.textContent = t("queue_" + entry.state); body.append(state);
       }
+      row.append(body);
+      if (canQueueSteer && canSteer && session?.can_steer) {
+        const steer = document.createElement("button");
+        steer.type = "button"; steer.className = "quiet"; steer.dataset.queueAction = "steer";
+        steer.textContent = t("steer"); steer.title = t(steerable ? "queue_steer_hint" : "queue_steer_wait");
+        steer.disabled = !online || session?.state !== "running" || !steerable || !["queued", "failed"].includes(entry.state) ||
+          settingsBusy || switchingProject || sending.has(target);
+        steer.addEventListener("click", () => changeQueue(target, "steer", entry.id, turn));
+        row.append(steer);
+      }
       const remove = document.createElement("button");
       remove.type = "button"; remove.className = "quiet"; remove.textContent = t("queue_remove");
-      remove.disabled = !online || session?.state !== "running" || entry.state === "sending" || sending.has(target);
+      remove.dataset.queueAction = "remove";
+      remove.disabled = !online || session?.state !== "running" || ["sending", "steering"].includes(entry.state) || sending.has(target);
       remove.addEventListener("click", () => changeQueue(target, "remove", entry.id));
-      row.append(body, remove); return row;
+      row.append(remove); return row;
     }));
   }
-  async function changeQueue(id, action, entryId) {
+  async function changeQueue(id, action, entryId, turn) {
     if (!id || sending.has(id)) return;
     sending.add(id); renderSession();
     try {
-      const result = await api("POST", `/v1/sessions/${id}/queue`, {action, ...(entryId ? {entry_id:entryId} : {}), request_id:uuid()});
-      if (session?.id === id) { setSession(result.session); updateQueue(result); }
+      const result = await api("POST", `/v1/sessions/${id}/queue`, {action, ...(entryId ? {entry_id:entryId} : {}),
+        ...(action === "steer" ? {turn_id:turn} : {}), request_id:uuid()});
+      if (session?.id === id) {
+        setSession(result.session); updateQueue(result);
+        if (["error_queue_steer_rejected", "error_steer_unavailable", "error_queue_entry", "error_input_uncertain"].includes(noticeData?.key)) notice("");
+      }
     } catch (error) { if (session?.id === id) notice(error.key || "error_request_failed"); }
     finally { sending.delete(id); renderSession(); }
   }

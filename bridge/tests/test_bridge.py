@@ -45,17 +45,18 @@ class BridgeTestCase(unittest.TestCase):
         self.directory.cleanup()
 
     def api(self, method, path, data=None, auth=True, headers=None):
-        connection = http.client.HTTPConnection("127.0.0.1", self.server.server_port, timeout=4)
+        # Allow the server's four-second Steer receipt deadline to respond.
+        connection = http.client.HTTPConnection("127.0.0.1", self.server.server_port, timeout=6)
         request_headers = {"Content-Type":"application/json"}
         if auth:
             request_headers["Authorization"] = "Bearer " + self.bridge.token
         request_headers.update(headers or {})
-        connection.request(method, path, None if data is None else json.dumps(data), request_headers)
-        response = connection.getresponse()
-        status = response.status
-        payload = json.loads(response.read())
-        connection.close()
-        return status, payload
+        try:
+            connection.request(method, path, None if data is None else json.dumps(data), request_headers)
+            response = connection.getresponse()
+            return response.status, json.loads(response.read())
+        finally:
+            connection.close()
 
     def register(self):
         path = self.root / "project"
