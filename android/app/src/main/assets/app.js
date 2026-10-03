@@ -23,6 +23,15 @@
   let enterBehavior = environment().enterBehavior === "send" ? "send" : "newline";
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
     claude:["inherit","default","acceptEdits","plan","bypassPermissions"], opencode:["inherit","ask","allow"]};
+  const pickers = new BibimerSelect(t, {
+    description: (select, option) => select.id.includes("permission") ? t("permission_hint_" + option.value) :
+      select.id === "project-switch" ? knownProjects.find(item => item.id === option.value)?.path || "" :
+      select.id === "enter-behavior" ? t("enter_" + option.value + "_hint") : "",
+    context: select => ["language", "enter-behavior"].includes(select.id) ? "app" :
+      select.id === "project-switch" ? "projects/" + projectKey() :
+      select.id.startsWith("import-") ? [projectKey(), importProject, $("import-agent").value].join("/") :
+      [projectKey(), session?.id, session?.state, select.dataset.agent].join("/")
+  });
   const conversation = new BibimerConversation($("conversation"), $("chat-requests"), (key, values) => key === "chat_assistant" ? t("agent_" + (session?.agent || "codex")) : t(key, values), async data => {
     const id = session?.id;
     try {
@@ -59,7 +68,7 @@
     const disabled = updateNeeded || busy || settingsBusy || (chat && (!online || !session.ready || session.state !== "running"));
     for (const id of prefix ? [prefix + "permission"] : ["permission", "quick-permission"]) {
       const select = $(id);
-      // Do not replace an open native picker during status polling.
+      // Keep the option model stable during status polling.
       if (select.dataset.agent !== agent || select.dataset.language !== i18n.language()) {
         select.replaceChildren(...permissionModes[agent].map(mode => new Option(t("permission_" + mode), mode)));
         select.dataset.agent = agent; select.dataset.language = i18n.language();
@@ -79,6 +88,7 @@
       (chat && agent === "opencode" && options.permission !== "inherit" ? " " + t("error_permission_default") : "") +
       (agent === "codex" ? " " + t("fast_hint") : "");
     if (!prefix) $("quick-hint").textContent = t(settingsBusy ? "settings_saving" : updateNeeded ? "settings_update_short" : chat ? "settings_next_message" : live ? "settings_next_session" : "settings_remembered");
+    pickers.sync();
   }
   async function saveOptions(prefix, quick = false) {
     if (settingsBusy) return;
@@ -206,7 +216,6 @@
     $("project-name").hidden = !picker.hidden;
     $("edit-project").textContent = t(multipleProjects ? "add_project" : "edit_project");
     $("cancel-project").hidden = !project;
-    if (document.activeElement === picker) return;
     const entries = knownProjects.map(item => {
       const state = item.session?.state;
       const label = state === "running" && item.session?.turn_state === "waiting" ? t("chat_state_waiting") :
@@ -221,6 +230,7 @@
       picker.dataset.entries = signature;
     }
     picker.value = selectedProjectId || "";
+    pickers.sync();
   }
   function adoptProject(next) {
     if (projectKey(next) !== projectKey()) {
@@ -242,6 +252,7 @@
     $("mode").querySelector('[value="chat"]').disabled = !supportsChat();
     if (!supportsChat()) $("mode").value = "terminal";
     $("mode-hint").textContent = t($("agent").value === "codex" && !persistentCodex ? "codex_storage_update" : supportsChat() ? "mode_hint" : "mode_terminal_hint");
+    pickers.sync();
   }
   function isChat() { return session?.mode === "chat"; }
   function renderLanguage() {
@@ -260,6 +271,7 @@
     setTimeout(resize, 30);
   }
   function tab(name) {
+    pickers.close();
     currentTab = name;
     for (const page of ["work", "setup", "settings"]) {
       $(page).hidden = name !== page;
@@ -329,6 +341,7 @@
     conversation.enable(online && live);
     $("session-note").textContent = t(!online && session ? "session_unknown" :
       session && session.state === "lost" ? "session_lost_note" : "session_kept");
+    pickers.sync();
   }
   $("copy-resume").addEventListener("click", () => {
     if (!session?.history_persisted || session.agent !== "codex" || !session.external_thread_id) return;
@@ -393,7 +406,7 @@
       if (JSON.stringify(knownAgents) !== JSON.stringify(health.agents)) {
         knownAgents = health.agents;
         renderAgents();
-      }
+      } else updateMode();
       $("welcome").hidden = true;
       $("workspace").hidden = false;
       setSession(entry ? entry.session : health.session);
@@ -707,6 +720,7 @@
     $("import-confirm").textContent = t(busy ? "import_starting" : "import_selected");
     $("import-more").hidden = !importCursor;
     $("import-more").disabled = disabled || !online;
+    pickers.sync();
     $("import-status").textContent = t(importError || (importLoading ? "import_loading" :
       importEntries.length ? "import_count" : importSearch ? "import_no_results" : "import_empty"), {count:importEntries.length});
     if (rebuild) {
@@ -843,7 +857,7 @@
   for (const button of document.querySelectorAll("[data-command]")) button.addEventListener("click", () => native.copyCommand(button.dataset.command));
   const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", interrupt:"\x03", enter:"\r"};
   for (const button of document.querySelectorAll("[data-key]")) button.addEventListener("click", () => sendRaw(keys[button.dataset.key]));
-  window.BibimerPause = () => { paused = true; ++generation; clearTimeout(retryTimer); };
+  window.BibimerPause = () => { pickers.close(); paused = true; ++generation; clearTimeout(retryTimer); };
   $("language").addEventListener("change", () => {
     try {
       if (!native.setLanguage($("language").value)) throw new Error();
@@ -858,6 +872,7 @@
     $("enter-behavior").value = enterBehavior;
     $("enter-behavior-hint").textContent = t("enter_" + enterBehavior + "_hint");
     $("input").setAttribute("enterkeyhint", enterBehavior === "send" ? "send" : "enter");
+    pickers.sync();
   }
   $("enter-behavior").addEventListener("change", () => {
     const value = $("enter-behavior").value;

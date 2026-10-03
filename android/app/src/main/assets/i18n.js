@@ -2,6 +2,8 @@
 (() => {
   // Each entry is [English default, Korean]. Terminal output is never translated.
   const strings = {
+    select_title: ["Choose an option", "옵션 선택"],
+    select_close: ["Close choices", "선택 목록 닫기"],
     tab_settings: ["Settings", "설정"],
     app_settings_intro: ["Choose your input behavior and app language.", "입력 방식과 표시 언어를 설정하세요."],
     app_settings_saved: ["Saved on this phone for all projects and sessions.", "이 휴대폰에 저장하며 모든 프로젝트와 세션에 적용합니다."],

@@ -5,7 +5,7 @@
 ```text
 android/app/src/main/
     java/app/bibimer/       Android Activity, 고정 로컬 HTTP 클라이언트, 토큰 보관
-    assets/                대화·터미널 화면, conversation.js/rich-text.js, brand.svg, 영어·한국어 i18n.js 문구
+    assets/                대화·터미널 화면, conversation.js/rich-text.js, select.js 선택 UI, brand.svg, i18n.js 문구
     res/                   앱 아이콘·테마·네트워크 정책, 영어·한국어 네이티브 문구
 bridge/bibimer_bridge.py    Python 표준 라이브러리 브리지
 bridge/provider_opencode.py OpenCode 로컬 HTTP 서버 어댑터
@@ -13,6 +13,7 @@ bridge/provider_claude.mjs  Claude Agent SDK 어댑터
 bridge/tests/              PTY·HTTP, 세 에이전트 프로토콜 대역, 업데이트 통합 테스트
 scripts/build_apk.py        Termux에서 APK 빌드 및 설치 스크립트 생성
 scripts/smoke_ui.cjs        화면 + 실제 브리지 연결 검증
+scripts/smoke_select.cjs    자체 선택 시트·키보드·긴 목록·상태 변경 검증
 scripts/smoke_rendering.cjs GFM·코드·diff·계획·스크롤·안전한 출력과 UI 검증
 ```
 
@@ -58,6 +59,7 @@ CLI와 설정 스크립트는 영어가 기본이다. `BIBIMER_LANGUAGE=ko` 환�
 python -m unittest discover -s bridge/tests -v
 node --check bridge/provider_claude.mjs
 node --check android/app/src/main/assets/app.js
+node --check android/app/src/main/assets/select.js
 node --check android/app/src/main/assets/i18n.js
 node --check android/app/src/main/assets/conversation.js
 node --check android/app/src/main/assets/rich-text.js
@@ -71,6 +73,7 @@ bash -n dist/bibimer-setup.sh
 pkg install nodejs
 npm install --prefix .tools/ui --ignore-scripts --no-fund --no-audit playwright-core@1.55.1
 node scripts/smoke_ui.cjs
+node scripts/smoke_select.cjs
 node scripts/smoke_rendering.cjs
 ```
 
@@ -79,6 +82,13 @@ node scripts/smoke_rendering.cjs
 현재 기기에서는 기존 Termux X11 Chromium의 `headless_shell`을 사용했다. 다른 경로의 Chromium을 사용하려면 `BIBIMER_CHROMIUM`을 지정한다. Playwright의 플랫폼 검사에 맞춰 테스트 프로세스에서만 Android를 Linux로 식별하고, 실제 실행 파일은 Termux용 Chromium을 지정한다. 이는 Playwright나 앱의 Android 지원을 검증하는 방법이 아니다.
 
 UI 테스트는 임시 폴더의 실제 브리지에 연결하며 Android 네이티브 API를 명시적인 테스트 어댑터로 대체한다. 한국어 브라우저 로캘에서도 영어로 시작하는지, 한국어 전환·저장값 복원, 오류 번역과 0.1.0 응답 호환, 언어 전환 시 세션·입력 유지까지 확인한다. 어댑터의 설정 저장은 브라우저 테스트용이며 실제 앱의 Android 환경 설정 저장을 검증한 것은 아니다. 화면 캡처는 통제된 셸 출력과 모의 대화만 포함하고 `dist/screenshots/*-en.png`, `*-ko.png`에 저장한다. 실제 앱의 Keystore, WebView 리소스 로딩, 기기 간 앱 격리 경계는 APK로 따로 확인해야 한다.
+
+## 2026-10-03 자체 선택 UI 검증 (소스 반영 / APK 빌드 대기)
+
+- `select.js` 공통 컨트롤을 10개 선택 메뉴에 적용하고 Android WebView 자산 허용 목록에 추가했다. 기존 select는 값·변경 이벤트의 내부 모델로만 사용한다. `.value` 변경 뒤 `sync()`로 표시를 맞추고 옵션/비활성 변경도 감지한다. 열린 목록은 소유 프로젝트·세션 문맥을 확인한 뒤 선택을 적용한다.
+- `node scripts/smoke_ui.cjs` 통과. 모든 메뉴를 실제 트리거·선택 행으로 조작하며 프로젝트 전환·권한/Fast·가져오기·세 제공자·Queue/Steer·Settings·영어/한국어를 확인했다. 취소/포커스 복원, 같은 항목 중복 저장 없음, 비활성 항목 차단, 저장 실패 복원, 상태 polling 중 선택/포커스 유지도 확인했다. 재연결 시 에이전트 목록이 같아도 인터페이스 지원 안내를 갱신하도록 수정했다.
+- `node scripts/smoke_select.cjs` 통과. 120개 옵션·Unicode/긴 경로·HTML 문자 표시, 320×460에서 현재 행 스크롤·가로 넘침 없음, 키보드 이동/비활성 건너뛰기, 프로그램 값 동기화, 오래된 문맥/제거 항목 차단, 중첩 팝업 취소·선택·부모 닫힘을 확인했다.
+- 기존 `smoke_rendering.cjs`와 Java 소스 컴파일 통과. 로그는 `.tools/ui-select.log`, `.tools/select-control.log`, `.tools/render-select.log`, 미리보기는 `dist/screenshots/select-*.png`다. APK 패키징·버전 변경·운영 브리지 재시작은 하지 않았다. 마지막 APK는 0.9.0/code 16이며 Android WebView 터치·뒤로 가기·TalkBack은 다음 빌드 설치 후 검증한다.
 
 ## 2026-10-02 0.9.0 APK 빌드 검증
 
