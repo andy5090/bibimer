@@ -44,7 +44,7 @@ window.BibimerSidebar = class BibimerSidebar {
     // Exclude output cursors so streaming text cannot rebuild the list or steal focus.
     const rows = state.projects.map(project => ({...project, session:undefined, sessions:(project.sessions || (project.session ? [project.session] : [])).map(row => ({
       id:row.id, agent:row.agent, path:row.project.path, title:state.title(row), status:state.status(row),
-      archived:!!row.archived, state:row.state
+      archived:!!row.archived, state:row.state, responding:state.responding(row)
     }))}));
     const signature = JSON.stringify([rows, state.worktrees, state.projectId, state.sessionId, state.disabled, state.library, this.archived, t("session_new")]);
     if (signature === this.signature) return;
@@ -87,6 +87,7 @@ window.BibimerSidebar = class BibimerSidebar {
           open.setAttribute("aria-current", session.id === state.sessionId ? "true" : "false");
           const title = document.createElement("strong"), status = document.createElement("small");
           title.textContent = session.title; title.dir = "auto"; status.textContent = t("agent_" + session.agent) + " · " + session.status;
+          status.classList.toggle("response-progress", session.responding);
           open.append(title, status);
           const more = this.button("⋯", () => this.actions.manage(session.id), "icon-button", "manage/" + session.id);
           more.setAttribute("aria-label", t("session_actions") + ": " + session.title); more.setAttribute("aria-haspopup", "dialog");

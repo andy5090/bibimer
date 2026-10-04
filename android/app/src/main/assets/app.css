@@ -176,3 +176,12 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .sidebar-project > summary .sidebar-count { margin-top:12px; }
 .sidebar-path { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .sidebar-project-actions button { white-space:nowrap; }
+
+/* The native turn state drives this indicator; waiting for approval stays still. */
+.response-progress { display:inline-flex; align-items:center; gap:7px; color:var(--green); font-weight:600; }
+.response-progress::before { content:""; box-sizing:border-box; flex:none; width:12px; height:12px; border:1.5px solid currentColor; border-right-color:transparent; border-radius:50%; animation:response-spin 1s linear infinite; }
+#turn-status.response-progress { min-height:24px; padding:3px 8px; border-radius:999px; background:#233b32; }
+.sidebar-session-open small.response-progress { display:flex; color:var(--green); font-weight:500; }
+.sidebar-session-open .response-progress::before { width:10px; height:10px; }
+@keyframes response-spin { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) { .response-progress::before { animation:none; border-color:currentColor; } }

@@ -371,10 +371,13 @@
     return t(value.state === "running" ? value.mode === "chat" ? "chat_state_" + value.turn_state : "process_running" :
       value.state === "stopping" ? "process_stopping" : value.state === "lost" ? "process_lost" : "process_exited", {code:value.exit_code});
   }
+  function isResponding(value) {
+    return online && value?.mode === "chat" && value.state === "running" && value.turn_state === "running";
+  }
   function renderSidebar() {
     sidebar.render({projects:knownProjects, projectId:projectKey(), sessionId:session?.id,
       worktrees, online, library:canLibrary, disabled:!online || busy || switchingProject || settingsBusy || libraryBusy,
-      loading:worktreeLoading, error:worktreeError || (noticeData?.key?.startsWith("error_") ? noticeData.key : null), title:sessionTitle, status:sessionStatus});
+      loading:worktreeLoading, error:worktreeError || (noticeData?.key?.startsWith("error_") ? noticeData.key : null), title:sessionTitle, status:sessionStatus, responding:isResponding});
   }
   async function refreshSidebar() {
     await refreshCatalog();
@@ -427,6 +430,7 @@
     const live = target && ["running", "stopping"].includes(target.state);
     $("session-action-name").textContent = target ? sessionTitle(target) : "";
     $("session-action-status").textContent = target ? sessionStatus(target) : "";
+    $("session-action-status").classList.toggle("response-progress", isResponding(target));
     $("session-rename-form").hidden = !canLibrary;
     for (const id of ["session-name", "session-rename", "session-archive", "session-delete", "session-continue"]) $(id).disabled = disabled;
     $("session-archive").hidden = $("session-archive-hint").hidden = $("session-delete").hidden = $("session-delete-hint").hidden = !canLibrary;
@@ -625,6 +629,7 @@
     $("workspace").classList.toggle("chat-mode", isChat());
     $("workspace").classList.toggle("has-requests", isChat() && conversation.requests.size > 0);
     $("turn-status").textContent = isChat() ? (session.state === "running" ? t("chat_state_" + session.turn_state) : label) : "";
+    $("turn-status").classList.toggle("response-progress", isResponding(session));
     $("interrupt-turn").hidden = !isChat() || !["running", "waiting"].includes(session.turn_state);
     $("interrupt-turn").disabled = !online || !live;
     $("input").placeholder = t(isChat() ? "chat_placeholder" : "input_placeholder");
