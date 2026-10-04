@@ -80,7 +80,9 @@ async function main(){
   await page.evaluate(()=>window.setupResult('connected',true));
   await page.waitForFunction(()=>!document.querySelector('#workspace').hidden && document.querySelector('#setup').hidden);
   assert.equal(await page.locator('#pair-code').inputValue(),'');
-  await page.reload();await page.locator('#tab-setup').click();
+  await page.reload();await page.waitForFunction(()=>!document.querySelector('#workspace').hidden);
+  if(await page.locator('#sidebar').evaluate(node=>node.open))await page.locator('#sidebar-close').click();
+  await page.locator('#tab-setup').click();
   assert.match(await page.locator('#quick-status').innerText(),/연결 정보를 저장/);
   assert.equal(await page.locator('#setup').isVisible(),true);
   await page.locator('#forget').click();

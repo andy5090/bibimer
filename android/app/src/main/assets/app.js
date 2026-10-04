@@ -21,6 +21,9 @@
   let canOptions = false, canLiveOptions = false, settingsBusy = false, pendingOptions = null;
   let canQueue = false, canSteer = false, canQueueSteer = false, queued = [], queueRevision = -1, queueSignature = "";
   let canModels = false, canSwitchAgents = false, selectedAgent = "shell";
+  let canLibrary = false, canWorktrees = false, activeViewKey = null, draftPath = null, importPath = null;
+  let actionTarget = null, deleteTarget = null, libraryBusy = false, worktreeLoading = false, worktreeError = null;
+  const worktrees = {};
   const modelCatalogs = new Map();
   const lastOptions = environment().agentOptions || {};
   let enterBehavior = environment().enterBehavior === "send" ? "send" : "newline";
@@ -48,6 +51,12 @@
   const fit = new FitAddon.FitAddon();
   term.loadAddon(fit);
   term.open($("terminal"));
+  const sidebar = new BibimerSidebar(t, {
+    refresh:refreshSidebar, manage:openSessionActions,
+    import:async (id, path) => { await newSession(id, path); if (projectKey() === id) $("import-session").click(); },
+    project:async id => { await changeProject({project_id:id}); sidebar.close(); tab("work"); },
+    session:selectSession, create:newSession
+  });
 
   function environment() {
     try { return JSON.parse(native.environment()); }
@@ -62,8 +71,9 @@
   function modelContext(prefix = "") {
     const live = !prefix && session && ["running", "stopping"].includes(session.state);
     const agent = prefix ? $("import-agent").value : live ? session.agent : $("agent").value;
-    const key = (prefix ? importProject : projectKey()) + "/" + agent;
-    return {agent, key, live, chat:live && isChat(), mode:prefix ? "chat" : live ? session.mode : $("mode").value, project:prefix ? importProject : projectKey()};
+    const path = prefix ? importPath || project?.path : live ? session.project.path : draftPath || project?.path;
+    const key = (prefix ? importProject : projectKey()) + "/" + agent + (canWorktrees ? "/" + path : "");
+    return {agent, key, path, live, chat:live && isChat(), mode:prefix ? "chat" : live ? session.mode : $("mode").value, project:prefix ? importProject : projectKey()};
   }
   async function loadModels(prefix = "", refresh = false) {
     const ctx = modelContext(prefix);
@@ -73,7 +83,7 @@
     modelCatalogs.set(ctx.key, state);
     const sourceInstance = instance;
     try {
-      const result = await api("POST", "/v1/models", {project_id:ctx.project, agent:ctx.agent, refresh});
+      const result = await api("POST", "/v1/models", {project_id:ctx.project, agent:ctx.agent, ...(canWorktrees ? {worktree_path:ctx.path} : {}), refresh});
       if (instance !== sourceInstance || modelCatalogs.get(ctx.key) !== state) return;
       state.models = result.models; state.ready = true;
     } catch (error) {
@@ -199,6 +209,10 @@
   function renderNotice() {
     $("notice").textContent = noticeData ? t(noticeData.key) + (noticeData.suffix ? " " + t(noticeData.suffix) : "") : "";
     $("notice").hidden = !noticeData;
+    const error = noticeData?.key?.startsWith("error_") ? $("notice").textContent : "";
+    $("session-action-error").textContent = error;
+    $("session-action-error").hidden = !error;
+    if ($("sidebar").open && error) $("sidebar-status").textContent = error;
   }
   function notice(key, suffix = null) { noticeData = key ? {key, suffix} : null; renderNotice(); }
   function appError(key, status = 0) { return Object.assign(new Error(t(key)), {key, status}); }
@@ -277,11 +291,11 @@
   function importable(agent) {
     const owned = agent.id === session?.agent ? session : knownProjects.find(item => item.id === projectKey())?.sessions?.find(item => item.agent === agent.id);
     return canImport && (multiImport || agent.id === "codex") && agent.installed && agent.available !== false && agent.modes?.includes("chat") &&
-      (!canSwitchAgents || !owned || !["running", "stopping"].includes(owned.state));
+      (canLibrary || !canSwitchAgents || !owned || !["running", "stopping"].includes(owned.state));
   }
   function supportsChat() { return !!knownAgents.find(agent => agent.id === $("agent").value)?.modes?.includes("chat"); }
   function projectKey(value = project) { return value?.id || value?.path || null; }
-  function viewKey() { return canSwitchAgents ? projectKey() + "/" + selectedAgent : projectKey(); }
+  function viewKey() { return canLibrary ? activeViewKey : canSwitchAgents ? projectKey() + "/" + selectedAgent : projectKey(); }
   function rememberView() {
     const key = viewKey();
     if (!projectKey()) return;
@@ -310,8 +324,8 @@
   }
   function renderProjects() {
     const picker = $("project-switch");
-    picker.hidden = !multipleProjects || !knownProjects.length;
-    $("project-name").hidden = !picker.hidden;
+    picker.hidden = true;
+    $("project-name").hidden = false;
     $("edit-project").textContent = t(multipleProjects ? "add_project" : "edit_project");
     $("cancel-project").hidden = !project;
     const entries = knownProjects.map(item => {
@@ -328,9 +342,152 @@
       picker.dataset.entries = signature;
     }
     picker.value = selectedProjectId || "";
+    renderSidebar();
     pickers.sync();
   }
+  function findSession(id) {
+    if (session?.id === id) return session;
+    for (const entry of knownProjects) {
+      const found = entry.sessions?.find(row => row.id === id) || (entry.session?.id === id ? entry.session : null);
+      if (found) return found;
+    }
+    return null;
+  }
+  function cacheSession(value) {
+    const entry = knownProjects.find(row => row.id === value?.project?.id);
+    if (!entry) return;
+    const previous = entry.sessions?.find(row => row.id === value.id);
+    value = {...previous, ...value};
+    entry.sessions = [...(entry.sessions || []).filter(row => row.id !== value.id), value];
+    if (entry.session?.id === value.id) entry.session = value;
+  }
+  function sessionTitle(value) {
+    if (value.title) return value.title;
+    const date = new Date(value.started_at * 1000);
+    return t("agent_" + value.agent) + " · " + (Number.isNaN(date.getTime()) ? value.id.slice(0,8) :
+      date.toLocaleString(i18n.language() === "ko" ? "ko-KR" : "en-US", {month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})) + " · " + value.id.slice(0,4);
+  }
+  function sessionStatus(value) {
+    return t(value.state === "running" ? value.mode === "chat" ? "chat_state_" + value.turn_state : "process_running" :
+      value.state === "stopping" ? "process_stopping" : value.state === "lost" ? "process_lost" : "process_exited", {code:value.exit_code});
+  }
+  function renderSidebar() {
+    sidebar.render({projects:knownProjects, projectId:projectKey(), sessionId:session?.id,
+      worktrees, online, library:canLibrary, disabled:!online || busy || switchingProject || settingsBusy || libraryBusy,
+      loading:worktreeLoading, error:worktreeError || (noticeData?.key?.startsWith("error_") ? noticeData.key : null), title:sessionTitle, status:sessionStatus});
+  }
+  async function refreshSidebar() {
+    await refreshCatalog();
+    if (!online || !canWorktrees || worktreeLoading) { renderSidebar(); return; }
+    worktreeLoading = true; worktreeError = null; renderSidebar();
+    const sourceInstance = instance;
+    try {
+      for (const entry of [...knownProjects]) {
+        const result = await api("POST", "/v1/worktrees", {project_id:entry.id});
+        if (sourceInstance !== instance) return;
+        worktrees[entry.id] = result.worktrees;
+      }
+    } catch (error) { worktreeError = error.key || "error_request_failed"; }
+    finally { worktreeLoading = false; renderSidebar(); }
+  }
+  async function selectSession(projectId, id, path = null) {
+    if (!online || busy || switchingProject || settingsBusy || libraryBusy) return;
+    if (!canLibrary) { await changeProject({project_id:projectId}); sidebar.close(); tab("work"); return; }
+    switchingProject = true; ++generation; clearTimeout(retryTimer); native.cancelPoll?.(); renderSession();
+    try {
+      const entry = knownProjects.find(row => row.id === projectId);
+      const agent = projectId === projectKey() ? selectedAgent : entry?.agent || "shell";
+      const result = await api("POST", "/v1/project-session", {project_id:projectId, session_id:id, agent});
+      selectedProjectId = projectId; adoptProject(entry); rememberView();
+      selectedAgent = result.agent; draftPath = path || result.session?.project?.path || entry.path;
+      entry.agent = result.agent; entry.session = result.session;
+      setSession(result.session); projectInitialized = true;
+      $("project-name").textContent = entry.name;
+      projectForm(false); notice(""); sidebar.close(); tab("work"); resize();
+    } catch (error) { notice(error.key || "error_request_failed"); }
+    finally { switchingProject = false; renderSession(); renderProjects(); startPoll(); }
+  }
+  async function newSession(projectId = projectKey(), path = session?.project?.path || draftPath || project?.path) {
+    if (!canLibrary) {
+      if (session && ["running", "stopping"].includes(session.state)) { notice("sidebar_update"); return; }
+      setSession(null); sidebar.close(); return;
+    }
+    await selectSession(projectId, null, path);
+  }
+  function openSessionActions(id) {
+    const target = findSession(id);
+    if (!target) return;
+    notice(""); actionTarget = id; $("session-name").value = target.title || "";
+    $("session-name").placeholder = sessionTitle(target);
+    renderSessionActions(); $("session-dialog").showModal();
+  }
+  function renderSessionActions() {
+    const target = findSession(actionTarget);
+    const disabled = !online || libraryBusy || busy || switchingProject || !target;
+    const live = target && ["running", "stopping"].includes(target.state);
+    $("session-action-name").textContent = target ? sessionTitle(target) : "";
+    $("session-action-status").textContent = target ? sessionStatus(target) : "";
+    $("session-rename-form").hidden = !canLibrary;
+    for (const id of ["session-name", "session-rename", "session-archive", "session-delete", "session-continue"]) $(id).disabled = disabled;
+    $("session-archive").hidden = $("session-archive-hint").hidden = $("session-delete").hidden = $("session-delete-hint").hidden = !canLibrary;
+    $("session-archive").textContent = t(target?.archived ? "session_restore" : "session_archive");
+    $("session-delete").disabled = disabled || live;
+    $("session-continue").hidden = !canLibrary || live || target?.mode !== "chat" || !target?.external_thread_id;
+    $("stop").hidden = !live; $("stop").disabled = disabled || target?.state !== "running";
+    $("copy-resume").hidden = !(target?.agent === "codex" && target.history_persisted && target.external_thread_id);
+    $("copy-resume").disabled = disabled;
+  }
+  async function manageSession(id, action, title) {
+    if (!canLibrary || libraryBusy || !online) return;
+    libraryBusy = true; ++generation; clearTimeout(retryTimer); native.cancelPoll?.(); renderSession();
+    try {
+      const result = await api("POST", `/v1/sessions/${id}/manage`, {action, ...(title !== undefined ? {title} : {})});
+      if (result.session) {
+        cacheSession(result.session);
+        if (session?.id === id) setSession(result.session);
+      } else {
+        for (const entry of knownProjects) {
+          entry.sessions = (entry.sessions || []).filter(row => row.id !== id);
+          if (entry.session?.id === id) entry.session = null;
+        }
+        if (session?.id === id) { ++generation; native.cancelPoll?.(); setSession(null); }
+        for (const key of views.keys()) if (key?.endsWith("/" + id)) views.delete(key);
+      }
+      $("session-dialog").close(); notice("");
+    } catch (error) { notice(error.key || "error_request_failed"); }
+    finally { libraryBusy = false; renderSession(); renderProjects(); startPoll(); }
+  }
+  $("new-session").addEventListener("click", () => newSession());
+  $("session-more").addEventListener("click", () => openSessionActions(session?.id));
+  $("session-actions-close").addEventListener("click", () => $("session-dialog").close());
+  $("session-rename-form").addEventListener("submit", event => { event.preventDefault(); manageSession(actionTarget, "rename", $("session-name").value); });
+  $("session-archive").addEventListener("click", () => manageSession(actionTarget, findSession(actionTarget)?.archived ? "restore" : "archive"));
+  $("session-delete").addEventListener("click", () => {
+    deleteTarget = actionTarget; $("delete-name").textContent = sessionTitle(findSession(deleteTarget)); $("delete-dialog").showModal();
+  });
+  $("cancel-delete").addEventListener("click", () => $("delete-dialog").close());
+  $("confirm-delete").addEventListener("click", () => { $("delete-dialog").close(); manageSession(deleteTarget, "delete"); });
+  $("session-continue").addEventListener("click", async () => {
+    const target = findSession(actionTarget);
+    if (!target || libraryBusy || !online) return;
+    libraryBusy = true; renderSession();
+    try {
+      const result = await api("POST", "/v1/sessions", {project_id:target.project.id, worktree_path:target.project.path,
+        agent:target.agent, mode:"chat", options:target.options, source_thread_id:target.external_thread_id,
+        import_mode:"resume", new_session:true, request_id:uuid()});
+      cacheSession(result.session); $("session-dialog").close(); libraryBusy = false;
+      await selectSession(target.project.id, result.session.id);
+    } catch (error) { notice(error.key || "error_request_failed"); }
+    finally { libraryBusy = false; renderSession(); }
+  });
   function adoptProject(next) {
+    if (canLibrary) {
+      if (projectKey(next) !== projectKey()) {
+        $("import-dialog").close(); rememberView(); project = next;
+        draftPath = next?.path || null; selectedAgent = next?.agent || "shell"; setSession(null);
+      } else project = next;
+      return;
+    }
     if (projectKey(next) !== projectKey()) {
       $("import-dialog").close();
       rememberView();
@@ -348,6 +505,7 @@
   }
   function adoptAgent(agent) {
     if (!agent || agent === selectedAgent) return;
+    if (canLibrary) { selectedAgent = agent; return; }
     rememberView(); selectedAgent = agent;
     const view = views.get(viewKey());
     $("input").value = view?.text || "";
@@ -381,7 +539,9 @@
   }
   function tab(name) {
     pickers.close();
+    sidebar.close();
     currentTab = name;
+    updateBackState();
     for (const page of ["work", "setup", "settings"]) {
       $(page).hidden = name !== page;
       $("tab-" + page).classList.toggle("selected", name === page);
@@ -449,10 +609,13 @@
     $("delivery-hint").hidden = !isChat() || !responding;
     $("delivery-hint").textContent = t(!canQueue ? "delivery_update" : steerable ? "delivery_steer" : "delivery_queue");
     renderQueue();
-    $("stop").disabled = !online || !session || session.state !== "running";
-    $("stop").hidden = !live;
-    $("copy-resume").hidden = !(isChat() && session.agent === "codex" && session.history_persisted && session.external_thread_id);
-    for (const button of document.querySelectorAll("[data-key]")) button.disabled = $("input").disabled;
+    $("new-session").disabled = !online || !project || busy || switchingProject || settingsBusy || (!canLibrary && !!live);
+    $("session-more").hidden = !session;
+    $("session-more").disabled = !online || libraryBusy;
+    $("session-title").textContent = session ? sessionTitle(session) : t("session_new");
+    $("project-path").textContent = session?.project?.path || draftPath || project?.path || t("project_location");
+    renderSessionActions(); renderSidebar();
+    for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.disabled = $("input").disabled;
     $("terminal-empty").hidden = !!session;
     $("terminal-area").hidden = isChat();
     $("terminal-keys").hidden = isChat();
@@ -471,13 +634,28 @@
     pickers.sync();
   }
   $("copy-resume").addEventListener("click", () => {
-    if (!session?.history_persisted || session.agent !== "codex" || !session.external_thread_id) return;
+    const target = findSession(actionTarget);
+    if (!target?.history_persisted || target.agent !== "codex" || !target.external_thread_id) return;
     const quote = value => "'" + String(value).replace(/'/g, "'\"'\"'") + "'";
-    window.Bibimer.copyText("codex resume " + quote(session.external_thread_id) + " --cd " + quote(session.project.path));
+    window.Bibimer.copyText("codex resume " + quote(target.external_thread_id) + " --cd " + quote(target.project.path));
+    $("session-dialog").close();
     notice("codex_resume_copied");
   });
   function setSession(value) {
+    if (value) value = {...findSession(value.id), ...value};
     if (isChat() && value?.id === session.id && value.output_end < session.output_end) return;
+    if (canLibrary) {
+      const agent = value?.agent || selectedAgent;
+      const nextKey = projectKey() + "/" + (value?.id || "new/" + agent + "/" + (draftPath || project?.path || ""));
+      if (activeViewKey !== nextKey) {
+        rememberView(); activeViewKey = nextKey;
+        const view = views.get(nextKey);
+        $("input").value = view?.text || "";
+        $("input").setSelectionRange(view?.start || 0, view?.end || 0);
+        $("agent").value = agent; updateMode();
+        $("mode").value = view?.mode || (supportsChat() ? "chat" : "terminal"); resizeInput();
+      }
+    }
     if (value) adoptAgent(value.agent);
     if ((session && session.id) !== (value && value.id)) {
       cursor = 0;
@@ -487,7 +665,7 @@
     }
     session = value;
     const entry = knownProjects.find(item => item.id === value?.project?.id);
-    if (entry && value) entry.sessions = [...(entry.sessions || []).filter(item => item.agent !== value.agent), value];
+    if (entry && value) entry.sessions = [...(entry.sessions || []).filter(item => canLibrary ? item.id !== value.id : item.agent !== value.agent), value];
     if (value && ["running", "stopping"].includes(value.state)) {
       $("agent").value = value.agent; updateMode(); $("mode").value = value.mode || "terminal";
     }
@@ -495,7 +673,7 @@
   }
   function projectForm(visible) {
     $("project-form").hidden = !visible;
-    $("workspace").classList.toggle("project-editing", visible);
+    if (visible) { sidebar.open(); $("path").focus(); }
   }
   async function connect() {
     if (paused || !environment().paired) return;
@@ -524,6 +702,8 @@
       canQueueSteer = health.features?.includes("queue_steer") === true;
       canModels = health.features?.includes("model_options") === true;
       canSwitchAgents = health.features?.includes("agent_sessions") === true;
+      canLibrary = health.features?.includes("session_library") === true;
+      canWorktrees = health.features?.includes("git_worktrees") === true;
       if (JSON.stringify(knownAgents) !== JSON.stringify(health.agents)) {
         knownAgents = health.agents; renderAgents();
       }
@@ -543,7 +723,7 @@
       updateMode();
       $("welcome").hidden = true;
       $("workspace").hidden = false;
-      if (canSwitchAgents && entry) adoptAgent(entry.agent);
+      if (canSwitchAgents && entry && !canLibrary) adoptAgent(entry.agent);
       setSession(entry ? entry.session : health.session);
       renderProjects();
       connected(true);
@@ -601,7 +781,7 @@
     }
   }
   async function refreshCatalog() {
-    if (!multipleProjects || !online || paused || switchingProject || catalogRequest) return;
+    if (!multipleProjects || !online || paused || switchingProject || libraryBusy || catalogRequest) return;
     catalogRequest = true;
     const ticket = generation;
     try {
@@ -614,7 +794,7 @@
         ++generation;
         if (native.cancelPoll) native.cancelPoll();
       }
-      if (entry) { if (canSwitchAgents) adoptAgent(entry.agent); setSession(entry.session); }
+      if (entry) { if (canSwitchAgents && !canLibrary) adoptAgent(entry.agent); setSession(entry.session); }
       renderProjects(); startPoll();
     } catch (_) { /* The session poll handles connection loss and reconnects. */ }
     finally { catalogRequest = false; }
@@ -777,6 +957,7 @@
     try {
       const key = projectKey();
       const result = await api("POST", "/v1/project-agent", {project_id:key, agent});
+      if (canLibrary) rememberView();
       adoptAgent(agent); setSession(result.session);
       const entry = knownProjects.find(item => item.id === key);
       if (entry) { entry.agent = agent; entry.session = result.session; }
@@ -866,6 +1047,7 @@
       selectedProjectId = result.project.id || null;
       projectInitialized = false;
       notice(""); await connect();
+      return true;
     } catch (error) { notice(error.key || "error_request_failed"); }
     finally { switchingProject = false; renderSession(); renderProjects(); startPoll(); }
   }
@@ -877,7 +1059,7 @@
   $("project-switch").addEventListener("blur", renderProjects);
   $("project-form").addEventListener("submit", async event => {
     event.preventDefault();
-    await changeProject({path:$("path").value, create:$("create-folder").checked, add:multipleProjects});
+    if (await changeProject({path:$("path").value, create:$("create-folder").checked, add:multipleProjects})) { projectForm(false); sidebar.close(); await refreshSidebar(); }
   });
   function renderImport(rebuild = false) {
     if (!$("import-dialog").open) return;
@@ -922,7 +1104,7 @@
     }
     importLoading = true; importError = null; renderImport(!more);
     try {
-      const result = await api("POST", "/v1/session-history", {agent:$("import-agent").value, project_id:target, search:importSearch, cursor:more ? importCursor : null});
+      const result = await api("POST", "/v1/session-history", {agent:$("import-agent").value, project_id:target, ...(canWorktrees ? {worktree_path:importPath} : {}), search:importSearch, cursor:more ? importCursor : null});
       if (ticket !== importTicket || !$("import-dialog").open || projectKey() !== target) return;
       const entries = new Map(importEntries.map(entry => [entry.id, entry]));
       for (const entry of result.sessions) entries.set(entry.id, entry);
@@ -937,13 +1119,14 @@
   $("import-session").addEventListener("click", () => {
     if ($("import-session").disabled) return;
     importProject = projectKey(); importEntries = []; importSelection = null; importCursor = null; importError = null;
+    importPath = session?.project?.path || draftPath || project.path;
     $("import-agent").replaceChildren(...knownAgents.filter(agent => ["codex","claude","opencode"].includes(agent.id)).map(agent => {
       const option = new Option(t("agent_" + agent.id), agent.id);
       option.disabled = !importable(agent); return option;
     }));
     $("import-agent").value = knownAgents.find(agent => agent.id === $("agent").value && importable(agent))?.id || knownAgents.find(importable)?.id || "codex";
     $("import-search").value = ""; $("import-mode").value = "resume";
-    $("import-project").textContent = project.path;
+    $("import-project").textContent = importPath;
     renderSettings("import-"); $("import-dialog").showModal(); loadImports();
   });
   $("import-search-form").addEventListener("submit", event => { event.preventDefault(); loadImports(); });
@@ -958,6 +1141,7 @@
     try {
       const agent = $("import-agent").value;
       const data = await api("POST", "/v1/sessions", {agent, mode:"chat", project_id:key,
+        ...(canLibrary ? {new_session:true, worktree_path:importPath} : {}),
         options:savedOptions(agent),
         source_thread_id:importSelection, import_mode:$("import-mode").value, request_id:uuid()});
       $("import-dialog").close();
@@ -976,6 +1160,7 @@
     busy = true; renderSession(); notice("");
     try {
       const data = await api("POST", "/v1/sessions", {agent:$("agent").value, mode:$("mode").value,
+        ...(canLibrary ? {new_session:true, worktree_path:draftPath || project.path} : {}),
         ...(canOptions ? {options:{...savedOptions($("agent").value),
           ...(canModels && $("agent").value === "opencode" && $("mode").value === "terminal" ? {effort:""} : {})}} : {}),
         ...(multipleProjects ? {project_id:selectedProjectId} : {}),
@@ -995,15 +1180,18 @@
     } catch (error) { notice(error.key || "error_request_failed"); }
     finally { $("pair").disabled = false; }
   });
-  $("stop").addEventListener("click", () => { stopTarget = session?.id; $("stop-dialog").showModal(); });
+  $("stop").addEventListener("click", () => { stopTarget = actionTarget; $("stop-dialog").showModal(); });
   $("cancel-stop").addEventListener("click", () => $("stop-dialog").close());
   $("confirm-stop").addEventListener("click", async () => {
     $("stop-dialog").close();
+    $("session-dialog").close();
     const id = stopTarget; stopTarget = null;
     if (!id) return;
     try {
       const data = await api("POST", `/v1/sessions/${id}/stop`);
+      cacheSession(data.session);
       if (session?.id === id) setSession(data.session);
+      renderSessionActions(); renderSidebar();
     } catch (error) { if (session?.id === id) notice(error.key || "error_request_failed"); }
   });
   $("forget").addEventListener("click", () => {
@@ -1011,6 +1199,8 @@
     connected(false); $("workspace").hidden = true; $("welcome").hidden = false;
     setSession(null); instance = null; projectInitialized = false; updateEnvironment();
     views.clear(); modelCatalogs.clear(); selectedAgent = "shell"; selectedProjectId = null; knownProjects = []; $("input").value = "";
+    for (const key of Object.keys(worktrees)) delete worktrees[key];
+    activeViewKey = null; draftPath = null; sidebar.close(); $("session-dialog").close();
     notice("connection_forgotten");
   });
   for (const name of ["work", "setup", "settings"]) $("tab-" + name).addEventListener("click", () => tab(name));
@@ -1020,7 +1210,7 @@
     if (visible && multipleProjects) { $("path").value = "~/projects/"; $("create-folder").checked = true; }
     projectForm(visible);
   });
-  $("cancel-project").addEventListener("click", () => projectForm(false));
+  $("cancel-project").addEventListener("click", () => { projectForm(false); $("edit-project").focus(); });
   $("project-update").addEventListener("click", () => tab("setup"));
   for (const id of ["reconnect", "reconnect-welcome"]) $(id).addEventListener("click", () => { notice(""); connect(); });
   $("open-termux").addEventListener("click", () => native.openTermux());
@@ -1037,7 +1227,7 @@
   for (const button of document.querySelectorAll("[data-guide]")) button.addEventListener("click", () => native.openGuide(button.dataset.guide));
   for (const button of document.querySelectorAll("[data-command]")) button.addEventListener("click", () => native.copyCommand(button.dataset.command));
   const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", interrupt:"\x03", enter:"\r"};
-  for (const button of document.querySelectorAll("[data-key]")) button.addEventListener("click", () => sendRaw(keys[button.dataset.key]));
+  for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.addEventListener("click", () => sendRaw(keys[button.dataset.key]));
   window.BibimerPause = () => { pickers.close(); paused = true; ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); };
   $("language").addEventListener("change", () => {
     try {
@@ -1070,6 +1260,15 @@
     enterBehavior = env.enterBehavior === "send" ? "send" : "newline";
     i18n.setLanguage(env.language); renderLanguage(); connect();
   };
+  window.BibimerBack = () => {
+    const dialogs = [...document.querySelectorAll("dialog[open]")];
+    if (dialogs.length) { dialogs[dialogs.length - 1].close(); return true; }
+    if (currentTab !== "work") { tab("work"); return true; }
+    return false;
+  };
+  function updateBackState() { native.setBackHandling?.(currentTab !== "work" || !!document.querySelector("dialog[open]")); }
+  const backObserver = new MutationObserver(updateBackState);
+  for (const dialog of document.querySelectorAll("dialog")) backObserver.observe(dialog, {attributes:true, attributeFilter:["open"]});
   i18n.setLanguage(environment().language);
   renderLanguage();
   if (environment().paired) connect();

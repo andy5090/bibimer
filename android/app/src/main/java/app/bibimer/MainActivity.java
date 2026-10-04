@@ -37,7 +37,7 @@ public final class MainActivity extends Activity {
     private static final String PAGE = "https://" + ASSET_HOST + "/index.html";
     private static final int EXPORT_INSTALLER = 10;
     private static final Set<String> ASSETS = new HashSet<>(Arrays.asList(
-        "index.html", "app.js", "select.js", "app.css", "i18n.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
+        "index.html", "app.js", "select.js", "sidebar.js", "app.css", "i18n.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
     private final ExecutorService actions = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<Runnable>(128));
     private final ExecutorService events = Executors.newSingleThreadExecutor();
@@ -49,6 +49,7 @@ public final class MainActivity extends Activity {
     private LocalBridge bridge;
     private String setupLoaded = "";
     private volatile boolean destroyed;
+    private android.window.OnBackInvokedCallback backCallback;
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
@@ -110,6 +111,23 @@ public final class MainActivity extends Activity {
         runOnUiThread(() -> { if (!destroyed) web.evaluateJavascript(source, null); });
     }
 
+    @Override public void onBackPressed() {
+        web.evaluateJavascript("window.BibimerBack ? window.BibimerBack() : false", handled -> {
+            if (!destroyed && !"true".equals(handled)) moveTaskToBack(true);
+        });
+    }
+
+    private void backHandling(boolean enabled) {
+        if (Build.VERSION.SDK_INT < 33 || destroyed) return;
+        if (enabled && backCallback == null) {
+            backCallback = () -> script("window.BibimerBack && window.BibimerBack()");
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback);
+        } else if (!enabled && backCallback != null) {
+            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);
+            backCallback = null;
+        }
+    }
+
     private void reply(String id, JSONObject result) {
         script("window.BibimerNativeReply && window.BibimerNativeReply(" + JSONObject.quote(id) + "," + result + ");");
     }
@@ -131,6 +149,9 @@ public final class MainActivity extends Activity {
     }
 
     private final class NativeApi {
+        @JavascriptInterface public void setBackHandling(boolean enabled) {
+            runOnUiThread(() -> backHandling(enabled));
+        }
         @JavascriptInterface public String environment() {
             try {
                 JSONObject setup = TermuxSetup.status(MainActivity.this);
@@ -307,6 +328,7 @@ public final class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        backHandling(false);
         destroyed = true;
         bridge.cancelPoll();
         actions.shutdownNow();

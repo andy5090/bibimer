@@ -66,7 +66,26 @@ async function main() {
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
   const capturedChoices = new Set();
+  async function openSidebar() {
+    if (!await page.locator('#sidebar').evaluate(node=>node.open)) await page.locator('#sidebar-open').click();
+  }
+  async function closeSidebar() {
+    if (await page.locator('#sidebar').evaluate(node=>node.open)) await page.locator('#sidebar-close').click();
+  }
+  async function sessionAction(id) {
+    if (!await page.locator('#session-dialog').evaluate(node=>node.open)) await page.locator('#session-more').click();
+    await page.locator('#'+id).click();
+  }
+  async function reconnect() { await openSidebar(); await page.locator('#reconnect').click(); await closeSidebar(); }
   async function choose(id, value) {
+    if (id === 'project-switch') {
+      await openSidebar();
+      const group=page.locator('#sidebar-projects [data-project='+JSON.stringify(value)+']');
+      if (!await group.evaluate(node=>node.open)) await group.locator(':scope > summary').click();
+      await group.locator('[data-key='+JSON.stringify('open/'+value)+']').click();
+      await page.locator('#sidebar').waitFor({state:'hidden'});
+      return;
+    }
     await page.locator('#'+id+'-trigger').click();
     assert.equal(await page.locator('#select-dialog').getAttribute('data-select'),id);
     if (['quick-permission','project-switch','import-agent','import-permission'].includes(id) && !capturedChoices.has(id)) {
@@ -158,7 +177,7 @@ async function main() {
   assert.equal(await page.locator('html').getAttribute('lang'),'en');
   assert.equal(await page.locator('#go-setup [data-i18n]').innerText(),'Set up this phone');
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
-  await page.locator('#tab-settings').click();
+  await closeSidebar(); await page.locator('#tab-settings').click();
   assert.equal(await page.locator('#settings').isVisible(),true);
   assert.equal(await page.locator('#work').isVisible(),false);
   assert.equal(await page.locator('#setup').isVisible(),false);
@@ -239,7 +258,7 @@ async function main() {
   await page.evaluate(()=>{window.failEnterSave=false;});
   await choose('enter-behavior','send');
   await page.reload();
-  await page.locator('#tab-settings').click();
+  await closeSidebar(); await page.locator('#tab-settings').click();
   assert.equal(await page.locator('#enter-behavior').inputValue(),'send');
   assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'send');
   await choose('enter-behavior','newline');
@@ -255,7 +274,7 @@ async function main() {
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
   await page.locator('#setup').evaluate(node=>{node.scrollTop=0;});
   await page.screenshot({path:path.join(root,'dist/screenshots/setup-en.png')});
-  await page.locator('#tab-settings').click();
+  await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('language','ko');
   assert.equal(await page.locator('html').getAttribute('lang'),'ko');
   assert.equal(await page.locator('#termux-status').innerText(),'설치 필요');
@@ -264,7 +283,7 @@ async function main() {
   await page.screenshot({path:path.join(root,'dist/screenshots/setup-ko.png')});
   await page.reload();
   assert.equal(await page.locator('html').getAttribute('lang'),'ko');
-  await page.locator('#tab-settings').click();
+  await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('language','en');
   await page.locator('#tab-setup').click();
   await page.locator('#pair-code').fill(code);
@@ -278,13 +297,13 @@ async function main() {
   legacyProjectError = true;
   await page.locator('#project-form button[type=submit]').click();
   await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Choose a project folder with read and write access.');
-  await page.locator('#tab-settings').click();
+  await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('language','ko');
   assert.equal(await page.locator('#notice').innerText(),'읽고 쓸 수 있는 프로젝트 폴더가 필요합니다.');
   assert.equal(await page.locator('#path').inputValue(),'relative/project');
   await choose('language','en');
   await page.locator('#tab-work').click();
-  legacyProjectError = false;
+  legacyProjectError = false; await openSidebar();
   // Clear the error before measuring the ordinary project form.
   await page.evaluate(()=>document.querySelector('#reconnect').click());
   await page.locator('#path').fill(path.join(temporary,'project'));
@@ -317,7 +336,7 @@ async function main() {
   await page.locator('[data-key="enter"]').click();
   await page.waitForFunction(before=>window.messageRequests===before+1,ptyRequests);
   await page.locator('#input').fill('Draft A · 한글');
-  await page.locator('#edit-project').click();
+  await openSidebar(); await page.locator('#edit-project').click();
   // Browse existing folders while project A continues running.
   const browseRoot = path.join(temporary, 'existing projects');
   fs.mkdirSync(browseRoot);
@@ -325,12 +344,12 @@ async function main() {
   for (const name of ['.hidden', 'gone', 'second-project', '한글 & <tag>']) fs.mkdirSync(path.join(browseRoot,name));
   fs.writeFileSync(path.join(browseRoot,'not-a-folder.txt'),'CONTROLLED_TEST_FILE');
   await page.locator('#path').fill(path.join(browseRoot,'not-created'));
-  await page.locator('#browse-project').click();
+  await openSidebar(); await page.locator('#browse-project').click();
   await page.waitForFunction(home=>document.querySelector('#folder-path').textContent===home && !document.querySelector('#folder-select').disabled, os.homedir());
   await page.locator('#folder-cancel').click();
   assert.equal(await page.locator('#path').inputValue(),path.join(browseRoot,'not-created'));
   await page.locator('#path').fill(browseRoot);
-  await page.locator('#browse-project').click();
+  await openSidebar(); await page.locator('#browse-project').click();
   await page.waitForFunction(()=>document.querySelectorAll('.folder-entry').length===100 && !document.querySelector('#folder-more').disabled);
   await page.screenshot({path:path.join(root,'dist/screenshots/folders-list-en.png')});
   assert.equal(await page.locator('.folder-entry', {hasText:'.hidden'}).count(),0);
@@ -373,33 +392,33 @@ async function main() {
   legacyFolders = true;
   await page.evaluate(()=>document.querySelector('#reconnect').click());
   await delay(150);
-  await page.locator('#browse-project').click();
+  await openSidebar(); await page.locator('#browse-project').click();
   await page.locator('#setup').waitFor({state:'visible'});
   assert.ok((await page.locator('#notice').innerText()).includes('Update the bridge to browse folders'));
-  await page.locator('#tab-settings').click();
+  await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('language','ko');
   await page.locator('#tab-work').click();
   legacyFolders = false;
   await page.locator('#reconnect').evaluate(node=>node.click());
   await delay(150);
-  await page.locator('#browse-project').click();
+  await openSidebar(); await page.locator('#browse-project').click();
   await page.waitForFunction(()=>!document.querySelector('#folder-select').disabled);
   assert.equal(await page.locator('#folder-title').innerText(),'프로젝트 폴더 선택');
   assert.equal(await page.locator('#folder-status').innerText(),'표시할 하위 폴더가 없습니다. 현재 폴더를 선택할 수 있습니다.');
   await page.screenshot({path:path.join(root,'dist/screenshots/folders-ko.png')});
   await page.locator('#folder-cancel').click();
-  await page.locator('#tab-settings').click();
+  await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('language','en');
   await page.locator('#tab-work').click();
   // A canceled listing must not overwrite a newly opened browser.
   let releaseFolders, foldersAccepted;
   const folderAccepted = new Promise(resolve=>{foldersAccepted=resolve;});
   heldReply = {endpoint:'/v1/folders', entered:foldersAccepted, promise:new Promise(resolve=>{releaseFolders=resolve;})};
-  await page.locator('#browse-project').click();
+  await openSidebar(); await page.locator('#browse-project').click();
   await folderAccepted;
   await page.locator('#folder-cancel').click();
   await page.locator('#path').fill(browseRoot);
-  await page.locator('#browse-project').click();
+  await openSidebar(); await page.locator('#browse-project').click();
   await page.waitForFunction(()=>!document.querySelector('#folder-select').disabled);
   releaseFolders(); await delay(150);
   assert.equal(await page.locator('#folder-path').innerText(),browseRoot);
@@ -415,7 +434,7 @@ async function main() {
   const secondSession = (await call('GET','/v1/health')).data.session.id;
   assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
   await page.locator('#input').fill('Keep this draft');
-  await page.locator('#tab-settings').click();
+  await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('enter-behavior','send');
   await page.locator('#tab-work').click();
   assert.equal(await page.locator('#input').inputValue(),'Keep this draft');
@@ -447,7 +466,7 @@ async function main() {
   assert.ok(!Buffer.from(aOutput.data,'base64').toString().includes('PROJECT_B_ONLY'));
   assert.ok(Buffer.from(bOutput.data,'base64').toString().includes('PROJECT_B_ONLY'));
   assert.ok(!Buffer.from(bOutput.data,'base64').toString().includes('PROJECT_A_ONLY'));
-  await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+  await sessionAction('stop'); await page.locator('#confirm-stop').click();
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited');
   assert.equal((await call('GET','/v1/health')).data.active_sessions,1);
   await choose('project-switch',projectA);
@@ -476,7 +495,7 @@ async function main() {
   await page.screenshot({path:path.join(root,'dist/screenshots/session-en.png')});
   const draft = 'Draft instruction · 작성 중';
   await page.locator('#input').fill(draft);
-  await page.locator('#tab-settings').click();
+  await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('language','ko');
   await page.locator('#tab-work').click();
   assert.equal(await page.locator('#input').inputValue(),draft);
@@ -497,7 +516,7 @@ async function main() {
   assert.ok(sendBox.y>=0 && sendBox.y+sendBox.height<=460);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:path.join(root,'dist/screenshots/keyboard-ko.png')});
-  await page.locator('#tab-settings').click();
+  await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('language','en');
   await page.locator('#tab-work').click();
   const englishSendBox = await page.locator('#send').boundingBox();
@@ -509,17 +528,17 @@ async function main() {
   await page.waitForFunction(()=>document.querySelector('#connection').textContent==='Connected');
   assert.equal(await page.locator('html').getAttribute('lang'),'en');
   assert.equal((await call('GET','/v1/health')).data.session.id,initial);
-  await page.locator('#stop').click();
+  await sessionAction('stop');
   await page.locator('#cancel-stop').click();
   assert.equal((await call('GET','/v1/health')).data.session.state,'running');
-  await page.locator('#stop').click();
+  await sessionAction('stop');
   await page.locator('#confirm-stop').click();
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
   assert.equal((await call('GET','/v1/health')).data.session.state,'exited');
   await verifyRestartAfterExit();
   if (fixtureMode) {
     legacyPersistence = true;
-    await page.locator('#reconnect').click();
+    await reconnect();
     await choose('agent','codex');
     await page.waitForFunction(()=>document.querySelector('#mode-hint').textContent.includes('save new Codex chats'));
     assert.equal(await page.locator('#launch').isDisabled(),true);
@@ -528,16 +547,16 @@ async function main() {
     await choose('mode','chat');
     assert.equal(await page.locator('#launch').isDisabled(),true);
     legacyPersistence = false;
-    await page.locator('#reconnect').click();
+    await reconnect();
     await page.waitForFunction(()=>!document.querySelector('#launch').disabled);
     assert.equal(await page.locator('#mode').inputValue(),'chat');
     legacyOptions = true;
-    await page.locator('#reconnect').click();
+    await reconnect();
     await page.waitForFunction(()=>document.querySelector('#settings-summary').textContent==='Update bridge');
     assert.equal(await page.locator('#launch').isDisabled(),true);
     assert.equal(await page.locator('#import-session').isDisabled(),true);
     legacyOptions = false;
-    await page.locator('#reconnect').click();
+    await reconnect();
     await page.waitForFunction(()=>!document.querySelector('#launch').disabled);
     await page.locator('#settings-toggle').click();
     assert.equal(await page.locator('#edit-project').innerText(),'Project Add');
@@ -570,12 +589,12 @@ async function main() {
     let chatId = (await call('GET','/v1/health')).data.session.id;
     assert.deepEqual((await call('GET','/v1/health')).data.session.options,{permission:'workspace-write',fast:true,model:'',effort:''});
     legacyLiveOptions = true;
-    await page.locator('#reconnect').click();
+    await reconnect();
     await page.waitForFunction(()=>document.querySelector('#quick-hint').textContent==='Update bridge');
     assert.equal(await page.locator('#quick-permission').isDisabled(),true);
     assert.equal(await page.locator('#send').isDisabled(),false);
     legacyLiveOptions = false;
-    await page.locator('#reconnect').click();
+    await reconnect();
     await page.waitForFunction(()=>!document.querySelector('#quick-permission').disabled);
     assert.equal(await page.locator('#quick-permission').isDisabled(),false);
     await page.setViewportSize({width:360,height:460});
@@ -648,7 +667,7 @@ async function main() {
     await choose('quick-agent','claude');
     assert.equal(await page.locator('#input').inputValue(),'Claude draft');
     assert.equal(await page.locator('#quick-model').inputValue(),'sonnet');
-    await page.locator('#stop').click();await page.locator('#confirm-stop').click();
+    await sessionAction('stop');await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited');
     await choose('quick-agent','opencode');
     await page.locator('#launch').click();
@@ -661,7 +680,7 @@ async function main() {
     await page.waitForFunction(()=>document.querySelector('#input').value==='' && document.querySelector('#turn-status').textContent==='Ready for your message');
     const providerChoice=JSON.parse(fs.readFileSync(path.join(temporary,'project/opencode-model.json'),'utf8'));
     assert.deepEqual(providerChoice,{model:{providerID:'test',modelID:'coder'},variant:'high'});
-    await page.locator('#stop').click();await page.locator('#confirm-stop').click();
+    await sessionAction('stop');await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited');
     await choose('quick-agent','codex');
     assert.equal(await page.locator('#input').inputValue(),'Codex draft');
@@ -675,7 +694,7 @@ async function main() {
     await page.locator('#select-close').click();
     console.log('PASS: native model catalogs/effort choices, per-agent defaults/reload, next-turn settings, Codex/Claude/OpenCode switching with live process, isolated draft/queue restoration and scoped stop');
     // Start a fresh fixture conversation for the existing first-message assertions.
-    await page.locator('#stop').click();await page.locator('#confirm-stop').click();
+    await sessionAction('stop');await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited');
     await page.locator('#launch').click();
     await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message');
@@ -687,7 +706,7 @@ async function main() {
     await page.setViewportSize({width:393,height:780});
     await page.screenshot({path:path.join(root,'dist/screenshots/quick-settings-en.png')});
     assert.equal(await page.locator('#terminal-area').isVisible(),false);
-    await page.locator('#tab-settings').click();
+    await closeSidebar(); await page.locator('#tab-settings').click();
     await choose('enter-behavior','newline');
     await page.reload();
     await page.waitForFunction(()=>!document.querySelector('#send').disabled);
@@ -705,7 +724,7 @@ async function main() {
     });
     assert.equal(await page.locator('#input').inputValue(),'Chat draft\n');
     assert.equal(await page.evaluate(()=>window.messageRequests),chatRequests);
-    await page.locator('#tab-settings').click();
+    await closeSidebar(); await page.locator('#tab-settings').click();
     await choose('enter-behavior','send');
     await page.locator('#tab-work').click();
     assert.equal(await page.locator('#input').inputValue(),'Chat draft\n');
@@ -771,7 +790,7 @@ async function main() {
     await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
     await choose('project-switch',projectA);
     await page.waitForFunction(()=>document.querySelector('.request-card input')?.value==='한국어 · draft');
-    await page.locator('#tab-settings').click(); await choose('language','ko'); await page.locator('#tab-work').click();
+    await closeSidebar(); await page.locator('#tab-settings').click(); await choose('language','ko'); await page.locator('#tab-work').click();
     assert.equal(await page.locator('.request-card input').inputValue(),'한국어 · draft');
     await page.setViewportSize({width:360,height:460});
     await page.locator('[data-request-action="chat_answer"]').scrollIntoViewIfNeeded();
@@ -785,15 +804,15 @@ async function main() {
     await page.locator('#input').fill('wait'); await page.locator('#send').click();
     await page.locator('#interrupt-turn').waitFor({state:'visible'});
     legacyQueue = true;
-    await page.locator('#reconnect').click();
+    await reconnect();
     await page.waitForFunction(()=>document.querySelector('#send').disabled);
     assert.equal(await page.locator('#input').isDisabled(),false);
     assert.equal(await page.locator('#steer').isVisible(),false);
     legacyQueue = false;
-    await page.locator('#reconnect').click();
+    await reconnect();
     await page.waitForFunction(()=>!document.querySelector('#send').disabled && !document.querySelector('#steer').hidden);
     const activeTurn = (await call('GET','/v1/health')).data.session.active_turn_id;
-    await page.locator('#tab-settings').click();
+    await closeSidebar(); await page.locator('#tab-settings').click();
     await choose('enter-behavior','newline');
     await page.locator('#tab-work').click();
     const queueRequests = await page.evaluate(()=>window.messageRequests);
@@ -807,7 +826,7 @@ async function main() {
     await page.locator('.queue-entry').waitFor();
     await page.locator('.queue-entry [data-queue-action=remove]').click();
     await page.waitForFunction(()=>document.querySelectorAll('.queue-entry').length===0);
-    await page.locator('#tab-settings').click();
+    await closeSidebar(); await page.locator('#tab-settings').click();
     await choose('enter-behavior','send');
     await page.locator('#tab-work').click();
     await page.locator('#input').fill('Queued follow-up · 다음 작업');
@@ -823,11 +842,11 @@ async function main() {
     await page.locator('.queue-entry').waitFor();
     assert.equal(await page.locator('.queue-entry p').innerText(),'Queued follow-up · 다음 작업');
     legacyQueueSteer = true;
-    await page.locator('#reconnect').click();
+    await reconnect();
     await page.waitForFunction(()=>document.querySelectorAll('[data-queue-action=steer]').length===0);
     assert.equal(await page.locator('#steer').isVisible(),true);
     legacyQueueSteer = false;
-    await page.locator('#reconnect').click();
+    await reconnect();
     await page.locator('[data-queue-action=steer]').waitFor();
     assert.equal(await page.locator('[data-queue-action=steer]').innerText(),'방향 수정');
     await page.locator('#input').fill('Keep my composer draft · 초안 유지');
@@ -889,13 +908,13 @@ async function main() {
     assert.equal((await call('GET','/v1/health')).data.session.state,'running');
     await page.setViewportSize({width:393,height:780});
     await page.screenshot({path:path.join(root,'dist/screenshots/chat-ko.png')});
-    await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+    await sessionAction('stop'); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
     await verifyRestartAfterExit();
     await page.locator('#launch').click();
     await page.waitForFunction(()=>!document.querySelector('#input').disabled);
     assert.equal((await call('GET','/v1/health')).data.session.mode,'chat');
-    await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+    await sessionAction('stop'); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
     console.log('PASS: Enter defaults to newline in Chat/PTY and during responses; Send setting queues, modifiers/selection/IME/repeat guards, preserved drafts and sessions; structured chat and interrupt; no model task sent');
     const beforeImport = fs.readFileSync(path.join(temporary,'project/turn-count'),'utf8');
@@ -951,7 +970,7 @@ async function main() {
     assert.equal(imported.external_thread_id,'saved-one-copy');
     assert.equal(imported.import_mode,'fork');
     assert.equal(imported.history_persisted,true);
-    await page.locator('#copy-resume').click();
+    await sessionAction('copy-resume');
     assert.equal(await page.evaluate(()=>window.testClipboard), `codex resume 'saved-one-copy' --cd '${path.join(temporary,'project')}'`);
     assert.equal(await page.locator('#conversation .assistant .code-block').count(),1);
     await page.setViewportSize({width:393,height:780});
@@ -959,9 +978,9 @@ async function main() {
     await page.locator('#input').press('Enter');
     await page.waitForFunction(()=>document.querySelector('#conversation').textContent.includes('Continue imported context'));
     await page.waitForFunction(()=>!document.querySelector('#send').disabled);
-    await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+    await sessionAction('stop'); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
-    await page.locator('#tab-settings').click(); await choose('language','en'); await page.locator('#tab-work').click();
+    await closeSidebar(); await page.locator('#tab-settings').click(); await choose('language','en'); await page.locator('#tab-work').click();
     await page.locator('#import-session').click();
     await page.locator('.import-entry').waitFor();
     await page.screenshot({path:path.join(root,'dist/screenshots/import-en.png')});
@@ -1000,7 +1019,7 @@ async function main() {
       await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
       await choose('project-switch',projectA);
       await page.waitForFunction(()=>document.querySelectorAll('.question-options [aria-pressed="true"]').length===2);
-      await page.locator('#tab-settings').click(); await choose('language','ko'); await page.locator('#tab-work').click();
+      await closeSidebar(); await page.locator('#tab-settings').click(); await choose('language','ko'); await page.locator('#tab-work').click();
       await page.setViewportSize({width:360,height:460});
       await page.locator('[data-request-action="chat_answer"]').scrollIntoViewIfNeeded();
       await page.screenshot({path:path.join(root,`dist/screenshots/${agent}-question-ko.png`)});
@@ -1009,7 +1028,7 @@ async function main() {
       await page.waitForFunction(()=>!document.querySelector('#send').disabled);
       assert.equal(fs.readFileSync(path.join(temporary,`project/${agent}-answers`),'utf8'),'both');
       await page.setViewportSize({width:393,height:780});
-      await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+      await sessionAction('stop'); await page.locator('#confirm-stop').click();
       await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
       await page.locator('#import-session').click();
       assert.equal(await page.locator('#import-agent').inputValue(),agent);
@@ -1023,16 +1042,16 @@ async function main() {
       await page.waitForFunction(()=>document.querySelector('#conversation').textContent.includes('result'));
       await page.waitForFunction(()=>!document.querySelector('#send').disabled);
       await page.screenshot({path:path.join(root,`dist/screenshots/${agent}-chat-ko.png`)});
-      await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+      await sessionAction('stop'); await page.locator('#confirm-stop').click();
       await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
-      await page.locator('#tab-settings').click(); await choose('language','en'); await page.locator('#tab-work').click();
+      await closeSidebar(); await page.locator('#tab-settings').click(); await choose('language','en'); await page.locator('#tab-work').click();
     }
     await choose('agent','opencode'); await choose('mode','terminal');
     await page.locator('#launch').click();
     await page.waitForFunction(()=>!document.querySelector('#input').disabled);
     await page.locator('#input').fill('terminal check'); await page.locator('#input').press('Enter');
     await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('OpenCode input: terminal check'));
-    await page.locator('#stop').click(); await page.locator('#confirm-stop').click();
+    await sessionAction('stop'); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
     console.log('PASS: OpenCode and Claude new chat/import/follow-up, explicit approval, reconnect, multiple-choice drafts across projects/languages, small screens and OpenCode PTY');
   }
@@ -1051,7 +1070,7 @@ async function main() {
     await page.evaluate(()=>window.BibimerResume());
     await delay(1500);
     assert.equal((await call('GET','/v1/health')).data.session.id,agentSession.id);
-    await page.locator('#stop').click();
+    await sessionAction('stop');
     await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
     console.log('PASS: installed Codex startup through xterm, reconnect, explicit stop; no model task sent');
@@ -1064,7 +1083,7 @@ async function main() {
     await page.evaluate(()=>window.BibimerResume());
     await page.waitForFunction(()=>document.querySelector('#connection').textContent==='Connected');
     assert.equal((await call('GET','/v1/health')).data.session.id,actualChat.id);
-    await page.locator('#stop').click();
+    await sessionAction('stop');
     await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
     console.log('PASS: installed Codex App Server initializes a chat through the UI, reconnects and stops; no model task sent');

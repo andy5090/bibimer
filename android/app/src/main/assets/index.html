@@ -16,11 +16,13 @@
   <script src="rich-text.js" defer></script>
   <script src="conversation.js" defer></script>
   <script src="select.js" defer></script>
+  <script src="sidebar.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
 <div id="app">
   <header class="topbar">
+    <button id="sidebar-open" class="icon-button" type="button" aria-label="Projects and sessions" data-i18n-aria-label="sidebar_title" aria-haspopup="dialog" aria-controls="sidebar" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
     <div class="brand"><img class="brand-mark" src="brand.svg" alt=""><div><strong class="brand-wordmark">BIBIMER</strong><small data-i18n="tagline">Coding agents at your fingertips</small></div></div>
     <span id="connection" class="badge" role="status">Not connected</span>
   </header>
@@ -35,17 +37,12 @@
     </div>
     <section id="workspace" hidden>
       <div class="project-summary">
-        <div class="project-label"><span class="eyebrow" data-i18n="project_eyebrow">PROJECT</span><strong id="project-name">Add a project</strong><select id="project-switch" aria-label="Switch project" data-i18n-aria-label="switch_project" hidden></select><small id="project-path">A working folder in Termux</small></div>
-        <button class="quiet" id="edit-project" data-i18n="add_project">Project Add</button>
+        <div class="project-label"><strong id="project-name">Add a project</strong><select id="project-switch" aria-label="Switch project" data-i18n-aria-label="switch_project" hidden></select><small id="project-path">A working folder in Termux</small></div>
+        <button id="new-session" class="icon-button" type="button" aria-label="New session" data-i18n-aria-label="session_new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button id="session-more" class="icon-button" type="button" aria-label="Session actions" data-i18n-aria-label="session_actions" aria-haspopup="dialog">⋯</button>
       </div>
       <button id="project-update" class="quiet" data-i18n="projects_update" hidden>Update the bridge to use multiple projects</button>
-      <form id="project-form" class="card" hidden>
-        <label for="path" data-i18n="project_folder">Project folder</label>
-        <div class="folder-input"><input id="path" placeholder="~/projects/my-project" autocomplete="off" spellcheck="false"><button id="browse-project" class="secondary" type="button" data-i18n="browse">Browse</button></div>
-        <label class="check"><input type="checkbox" id="create-folder"><span data-i18n="create_folder">Create the folder if it does not exist</span></label>
-        <div class="button-row"><button class="primary" type="submit" data-i18n="save_project">Save project</button><button id="cancel-project" class="quiet" type="button" data-i18n="cancel_project">Cancel</button></div>
-      </form>
-      <div class="session-bar"><span id="process" class="badge">Not started</span><button id="copy-resume" class="quiet" type="button" data-i18n="codex_resume_copy" hidden>Resume in CLI</button><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
+      <div class="session-bar"><span id="session-title"></span><span id="process" class="badge">Not started</span></div>
       <div id="mode-controls" class="mode-controls"><label for="mode" data-i18n="mode_label">Session interface</label><select id="mode"><option value="terminal" data-i18n="mode_terminal">Terminal · PTY</option><option value="chat" data-i18n="mode_chat">Chat · formatted text</option></select></div>
       <div id="launch-controls" class="launch-controls">
         <label class="sr-only" for="agent" data-i18n="program_label">Program to run</label>
@@ -88,7 +85,6 @@
           <button id="settings-toggle" class="quiet" type="button" data-i18n-aria-label="agent_settings" aria-label="Session settings"><span aria-hidden="true">ⓘ</span><span id="settings-summary" class="sr-only"></span></button></div>
         <p id="quick-hint" class="quick-hint" role="status" hidden></p>
       </div>
-      <button id="stop" class="stop" data-i18n="stop_session">Stop this session</button>
     </section>
   </main>
   <main id="setup" class="page scroll" hidden>
@@ -164,6 +160,32 @@
     <p id="version" class="version"></p>
   </main>
   <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected" aria-current="page"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button><button id="tab-settings"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h5m6 0h5M4 17h9m6 0h1"/><circle cx="12" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></svg><span data-i18n="tab_settings">Settings</span></button></nav>
+  <dialog id="sidebar" class="sidebar" aria-labelledby="sidebar-title">
+    <div class="sidebar-heading"><h2 id="sidebar-title" data-i18n="sidebar_title">Projects and sessions</h2><button id="sidebar-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close sidebar">×</button></div>
+    <div class="sidebar-tools"><button id="sidebar-archived" class="quiet" type="button" aria-pressed="false" data-i18n="session_archived">Archived</button><button id="sidebar-refresh" class="icon-button" type="button" data-i18n-aria-label="sidebar_refresh" aria-label="Refresh projects">↻</button></div>
+    <form id="project-form" class="card" hidden>
+      <label for="path" data-i18n="project_folder">Project folder</label>
+      <div class="folder-input"><input id="path" placeholder="~/projects/my-project" autocomplete="off" spellcheck="false"><button id="browse-project" class="secondary" type="button" data-i18n="browse">Browse</button></div>
+      <label class="check"><input type="checkbox" id="create-folder"><span data-i18n="create_folder">Create the folder if it does not exist</span></label>
+      <div class="button-row"><button class="primary" type="submit" data-i18n="save_project">Save project</button><button id="cancel-project" class="quiet" type="button" data-i18n="cancel_project">Cancel</button></div>
+    </form>
+    <div id="sidebar-projects"></div>
+    <p id="sidebar-status" class="hint" role="status"></p>
+    <div class="sidebar-footer"><button class="secondary" id="edit-project" data-i18n="add_project">Project Add</button><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
+  </dialog>
+  <dialog id="session-dialog" class="settings-dialog" aria-labelledby="session-actions-title">
+    <div class="sidebar-heading"><h2 id="session-actions-title" data-i18n="session_actions">Session actions</h2><button id="session-actions-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
+    <p id="session-action-name"></p><p id="session-action-status" class="hint"></p><p id="session-action-error" class="hint danger-text" role="status" hidden></p>
+    <form id="session-rename-form"><label for="session-name" data-i18n="session_name">Session name</label><div class="folder-input"><input id="session-name" maxlength="120" autocomplete="off"><button id="session-rename" class="secondary" type="submit" data-i18n="session_rename">Rename</button></div></form>
+    <button id="session-continue" class="primary" type="button" data-i18n="session_continue">Continue session</button>
+    <button id="session-archive" class="secondary" type="button" data-i18n="session_archive">Archive</button>
+    <p id="session-archive-hint" class="hint" data-i18n="session_archive_hint">Moves to Archived. Running work continues.</p>
+    <button id="copy-resume" class="quiet" type="button" data-i18n="codex_resume_copy" hidden>Resume in CLI</button>
+    <button id="stop" class="quiet" type="button" data-i18n="session_end">End session</button>
+    <button id="session-delete" class="quiet danger-text" type="button" data-i18n="session_delete">Remove from BIBIMER</button>
+    <p id="session-delete-hint" class="hint" data-i18n="session_delete_hint">Ends no processes and keeps the agent’s saved history and project files. End a running session first.</p>
+  </dialog>
+  <dialog id="delete-dialog" aria-labelledby="delete-title"><h2 id="delete-title" data-i18n="session_delete">Remove from BIBIMER</h2><p id="delete-name"></p><p data-i18n="session_delete_confirm">Remove this session from the list? The agent’s saved history and project files are kept.</p><div class="button-row"><button id="cancel-delete" class="secondary" data-i18n="cancel_project">Cancel</button><button id="confirm-delete" class="danger" data-i18n="session_delete">Remove from BIBIMER</button></div></dialog>
   <dialog id="folder-dialog" aria-labelledby="folder-title">
     <h2 id="folder-title" data-i18n="folder_title">Choose a project folder</h2>
     <p class="hint" data-i18n="folder_hint">Browse folders in Termux on this phone.</p>

@@ -106,7 +106,8 @@ class RestartTests(unittest.TestCase):
         next_session = self.post("/v1/sessions", {"agent": "shell", "request_id": str(uuid.uuid4())})["session"]
         self.assertNotEqual(session["id"], next_session["id"])
         self.assertEqual("running", next_session["state"])
-        self.assertEqual(404, self.request("GET", endpoint + "/events?cursor=0&wait=0")[0])
+        # Starting another session retains the earlier session in the library.
+        self.assertEqual(200, self.request("GET", endpoint + "/events?cursor=0&wait=0")[0])
 
     def test_idle_shutdown_and_legacy_pidfd_keep_unrelated_process(self):
         for legacy in [False, True]:

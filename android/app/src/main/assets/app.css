@@ -39,7 +39,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .settings-dialog .hint { margin:8px 0; font-size:12px; line-height:1.5; }
 .settings-dialog > button { width:100%; margin-top:8px; }
 
-.composer-options { flex:none; margin:-3px 0 6px; }
+.composer-options { flex:none; margin:-3px 0 10px; }
 .quick-options { display:flex; align-items:center; gap:6px; }
 .quick-options select { flex:0 1 auto; min-width:0; width:auto; min-height:36px; padding:6px 2px; font-size:12px; border:0; border-radius:4px; background:transparent; color:var(--muted); cursor:pointer; }
 .quick-options select option { background:var(--card); color:var(--text); }
@@ -117,3 +117,62 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 #models-hint { flex:none; margin:0 0 4px; font-size:10px; }
 #workspace.project-editing .model-controls, #workspace.project-editing #models-hint { display:none; }
 #import-settings-dialog > .select-control { margin:5px 0 10px; }
+
+/* Project/session navigation stays outside the working conversation. */
+.topbar { gap:6px; padding-left:6px; }
+.topbar .brand { flex:1; min-width:0; }
+.icon-button { display:inline-flex; align-items:center; justify-content:center; flex:none; width:40px; min-height:40px; padding:8px; color:var(--muted); font-size:22px; line-height:1; }
+.icon-button svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.project-summary { gap:2px; margin-bottom:0; }
+.project-label { flex:1; min-width:0; }
+.project-label strong { display:block; font-size:13px; }
+.project-label small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; }
+.session-bar { gap:6px; margin:1px 0 5px; min-height:24px; }
+#session-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:11px; }
+.session-bar .badge { flex:none; font-size:9px; }
+.sidebar { margin:0; inset:0 auto 0 0; height:100%; height:100dvh; max-height:100dvh; width:min(88vw,360px); max-width:360px; border:0; border-right:1px solid var(--line); border-radius:0 16px 16px 0; padding:12px 10px 10px; overflow:hidden; background:var(--bg); }
+.sidebar[open] { display:flex; flex-direction:column; gap:4px; }
+.sidebar-heading { display:flex; align-items:center; gap:6px; flex:none; }
+.sidebar-heading h2 { flex:1; min-width:0; font-size:15px; margin:0; padding:0 6px; }
+.sidebar-tools { display:flex; justify-content:space-between; align-items:center; flex:none; padding:0 2px; }
+.sidebar-tools button { min-height:36px; font-size:12px; }
+#sidebar-archived[aria-pressed="true"] { color:var(--green); background:#233b32; }
+#sidebar-projects { flex:1; overflow-y:auto; overscroll-behavior:contain; min-height:30px; }
+.sidebar-project { border-bottom:1px solid var(--line); padding:4px 0 8px; }
+.sidebar-project > summary,.sidebar-worktree > summary { cursor:pointer; min-height:42px; padding:10px 6px; font-size:13px; font-weight:600; overflow-wrap:anywhere; }
+.sidebar-project.current > summary { color:var(--green); }
+.sidebar-count { float:right; font-size:10px; line-height:18px; min-width:18px; text-align:center; padding:0 4px; border-radius:5px; color:var(--green); background:#233b32; margin-left:4px; }
+.sidebar-path { font:10px/1.4 monospace; color:var(--muted); overflow-wrap:anywhere; margin:0 8px 3px 20px; }
+.sidebar-project-actions { display:flex; align-items:center; padding-left:10px; }
+.sidebar-project-actions button { min-height:36px; padding:5px 8px; font-size:11px; }
+.sidebar-project-actions button:first-child { color:var(--green); }
+.sidebar-worktree { margin-left:14px; border-left:1px solid var(--line); padding-left:4px; }
+.sidebar-worktree > summary { font-size:11px; min-height:36px; padding:8px 5px; color:var(--muted); }
+.sidebar-empty { font-size:11px; line-height:1.5; color:var(--muted); padding:0 12px; margin:6px 0; }
+.sidebar-session { display:flex; align-items:center; margin:2px 1px 2px 10px; border-radius:8px; }
+.sidebar-session.selected { background:#21342d; box-shadow:inset 2px 0 var(--green); }
+.sidebar-session-open { text-align:start; flex:1; min-width:0; padding:7px 9px; min-height:48px; }
+.sidebar-session-open strong { display:block; font-size:12px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sidebar-session-open small { display:block; color:var(--muted); font-size:10px; margin-top:3px; font-weight:400; }
+.sidebar-session .icon-button { width:36px; min-height:44px; }
+.sidebar-footer { display:flex; gap:5px; flex:none; border-top:1px solid var(--line); padding-top:8px; }
+.sidebar-footer button { flex:1; font-size:12px; }
+#sidebar-status { flex:none; margin:2px 6px; font-size:10px; }
+#sidebar-status:empty { display:none; }
+#project-form { flex:none; margin:0 0 4px; max-height:55dvh; overflow:auto; padding:10px; }
+#project-form .folder-input { gap:3px; }
+#project-form input { min-width:0; }
+#session-dialog { padding:12px; }
+#session-action-name { margin:5px 5px 0; font-size:14px; font-weight:600; overflow-wrap:anywhere; }
+#session-action-status { margin:3px 5px 10px; }
+#session-dialog .folder-input input { min-width:0; }
+#session-dialog > button { min-height:40px; margin-top:5px; font-size:13px; }
+#session-dialog .hint { font-size:11px; }
+.danger-text { color:var(--red); }
+@media (max-height:580px) { .sidebar { padding-top:4px; } #project-form { max-height:48dvh; } }
+@media (prefers-reduced-motion:no-preference) { .sidebar[open] { animation:drawer-enter .16s ease-out; } @keyframes drawer-enter { from { transform:translateX(-100%); } to { transform:translateX(0); } } }
+.sidebar-project > summary { padding:0 4px 0 6px; line-height:42px; }
+.sidebar-project-open { float:right; width:36px; min-height:42px; padding:0; color:var(--muted); font-size:15px; font-weight:400; }
+.sidebar-project > summary .sidebar-count { margin-top:12px; }
+.sidebar-path { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sidebar-project-actions button { white-space:nowrap; }

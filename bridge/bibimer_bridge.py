@@ -104,6 +104,9 @@ ERROR_MESSAGES = {
     "error_program_missing": "This program is not installed in Termux. Check the setup guide.",
     "error_launch_failed": "Could not start the process. Check the folder and program.",
     "error_session_missing": "This session is no longer accessible. Refresh its current state.",
+    "error_session_action": "Choose a valid session action.",
+    "error_session_delete_active": "End this session before removing it from BIBIMER.",
+    "error_worktree": "This working folder is no longer available in the project's Git worktrees.",
     "error_http_request": "The request could not be handled.",
     "error_internal": "The bridge could not process the request.",
     "error_local_only": "Only the app's local connection is allowed.",
@@ -1241,6 +1244,9 @@ class Bridge:
         saved = read_json(state / "metadata.json", {})
         self.projects, self.sessions, self.previous_sessions = {}, {}, {}
         self.selected_agents = dict(saved.get("selected_agents") or {})
+        self.selected_sessions = dict(saved.get("selected_sessions") or {})
+        self.session_labels = dict(saved.get("session_labels") or {})
+        self.deleted_launches = list(saved.get("deleted_launches") or [])[-1024:]
         records = saved.get("projects") or ([saved["project"]] if saved.get("project") else [])
         for record in records:
             project = dict(record)
@@ -1257,14 +1263,15 @@ class Bridge:
                                if key == location.get("id") or project["path"] == location.get("path")), None)
             if project_id is None:
                 continue
-            snapshot["project"] = dict(self.projects[project_id])
+            snapshot["project"] = dict(self.projects[project_id], path=location.get("path") or self.projects[project_id]["path"])
             snapshot["output_start"] = snapshot["output_end"] = 0
             if snapshot.get("mode") == "chat":
                 snapshot.update(queued_count=0, queue_paused=False, active_turn_id=None)
             if snapshot["state"] in ACTIVE:
                 snapshot["state"], snapshot["exit_code"] = "lost", None
             agent = snapshot.get("agent", "shell")
-            self.previous_sessions[(project_id, agent)] = snapshot
+            self.previous_sessions[snapshot["id"]] = snapshot
+            self.selected_sessions.setdefault(project_id, {}).setdefault(agent, snapshot["id"])
             self.selected_agents.setdefault(project_id, agent)
         self.closing = False
         self.persist()
@@ -1275,20 +1282,118 @@ class Bridge:
 
     @property
     def session(self):
-        return self.sessions.get((self.active_project_id, self.selected_agents.get(self.active_project_id, "shell")))
+        return self.sessions.get(self.selected_id(self.active_project_id))
 
     @property
     def previous(self):
-        return self.previous_sessions.get((self.active_project_id, self.selected_agents.get(self.active_project_id, "shell")))
+        return self.previous_sessions.get(self.selected_id(self.active_project_id))
+
+    def selected_id(self, project_id, agent=None):
+        return self.selected_sessions.get(project_id, {}).get(agent or self.selected_agents.get(project_id, "shell"))
+
+    def describe(self, snapshot):
+        return dict(snapshot, **self.session_labels.get(snapshot["id"], {})) if snapshot else None
+
+    def snapshot_by_id(self, session_id):
+        session = self.sessions.get(session_id)
+        return self.describe(session.snapshot() if session else self.previous_sessions.get(session_id))
 
     def snapshot_for(self, project_id, agent=None):
-        slot = (project_id, agent or self.selected_agents.get(project_id, "shell"))
-        session = self.sessions.get(slot)
-        return session.snapshot() if session else self.previous_sessions.get(slot)
+        return self.snapshot_by_id(self.selected_id(project_id, agent))
 
     def snapshots(self, project_id=None):
-        slots = self.sessions.keys() | self.previous_sessions.keys()
-        return [self.snapshot_for(key, agent) for key, agent in sorted(slots) if project_id is None or key == project_id]
+        records = [self.snapshot_by_id(key) for key in self.sessions.keys() | self.previous_sessions.keys()]
+        return sorted((row for row in records if project_id is None or row["project"]["id"] == project_id),
+                      key=lambda row: (row.get("started_at", 0), row["id"]), reverse=True)
+
+    def select_session(self, data):
+        with self.lock:
+            key, session_id = data.get("project_id"), data.get("session_id")
+            if not isinstance(key, str) or key not in self.projects:
+                raise Problem(404, "error_project_missing")
+            snapshot = self.snapshot_by_id(session_id) if isinstance(session_id, str) else None
+            if session_id is not None and (not snapshot or snapshot["project"]["id"] != key):
+                raise Problem(404, "error_session_missing")
+            agent = snapshot["agent"] if snapshot else data.get("agent", self.selected_agents.get(key, "shell"))
+            if not isinstance(agent, str) or agent not in PERMISSION_MODES:
+                raise Problem(400, "error_program")
+            self.active_project_id = key
+            self.selected_agents[key] = agent
+            self.selected_sessions.setdefault(key, {})[agent] = session_id
+            self.persist()
+            return {"project_id": key, "agent": agent, "session": snapshot}
+
+    def manage_session(self, session_id, data):
+        with self.lock:
+            snapshot = self.snapshot_by_id(session_id)
+            if not snapshot:
+                raise Problem(404, "error_session_missing")
+            action = data.get("action")
+            if action == "delete":
+                if snapshot["state"] in ACTIVE:
+                    raise Problem(409, "error_session_delete_active")
+                self.deleted_launches = (self.deleted_launches + [snapshot["launch_id"]])[-1024:]
+                self.sessions.pop(session_id, None)
+                self.previous_sessions.pop(session_id, None)
+                self.session_labels.pop(session_id, None)
+                for choices in self.selected_sessions.values():
+                    for agent in choices:
+                        if choices[agent] == session_id:
+                            choices[agent] = None
+            elif action in {"archive", "restore"}:
+                self.session_labels.setdefault(session_id, {})["archived"] = action == "archive"
+            elif action == "rename":
+                title = data.get("title")
+                if not isinstance(title, str) or not title.strip() or len(title) > 120 or any(ord(c) < 32 for c in title):
+                    raise Problem(400, "error_session_action")
+                self.session_labels.setdefault(session_id, {})["title"] = title.strip()
+            else:
+                raise Problem(400, "error_session_action")
+            self.persist()
+            return {"session": self.snapshot_by_id(session_id)}
+
+    def worktrees(self, data):
+        with self.lock:
+            key = data.get("project_id")
+            if not isinstance(key, str) or key not in self.projects:
+                raise Problem(404, "error_project_missing")
+            project = dict(self.projects[key])
+        root = project["path"]
+        entries = [{"path": root, "name": project["name"], "primary": True, "available": Path(root).is_dir()}]
+        try:
+            # NUL delimiters preserve spaces/newlines; never execute Git hooks or a shell.
+            result = subprocess.run(["git", "-C", root, "worktree", "list", "--porcelain", "-z"],
+                                    stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=3)
+            if result.returncode == 0 and len(result.stdout) <= BUFFER_LIMIT:
+                for block in result.stdout.decode("utf-8", "replace").split("\0\0")[:128]:
+                    fields = dict(line.split(" ", 1) if " " in line else (line, True) for line in block.split("\0") if line)
+                    path = fields.get("worktree")
+                    if not isinstance(path, str) or fields.get("bare"):
+                        continue
+                    path = str(Path(path).resolve())
+                    branch = str(fields.get("branch", "")).removeprefix("refs/heads/")
+                    if path == root:
+                        entries[0]["branch"] = branch
+                    else:
+                        entries.append({"path": path, "name": Path(path).name, "branch": branch,
+                                        "primary": False, "available": Path(path).is_dir() and not fields.get("prunable")})
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        return {"project_id": key, "worktrees": entries}
+
+    def working_project(self, data):
+        key = data.get("project_id", self.active_project_id)
+        with self.lock:
+            if not isinstance(key, str) or key not in self.projects:
+                raise Problem(404, "error_project_missing")
+            project = dict(self.projects[key])
+        path = data.get("worktree_path", project["path"])
+        if not isinstance(path, str) or "\0" in path:
+            raise Problem(400, "error_worktree")
+        if path != project["path"] and not any(row["path"] == path and row["available"] for row in self.worktrees({"project_id": key})["worktrees"]):
+            raise Problem(400, "error_worktree")
+        project["path"] = path
+        return project
 
     def select_agent(self, data):
         with self.lock:
@@ -1307,9 +1412,12 @@ class Bridge:
     def persist(self):
         with self.lock:
             save_json(self.state / "metadata.json", {
-                "format": 3, "projects": list(self.projects.values()),
+                "format": 4, "projects": list(self.projects.values()),
                 "active_project_id": self.active_project_id,
                 "selected_agents": self.selected_agents,
+                "selected_sessions": self.selected_sessions,
+                "session_labels": self.session_labels,
+                "deleted_launches": self.deleted_launches,
                 "sessions": self.snapshots(),
                 "project": self.project,
                 "session": self.snapshot_for(self.active_project_id),
@@ -1361,7 +1469,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "git_worktrees"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -1466,11 +1574,8 @@ class Bridge:
             self.history_lock.release()
 
     def session_history(self, data):
-        with self.lock:
-            project_id = data.get("project_id")
-            if not isinstance(project_id, str) or project_id not in self.projects:
-                raise Problem(404, "error_project_missing")
-            project = dict(self.projects[project_id])
+        project = self.working_project(data)
+        project_id = project["id"]
         search, cursor = data.get("search", ""), data.get("cursor")
         if (not isinstance(search, str) or len(search) > 200 or
                 (cursor is not None and (not isinstance(cursor, str) or len(cursor) > 2048))):
@@ -1497,13 +1602,10 @@ class Bridge:
 
     def models(self, data):
         key, agent = data.get("project_id"), data.get("agent")
-        with self.lock:
-            if not isinstance(key, str) or key not in self.projects:
-                raise Problem(404, "error_project_missing")
-            project = dict(self.projects[key])
+        project = self.working_project(data)
         if not isinstance(agent, str) or agent not in {"codex", "claude", "opencode"}:
             raise Problem(400, "error_program")
-        cache_key = (key, agent)
+        cache_key = (key, project["path"], agent)
         with self.lock:
             model_lock = self.model_locks.setdefault(cache_key, threading.Lock())
         cached = self.model_cache.get(cache_key)
@@ -1559,7 +1661,7 @@ class Bridge:
             options = agent_options(session.agent, {**session.options, **data.get("options", {})}) if isinstance(data.get("options"), dict) else None
         if options is None:
             raise Problem(400, "error_agent_options")
-        catalog = self.models({"project_id": session.project["id"], "agent": session.agent})["models"] if options.get("model") else None
+        catalog = self.models({"project_id": session.project["id"], "worktree_path": session.project["path"], "agent": session.agent})["models"] if options.get("model") else None
         session.configure(data, catalog)
 
     def launch(self, data):
@@ -1574,8 +1676,16 @@ class Bridge:
             raise Problem(400, "error_program")
         imported = import_spec(data)
         options = agent_options(agent, data.get("options"))
+        if "new_session" in data and not isinstance(data["new_session"], bool):
+            raise Problem(400, "error_session_action")
         if mode == "terminal" and agent == "opencode" and options.get("effort"):
             raise Problem(400, "error_effort_terminal")
+        with self.lock:
+            project_id = data.get("project_id", self.active_project_id)
+            if project_id is None:
+                raise Problem(400, "error_project_required")
+        data = dict(data, project_id=project_id)
+        working = self.working_project(data)
 
         def target():
             if self.closing:
@@ -1583,20 +1693,24 @@ class Bridge:
             project_id = data.get("project_id", self.active_project_id)
             if project_id is not None and (not isinstance(project_id, str) or project_id not in self.projects):
                 raise Problem(404, "error_project_missing")
-            project = self.projects.get(project_id)
-            current = self.snapshot_for(project_id, agent)
-            for other in self.snapshots():
-                if other.get("launch_id") == key and other is not current and (other["project"]["id"] != project_id or other["agent"] != agent):
-                    raise Problem(409, "error_launch_conflict")
+            project = working
+            if key in self.deleted_launches:
+                raise Problem(409, "error_launch_conflict")
+            current = next((row for row in self.snapshots() if row.get("launch_id") == key), None)
             if current and current.get("launch_id") == key:
-                if (current["agent"] != agent or current.get("mode", "terminal") != mode or
+                if (current["project"] != project or current["agent"] != agent or current.get("mode", "terminal") != mode or
                         current.get("launch_options", current.get("options", {"permission": "inherit"})) != options or
                         any(current.get(field) != (imported or {}).get(field) for field in ("source_thread_id", "import_mode"))):
                     raise Problem(409, "error_launch_conflict")
                 return project_id, project, current
-            owned = self.sessions.get((project_id, agent))
-            if owned and owned.state in ACTIVE:
+            if not data.get("new_session") and any(row["agent"] == agent and row["state"] in ACTIVE for row in self.snapshots(project_id)):
                 raise Problem(409, "error_session_exists")
+            if imported and imported["import_mode"] == "resume" and any(
+                    row["agent"] == agent and row["state"] in ACTIVE and
+                    (row.get("external_thread_id") == imported["source_thread_id"] or
+                     (row.get("import_mode") == "resume" and row.get("source_thread_id") == imported["source_thread_id"]))
+                    for row in self.snapshots()):
+                raise Problem(409, "error_import_active")
             if not project:
                 raise Problem(400, "error_project_required")
             return project_id, project, None
@@ -1609,7 +1723,7 @@ class Bridge:
             # the source. A later UI project switch cannot redirect this launch.
             data = dict(data, project_id=project_id)
             project = dict(project)
-        catalog = self.models({"project_id": project_id, "agent": agent})["models"] if options.get("model") else []
+        catalog = self.models({"project_id": project_id, "worktree_path": project["path"], "agent": agent})["models"] if options.get("model") else []
         validate_model_selection(options, catalog)
         if imported:
             result = self.history_call(project, "thread/read", {"threadId": imported["source_thread_id"], "includeTurns": False}, agent)
@@ -1635,8 +1749,8 @@ class Bridge:
                     options=options, **({"imported": imported, "catalog": catalog} if mode == "chat" else {}))
             except OSError:
                 raise Problem(400, "error_launch_failed") from None
-            self.sessions[(project_id, agent)] = session
-            self.previous_sessions.pop((project_id, agent), None)
+            self.sessions[session.id] = session
+            self.selected_sessions.setdefault(project_id, {})[agent] = session.id
             self.selected_agents[project_id] = agent
             self.persist()
             session.start_reading()
@@ -1657,7 +1771,7 @@ class Bridge:
                 # Health retains the last session after a restart, but its output
                 # only lived in the old process. Keep that snapshot readable so
                 # clients can stay connected and launch their next session.
-                snapshot = dict(previous)
+                snapshot = self.describe(previous)
                 result = {"session": snapshot, "cursor": 0, "gap": cursor > 0}
                 if snapshot.get("mode") == "chat":
                     result.update(items=[], retained=[], requests=[], queue=[])
@@ -1666,7 +1780,10 @@ class Bridge:
                 return result
             session = self.get_session(session_id)
         # Never hold the bridge lock during an active session's long poll.
-        return session.events(cursor, wait)
+        result = session.events(cursor, wait)
+        with self.lock:
+            result["session"] = self.describe(result["session"])
+        return result
 
     def begin_shutdown(self):
         with self.lock:
@@ -1789,6 +1906,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = bridge.models(data)
         elif method == "POST" and parsed.path == "/v1/project-agent":
             result = bridge.select_agent(data)
+        elif method == "POST" and parsed.path == "/v1/project-session":
+            result = bridge.select_session(data)
+        elif method == "POST" and parsed.path == "/v1/worktrees":
+            result = bridge.worktrees(data)
         elif method == "POST" and parsed.path == "/v1/sessions":
             result = {"session": bridge.launch(data)}
         elif method == "POST" and parsed.path == "/v1/shutdown":
@@ -1808,6 +1929,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 except ValueError:
                     raise Problem(400, "error_cursor") from None
                 self.reply(200, bridge.session_events(parts[2], cursor, wait))
+                return
+            if method == "POST" and action == "manage":
+                self.reply(200, bridge.manage_session(parts[2], data))
                 return
             session = bridge.get_session(parts[2])
             if method == "POST" and action == "input":
