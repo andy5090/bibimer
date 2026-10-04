@@ -35,27 +35,27 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 | `POST /v1/pair` | 일회용 연결 코드 교환 | `code` |
 | `GET /v1/health` | 인스턴스, 전체 프로젝트·세션 상태, 선택 프로젝트, 프로그램 탐지 | 없음 |
 | `POST /v1/project` | 폴더 추가·선택 | 추가: `path`, `create`, `add: true`; 전환: `project_id` |
-| `POST /v1/project-agent` | 프로젝트의 선택 에이전트 변경·기존 세션 복원 (빌드 대기) | `project_id`, `agent`; 프로세스를 시작/종료하지 않음 |
-| `POST /v1/project-session` | 목록의 세션 선택·새 시작 화면 (빌드 대기) | `project_id`, `session_id`; null이면 `agent`의 새 시작 화면. 프로세스 변경 없음 |
-| `POST /v1/worktrees` | 실제 Git 워크트리 조회 (빌드 대기) | `project_id`; 프로젝트 폴더·연결 경로·branch·available 반환 |
-| `POST /v1/sessions/{id}/manage` | 세션 이름·보관·목록 삭제 (빌드 대기) | `action`: `rename`(+ `title`), `archive`, `restore`, `delete`. 삭제는 실행 중 거절 |
-| `POST /v1/models` | 프로젝트·에이전트별 네이티브 모델/추론 목록 (빌드 대기) | `project_id`, `agent`, `refresh` (선택) |
+| `POST /v1/project-agent` | 프로젝트의 선택 에이전트 변경·기존 세션 복원 (0.10.0) | `project_id`, `agent`; 프로세스를 시작/종료하지 않음 |
+| `POST /v1/project-session` | 목록의 세션 선택·새 시작 화면 (0.10.0) | `project_id`, `session_id`; null이면 `agent`의 새 시작 화면. 프로세스 변경 없음 |
+| `POST /v1/worktrees` | 실제 Git 워크트리 조회 (0.10.0) | `project_id`; 프로젝트 폴더·연결 경로·branch·available 반환 |
+| `POST /v1/sessions/{id}/manage` | 세션 이름·보관·목록 삭제 (0.10.0) | `action`: `rename`(+ `title`), `archive`, `restore`, `delete`. 삭제는 실행 중 거절 |
+| `POST /v1/models` | 프로젝트·에이전트별 네이티브 모델/추론 목록 (0.10.0) | `project_id`, `agent`, `refresh` (선택) |
 | `POST /v1/folders` | Termux 하위 폴더 탐색, 상태 변경 없음 | `path` (기본 `~`), `hidden` (기본 false), `after` (다음 페이지의 이름 커서) |
 | `POST /v1/session-history` | 현재 프로젝트의 저장된 에이전트 세션 조회 | `project_id`, `agent` (`codex` 기본 / `opencode` / `claude`), `search` (제목), `cursor` |
 | `POST /v1/sessions` | 지정 프로젝트의 세션 시작·가져오기 | `project_id`, `agent` (`shell`, `codex`, `claude`, `opencode`), `mode` (`terminal` 기본 / `chat`), `request_id`, `cols`, `rows`, `options` (0.8.0); 가져오기: `source_thread_id`, `import_mode` (`fork` / `resume`), `mode: chat` |
 | `GET /v1/sessions/{id}/events` | 출력 및 실제 프로세스 상태 | `cursor` (PTY 바이트 위치 / Chat 변경 번호), `wait` (0~20초) |
 | `POST /v1/sessions/{id}/input` | 입력 바이트 전송 | `data` (base64), `request_id` (UUID) |
 | `POST /v1/sessions/{id}/resize` | PTY 크기 변경 | `cols` (20~300), `rows` (4~200) |
-| `POST /v1/sessions/{id}/options` | Chat의 다음 입력 설정 변경·보관 (0.8.1) | `options` (권한·Codex Fast, 빌드 대기: `model`·`effort`), `request_id` |
+| `POST /v1/sessions/{id}/options` | Chat의 다음 입력 설정 변경·보관 (0.8.1) | `options` (권한·Codex Fast, 0.10.0: `model`·`effort`), `request_id` |
 | `POST /v1/sessions/{id}/message` | Chat의 새 메시지 | `text`, `request_id`, Codex 전용 `fast` (boolean, 선택) |
-| `POST /v1/sessions/{id}/queue` | Chat 대기열 추가·개별 취소·재개·Steer (Steer는 빌드 대기) | `action` (`add` / `remove` / `resume` / `steer`), `request_id`; 추가: `text`, 취소: `entry_id`, Steer: `entry_id`·`turn_id` |
-| `POST /v1/sessions/{id}/steer` | 진행 중 Codex 턴에 추가 입력 (빌드 대기) | `text`, `turn_id` (현재 턴), `request_id` |
+| `POST /v1/sessions/{id}/queue` | Chat 대기열 추가·개별 취소·재개·Steer (대기 항목 Steer는 0.10.0) | `action` (`add` / `remove` / `resume` / `steer`), `request_id`; 추가: `text`, 취소: `entry_id`, Steer: `entry_id`·`turn_id` |
+| `POST /v1/sessions/{id}/steer` | 진행 중 Codex 턴에 추가 입력 (0.9.0) | `text`, `turn_id` (현재 턴), `request_id` |
 | `POST /v1/sessions/{id}/respond` | 대기 중인 승인·질문에 응답 | `prompt_id`, `request_id`, `decision` 또는 `answers` |
 | `POST /v1/sessions/{id}/interrupt` | Chat의 현재 응답만 중단 | 빈 객체 |
 | `POST /v1/shutdown` | CLI 업데이트용 브리지 종료, 실행 세션이 있으면 거부 | 빈 객체 |
 | `POST /v1/sessions/{id}/stop` | 해당 실행 세션 중지 | 빈 객체 |
 
-여러 프로젝트를 등록하며 빌드 대기 소스는 **동일 에이전트의 여러 세션**을 허용한다. 실행·이전 상태를 세션 UUID로 분리하고 `selected_agents`와 `selected_sessions[project_id][agent]`에 마지막 선택을 보관한다. `new_session: true`를 명시하면 기존 실행을 유지한 채 추가하며 구형 클라이언트의 기본 실행은 같은 에이전트가 실행 중이면 거절한다. 새 시작 화면은 선택 포인터만 null로 바꾼다. 프로젝트·에이전트 전환은 기존 프로세스를 종료하지 않는다. 입력·응답·종료는 세션 ID로 전달하고 실행 명령은 허용된 프로그램 ID에서 선택한다. 배포된 0.9.0은 여전히 프로젝트당 세션 하나다.
+여러 프로젝트를 등록하며 0.10.0 브리지는 **동일 에이전트의 여러 세션**을 허용한다. 실행·이전 상태를 세션 UUID로 분리하고 `selected_agents`와 `selected_sessions[project_id][agent]`에 마지막 선택을 보관한다. `new_session: true`를 명시하면 기존 실행을 유지한 채 추가하며 구형 클라이언트의 기본 실행은 같은 에이전트가 실행 중이면 거절한다. 새 시작 화면은 선택 포인터만 null로 바꾼다. 프로젝트·에이전트 전환은 기존 프로세스를 종료하지 않는다. 입력·응답·종료는 세션 ID로 전달하고 실행 명령은 허용된 프로그램 ID에서 선택한다. 이전 0.9.0 브리지는 프로젝트당 세션 하나다.
 
 0.3.1은 `features` 배열의 `browse_folders` 항목으로 폴더 탐색 지원을 알린다. 폴더 API도 인증·로컬 Host·Origin 검사를 거치며 Android는 고정된 `/v1/folders` 경로만 허용한다. `path`·`parent`·`entries`(이름/경로)·`next`·`writable`을 반환한다. 한 단계의 폴더를 이름순으로 최대 100개씩 반환하고 스캔 메모리는 한 페이지로 제한한다. 파일 내용을 열거나 하위 폴더를 재귀 탐색하지 않는다. 심볼릭 링크는 열 때 실제 경로로 정규화하며 Termux가 접근 가능한 경로를 사용한다. 페이지 사이 폴더 변경은 새로 탐색할 때 반영된다. 선택 후 기존 프로젝트 등록 API에서 접근 권한을 다시 확인한다.
 
@@ -95,7 +95,7 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 
 Codex [공식 `turn/steer`](https://learn.chatgpt.com/docs/app-server#steer-an-active-turn)에 `expectedTurnId`를 전달하고 네이티브 응답의 `turnId`가 일치한 뒤 성공 처리한다. 새 턴·interrupt·권한 변경 RPC로 대체하지 않는다. 거절 시 초안을 유지하며 응답 유실/시간 초과는 전달 여부 불명으로 처리해 자동 재전송하지 않는다. 확인이 끝나지 않은 Steer가 이후 대기열을 영구 차단하지 않도록 제한 시간 후 수신 대기를 해제한다. Claude·OpenCode에는 브리지 FIFO만 제공한다.
 
-대기 항목의 Steer는 `queue_steer` 기능 표시와 `queue`의 `action: steer`로 제공한다(빌드·운영 브리지 적용 대기). 세션 ID·항목 ID·현재 턴 ID를 고정하고 텍스트는 브리지 대기열에서 읽는다. 조건 잠금 안에서 항목을 `steering`으로 바꿔 새 FIFO 턴·해당 항목 삭제·재전송을 막는다. 현재 턴이 먼저 끝나도 확인 전에는 후속 대기열을 실행하지 않는다. 수락 확인 시 해당 항목만 제거하며 다른 항목의 순서를 유지한다. 거절은 `failed`, 응답 유실·잘못된 턴 확인은 `uncertain`으로 보존하고 대기열을 일시정지한다. `uncertain` 항목은 재개·Steer 재전송을 금지하며 사용자가 대화를 확인하고 취소한 뒤 재개한다. 요청 ID 중복 확인은 제거된 항목에도 적용한다. 앱은 작성 중인 입력을 건드리지 않고, 늦게 도착한 결과로 다른 프로젝트·에이전트 화면을 바꾸지 않는다.
+대기 항목의 Steer는 `queue_steer` 기능 표시와 `queue`의 `action: steer`로 제공한다(앱·브리지 0.10.0). 세션 ID·항목 ID·현재 턴 ID를 고정하고 텍스트는 브리지 대기열에서 읽는다. 조건 잠금 안에서 항목을 `steering`으로 바꿔 새 FIFO 턴·해당 항목 삭제·재전송을 막는다. 현재 턴이 먼저 끝나도 확인 전에는 후속 대기열을 실행하지 않는다. 수락 확인 시 해당 항목만 제거하며 다른 항목의 순서를 유지한다. 거절은 `failed`, 응답 유실·잘못된 턴 확인은 `uncertain`으로 보존하고 대기열을 일시정지한다. `uncertain` 항목은 재개·Steer 재전송을 금지하며 사용자가 대화를 확인하고 취소한 뒤 재개한다. 요청 ID 중복 확인은 제거된 항목에도 적용한다. 앱은 작성 중인 입력을 건드리지 않고, 늦게 도착한 결과로 다른 프로젝트·에이전트 화면을 바꾸지 않는다.
 
 대화 이벤트는 `items`, `retained`, `requests`, `queue`를 반환한다. 항목은 변경 번호를 가지며 전체 항목은 최대 1MiB·200개, 항목별 텍스트는 32768자로 제한한다. 오래된 내용이 제거되면 `gap`을 알리고 남은 항목으로 복구한다. 승인·질문은 별도 메모리 상태로 유지해 재접속 시 다시 표시한다. 디스크 메타데이터에는 대화·질문·답변을 저장하지 않는다.
 
@@ -151,7 +151,7 @@ health의 `persistent_codex_sessions`는 새 Codex 대화의 영구 저장을 �
 
 Claude 실행 경로는 정상 사용자 CLI → Bibimer 전용 복구 런처 순서로 찾는다. 명시적인 `BIBIMER_CLAUDE_EXECUTABLE`은 이 선택보다 우선하며 HTTP 클라이언트에서 지정할 수 없다. 확인 캐시는 에이전트와 실행 경로별로 분리한다. `repair_claude_termux.py`는 공식 고정 패키지의 무결성·예상 일반 파일·실행 성공을 확인한 뒤 런처를 원자적으로 교체하고 이전 런처를 실패 시 유지한다. glibc 선행 설치나 사용자 로그인은 자동으로 처리하지 않는다.
 
-## 모델·추론 수준 (소스 반영 / 빌드·브리지 적용 대기)
+## 모델·추론 수준 (앱·브리지 0.10.0)
 
 `model_options` 기능 표시와 `/v1/models`는 선택한 프로젝트에서 에이전트의 모델 목록을 조회한다. Codex `model/list`, Claude SDK의 입력을 보내지 않는 `query().supportedModels()`, OpenCode `/provider`의 연결된 제공자·모델·variant를 읽는다. 모델 작업을 시작하지 않으며 자격 증명/제공자 설정은 전달하지 않는다. 최대 1,000개 모델·모델별 64개 수준, 120초 메모리 캐시와 명시적 새로고침을 사용한다. 조회 과정은 브리지·세션 잠금 밖에서 실행한다.
 
