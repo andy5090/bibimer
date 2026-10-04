@@ -150,7 +150,11 @@
       t(chat ? "settings_live_chat" : live ? "settings_live_terminal" : "settings_saved") +
       (chat && agent === "opencode" && options.permission !== "inherit" ? " " + t("error_permission_default") : "") +
       (agent === "codex" ? " " + t("fast_hint") : "");
-    if (!prefix) $("quick-hint").textContent = t(settingsBusy ? "settings_saving" : updateNeeded ? "settings_update_short" : chat ? "settings_next_message" : live ? "settings_next_session" : "settings_remembered");
+    if (!prefix) {
+      const hint = settingsBusy ? "settings_saving" : updateNeeded ? "settings_update_short" : null;
+      $("quick-hint").textContent = hint ? t(hint) : "";
+      $("quick-hint").hidden = !hint;
+    }
     pickers.sync();
   }
   async function saveOptions(prefix, quick = false, changed = null) {

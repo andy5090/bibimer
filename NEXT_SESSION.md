@@ -41,6 +41,12 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 - 첫 구현 스택: Java Android 앱 + 앱에 포함한 WebView/xterm.js 화면, Python 표준 라이브러리 HTTP 브리지, PTY. 현재 기기에서 APK를 직접 빌드하는 경로를 확보했다.
 - 기본 표시 언어는 영어이며 한국어를 추가 지원한다. 기기 언어와 관계없이 영어로 시작하고 **Settings → Language → 한국어**에서 선택한 언어를 저장한다(0.9.0부터, 이전 0.8.2는 Setup). 사용자와의 설명·프로젝트 문서는 한국어를 유지한다.
 
+## 입력창 하단 반복 안내 정리 (2026-10-04, 소스 반영 / APK 빌드 대기)
+
+- 권한·Fast 아래의 `Next message · remembered for future sessions`와 PTY·시작 전의 유사 안내를 평소에는 숨긴다. 빈 줄도 남기지 않으며 저장 중·브리지 업데이트 필요 상태만 표시한다. 적용 시점과 마지막 선택 저장 설명은 ⓘ 세션 설정에 유지한다. 하단 내비게이션과의 여백은 변경하지 않았다.
+- JavaScript 문법·기존 UI 통합 검증을 통과했다. 권한·Fast 저장, 미지원 브리지 안내, 프로젝트·에이전트 전환, Queue/Steer·가져오기·영어/한국어를 확인했고 대화 화면 미리보기에서 반복 안내와 빈 줄이 없는 것을 확인했다. 로그: `.tools/ui-quiet-hint.log`. 실제 Android WebView 확인은 다음 APK 설치 후 진행한다.
+- **APK 미빌드·운영 브리지 미변경**. 다음 명시적 빌드에 포함하며 마지막 APK는 계속 **0.9.0/code 16**이다.
+
 ## Setup 자동 설치·연결 (2026-10-04, 소스 반영 / APK·실기기 검증 대기)
 
 - Setup에 **Set up and connect(설정하고 연결)**를 추가했다. Termux 설치·첫 실행 후 최초 Android RUN_COMMAND 권한과 Termux `allow-external-apps=true` 허용이 필요하다. 앱 권한 화면 열기·연동 허용 명령 복사·Termux 열기를 함께 제공하고, 기존 파일 저장/수동 코드 입력은 **Manual setup and pairing** 안에 유지한다.
