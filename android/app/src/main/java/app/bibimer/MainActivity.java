@@ -148,6 +148,11 @@ public final class MainActivity extends Activity {
         catch (Exception ignored) { return false; }
     }
 
+    private String appVersion() {
+        try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; }
+        catch (android.content.pm.PackageManager.NameNotFoundException ignored) { return ""; }
+    }
+
     private final class NativeApi {
         @JavascriptInterface public void setBackHandling(boolean enabled) {
             runOnUiThread(() -> backHandling(enabled));
@@ -163,7 +168,7 @@ public final class MainActivity extends Activity {
                     .put("agentOptions", agentPreferences.get())
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
                     .put("quickSetup", setup)
-                    .put("version", "0.9.0").toString();
+                    .put("version", appVersion()).toString();
             } catch (Exception ignored) { return "{}"; }
         }
 
