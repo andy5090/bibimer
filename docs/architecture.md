@@ -12,6 +12,18 @@ Python 브리지는 `127.0.0.1`에만 바인드하고, Host가 해당 주소·�
 
 앱이 `POST /v1/pair`로 연결 코드를 보내면 인증 토큰을 받는다. 토큰은 Android 네이티브 코드에서 보관하고 나머지 API의 `Authorization: Bearer …` 헤더에 사용한다. 토큰과 세션 출력은 URL, 일반 로그, 저장소에 넣지 않는다.
 
+## 앱에서 시작하는 Termux 준비 (미배포 소스)
+
+`TermuxSetup`은 명시적인 사용자 버튼 조작으로 `com.termux.app.RunCommandService`의 `RUN_COMMAND`를 요청한다. Android의 `com.termux.permission.RUN_COMMAND` 권한과 Termux `allow-external-apps=true`가 필요하며, 허용 설정은 사용자에게 안내한다. 실행 경로는 Termux bash로 고정하고 APK에 포함한 `quick-setup.sh`·설치 스크립트·`setup-connect.py`를 stdin으로 전달한다. WebView에서 임의 실행 파일·명령·주소를 받을 수 없다. 공유 저장소 접근이나 추가 Termux 플러그인을 사용하지 않는다.
+
+Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용 설치 잠금 아래 누락된 브리지만 설치한다. 기존 브리지 파일은 교체하지 않으며 살아 있는 세션을 종료하지 않는다. 백그라운드에는 `/dev/tty`가 없으므로 대화형 `start` 출력에 의존하지 않고 동일한 `serve` 데몬을 시작한다. 인증된 health 확인 후 기존 5분·1회 코드 발급을 사용한다.
+
+결과는 명시적 대상·고유 URI·`FLAG_ONE_SHOT`·`FLAG_MUTABLE`인 PendingIntent를 통해 비공개 `TermuxSetupReceiver`로 돌아온다. 진행 중 작업 ID·만료·결과 형식을 확인하고 네이티브 `LocalBridge`가 코드를 교환해 Android Keystore로 토큰을 저장한다. 결과 원문·코드·토큰은 JavaScript·로그·URL·공유 파일에 보내지 않는다. Termux 백그라운드 작업의 로그 수준도 0으로 지정한다. 콜백을 받을 수 있도록 PendingIntent만 변경 가능하며 수신 컴포넌트는 exported=false다.
+
+앱 전용 설정에는 작업 ID·시작 시각·단계만 보관한다. 화면 재생성 후 진행 상태를 복원하고, 연결 정보 지우기는 진행 중 콜백도 무효화한다. 콜백 처리와 연결 초기화는 같은 잠금으로 직렬화한다. HTTP 코드 교환은 연결 2초·읽기 4초 제한을 둔다. 스크립트는 Android Intent 크기 제한을 고려해 UTF-16 440KB 이하로 제한한다. 15분 만료 후 자동 재실행하지 않으며 사용자가 Termux 상태를 확인한다. 기존 수동 경로는 계속 제공한다.
+
+근거: [Termux RUN_COMMAND·권한·결과 전달](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent), [설치 대상 0.118.3 서비스 구현](https://github.com/termux/termux-app/blob/v0.118.3/app/src/main/java/com/termux/app/RunCommandService.java), [결과 상수](https://github.com/termux/termux-app/blob/v0.118.3/termux-shared/src/main/java/com/termux/shared/termux/TermuxConstants.java), [Android PendingIntent](https://developer.android.com/guide/components/intents-filters#PendingIntent). 실제 Android 권한 창·프로세스 재생성·결과 수신과 기기별 백그라운드 제약은 다음 빌드 설치 후 검증한다.
+
 ## API
 
 요청·응답은 JSON이고, 입력·출력 바이트는 base64로 전달한다. 페어링 외 모든 API에 인증이 필요하다.

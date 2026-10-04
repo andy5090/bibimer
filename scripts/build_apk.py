@@ -115,9 +115,12 @@ fi
 if [ "${BIBIMER_CLAUDE_TERMUX:-0}" = 1 ]; then
     python "$HOME/.local/share/bibimer/repair_claude_termux.py"
 fi
-"$HOME/.local/bin/bibimer-bridge" start
+if [ "${BIBIMER_SKIP_START:-0}" != 1 ]; then
+    "$HOME/.local/bin/bibimer-bridge" start
+fi
 '''.replace("ADAPTER_PAYLOAD", repr(adapters)).replace("PAYLOAD", encoded).replace("DIGEST", digest)
     (SRC / "assets" / "bibimer-setup.sh").write_text(script)
+    (SRC / "assets" / "setup-connect.py").write_bytes((ROOT / "bridge" / "setup_connect.py").read_bytes())
     return script
 
 

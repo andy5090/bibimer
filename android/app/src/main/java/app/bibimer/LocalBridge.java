@@ -31,8 +31,8 @@ final class LocalBridge {
         try {
             connection.setRequestMethod(method);
             connection.setInstanceFollowRedirects(false);
-            connection.setConnectTimeout(3000);
-            connection.setReadTimeout(polling || path.equals("/v1/session-history") || path.equals("/v1/models") || path.equals("/v1/sessions") || path.endsWith("/options") ? 25000 : 6000);
+            connection.setConnectTimeout(pair ? 2000 : 3000);
+            connection.setReadTimeout(pair ? 4000 : polling || path.equals("/v1/session-history") || path.equals("/v1/models") || path.equals("/v1/sessions") || path.endsWith("/options") ? 25000 : 6000);
             connection.setUseCaches(false);
             if (!pair) connection.setRequestProperty("Authorization", "Bearer " + tokens.get());
             if (!get) {

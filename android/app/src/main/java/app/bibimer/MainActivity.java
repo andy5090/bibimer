@@ -47,6 +47,7 @@ public final class MainActivity extends Activity {
     private AgentPreferences agentPreferences;
     private InputPreferences inputPreferences;
     private LocalBridge bridge;
+    private String setupLoaded = "";
     private volatile boolean destroyed;
 
     @Override public void onCreate(Bundle saved) {
@@ -132,10 +133,15 @@ public final class MainActivity extends Activity {
     private final class NativeApi {
         @JavascriptInterface public String environment() {
             try {
+                JSONObject setup = TermuxSetup.status(MainActivity.this);
+                if (setup.optString("phase").equals("connected") && !setup.optString("id").equals(setupLoaded)) {
+                    tokens.reload(); setupLoaded = setup.optString("id");
+                }
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
                     .put("agentOptions", agentPreferences.get())
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
+                    .put("quickSetup", setup)
                     .put("version", "0.9.0").toString();
             } catch (Exception ignored) { return "{}"; }
         }
@@ -169,7 +175,19 @@ public final class MainActivity extends Activity {
 
         @JavascriptInterface public void forget() {
             bridge.cancelPoll();
-            tokens.clear();
+            TermuxSetup.forget(MainActivity.this, tokens);
+        }
+
+        @JavascriptInterface public void startQuickSetup() {
+            runOnUiThread(() -> TermuxSetup.start(MainActivity.this));
+        }
+
+        @JavascriptInterface public void openAppPermissions() {
+            runOnUiThread(() -> {
+                try { startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + getPackageName()))); }
+                catch (Exception ignored) { TermuxSetup.fail(MainActivity.this, "quick_permission"); }
+            });
         }
 
         @JavascriptInterface public void cancelPoll() {
@@ -212,6 +230,10 @@ public final class MainActivity extends Activity {
         @JavascriptInterface public void copyCommand(String name) {
             String command;
             if (name.equals("storage")) command = "termux-setup-storage";
+            else if (name.equals("external-apps")) command = "mkdir -p ~/.termux && " +
+                "touch ~/.termux/termux.properties && " +
+                "sed -i '/^[[:space:]]*allow-external-apps[[:space:]]*=/d' ~/.termux/termux.properties && " +
+                "printf '\\nallow-external-apps=true\\n' >> ~/.termux/termux.properties && termux-reload-settings";
             else if (name.equals("install")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
             else if (name.equals("claude-adapter")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "BIBIMER_CLAUDE=1 bash ~/storage/downloads/bibimer-setup.sh";
             else if (name.equals("claude-repair")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "BIBIMER_CLAUDE_TERMUX=1 bash ~/storage/downloads/bibimer-setup.sh";
@@ -245,6 +267,14 @@ public final class MainActivity extends Activity {
                     startActivityForResult(intent, EXPORT_INSTALLER);
                 } catch (Exception ignored) { toast(R.string.file_picker_failed); }
             });
+        }
+    }
+
+    @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
+        super.onRequestPermissionsResult(request, permissions, grants);
+        if (request == TermuxSetup.REQUEST_PERMISSION) {
+            if (TermuxSetup.permitted(this)) TermuxSetup.start(this);
+            else TermuxSetup.fail(this, "quick_permission");
         }
     }
 

@@ -10,10 +10,12 @@ android/app/src/main/
 bridge/bibimer_bridge.py    Python 표준 라이브러리 브리지
 bridge/provider_opencode.py OpenCode 로컬 HTTP 서버 어댑터
 bridge/provider_claude.mjs  Claude Agent SDK 어댑터
+bridge/setup_connect.py    앱의 Termux 준비·코드 발급 도우미 (APK asset으로 생성)
 bridge/tests/              PTY·HTTP, 세 에이전트 프로토콜 대역, 업데이트 통합 테스트
 scripts/build_apk.py        Termux에서 APK 빌드 및 설치 스크립트 생성
 scripts/smoke_ui.cjs        화면 + 실제 브리지 연결 검증
 scripts/smoke_select.cjs    자체 선택 시트·키보드·긴 목록·상태 변경 검증
+scripts/smoke_setup.cjs     자동 설정 상태·재시도·연결과 모바일 UI 검증
 scripts/smoke_rendering.cjs GFM·코드·diff·계획·스크롤·안전한 출력과 UI 검증
 ```
 
@@ -74,6 +76,7 @@ pkg install nodejs
 npm install --prefix .tools/ui --ignore-scripts --no-fund --no-audit playwright-core@1.55.1
 node scripts/smoke_ui.cjs
 node scripts/smoke_select.cjs
+node scripts/smoke_setup.cjs
 node scripts/smoke_rendering.cjs
 ```
 
@@ -82,6 +85,14 @@ node scripts/smoke_rendering.cjs
 현재 기기에서는 기존 Termux X11 Chromium의 `headless_shell`을 사용했다. 다른 경로의 Chromium을 사용하려면 `BIBIMER_CHROMIUM`을 지정한다. Playwright의 플랫폼 검사에 맞춰 테스트 프로세스에서만 Android를 Linux로 식별하고, 실제 실행 파일은 Termux용 Chromium을 지정한다. 이는 Playwright나 앱의 Android 지원을 검증하는 방법이 아니다.
 
 UI 테스트는 임시 폴더의 실제 브리지에 연결하며 Android 네이티브 API를 명시적인 테스트 어댑터로 대체한다. 한국어 브라우저 로캘에서도 영어로 시작하는지, 한국어 전환·저장값 복원, 오류 번역과 0.1.0 응답 호환, 언어 전환 시 세션·입력 유지까지 확인한다. 어댑터의 설정 저장은 브라우저 테스트용이며 실제 앱의 Android 환경 설정 저장을 검증한 것은 아니다. 화면 캡처는 통제된 셸 출력과 모의 대화만 포함하고 `dist/screenshots/*-en.png`, `*-ko.png`에 저장한다. 실제 앱의 Keystore, WebView 리소스 로딩, 기기 간 앱 격리 경계는 APK로 따로 확인해야 한다.
+
+## 2026-10-04 자동 설정·연결 검증 (소스 반영 / APK·실기기 검증 대기)
+
+- `python -m unittest discover -s bridge/tests -p test_setup.py -v` **4개 통과**. PATH가 제한된 임시 환경에서 Python 부재→패키지 설치 대역·실패 안내를 확인하고, 생성 설치 payload의 셸 문법·Intent 크기 한도를 검증했다. 임시 서버에서 새 설치·기존 파일 미교체·설치 잠금·별도 데몬 시작·실제 1회 코드 교환·기존 토큰/세션/승인 보존을 확인했다. 테스트는 운영 상태 폴더를 사용하지 않는다.
+- 자동 설정 UI와 기존 UI 전체 통합 통과. Termux 없음·최초 권한 안내·연동 명령 복사·중복 차단·진행 중 재로드·실패/재시도·수동 경로·자동 Work 이동·연결 정보 삭제, 영어/한국어와 320/360px를 확인했다. 기존 모델/에이전트 선택·Queue/Steer·멀티 프로젝트·가져오기·승인도 유지된다. Android API·콜백 상태는 브라우저 대역이므로 실제 권한/서비스 실행 검증을 의미하지 않는다.
+- Android Java 소스를 API 36·`--release 8`로 컴파일했다. 빌드 스크립트의 installer 생성만 실행해 두 설치 asset을 점검했으며 APK를 생성하지 않았다. 최신 APK의 자산 목록에는 새 `quick-setup.sh`·`setup-connect.py`가 추가되어야 한다. 설치 스크립트만 생성하는 동작을 APK 빌드와 구분한다.
+- 로그: `.tools/tests-quick-setup.log`, `.tools/ui-quick-setup.log`, `.tools/ui-setup-regression.log`, `.tools/java-quick-setup.log`. 화면: `dist/screenshots/quick-setup-320-ko.png`, `quick-setup-360-ko.png`.
+- 현재 폰의 외부 앱 허용은 꺼진 상태로 유지했다. APK 설치 후 실제 RUN_COMMAND 권한, 외부 앱 설정, 비공개 PendingIntent 수신, 앱 프로세스 재생성, Keystore 저장과 새 사용자 전체 설치를 확인해야 한다. 계정 로그인·모델 작업·운영 세션 재시작은 수행하지 않았다.
 
 ## 2026-10-03 대기 메시지 Steer 검증 (소스 반영 / APK·브리지 적용 대기)
 

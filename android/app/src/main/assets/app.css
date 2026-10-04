@@ -55,6 +55,10 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .quick-fast input:disabled + .fast-chip { opacity:.4; }
 .quick-options > button { min-width:32px; min-height:36px; padding:4px; font-size:16px; }
 .quick-hint { margin:3px 1px 0; font-size:10px; line-height:1.3; color:var(--muted); }
+#quick-permissions > summary, #manual-setup > summary { min-height:40px; padding:11px 0; font-size:12px; color:var(--green); cursor:pointer; }
+#quick-permissions .button-row { flex-wrap:wrap; }
+#quick-permissions .button-row > button { flex:1 1 125px; }
+#manual-setup { margin-bottom:8px; }
 
 .composer-actions { display:flex; flex:none; align-items:flex-end; justify-content:flex-end; gap:2px; }
 .composer-actions .primary { align-self:stretch; }

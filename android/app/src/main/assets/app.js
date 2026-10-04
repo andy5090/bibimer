@@ -8,6 +8,7 @@
   let serial = 0, online = false, paused = false, session = null, cursor = 0;
   let instance = null, activePoll = false, retryTimer = null, generation = 0, busy = false;
   let project = null, inputQueue = Promise.resolve(), currentTab = "work";
+  let quickTimer = null, quickHandled = environment().quickSetup?.phase === "connected" ? environment().quickSetup.id : null, quickSubmitting = false;
   let projectInitialized = false, connectionError = null;
   let noticeData = null, knownAgents = [];
   const sending = new Set(), views = new Map();
@@ -231,6 +232,25 @@
     $("termux-status").textContent = t(env.termuxInstalled ? "installed" : "install_needed");
     $("termux-status").className = "badge" + (env.termuxInstalled ? " connected" : "");
     $("reconnect-welcome").hidden = !env.paired;
+    renderQuickSetup(env);
+  }
+  function renderQuickSetup(env = environment()) {
+    const supported = typeof native.startQuickSetup === "function";
+    $("quick-setup").hidden = !supported;
+    if (!supported) { $("manual-setup").open = true; return; }
+    const setup = env.quickSetup || {phase:"idle"}, waiting = ["running", "connecting"].includes(setup.phase);
+    const phase = !env.termuxInstalled ? "quick_termux_missing" : setup.phase.startsWith("quick_") ? setup.phase : "quick_" + setup.phase;
+    $("quick-status").textContent = t(i18n.has(phase) ? phase : "quick_start_failed");
+    $("quick-connect").disabled = !env.termuxInstalled || waiting || quickSubmitting;
+    $("quick-connect").setAttribute("aria-busy", String(waiting || quickSubmitting));
+    if (["quick_external", "quick_permission"].includes(setup.phase)) $("quick-permissions").open = true;
+    if (setup.phase === "connected" && setup.id && quickHandled !== setup.id && env.paired) {
+      quickHandled = setup.id;
+      $("pair-code").value = "";
+      if (!paused) { notice(""); tab("work"); void connect(); }
+    }
+    clearTimeout(quickTimer);
+    if (!paused && (waiting || quickSubmitting || currentTab === "setup")) quickTimer = setTimeout(updateEnvironment, 1000);
   }
   function renderAgents() {
     const selected = $("agent").value;
@@ -1000,12 +1020,21 @@
   $("project-update").addEventListener("click", () => tab("setup"));
   for (const id of ["reconnect", "reconnect-welcome"]) $(id).addEventListener("click", () => { notice(""); connect(); });
   $("open-termux").addEventListener("click", () => native.openTermux());
+  $("quick-open-termux").addEventListener("click", () => native.openTermux());
+  $("quick-app-permissions").addEventListener("click", () => native.openAppPermissions?.());
+  $("quick-connect").addEventListener("click", () => {
+    if (quickSubmitting || $("quick-connect").disabled) return;
+    quickSubmitting = true; renderQuickSetup();
+    try { native.startQuickSetup(); }
+    catch (_) { notice("quick_start_failed"); }
+    finally { setTimeout(() => { quickSubmitting = false; updateEnvironment(); }, 500); }
+  });
   $("export-installer").addEventListener("click", () => native.exportInstaller());
   for (const button of document.querySelectorAll("[data-guide]")) button.addEventListener("click", () => native.openGuide(button.dataset.guide));
   for (const button of document.querySelectorAll("[data-command]")) button.addEventListener("click", () => native.copyCommand(button.dataset.command));
   const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", interrupt:"\x03", enter:"\r"};
   for (const button of document.querySelectorAll("[data-key]")) button.addEventListener("click", () => sendRaw(keys[button.dataset.key]));
-  window.BibimerPause = () => { pickers.close(); paused = true; ++generation; clearTimeout(retryTimer); };
+  window.BibimerPause = () => { pickers.close(); paused = true; ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); };
   $("language").addEventListener("change", () => {
     try {
       if (!native.setLanguage($("language").value)) throw new Error();

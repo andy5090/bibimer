@@ -99,8 +99,19 @@
       <div class="button-row"><button data-guide="termux" class="secondary" data-i18n="termux_guide">Installation guide</button><button id="open-termux" class="quiet" data-i18n="termux_open">Open Termux ↗</button></div>
       <p class="hint" data-i18n="termux_hint">Use the same distribution source for Termux and its plugins. Complete installation on the linked page and in Android's installer.</p>
     </section>
+    <section id="quick-setup" class="card setup-step">
+      <div class="step-heading"><span class="step-number">2</span><h2 data-i18n="quick_title">Connect with Termux</h2></div>
+      <p data-i18n="quick_body">Install the bridge if needed, start it, and connect automatically.</p>
+      <button id="quick-connect" class="primary full" data-i18n="quick_connect">Set up and connect</button>
+      <p id="quick-status" class="hint" role="status" aria-live="polite"></p>
+      <details id="quick-permissions"><summary data-i18n="quick_first_time">First-time permissions</summary>
+        <p data-i18n="quick_permission_body">Allow BIBIMER to run commands in Termux when Android asks. Enable external apps in Termux once using the command below, then return and connect.</p>
+        <div class="button-row"><button id="quick-app-permissions" class="secondary" data-i18n="quick_permissions">App permissions</button><button data-command="external-apps" class="secondary" data-i18n="quick_enable_copy">Copy enable command</button><button id="quick-open-termux" class="quiet" data-i18n="termux_open">Open Termux ↗</button></div>
+      </details>
+    </section>
+    <details id="manual-setup"><summary data-i18n="manual_setup">Manual setup and pairing</summary>
     <section class="card setup-step">
-      <div class="step-heading"><span class="step-number">2</span><h2 data-i18n="bridge_setup">Set up the bridge</h2></div>
+      <div class="step-heading"><h2 data-i18n="bridge_setup">Set up the bridge</h2></div>
       <p data-i18n="bridge_body">Save the setup file as bibimer-setup.sh in your Download folder. It connects this app to Termux.</p>
       <button id="export-installer" class="secondary full" data-i18n="save_installer">Save setup file</button>
       <p data-i18n="commands_body">Run these commands one at a time in Termux. Finish granting file access before running the installation command.</p>
@@ -109,13 +120,14 @@
       <p class="hint" data-i18n="bridge_hint">The setup file installs Python if needed, then installs the bridge in your Termux home. Adjust the command if you saved the file under another name or folder.</p>
     </section>
     <section class="card setup-step">
-      <div class="step-heading"><span class="step-number">3</span><h2 data-i18n="pair_title">Connect this app</h2></div>
+      <div class="step-heading"><h2 data-i18n="pair_title">Connect this app</h2></div>
       <p data-i18n="pair_body">Enter the 8-digit pairing code shown in Termux. It can be used once within five minutes.</p>
       <form id="pair-form" class="pair-form"><label for="pair-code" class="sr-only" data-i18n="pair_label">8-digit pairing code</label><input id="pair-code" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" placeholder="00000000" autocomplete="off"><button id="pair" class="primary" type="submit" data-i18n="pair">Connect</button></form>
       <div class="button-row"><button data-command="start" class="quiet" data-i18n="copy_start">Copy start command</button><button data-command="pair" class="quiet" data-i18n="copy_pair">Copy new-code command</button></div>
     </section>
+    </details>
     <section class="card setup-step">
-      <div class="step-heading"><span class="step-number">4</span><h2 data-i18n="agent_setup">Prepare an agent</h2></div>
+      <div class="step-heading"><span class="step-number">3</span><h2 data-i18n="agent_setup">Prepare an agent</h2></div>
       <p data-i18n="agent_body">Start with Terminal to check input and output. To use Codex or Claude Code, install a version that runs in Termux and complete any required sign-in.</p>
       <div class="button-row"><button data-guide="codex" class="quiet" data-i18n="codex_guide">Codex guide ↗</button><button data-guide="claude" class="quiet" data-i18n="claude_guide">Claude Code guide ↗</button><button data-guide="opencode" class="quiet" data-i18n="opencode_guide">OpenCode guide ↗</button></div>
       <div id="agent-diagnostics" aria-live="polite"></div>

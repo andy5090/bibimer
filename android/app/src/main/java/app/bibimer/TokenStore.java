@@ -20,6 +20,11 @@ final class TokenStore {
 
     TokenStore(Context context) {
         preferences = context.getSharedPreferences("bridge", Context.MODE_PRIVATE);
+        reload();
+    }
+
+    synchronized void reload() {
+        token = "";
         try {
             String ciphertext = preferences.getString("token", "");
             if (!ciphertext.isEmpty()) {

@@ -16,3 +16,4 @@ dist/
 *.jks
 android/app/src/main/assets/vendor/
 android/app/src/main/assets/bibimer-setup.sh
+android/app/src/main/assets/setup-connect.py

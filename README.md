@@ -12,6 +12,8 @@
 
 같은 빌드 대기 소스에 **입력창 아래 모델·추론 수준 선택과 Codex/Claude/OpenCode 전환**을 추가했다. 설치된 에이전트의 모델 목록을 조회하고 마지막 선택을 에이전트별로 저장한다. 프로젝트 안에서도 에이전트별 실행 세션·대기열·입력 초안을 유지하며 왕복한다. 이 확장에는 다음 APK와 새 브리지 적용이 모두 필요하다.
 
+**Setup → Set up and connect(설정하고 연결)**도 소스에 추가했다. 최초 Termux 설치·실행과 연동 허용을 마치면 필요한 Python·브리지 설치, 실행, 일회용 코드 수신과 연결을 앱에서 이어간다. 기존 브리지는 그대로 연결하며 실행 세션을 재시작하지 않는다. **2026-10-04 APK 빌드·Android 실기기 검증 대기**다. [설정 안내](docs/setup.md#앱에서-자동-연결-소스-반영--apk실기기-검증-대기)를 참고한다.
+
 - 저장소·폴더 이름: `bibimer`
 - GitHub: [andy5090/bibimer](https://github.com/andy5090/bibimer) — 비공개 저장소, 기본 브랜치 `main`.
 - 작업 경로: `/data/data/com.termux/files/home/projects/bibimer`
