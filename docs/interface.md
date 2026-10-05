@@ -38,7 +38,7 @@
 
 닫기·바깥쪽 탭·Escape로 사이드바를 닫는다. Android 13 이상에서는 열린 대화상자나 다른 페이지가 있을 때만 `OnBackInvokedCallback`을 등록하고, 이전 버전에서는 Back을 WebView UI에 전달한다. [Android 공식 Back 안내](https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture)에 맞춘 소스이며 실제 시스템 제스처·IME·TalkBack 검증은 다음 APK 설치 후 진행한다.
 
-## 프로젝트 설정 (소스 반영 / APK·브리지 적용 대기)
+## 프로젝트 설정 (앱·브리지 0.11.0)
 
 각 프로젝트 이름 옆 **⋯**는 프로젝트를 펼치지 않고도 사용할 수 있다. **Project settings(프로젝트 설정)**에서 이름을 변경하거나 폴더 경로를 확인·복사하고 **Remove project(프로젝트 등록 해제)**를 선택한다. 이름은 두 줄까지 표시해 긴 이름도 메뉴 버튼을 밀어내지 않는다. 프로젝트 폴더를 이동하거나 경로를 바꾸지는 않는다.
 
@@ -60,7 +60,7 @@ Setup은 **Termux 설치 → 설정하고 연결 → 에이전트 준비** 순�
 
 Enter는 기본 **New line(줄바꿈)**이다. **Send(보내기)**를 선택하면 Enter로 전송하며 응답 중에는 대기열에 추가한다. Shift/Ctrl/Meta/Alt+Enter는 항상 줄바꿈하고 한글 조합 중 Enter는 전송하지 않는다. 설정은 모든 프로젝트·세션의 공통 입력창에 적용하며 키보드 힌트를 함께 바꾼다. PTY 직접 입력·특수 키는 기존 동작을 유지한다. 권한·Fast는 계속 입력창 아래에서 바로 선택한다.
 
-## 응답 완료 알림 (소스 반영 / APK·브리지 적용 대기)
+## 응답 완료 알림 (0.11.0 / 실기기 검증 대기)
 
 Settings의 **Response notifications(응답 완료 알림)**에서 알림을 켜고 끈다. 기본 설정은 켜짐이며 첫 연결 후 Android 13 이상에서 알림 권한을 요청한다. 허용 전에는 서비스·완료 알림을 시작하지 않으며 거절해도 대화는 계속 사용할 수 있다. 권한/채널 차단 상태에는 **Android notification settings** 버튼을 제공한다. 구형 브리지는 업데이트 안내를 표시한다.
 

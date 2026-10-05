@@ -104,6 +104,8 @@ class ResponseNotificationTests(ChatFixture):
         first.stop()
         first.process.wait(timeout=5)
         first.reader.join(timeout=2)
+        with first.condition:
+            self.assertTrue(first.condition.wait_for(lambda: first.state == 'exited', timeout=5))
         self.assertEqual(200, self.api('POST', f'/v1/sessions/{first.id}/manage', {'action':'delete'})[0])
         self.assertEqual([self.session_id], [row['session_id'] for row in self.feed()['events']])
         self.assertEqual(2, self.feed()['cursor'])

@@ -35,7 +35,7 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 | `POST /v1/pair` | 일회용 연결 코드 교환 | `code` |
 | `GET /v1/health` | 인스턴스, 전체 프로젝트·세션 상태, 선택 프로젝트, 프로그램 탐지 | 없음 |
 | `POST /v1/project` | 폴더 추가·선택 | 추가: `path`, `create`, `add: true`; 전환: `project_id` |
-| `POST /v1/project/manage` | 프로젝트 이름 변경·등록 해제 (소스 반영 / 적용 대기) | `project_id`, `action`: `rename`(+ `name`) 또는 `delete`; 실행 세션이 있으면 삭제 거절. 파일·워크트리·원본 기록 유지. `project_management` 기능 표시 필요 |
+| `POST /v1/project/manage` | 프로젝트 이름 변경·등록 해제 (0.11.0) | `project_id`, `action`: `rename`(+ `name`) 또는 `delete`; 실행 세션이 있으면 삭제 거절. 파일·워크트리·원본 기록 유지. `project_management` 기능 표시 필요 |
 | `POST /v1/project-agent` | 프로젝트의 선택 에이전트 변경·기존 세션 복원 (0.10.0) | `project_id`, `agent`; 프로세스를 시작/종료하지 않음 |
 | `POST /v1/project-session` | 목록의 세션 선택·새 시작 화면 (0.10.0) | `project_id`, `session_id`; null이면 `agent`의 새 시작 화면. 프로세스 변경 없음 |
 | `POST /v1/worktrees` | 실제 Git 워크트리 조회 (0.10.0) | `project_id`; 프로젝트 폴더·연결 경로·branch·available 반환 |
@@ -70,7 +70,7 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 
 시작 요청은 프로젝트·프로그램·방식과 `request_id`가 같으면 같은 세션을 반환하며 다른 프로젝트의 실행 ID 재사용은 거절한다. 입력은 최근 512개 요청 ID를 기억하고 중복 전달을 막는다. 입력은 요청당 최대 16KiB다. 부분 전송이나 응답 유실 시 앱은 자동으로 재전송하지 않고 사용자가 출력을 확인하도록 안내한다.
 
-## 응답 완료 이벤트와 Android 알림 (미배포 소스)
+## 응답 완료 이벤트와 Android 알림 (0.11.0)
 
 `response_notifications` 기능 플래그와 인증된 `GET /v1/completions?cursor=N&instance=UUID|none&wait=0..20`를 제공한다. 현재 턴 ID와 일치하는 명시적 `turn/completed(status=completed)`에서만 전역 증가 ID를 발행한다. 별도 condition/deque에 최근 512개 `{id,session_id,project_id,agent,completed_at}`만 저장하며 대화 본문은 읽지 않는다. 초기 ready·과거 대화·실패·중단·중복 완료·PTY는 발행하지 않는다. 보관 상태와 선택 프로젝트는 필터가 아니다.
 
@@ -82,7 +82,7 @@ Android `ResponseNotificationService`는 UI와 별개 `LocalBridge`/TokenStore�
 
 알림은 immutable explicit Activity PendingIntent로 프로젝트/세션 ID만 전달한다. 앱이 이미 열렸으면 onNewIntent, 새로 열렸으면 첫 연결 후 대상 세션을 선택하고 삭제된 대상은 안내한다. 앱의 초안/대기열/승인과 프로세스를 유지하며 자동 실행하지 않는다. 구현 근거: [알림에서 Activity 열기](https://developer.android.com/develop/ui/views/notifications/navigation). 잠금 화면 공개 버전에는 프로젝트·세션 이름도 제외한다.
 
-서비스는 START_NOT_STICKY이며 강제 종료/시스템 서비스 중지 후 앱을 열어 다시 연결한다. Boot receiver·자동 권한 변경·배터리 예외 신청은 하지 않는다. 화면 잠금/Doze/OEM 절전에서 전달 시점·지속성은 아직 실기기 검증 전이다. APK 패키징·설치·운영 브리지 적용은 별도 요청에 따른다.
+서비스는 START_NOT_STICKY이며 강제 종료/시스템 서비스 중지 후 앱을 열어 다시 연결한다. Boot receiver·자동 권한 변경·배터리 예외 신청은 하지 않는다. 화면 잠금/Doze/OEM 절전에서 전달 시점·지속성은 아직 실기기 검증 전이다. 0.11.0 APK 패키징은 완료했으며 앱 설치·운영 브리지 적용은 아직 하지 않았다.
 
 ## 상태와 재접속
 
