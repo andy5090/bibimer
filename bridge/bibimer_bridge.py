@@ -62,6 +62,8 @@ ERROR_MESSAGES = {
     "error_bridge_stopping": "The bridge is restarting. Reconnect shortly.",
     "error_chat_mode": "This agent or interface is not supported by the bridge. Check Setup.",
     "error_agent_options": "Invalid settings for this agent.",
+    "error_commands": "Could not load commands. Refresh the list and try again.",
+    "error_command": "Choose an available skill or command from the slash list.",
     "error_models": "Could not load models. Check the agent in Termux and try again.",
     "error_model_selection": "This model or reasoning level is unavailable. Refresh the model list and choose again.",
     "error_model_default": "Restore the OpenCode agent default model in a new session. You can switch to any listed model here.",
@@ -538,7 +540,7 @@ class HistoryClient:
             raise
 
     def call(self, method, params):
-        if method not in {"initialize", "thread/list", "thread/read", "model/list"}:
+        if method not in {"initialize", "thread/list", "thread/read", "model/list", "skills/list", "commands/list"}:
             raise Problem(400, "error_import_invalid")
         try:
             self.serial += 1
@@ -1026,7 +1028,7 @@ class ChatSession(Session):
             return {"session": self.snapshot(), "cursor": self.revision, "gap": gap,
                     "items": [dict(item) for item in self.items.values() if gap or item["revision"] > cursor],
                     "retained": list(self.items),
-                    "queue": [dict(entry) for entry in self.queue.values()],
+                    "queue": [{k: v for k, v in entry.items() if not k.startswith("_")} for entry in self.queue.values()],
                     "requests": [{k: v for k, v in value.items() if k != "rpc_id"} for value in self.requests.values()]}
 
     def _duplicate(self, key, data):
@@ -1091,7 +1093,7 @@ class ChatSession(Session):
                 policy["effort"] = effort
         return policy
 
-    def message(self, data):
+    def message(self, data, invocation=None):
         key, text = request_id(data.get("request_id")), data.get("text")
         if "fast" in data and (self.agent != "codex" or type(data["fast"]) is not bool):
             raise Problem(400, "error_agent_options")
@@ -1099,7 +1101,7 @@ class ChatSession(Session):
             raise Problem(400, "error_input_size")
         with self.condition:
             speed = {"fast": data["fast"]} if "fast" in data else {}
-            digest, duplicate = self._duplicate(key, {"text": text, **speed})
+            digest, duplicate = self._duplicate(key, {"text": text, "command_id": data.get("command_id"), **speed})
             if duplicate:
                 return
             if self.state != "running" or not self.thread_id:
@@ -1110,7 +1112,7 @@ class ChatSession(Session):
             self.turn_state = "sending"
             self._bump()
             chosen = {**self.options, **speed}
-            self._rpc("turn/start", {"threadId": self.thread_id, "input": [{"type": "text", "text": text}], **self.turn_options(chosen)}, "turn")
+            self._rpc("turn/start", {"threadId": self.thread_id, **(invocation or {"input": [{"type": "text", "text": text}]}), **self.turn_options(chosen)}, "turn")
             self.options.update(speed)
             self._remember(key, digest, True)
 
@@ -1129,13 +1131,13 @@ class ChatSession(Session):
         self._bump()
         try:
             self._rpc("turn/start", {"threadId": self.thread_id,
-                "input": [{"type": "text", "text": entry["text"]}], **self.turn_options(self.options)}, ("queue", entry["id"]))
+                **(entry.get("_invocation") or {"input": [{"type": "text", "text": entry["text"]}]}), **self.turn_options(self.options)}, ("queue", entry["id"]))
         except Problem:
             entry.update(state="uncertain", code="error_input_uncertain")
             self.queue_paused = True
             self._fault("error_chat_transport")
 
-    def queue_action(self, data):
+    def queue_action(self, data, invocation=None):
         key, action = request_id(data.get("request_id")), data.get("action")
         if not isinstance(action, str) or action not in {"add", "remove", "resume", "steer"}:
             raise Problem(400, "error_queue_action")
@@ -1146,7 +1148,7 @@ class ChatSession(Session):
             value = data.get("text")
             if not isinstance(value, str) or not value.strip() or len(value.encode()) > 16384:
                 raise Problem(400, "error_input_size")
-            payload["text"] = value
+            payload.update(text=value, command_id=data.get("command_id"))
         elif action == "remove":
             payload["entry_id"] = request_id(data.get("entry_id"))
         with self.condition:
@@ -1160,7 +1162,7 @@ class ChatSession(Session):
                     raise Problem(409, "error_queue_full")
                 if not self.queue and self.turn_state in {"ready", "failed"}:
                     self.queue_paused = False
-                self.queue[key] = {"id": key, "text": value, "state": "queued"}
+                self.queue[key] = {"id": key, "text": value, "state": "queued", "_invocation": invocation}
             elif action == "remove":
                 entry = self.queue.get(payload["entry_id"])
                 if not entry or entry["state"] in {"sending", "steering"}:
@@ -1192,7 +1194,7 @@ class ChatSession(Session):
             del self.queue[entry_id]
         self._bump()
 
-    def steer(self, data, from_queue=False):
+    def steer(self, data, from_queue=False, invocation=None):
         key, text, expected = request_id(data.get("request_id")), data.get("text"), data.get("turn_id")
         entry_id = request_id(data.get("entry_id")) if from_queue else None
         if not from_queue and (not isinstance(text, str) or not text.strip() or len(text.encode()) > 16384):
@@ -1201,7 +1203,7 @@ class ChatSession(Session):
             raise Problem(400, "error_steer_unavailable")
         with self.condition:
             payload = {"action": "queue_steer" if from_queue else "steer", "turn_id": expected,
-                       **({"entry_id": entry_id} if from_queue else {"text": text})}
+                       **({"entry_id": entry_id} if from_queue else {"text": text, "command_id": data.get("command_id")})}
             digest, duplicate = self._duplicate(key, payload)
             if not duplicate:
                 if (self.agent != "codex" or self.state != "running" or self.turn_id != expected or
@@ -1212,13 +1214,14 @@ class ChatSession(Session):
                     if not entry or entry["state"] not in {"queued", "failed"}:
                         raise Problem(409, "error_queue_entry")
                     text = entry["text"]
+                    invocation = entry.get("_invocation")
                     entry["state"] = "steering"
                     entry.pop("code", None)
                     self._bump()
                 self._remember(key, digest, False)
                 try:
                     rpc_id = self._rpc("turn/steer", {"threadId": self.thread_id, "expectedTurnId": expected,
-                        "input": [{"type": "text", "text": text}]}, ("steer", key, digest, expected, entry_id))
+                        **(invocation or {"input": [{"type": "text", "text": text}]})}, ("steer", key, digest, expected, entry_id))
                 except Problem:
                     if from_queue:
                         self._finish_queue_steer(entry_id, "error_input_uncertain")
@@ -1318,6 +1321,8 @@ class Bridge:
         self.history_lock = threading.Lock()
         self.model_locks = {}
         self.model_cache = {}
+        self.command_cache = {}
+        self.command_locks = {}
         self.session_title_cache = {}
         self.program_checks = {}
         self.instance = str(uuid.uuid4())
@@ -1632,7 +1637,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "git_worktrees", "project_management", "response_notifications"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "git_worktrees", "project_management", "response_notifications"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -1817,6 +1822,84 @@ class Bridge:
             raise Problem(400, "error_models") from None
         finally:
             model_lock.release()
+
+    def commands(self, data, private=False):
+        project = self.working_project(data)
+        agent = data.get("agent")
+        if not isinstance(agent, str) or agent not in {"codex", "claude", "opencode"}:
+            raise Problem(400, "error_program")
+        key = (project["id"], project["path"], agent)
+        with self.lock:
+            guard = self.command_locks.setdefault(key, threading.Lock())
+        if not guard.acquire(timeout=10):
+            raise Problem(409, "error_commands")
+        try:
+            cached = self.command_cache.get(key)
+            if not cached or data.get("refresh") or time.monotonic() - cached[0] >= 60:
+                executable = self.agent_executable(agent)
+                if not executable:
+                    raise Problem(400, "error_program_missing")
+                with HistoryClient(executable, project["path"], agent) as client:
+                    if agent == "codex":
+                        result = client.call("skills/list", {"cwds": [project["path"]], "forceReload": True})
+                        rows = [row for group in result.get("data", [])
+                                if group.get("cwd") == project["path"] for row in group.get("skills", [])]
+                        partial = any(group.get("errors") for group in result.get("data", []))
+                    else:
+                        rows = client.call("commands/list", {}).get("data", [])
+                        partial = False
+                catalog, seen = [], set()
+                for row in rows[:1000]:
+                    name = row.get("name")
+                    if (not isinstance(name, str) or not re.fullmatch(r"[^\s/\\\x00-\x1f\x7f]{1,128}", name)
+                            or row.get("enabled") is False or name.startswith("__")):
+                        continue
+                    path = row.get("path") if agent == "codex" else ""
+                    if agent == "codex" and (not isinstance(path, str) or not Path(path).is_absolute()):
+                        continue
+                    identity = hashlib.sha256(json.dumps([key, name, path]).encode()).hexdigest()[:32]
+                    if identity in seen:
+                        continue
+                    seen.add(identity)
+                    def clean(value):
+                        return " ".join(value.split())[:400] if isinstance(value, str) else ""
+                    interface = row.get("interface") or {}
+                    catalog.append({"id": identity, "name": name,
+                        "description": clean(interface.get("shortDescription") or row.get("description")),
+                        "hint": clean(row.get("argumentHint")), "scope": clean(row.get("scope")),
+                        "kind": "skill" if agent == "codex" or row.get("source") == "skill" else "command",
+                        "_path": path})
+                cached = (time.monotonic(), catalog, partial)
+                self.command_cache[key] = cached
+            return {"commands": cached[1] if private else [{k: v for k, v in row.items() if not k.startswith("_")} for row in cached[1]],
+                    "partial": cached[2]}
+        except (OSError, ValueError, TypeError, KeyError, AttributeError):
+            raise Problem(400, "error_commands") from None
+        finally:
+            guard.release()
+
+    def command_input(self, session, data):
+        identity = data.get("command_id")
+        if identity is None:
+            return None
+        if not isinstance(identity, str):
+            raise Problem(400, "error_command")
+        rows = self.commands({"project_id": session.project["id"], "worktree_path": session.project["path"],
+                              "agent": session.agent}, private=True)["commands"]
+        row = next((row for row in rows if row["id"] == identity), None)
+        text = data.get("text")
+        if not row or not isinstance(text, str) or len(text.encode()) > 16384:
+            raise Problem(400, "error_command")
+        prefix = "/" + row["name"]
+        if not text.startswith(prefix) or (len(text) > len(prefix) and not text[len(prefix)].isspace()):
+            raise Problem(400, "error_command")
+        if session.agent == "codex":
+            return {"input": [{"type": "text", "text": "$" + text[1:]},
+                              {"type": "skill", "name": row["name"], "path": row["_path"]}]}
+        result = {"input": [{"type": "text", "text": text}]}
+        if session.agent == "opencode":
+            result["bibimerCommand"] = {"command": row["name"], "arguments": text[len(prefix):].lstrip()}
+        return result
 
     def configure_session(self, session, data):
         # Native catalog reads run outside all session/bridge locks.
@@ -2078,6 +2161,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = bridge.folders(data)
         elif method == "POST" and parsed.path == "/v1/session-history":
             result = bridge.session_history(data)
+        elif method == "POST" and parsed.path == "/v1/commands":
+            result = bridge.commands(data)
         elif method == "POST" and parsed.path == "/v1/models":
             result = bridge.models(data)
         elif method == "POST" and parsed.path == "/v1/project-agent":
@@ -2131,15 +2216,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 if not isinstance(session, ChatSession):
                     raise Problem(400, "error_chat_mode")
                 if action == "message":
-                    session.message(data)
+                    session.message(data, bridge.command_input(session, data))
                 elif action == "respond":
                     session.respond(data)
                 elif action == "options":
                     bridge.configure_session(session, data)
                 elif action == "queue":
-                    session.queue_action(data)
+                    session.queue_action(data, bridge.command_input(session, data) if data.get("action") == "add" else None)
                 elif action == "steer":
-                    session.steer(data)
+                    session.steer(data, invocation=bridge.command_input(session, data))
                 else:
                     session.interrupt()
                 result = {"session": session.snapshot()}

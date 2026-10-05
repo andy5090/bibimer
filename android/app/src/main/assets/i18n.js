@@ -2,6 +2,16 @@
 (() => {
   // Each entry is [English default, Korean]. Terminal output is never translated.
   const strings = {
+    commands_title: ["Skills & commands", "스킬·명령"],
+    commands_refresh: ["Refresh", "새로고침"],
+    commands_skill: ["Skill", "스킬"],
+    commands_command: ["Command", "명령"],
+    commands_loading: ["Loading available commands…", "사용 가능한 명령을 불러오는 중…"],
+    commands_empty: ["No matching skills or commands in this project.", "이 프로젝트에 일치하는 스킬·명령이 없습니다."],
+    commands_partial: ["Some skills could not be loaded. Check their configuration in Termux.", "일부 스킬을 불러오지 못했습니다. Termux에서 설정을 확인하세요."],
+    commands_update: ["Update the bridge to use skills and commands here.", "스킬·명령을 사용하려면 브리지를 업데이트하세요."],
+    error_commands: ["Could not load commands. Tap Refresh to try again.", "명령을 불러오지 못했습니다. 새로고침으로 다시 시도하세요."],
+    error_command: ["Choose an available skill or command from the / list.", "/ 목록에서 사용 가능한 스킬·명령을 선택하세요."],
     notifications_label: ["Response notifications", "응답 완료 알림"],
     notifications_hint: ["Show a short answer preview after each Chat response, across all projects. Background alerts use an ongoing notification.", "모든 프로젝트의 Chat 응답이 완료되면 짧은 답변 미리보기를 표시합니다. 백그라운드 알림을 위해 지속 알림을 표시합니다."],
     notifications_android_settings: ["Android notification settings", "Android 알림 설정"],

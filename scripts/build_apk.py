@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build a real Android APK on Termux using AAPT2, javac, D8 and apksigner."""
 import base64
+import zlib
 import hashlib
 import io
 import json
@@ -55,9 +56,9 @@ def fetch(url, expected, algorithm):
 
 def installer():
     source = (ROOT / "bridge" / "bibimer_bridge.py").read_bytes()
-    encoded = base64.b64encode(source).decode()
+    encoded = base64.b64encode(zlib.compress(source, 9)).decode()
     digest = hashlib.sha256(source).hexdigest()
-    adapters = {name: {"data": base64.b64encode((ROOT / "bridge" / name).read_bytes()).decode(),
+    adapters = {name: {"data": base64.b64encode(zlib.compress((ROOT / "bridge" / name).read_bytes(), 9)).decode(),
                        "sha256": hashlib.sha256((ROOT / "bridge" / name).read_bytes()).hexdigest()}
                 for name in ("provider_opencode.py", "provider_claude.mjs", "repair_claude_termux.py")}
     # No token or account credentials are embedded in this distributable script.
@@ -77,10 +78,10 @@ if ! command -v python >/dev/null 2>&1; then
     pkg install -y python
 fi
 python - <<'BIBIMER_PYTHON'
-import base64, hashlib, os
+import base64, hashlib, os, zlib
 from pathlib import Path
 is_korean = os.environ.get("BIBIMER_LANGUAGE") == "ko"
-data = base64.b64decode("PAYLOAD")
+data = zlib.decompress(base64.b64decode("PAYLOAD"))
 if hashlib.sha256(data).hexdigest() != "DIGEST":
     raise SystemExit("설정 파일이 손상되었습니다." if is_korean else "The setup file is damaged.")
 folder = Path.home() / ".local" / "share" / "bibimer"
@@ -91,7 +92,7 @@ temporary.write_bytes(data)
 temporary.chmod(0o700)
 temporary.replace(target)
 for name, entry in ADAPTER_PAYLOAD.items():
-    content = base64.b64decode(entry["data"])
+    content = zlib.decompress(base64.b64decode(entry["data"]))
     if hashlib.sha256(content).hexdigest() != entry["sha256"]:
         raise SystemExit("어댑터 설정 파일이 손상되었습니다." if is_korean else "The adapter setup file is damaged.")
     pending = folder / ("." + name + ".new")

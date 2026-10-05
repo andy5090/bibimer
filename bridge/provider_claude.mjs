@@ -94,7 +94,7 @@ function respond(value) {
 }
 let permissionMode = 'inherit', modelOptions = {};
 async function runTurn(prompt, identity) {
-  let finishInput, failed=false;
+  let finishInput, failed=false, resultSeen=false, answerSeen=false;
   const done = new Promise(resolve=>{finishInput=resolve;});
   async function* input() {
     yield {type:'user',uuid:identity,session_id:thread,parent_tool_use_id:null,message:{role:'user',content:[{type:'text',text:prompt}]}};
@@ -122,12 +122,19 @@ async function runTurn(prompt, identity) {
           if (current) { current.text=text(current.text+event.delta.text); notify('item/started',{item:{id:current.id,type:'agentMessage',text:current.text,status:'inProgress'}}); }
         }
       } else if (['assistant','user'].includes(message.type)) {
-        for (const entry of convert(message,identity)) notify('item/completed',entry);
+        for (const entry of convert(message,identity)) {
+          if (entry.item.type==='agentMessage' && entry.item.text) answerSeen=true;
+          notify('item/completed',entry);
+        }
         for (const block of message.message?.content || []) {
           if (block.type==='tool_use' && block.name==='TodoWrite') notify('turn/plan/updated',{plan:(block.input?.todos || []).map(todo=>({step:todo.content,status:todo.status}))});
         }
       } else if (message.type==='result') {
-        persisted=true; failed=message.is_error || message.subtype!=='success'; finishInput();
+        resultSeen=true; persisted=true; failed=message.is_error || message.subtype!=='success'; finishInput();
+        // Local SDK commands can return a result without an assistant message.
+        if (!failed && prompt.startsWith('/') && !answerSeen && typeof message.result==='string' && message.result.trim()) {
+          notify('item/completed',{item:{id:identity+'-result',type:'agentMessage',text:text(message.result),status:'completed'}});
+        }
         if (failed && !interrupted) notify('bibimer/notice',{code:'error_agent_turn'});
       }
     }
@@ -138,13 +145,13 @@ async function runTurn(prompt, identity) {
     finishInput();
     for (const request of [...approvals.values()]) request.finish({behavior:'deny',message:'Turn ended'});
     active?.close(); active=null;
-    notify('turn/completed',{turn:{id:identity,status:interrupted?'interrupted':failed?'failed':'completed'}});
+    notify('turn/completed',{turn:{id:identity,status:interrupted?'interrupted':failed || !resultSeen?'failed':'completed'}});
     turn=null; streams.clear(); tools.clear();
   }
 }
 async function call(method,params) {
   if (method==='initialize') return {userAgent:'bibimer-claude'};
-  if (method==='model/list') {
+  if (method==='model/list' || method==='commands/list') {
     // Initialize the CLI control protocol without yielding any user prompt.
     let release;
     const idle = new Promise(resolve=>{release=resolve;});
@@ -152,6 +159,7 @@ async function call(method,params) {
     const probe=sdk.query({prompt:input(),options:{cwd,pathToClaudeCodeExecutable:executable,
       settingSources:['user','project','local'],persistSession:false,stderr:()=>{}}});
     try {
+      if (method==='commands/list') return {data:await probe.supportedCommands()};
       const rows=await probe.supportedModels();
       return {data:rows.map(row=>({id:row.value,model:row.value,displayName:row.displayName,
         description:row.description,hidden:row.disabled===true,

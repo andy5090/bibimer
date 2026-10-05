@@ -45,7 +45,19 @@ for line in sys.stdin:
     if method in {"thread/start", "thread/resume", "thread/fork", "turn/start"}:
         with Path("codex-options.jsonl").open("a") as capture:
             capture.write(json.dumps({"method": method, **{key: params[key] for key in ("sandbox", "sandboxPolicy", "approvalPolicy", "serviceTier", "config", "approvalsReviewer", "model", "effort") if key in params}}) + "\n")
-    if method == "initialize":
+    if method in {"turn/start", "turn/steer"}:
+        with Path("codex-inputs.jsonl").open("a") as capture:
+            capture.write(json.dumps({"method": method, "input": params["input"]}) + "\n")
+    if method == "skills/list":
+        assert params["cwds"] == [str(Path.cwd())]
+        rows = [{"name": "review", "description": "Review changes <b>literally</b>", "enabled": True,
+                 "path": str(Path.cwd()/".agents/skills/review/SKILL.md"), "scope": "repo"},
+                {"name": "disabled", "enabled": False, "path": "/disabled/SKILL.md"},
+                {"name": "bad name", "enabled": True, "path": "/bad/SKILL.md"},
+                {"name": "duplicate", "description": "First scope", "path": "/first/SKILL.md", "enabled": True},
+                {"name": "duplicate", "description": "Second scope", "path": "/second/SKILL.md", "enabled": True}]
+        emit({"id": message["id"], "result": {"data": [{"cwd": str(Path.cwd()), "skills": rows, "errors": []}]}})
+    elif method == "initialize":
         emit({"id": message["id"], "result": {"userAgent": "test"}})
     elif method == "model/list":
         rows = [{"id":"test-codex", "model":"test-codex", "displayName":"Test Codex", "defaultReasoningEffort":"medium", "isDefault":True,

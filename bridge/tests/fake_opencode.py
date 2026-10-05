@@ -50,6 +50,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
         assert query.get('directory')==[cwd]
         body=json.loads(self.rfile.read(int(self.headers.get('Content-Length',0))) or b'{}')
         method=self.command
+        if route=='/command':
+            self.reply(200,[{'name':'review','description':'Project review','source':'command','template':'PRIVATE_TEMPLATE'},
+                            {'name':'design','description':'Design skill','source':'skill','template':'PRIVATE_CONTENT'}]); return
         if route=='/provider':
             self.reply(200,{'connected':['test'], 'all':[
                 {'id':'test','name':'Test provider','options':{'apiKey':'CATALOG_SECRET'},'models':{
@@ -82,7 +85,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if action=='abort':
                 if messages.get(key): finish(key)
                 self.reply(200,True); return
-            if action=='prompt_async':
+            if action=='command':
+                assert set(body)<={'messageID','command','arguments','model','variant'}
+                assert body['command'] in {'review','design'}
+                assert not body.get('model') or isinstance(body['model'],str)
+                Path('opencode-command.json').write_text(json.dumps(body))
+                body={**{k:v for k,v in body.items() if k in {'messageID','model','variant'}}, 'parts':[{'type':'text','text':body['arguments']}]}
+            if action in {'prompt_async','command'}:
                 assert set(body)<={'messageID','parts','model','variant'}
                 Path('opencode-model.json').write_text(json.dumps({name:body[name] for name in ['model','variant'] if name in body}))
                 assert body['parts'][0]['type']=='text'
@@ -96,7 +105,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 elif text=='question': questions[key]={'id':'que_'+key,'sessionID':key,'questions':[{'question':'Which checks?','header':'Checks','multiple':True,'custom':True,'options':[{'label':'Unit','description':'Unit tests'},{'label':'UI','description':'UI checks'}]}]}
                 elif text=='wait': pass
                 else: finish(key)
-                self.reply(204,None);return
+                if action=='command':
+                    import time
+                    while states[key]['type']!='idle': time.sleep(.02)
+                    self.reply(200,messages[key][-1])
+                else: self.reply(204,None)
+                return
         if len(parts)==3 and parts[0] in {'permission','question'}:
             kind,identity,action=parts
             key=identity[4:]

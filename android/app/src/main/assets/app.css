@@ -196,3 +196,15 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 @media (prefers-reduced-motion:reduce) { .response-progress::before { animation:none; border-color:currentColor; } }
 
 #response-notifications { flex: 0 0 auto; width: 20px; height: 20px; accent-color: var(--green); }
+
+/* Autocomplete floats above the compact composer without changing its height. */
+.commands { position:relative; flex:none; z-index:8; }
+.command-panel { position:absolute; bottom:0; left:0; right:0; max-height:min(260px, 40vh); overflow:auto; background:var(--surface, #19201e); border:1px solid var(--border, #34403a); border-radius:12px; box-shadow:0 8px 24px #0006; padding:4px; }
+.command-header { display:flex; justify-content:space-between; align-items:center; padding:2px 8px; font-size:12px; }
+.command-header button { min-height:30px; padding:4px 8px; font-size:11px; }
+.command-option { display:grid; grid-template-columns:1fr auto; gap:2px 8px; width:100%; text-align:left; padding:8px; border:0; border-radius:8px; background:transparent; min-height:44px; }
+.command-option[aria-selected="true"] { background:#a8c8791c; }
+.command-option strong { font-size:13px; overflow-wrap:anywhere; }
+.command-kind { font-size:10px; opacity:.65; }
+.command-option small { font-weight:400; grid-column:1/-1; font-size:11px; line-height:1.4; opacity:.75; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.command-panel .hint { margin:8px; }

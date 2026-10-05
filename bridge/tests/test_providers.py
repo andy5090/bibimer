@@ -9,7 +9,7 @@ from test_chat import ChatFixture
 from test_bridge import module
 
 
-class ProviderTests(ChatFixture):
+class ProviderFixture(ChatFixture):
     def setUp(self):
         super().setUp()
         executable=self.root/'opencode'
@@ -40,6 +40,8 @@ class ProviderTests(ChatFixture):
         session.stop();session.process.wait(timeout=6)
         self.until(lambda event:event['session']['state']=='exited')
 
+
+class ProviderTests(ProviderFixture):
     def test_explicit_native_permissions_on_new_and_imported_sessions(self):
         for agent, modes in [('claude', ['inherit','default','acceptEdits','plan','bypassPermissions']), ('opencode', ['inherit','ask','allow'])]:
             for imported, import_mode in [(False,'fork'), (True,'fork'), (True,'resume')]:

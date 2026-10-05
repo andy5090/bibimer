@@ -65,7 +65,7 @@ class Adapter:
     def notify(self, method, params):
         self.emit({'method': method, 'params': {'threadId': self.thread, 'turnId': self.turn, **params}})
 
-    def http(self, method, route, body=None, **params):
+    def http(self, method, route, body=None, timeout=5, **params):
         query = urllib.parse.urlencode({'directory': self.cwd, **params})
         request = urllib.request.Request(self.base + route + '?' + query,
             data=None if body is None else json.dumps(body).encode(), method=method,
@@ -74,7 +74,7 @@ class Adapter:
         class NoRedirect(urllib.request.HTTPRedirectHandler):
             def redirect_request(self, *args, **kwargs):
                 return None
-        with urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect()).open(request, timeout=5) as response:
+        with urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect()).open(request, timeout=timeout) as response:
             raw = response.read(8 * 1024 * 1024 + 1)
             if len(raw) > 8 * 1024 * 1024:
                 raise RuntimeError('error_agent_transport')
@@ -193,7 +193,7 @@ class Adapter:
                             self.notify('serverRequest/resolved', {'requestId': identity})
                     answers = [m['info'] for m in messages if m['info'].get('role') == 'assistant' and m['info'].get('parentID') == self.message_id]
                     done = answers and answers[-1].get('time', {}).get('completed')
-                    if status == 'idle' and not self.pending and (done or saw_busy):
+                    if status == 'idle' and not self.pending and (done or (saw_busy and not self.command_turn)):
                         failed = any(answer.get('error') for answer in answers)
                         if failed:
                             self.notify('bibimer/notice', {'code': 'error_agent_turn'})
@@ -229,6 +229,8 @@ class Adapter:
     def call(self, method, params):
         if method == 'initialize':
             return {'userAgent': 'bibimer-opencode'}
+        if method == 'commands/list':
+            return {'data': self.http('GET', '/command')}
         if method == 'model/list':
             # Strip provider configuration/credentials; expose only picker metadata.
             providers = self.http('GET', '/provider')
@@ -300,6 +302,7 @@ class Adapter:
                         raise RuntimeError('error_permission_default')
                     self.http('PATCH', '/session/' + self.thread, {'permission': [{'permission': '*', 'pattern': '*', 'action': permission}]})
                     self.permission_mode = permission
+                self.command_turn = bool(params.get('bibimerCommand'))
                 self.turn = str(uuid.uuid4())
                 self.message_id = 'msg_' + format(int(time.time()*1000), '012x') + secrets.token_hex(6)
                 self.notify('turn/started', {'turn': {'id': self.turn, 'status': 'inProgress'}})
@@ -312,7 +315,16 @@ class Adapter:
                         body['model'] = {'providerID': provider, 'modelID': model}
                     if options.get('effort'):
                         body['variant'] = options['effort']
-                    self.http('POST', '/session/' + self.thread + '/prompt_async', body)
+                    if params.get('bibimerCommand'):
+                        body.pop('parts')
+                        body.update(params['bibimerCommand'])
+                        if options.get('model'):
+                            body['model'] = options['model']
+                        # /command waits for the response. Keep approval/interrupt RPC
+                        # and the event observer available throughout this request.
+                        threading.Thread(target=self.command, args=(self.thread, turn, body), daemon=True).start()
+                    else:
+                        self.http('POST', '/session/' + self.thread + '/prompt_async', body)
                 except urllib.error.HTTPError:
                     self.complete('failed')
                     raise RuntimeError('error_agent_turn') from None
@@ -327,6 +339,19 @@ class Adapter:
                     self.complete('interrupted')
                 return {}
         raise RuntimeError('error_history_unsupported')
+
+    def command(self, thread, turn, body):
+        try:
+            self.http('POST', '/session/' + thread + '/command', body, timeout=3600)
+        except urllib.error.HTTPError:
+            with self.lock:
+                if self.turn == turn:
+                    self.notify('bibimer/notice', {'code': 'error_agent_turn'})
+                    self.complete('failed')
+        except Exception:
+            with self.lock:
+                if self.turn == turn:
+                    self.notify('bibimer/notice', {'code': 'error_input_uncertain'})
 
     def close(self):
         self.closed.set()

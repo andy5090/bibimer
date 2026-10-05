@@ -20,6 +20,7 @@
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
   let canOptions = false, canLiveOptions = false, settingsBusy = false, pendingOptions = null;
   let canQueue = false, canSteer = false, canQueueSteer = false, queued = [], queueRevision = -1, queueSignature = "";
+  let canCommands = false;
   let canModels = false, canSwitchAgents = false, selectedAgent = "shell";
   let canLibrary = false, canWorktrees = false, activeViewKey = null, draftPath = null, importPath = null;
   let actionTarget = null, deleteTarget = null, libraryBusy = false, worktreeLoading = false, worktreeError = null;
@@ -61,6 +62,12 @@
     project:async id => { await changeProject({project_id:id}); sidebar.close(); tab("work"); },
     session:selectSession, create:newSession
   });
+
+  const commands = new BibimerCommands($("input"), $("commands"), t, () => {
+    const agent = session?.agent, path = session?.project?.path;
+    return {agent, path, project:projectKey(), view:viewKey(), key:[instance, projectKey(), agent, path].join("/"),
+      mode:session?.mode, supported:canCommands, enabled:!$("input").disabled && ["codex", "claude", "opencode"].includes(agent)};
+  }, data => api("POST", "/v1/commands", data));
 
   function environment() {
     try { return JSON.parse(native.environment()); }
@@ -715,7 +722,7 @@
     $("steer").disabled = $("input").disabled || settingsBusy || sending.has(session?.id);
     $("delivery-hint").hidden = !isChat() || !responding;
     $("delivery-hint").textContent = t(!canQueue ? "delivery_update" : steerable ? "delivery_steer" : "delivery_queue");
-    renderQueue();
+    renderQueue(); commands.render();
     $("new-session").disabled = !online || !project || busy || switchingProject || settingsBusy || (!canLibrary && !!live);
     $("session-more").hidden = !session;
     $("session-more").disabled = !online || libraryBusy;
@@ -806,6 +813,7 @@
       persistentCodex = health.features?.includes("persistent_codex_sessions") === true;
       canOptions = health.features?.includes("agent_options") === true;
       canLiveOptions = health.features?.includes("live_agent_options") === true;
+      canCommands = health.features?.includes("slash_commands") === true;
       canQueue = health.features?.includes("chat_queue") === true;
       canSteer = health.features?.includes("codex_steer") === true;
       canQueueSteer = health.features?.includes("queue_steer") === true;
@@ -1018,14 +1026,16 @@
     rememberView();
     sending.add(id); renderSession();
     let ok = false;
+    const chat = isChat();
     try {
-      if (isChat()) {
+      const invocation = await commands.invocation(text);
+      if (chat) {
         const action = steer ? "steer" : canQueue ? "queue" : "message";
-        const result = await api("POST", `/v1/sessions/${id}/${action}`, {text, request_id:uuid(),
+        const result = await api("POST", `/v1/sessions/${id}/${action}`, {text, ...invocation, request_id:uuid(),
           ...(steer ? {turn_id:turn} : canQueue ? {action:"add"} : {})});
         if (session?.id === id) { setSession(result.session); updateQueue(result); }
         ok = true;
-      } else ok = await sendRaw(text.replace(/\r?\n/g, "\r") + "\r");
+      } else if (session?.id === id) ok = await sendRaw((invocation.terminalText || text).replace(/\r?\n/g, "\r") + "\r");
       if (ok && views.get(key)?.text === text) Object.assign(views.get(key), {text:"", start:0, end:0});
       if (ok && key === viewKey() && $("input").value === text) $("input").value = "";
       if (ok && session?.id === id && ["error_steer_rejected", "error_steer_unavailable", "error_queue_full", "error_input_uncertain"].includes(noticeData?.key)) notice("");
@@ -1046,7 +1056,8 @@
   $("input").addEventListener("compositionstart", () => { composing = true; });
   $("input").addEventListener("compositionend", () => { composing = false; });
   $("input").addEventListener("keydown", event => {
-    if (event.key !== "Enter" || event.isComposing || composing || event.keyCode === 229) return;
+    if (event.isComposing || composing || event.keyCode === 229) return;
+    if (commands.keydown(event) || event.key !== "Enter") return;
     event.preventDefault();
     if (enterBehavior === "newline" || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
       const input = $("input");
@@ -1433,11 +1444,13 @@
   window.BibimerBack = () => {
     const dialogs = [...document.querySelectorAll("dialog[open]")];
     if (dialogs.length) { dialogs[dialogs.length - 1].close(); return true; }
+    if (!$("commands").hidden && currentTab === "work") { commands.dismiss(); return true; }
     if (currentTab !== "work") { tab("work"); return true; }
     return false;
   };
-  function updateBackState() { native.setBackHandling?.(currentTab !== "work" || !!document.querySelector("dialog[open]")); }
+  function updateBackState() { native.setBackHandling?.(currentTab !== "work" || !$("commands").hidden || !!document.querySelector("dialog[open]")); }
   const backObserver = new MutationObserver(updateBackState);
+  backObserver.observe($("commands"), {attributes:true, attributeFilter:["hidden"]});
   for (const dialog of document.querySelectorAll("dialog")) backObserver.observe(dialog, {attributes:true, attributeFilter:["open"]});
   i18n.setLanguage(environment().language);
   renderLanguage();

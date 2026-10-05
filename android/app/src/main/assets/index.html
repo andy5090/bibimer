@@ -17,6 +17,7 @@
   <script src="conversation.js" defer></script>
   <script src="select.js" defer></script>
   <script src="sidebar.js" defer></script>
+  <script src="commands.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -66,6 +67,7 @@
         <div class="queue-heading"><span id="queue-count" role="status"></span><button id="queue-resume" type="button" class="quiet" data-i18n="queue_resume" hidden>Resume queue</button></div>
         <ol id="queue-list"></ol>
       </section>
+      <div id="commands" class="commands" hidden></div>
       <form id="input-form" class="composer">
         <label for="input" class="sr-only" data-i18n="input_label">Input for the agent</label>
         <textarea id="input" rows="1" placeholder="Type an instruction or reply" data-i18n-placeholder="input_placeholder" autocomplete="off" spellcheck="false" enterkeyhint="enter"></textarea>

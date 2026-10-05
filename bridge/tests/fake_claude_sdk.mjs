@@ -18,6 +18,8 @@ export function query({prompt,options}) {
   assert.equal(options.cwd,process.cwd());
   assert.deepEqual(options.settingSources,['user','project','local']);
   if (options.persistSession===false) return {
+    supportedCommands:async()=>[{name:'review',description:'Project review',argumentHint:'[files]'},
+      {name:'context',description:'Session context',builtin:true}],
     supportedModels:async()=>[
       {value:'sonnet',displayName:'Test Sonnet',supportsEffort:true,supportedEffortLevels:['low','medium','high']},
       {value:'opus',displayName:'Test Opus',supportsEffort:true,supportedEffortLevels:['low','medium','high','max']},
@@ -34,9 +36,11 @@ export function query({prompt,options}) {
   const controller=new AbortController();
   const iterator=(async function*(){
     const first=await prompt.next(), input=first.value, text=input.message.content[0].text;
+    writeFileSync('claude-input.json',JSON.stringify({text}));
     const id=options.resume || options.sessionId;
     writeFileSync('claude-turn-count',String(existsSync('claude-turn-count')?Number(readFileSync('claude-turn-count','utf8'))+1:1));
     yield {type:'system',subtype:'init',session_id:id};
+    if (text==='/context') { yield {type:'result',subtype:'success',session_id:id,is_error:false,result:'Context: controlled session'}; return; }
     yield {type:'stream_event',session_id:id,event:{type:'message_start',message:{id:'msg-live'}}};
     yield {type:'stream_event',session_id:id,event:{type:'content_block_delta',delta:{type:'text_delta',text:'Streaming **Claude**'}}};
     if(text==='approval' || text==='question') {

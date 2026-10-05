@@ -90,6 +90,18 @@ Android 앱은 UI와 제어를, Termux 내부 브리지는 프로젝트 경로�
 
 기존 프로젝트는 **Project Add → Browse(찾아보기)**에서 Termux 폴더를 탐색하고 **Select folder(폴더 선택) → Save project(프로젝트 등록)**으로 불러온다. 홈·상위 폴더 이동과 숨김 폴더 표시를 지원하며 경로를 직접 입력할 수도 있다. 폴더 탐색에는 앱·브리지 0.3.1 이상이 필요하다.
 
+## `/` 스킬·명령 선택 (소스 구현, APK·브리지 배포 대기)
+
+실행 중인 에이전트의 공통 입력창 첫 글자로 `/`를 입력하면 현재 프로젝트·워크트리에서 사용 가능한 목록이 열린다. 이름·설명으로 검색하고 항목을 눌러 선택한 뒤 인자를 입력해 Send/Queue로 보낸다. 목록이 열린 동안 ↑/↓로 이동하고 Enter/Tab으로 선택한다. 선택 자체는 전송하지 않으며 Escape·Android 뒤로 가기로 닫는다. Shift/Ctrl+Enter 줄바꿈과 한글 조합 Enter 처리는 유지한다.
+
+- **Codex:** 활성 스킬을 네이티브 `skills/list`로 조회하고, Chat 전송 시 `$name` 텍스트와 명시적 skill 항목으로 호출한다. 대기열·직접/대기 메시지 Steer에도 스킬 정보가 유지된다. CLI 전용 `/` 메뉴 전체를 Chat에 제공하는 것은 아니다.
+- **Claude:** SDK `supportedCommands()`가 반환하는 스킬·사용자 명령·SDK에서 사용할 수 있는 내장 명령을 `/name`으로 호출한다. 일반 assistant 메시지 없이 반환되는 명령 결과도 표시한다.
+- **OpenCode:** 네이티브 `/command` 목록의 명령·스킬을 전용 세션 command API로 실행한다. 실행 중 승인·응답 중단을 계속 처리하며 모델·추론 수준 설정을 함께 전달한다.
+
+목록 조회·선택만으로 에이전트 턴을 실행하지 않는다. Refresh로 목록을 새로고침하며 조회 실패·빈 목록·구형 브리지는 안내를 표시한다. Chat에서 찾을 수 없거나 이름이 중복된 항목은 목록에서 선택해야 한다. PTY의 공통 입력창에서는 Codex 스킬을 `$name`, Claude·OpenCode는 `/name`으로 전송하고, 목록에 없는 CLI 명령은 원래 입력대로 전달한다. 일반 셸·PTY 직접 키 입력은 유지한다.
+
+구현은 [Codex App Server의 스킬 API](https://learn.chatgpt.com/docs/app-server), [Claude SDK 명령](https://code.claude.com/docs/en/agent-sdk/slash-commands), [OpenCode 서버 API](https://dev.opencode.ai/docs/server/)와 설치된 CLI 스키마를 기준으로 한다. 실제 기기의 세 에이전트 목록 조회와 격리된 실행/브라우저 테스트를 확인했으며, 새 APK 설치 후 Android 키보드 및 실제 모델 응답 검증은 남아 있다.
+
 ## 모델·추론 수준과 에이전트 전환 (앱·브리지 0.10.0)
 
 입력창 아래 **Agent / Model / Reasoning**을 눌러 자체 목록에서 선택한다. Codex·Claude·OpenCode가 반환한 모델과 해당 모델의 effort/variant만 표시하며 ↻로 목록을 새로고침한다. 모델을 바꾸면 추론 수준은 새 모델의 기본값으로 돌린다. 선택은 에이전트별로 저장하고 Chat에서는 **다음 입력부터** 적용한다. 현재 응답·승인에는 영향을 주지 않으며 대기열은 실제 전송할 때 해당 세션의 설정을 사용한다.

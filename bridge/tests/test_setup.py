@@ -127,3 +127,20 @@ class SetupTests(ChatFixture):
         full=template.replace('__BIBIMER_INSTALLER__',installer).replace('__BIBIMER_CONNECT_HELPER__',(ROOT/'bridge/setup_connect.py').read_text())
         self.assertLess(len(full.encode('utf-16-le')),440000)
         subprocess.run([shutil.which('bash'),'-n'],input=full,text=True,check=True,capture_output=True)
+
+        # Exercise the generated installer payload without touching the real HOME,
+        # installing packages, or starting/restarting a bridge.
+        payload = installer.split("<<'BIBIMER_PYTHON'\n", 1)[1].split("\nBIBIMER_PYTHON", 1)[0]
+        isolated = self.root/'install-target'; isolated.mkdir()
+        with patch.object(Path, 'home', return_value=isolated):
+            exec(compile(payload, '<isolated-installer>', 'exec'), {})
+        destination = isolated/'.local/share/bibimer'
+        for name in ['bibimer_bridge.py', 'provider_opencode.py', 'provider_claude.mjs', 'repair_claude_termux.py']:
+            self.assertEqual((ROOT/'bridge'/name).read_bytes(), (destination/name).read_bytes())
+            self.assertEqual(0o700, (destination/name).stat().st_mode & 0o777)
+        import hashlib
+        digest = hashlib.sha256((ROOT/'bridge/bibimer_bridge.py').read_bytes()).hexdigest()
+        damaged = payload.replace(digest, '0' * 64)
+        with patch.object(Path, 'home', return_value=isolated), self.assertRaises(SystemExit):
+            exec(compile(damaged, '<damaged-installer>', 'exec'), {})
+        self.assertEqual((ROOT/'bridge/bibimer_bridge.py').read_bytes(), (destination/'bibimer_bridge.py').read_bytes())
