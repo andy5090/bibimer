@@ -1036,8 +1036,10 @@
     finally { sending.delete(id); resizeInput(); renderSession(); }
   }
   function resizeInput() {
-    $("input").style.height = "auto";
-    $("input").style.height = Math.min(100, $("input").scrollHeight) + "px";
+    const input = $("input");
+    input.style.height = "auto";
+    // A wrapping placeholder must not increase the empty, one-row input height.
+    if (input.value) input.style.height = Math.min(100, input.scrollHeight) + "px";
   }
   $("input").addEventListener("input", () => { resizeInput(); rememberView(); });
   let composing = false;
