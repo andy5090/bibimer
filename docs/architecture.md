@@ -35,6 +35,7 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 | `POST /v1/pair` | 일회용 연결 코드 교환 | `code` |
 | `GET /v1/health` | 인스턴스, 전체 프로젝트·세션 상태, 선택 프로젝트, 프로그램 탐지 | 없음 |
 | `POST /v1/project` | 폴더 추가·선택 | 추가: `path`, `create`, `add: true`; 전환: `project_id` |
+| `POST /v1/project/manage` | 프로젝트 이름 변경·등록 해제 (소스 반영 / 적용 대기) | `project_id`, `action`: `rename`(+ `name`) 또는 `delete`; 실행 세션이 있으면 삭제 거절. 파일·워크트리·원본 기록 유지. `project_management` 기능 표시 필요 |
 | `POST /v1/project-agent` | 프로젝트의 선택 에이전트 변경·기존 세션 복원 (0.10.0) | `project_id`, `agent`; 프로세스를 시작/종료하지 않음 |
 | `POST /v1/project-session` | 목록의 세션 선택·새 시작 화면 (0.10.0) | `project_id`, `session_id`; null이면 `agent`의 새 시작 화면. 프로세스 변경 없음 |
 | `POST /v1/worktrees` | 실제 Git 워크트리 조회 (0.10.0) | `project_id`; 프로젝트 폴더·연결 경로·branch·available 반환 |

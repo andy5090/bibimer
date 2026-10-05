@@ -56,6 +56,8 @@ ERROR_MESSAGES = {
     "error_folder_access": "Could not open this folder. Check that it exists and Termux has access.",
     "error_folder_request": "The folder browsing request is invalid.",
     "error_project_missing": "This project is no longer registered. Refresh the project list.",
+    "error_project_action": "Enter a project name of up to 120 characters or choose a valid action.",
+    "error_project_delete_active": "End all sessions in this project, including archived sessions, before removing it.",
     "error_bridge_stopping": "The bridge is restarting. Reconnect shortly.",
     "error_chat_mode": "This agent or interface is not supported by the bridge. Check Setup.",
     "error_agent_options": "Invalid settings for this agent.",
@@ -1292,7 +1294,13 @@ class Bridge:
         return self.selected_sessions.get(project_id, {}).get(agent or self.selected_agents.get(project_id, "shell"))
 
     def describe(self, snapshot):
-        return dict(snapshot, **self.session_labels.get(snapshot["id"], {})) if snapshot else None
+        if not snapshot:
+            return None
+        project = snapshot["project"]
+        registered = self.projects.get(project["id"])
+        if registered:
+            project = dict(project, name=registered["name"])
+        return dict(snapshot, project=project, **self.session_labels.get(snapshot["id"], {}))
 
     def snapshot_by_id(self, session_id):
         session = self.sessions.get(session_id)
@@ -1351,6 +1359,39 @@ class Bridge:
                 raise Problem(400, "error_session_action")
             self.persist()
             return {"session": self.snapshot_by_id(session_id)}
+
+    def manage_project(self, data):
+        with self.lock:
+            key, action = data.get("project_id"), data.get("action")
+            if not isinstance(key, str) or key not in self.projects:
+                raise Problem(404, "error_project_missing")
+            if action == "rename":
+                name = data.get("name")
+                if not isinstance(name, str) or not name.strip() or len(name) > 120 or any(ord(c) < 32 for c in name):
+                    raise Problem(400, "error_project_action")
+                self.projects[key] = dict(self.projects[key], name=name.strip())
+            elif action == "delete":
+                records = self.snapshots(key)
+                if any(row["state"] in ACTIVE for row in records):
+                    raise Problem(409, "error_project_delete_active")
+                # Unregister only: never touch project folders or native history.
+                for row in records:
+                    self.deleted_launches.append(row.get("launch_id", row["id"]))
+                    self.sessions.pop(row["id"], None)
+                    self.previous_sessions.pop(row["id"], None)
+                    self.session_labels.pop(row["id"], None)
+                self.deleted_launches = self.deleted_launches[-1024:]
+                self.selected_agents.pop(key, None)
+                self.selected_sessions.pop(key, None)
+                self.projects.pop(key)
+                self.model_cache = {cache_key: value for cache_key, value in self.model_cache.items() if cache_key[0] != key}
+                if self.active_project_id == key:
+                    self.active_project_id = next(iter(self.projects), None)
+            else:
+                raise Problem(400, "error_project_action")
+            self.persist()
+            return {"project": self.projects.get(key), "removed_project_id": key if action == "delete" else None,
+                    "active_project_id": self.active_project_id}
 
     def worktrees(self, data):
         with self.lock:
@@ -1469,7 +1510,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "git_worktrees"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "git_worktrees", "project_management"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -1898,6 +1939,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = bridge.pair(data.get("code"))
         elif method == "POST" and parsed.path == "/v1/project":
             result = {"project": bridge.register(data)}
+        elif method == "POST" and parsed.path == "/v1/project/manage":
+            result = bridge.manage_project(data)
         elif method == "POST" and parsed.path == "/v1/folders":
             result = bridge.folders(data)
         elif method == "POST" and parsed.path == "/v1/session-history":

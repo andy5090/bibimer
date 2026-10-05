@@ -173,6 +173,22 @@
     <p id="sidebar-status" class="hint" role="status"></p>
     <div class="sidebar-footer"><button class="secondary" id="edit-project" data-i18n="add_project">Project Add</button><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
   </dialog>
+  <dialog id="project-settings-dialog" class="settings-dialog" aria-labelledby="project-settings-title">
+    <div class="sidebar-heading"><h2 id="project-settings-title" data-i18n="project_settings">Project settings</h2><button id="project-settings-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
+    <form id="project-rename-form"><label for="project-settings-name" data-i18n="project_name">Project name</label><div class="folder-input"><input id="project-settings-name" maxlength="120" required autocomplete="off"><button id="project-rename" class="secondary" type="submit" data-i18n="session_rename">Rename</button></div></form>
+    <p class="hint" data-i18n="worktree_main">Project folder</p><p id="project-settings-path" dir="auto"></p>
+    <button id="project-copy-path" class="secondary" type="button" data-i18n="project_copy_path">Copy folder path</button>
+    <p id="project-settings-error" class="hint danger-text" role="status" hidden></p>
+    <p id="project-management-update" class="hint" data-i18n="project_management_update" hidden>Update the bridge to rename or remove projects.</p>
+    <button id="project-remove" class="quiet danger-text" type="button" data-i18n="project_remove">Remove project</button>
+    <p id="project-remove-hint" class="hint"></p>
+  </dialog>
+  <dialog id="project-delete-dialog" class="settings-dialog" aria-labelledby="project-delete-title">
+    <h2 id="project-delete-title" data-i18n="project_remove">Remove project</h2><p id="project-delete-name" dir="auto"></p>
+    <p class="hint" data-i18n="project_remove_confirm">Remove this project and its session list from BIBIMER? Project files, Git worktrees and the agent’s saved history are kept.</p>
+    <p id="project-delete-error" class="hint danger-text" role="status" hidden></p>
+    <div class="button-row"><button id="project-delete-cancel" class="secondary" data-i18n="cancel_project">Cancel</button><button id="project-delete-confirm" class="danger" data-i18n="project_remove_button">Remove</button></div>
+  </dialog>
   <dialog id="session-dialog" class="settings-dialog" aria-labelledby="session-actions-title">
     <div class="sidebar-heading"><h2 id="session-actions-title" data-i18n="session_actions">Session actions</h2><button id="session-actions-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
     <p id="session-action-name"></p><p id="session-action-status" class="hint"></p><p id="session-action-error" class="hint danger-text" role="status" hidden></p>

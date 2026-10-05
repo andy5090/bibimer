@@ -2,6 +2,16 @@
 (() => {
   // Each entry is [English default, Korean]. Terminal output is never translated.
   const strings = {
+    project_settings: ["Project settings", "프로젝트 설정"],
+    project_name: ["Project name", "프로젝트 이름"],
+    project_copy_path: ["Copy folder path", "폴더 경로 복사"],
+    project_remove: ["Remove project", "프로젝트 등록 해제"],
+    project_remove_button: ["Remove", "등록 해제"],
+    project_remove_hint: ["Removes the project and its session list from BIBIMER. Files and the agent’s saved history are kept.", "BIBIMER의 프로젝트와 세션 목록만 삭제합니다. 파일과 에이전트 원본 기록은 유지합니다."],
+    project_remove_confirm: ["Remove this project and its session list from BIBIMER? Project files, Git worktrees and the agent’s saved history are kept.", "이 프로젝트와 세션 목록의 BIBIMER 등록을 해제할까요? 프로젝트 파일·Git 워크트리·에이전트 원본 기록은 유지합니다."],
+    project_management_update: ["Update the bridge to rename or remove projects.", "프로젝트 이름 변경·등록 해제를 사용하려면 브리지를 업데이트하세요."],
+    error_project_action: ["Enter a project name of up to 120 characters or choose a valid action.", "프로젝트 이름은 120자 이내로 입력하고 올바른 작업을 선택하세요."],
+    error_project_delete_active: ["End all sessions in this project, including archived sessions, before removing it.", "보관함을 포함한 이 프로젝트의 실행 세션을 모두 종료한 뒤 등록을 해제하세요."],
     sidebar_title: ["Projects and sessions", "프로젝트와 세션"],
     sidebar_close: ["Close", "닫기"],
     sidebar_refresh: ["Refresh projects and worktrees", "프로젝트·워크트리 새로고침"],

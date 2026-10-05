@@ -55,11 +55,16 @@ window.BibimerSidebar = class BibimerSidebar {
       const projectNode = this.details("project/" + project.id, project.name, "sidebar-project", project.id === state.projectId);
       projectNode.dataset.project = project.id;
       projectNode.classList.toggle("current", project.id === state.projectId);
+      const label = document.createElement("span"); label.className = "sidebar-project-label"; label.textContent = project.name; label.title = project.name;
+      projectNode.firstChild.replaceChildren(label);
+      const count = project.sessions.filter(row => ["running", "stopping"].includes(row.state)).length;
+      if (count) { const badge = document.createElement("span"); badge.className = "sidebar-count"; badge.textContent = String(count); badge.title = t("sidebar_running"); projectNode.firstChild.append(badge); }
       const openProject = this.button("↗", event => { event.preventDefault(); event.stopPropagation(); this.actions.project(project.id); }, "sidebar-project-open", "open/" + project.id);
       openProject.setAttribute("aria-label", t("sidebar_open_project") + ": " + project.name);
       projectNode.firstChild.append(openProject);
-      const count = project.sessions.filter(row => ["running", "stopping"].includes(row.state)).length;
-      if (count) { const badge = document.createElement("span"); badge.className = "sidebar-count"; badge.textContent = String(count); badge.title = t("sidebar_running"); projectNode.firstChild.append(badge); }
+      const settings = this.button("⋯", event => { event.preventDefault(); event.stopPropagation(); this.actions.manageProject(project.id); }, "sidebar-project-more", "project-settings/" + project.id);
+      settings.setAttribute("aria-label", t("project_settings") + ": " + project.name); settings.setAttribute("aria-haspopup", "dialog");
+      projectNode.firstChild.append(settings);
       const path = document.createElement("p"); path.className = "sidebar-path"; path.textContent = project.path; path.title = project.path; path.dir = "auto"; projectNode.append(path);
       const groups = [...(state.worktrees[project.id] || [{path:project.path, name:project.name, primary:true, available:true}])];
       for (const session of project.sessions) if (!groups.some(group => group.path === session.path)) groups.push({path:session.path, name:session.path.split("/").pop(), available:false});

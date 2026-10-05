@@ -23,6 +23,7 @@
   let canModels = false, canSwitchAgents = false, selectedAgent = "shell";
   let canLibrary = false, canWorktrees = false, activeViewKey = null, draftPath = null, importPath = null;
   let actionTarget = null, deleteTarget = null, libraryBusy = false, worktreeLoading = false, worktreeError = null;
+  let canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   const worktrees = {};
   const modelCatalogs = new Map();
   const lastOptions = environment().agentOptions || {};
@@ -52,7 +53,7 @@
   term.loadAddon(fit);
   term.open($("terminal"));
   const sidebar = new BibimerSidebar(t, {
-    refresh:refreshSidebar, manage:openSessionActions,
+    refresh:refreshSidebar, manage:openSessionActions, manageProject:openProjectSettings,
     import:async (id, path) => { await newSession(id, path); if (projectKey() === id) $("import-session").click(); },
     project:async id => { await changeProject({project_id:id}); sidebar.close(); tab("work"); },
     session:selectSession, create:newSession
@@ -424,6 +425,77 @@
     $("session-name").placeholder = sessionTitle(target);
     renderSessionActions(); $("session-dialog").showModal();
   }
+  function openProjectSettings(id) {
+    const target = knownProjects.find(row => row.id === id);
+    if (!target || libraryBusy) return;
+    projectActionTarget = id; projectDeleteTarget = null; projectActionError = null;
+    $("project-settings-name").value = target.name;
+    renderProjectSettings(); $("project-settings-dialog").showModal();
+  }
+  function projectHasActiveSessions(target) {
+    return (target?.sessions || (target?.session ? [target.session] : [])).some(row => ["running", "stopping"].includes(row.state));
+  }
+  function renderProjectSettings() {
+    const target = knownProjects.find(row => row.id === projectActionTarget);
+    const disabled = !online || !canManageProjects || !target || libraryBusy || busy || switchingProject;
+    const live = projectHasActiveSessions(target);
+    $("project-settings-path").textContent = target?.path || "";
+    $("project-settings-name").disabled = $("project-rename").disabled = disabled;
+    $("project-copy-path").disabled = !target;
+    $("project-remove").disabled = disabled || live;
+    $("project-remove-hint").textContent = t(live ? "error_project_delete_active" : "project_remove_hint");
+    $("project-management-update").hidden = canManageProjects;
+    const deleting = knownProjects.find(row => row.id === projectDeleteTarget);
+    $("project-delete-name").textContent = deleting?.name || "";
+    $("project-delete-confirm").disabled = disabled || !deleting || projectHasActiveSessions(deleting);
+    for (const id of ["project-settings-error", "project-delete-error"]) {
+      $(id).textContent = projectActionError ? t(projectActionError) : "";
+      $(id).hidden = !projectActionError;
+    }
+  }
+  async function manageProject(id, action, name) {
+    if (!canManageProjects || !online || libraryBusy || busy || switchingProject) return;
+    libraryBusy = true; projectActionError = null;
+    ++generation; clearTimeout(retryTimer); native.cancelPoll?.(); renderSession();
+    try {
+      const result = await api("POST", "/v1/project/manage", {project_id:id, action, ...(name !== undefined ? {name} : {})});
+      if (result.project) {
+        knownProjects = knownProjects.map(row => row.id === id ? {...row, ...result.project} : row);
+        if (projectKey() === id) project = {...project, ...result.project};
+      } else {
+        knownProjects = knownProjects.filter(row => row.id !== id);
+        delete worktrees[id]; modelCatalogs.clear();
+        if (projectKey() === id) {
+          const next = knownProjects.find(row => row.id === result.active_project_id) || knownProjects[0] || null;
+          selectedProjectId = next?.id || null; adoptProject(next); setSession(next?.session || null);
+          projectInitialized = false;
+        }
+        for (const key of views.keys()) if (key === id || key?.startsWith(id + "/")) views.delete(key);
+      }
+      $("project-name").textContent = project?.name || t("project_empty");
+      $("project-delete-dialog").close(); $("project-settings-dialog").close();
+      notice(""); await connect();
+    } catch (error) {
+      projectActionError = error.key || "error_request_failed";
+      if (!$("project-settings-dialog").open) notice(projectActionError);
+    } finally { libraryBusy = false; renderProjects(); renderSession(); startPoll(); }
+  }
+  $("project-settings-close").addEventListener("click", () => $("project-settings-dialog").close());
+  $("project-settings-dialog").addEventListener("close", () => {
+    const key = "project-settings/" + projectActionTarget;
+    [...$("sidebar-projects").querySelectorAll("[data-key]")].find(node => node.dataset.key === key)?.focus({preventScroll:true});
+  });
+  $("project-rename-form").addEventListener("submit", event => { event.preventDefault(); manageProject(projectActionTarget, "rename", $("project-settings-name").value); });
+  $("project-copy-path").addEventListener("click", () => {
+    const target = knownProjects.find(row => row.id === projectActionTarget);
+    if (target) native.copyText(target.path);
+  });
+  $("project-remove").addEventListener("click", () => {
+    projectDeleteTarget = projectActionTarget; projectActionError = null;
+    renderProjectSettings(); $("project-delete-dialog").showModal();
+  });
+  $("project-delete-cancel").addEventListener("click", () => $("project-delete-dialog").close());
+  $("project-delete-confirm").addEventListener("click", () => manageProject(projectDeleteTarget, "delete"));
   function renderSessionActions() {
     const target = findSession(actionTarget);
     const disabled = !online || libraryBusy || busy || switchingProject || !target;
@@ -618,7 +690,7 @@
     $("session-more").disabled = !online || libraryBusy;
     $("session-title").textContent = session ? sessionTitle(session) : t("session_new");
     $("project-path").textContent = session?.project?.path || draftPath || project?.path || t("project_location");
-    renderSessionActions(); renderSidebar();
+    renderSessionActions(); renderProjectSettings(); renderSidebar();
     for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.disabled = $("input").disabled;
     $("terminal-empty").hidden = !!session;
     $("terminal-area").hidden = isChat();
@@ -709,6 +781,7 @@
       canSwitchAgents = health.features?.includes("agent_sessions") === true;
       canLibrary = health.features?.includes("session_library") === true;
       canWorktrees = health.features?.includes("git_worktrees") === true;
+      canManageProjects = health.features?.includes("project_management") === true;
       if (JSON.stringify(knownAgents) !== JSON.stringify(health.agents)) {
         knownAgents = health.agents; renderAgents();
       }
@@ -744,7 +817,7 @@
     }
   }
   async function startPoll() {
-    if (activePoll || paused || !online || switchingProject) return;
+    if (activePoll || paused || !online || switchingProject || libraryBusy) return;
     if (!session || session.state === "lost") {
       clearTimeout(retryTimer); retryTimer = setTimeout(connect, 3000); return;
     }

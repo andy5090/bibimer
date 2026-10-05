@@ -6,7 +6,7 @@ const {chromium}=require('../.tools/ui/node_modules/playwright-core');
 const root=path.resolve(__dirname,'..'),tmp=fs.mkdtempSync(path.join(os.tmpdir(),'bibimer-library-'));
 const state=path.join(tmp,'state'),projectPath=path.join(tmp,'Mobile studio'),worktreePath=path.join(tmp,'feature 한글');
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-let assets,bridge,browser;
+let assets,bridge,browser,hideManagement=false,rejectManagement=false;
 async function main(){
   fs.mkdirSync(projectPath);fs.mkdirSync(path.join(tmp,'bin'));
   const python=execFileSync('which',['python'],{encoding:'utf8'}).trim();
@@ -33,10 +33,11 @@ async function main(){
   const page=await browser.newPage({viewport:{width:393,height:780},isMobile:true,hasTouch:true});page.setDefaultTimeout(12000);
   const errors=[];page.on('pageerror',error=>{errors.push(error.message);console.error('Page error:',error.message);});
   await page.exposeFunction('nativeRequest',async(id,method,endpoint,body)=>{
-    const result=await call(method,endpoint.replace('wait=20','wait=1'),JSON.parse(body));
+    const result=rejectManagement&&endpoint==='/v1/project/manage'?{ok:false,status:409,data:{code:'error_project_delete_active'}}:await call(method,endpoint.replace('wait=20','wait=1'),JSON.parse(body));
+    if(hideManagement&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='project_management');
     try{await page.evaluate(({id,result})=>window.BibimerNativeReply(id,result),{id,result});}catch{}
   });
-  await page.addInitScript(()=>{window.Bibimer={environment:()=>JSON.stringify({paired:true,termuxInstalled:true,language:localStorage.language||'en',version:'test'}),request:(...args)=>window.nativeRequest(...args),cancelPoll:()=>{},setLanguage:value=>{localStorage.language=value;return true;},setAgentOptions:()=>true,setEnterBehavior:()=>true,setBackHandling:value=>window.backHandled=value,copyText:()=>{}};});
+  await page.addInitScript(()=>{window.Bibimer={environment:()=>JSON.stringify({paired:true,termuxInstalled:true,language:localStorage.language||'en',version:'test'}),request:(...args)=>window.nativeRequest(...args),cancelPoll:()=>{},setLanguage:value=>{localStorage.language=value;return true;},setAgentOptions:()=>true,setEnterBehavior:()=>true,setBackHandling:value=>window.backHandled=value,copyText:value=>window.copiedPath=value};});
   await page.goto('http://127.0.0.1:'+assets.address().port);
   await page.waitForFunction(()=>document.querySelector('#connection').textContent==='Connected');
   const choose=async(id,value)=>{await page.locator('#'+id+'-trigger').click();await page.locator('#select-options [data-value='+JSON.stringify(value)+']').click();};
@@ -82,9 +83,52 @@ async function main(){
   assert.equal(await page.evaluate(()=>window.backHandled),false);
   await page.locator('#tab-settings').click();await choose('language','ko');await page.locator('#tab-work').click();await sidebar();await page.screenshot({path:path.join(root,'dist/screenshots/sidebar-393-ko.png')});
   await page.keyboard.press('Escape');await page.locator('#sidebar').waitFor({state:'hidden'});
-  await sidebar();const drawer=await page.locator('#sidebar').boundingBox();await page.mouse.click(drawer.x+drawer.width+8,100);await page.locator('#sidebar').waitFor({state:'hidden'});
+  await sidebar();await page.mouse.click(page.viewportSize().width-4,100);await page.locator('#sidebar').waitFor({state:'hidden'});
   await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
   assert.equal((await call('GET','/v1/health')).data.active_sessions,3);await sidebar();assert.ok(await page.locator('.sidebar-session').count()>=3);
+  await page.setViewportSize({width:320,height:460});
+  const projectSettings=async id=>{await sidebar();await page.locator('[data-project='+JSON.stringify(id)+'] .sidebar-project-more').click();await page.locator('#project-settings-dialog').waitFor({state:'visible'});};
+  await closeSidebar();await page.locator('#tab-settings').click();await choose('language','en');await page.locator('#tab-work').click();
+  await page.locator('#input').fill('Keep current project draft');
+  await sidebar();const folded=page.locator('[data-project='+JSON.stringify(project.id)+']');if(await folded.evaluate(node=>node.open))await folded.locator(':scope > summary').click();
+  await projectSettings(project.id);assert.equal(await folded.evaluate(node=>node.open),false);
+  assert.equal(await page.locator('#project-remove').isDisabled(),true);
+  assert.match(await page.locator('#project-remove-hint').innerText(),/including archived/);
+  await page.locator('#project-copy-path').click();assert.equal(await page.evaluate(()=>window.copiedPath),projectPath);
+  const newName='<Mobile & 개발> '+ 'Long project name '.repeat(4);
+  await page.locator('#project-settings-name').fill(newName);await delay(5500);assert.equal(await page.locator('#project-settings-name').inputValue(),newName);
+  await page.locator('#project-rename').click();await page.locator('#project-settings-dialog').waitFor({state:'hidden'});
+  await page.waitForFunction(({id,name})=>document.querySelector('[data-project="'+id+'"] .sidebar-project-label')?.textContent===name,{id:project.id,name:newName.trim()});
+  assert.equal(await page.locator('.sidebar-project-label mobile').count(),0);
+  assert.equal(await page.locator('#input').inputValue(),'Keep current project draft');
+  assert.equal((await call('GET','/v1/health')).data.active_sessions,3);
+  assert.equal((await call('GET','/v1/sessions/'+first+'/events?cursor=0&wait=0')).data.requests.length,1);
+  await page.screenshot({path:path.join(root,'dist/screenshots/project-menu-320-en.png')});
+  await projectSettings(project.id);await page.setViewportSize({width:320,height:460});await page.screenshot({path:path.join(root,'dist/screenshots/project-settings-320-en.png')});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  assert.equal(await page.evaluate(()=>window.BibimerBack()),true);await page.locator('#project-settings-dialog').waitFor({state:'hidden'});assert.equal(await page.locator('#sidebar').isVisible(),true);
+  await closeSidebar();await page.locator('#tab-settings').click();await choose('language','ko');await page.locator('#tab-work').click();await projectSettings(project.id);
+  await page.screenshot({path:path.join(root,'dist/screenshots/project-settings-320-ko.png')});assert.equal(await page.locator('#project-settings-title').innerText(),'프로젝트 설정');
+  await page.keyboard.press('Escape');await closeSidebar();
+  hideManagement=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');await projectSettings(project.id);
+  assert.equal(await page.locator('#project-management-update').isVisible(),true);assert.equal(await page.locator('#project-rename').isDisabled(),true);assert.equal(await page.locator('#project-remove').isDisabled(),true);assert.equal(await page.locator('#project-copy-path').isDisabled(),false);
+  hideManagement=false;await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
+  await page.locator('#input').fill('Keep after deleting another project');
+  const removablePath=path.join(tmp,'Remove only registration');fs.mkdirSync(removablePath);fs.writeFileSync(path.join(removablePath,'keep.txt'),'keep files');
+  const removable=(await call('POST','/v1/project',{path:removablePath,add:true})).data.project;
+  await sidebar();await page.locator('#sidebar-refresh').click();await page.locator('[data-project='+JSON.stringify(removable.id)+']').waitFor();await projectSettings(removable.id);
+  await page.locator('#project-remove').click();await page.locator('#project-delete-cancel').click();assert.equal(await page.locator('#project-settings-dialog').isVisible(),true);assert.ok((await call('GET','/v1/health')).data.projects.some(row=>row.id===removable.id));
+  await page.locator('#project-remove').click();await page.screenshot({path:path.join(root,'dist/screenshots/project-remove-320-ko.png')});
+  rejectManagement=true;await page.locator('#project-delete-confirm').click();await page.locator('#project-delete-error').waitFor();assert.match(await page.locator('#project-delete-error').innerText(),/실행 세션/);assert.equal(await page.locator('#project-delete-dialog').isVisible(),true);
+  rejectManagement=false;await page.locator('#project-delete-confirm').click();await page.locator('#project-settings-dialog').waitFor({state:'hidden'});
+  await page.waitForFunction(id=>!document.querySelector('[data-project="'+id+'"]'),removable.id);
+  assert.equal(fs.readFileSync(path.join(removablePath,'keep.txt'),'utf8'),'keep files');assert.equal(await page.locator('#input').inputValue(),'Keep after deleting another project');assert.equal((await call('GET','/v1/health')).data.active_sessions,3);
+  for(const id of [first,third,fourth])await call('POST','/v1/sessions/'+id+'/stop',{});
+  for(let i=0;i<100&&(await call('GET','/v1/health')).data.active_sessions;i++)await delay(50);
+  await page.locator('#sidebar-refresh').click();
+  for(const id of [other.id,project.id]){await projectSettings(id);await page.waitForFunction(()=>!document.querySelector('#project-remove').disabled);await page.locator('#project-remove').click();await page.locator('#project-delete-confirm').click();await page.locator('#project-settings-dialog').waitFor({state:'hidden'});}
+  await page.locator('#project-form').waitFor({state:'visible'});assert.equal(await page.locator('#launch').isDisabled(),true);assert.equal((await call('GET','/v1/health')).data.projects.length,0);assert.equal((await call('GET','/v1/health')).data.session,null);assert.ok(fs.existsSync(projectPath)&&fs.existsSync(worktreePath)&&fs.existsSync(secondPath));
+  console.log('PASS: project menu while collapsed; rename keeps draft/approval/processes; literal long name; copy path; polling edit preservation; small English/Korean dialogs; Back/Escape; old bridge guidance; removal cancel/failure/retry; unrelated project draft; last project removal; folders kept');
   assert.deepEqual(errors,[]);
   console.log('PASS: same-agent sessions; draft/project/worktree isolation; pending approval kept; rename literal text; archive/restore without stop; delete scoped inactive session/cancel; real Git worktree launch; sidebar focus/polling; 320/360/393px; English/Korean; Back/Escape/backdrop; reload');
 }
