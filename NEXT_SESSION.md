@@ -18,6 +18,17 @@
 - **사용자가 명시적으로 빌드를 요청할 때만 APK를 빌드한다.** 작업 보고에서는 소스 구현 완료와 마지막 APK에 포함된 내용을 구분한다.
 - 현재 마지막 빌드 파일은 `Download/Bibimer-0.12.0.apk`다. 2026-10-06의 명시적 `apk 빌드` 요청으로 `/` 스킬·명령 기능까지 포함했다.
 
+## 설치된 Chat 선택 UI 검증 (2026-10-06, 운영 변경 없음)
+
+- 사용자 `확인 진행` 요청으로 설치된 **앱 0.12.0/code 22의 base.apk**를 읽어 assets를 추출했다. `conversation.js`가 현재 소스와 동일함을 확인했다. `adb devices -l`에 연결된 기기가 없어 실제 Android WebView 화면 조작·IME·터치는 검증하지 못했다. 아래 UI 검사는 설치 APK의 실제 assets를 같은 폰의 headless Chromium에서 실행한 것이며 Android 네이티브 화면 검증과 구분한다.
+- 운영에 설치된 0.12.0 브리지·어댑터를 별도 상태 폴더에 로드하고, 임시 프로젝트에서 실제 에이전트별 질문을 요청했다. **Codex의 기본 모드는 구조화된 질문 0건**이며 도구 사용 불가를 일반 텍스트로 답했다. 설치 CLI의 `codex features list`에서 `default_mode_request_user_input`은 **under development / false**였다. 질문 UI 구현만으로 기본 모드에서도 질문이 발생한다고 보장하면 안 된다.
+- **격리된 Codex App Server 한 프로세스에만** `--enable default_mode_request_user_input`을 적용한 추가 검증에서는 실제 `item/tool/requestUserInput` 1건을 받았다. 해당 요청을 APK renderer에서 표시하고 한국어 선택 → 답변 제출 → 브리지 respond → 실제 모델의 `BIBIMER_QA_ACCEPTED` 확인까지 통과했다. 영어·한국어 320/393px, 선택만으로 미전송, 오프라인 버튼 비활성화를 검증했다. 운영 브리지 실행 인수·전역 config·사용자 권한은 바꾸지 않았다. **기본 모드에서 이 기능을 제공하려면 설치 CLI 호환성을 확인한 브리지 변경이 후속으로 필요하다.**
+- 실제 **Claude는 인증 오류**, **OpenCode는 제공자 관련 오류**로 질문 전에 턴이 실패했다. 정상 로그인·모델 연결 상태에서의 실모델 질문 검증은 남는다. 오류 원문이나 자격 증명은 일반 로그에 기록하지 않았다.
+- 별도로 세 에이전트 대역 → **운영에 설치된 브리지/어댑터** → **설치 APK renderer** → 답변 전달을 검사했다. Codex 단일 선택, Claude/OpenCode 두 항목 복수 선택과 응답 복귀가 통과했다. 처음 복수 선택 대역은 테스트의 고정 순서와 반대 순서로 클릭해 거절됐으며, 대역이 요구하는 Unit → UI 순서로 수정 후 모두 통과했다. 이를 실제 Claude/OpenCode 계정 모델 검증으로 확대하지 않는다.
+- 검증 중 생성한 Codex 대화 두 개는 native archive로 보관했고 Claude/OpenCode 테스트 기록은 해당 제공자 API로 삭제했다. 기존 운영 프로젝트·세션을 생성/종료/전환하지 않았다. 종료 후 운영 health **0.12.0 / 프로젝트 2개 / 활성 세션 2개**를 확인했다. **APK 빌드·운영 설치·재시작·전역 설정 변경 없음.**
+- 로그: `.tools/native-question-check.log`, `.tools/native-question-enabled.log`, `.tools/native-question-enabled-results.json`, `.tools/installed-question-fixtures.log`, `.tools/question-errors.log`. 검사 코드: `.tools/check-native-questions.py`, `.tools/check-enabled-native-questions.py`, `.tools/check-question-fixtures.py`, `.tools/check-installed-questions.cjs`. 화면: `dist/screenshots/installed-questions-*-en.png`, `*-ko.png` — 통제된 브라우저 화면이며 실제 Android 앱 캡처가 아니다.
+- [공식 App Server 문서](https://learn.chatgpt.com/docs/app-server)의 `item/tool/requestUserInput` 요청/응답 경로를 확인했다. 기본 모드 기능 플래그 상태와 실제 동작은 설치된 CLI·위 네이티브 실험을 근거로 한다.
+
 ## 에이전트 간 대화 이어가기 선택 (2026-10-06, 소스 반영 / APK·운영 적용 대기)
 
 - 사용자의 `agent cli 종류가 바뀌어도 세션을 이어나갈수있는 기능 필요` 및 `선택` 답변에 따라 Chat 에이전트 전환에 두 경로를 추가했다. **Continue & send**는 확인·편집한 대화와 다음 지시로 대상 에이전트의 새 네이티브 세션을 만들고, **Open … session without sharing**은 기존 대상 세션으로 돌아간다. 세션 관리에서도 **Continue with another agent**를 제공한다. Codex·Claude·OpenCode 여섯 방향을 지원하며 원본·기존 대상 세션·작성 중 초안을 유지한다.
