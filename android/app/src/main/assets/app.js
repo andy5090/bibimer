@@ -27,6 +27,8 @@
   let canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   const worktrees = {};
   const modelCatalogs = new Map();
+  const sessionTitles = new Map(), titleChecks = new Map();
+  let canSessionTitles = false, titleLoading = false;
   const lastOptions = environment().agentOptions || {};
   let enterBehavior = environment().enterBehavior === "send" ? "send" : "newline";
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
@@ -366,6 +368,7 @@
   }
   function sessionTitle(value) {
     if (value.title) return value.title;
+    if (value.display_title || sessionTitles.get(value.id)) return value.display_title || sessionTitles.get(value.id);
     const date = new Date(value.started_at * 1000);
     return t("agent_" + value.agent) + " · " + (Number.isNaN(date.getTime()) ? value.id.slice(0,8) :
       date.toLocaleString(i18n.language() === "ko" ? "ko-KR" : "en-US", {month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})) + " · " + value.id.slice(0,4);
@@ -384,6 +387,7 @@
   }
   async function refreshSidebar() {
     await refreshCatalog();
+    refreshSessionTitles();
     if (!online || !canWorktrees || worktreeLoading) { renderSidebar(); return; }
     worktreeLoading = true; worktreeError = null; renderSidebar();
     const sourceInstance = instance;
@@ -395,6 +399,31 @@
       }
     } catch (error) { worktreeError = error.key || "error_request_failed"; }
     finally { worktreeLoading = false; renderSidebar(); }
+  }
+  async function refreshSessionTitles() {
+    if (!online || paused || !canSessionTitles || titleLoading || !sidebar.dialog.open) return;
+    titleLoading = true;
+    const sourceInstance = instance;
+    try {
+      const rows = knownProjects.flatMap(entry => entry.sessions || []);
+      for (const row of rows) {
+        if (sourceInstance !== instance || paused || !online || !sidebar.dialog.open) break;
+        if (row.title || row.mode !== "chat" || !row.external_thread_id || Date.now() - (titleChecks.get(row.id) || 0) < 60000) continue;
+        titleChecks.set(row.id, Date.now());
+        try {
+          const result = await api("GET", `/v1/sessions/${row.id}/title`);
+          if (sourceInstance !== instance) break;
+          // Only merge the title: status/drafts may have changed during the lookup.
+          const current = findSession(row.id);
+          if (current && result.session?.display_title) {
+            sessionTitles.set(row.id, result.session.display_title);
+            current.display_title = result.session.display_title;
+            if (session?.id === row.id) session.display_title = result.session.display_title;
+            renderSession(); renderSidebar();
+          }
+        } catch (_) { /* Keep the existing label; a later refresh can retry. */ }
+      }
+    } finally { titleLoading = false; }
   }
   async function selectSession(projectId, id, path = null) {
     if (!online || busy || switchingProject || settingsBusy || libraryBusy) return;
@@ -766,6 +795,7 @@
         const lostQueue = queued.length > 0 || session?.queued_count > 0;
         setSession(null);
         modelCatalogs.clear();
+        sessionTitles.clear(); titleChecks.clear();
         notice(lostQueue ? "queue_lost" : "bridge_restarted");
       }
       instance = health.instance;
@@ -782,6 +812,7 @@
       canModels = health.features?.includes("model_options") === true;
       canSwitchAgents = health.features?.includes("agent_sessions") === true;
       canLibrary = health.features?.includes("session_library") === true;
+      canSessionTitles = health.features?.includes("session_titles") === true;
       canWorktrees = health.features?.includes("git_worktrees") === true;
       canManageProjects = health.features?.includes("project_management") === true;
       canResponseNotifications = health.features?.includes("response_notifications") === true;
@@ -879,7 +910,7 @@
         if (native.cancelPoll) native.cancelPoll();
       }
       if (entry) { if (canSwitchAgents && !canLibrary) adoptAgent(entry.agent); setSession(entry.session); }
-      renderProjects(); startPoll();
+      renderProjects(); startPoll(); refreshSessionTitles();
     } catch (_) { /* The session poll handles connection loss and reconnects. */ }
     finally { catalogRequest = false; }
   }
@@ -1283,6 +1314,7 @@
     connected(false); $("workspace").hidden = true; $("welcome").hidden = false;
     setSession(null); instance = null; projectInitialized = false; updateEnvironment();
     views.clear(); modelCatalogs.clear(); selectedAgent = "shell"; selectedProjectId = null; knownProjects = []; $("input").value = "";
+    sessionTitles.clear(); titleChecks.clear();
     for (const key of Object.keys(worktrees)) delete worktrees[key];
     activeViewKey = null; draftPath = null; sidebar.close(); $("session-dialog").close();
     notice("connection_forgotten");

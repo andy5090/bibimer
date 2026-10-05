@@ -620,6 +620,14 @@ def response_preview(value):
     return text if len(text) <= 180 else text[:179].rstrip() + "…"
 
 
+def session_title(value):
+    if not isinstance(value, str):
+        return ""
+    value = re.sub(r"[\x00-\x1f\x7f-\x9f\u200e\u200f\u202a-\u202e\u2066-\u2069]", " ", value[:4096])
+    value = " ".join(value.split())
+    return value if len(value) <= 120 else value[:119].rstrip() + "…"
+
+
 class ChatSession(Session):
     """One Codex app-server or provider adapter over stdio. Output stays in memory.
 
@@ -636,6 +644,7 @@ class ChatSession(Session):
         self.default_model, self.default_effort = None, None
         self.completed = completed
         self.response_preview, self.response_preview_final = "", False
+        self.display_title = ""
         self.cols, self.rows = cols, rows
         self.started_at = time.time()
         self.state, self.exit_code = "running", None
@@ -657,10 +666,11 @@ class ChatSession(Session):
         os.set_blocking(self.process.stdin.fileno(), False)
 
     def snapshot(self):
-        # This is also persisted as metadata: no prompts, answers or tool output.
+        # display_title is memory-only; Bridge.persist removes it from metadata.
         with self.condition:
             return {"id": self.id, "launch_id": self.launch_id, "project": self.project,
                     "agent": self.agent, "mode": "chat", "state": self.state,
+                    "display_title": self.display_title,
                     "options": self.options.copy(), "launch_options": self.launch_options.copy(),
                     "default_model": self.default_model, "default_effort": self.default_effort,
                     "ready": self.thread_id is not None and not self.history_pending,
@@ -856,6 +866,7 @@ class ChatSession(Session):
                     self._fault("error_import_project")
                     return
                 self.thread_id = result["thread"]["id"]
+                self.display_title = session_title(result["thread"].get("name") or result["thread"].get("preview"))
                 if self.agent == "codex":
                     self.default_model, self.default_effort = result.get("model"), result.get("reasoningEffort")
                     self.default_policy = {key: result[source] for key, source in
@@ -951,6 +962,8 @@ class ChatSession(Session):
         item = {"id": key, "status": source.get("status", "completed" if complete else "inProgress")}
         if kind == "userMessage":
             item.update(kind="user", text=self._text("\n".join(x.get("text", "") for x in source.get("content", []) if x.get("type") == "text")))
+            if not self.display_title:
+                self.display_title = session_title(item["text"])
         elif kind in {"agentMessage", "plan"}:
             if kind == "agentMessage":
                 phase = source.get("phase") or self.items.get(key, {}).get("phase")
@@ -1305,6 +1318,7 @@ class Bridge:
         self.history_lock = threading.Lock()
         self.model_locks = {}
         self.model_cache = {}
+        self.session_title_cache = {}
         self.program_checks = {}
         self.instance = str(uuid.uuid4())
         self.completion_feed = CompletionFeed(self.instance)
@@ -1369,7 +1383,32 @@ class Bridge:
         registered = self.projects.get(project["id"])
         if registered:
             project = dict(project, name=registered["name"])
-        return dict(snapshot, project=project, **self.session_labels.get(snapshot["id"], {}))
+        cached = self.session_title_cache.get(snapshot["id"])
+        return dict(snapshot, project=project,
+                    display_title=(cached[1] if cached else "") or snapshot.get("display_title", ""),
+                    **self.session_labels.get(snapshot["id"], {}))
+
+    def read_session_title(self, session_id):
+        with self.lock:
+            snapshot = self.snapshot_by_id(session_id)
+            if not snapshot:
+                raise Problem(404, "error_session_missing")
+            cached = self.session_title_cache.get(session_id)
+            if (snapshot.get("title") or snapshot.get("mode") != "chat" or
+                    not snapshot.get("external_thread_id") or (cached and time.monotonic() - cached[0] < 60)):
+                return {"session": snapshot}
+        # Native metadata only: no resume/model input, no bridge/session lock during I/O.
+        source = self.history_call(snapshot["project"], "thread/read",
+            {"threadId": snapshot["external_thread_id"], "includeTurns": False}, snapshot["agent"]).get("thread", {})
+        if (source.get("id") != snapshot["external_thread_id"] or source.get("ephemeral") or
+                Path(source.get("cwd") or "/").resolve() != Path(snapshot["project"]["path"]).resolve()):
+            raise Problem(400, "error_import_project")
+        title = session_title(source.get("name") or source.get("preview"))
+        with self.lock:
+            if not self.snapshot_by_id(session_id):
+                raise Problem(404, "error_session_missing")
+            self.session_title_cache[session_id] = (time.monotonic(), title)
+            return {"session": self.snapshot_by_id(session_id)}
 
     def snapshot_by_id(self, session_id):
         session = self.sessions.get(session_id)
@@ -1413,6 +1452,7 @@ class Bridge:
                 self.sessions.pop(session_id, None)
                 self.previous_sessions.pop(session_id, None)
                 self.session_labels.pop(session_id, None)
+                self.session_title_cache.pop(session_id, None)
                 for choices in self.selected_sessions.values():
                     for agent in choices:
                         if choices[agent] == session_id:
@@ -1449,6 +1489,7 @@ class Bridge:
                     self.sessions.pop(row["id"], None)
                     self.previous_sessions.pop(row["id"], None)
                     self.session_labels.pop(row["id"], None)
+                    self.session_title_cache.pop(row["id"], None)
                 self.deleted_launches = self.deleted_launches[-1024:]
                 self.selected_agents.pop(key, None)
                 self.selected_sessions.pop(key, None)
@@ -1531,6 +1572,8 @@ class Bridge:
 
     def persist(self):
         with self.lock:
+            def metadata(row):
+                return {key: value for key, value in row.items() if key != "display_title"} if row else None
             save_json(self.state / "metadata.json", {
                 "format": 4, "projects": list(self.projects.values()),
                 "active_project_id": self.active_project_id,
@@ -1538,9 +1581,9 @@ class Bridge:
                 "selected_sessions": self.selected_sessions,
                 "session_labels": self.session_labels,
                 "deleted_launches": self.deleted_launches,
-                "sessions": self.snapshots(),
+                "sessions": [metadata(row) for row in self.snapshots()],
                 "project": self.project,
-                "session": self.snapshot_for(self.active_project_id),
+                "session": metadata(self.snapshot_for(self.active_project_id)),
             })
 
     def agents(self):
@@ -1589,7 +1632,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "git_worktrees", "project_management", "response_notifications"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "git_worktrees", "project_management", "response_notifications"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -2054,6 +2097,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if len(parts) != 4:
                 raise Problem(404, "error_route")
             action = parts[3]
+            if method == "GET" and action == "title":
+                self.reply(200, bridge.read_session_title(parts[2]))
+                return
             if method == "GET" and action == "events":
                 query = urllib.parse.parse_qs(parsed.query)
                 try:

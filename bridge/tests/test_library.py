@@ -3,12 +3,68 @@ from pathlib import Path
 import subprocess
 import time
 import uuid
+from unittest.mock import patch
 
 from test_chat import ChatFixture
 from test_bridge import module
 
 
 class LibraryTests(ChatFixture):
+    def test_automatic_title_uses_first_user_message_and_never_persists_text(self):
+        first = self.chat()
+        self.message("PRIVATE_FIRST_TITLE 한글 🙂")
+        self.until(lambda event: event["session"]["turn_state"] == "ready")
+        self.assertEqual("PRIVATE_FIRST_TITLE 한글 🙂", self.bridge.snapshot_by_id(first.id)["display_title"])
+        self.message("Different follow up")
+        self.until(lambda event: event["session"]["turn_state"] == "ready")
+        self.assertEqual("PRIVATE_FIRST_TITLE 한글 🙂", self.bridge.snapshot_by_id(first.id)["display_title"])
+        self.bridge.persist()
+        self.assertNotIn("PRIVATE_FIRST_TITLE", (self.state / "metadata.json").read_text())
+        self.assertNotIn("display_title", (self.state / "metadata.json").read_text())
+
+    def test_native_title_read_restores_old_sessions_without_starting_them(self):
+        first = self.chat()
+        restored = module.Bridge(self.state)
+        native = {"thread": {"id": first.thread_id, "cwd": first.project["path"],
+                             "name": "Native saved title", "preview": "PRIVATE_PREVIEW"}}
+        with patch.object(restored, "history_call", return_value=native) as lookup:
+            row = restored.read_session_title(first.id)["session"]
+            self.assertEqual("lost", row["state"])
+            self.assertEqual("Native saved title", row["display_title"])
+            self.assertEqual(0, restored.active_count())
+            restored.read_session_title(first.id)
+            self.assertEqual(1, lookup.call_count)
+            self.assertEqual({"threadId": first.thread_id, "includeTurns": False}, lookup.call_args.args[2])
+        restored.manage_session(first.id, {"action": "rename", "title": "My title"})
+        with patch.object(restored, "history_call", side_effect=AssertionError("must not read renamed session")):
+            self.assertEqual("My title", restored.read_session_title(first.id)["session"]["title"])
+        metadata = (self.state / "metadata.json").read_text()
+        self.assertNotIn("Native saved title", metadata)
+        self.assertNotIn("PRIVATE_PREVIEW", metadata)
+
+    def test_native_title_endpoint_scope_auth_and_import_titles(self):
+        self.register()
+        first, _ = self.start_another(source_thread_id="saved-one", import_mode="resume")
+        self.assertEqual("Saved workspace", self.bridge.snapshot_by_id(first.id)["display_title"])
+        endpoint = f"/v1/sessions/{first.id}/title"
+        self.assertEqual(401, self.api("GET", endpoint, auth=False)[0])
+        self.assertEqual(404, self.api("GET", "/v1/sessions/missing/title")[0])
+        for agent in ["codex", "claude", "opencode"]:
+            first.agent = agent
+            with patch.object(self.bridge, "history_call", return_value={"thread": {
+                    "id": first.thread_id, "cwd": first.project["path"], "preview": "Native preview"}}) as lookup:
+                self.assertEqual("Native preview", self.api("GET", endpoint)[1]["session"]["display_title"])
+                self.assertEqual(agent, lookup.call_args.args[3])
+            self.bridge.session_title_cache.clear()
+        for source in [{"id": "other", "cwd": first.project["path"]},
+                       {"id": first.thread_id, "cwd": str(self.root)},
+                       {"id": first.thread_id, "cwd": first.project["path"], "ephemeral": True}]:
+            with patch.object(self.bridge, "history_call", return_value={"thread": source}):
+                self.assertEqual(400, self.api("GET", endpoint)[0])
+        self.assertEqual("a b c", module.session_title(" a\n b\x00 c "))
+        self.assertEqual("🙂" * 119 + "…", module.session_title("🙂" * 150))
+        self.assertEqual("", module.session_title({}))
+
     def start_another(self, **extra):
         data = {"agent": "codex", "mode": "chat", "project_id": self.bridge.project["id"],
                 "new_session": True, "request_id": str(uuid.uuid4()), **extra}

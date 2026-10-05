@@ -20,6 +20,7 @@ final class LocalBridge {
         boolean get = method.equals("GET");
         boolean pair = path.equals("/v1/pair") && method.equals("POST");
         boolean allowed = get && (path.equals("/v1/health") ||
+            path.matches("/v1/sessions/[a-f0-9-]{36}/title") ||
             path.matches("/v1/completions\\?cursor=[0-9]{1,16}&instance=(none|[a-f0-9-]{36})&wait=(0|20)") ||
             path.matches("/v1/sessions/[a-f0-9-]{36}/events\\?cursor=[0-9]{1,16}&wait=(0|20)"));
         allowed |= method.equals("POST") && (pair || path.equals("/v1/project") || path.equals("/v1/project/manage") || path.equals("/v1/project-agent") || path.equals("/v1/project-session") || path.equals("/v1/worktrees") || path.equals("/v1/models") || path.equals("/v1/folders") || path.equals("/v1/sessions") || path.equals("/v1/session-history") ||
@@ -33,7 +34,7 @@ final class LocalBridge {
             connection.setRequestMethod(method);
             connection.setInstanceFollowRedirects(false);
             connection.setConnectTimeout(pair ? 2000 : 3000);
-            connection.setReadTimeout(pair ? 4000 : polling || path.equals("/v1/session-history") || path.equals("/v1/models") || path.equals("/v1/sessions") || path.endsWith("/options") ? 25000 : 6000);
+            connection.setReadTimeout(pair ? 4000 : polling || path.equals("/v1/session-history") || path.equals("/v1/models") || path.equals("/v1/sessions") || path.endsWith("/options") || path.endsWith("/title") ? 25000 : 6000);
             connection.setUseCaches(false);
             if (!pair) connection.setRequestProperty("Authorization", "Bearer " + tokens.get());
             if (!get) {

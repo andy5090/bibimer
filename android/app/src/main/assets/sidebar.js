@@ -91,7 +91,9 @@ window.BibimerSidebar = class BibimerSidebar {
           const open = this.button("", () => this.actions.session(project.id, session.id), "sidebar-session-open", "session/" + session.id);
           open.setAttribute("aria-current", session.id === state.sessionId ? "true" : "false");
           const title = document.createElement("strong"), status = document.createElement("small");
-          title.textContent = session.title; title.dir = "auto"; status.textContent = t("agent_" + session.agent) + " · " + session.status;
+          title.textContent = session.title; title.title = session.title; title.dir = "auto";
+          open.setAttribute("aria-label", session.title);
+          status.textContent = t("agent_" + session.agent) + " · " + session.status;
           status.classList.toggle("response-progress", session.responding);
           open.append(title, status);
           const more = this.button("⋯", () => this.actions.manage(session.id), "icon-button", "manage/" + session.id);

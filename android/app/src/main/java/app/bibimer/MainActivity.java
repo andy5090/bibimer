@@ -41,6 +41,7 @@ public final class MainActivity extends Activity {
     private final ExecutorService actions = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<Runnable>(128));
     private final ExecutorService events = Executors.newSingleThreadExecutor();
+    private final ExecutorService titles = Executors.newSingleThreadExecutor();
     private WebView web;
     private TokenStore tokens;
     private AppLanguage language;
@@ -245,7 +246,7 @@ public final class MainActivity extends Activity {
 
         @JavascriptInterface public void request(String id, String method, String path, String body) {
             if (id.length() > 80 || destroyed) return;
-            ExecutorService executor = path.contains("/events?") ? events : actions;
+            ExecutorService executor = path.contains("/events?") ? events : path.endsWith("/title") ? titles : actions;
             try {
                 executor.execute(() -> {
                     try { reply(id, bridge.request(method, path, body)); }
@@ -401,6 +402,7 @@ public final class MainActivity extends Activity {
         bridge.cancelPoll();
         actions.shutdownNow();
         events.shutdownNow();
+        titles.shutdownNow();
         web.removeJavascriptInterface("Bibimer");
         web.destroy();
         // Activity lifecycle deliberately never calls the session stop endpoint.

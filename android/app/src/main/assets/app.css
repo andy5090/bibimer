@@ -152,7 +152,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .sidebar-session { display:flex; align-items:center; margin:2px 1px 2px 10px; border-radius:8px; }
 .sidebar-session.selected { background:#21342d; box-shadow:inset 2px 0 var(--green); }
 .sidebar-session-open { text-align:start; flex:1; min-width:0; padding:7px 9px; min-height:48px; }
-.sidebar-session-open strong { display:block; font-size:12px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sidebar-session-open strong { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; font-size:12px; line-height:1.45; font-weight:500; overflow:hidden; overflow-wrap:anywhere; white-space:normal; color:var(--text); }
 .sidebar-session-open small { display:block; color:var(--muted); font-size:10px; margin-top:3px; font-weight:400; }
 .sidebar-session .icon-button { width:36px; min-height:44px; }
 .sidebar-footer { display:flex; gap:5px; flex:none; border-top:1px solid var(--line); padding-top:8px; }
