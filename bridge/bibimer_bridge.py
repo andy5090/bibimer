@@ -33,7 +33,7 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.11.0"
+VERSION = "0.11.1"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
