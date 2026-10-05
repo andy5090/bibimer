@@ -9,4 +9,11 @@
     <string name="file_picker_failed">Could not open the file picker.</string>
     <string name="installer_saved">Setup file saved. Continue with the next step in Setup.</string>
     <string name="installer_save_failed">Could not save the setup file.</string>
+    <string name="notification_channel_responses">Agent responses</string>
+    <string name="notification_channel_description">Alerts when a Chat response finishes.</string>
+    <string name="notification_channel_monitor">Response monitoring</string>
+    <string name="notification_monitor_title">BIBIMER · Response notifications</string>
+    <string name="notification_monitor_body">Listening for completed responses in Termux.</string>
+    <string name="notification_stop_alerts">Turn off alerts</string>
+    <string name="notification_response_complete">Response complete</string>
 </resources>

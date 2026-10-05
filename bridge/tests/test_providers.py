@@ -138,6 +138,7 @@ class ProviderTests(ChatFixture):
         for agent in ['opencode', 'claude']:
             with self.subTest(agent=agent):
                 session = self.begin(agent)
+                notification_cursor = self.bridge.completion_feed.cursor
                 self.message('approval')
                 event = self.until(lambda e: bool(e['requests']))
                 prompt = event['requests'][0]['id']
@@ -158,6 +159,9 @@ class ProviderTests(ChatFixture):
                 self.assertEqual(['approval', 'first queued task', 'second queued task'],
                     [i['text'] for i in event['items'] if i['kind'] == 'user'])
                 self.assertEqual('3', (self.root/'project'/f'{agent}-turn-count').read_text())
+                completions = self.bridge.completions(self.bridge.instance, notification_cursor, 0)['events']
+                self.assertEqual([agent] * 3, [row['agent'] for row in completions])
+                self.assertEqual([session.id] * 3, [row['session_id'] for row in completions])
                 self.assertFalse((self.root/'project'/f'{agent}-approved').exists())
                 self.end()
 

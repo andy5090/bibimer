@@ -70,6 +70,20 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 
 시작 요청은 프로젝트·프로그램·방식과 `request_id`가 같으면 같은 세션을 반환하며 다른 프로젝트의 실행 ID 재사용은 거절한다. 입력은 최근 512개 요청 ID를 기억하고 중복 전달을 막는다. 입력은 요청당 최대 16KiB다. 부분 전송이나 응답 유실 시 앱은 자동으로 재전송하지 않고 사용자가 출력을 확인하도록 안내한다.
 
+## 응답 완료 이벤트와 Android 알림 (미배포 소스)
+
+`response_notifications` 기능 플래그와 인증된 `GET /v1/completions?cursor=N&instance=UUID|none&wait=0..20`를 제공한다. 현재 턴 ID와 일치하는 명시적 `turn/completed(status=completed)`에서만 전역 증가 ID를 발행한다. 별도 condition/deque에 최근 512개 `{id,session_id,project_id,agent,completed_at}`만 저장하며 대화 본문은 읽지 않는다. 초기 ready·과거 대화·실패·중단·중복 완료·PTY는 발행하지 않는다. 보관 상태와 선택 프로젝트는 필터가 아니다.
+
+응답은 `{instance,cursor,reset,gap,events}`다. 처음 연결·인스턴스 변경·범위 밖 미래 cursor에는 `reset:true`와 현재 cursor, 빈 events를 반환해 과거 완료를 재생하지 않는다. 범위 내 재접속은 cursor 이후를 반환하고 보존 범위가 넘으면 `gap:true`와 남은 이벤트를 반환한다. 기다리는 동안 Bridge/Session 잠금을 잡지 않는다. 반환 전에 현재 프로젝트·세션 별칭을 추가하고 목록에서 삭제된 대상은 제외한다. 완료 목록은 메타데이터 파일에 영속화하지 않는다.
+
+Android `ResponseNotificationService`는 UI와 별개 `LocalBridge`/TokenStore로 loopback long poll한다. foreground Activity의 연결 확인/사용자 토글에서만 서비스를 시작한다. POST_NOTIFICATIONS·앱/채널 차단을 검사하고 활성 서비스는 끌 수 있는 지속 알림을 표시한다. `specialUse` 타입·권한·세부 사유를 Manifest에 선언했다. 일반 dataSync나 외부 기기 연결로 분류하지 않는다. 근거: [서비스 타입](https://developer.android.com/develop/background-work/services/fgs/service-types), [백그라운드 시작 제약](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start).
+
+앱은 처리한 인스턴스/cursor만 private preferences에 저장하며 알림 비활성/권한 해제/연결 삭제 시 지운다. 세대 번호와 잠금으로 진행 중 poll의 늦은 결과가 초기화한 cursor를 복원하지 못하게 한다. 완료 이벤트 ID별 고정 tag·OnlyAlertOnce와 게시 후 checkpoint로 일반 재접속 중복 알림을 방지한다. 알림 게시와 디스크 기록은 원자적 트랜잭션이 아니므로 강제 종료 시 정확히 한 번 전달을 보장하지 않는다. 완료 알림은 최근 40건을 유지한다.
+
+알림은 immutable explicit Activity PendingIntent로 프로젝트/세션 ID만 전달한다. 앱이 이미 열렸으면 onNewIntent, 새로 열렸으면 첫 연결 후 대상 세션을 선택하고 삭제된 대상은 안내한다. 앱의 초안/대기열/승인과 프로세스를 유지하며 자동 실행하지 않는다. 구현 근거: [알림에서 Activity 열기](https://developer.android.com/develop/ui/views/notifications/navigation). 잠금 화면 공개 버전에는 프로젝트·세션 이름도 제외한다.
+
+서비스는 START_NOT_STICKY이며 강제 종료/시스템 서비스 중지 후 앱을 열어 다시 연결한다. Boot receiver·자동 권한 변경·배터리 예외 신청은 하지 않는다. 화면 잠금/Doze/OEM 절전에서 전달 시점·지속성은 아직 실기기 검증 전이다. APK 패키징·설치·운영 브리지 적용은 별도 요청에 따른다.
+
 ## 상태와 재접속
 
 - 화면 연결: `Connected` / `Disconnected`(한국어: `기기 연결됨` / `연결 끊김`). 연결되지 않은 동안 프로세스 상태는 마지막 확인 값이다.

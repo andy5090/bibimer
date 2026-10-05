@@ -20,13 +20,14 @@ final class LocalBridge {
         boolean get = method.equals("GET");
         boolean pair = path.equals("/v1/pair") && method.equals("POST");
         boolean allowed = get && (path.equals("/v1/health") ||
+            path.matches("/v1/completions\\?cursor=[0-9]{1,16}&instance=(none|[a-f0-9-]{36})&wait=(0|20)") ||
             path.matches("/v1/sessions/[a-f0-9-]{36}/events\\?cursor=[0-9]{1,16}&wait=(0|20)"));
         allowed |= method.equals("POST") && (pair || path.equals("/v1/project") || path.equals("/v1/project/manage") || path.equals("/v1/project-agent") || path.equals("/v1/project-session") || path.equals("/v1/worktrees") || path.equals("/v1/models") || path.equals("/v1/folders") || path.equals("/v1/sessions") || path.equals("/v1/session-history") ||
             path.matches("/v1/sessions/[a-f0-9-]{36}/(input|resize|stop|message|respond|interrupt|options|queue|steer|manage)"));
         if (!allowed || body.length() > 65536) throw new IllegalArgumentException("Invalid local request");
         HttpURLConnection connection = (HttpURLConnection)
             new URL("http://127.0.0.1:8765" + path).openConnection(Proxy.NO_PROXY);
-        boolean polling = path.contains("/events?");
+        boolean polling = path.contains("/events?") || path.startsWith("/v1/completions?");
         if (polling) poll = connection;
         try {
             connection.setRequestMethod(method);

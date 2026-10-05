@@ -142,7 +142,7 @@
     </section>
   </main>
   <main id="settings" class="page scroll" hidden>
-    <div class="section-heading"><h1 data-i18n="tab_settings">Settings</h1><p data-i18n="app_settings_intro">Choose your input behavior and app language.</p></div>
+    <div class="section-heading"><h1 data-i18n="tab_settings">Settings</h1><p data-i18n="app_settings_intro">Choose your input behavior, language and notifications.</p></div>
     <section class="card preference-card">
       <div class="preference-row"><label for="enter-behavior" data-i18n="enter_behavior_label">Enter key</label>
         <select id="enter-behavior" aria-describedby="enter-behavior-hint enter-modifiers-hint"><option value="newline" data-i18n="enter_newline">New line</option><option value="send" data-i18n="enter_send">Send</option></select>
@@ -155,6 +155,12 @@
         <select id="language" aria-describedby="language-hint"><option value="en" lang="en">English</option><option value="ko" lang="ko">한국어</option></select>
       </div>
       <p id="language-hint" class="hint" data-i18n="language_hint">Choose your app language.</p>
+    </section>
+    <section class="card preference-card">
+      <div class="preference-row"><label for="response-notifications" data-i18n="notifications_label">Response notifications</label><input type="checkbox" id="response-notifications" role="switch" aria-describedby="notifications-hint notifications-status"></div>
+      <p id="notifications-hint" class="hint" data-i18n="notifications_hint">Notify when each Chat response finishes, across all projects. Background alerts use an ongoing notification.</p>
+      <p id="notifications-status" class="hint" role="status"></p>
+      <button id="notification-permission" class="secondary" type="button" data-i18n="notifications_android_settings" hidden>Android notification settings</button>
     </section>
     <p class="hint preferences-saved" data-i18n="app_settings_saved">Saved on this phone for all projects and sessions.</p>
     <p id="version" class="version"></p>

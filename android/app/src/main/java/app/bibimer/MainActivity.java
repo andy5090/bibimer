@@ -49,10 +49,38 @@ public final class MainActivity extends Activity {
     private LocalBridge bridge;
     private String setupLoaded = "";
     private volatile boolean destroyed;
+    private boolean resumed, notificationsSupported;
+    private String notificationTarget = "{}";
+
+    private synchronized void captureNotification(Intent intent) {
+        if (intent == null || !ResponseNotificationService.OPEN_SESSION.equals(intent.getAction())) return;
+        String project = intent.getStringExtra("notification_project"), session = intent.getStringExtra("notification_session");
+        if (project != null && session != null && project.matches("[a-f0-9-]{36}") && session.matches("[a-f0-9-]{36}")) {
+            try { notificationTarget = new JSONObject().put("project_id", project).put("session_id", session).toString(); }
+            catch (Exception ignored) { }
+        }
+        intent.removeExtra("notification_project"); intent.removeExtra("notification_session");
+    }
+
+    private void ensureNotifications(boolean prompt) {
+        if (resumed && !tokens.get().isEmpty()) ResponseNotifications.ensure(this, notificationsSupported, prompt);
+        script("window.BibimerNotificationStatus && window.BibimerNotificationStatus();");
+    }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent); setIntent(intent); captureNotification(intent);
+        script("window.BibimerOpenNotification && window.BibimerOpenNotification();");
+    }
+
+    @Override protected synchronized void onSaveInstanceState(Bundle saved) {
+        saved.putString("notificationTarget", notificationTarget); super.onSaveInstanceState(saved);
+    }
     private android.window.OnBackInvokedCallback backCallback;
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
+        notificationTarget = saved == null ? "{}" : saved.getString("notificationTarget", "{}");
+        captureNotification(getIntent());
         tokens = new TokenStore(this);
         language = new AppLanguage(this);
         agentPreferences = new AgentPreferences(this);
@@ -167,9 +195,40 @@ public final class MainActivity extends Activity {
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
                     .put("agentOptions", agentPreferences.get())
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
+                    .put("notifications", ResponseNotifications.status(MainActivity.this))
                     .put("quickSetup", setup)
                     .put("version", appVersion()).toString();
             } catch (Exception ignored) { return "{}"; }
+        }
+
+        @JavascriptInterface public String takeNotificationTarget() {
+            synchronized (MainActivity.this) { String target = notificationTarget; notificationTarget = "{}"; return target; }
+        }
+
+        @JavascriptInterface public void notificationsConnected(boolean supported) {
+            runOnUiThread(() -> {
+                notificationsSupported = supported;
+                ensureNotifications(!ResponseNotifications.preferences(MainActivity.this).getBoolean("asked", false));
+            });
+        }
+
+        @JavascriptInterface public void setResponseNotifications(boolean enabled) {
+            runOnUiThread(() -> {
+                synchronized (ResponseNotifications.CURSOR_LOCK) {
+                    ResponseNotifications.preferences(MainActivity.this).edit().putBoolean("enabled", enabled).commit();
+                    if (!enabled) ResponseNotifications.clearCursor(MainActivity.this);
+                }
+                if (!enabled) ResponseNotifications.stop(MainActivity.this, false);
+                ensureNotifications(enabled);
+            });
+        }
+
+        @JavascriptInterface public void openNotificationSettings() {
+            runOnUiThread(() -> {
+                try { startActivity(new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName())); }
+                catch (RuntimeException ignored) { }
+            });
         }
 
         @JavascriptInterface public boolean setLanguage(String value) {
@@ -202,6 +261,7 @@ public final class MainActivity extends Activity {
         @JavascriptInterface public void forget() {
             bridge.cancelPoll();
             TermuxSetup.forget(MainActivity.this, tokens);
+            ResponseNotifications.stop(MainActivity.this, true);
         }
 
         @JavascriptInterface public void startQuickSetup() {
@@ -298,6 +358,7 @@ public final class MainActivity extends Activity {
 
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
         super.onRequestPermissionsResult(request, permissions, grants);
+        if (request == ResponseNotifications.PERMISSION_REQUEST) ensureNotifications(false);
         if (request == TermuxSetup.REQUEST_PERMISSION) {
             if (TermuxSetup.permitted(this)) TermuxSetup.start(this);
             else TermuxSetup.fail(this, "quick_permission");
@@ -322,6 +383,7 @@ public final class MainActivity extends Activity {
     }
 
     @Override protected void onPause() {
+        resumed = false;
         script("window.BibimerPause && window.BibimerPause();");
         bridge.cancelPoll();
         super.onPause();
@@ -329,6 +391,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        resumed = true;
         if (web != null) script("window.BibimerResume && window.BibimerResume();");
     }
 

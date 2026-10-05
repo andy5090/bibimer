@@ -2,6 +2,19 @@
 (() => {
   // Each entry is [English default, Korean]. Terminal output is never translated.
   const strings = {
+    notifications_label: ["Response notifications", "응답 완료 알림"],
+    notifications_hint: ["Notify when each Chat response finishes, across all projects. Background alerts use an ongoing notification.", "모든 프로젝트의 Chat 응답이 완료될 때마다 알립니다. 백그라운드 알림을 위해 지속 알림을 표시합니다."],
+    notifications_android_settings: ["Android notification settings", "Android 알림 설정"],
+    notifications_off: ["Off. Agent sessions keep running.", "꺼짐. 에이전트 세션은 계속 실행됩니다."],
+    notifications_permission: ["Allow BIBIMER notifications in Android settings to receive alerts.", "알림을 받으려면 Android 설정에서 BIBIMER 알림을 허용하세요."],
+    notifications_update: ["Update the bridge to receive response notifications.", "응답 완료 알림을 받으려면 브리지를 업데이트하세요."],
+    notifications_app_update: ["Update the Android app to enable notifications.", "알림을 사용하려면 Android 앱을 업데이트하세요."],
+    notifications_connect: ["Connect to Termux to start response notifications.", "응답 완료 알림을 시작하려면 Termux에 연결하세요."],
+    notifications_listening: ["Listening for completed responses.", "응답 완료를 확인하고 있습니다."],
+    notifications_reconnecting: ["Waiting for the Termux bridge to reconnect…", "Termux 브리지 재연결을 기다리고 있습니다…"],
+    notifications_stopped: ["Starting response notifications…", "응답 완료 알림을 시작하고 있습니다…"],
+    notifications_failed: ["Could not start alerts. Reopen BIBIMER to try again.", "알림을 시작하지 못했습니다. BIBIMER를 다시 열어 시도하세요."],
+    notifications_missing: ["This session is no longer in BIBIMER.", "이 세션은 BIBIMER 목록에서 삭제되었습니다."],
     project_settings: ["Project settings", "프로젝트 설정"],
     project_name: ["Project name", "프로젝트 이름"],
     project_copy_path: ["Copy folder path", "폴더 경로 복사"],
@@ -60,7 +73,7 @@
     select_title: ["Choose an option", "옵션 선택"],
     select_close: ["Close choices", "선택 목록 닫기"],
     tab_settings: ["Settings", "설정"],
-    app_settings_intro: ["Choose your input behavior and app language.", "입력 방식과 표시 언어를 설정하세요."],
+    app_settings_intro: ["Choose your input behavior, language and notifications.", "입력 방식·표시 언어·알림을 설정하세요."],
     app_settings_saved: ["Saved on this phone for all projects and sessions.", "이 휴대폰에 저장하며 모든 프로젝트와 세션에 적용합니다."],
     enter_behavior_label: ["Enter key", "Enter 키"],
     enter_newline: ["New line", "줄바꿈"],

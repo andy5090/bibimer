@@ -194,3 +194,5 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .sidebar-session-open .response-progress::before { width:10px; height:10px; }
 @keyframes response-spin { to { transform:rotate(360deg); } }
 @media (prefers-reduced-motion:reduce) { .response-progress::before { animation:none; border-color:currentColor; } }
+
+#response-notifications { flex: 0 0 auto; width: 20px; height: 20px; accent-color: var(--green); }

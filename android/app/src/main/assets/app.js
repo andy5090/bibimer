@@ -23,6 +23,7 @@
   let canModels = false, canSwitchAgents = false, selectedAgent = "shell";
   let canLibrary = false, canWorktrees = false, activeViewKey = null, draftPath = null, importPath = null;
   let actionTarget = null, deleteTarget = null, libraryBusy = false, worktreeLoading = false, worktreeError = null;
+  let canResponseNotifications = false, notificationNavigating = false, notificationRetry, pendingNotification;
   let canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   const worktrees = {};
   const modelCatalogs = new Map();
@@ -247,6 +248,7 @@
     renderSession();
   }
   function updateEnvironment() {
+    renderNotificationSettings();
     const env = environment();
     $("termux-status").textContent = t(env.termuxInstalled ? "installed" : "install_needed");
     $("termux-status").className = "badge" + (env.termuxInstalled ? " connected" : "");
@@ -782,6 +784,7 @@
       canLibrary = health.features?.includes("session_library") === true;
       canWorktrees = health.features?.includes("git_worktrees") === true;
       canManageProjects = health.features?.includes("project_management") === true;
+      canResponseNotifications = health.features?.includes("response_notifications") === true;
       if (JSON.stringify(knownAgents) !== JSON.stringify(health.agents)) {
         knownAgents = health.agents; renderAgents();
       }
@@ -805,10 +808,13 @@
       setSession(entry ? entry.session : health.session);
       renderProjects();
       connected(true);
+      native.notificationsConnected?.(canResponseNotifications);
+      renderNotificationSettings();
       if (connectionError && noticeData && noticeData.key === connectionError) notice("");
       connectionError = null;
       resize();
       startPoll();
+      window.BibimerOpenNotification();
     } catch (error) {
       if (ticket !== generation || paused) return;
       connected(false); connectionError = error.key || "error_request_failed"; notice(connectionError);
@@ -1317,6 +1323,46 @@
       notice("language_save_failed");
     }
   });
+  function renderNotificationSettings() {
+    const env = environment(), settings = env.notifications;
+    $("response-notifications").checked = settings?.enabled !== false;
+    $("response-notifications").disabled = !native.setResponseNotifications;
+    let key = !settings ? "notifications_app_update" : !settings.enabled ? "notifications_off" :
+      !env.paired ? "notifications_connect" : !online ? "notifications_reconnecting" :
+      !canResponseNotifications ? "notifications_update" : !settings.allowed ? "notifications_permission" :
+      "notifications_" + ({listening:"listening", reconnecting:"reconnecting", failed:"failed", unsupported:"update", unpaired:"connect"}[settings.state] || "stopped");
+    $("notifications-status").textContent = t(key);
+    $("notification-permission").hidden = !settings?.enabled || settings.allowed || !native.openNotificationSettings;
+  }
+  $("response-notifications").addEventListener("change", () => {
+    native.setResponseNotifications?.($("response-notifications").checked);
+    renderNotificationSettings();
+  });
+  $("notification-permission").addEventListener("click", () => native.openNotificationSettings?.());
+  window.BibimerNotificationStatus = renderNotificationSettings;
+  setInterval(() => { if (!paused && currentTab === "settings") renderNotificationSettings(); }, 2000);
+  window.BibimerOpenNotification = async () => {
+    clearTimeout(notificationRetry);
+    if (notificationNavigating || paused || !online || !native.takeNotificationTarget) return;
+    if (busy || switchingProject || settingsBusy || libraryBusy) {
+      notificationRetry = setTimeout(window.BibimerOpenNotification, 500); return;
+    }
+    try { pendingNotification ||= JSON.parse(native.takeNotificationTarget()); } catch (_) { return; }
+    const target = pendingNotification;
+    if (!target?.project_id || !target?.session_id) { pendingNotification = null; return; }
+    notificationNavigating = true;
+    try {
+      const health = await api("GET", "/v1/health");
+      if (paused || busy || switchingProject || settingsBusy || libraryBusy) return;
+      const entry = health.projects?.find(row => row.id === target.project_id);
+      pendingNotification = null;
+      if (!entry?.sessions?.some(row => row.id === target.session_id)) { notice("notifications_missing"); return; }
+      knownProjects = health.projects;
+      for (const dialog of document.querySelectorAll("dialog[open]")) dialog.close();
+      await selectSession(target.project_id, target.session_id);
+    } catch (error) { pendingNotification = null; notice(error.key || "error_request_failed"); }
+    finally { notificationNavigating = false; notificationRetry = setTimeout(window.BibimerOpenNotification, 500); }
+  };
   function renderInputPreferences() {
     $("enter-behavior").value = enterBehavior;
     $("enter-behavior-hint").textContent = t("enter_" + enterBehavior + "_hint");

@@ -6,7 +6,7 @@ const {chromium}=require('../.tools/ui/node_modules/playwright-core');
 const root=path.resolve(__dirname,'..'),tmp=fs.mkdtempSync(path.join(os.tmpdir(),'bibimer-library-'));
 const state=path.join(tmp,'state'),projectPath=path.join(tmp,'Mobile studio'),worktreePath=path.join(tmp,'feature 한글');
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-let assets,bridge,browser,hideManagement=false,rejectManagement=false;
+let assets,bridge,browser,hideManagement=false,rejectManagement=false,hideNotifications=false;
 async function main(){
   fs.mkdirSync(projectPath);fs.mkdirSync(path.join(tmp,'bin'));
   const python=execFileSync('which',['python'],{encoding:'utf8'}).trim();
@@ -34,10 +34,11 @@ async function main(){
   const errors=[];page.on('pageerror',error=>{errors.push(error.message);console.error('Page error:',error.message);});
   await page.exposeFunction('nativeRequest',async(id,method,endpoint,body)=>{
     const result=rejectManagement&&endpoint==='/v1/project/manage'?{ok:false,status:409,data:{code:'error_project_delete_active'}}:await call(method,endpoint.replace('wait=20','wait=1'),JSON.parse(body));
+    if(hideNotifications&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='response_notifications');
     if(hideManagement&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='project_management');
     try{await page.evaluate(({id,result})=>window.BibimerNativeReply(id,result),{id,result});}catch{}
   });
-  await page.addInitScript(()=>{window.Bibimer={environment:()=>JSON.stringify({paired:true,termuxInstalled:true,language:localStorage.language||'en',version:'test'}),request:(...args)=>window.nativeRequest(...args),cancelPoll:()=>{},setLanguage:value=>{localStorage.language=value;return true;},setAgentOptions:()=>true,setEnterBehavior:()=>true,setBackHandling:value=>window.backHandled=value,copyText:value=>window.copiedPath=value};});
+  await page.addInitScript(()=>{window.Bibimer={environment:()=>JSON.stringify({paired:true,termuxInstalled:true,language:localStorage.language||'en',version:'test',notifications:{enabled:localStorage.notifications!=='off',allowed:window.notificationAllowed!==false,state:'listening'}}),notificationsConnected:value=>window.notificationsSupported=value,setResponseNotifications:value=>{localStorage.notifications=value?'on':'off';window.BibimerNotificationStatus();},openNotificationSettings:()=>window.openedNotificationSettings=true,takeNotificationTarget:()=>{const target=window.notificationTarget||JSON.parse(localStorage.notificationTarget||'{}');window.notificationTarget=null;localStorage.removeItem('notificationTarget');return JSON.stringify(target);},request:(...args)=>window.nativeRequest(...args),cancelPoll:()=>{},setLanguage:value=>{localStorage.language=value;return true;},setAgentOptions:()=>true,setEnterBehavior:()=>true,setBackHandling:value=>window.backHandled=value,copyText:value=>window.copiedPath=value};});
   await page.goto('http://127.0.0.1:'+assets.address().port);
   await page.waitForFunction(()=>document.querySelector('#connection').textContent==='Connected');
   const choose=async(id,value)=>{await page.locator('#'+id+'-trigger').click();await page.locator('#select-options [data-value='+JSON.stringify(value)+']').click();};
@@ -75,6 +76,42 @@ async function main(){
   await sidebar();await openGroup(other.id);await page.locator('[data-key='+JSON.stringify('new/'+other.id+'/'+secondPath)+']').click();
   await choose('agent','codex');const fourth=await launch();await page.locator('#input').fill('Other project draft');
   await select(third);assert.equal(await page.locator('#input').inputValue(),'Worktree draft');await select(fourth,other.id);assert.equal(await page.locator('#input').inputValue(),'Other project draft');
+  // Completion navigation preserves the current draft, does not launch or interrupt agents.
+  const activeBeforeNotification=(await call('GET','/v1/health')).data.active_sessions;
+  await page.evaluate(target=>{window.notificationTarget=target;window.BibimerOpenNotification();},{project_id:project.id,session_id:third});
+  await page.waitForFunction(()=>document.querySelector('#input').value==='Worktree draft');
+  await page.evaluate(target=>{window.BibimerPause();window.notificationTarget=target;window.BibimerOpenNotification();},{project_id:other.id,session_id:fourth});
+  assert.equal(await page.locator('#input').inputValue(),'Worktree draft');
+  await page.evaluate(()=>window.BibimerResume());
+  await page.waitForFunction(()=>document.querySelector('#input').value==='Other project draft');
+  await page.evaluate(target=>{window.notificationTarget=target;window.BibimerOpenNotification();},{project_id:other.id,session_id:'00000000-0000-0000-0000-000000000000'});
+  await page.getByText('This session is no longer in BIBIMER.',{exact:true}).waitFor();
+  assert.equal(await page.locator('#input').inputValue(),'Other project draft');
+  assert.equal((await call('GET','/v1/health')).data.active_sessions,activeBeforeNotification);
+  await page.locator('#tab-settings').click();
+  assert.equal(await page.locator('#response-notifications').isChecked(),true);
+  await page.locator('#response-notifications').uncheck();
+  assert.equal(await page.locator('#notifications-status').innerText(),'Off. Agent sessions keep running.');
+  await page.locator('#response-notifications').check();
+  await page.evaluate(()=>{window.notificationAllowed=false;window.BibimerNotificationStatus();});
+  await page.locator('#notification-permission').click();assert.equal(await page.evaluate(()=>window.openedNotificationSettings),true);
+  assert.match(await page.locator('#notifications-status').innerText(),/Allow BIBIMER/);
+  fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
+  await page.setViewportSize({width:320,height:640});await page.locator('#response-notifications').scrollIntoViewIfNeeded();
+  await page.screenshot({path:path.join(root,'dist/screenshots/notifications-320-en.png')});
+  await choose('language','ko');await page.locator('#response-notifications').scrollIntoViewIfNeeded();
+  assert.match(await page.locator('#notifications-status').innerText(),/알림을 허용/);
+  await page.screenshot({path:path.join(root,'dist/screenshots/notifications-320-ko.png')});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await choose('language','en');
+  await page.evaluate(()=>{window.notificationAllowed=true;window.BibimerNotificationStatus();});
+  assert.equal(await page.locator('#notification-permission').isVisible(),false);
+  hideNotifications=true;await page.evaluate(()=>window.BibimerResume());
+  await page.waitForFunction(()=>window.notificationsSupported===false);
+  assert.match(await page.locator('#notifications-status').innerText(),/Update the bridge/);
+  hideNotifications=false;await page.evaluate(()=>window.BibimerResume());await page.waitForFunction(()=>window.notificationsSupported===true);
+  console.log('PASS: response notification settings; disabled/denied/allowed and old bridge; English/Korean 320px; notification session navigation; pause/resume target; missing session; drafts and running agents preserved');
+  await page.setViewportSize({width:393,height:780});await page.locator('#tab-work').click();
   await sidebar();await openGroup(project.id);
   const summary=page.locator('[data-project='+JSON.stringify(project.id)+'] > summary');await summary.focus();await delay(5500);assert.equal(await summary.evaluate(node=>node===document.activeElement),true);
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
@@ -84,7 +121,13 @@ async function main(){
   await page.locator('#tab-settings').click();await choose('language','ko');await page.locator('#tab-work').click();await sidebar();await page.screenshot({path:path.join(root,'dist/screenshots/sidebar-393-ko.png')});
   await page.keyboard.press('Escape');await page.locator('#sidebar').waitFor({state:'hidden'});
   await sidebar();await page.mouse.click(page.viewportSize().width-4,100);await page.locator('#sidebar').waitFor({state:'hidden'});
+  await page.locator('#tab-settings').click();await page.locator('#response-notifications').uncheck();
+  await page.evaluate(target=>localStorage.notificationTarget=JSON.stringify(target),{project_id:project.id,session_id:third});
   await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
+  await page.waitForFunction(expected=>document.querySelector('#project-path').textContent===expected,worktreePath);
+  await page.locator('#tab-settings').click();assert.equal(await page.locator('#response-notifications').isChecked(),false);
+  await page.locator('#response-notifications').check();await page.locator('#tab-work').click();
+  console.log('PASS: notification target consumed on fresh page connection; stored disabled preference restored');
   assert.equal((await call('GET','/v1/health')).data.active_sessions,3);await sidebar();assert.ok(await page.locator('.sidebar-session').count()>=3);
   await page.setViewportSize({width:320,height:460});
   const projectSettings=async id=>{await sidebar();await page.locator('[data-project='+JSON.stringify(id)+'] .sidebar-project-more').click();await page.locator('#project-settings-dialog').waitFor({state:'visible'});};

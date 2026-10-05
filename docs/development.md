@@ -83,6 +83,7 @@ pkg install nodejs
 npm install --prefix .tools/ui --ignore-scripts --no-fund --no-audit playwright-core@1.55.1
 node scripts/smoke_ui.cjs
 node scripts/smoke_select.cjs
+node scripts/smoke_library.cjs
 node scripts/smoke_setup.cjs
 node scripts/smoke_rendering.cjs
 ```
@@ -92,6 +93,13 @@ node scripts/smoke_rendering.cjs
 현재 기기에서는 기존 Termux X11 Chromium의 `headless_shell`을 사용했다. 다른 경로의 Chromium을 사용하려면 `BIBIMER_CHROMIUM`을 지정한다. Playwright의 플랫폼 검사에 맞춰 테스트 프로세스에서만 Android를 Linux로 식별하고, 실제 실행 파일은 Termux용 Chromium을 지정한다. 이는 Playwright나 앱의 Android 지원을 검증하는 방법이 아니다.
 
 UI 테스트는 임시 폴더의 실제 브리지에 연결하며 Android 네이티브 API를 명시적인 테스트 어댑터로 대체한다. 한국어 브라우저 로캘에서도 영어로 시작하는지, 한국어 전환·저장값 복원, 오류 번역과 0.1.0 응답 호환, 언어 전환 시 세션·입력 유지까지 확인한다. 어댑터의 설정 저장은 브라우저 테스트용이며 실제 앱의 Android 환경 설정 저장을 검증한 것은 아니다. 화면 캡처는 통제된 셸 출력과 모의 대화만 포함하고 `dist/screenshots/*-en.png`, `*-ko.png`에 저장한다. 실제 앱의 Keystore, WebView 리소스 로딩, 기기 간 앱 격리 경계는 APK로 따로 확인해야 한다.
+
+## 2026-10-05 응답 완료 알림 검증 (소스 반영 / APK·실기기 검증 대기)
+
+- 브리지 **97개 테스트 통과**. `test_notifications.py` 신규 5개: 초기 기준/재시작/overflow/long poll, 연속 대기열 각각의 완료·중복 방지·본문 제외, 중단/실패/오래된 턴 제외, 프로젝트/보관/별칭/삭제, 인증·입력 검증과 PTY 제외. 기존 Claude/OpenCode 어댑터 대기열 테스트에도 정상 완료 수 검증을 추가했다. Setup 설치 payload 한계 검증도 통과했다.
+- `node scripts/smoke_library.cjs` 통과. 알림 설정 토글·권한 차단/허용·Android 설정 버튼·구형 브리지·영어/한국어 320px, 새 페이지 및 실행 중 화면의 알림 세션 이동, Pause/Resume, 삭제된 대상 안내, 초안·승인·실행 프로세스 유지와 설정 저장을 확인했다. 프로젝트 관리/세션 사이드바 회귀도 포함한다.
+- AAPT2 리소스 컴파일/링크와 javac 전체 소스 컴파일, JS 문법·diff 검사 통과. 서명·DEX 생성·APK 배포 파일 빌드는 하지 않았다. 로그: `.tools/tests-response-notifications.log`, `.tools/ui-notifications.log`, `.tools/java-notifications.log`. 화면: `dist/screenshots/notifications-320-en.png`, `notifications-320-ko.png`.
+- Android 환경 설정·권한·NotificationManager·foreground service·실제 Activity PendingIntent는 기기에서 아직 검증하지 않았다. 다음 명시적 빌드 후 권한 거절/복구, 홈/잠금/최근 앱 제거, 앱이 닫힌 상태의 알림 탭, 여러 프로젝트의 연속 응답, 서비스 중지/재연결, Termux 종료/절전을 확인한다. 운영 브리지와 진행 중 세션은 변경하지 않았다.
 
 ## 2026-10-04 자동 설정·연결 검증 (소스 반영 / APK·실기기 검증 대기)
 

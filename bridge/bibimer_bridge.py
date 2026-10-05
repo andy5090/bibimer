@@ -604,7 +604,7 @@ class ChatSession(Session):
     Reuses the PTY session's scoped process stop, but never opens a PTY or
     derives messages by scraping a terminal screen. No arbitrary RPC passthrough.
     """
-    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, imported=None, options=None, catalog=None):
+    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, imported=None, options=None, catalog=None, completed=None):
         self.id, self.launch_id = str(uuid.uuid4()), launch_id
         self.project, self.agent = project.copy(), agent
         self.options = agent_options(agent, options)
@@ -612,6 +612,7 @@ class ChatSession(Session):
         self.default_policy = {}
         self.model_catalog = catalog or []
         self.default_model, self.default_effort = None, None
+        self.completed = completed
         self.cols, self.rows = cols, rows
         self.started_at = time.time()
         self.state, self.exit_code = "running", None
@@ -878,12 +879,15 @@ class ChatSession(Session):
             turn = params["turn"]
             if self.turn_id and turn["id"] != self.turn_id:
                 return
+            notify_complete = self.turn_id == turn["id"] and turn.get("status") == "completed"
             self.turn_state, self.turn_id = "ready", None
             if turn.get("status", "completed") != "completed":
                 self.queue_paused = True
             self.requests.clear()
             self._put({"id": "turn-" + turn["id"], "kind": "turn", "status": turn.get("status", "completed"),
                        "text": self._text((turn.get("error") or {}).get("message"))})
+            if notify_complete and self.completed:
+                self.completed(self.id, self.project["id"], self.agent)
         elif method == "serverRequest/resolved":
             for key, request in list(self.requests.items()):
                 if request["rpc_id"] == params.get("requestId"):
@@ -1229,6 +1233,32 @@ class ChatSession(Session):
         raise Problem(400, "error_chat_mode")
 
 
+class CompletionFeed:
+    """Bounded, process-local metadata. Its lock never acquires a bridge/session lock."""
+    def __init__(self, instance):
+        self.instance = instance
+        self.condition = threading.Condition()
+        self.cursor = 0
+        self.entries = collections.deque(maxlen=512)
+
+    def publish(self, session_id, project_id, agent):
+        with self.condition:
+            self.cursor += 1
+            self.entries.append({"id": self.cursor, "session_id": session_id, "project_id": project_id,
+                                 "agent": agent, "completed_at": time.time()})
+            self.condition.notify_all()
+
+    def read(self, instance, cursor, wait):
+        with self.condition:
+            if instance != self.instance or cursor > self.cursor:
+                return {"instance": self.instance, "cursor": self.cursor, "reset": True, "gap": False, "events": []}
+            if cursor == self.cursor and wait:
+                self.condition.wait_for(lambda: cursor != self.cursor, timeout=wait)
+            floor = self.entries[0]["id"] - 1 if self.entries else self.cursor
+            return {"instance": self.instance, "cursor": self.cursor, "reset": False, "gap": cursor < floor,
+                    "events": [dict(row) for row in self.entries if row["id"] > cursor]}
+
+
 class Bridge:
     def __init__(self, state):
         self.state = private_dir(state)
@@ -1239,6 +1269,7 @@ class Bridge:
         self.model_cache = {}
         self.program_checks = {}
         self.instance = str(uuid.uuid4())
+        self.completion_feed = CompletionFeed(self.instance)
         self.token = read_json(state / "token.json")
         if not self.token:
             self.token = secrets.token_urlsafe(32)
@@ -1450,6 +1481,16 @@ class Bridge:
     def active_count(self):
         return sum(session.state in ACTIVE for session in self.sessions.values())
 
+    def completions(self, instance, cursor, wait):
+        result = self.completion_feed.read(instance, cursor, wait)
+        # Resolve current labels after releasing the feed lock; no transcript is read.
+        with self.lock:
+            result["events"] = [dict(row, project_name=self.projects[row["project_id"]]["name"][:120],
+                session_title=self.session_labels.get(row["session_id"], {}).get("title", ""))
+                for row in result["events"] if row["project_id"] in self.projects and
+                (row["session_id"] in self.sessions or row["session_id"] in self.previous_sessions)]
+        return result
+
     def persist(self):
         with self.lock:
             save_json(self.state / "metadata.json", {
@@ -1510,7 +1551,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "git_worktrees", "project_management"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "git_worktrees", "project_management", "response_notifications"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -1787,7 +1828,7 @@ class Bridge:
             argv = [executable, "-i"] if agent == "shell" else [executable]
             try:
                 session = (ChatSession if mode == "chat" else Session)(project, agent, argv, cols, rows, key, self.persist,
-                    options=options, **({"imported": imported, "catalog": catalog} if mode == "chat" else {}))
+                    options=options, **({"imported": imported, "catalog": catalog, "completed": self.completion_feed.publish} if mode == "chat" else {}))
             except OSError:
                 raise Problem(400, "error_launch_failed") from None
             self.sessions[session.id] = session
@@ -1935,6 +1976,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 raise Problem(400, "error_invalid_json") from None
         if method == "GET" and parsed.path == "/v1/health":
             result = bridge.health()
+        elif method == "GET" and parsed.path == "/v1/completions":
+            query = urllib.parse.parse_qs(parsed.query)
+            try:
+                instance = query.get("instance", ["none"])[0]
+                if instance != "none" and not re.fullmatch(r"[a-f0-9-]{36}", instance):
+                    raise ValueError()
+                cursor = integer(int(query.get("cursor", ["0"])[0]), 0, 2**53 - 1)
+                wait = integer(int(query.get("wait", ["0"])[0]), 0, 20)
+            except ValueError:
+                raise Problem(400, "error_invalid_json") from None
+            result = bridge.completions(instance, cursor, wait)
         elif method == "POST" and parsed.path == "/v1/pair":
             result = bridge.pair(data.get("code"))
         elif method == "POST" and parsed.path == "/v1/project":
