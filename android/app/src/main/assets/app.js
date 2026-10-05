@@ -1373,6 +1373,16 @@
   $("notification-permission").addEventListener("click", () => native.openNotificationSettings?.());
   window.BibimerNotificationStatus = renderNotificationSettings;
   setInterval(() => { if (!paused && currentTab === "settings") renderNotificationSettings(); }, 2000);
+  function notificationSession(entry, id) {
+    const original = entry?.sessions?.find(row => row.id === id);
+    if (!original || ["running", "stopping"].includes(original.state) || original.mode !== "chat" || !original.external_thread_id || !original.project?.path) return original;
+    // Bridge restarts/resumes create a new execution ID for the same native conversation.
+    // Copies, other agents/worktrees, and ambiguous matches must never redirect a tap.
+    const resumed = entry.sessions.filter(row => ["running", "stopping"].includes(row.state) &&
+      row.mode === "chat" && row.agent === original.agent && row.project?.path === original.project.path &&
+      row.external_thread_id === original.external_thread_id);
+    return resumed.length === 1 ? resumed[0] : original;
+  }
   window.BibimerOpenNotification = async () => {
     clearTimeout(notificationRetry);
     if (notificationNavigating || paused || !online || !native.takeNotificationTarget) return;
@@ -1386,12 +1396,14 @@
     try {
       const health = await api("GET", "/v1/health");
       if (paused || busy || switchingProject || settingsBusy || libraryBusy) return;
+      if (health.instance !== instance) { await connect(); return; }
       const entry = health.projects?.find(row => row.id === target.project_id);
+      const destination = notificationSession(entry, target.session_id);
       pendingNotification = null;
-      if (!entry?.sessions?.some(row => row.id === target.session_id)) { notice("notifications_missing"); return; }
+      if (!destination) { notice("notifications_missing"); return; }
       knownProjects = health.projects;
       for (const dialog of document.querySelectorAll("dialog[open]")) dialog.close();
-      await selectSession(target.project_id, target.session_id);
+      await selectSession(target.project_id, destination.id);
     } catch (error) { pendingNotification = null; notice(error.key || "error_request_failed"); }
     finally { notificationNavigating = false; notificationRetry = setTimeout(window.BibimerOpenNotification, 500); }
   };

@@ -32,7 +32,9 @@ async function main(){
   browser=await chromium.launch({executablePath:path.join(process.env.PREFIX,'bin/headless_shell'),headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
   const page=await browser.newPage({viewport:{width:393,height:780},isMobile:true,hasTouch:true});page.setDefaultTimeout(12000);
   const errors=[];page.on('pageerror',error=>{errors.push(error.message);console.error('Page error:',error.message);});
+  const agentMutations=[];
   await page.exposeFunction('nativeRequest',async(id,method,endpoint,body)=>{
+    if(method==='POST'&&endpoint.startsWith('/v1/sessions'))agentMutations.push(endpoint);
     const result=rejectManagement&&endpoint==='/v1/project/manage'?{ok:false,status:409,data:{code:'error_project_delete_active'}}:await call(method,endpoint.replace('wait=20','wait=1'),JSON.parse(body));
     if(hideNotifications&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='response_notifications');
     if(hideManagement&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='project_management');
@@ -93,6 +95,47 @@ async function main(){
   await sidebar();await openGroup(other.id);await page.locator('[data-key='+JSON.stringify('new/'+other.id+'/'+secondPath)+']').click();
   await choose('agent','codex');const fourth=await launch();await page.locator('#input').fill('Other project draft');
   await select(third);assert.equal(await page.locator('#input').inputValue(),'Worktree draft');await select(fourth,other.id);assert.equal(await page.locator('#input').inputValue(),'Other project draft');
+  // An old notification identifies a completed execution, whose native conversation
+  // is now running under another execution ID after a resume/bridge upgrade.
+  const waitReady=async id=>{for(let i=0;i<100;i++){const e=(await call('GET','/v1/sessions/'+id+'/events?cursor=0&wait=0')).data;if(e.session.ready&&e.session.turn_state==='ready')return;await delay(50);}throw Error('fixture did not become ready');};
+  const stopFixture=async id=>{await call('POST','/v1/sessions/'+id+'/stop',{});for(let i=0;i<100;i++){if((await call('GET','/v1/sessions/'+id+'/events?cursor=0&wait=0')).data.session.state==='exited')return;await delay(50);}throw Error('fixture did not exit');};
+  const importFixture=async(mode='resume')=>{const result=await call('POST','/v1/sessions',{project_id:project.id,agent:'codex',mode:'chat',new_session:true,source_thread_id:'saved-one',import_mode:mode,request_id:require('node:crypto').randomUUID()});assert.equal(result.status,200);await waitReady(result.data.session.id);return result.data.session.id;};
+  const oldNotification=await importFixture();
+  await call('POST','/v1/sessions/'+oldNotification+'/manage',{action:'rename',title:'Original notification record'});
+  await stopFixture(oldNotification);
+  const resumedNotification=await importFixture();
+  await call('POST','/v1/sessions/'+resumedNotification+'/manage',{action:'rename',title:'Resumed notification conversation'});
+  await call('POST','/v1/sessions/'+resumedNotification+'/manage',{action:'archive'});
+  const copiedNotification=await importFixture('fork');
+  await call('POST','/v1/sessions/'+copiedNotification+'/manage',{action:'rename',title:'Separate copied conversation'});
+  const notify=async id=>page.evaluate(target=>{window.notificationTarget=target;return window.BibimerOpenNotification();},{project_id:project.id,session_id:id});
+  const beforeTap=agentMutations.length;
+  await notify(oldNotification);
+  await page.waitForFunction(()=>document.querySelector('#session-title').textContent==='Resumed notification conversation');
+  assert.equal((await call('GET','/v1/health')).data.session.id,resumedNotification);
+  assert.equal(await page.locator('#launch').isVisible(),false);
+  assert.equal(await page.locator('#input').isEnabled(),true);
+  await page.locator('#conversation .message.assistant').first().waitFor();
+  await page.locator('#input').fill('Resumed draft');
+  await select(fourth,other.id);assert.equal(await page.locator('#input').inputValue(),'Other project draft');
+  await notify(oldNotification);await page.waitForFunction(()=>document.querySelector('#input').value==='Resumed draft');
+  // Cold WebView entry consumes the same old notification and selects the resumed record.
+  await select(fourth,other.id);
+  await page.evaluate(target=>localStorage.notificationTarget=JSON.stringify(target),{project_id:project.id,session_id:oldNotification});
+  await page.reload();await page.waitForFunction(()=>document.querySelector('#session-title').textContent==='Resumed notification conversation');
+  assert.equal((await call('GET','/v1/health')).data.session.id,resumedNotification);
+  assert.deepEqual(agentMutations.slice(beforeTap),[]);
+  assert.equal((await call('GET','/v1/health')).data.active_sessions,5);
+  // With no running original, keep the ended record; never follow a fork or launch anew.
+  await stopFixture(resumedNotification);await notify(oldNotification);
+  await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited'&&document.querySelector('#session-title').textContent==='Original notification record');
+  assert.equal((await call('GET','/v1/health')).data.session.id,oldNotification);
+  assert.equal((await call('GET','/v1/health')).data.active_sessions,4);
+  await stopFixture(copiedNotification);
+  for(const id of [oldNotification,resumedNotification,copiedNotification])await call('POST','/v1/sessions/'+id+'/manage',{action:'delete'});
+  await select(fourth,other.id);await page.locator('#input').fill('Other project draft');
+  await select(third);await page.locator('#input').fill('Worktree draft');await select(fourth,other.id);
+  console.log('PASS: old notification follows the unique resumed native conversation, including archived sessions and cold entry; draft preserved; imported history visible; fork excluded; no launch/resume/approval/model input from notification');
   // Completion navigation preserves the current draft, does not launch or interrupt agents.
   const activeBeforeNotification=(await call('GET','/v1/health')).data.active_sessions;
   await page.evaluate(target=>{window.notificationTarget=target;window.BibimerOpenNotification();},{project_id:project.id,session_id:third});
