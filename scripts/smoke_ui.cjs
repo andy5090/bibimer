@@ -94,7 +94,11 @@ async function main() {
     }
     await page.locator('#select-options [data-value='+JSON.stringify(value)+']').click();
     await page.locator('#select-dialog').waitFor({state:'hidden'});
-    if (id==='agent' || id==='quick-agent') await page.waitForFunction(()=>!document.querySelector('#quick-agent').disabled);
+    if (id==='agent' || id==='quick-agent') {
+      // These regression cases explicitly open each provider's existing session.
+      if (await page.locator('#handoff-dialog').evaluate(node=>node.open)) await page.locator('#handoff-existing').click();
+      await page.waitForFunction(()=>!document.querySelector('#quick-agent').disabled);
+    }
   }
 
   await page.exposeFunction('nativeRequest', async (id, method, endpoint, body) => {
@@ -185,7 +189,7 @@ async function main() {
   assert.equal(await page.locator('#enter-behavior').inputValue(),'newline');
   assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
   assert.equal(await page.locator('select:visible').count(),0);
-  assert.equal(await page.locator('.select-trigger').count(),15);
+  assert.equal(await page.locator('.select-trigger').count(),await page.locator('select').count());
   await page.locator('#enter-behavior').evaluate(node=>{
     window.enterChanges=0; node.addEventListener('change',()=>window.enterChanges++);
   });

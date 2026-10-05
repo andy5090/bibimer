@@ -18,12 +18,22 @@
 - **사용자가 명시적으로 빌드를 요청할 때만 APK를 빌드한다.** 작업 보고에서는 소스 구현 완료와 마지막 APK에 포함된 내용을 구분한다.
 - 현재 마지막 빌드 파일은 `Download/Bibimer-0.12.0.apk`다. 2026-10-06의 명시적 `apk 빌드` 요청으로 `/` 스킬·명령 기능까지 포함했다.
 
-## 0.12.0 운영 브리지 설치 (2026-10-06, 현재 응답 후 재시작 예약)
+## 에이전트 간 대화 이어가기 선택 (2026-10-06, 소스 반영 / APK·운영 적용 대기)
+
+- 사용자의 `agent cli 종류가 바뀌어도 세션을 이어나갈수있는 기능 필요` 및 `선택` 답변에 따라 Chat 에이전트 전환에 두 경로를 추가했다. **Continue & send**는 확인·편집한 대화와 다음 지시로 대상 에이전트의 새 네이티브 세션을 만들고, **Open … session without sharing**은 기존 대상 세션으로 돌아간다. 세션 관리에서도 **Continue with another agent**를 제공한다. Codex·Claude·OpenCode 여섯 방향을 지원하며 원본·기존 대상 세션·작성 중 초안을 유지한다.
+- 새 세션은 원본과 같은 프로젝트·검증된 Git 워크트리 경로를 사용하고 대상 에이전트에 저장된 권한·모델·추론·Fast를 적용한다. **Open source**로 원본에 돌아간다. 첫 입력은 실제 다음 지시로 시작해 네이티브 미리보기에 내부 전달 안내문이 앞서지 않으며 초기 화면 제목도 다음 지시로 표시한다.
+- 인증된 `POST /v1/sessions/{id}/handoff`의 preview/start 및 `agent_handoff` 기능을 추가했다. 미리보기는 완료된 사용자 입력·답변 중 최근 최대 24개/12,000 UTF-8 바이트만 가져오고 도구·추론·commentary·PTY를 제외한다. 다음 지시는 최대 4,000바이트이며 전송 시 native 첫 턴으로 전달한다. 미리보기·취소는 세션/모델 턴을 만들지 않는다. 원본의 응답·승인·대기열 처리 중에는 거절하며 revision으로 미리보기 이후 변경을 다시 확인한다.
+- 불확실한 응답 유실은 같은 요청 ID/본문으로 **Check transfer / Retry**하여 중복 세션·턴을 막는다. 브리지 메타데이터에는 전달 본문을 저장하지 않고 출처·요청 digest/생성 ID만 유지한다. 원본/대상 native 기록에는 사용자가 전송한 내용이 남는다. 대상 native 세션 재개 시 출처 링크도 이어받는다. 브리지 재시작으로 원본 대화가 메모리에 없으면 원본 Chat을 먼저 이어서 열어야 한다.
+- 전용 브리지 6개 테스트: 세 제공자의 여섯 방향, UTF-8 제한/부분 생략·비대화 제외, 승인·대기열·빈 대화·변경된 원본 거절, 잘못된 모델/입력 거절, 기존 대상 프로세스·실제 한글 Git 워크트리 보존, 응답 유실 재시도와 브리지 재시작 뒤 동일 요청 복원·출처 재개를 검증했다. 새 UI 통합 검사와 기존 전체 UI·라이브러리/알림 회귀 검사, Java 소스 컴파일·JS 문법 검사도 통과했다. 초기 전체 검사의 PTY 중단 타이밍 실패는 단독 재검사에서 통과했다. 전체 115개 검사에서 발견한 제목 초기화 회귀는 수정 후 전용 6개와 Library 8개 테스트로 재검사해 모두 통과했다.
+- 로그: `.tools/test-handoff.log`, `.tools/test-handoff-all.log`, `.tools/test-handoff-all-rerun.log`, `.tools/test-handoff-interrupt.log`, `.tools/test-handoff-library.log`, `.tools/ui-handoff.log`, `.tools/ui-handoff-regression.log`, `.tools/ui-handoff-library.log`. 화면: `dist/screenshots/handoff-393-en.png`, `dist/screenshots/handoff-320-ko.png`. **실제 모델 요청 없이 격리 CLI/브라우저 대역으로 검증**했으며 새 APK 설치 후 Android WebView·IME 및 실제 모델로 전달된 맥락의 유용성을 확인해야 한다.
+- **버전 0.12.0/code 22 유지, APK 미빌드·운영 소스 미설치·재시작 미실행**. 이 기능은 다음 APK와 브리지 소스를 함께 적용해야 한다. 현재 설치된 앱·운영 브리지는 아래의 0.12.0 릴리스 상태다.
+
+## 0.12.0 운영 브리지 설치 (2026-10-06, 재시작 완료 확인)
 
 - 사용자 `브리지 적용` 요청으로 운영 `~/.local/share/bibimer/`의 브리지·OpenCode/Claude 어댑터·Claude 복구 도구 네 파일을 **0.12.0** 소스와 일치하도록 설치했다. SHA-256·0700 권한을 확인했고 이전 소스와 metadata는 저장소 밖 비공개 유지보수 폴더에 보관했다. APK를 다시 빌드·설치하지 않았다. Android 패키지 조회에서 사용자가 **앱 0.12.0/code 22** 설치를 마친 것도 확인했다.
 - 이전 `restart-0.11.2-eea24817`은 **complete**로 확인했으며 중복 실행하지 않았다. 적용 전 운영 런타임은 **0.11.2 / 프로젝트 2개 / 영구 저장된 Codex Chat 2개**였다. 다른 대화는 ready, 현재 대화는 이 요청 처리 중이며 확인 시 승인·대기열은 없었다.
-- 독립 유지보수 작업 **`restart-0.12.0-cb3bf510`**을 실행했다. 포인터는 `~/.local/state/bibimer/maintenance/latest-restart.json`이다. 마지막 직접 확인 상태는 **waiting_for_current_turn**, 실행 버전은 **아직 0.11.2**다. 이 응답과 현재 세션의 대기 입력이 끝나 ready·대기열 0이 4초간 유지된 뒤 재시작한다. **다음 작업에서는 먼저 해당 status.json과 인증된 health를 확인하고 pending인 동안 중복 예약하지 않는다.** 예약을 런타임 전환 완료로 보고하지 않는다.
-- 두 세션을 같은 원본 thread ID·권한/Fast/모델/effort·프로젝트/워크트리·별칭/보관·선택 상태로 이어받는다. 현재 세션의 후속 대기 메시지는 먼저 처리하게 두며 승인 요청·다른 세션 변경·원본/권한/활성 목록 변화에는 작업을 중단한다. 새 모델 입력이나 임의 승인은 보내지 않는다. 완료 단계에서는 새 버전/기능·동일 인증/프로젝트·원본 대화 복원·완료 알림 feed와 **`/v1/commands` 네이티브 목록 조회**까지 확인한다.
+- 독립 유지보수 작업 **`restart-0.12.0-cb3bf510`**은 이번 이어가기 작업 시작 시 **complete**로 확인했다. 인증된 health의 운영 런타임은 **0.12.0 / 프로젝트 2개 / 활성 Codex Chat 2개**다. 상태 기록의 복원 수 2개·`commands_catalog_verified: true`를 확인했다. 포인터는 `~/.local/state/bibimer/maintenance/latest-restart.json`이며 **재실행하거나 중복 예약하지 않는다.**
+- 두 세션의 같은 원본 thread ID·권한/Fast/모델/effort·프로젝트/워크트리·별칭/보관·선택 상태, 동일 인증·완료 feed·명령 목록 조회를 유지보수 완료 검사에서 확인했다. 이번 에이전트 간 이어가기 소스는 운영 폴더에 설치하지 않았으며 APK도 새로 빌드하지 않았다.
 - 유지보수 폴더/실행 파일 0700, config/status/metadata 0600이다. 이번 도우미는 대화 events 및 표시 제목이 포함된 health를 파일로 기록하지 않으며 config의 자동 display_title도 제외한다. 대화 출력·미리보기는 메모리에서만 검사한다.
 - 격리된 실제 **0.11.2 → 0.12.0** 전환에서 두 원본 대화·권한/Fast·프로젝트 선택·별칭/보관·인증 유지, 대기 메시지 처리 후 재시작, 유지보수 모델 턴 없음, 완료 feed·명령 목록 API를 검증했다. 다른 대화에서 새 입력이 생기면 프로세스를 종료하지 않고 중단되는 경우도 통과했다. 로그: `.tools/test-restart-after-turn-0.12.0.log`, `.tools/test-restart-after-turn-0.12.0-abort.log`. 설치/도우미: `.tools/stage-bridge-0.12.0.py`, `.tools/restart-after-turn-0.12.0.py`. 이후 버전/운영 상태를 재검사하지 않고 이 일회성 도구를 재실행하지 않는다.
 

@@ -20,7 +20,7 @@
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
   let canOptions = false, canLiveOptions = false, settingsBusy = false, pendingOptions = null;
   let canQueue = false, canSteer = false, canQueueSteer = false, queued = [], queueRevision = -1, queueSignature = "";
-  let canCommands = false;
+  let canCommands = false, canHandoff = false, handoff = null;
   let canModels = false, canSwitchAgents = false, selectedAgent = "shell";
   let canLibrary = false, canWorktrees = false, activeViewKey = null, draftPath = null, importPath = null;
   let actionTarget = null, deleteTarget = null, libraryBusy = false, worktreeLoading = false, worktreeError = null;
@@ -546,6 +546,8 @@
     $("session-archive").hidden = $("session-archive-hint").hidden = $("session-delete").hidden = $("session-delete-hint").hidden = !canLibrary;
     $("session-archive").textContent = t(target?.archived ? "session_restore" : "session_archive");
     $("session-delete").disabled = disabled || live;
+    $("session-handoff").hidden = target?.mode !== "chat";
+    $("session-handoff").disabled = disabled;
     $("session-continue").hidden = !canLibrary || live || target?.mode !== "chat" || !target?.external_thread_id;
     $("stop").hidden = !live; $("stop").disabled = disabled || target?.state !== "running";
     $("copy-resume").hidden = !(target?.agent === "codex" && target.history_persisted && target.external_thread_id);
@@ -722,10 +724,13 @@
     $("steer").disabled = $("input").disabled || settingsBusy || sending.has(session?.id);
     $("delivery-hint").hidden = !isChat() || !responding;
     $("delivery-hint").textContent = t(!canQueue ? "delivery_update" : steerable ? "delivery_steer" : "delivery_queue");
-    renderQueue(); commands.render();
+    renderQueue(); commands.render(); renderHandoff();
     $("new-session").disabled = !online || !project || busy || switchingProject || settingsBusy || (!canLibrary && !!live);
     $("session-more").hidden = !session;
     $("session-more").disabled = !online || libraryBusy;
+    $("handoff-source").hidden = !session?.handoff;
+    $("handoff-source").textContent = session?.handoff ? t("handoff_from", {agent:t("agent_" + session.handoff.source_agent)}) : "";
+    $("handoff-source").disabled = !online || !findSession(session?.handoff?.source_session_id);
     $("session-title").textContent = session ? sessionTitle(session) : t("session_new");
     $("project-path").textContent = session?.project?.path || draftPath || project?.path || t("project_location");
     renderSessionActions(); renderProjectSettings(); renderSidebar();
@@ -813,6 +818,7 @@
       persistentCodex = health.features?.includes("persistent_codex_sessions") === true;
       canOptions = health.features?.includes("agent_options") === true;
       canLiveOptions = health.features?.includes("live_agent_options") === true;
+      canHandoff = health.features?.includes("agent_handoff") === true;
       canCommands = health.features?.includes("slash_commands") === true;
       canQueue = health.features?.includes("chat_queue") === true;
       canSteer = health.features?.includes("codex_steer") === true;
@@ -1072,7 +1078,105 @@
     try { await api("POST", `/v1/sessions/${session.id}/interrupt`); }
     catch (error) { notice(error.key || "error_request_failed"); }
   });
-  async function changeAgent(agent) {
+  function openHandoff(id, agent) {
+    const source = findSession(id);
+    if (!source || source.mode !== "chat" || handoff?.busy) return;
+    const agents = knownAgents.filter(row => row.id !== source.agent && row.installed && row.available !== false && row.modes?.includes("chat"));
+    $("handoff-agent").replaceChildren(...agents.map(row => new Option(t("agent_" + row.id), row.id)));
+    if (agents.some(row => row.id === agent)) $("handoff-agent").value = agent;
+    handoff = {id, source, target:$("handoff-agent").value, loading:false, busy:false, preview:null, error:null};
+    handoff.options = savedOptions(handoff.target);
+    $("handoff-context").value = "";
+    $("handoff-instruction").value = session?.id === id ? $("input").value : "";
+    $("handoff-context-details").open = false;
+    $("session-dialog").close(); renderHandoff();
+    if (!$("handoff-dialog").open) $("handoff-dialog").showModal();
+    void loadHandoff();
+  }
+  async function loadHandoff() {
+    const state = handoff;
+    if (!state || state.busy || state.loading || state.uncertain) return;
+    if (!canHandoff) { state.error = "handoff_update"; renderHandoff(); return; }
+    state.loading = true; state.error = null; state.preview = null; state.attempt = null; renderHandoff();
+    try {
+      const preview = await api("POST", `/v1/sessions/${state.id}/handoff`, {action:"preview"});
+      if (handoff !== state) return;
+      state.preview = preview; $("handoff-context").value = preview.context;
+    } catch (error) { if (handoff === state) state.error = error.key || "error_request_failed"; }
+    finally { if (handoff === state) { state.loading = false; renderHandoff(); } }
+  }
+  function renderHandoff() {
+    if (!handoff) return;
+    const state = handoff, locked = state.busy || state.uncertain;
+    $("handoff-path").textContent = state.source.project.path;
+    const options = state.options;
+    $("handoff-options").textContent = t("handoff_settings") + " " + [t("permission_" + options.permission),
+      options.model || t("model_default"), options.effort, state.target === "codex" ? t(options.fast ? "fast_on" : "fast_off") : ""].filter(Boolean).join(" · ");
+    $("handoff-summary").textContent = state.loading ? t("handoff_loading") : state.preview ?
+      t(state.preview.truncated ? "handoff_partial" : "handoff_count", {count:state.preview.message_count}) : "";
+    $("handoff-error").textContent = state.error ? t(state.error) : ""; $("handoff-error").hidden = !state.error;
+    $("handoff-agent").disabled = locked;
+    $("handoff-context").disabled = locked || state.loading || !state.preview;
+    $("handoff-instruction").disabled = locked;
+    $("handoff-close").disabled = state.busy;
+    $("handoff-refresh").disabled = locked || state.loading || !online || !canHandoff;
+    $("handoff-existing").textContent = t("handoff_existing", {agent:t("agent_" + state.target)});
+    $("handoff-existing").disabled = state.busy || !online || !state.target;
+    const bytes = value => new TextEncoder().encode(value).length;
+    $("handoff-send").disabled = !online || state.busy || state.loading || !state.preview || !state.target ||
+      !$("handoff-context").value.trim() || bytes($("handoff-context").value) > 12000 ||
+      !$("handoff-instruction").value.trim() || bytes($("handoff-instruction").value) > 4000;
+    $("handoff-send").textContent = t(state.uncertain ? "handoff_retry" : "handoff_send");
+    pickers.sync();
+  }
+  $("handoff-agent").addEventListener("change", () => {
+    if (!handoff || handoff.busy || handoff.uncertain) return;
+    handoff.target = $("handoff-agent").value; handoff.options = savedOptions(handoff.target); handoff.attempt = null; renderHandoff();
+  });
+  for (const id of ["handoff-context", "handoff-instruction"]) $(id).addEventListener("input", () => {
+    if (handoff && !handoff.uncertain) handoff.attempt = null;
+    renderHandoff();
+  });
+  $("handoff-refresh").addEventListener("click", loadHandoff);
+  $("handoff-close").addEventListener("click", () => { if (!handoff?.busy) $("handoff-dialog").close(); });
+  $("handoff-dialog").addEventListener("cancel", event => { if (handoff?.busy) event.preventDefault(); });
+  $("handoff-dialog").addEventListener("close", () => { if (!handoff?.busy) handoff = null; });
+  $("handoff-existing").addEventListener("click", async () => {
+    if (!handoff || handoff.busy) return;
+    const state = handoff; $("handoff-dialog").close();
+    if (projectKey() !== state.source.project.id) await changeProject({project_id:state.source.project.id});
+    await changeAgent(state.target, true);
+  });
+  $("session-handoff").addEventListener("click", () => openHandoff(actionTarget));
+  $("handoff-source").addEventListener("click", () => {
+    const source = findSession(session?.handoff?.source_session_id);
+    if (source) void selectSession(source.project.id, source.id);
+  });
+  $("handoff-send").addEventListener("click", async () => {
+    const state = handoff;
+    if (!state || $("handoff-send").disabled) return;
+    if (!state.attempt) state.attempt = {action:"start", agent:state.target, options:{...state.options},
+      context:$("handoff-context").value, instruction:$("handoff-instruction").value,
+      revision:state.preview.revision, request_id:uuid()};
+    state.busy = true; state.error = null; renderHandoff();
+    try {
+      const result = await api("POST", `/v1/sessions/${state.id}/handoff`, state.attempt);
+      cacheSession(result.session); state.busy = false; $("handoff-dialog").close();
+      await selectSession(state.source.project.id, result.session.id);
+    } catch (error) {
+      if (handoff === state) {
+        state.uncertain = !error.status || error.status >= 500;
+        state.error = state.uncertain ? "handoff_uncertain" : error.key || "error_request_failed";
+        if (!state.uncertain) state.attempt = null;
+      }
+    } finally { state.busy = false; renderHandoff(); renderSession(); }
+  });
+
+  async function changeAgent(agent, openExisting = false) {
+    if (!openExisting && session?.mode === "chat" && agent !== session.agent && ["codex", "claude", "opencode"].includes(agent)) {
+      if (busy || switchingProject || settingsBusy) { renderSession(); return; }
+      openHandoff(session.id, agent); renderSession(); return;
+    }
     if (busy || switchingProject || settingsBusy) { $("agent").value = selectedAgent; renderSession(); return; }
     if (!canSwitchAgents) {
       $("agent").value = agent; selectedAgent = agent;
@@ -1443,7 +1547,10 @@
   };
   window.BibimerBack = () => {
     const dialogs = [...document.querySelectorAll("dialog[open]")];
-    if (dialogs.length) { dialogs[dialogs.length - 1].close(); return true; }
+    if (dialogs.length) {
+      if (dialogs[dialogs.length - 1].id === "handoff-dialog" && handoff?.busy) return true;
+      dialogs[dialogs.length - 1].close(); return true;
+    }
     if (!$("commands").hidden && currentTab === "work") { commands.dismiss(); return true; }
     if (currentTab !== "work") { tab("work"); return true; }
     return false;

@@ -44,6 +44,7 @@
       </div>
       <button id="project-update" class="quiet" data-i18n="projects_update" hidden>Update the bridge to use multiple projects</button>
       <div class="session-bar"><span id="session-title"></span><span id="process" class="badge">Not started</span></div>
+      <button id="handoff-source" class="quiet" type="button" hidden></button>
       <div id="mode-controls" class="mode-controls"><label for="mode" data-i18n="mode_label">Session interface</label><select id="mode"><option value="terminal" data-i18n="mode_terminal">Terminal · PTY</option><option value="chat" data-i18n="mode_chat">Chat · formatted text</option></select></div>
       <div id="launch-controls" class="launch-controls">
         <label class="sr-only" for="agent" data-i18n="program_label">Program to run</label>
@@ -202,12 +203,27 @@
     <p id="session-action-name"></p><p id="session-action-status" class="hint"></p><p id="session-action-error" class="hint danger-text" role="status" hidden></p>
     <form id="session-rename-form"><label for="session-name" data-i18n="session_name">Session name</label><div class="folder-input"><input id="session-name" maxlength="120" autocomplete="off"><button id="session-rename" class="secondary" type="submit" data-i18n="session_rename">Rename</button></div></form>
     <button id="session-continue" class="primary" type="button" data-i18n="session_continue">Continue session</button>
+    <button id="session-handoff" class="secondary" type="button" data-i18n="handoff_action">Continue with another agent</button>
     <button id="session-archive" class="secondary" type="button" data-i18n="session_archive">Archive</button>
     <p id="session-archive-hint" class="hint" data-i18n="session_archive_hint">Moves to Archived. Running work continues.</p>
     <button id="copy-resume" class="quiet" type="button" data-i18n="codex_resume_copy" hidden>Resume in CLI</button>
     <button id="stop" class="quiet" type="button" data-i18n="session_end">End session</button>
     <button id="session-delete" class="quiet danger-text" type="button" data-i18n="session_delete">Remove from BIBIMER</button>
     <p id="session-delete-hint" class="hint" data-i18n="session_delete_hint">Ends no processes and keeps the agent’s saved history and project files. End a running session first.</p>
+  </dialog>
+  <dialog id="handoff-dialog" class="settings-dialog" aria-labelledby="handoff-title">
+    <div class="sidebar-heading"><h2 id="handoff-title" data-i18n="handoff_title">Switch agent</h2><button id="handoff-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
+    <p id="handoff-path" class="hint" dir="auto"></p>
+    <label for="handoff-agent" data-i18n="agent_label">Agent</label><select id="handoff-agent"></select>
+    <p data-i18n="handoff_hint" class="hint">Continue in a new session with the conversation below and the same project files. The source session is kept.</p>
+    <p id="handoff-options" class="hint"></p>
+    <details id="handoff-context-details"><summary data-i18n="handoff_context">Review conversation to share</summary><textarea id="handoff-context" rows="6" data-i18n-aria-label="handoff_context" aria-label="Review conversation to share" spellcheck="false"></textarea></details>
+    <p id="handoff-summary" class="hint"></p>
+    <button id="handoff-refresh" class="quiet" type="button" data-i18n="handoff_refresh">Reload conversation</button>
+    <label for="handoff-instruction" data-i18n="handoff_instruction">Next instruction</label><textarea id="handoff-instruction" rows="2" data-i18n-placeholder="handoff_placeholder" placeholder="What should the next agent do?"></textarea>
+    <p id="handoff-error" class="hint danger-text" role="status" hidden></p>
+    <button id="handoff-send" class="primary" type="button" data-i18n="handoff_send">Continue &amp; send</button>
+    <button id="handoff-existing" class="secondary" type="button"></button>
   </dialog>
   <dialog id="delete-dialog" aria-labelledby="delete-title"><h2 id="delete-title" data-i18n="session_delete">Remove from BIBIMER</h2><p id="delete-name"></p><p data-i18n="session_delete_confirm">Remove this session from the list? The agent’s saved history and project files are kept.</p><div class="button-row"><button id="cancel-delete" class="secondary" data-i18n="cancel_project">Cancel</button><button id="confirm-delete" class="danger" data-i18n="session_delete">Remove from BIBIMER</button></div></dialog>
   <dialog id="folder-dialog" aria-labelledby="folder-title">

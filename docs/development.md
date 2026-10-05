@@ -1,5 +1,12 @@
 # 개발 및 검증
 
+## 2026-10-06 에이전트 간 대화 이어가기 (미빌드)
+
+- `POST /v1/sessions/{id}/handoff`는 preview/start 두 동작을 제공한다. preview는 원본의 완료된 사용자·답변과 revision을 반환한다. start는 확인한 context·instruction·대상 agent/options·revision·request_id를 받아 같은 프로젝트/워크트리에 별도 Chat을 만들고 초기 대기 입력을 보낸다. 기존 에이전트 어댑터의 새 세션/턴 API를 사용하며 원본 프로세스나 네이티브 ID를 바꾸지 않는다.
+- 초기화·진행 중 턴·승인·대기열·변경된 revision을 검사한다. request digest는 원본/대상/본문/설정/revision을 묶고 동일 요청은 생성된 세션을 반환한다. 출처와 digest만 metadata에 유지하고 본문은 저장하지 않는다. 네이티브 대화 기록은 해당 에이전트가 보관한다.
+- `bridge/tests/test_handoff.py`의 6개 검사와 `scripts/smoke_handoff.cjs`로 세 에이전트의 여섯 방향, 기존 세션·초안·워크트리 유지, 기록 필터/바이트 제한, 미리보기의 무실행, 승인/대기열/원본 변경 거절, 응답 유실 후 동일 요청 복구·출처 링크를 검증했다. 320/393px 영어·한국어 화면과 구형 브리지 안내를 확인했다. 기존 전체 UI·라이브러리/알림 검증, Java 컴파일·JS 문법 검사도 통과했다.
+- 새 APK·운영 브리지 적용 전 상태다. 실제 모델 맥락의 유용성, Android WebView/키보드는 새 빌드 설치 후 검증한다. 자세한 로그·현재 운영 상태는 [NEXT_SESSION.md](../NEXT_SESSION.md)를 따른다.
+
 ## 2026-10-06 0.12.0 APK 빌드 검증
 
 - 앱 **0.12.0/code 22**, 내장 브리지 **0.12.0** 빌드 완료. `/` 스킬·명령 UI와 세 에이전트 네이티브 호출, 압축 브리지 설치 파일을 포함한다. Download의 `Bibimer-0.12.0.apk`는 338,477바이트, `bibimer-setup-0.12.0.sh`는 59,803바이트다.
