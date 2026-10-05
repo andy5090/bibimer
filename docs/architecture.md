@@ -72,9 +72,11 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 
 ## 응답 완료 이벤트와 Android 알림 (0.11.0)
 
-`response_notifications` 기능 플래그와 인증된 `GET /v1/completions?cursor=N&instance=UUID|none&wait=0..20`를 제공한다. 현재 턴 ID와 일치하는 명시적 `turn/completed(status=completed)`에서만 전역 증가 ID를 발행한다. 별도 condition/deque에 최근 512개 `{id,session_id,project_id,agent,completed_at}`만 저장하며 대화 본문은 읽지 않는다. 초기 ready·과거 대화·실패·중단·중복 완료·PTY는 발행하지 않는다. 보관 상태와 선택 프로젝트는 필터가 아니다.
+`response_notifications` 기능 플래그와 인증된 `GET /v1/completions?cursor=N&instance=UUID|none&wait=0..20`를 제공한다. 현재 턴 ID와 일치하는 명시적 `turn/completed(status=completed)`에서만 전역 증가 ID를 발행한다. 별도 condition/deque에 최근 512개 `{id,session_id,project_id,agent,completed_at}`를 메모리에 저장한다. **답변 미리보기 미배포 소스**는 `preview` 필드를 추가하며, 현재 턴의 완료된 assistant 메시지만 최대 180자로 발췌한다. 명시적 `final_answer`를 우선하고 `commentary`는 제외한다. phase가 없는 제공자는 현재 턴에서 마지막으로 완료된 assistant 메시지를 사용한다. 미리보기는 메모리에만 유지하고 메타데이터 파일·로그에는 기록하지 않는다. 초기 ready·과거 대화·실패·중단·중복 완료·PTY는 발행하지 않는다. 보관 상태와 선택 프로젝트는 필터가 아니다.
 
-응답은 `{instance,cursor,reset,gap,events}`다. 처음 연결·인스턴스 변경·범위 밖 미래 cursor에는 `reset:true`와 현재 cursor, 빈 events를 반환해 과거 완료를 재생하지 않는다. 범위 내 재접속은 cursor 이후를 반환하고 보존 범위가 넘으면 `gap:true`와 남은 이벤트를 반환한다. 기다리는 동안 Bridge/Session 잠금을 잡지 않는다. 반환 전에 현재 프로젝트·세션 별칭을 추가하고 목록에서 삭제된 대상은 제외한다. 완료 목록은 메타데이터 파일에 영속화하지 않는다.
+응답은 `{instance,cursor,reset,gap,events}`다. OpenCode의 native parent message ID와 브리지 turn ID는 다르므로 어댑터가 현재 prompt에 속한 항목에만 `responseTurnId`를 붙인다. 과거 메시지는 미리보기 후보에서 제외하며 기존 대화 화면의 native 그룹 ID는 유지한다. 턴별 미리보기는 최대 200개 대화 항목이 잘려도 유지되고, 턴 종료/다음 시작에서 초기화한다. 원문 발췌의 Markdown·링크·ANSI·제어 문자를 정리하고 긴 답변에는 말줄임표를 붙인다.
+
+처음 연결·인스턴스 변경·범위 밖 미래 cursor에는 `reset:true`와 현재 cursor, 빈 events를 반환해 과거 완료를 재생하지 않는다. 범위 내 재접속은 cursor 이후를 반환하고 보존 범위가 넘으면 `gap:true`와 남은 이벤트를 반환한다. 기다리는 동안 Bridge/Session 잠금을 잡지 않는다. 반환 전에 현재 프로젝트·세션 별칭을 추가하고 목록에서 삭제된 대상은 제외한다. 완료 목록은 메타데이터 파일에 영속화하지 않는다.
 
 Android `ResponseNotificationService`는 UI와 별개 `LocalBridge`/TokenStore로 loopback long poll한다. foreground Activity의 연결 확인/사용자 토글에서만 서비스를 시작한다. POST_NOTIFICATIONS·앱/채널 차단을 검사하고 활성 서비스는 끌 수 있는 지속 알림을 표시한다. `specialUse` 타입·권한·세부 사유를 Manifest에 선언했다. 일반 dataSync나 외부 기기 연결로 분류하지 않는다. 근거: [서비스 타입](https://developer.android.com/develop/background-work/services/fgs/service-types), [백그라운드 시작 제약](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start).
 
@@ -82,7 +84,7 @@ Android `ResponseNotificationService`는 UI와 별개 `LocalBridge`/TokenStore�
 
 알림은 immutable explicit Activity PendingIntent로 프로젝트/세션 ID만 전달한다. 앱이 이미 열렸으면 onNewIntent, 새로 열렸으면 첫 연결 후 대상 세션을 선택하고 삭제된 대상은 안내한다. 앱의 초안/대기열/승인과 프로세스를 유지하며 자동 실행하지 않는다. 구현 근거: [알림에서 Activity 열기](https://developer.android.com/develop/ui/views/notifications/navigation). 잠금 화면 공개 버전에는 프로젝트·세션 이름도 제외한다.
 
-서비스는 START_NOT_STICKY이며 강제 종료/시스템 서비스 중지 후 앱을 열어 다시 연결한다. Boot receiver·자동 권한 변경·배터리 예외 신청은 하지 않는다. 화면 잠금/Doze/OEM 절전에서 전달 시점·지속성은 아직 실기기 검증 전이다. 0.11.0 APK 패키징은 완료했으며 앱 설치·운영 브리지 적용은 아직 하지 않았다.
+서비스는 START_NOT_STICKY이며 강제 종료/시스템 서비스 중지 후 앱을 열어 다시 연결한다. Boot receiver·자동 권한 변경·배터리 예외 신청은 하지 않는다. 화면 잠금/Doze/OEM 절전에서 전달 시점·지속성은 아직 실기기 검증 전이다. 0.11.0 앱 설치·운영 브리지 적용은 확인했다. 답변 미리보기 변경은 다음 APK·브리지 적용 대기다.
 
 ## 상태와 재접속
 

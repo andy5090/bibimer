@@ -10,6 +10,7 @@ import fcntl
 import hashlib
 import heapq
 import hmac
+import html
 import http.server
 import json
 import os
@@ -598,6 +599,27 @@ def import_spec(data):
     return {"source_thread_id": thread_id, "import_mode": mode}
 
 
+def response_preview(value):
+    """Plain-text excerpt of a structured assistant answer, never tool output."""
+    text = value[:32768] if isinstance(value, str) else ""
+    text = re.sub(r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)", "", text)
+    text = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", text)
+    text = re.sub(r"(?m)^\s{0,3}(?:`{3,}|~{3,})[^\n]*$", "", text)
+    text = re.sub(r"(?m)^\s{0,3}\[[^\]\n]+\]:[^\n]*$", "", text)
+    text = re.sub(r"!?\[([^\]\n]*)\]\([^\n)]*\)", r"\1", text)
+    text = re.sub(r"\[([^\]\n]+)\]\[[^\]\n]*\]", r"\1", text)
+    text = re.sub(r"<[^>\n]+>", "", text)
+    text = html.unescape(text)
+    text = re.sub(r"(?m)^\s*(?:#{1,6}\s+|>\s*|[-+*]\s+(?:\[[ xX]\]\s*)?|\d+[.)]\s+)", "", text)
+    text = re.sub(r"(?m)^\s*(?:[-=_*]\s*){3,}$", "", text)
+    text = re.sub(r"(`+)(.*?)\1", r"\2", text)
+    text = re.sub(r"(\*\*|__|~~)(.*?)\1", r"\2", text, flags=re.S)
+    text = re.sub(r"(?<!\w)([*_])(\S(?:.*?\S)?)\1(?!\w)", r"\2", text)
+    text = re.sub(r"[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069\ud800-\udfff]", " ", text)
+    text = " ".join(text.split())
+    return text if len(text) <= 180 else text[:179].rstrip() + "…"
+
+
 class ChatSession(Session):
     """One Codex app-server or provider adapter over stdio. Output stays in memory.
 
@@ -613,6 +635,7 @@ class ChatSession(Session):
         self.model_catalog = catalog or []
         self.default_model, self.default_effort = None, None
         self.completed = completed
+        self.response_preview, self.response_preview_final = "", False
         self.cols, self.rows = cols, rows
         self.started_at = time.time()
         self.state, self.exit_code = "running", None
@@ -872,6 +895,7 @@ class ChatSession(Session):
         elif method == "turn/started":
             if self.turn_id != params["turn"]["id"]:
                 self.requests.clear()
+                self.response_preview, self.response_preview_final = "", False
             self.turn_id = params["turn"]["id"]
             self.turn_state = "running"
             self._bump()
@@ -887,7 +911,8 @@ class ChatSession(Session):
             self._put({"id": "turn-" + turn["id"], "kind": "turn", "status": turn.get("status", "completed"),
                        "text": self._text((turn.get("error") or {}).get("message"))})
             if notify_complete and self.completed:
-                self.completed(self.id, self.project["id"], self.agent)
+                self.completed(self.id, self.project["id"], self.agent, self.response_preview)
+            self.response_preview, self.response_preview_final = "", False
         elif method == "serverRequest/resolved":
             for key, request in list(self.requests.items()):
                 if request["rpc_id"] == params.get("requestId"):
@@ -896,7 +921,16 @@ class ChatSession(Session):
                 self.turn_state = "running"
             self._bump()
         elif method in {"item/started", "item/completed"}:
-            self._item(params["item"], params.get("turnId", ""), method == "item/completed")
+            source = params["item"]
+            self._item(source, params.get("turnId", ""), method == "item/completed")
+            response_turn = params.get("responseTurnId", params.get("turnId"))
+            if (method == "item/completed" and self.turn_id and response_turn == self.turn_id and
+                    source.get("type") == "agentMessage" and source.get("status", "completed") == "completed"):
+                item = self.items.get(params.get("turnId", "") + ":" + source["id"], {})
+                phase = source.get("phase") or item.get("phase")
+                if phase == "final_answer" or (phase is None and not self.response_preview_final):
+                    self.response_preview = response_preview(source.get("text"))
+                    self.response_preview_final = phase == "final_answer"
         elif method in {"item/agentMessage/delta", "item/plan/delta", "item/commandExecution/outputDelta"}:
             key = params.get("turnId", "") + ":" + params["itemId"]
             item = dict(self.items.get(key, {"id": key, "kind": "command" if "outputDelta" in method else "assistant", "text": "", "status": "inProgress"}))
@@ -918,6 +952,10 @@ class ChatSession(Session):
         if kind == "userMessage":
             item.update(kind="user", text=self._text("\n".join(x.get("text", "") for x in source.get("content", []) if x.get("type") == "text")))
         elif kind in {"agentMessage", "plan"}:
+            if kind == "agentMessage":
+                phase = source.get("phase") or self.items.get(key, {}).get("phase")
+                if phase in {"commentary", "final_answer"}:
+                    item["phase"] = phase
             item.update(kind="assistant" if kind == "agentMessage" else "plan", text=self._text(source.get("text")))
         elif kind == "commandExecution":
             item.update(kind="command", title=self._text(source.get("command")), text=self._text(source.get("aggregatedOutput")), exit_code=source.get("exitCode"))
@@ -1234,18 +1272,18 @@ class ChatSession(Session):
 
 
 class CompletionFeed:
-    """Bounded, process-local metadata. Its lock never acquires a bridge/session lock."""
+    """Bounded metadata and answer excerpts; never persisted or logged. No reverse lock acquisition."""
     def __init__(self, instance):
         self.instance = instance
         self.condition = threading.Condition()
         self.cursor = 0
         self.entries = collections.deque(maxlen=512)
 
-    def publish(self, session_id, project_id, agent):
+    def publish(self, session_id, project_id, agent, preview=""):
         with self.condition:
             self.cursor += 1
             self.entries.append({"id": self.cursor, "session_id": session_id, "project_id": project_id,
-                                 "agent": agent, "completed_at": time.time()})
+                                 "agent": agent, "completed_at": time.time(), "preview": preview[:180]})
             self.condition.notify_all()
 
     def read(self, instance, cursor, wait):

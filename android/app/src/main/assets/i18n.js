@@ -3,7 +3,7 @@
   // Each entry is [English default, Korean]. Terminal output is never translated.
   const strings = {
     notifications_label: ["Response notifications", "응답 완료 알림"],
-    notifications_hint: ["Notify when each Chat response finishes, across all projects. Background alerts use an ongoing notification.", "모든 프로젝트의 Chat 응답이 완료될 때마다 알립니다. 백그라운드 알림을 위해 지속 알림을 표시합니다."],
+    notifications_hint: ["Show a short answer preview after each Chat response, across all projects. Background alerts use an ongoing notification.", "모든 프로젝트의 Chat 응답이 완료되면 짧은 답변 미리보기를 표시합니다. 백그라운드 알림을 위해 지속 알림을 표시합니다."],
     notifications_android_settings: ["Android notification settings", "Android 알림 설정"],
     notifications_off: ["Off. Agent sessions keep running.", "꺼짐. 에이전트 세션은 계속 실행됩니다."],
     notifications_permission: ["Allow BIBIMER notifications in Android settings to receive alerts.", "알림을 받으려면 Android 설정에서 BIBIMER 알림을 허용하세요."],

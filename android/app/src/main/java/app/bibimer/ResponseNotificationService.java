@@ -142,12 +142,16 @@ public final class ResponseNotificationService extends Service {
         String sessionTitle = event.optString("session_title", "");
         String agent = event.optString("agent");
         String agentName = agent.equals("codex") ? "Codex" : agent.equals("claude") ? "Claude" : "OpenCode";
-        String text = language.text(R.string.notification_response_complete) + " · " + (sessionTitle.isEmpty() ? agentName : sessionTitle);
+        String text = event.optString("preview", "").trim();
+        if (text.codePointCount(0, text.length()) > 180)
+            text = text.substring(0, text.offsetByCodePoints(0, 179)).trim() + "…";
+        if (text.isEmpty()) text = language.text(R.string.notification_response_complete);
         Notification hidden = new Notification.Builder(this, ResponseNotifications.RESPONSES)
             .setSmallIcon(R.drawable.ic_notification).setContentTitle("BIBIMER")
             .setContentText(language.text(R.string.notification_response_complete)).build();
         Notification notification = new Notification.Builder(this, ResponseNotifications.RESPONSES)
             .setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setContentText(text)
+            .setSubText(sessionTitle.isEmpty() ? agentName : sessionTitle)
             .setStyle(new Notification.BigTextStyle().bigText(text)).setContentIntent(open)
             .setWhen((long)(event.getDouble("completed_at") * 1000)).setAutoCancel(true).setOnlyAlertOnce(true)
             .setCategory(Notification.CATEGORY_STATUS).setVisibility(Notification.VISIBILITY_PRIVATE).setPublicVersion(hidden).build();

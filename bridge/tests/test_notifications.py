@@ -7,6 +7,20 @@ from test_bridge import module
 from test_chat import ChatFixture
 
 
+class ResponsePreviewTests(unittest.TestCase):
+    def test_markdown_becomes_readable_text_and_preserves_code_names(self):
+        text = "## 완료\n- **알림 수정**: [`my_file.py`](https://example.invalid/path)\n- [x] _테스트_ 통과\n```python\nprint('ok')\n```\n&gt; 다음 단계 &amp; 확인"
+        self.assertEqual("완료 알림 수정: my_file.py 테스트 통과 print('ok') 다음 단계 & 확인", module.response_preview(text))
+        self.assertEqual("문서 참고", module.response_preview("[문서][ref] 참고\n[ref]: https://example.invalid"))
+
+    def test_unicode_boundaries_controls_and_empty_answer(self):
+        self.assertEqual("안녕 👩‍💻 작업 완료", module.response_preview("\x1b[32m안녕 👩‍💻\x1b[0m\n작업\t완료\u202e"))
+        self.assertEqual("😀" * 179 + "…", module.response_preview("😀" * 181))
+        self.assertEqual("가" * 180, module.response_preview("가" * 180))
+        self.assertEqual("", module.response_preview(None))
+        self.assertEqual("", module.response_preview("```\n```\n---"))
+
+
 class CompletionFeedTests(unittest.TestCase):
     def test_baseline_restart_overflow_and_long_poll(self):
         instance = str(uuid.uuid4())
@@ -57,15 +71,59 @@ class ResponseNotificationTests(ChatFixture):
         self.assertEqual([1, 2, 3], [row['id'] for row in result['events']])
         self.assertEqual({session.id}, {row['session_id'] for row in result['events']})
         self.assertNotIn('PRIVATE', json.dumps(result))
-        self.assertEqual({'id','session_id','project_id','agent','completed_at','project_name','session_title'}, set(result['events'][0]))
+        self.assertTrue(all(row['preview'].startswith('Result Formatted reply') for row in result['events']))
+        self.assertTrue(all(len(row['preview']) <= 180 for row in result['events']))
+        self.assertEqual({'id','session_id','project_id','agent','completed_at','project_name','session_title','preview'}, set(result['events'][0]))
         with session.condition:
             session._handle({'method':'turn/completed','params':{'turn':{'id':'duplicate','status':'completed'}}})
         self.assertEqual([], self.feed(result['cursor'])['events'])
         self.bridge.persist()
         self.assertNotIn('completed_at', (self.state/'metadata.json').read_text())
+        self.assertNotIn(result['events'][0]['preview'], (self.state/'metadata.json').read_text())
         initial = self.api('GET', '/v1/completions?instance=none&cursor=0&wait=0')[1]
         self.assertTrue(initial['reset'])
         self.assertEqual([], initial['events'])
+
+    def test_preview_uses_current_final_answer_and_survives_output_eviction(self):
+        session = self.chat()
+        def emit(method, **params):
+            session._handle({'method':method,'params':params})
+        def item(turn, kind, text, identity='answer', **fields):
+            emit('item/completed', turnId=turn, item={'id':identity,'type':kind,'text':text,**fields})
+        with session.condition:
+            session._item({'id':'history','type':'agentMessage','text':'OLD HISTORY'}, 'old', True)
+            emit('turn/started', turn={'id':'first'})
+            emit('item/started', turnId='first', item={'id':'progress','type':'agentMessage','phase':'commentary','text':'PROGRESS'})
+            item('first', 'agentMessage', 'PROGRESS DONE', identity='progress')
+            item('first', 'reasoning', 'REASONING SECRET', identity='reasoning')
+            item('first', 'userMessage', 'USER SECRET', identity='user')
+            item('old', 'agentMessage', 'OLD RESPONSE', phase='final_answer')
+            item('first', 'agentMessage', '**응답 미리보기**를 구현했습니다. ✅', phase='final_answer')
+            item('first', 'agentMessage', 'LATE UNCLASSIFIED', identity='late')
+            for number in range(205):
+                item('first', 'commandExecution', 'TOOL OUTPUT', identity='command-'+str(number), aggregatedOutput='TOOL OUTPUT')
+            emit('turn/completed', turn={'id':'first','status':'completed'})
+            emit('turn/started', turn={'id':'second'})
+            item('second', 'agentMessage', 'COMMENTARY ONLY', phase='commentary')
+            emit('turn/completed', turn={'id':'second','status':'completed'})
+            emit('turn/started', turn={'id':'third'})
+            item('third', 'agentMessage', 'Legacy answer without phase')
+            emit('turn/completed', turn={'id':'third','status':'completed'})
+            emit('turn/started', turn={'id':'fourth'})
+            item('fourth', 'agentMessage', 'UNFINISHED', status='inProgress')
+            emit('turn/completed', turn={'id':'fourth','status':'completed'})
+        self.assertEqual(['응답 미리보기를 구현했습니다. ✅', '', 'Legacy answer without phase', ''],
+                         [row['preview'] for row in self.feed()['events']])
+
+    def test_adapter_native_message_id_is_mapped_to_current_response_only(self):
+        session = self.chat()
+        with session.condition:
+            session._handle({'method':'turn/started','params':{'turn':{'id':'bridge-turn'}}})
+            for source_turn, mapped_turn, text in [('native-parent','bridge-turn','**OpenCode** answer'), ('old-parent',None,'OLD ANSWER')]:
+                session._handle({'method':'item/completed','params':{'turnId':source_turn,'responseTurnId':mapped_turn,
+                    'item':{'id':'native-answer','type':'agentMessage','text':text}}})
+            session._handle({'method':'turn/completed','params':{'turn':{'id':'bridge-turn','status':'completed'}}})
+        self.assertEqual('OpenCode answer', self.feed()['events'][0]['preview'])
 
     def test_interrupted_failed_unmatched_and_missing_status_do_not_notify(self):
         session = self.chat()

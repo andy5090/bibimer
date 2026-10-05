@@ -18,6 +18,17 @@
 - **사용자가 명시적으로 빌드를 요청할 때만 APK를 빌드한다.** 작업 보고에서는 소스 구현 완료와 마지막 APK에 포함된 내용을 구분한다.
 - 현재 마지막 빌드 파일은 `Download/Bibimer-0.11.0.apk`다. 2026-10-05의 명시적 `apk 빌드` 요청으로 누적 변경을 빌드했다.
 
+## 응답 완료 알림의 답변 미리보기 (2026-10-05, 소스 반영 / APK·브리지 적용 대기)
+
+- 사용자 요청으로 일반 `Response complete` 문구 대신 **완료된 답변 앞부분 최대 180자**를 표시하도록 수정했다. 별도 모델 요약은 호출하지 않는다. Android 알림 제목은 프로젝트 이름, 보조 문구는 세션 이름/에이전트, 본문·확장 본문은 답변 미리보기다. 텍스트가 없거나 구형 브리지가 preview를 제공하지 않으면 일반 완료 문구로 돌아간다. 잠금 화면 공개 버전은 BIBIMER·일반 완료 문구만 유지한다.
+- 브리지 완료 feed에 `preview`를 추가했다. 현재 턴의 완료된 `agentMessage`만 사용하며 Codex `final_answer`를 우선하고 `commentary`를 제외한다. 단계가 없는 Claude/OpenCode/이전 Codex는 해당 턴의 마지막 완료된 assistant 텍스트를 사용한다. 사용자 입력·추론·도구/명령 출력·이전 턴/가져온 기록·미완료 스트림은 후보가 아니다. 명시적 최종 답변 뒤의 단계 미상 메시지로 덮어쓰지 않는다.
+- 턴별 짧은 미리보기를 유지해 최근 대화 200개 한계에 걸려도 마지막 답변을 잃지 않으며 턴 종료/새 턴 시작에서 비운다. Markdown 제목/목록/강조/링크/코드 구분 기호, ANSI/제어 문자를 정리하고 공백을 합친다. 한국어·이모지를 유지하고 긴 발췌는 말줄임표로 끝낸다. Native에서도 코드 포인트 기준 길이를 제한한다.
+- OpenCode는 native parent message ID와 브리지 turn UUID가 달라, 어댑터가 현재 prompt 소속 항목에만 `responseTurnId`를 명시한다. 기존 대화 화면의 native 그룹 ID는 바꾸지 않는다. 이전 메시지를 현재 알림으로 발췌하지 않는다.
+- 사용자 지시를 반영해 AGENTS의 본문 미포함 지침을 짧은 답변 미리보기 허용으로 수정했다. 발췌는 브리지 메모리의 최근 512개 완료 목록에만 추가되며 metadata/일반 로그/Android cursor preferences에 저장하지 않는다. 별도 인증 정보를 추가하지 않는다. 설정 안내도 영어·한국어로 갱신했다.
+- **전체 브리지 테스트 101개 통과**, 알림 관련 9개, Android 전체 Java 컴파일·JS 문법·diff 검사 통과. 신규 검증은 Markdown/한국어/이모지/제어 문자/길이, final과 commentary 구분, 기록/도구/추론 제외, 200개 항목 제거 후 유지, 다음 턴 미리보기 초기화, OpenCode ID 연결을 포함한다. Claude/OpenCode 실제 어댑터 대역에서 대기 응답 3건의 미리보기 3건도 검증했다. 자동 Setup payload는 **215,849 UTF-16 단위**로 220,000 한도 이내다.
+- 로그: `.tools/tests-notification-previews-all.log`, `.tools/tests-notification-previews.log`, `.tools/java-notification-previews.log`. **APK 미빌드·운영 브리지 미변경**. 설치된 앱·브리지 0.11.0은 아직 일반 완료 문구를 사용하며 새 APK와 브리지 적용이 모두 필요하다. 실제 Android 알림 미리보기/확장/잠금 화면은 다음 설치 후 검증한다.
+- 이전 실제 응답 테스트 **response-1cc4e580**의 독립 관찰 결과는 `completion_event_seen`, event ID 1, 해당 세션 일치 이벤트 1개였다. 브리지 이벤트 생성은 확인했지만 관찰 작업은 Android 표시 자체를 검사하지 않으므로 `android_delivery_verified:false`를 유지한다.
+
 ## 0.11.0 적용 확인 및 실제 응답 알림 테스트 (2026-10-05)
 
 - `restart-0.11.0-1d3f2ae2/status.json`의 **complete**와 운영 health **0.11.0·활성 세션 2개·프로젝트 3개**를 확인했다. 두 원본 대화·권한·페어링 유지 및 완료 API 검증이 기록됐고 `response_notifications` 기능을 실제 제공한다. 아래 재시작 예약 기록은 완료됐다. 같은 작업을 다시 예약하지 않는다.

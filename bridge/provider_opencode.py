@@ -162,7 +162,9 @@ class Adapter:
                         identity = entry['turnId'] + ':' + entry['item']['id']
                         if self.seen.get(identity) != entry:
                             self.seen[identity] = entry
-                            self.notify('item/completed' if entry['item'].get('status') != 'inProgress' else 'item/started', entry)
+                            # Keep native message grouping; explicitly associate only this prompt’s answer.
+                            self.notify('item/completed' if entry['item'].get('status') != 'inProgress' else 'item/started',
+                                        {**entry, 'responseTurnId': turn if entry['turnId'] == self.message_id else None})
                     # Bound the adapter's own comparison cache too.
                     if len(self.seen) > 500:
                         self.seen = dict(list(self.seen.items())[-250:])

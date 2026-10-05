@@ -162,6 +162,8 @@ class ProviderTests(ChatFixture):
                 completions = self.bridge.completions(self.bridge.instance, notification_cursor, 0)['events']
                 self.assertEqual([agent] * 3, [row['agent'] for row in completions])
                 self.assertEqual([session.id] * 3, [row['session_id'] for row in completions])
+                expected_preview = ('OpenCode' if agent == 'opencode' else 'Claude') + ' result Ready for follow-up'
+                self.assertEqual([expected_preview] * 3, [row['preview'] for row in completions])
                 self.assertFalse((self.root/'project'/f'{agent}-approved').exists())
                 self.end()
 

@@ -1,5 +1,11 @@
 # 개발 및 검증
 
+## 2026-10-05 알림 답변 미리보기 검증 (소스 반영 / APK·브리지 적용 대기)
+
+- 전체 브리지 **101개 테스트 통과**. 알림 관련 9개는 발췌 서식/한국어/이모지/길이, 명시적 final 우선·commentary/도구/추론/이전 기록 제외, 출력 200개 한계와 다음 턴 초기화, OpenCode native 메시지/브리지 턴 연결을 검증한다. Claude/OpenCode 어댑터 대기열 통합 테스트에서 실제 완료 답변 미리보기 3건을 검증했다.
+- Android 전체 Java 소스 컴파일과 JS 문법·diff 검사 통과. Setup payload는 215,849 UTF-16 단위로 220,000 이내다. 로그: `.tools/tests-notification-previews-all.log`, `.tools/tests-notification-previews.log`, `.tools/java-notification-previews.log`.
+- APK 빌드·운영 브리지 교체는 하지 않았다. 0.11.0 설치본은 일반 완료 문구를 사용하며 짧은 답변 미리보기에는 새 APK와 브리지 적용이 필요하다. 실제 알림 UI·확장 본문·잠금 화면은 설치 후 검증한다.
+
 ## 2026-10-05 0.11.0 APK 빌드 검증
 
 - 명시적 요청으로 앱 **0.11.0/code 18**, 내장 브리지 **0.11.0**을 빌드했다. `Download/Bibimer-0.11.0.apk`(350,701바이트), `Download/bibimer-setup-0.11.0.sh`(208,463바이트)를 저장했다. 완료 알림·프로젝트 관리·설치 버전 표시 수정이 포함된다.
