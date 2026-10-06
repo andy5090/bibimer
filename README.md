@@ -179,6 +179,7 @@ python bridge/bibimer_bridge.py start
 
 - [빌드 및 검증 방법](docs/development.md)
 - [브리지 구조와 API](docs/architecture.md)
+- [Google Play 출시 준비](docs/google-play-release.md) — AAB 빌드 경로·등록 문구·그래픽 초안. 실제 AAB 빌드·제출·심사 전이다.
 
 ## 첫 번째 마일스톤
 

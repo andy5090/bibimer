@@ -70,6 +70,8 @@ scripts/smoke_rendering.cjs GFM·코드·diff·계획·스크롤·안전한 출�
 
 ## 빌드
 
+Google Play용 AAB 준비와 업로드 키 설정은 [출시 준비](google-play-release.md)를 따른다. `python scripts/build_aab.py --unsigned --check`는 다운로드·빌드 없이 설정을 확인한다. 새 번들 경로는 소스에 추가했으며 실제 AAB 빌드·서명·설치 검증은 남아 있다. 아래 APK 경로는 기존 개발용이다.
+
 ```sh
 pkg install python openjdk-21 aapt2 d8 apksigner
 python scripts/build_apk.py

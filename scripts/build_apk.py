@@ -125,12 +125,9 @@ fi
     return script
 
 
-def main():
-    for tool in ("java", "javac", "jar", "keytool", "aapt2", "d8", "apksigner"):
-        if not shutil.which(tool):
-            raise SystemExit(f"{tool} 필요: pkg install openjdk-21 aapt2 d8 apksigner")
+def prepare_inputs():
+    """Prepare the same pinned SDK, web assets and bridge for APK and AAB builds."""
     TOOLS.mkdir(exist_ok=True)
-    BUILD.mkdir(parents=True, exist_ok=True)
     vendor = SRC / "assets" / "vendor"
     vendor.mkdir(parents=True, exist_ok=True)
     android_jar = TOOLS / "android-36.jar"
@@ -142,22 +139,35 @@ def main():
         with tarfile.open(fileobj=io.BytesIO(fetch(url, checksum, "sha512")), mode="r:gz") as bundle:
             for member, filename in entries.items():
                 (vendor / filename).write_bytes(bundle.extractfile(member).read())
-    setup = installer()
+    return android_jar, installer()
+
+
+def compile_android(android_jar, build, proto=False):
+    build.mkdir(parents=True, exist_ok=True)
     for directory in ("classes", "generated", "dex"):
-        target = BUILD / directory
+        target = build / directory
         if target.exists():
             shutil.rmtree(target)
         target.mkdir()
     print("Android 리소스 및 Java 컴파일", flush=True)
-    run("aapt2", "compile", "--dir", SRC / "res", "-o", BUILD / "resources.zip")
-    run("aapt2", "link", "-o", BUILD / "unsigned.apk", "--manifest", SRC / "AndroidManifest.xml",
-        "-I", android_jar, "--java", BUILD / "generated", "-A", SRC / "assets",
-        "--min-sdk-version", "26", "--target-sdk-version", "36", BUILD / "resources.zip")
-    sources = sorted((SRC / "java").rglob("*.java")) + sorted((BUILD / "generated").rglob("*.java"))
+    run("aapt2", "compile", "--dir", SRC / "res", "-o", build / "resources.zip")
+    run("aapt2", "link", *(["--proto-format"] if proto else []),
+        "-o", build / "unsigned.apk", "--manifest", SRC / "AndroidManifest.xml",
+        "-I", android_jar, "--java", build / "generated", "-A", SRC / "assets",
+        "--min-sdk-version", "26", "--target-sdk-version", "36", build / "resources.zip")
+    sources = sorted((SRC / "java").rglob("*.java")) + sorted((build / "generated").rglob("*.java"))
     run("javac", "-encoding", "UTF-8", "--release", "8", "-classpath", android_jar,
-        "-d", BUILD / "classes", *sources)
-    run("jar", "cf", BUILD / "classes.jar", "-C", BUILD / "classes", ".")
-    run("d8", "--lib", android_jar, "--min-api", "26", "--output", BUILD / "dex", BUILD / "classes.jar")
+        "-d", build / "classes", *sources)
+    run("jar", "cf", build / "classes.jar", "-C", build / "classes", ".")
+    run("d8", "--lib", android_jar, "--min-api", "26", "--output", build / "dex", build / "classes.jar")
+
+
+def main():
+    for tool in ("java", "javac", "jar", "keytool", "aapt2", "d8", "apksigner"):
+        if not shutil.which(tool):
+            raise SystemExit(f"{tool} 필요: pkg install openjdk-21 aapt2 d8 apksigner")
+    android_jar, setup = prepare_inputs()
+    compile_android(android_jar, BUILD)
     with zipfile.ZipFile(BUILD / "unsigned.apk", "a", compression=zipfile.ZIP_DEFLATED) as apk:
         for dex in sorted((BUILD / "dex").glob("*.dex")):
             apk.write(dex, dex.name)

@@ -1,0 +1,28 @@
+{
+  "status": "draft",
+  "developerAccount": {
+    "type": "organization",
+    "verificationStatus": "unknown",
+    "organizationName": null,
+    "organizationWebsite": null
+  },
+  "packageName": "app.bibimer",
+  "defaultLanguage": "en-US",
+  "categorySuggestion": "PRODUCTIVITY",
+  "supportEmail": null,
+  "privacyPolicyUrl": null,
+  "pricing": null,
+  "countries": [],
+  "listings": {
+    "en-US": {
+      "title": "BIBIMER",
+      "shortDescription": "Control coding agents in Termux, right from your Android phone.",
+      "fullDescription": "Direct your coding agents with one hand.\n\nBIBIMER connects an Android interface to coding agents running in Termux on the same phone. Organize projects, follow responses, send instructions, and return to your sessions without a separate development computer.\n\nYOUR PROJECTS AND SESSIONS\nBrowse projects, existing Git worktrees, and agent sessions from a mobile sidebar. Rename or archive sessions and return to ongoing work. Switching screens does not end your agent processes.\n\nCHAT AND TERMINAL\nRead structured conversations, code blocks, and tool activity, or use the terminal interface. Send instructions, respond to approval requests, and queue follow-up messages during a response. Available controls depend on the agent and interface.\n\nAGENT CHOICES\nConnect compatible installations of Codex, Claude, and OpenCode. Choose models and reasoning options reported by your installed agent. To continue with another agent, review the recent conversation context before sending it.\n\nSETUP REQUIRED\nTermux must be installed and initialized on this phone. BIBIMER provides bridge setup instructions and a connection flow. Command access requires your permission. A working agent installation and any required provider login or API configuration are separate requirements. Provider availability and charges depend on your account.\n\nThe Android interface connects to a local bridge. Agents may send prompts, code, and files to their configured AI providers and tools; this is not a promise of offline AI processing.\n\nBIBIMER starts in English and also supports Korean. Completion notifications require Android notification permission; background delivery depends on Android and the running bridge.\n\nBIBIMER is an independent application and is not affiliated with the makers of Termux or the supported agents."
+    },
+    "ko-KR": {
+      "title": "BIBIMER 비비머",
+      "shortDescription": "한 손으로 지휘하는 코딩 에이전트. 같은 휴대폰의 Termux에서 프로젝트와 작업을 이어가세요.",
+      "fullDescription": "한 손으로 지휘하는 코딩 에이전트.\n\nBIBIMER는 같은 휴대폰의 Termux에서 실행하는 코딩 에이전트를 Android 화면으로 연결합니다. 별도의 개발 PC 없이 프로젝트를 선택하고, 응답을 확인하고, 지시를 보내며 개발 작업을 이어가세요.\n\n프로젝트와 세션 관리\n모바일 사이드바에서 프로젝트, 기존 Git 워크트리, 에이전트 세션을 탐색합니다. 세션 이름을 바꾸거나 보관하고 진행 중인 작업으로 돌아갈 수 있습니다. 화면을 전환해도 기존 에이전트 프로세스를 종료하지 않습니다.\n\n대화와 터미널\n구조화된 대화, 코드 블록, 도구 활동을 확인하거나 터미널 인터페이스를 사용하세요. 지시 전송, 승인 요청 응답, 응답 중 후속 입력 대기열을 제공합니다. 세부 기능은 에이전트와 인터페이스에 따라 다릅니다.\n\n에이전트 선택\n호환되는 Codex·Claude·OpenCode 설치본과 연결합니다. 설치된 에이전트가 제공하는 모델과 추론 수준을 선택할 수 있습니다. 다른 에이전트로 이어갈 때는 최근 대화 맥락을 확인한 뒤 전송합니다.\n\n사용 전 준비\n같은 휴대폰에 Termux를 설치하고 최초 실행을 마쳐야 합니다. 앱은 브리지 설정 안내와 연결 과정을 제공하며 명령 실행에는 사용자의 권한 허용이 필요합니다. 실행 가능한 에이전트 설치와 제공자 로그인 또는 API 설정은 별도로 필요합니다. 제공 기능과 비용은 사용자의 제공자 계정에 따라 달라집니다.\n\nAndroid 화면은 로컬 브리지와 연결합니다. 에이전트는 설정된 AI 제공자와 도구에 입력·코드·파일을 전송할 수 있으므로 모든 AI 처리가 오프라인에서 이루어진다는 뜻은 아닙니다.\n\n처음에는 영어로 표시되며 앱 설정에서 한국어를 선택할 수 있습니다. 응답 완료 알림에는 Android 알림 권한이 필요하며 백그라운드 전달은 Android와 브리지 실행 상태의 영향을 받습니다.\n\nBIBIMER는 독립 앱으로, Termux 및 지원 에이전트의 제작사와 제휴된 제품이 아닙니다."
+    }
+  }
+}
