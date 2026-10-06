@@ -199,7 +199,7 @@
     code_wrap: ["Wrap", "줄바꿈"],
     image_reference: ["Image", "이미지"],
     chat_latest: ["Jump to latest ↓", "최신 응답으로 ↓"],
-    chat_summary: ["Activity summary", "작업 요약"],
+    chat_summary: ["Agent summary", "에이전트 요약"],
     tool_no_output: ["No output reported.", "전달된 출력이 없습니다."],
     exit_code: ["Exit {code}", "종료 {code}"],
     plan_completed: ["Completed", "완료"],

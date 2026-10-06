@@ -152,6 +152,35 @@ async function main() {
   // Long fences and unknown languages remain inert and copyable.
   await page.evaluate(()=>renderer.update({items:[{id:'edge',kind:'assistant',text:'```unknown\n<img src=x onerror=alert(1)>\n```\n'+'> quote\n'.repeat(30),status:'completed'}],requests:[]}));
   assert.equal(await page.locator('.assistant').last().locator('img').count(),0);
+  // Empty public summaries from restored history must not become blank cards.
+  // A later nonempty update must still appear at its original transcript position.
+  await page.evaluate(()=>{
+    BibimerI18n.setLanguage('en'); renderer.clear();
+    const empty=Array.from({length:64},(_,n)=>({id:'summary-'+n,kind:'plan',summary:true,
+      text:n%2?' \n\t':'',status:n%2?'inProgress':'completed'}));
+    window.summaryFixture=[{id:'request',kind:'user',text:'Check the workspace'},...empty,
+      {id:'answer',kind:'assistant',text:'Workspace checked',status:'completed'}];
+    renderer.update({items:summaryFixture,requests:[]});
+  });
+  assert.equal(await page.locator('.message:visible').count(),2);
+  assert.equal(await page.locator('.plan:visible').count(),0);
+  assert.doesNotMatch(await page.locator('#conversation').innerText(),/Activity summary|Agent summary/);
+  await page.evaluate(()=>renderer.update({items:[{id:'summary-0',kind:'plan',summary:true,text:'**Checking** the workspace',status:'inProgress'}],requests:[]}));
+  assert.deepEqual(await page.locator('.message:visible').evaluateAll(nodes=>nodes.map(node=>node.className)),['message user','message plan','message assistant']);
+  assert.equal(await page.locator('.plan:visible .activity-title').innerText(),'Agent summary');
+  await page.locator('.plan:visible summary').click();
+  assert.equal(await page.locator('.plan:visible .markdown strong').innerText(),'Checking');
+  await page.evaluate(()=>renderer.update({items:[{id:'summary-0',kind:'plan',summary:true,text:'**Checked** the workspace',status:'completed'}],requests:[]}));
+  assert.equal(await page.locator('.plan:visible details').evaluate(node=>node.open),true);
+  await page.evaluate(()=>{BibimerI18n.setLanguage('ko');renderer.localize();});
+  assert.equal(await page.locator('.plan:visible .activity-title').innerText(),'에이전트 요약');
+  await page.evaluate(()=>renderer.update({items:[{id:'summary-0',kind:'plan',summary:true,text:'\n',status:'completed'},
+    {id:'real-plan',kind:'plan',steps:[{step:'Run checks',status:'completed'}]}],requests:[]}));
+  assert.equal(await page.locator('.plan:visible').count(),1);
+  assert.equal(await page.locator('.plan:visible .plan-count').innerText(),'1/1');
+  await page.evaluate(()=>{renderer.update({items:[],retained:['answer'],requests:[]});renderer.localize();});
+  assert.equal(await page.locator('.message').count(),1);
+  console.log('PASS: 64 empty historical/live summaries hidden; later content keeps order; Markdown, expansion and EN/KO labels; normal plans and pruning preserved');
   assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
   // Controlled icon preview, separate from actual launcher verification.
   await page.setViewportSize({width:560,height:240});

@@ -21,7 +21,7 @@
     update(event) {
       const follow = this.root.scrollHeight - this.root.scrollTop - this.root.clientHeight < 80;
       const edge = this.root.getBoundingClientRect().top;
-      const anchor = [...this.cards.values()].find(card => card.getBoundingClientRect().bottom > edge);
+      const anchor = [...this.cards.values()].find(card => !card.hidden && card.getBoundingClientRect().bottom > edge);
       const anchorTop = anchor?.getBoundingClientRect().top;
       const retained = new Set(event.retained || []);
       if (event.retained) for (const key of this.items.keys()) {
@@ -49,6 +49,10 @@
       const codeState = [...card.querySelectorAll(".code-block")].map(node => ({wrapped:node.classList.contains("wrapped"), left:node.querySelector("pre").scrollLeft}));
       card.replaceChildren();
       card.dataset.status = item.status || "";
+      // Keep the item in order so a later public summary can reveal it.
+      // Empty reasoning events from live or imported history have no UI content.
+      card.hidden = item.kind === "plan" && item.summary === true && !(item.text || "").trim() && !item.steps?.length;
+      if (card.hidden) return;
       const status = () => make("span", item.status ? this.t("chat_status_" + item.status) : "", "item-status");
       const detail = (key, title, opened = false) => {
         const node = make("details"); node.dataset.view = key;
