@@ -1,5 +1,11 @@
 # 개발 및 검증
 
+## 2026-10-06 0.13.0 APK 빌드 검증
+
+- 앱 **0.13.0/code 23**, 내장 브리지 **0.13.0** 빌드 완료. 빈 요약 카드 숨김·표기 변경과 에이전트 간 이어가기 선택을 포함한다. APK·설치 스크립트를 Download에 저장했다.
+- v2/v3 서명·기존 0.12.0 인증서 일치, Manifest/DEX, 25개 asset 소스 일치, handoff 경로 및 요약 수정 포함, 설치 스크립트 문법·격리 추출·0700 권한·복사본 해시를 확인했다. 자동 연결 페이로드는 65,977 UTF-16 단위다.
+- 기능 검증에 이어 버전 변경 후 Handoff 6개·Setup 4개 통과. 로그·파일 크기·SHA-256은 [NEXT_SESSION.md](../NEXT_SESSION.md)의 0.13.0 항목을 따른다. APK 설치·운영 브리지 적용은 이번 빌드와 별개이며 수행하지 않았다.
+
 ## 2026-10-06 에이전트 간 대화 이어가기 (미빌드)
 
 - `POST /v1/sessions/{id}/handoff`는 preview/start 두 동작을 제공한다. preview는 원본의 완료된 사용자·답변과 revision을 반환한다. start는 확인한 context·instruction·대상 agent/options·revision·request_id를 받아 같은 프로젝트/워크트리에 별도 Chat을 만들고 초기 대기 입력을 보낸다. 기존 에이전트 어댑터의 새 세션/턴 API를 사용하며 원본 프로세스나 네이티브 ID를 바꾸지 않는다.
