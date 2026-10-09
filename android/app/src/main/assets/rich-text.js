@@ -55,14 +55,18 @@
     let url;
     try { url = new URL(target); } catch (_) {}
     const external = url && ["https:", "http:"].includes(url.protocol) && !url.username && !url.password && !/[\x00-\x20]/.test(target);
-    const local = !url && !/^[\w+.-]+:|^\/\/|[\x00-\x1f]/.test(target);
+    const withoutLine = target.replace(/:[1-9][0-9]*(?::[1-9][0-9]*)?$/, "");
+    const local = !/[\x00-\x1f\x7f]/.test(target) && !target.startsWith("//") && (
+      (url?.protocol === "file:" && ["", "localhost"].includes(url.hostname) && !url.search) ||
+      (!/^[\w+.-]+:/.test(withoutLine) && !target.startsWith("#"))
+    );
     if (!external && !local) return make("span", label);
     const button = make("button", undefined, "text-link" + (local ? " file-link" : ""));
     button.type = "button";
     if (token.tokens) inline(button, token.tokens, t); else button.textContent = label;
     button.title = target;
-    button.setAttribute("aria-label", label + " · " + t(external ? "open_browser" : "copy_path"));
-    button.onclick = () => external ? window.Bibimer.openLink?.(url.href) : window.Bibimer.copyText(target);
+    button.setAttribute("aria-label", label + " · " + t(external ? "open_browser" : "open_file"));
+    button.onclick = () => external ? window.Bibimer.openLink?.(url.href) : window.BibimerOpenFile?.(target);
     return button;
   }
   function inline(parent, tokens, t, depth = 0) {

@@ -9,7 +9,7 @@ const output = path.join(root, 'release/google-play/graphics');
 const font = fs.readFileSync(path.join(assets, 'fonts/SpaceGrotesk-Bold.woff2'));
 const brand = fs.readFileSync(path.join(assets, 'brand.svg'), 'utf8');
 // Play applies its own icon mask. Preserve the app's paths and use a full square background.
-const icon = brand.replace(' rx="26"', '');
+const icon = brand.replaceAll(' rx="26"', '');
 const copy = {
   'en-US': ['Your phone.<br>Your dev workspace.', 'Coding agents, connected through Termux.', 'Projects', 'Chat', 'Terminal'],
   'ko-KR': ['한 손으로 지휘하는<br>코딩 에이전트', '같은 휴대폰의 Termux에서 개발을 이어가세요.', '프로젝트', '대화', '터미널']

@@ -1,5 +1,46 @@
 # 개발 및 검증
 
+## 0.15.0 APK 빌드 완료 (2026-10-10)
+
+- 사용자 `apk 빌드` 요청으로 앱 **0.15.0 / versionCode 28**, 내장 브리지 **0.15.0**을 빌드했다. GitHub 연결·저장소 클론/프로젝트 등록, 민트 티타늄 로고·적응형/단색 아이콘, 이미지·파일 링크를 외부 Android 앱으로 여는 기능을 포함한다. 기존 사이드바·직접 폴더 선택도 유지했다.
+- 리소스·Java/D8·APK v2/v3 서명 검증 통과. 이전 0.14.2 인증서와 일치, 패키지/SDK/Manifest·읽기 전용 ContentProvider·파일 열기/GitHub DEX 경로·27개 내장 asset 원본 일치·새 로고 리소스를 확인했다. 설치 스크립트 문법·격리 추출 원본/0700 권한·자동 연결 페이로드 **77,153 UTF-16 단위 < 220,000**·Download 복사본 해시 확인.
+- 버전 변경 뒤 Setup 테스트 **4개 통과**. 기능 소스는 앞선 전체 브리지 **139개**, 파일 링크/렌더링/GitHub UI 검증 결과를 따른다. 기존 deprecated/source8 컴파일 경고만 있으며 검증 실패 없음.
+- 파일: **`/storage/emulated/0/Download/Bibimer-0.15.0.apk`**, 380,190바이트, SHA-256 `016ef54ad8ed9d57e30038fa5e52dfc16ae38b02e9c23f14cf47aa987392b302`.
+- 파일: **`/storage/emulated/0/Download/bibimer-setup-0.15.0.sh`**, 73,299바이트, SHA-256 `09de0ce4391a75e5e4b86ef78fd5278f0562ba531e1e3f21442588a38f237448`.
+- 로그: `.tools/build-0.15.0.log`, `.tools/tests-setup-0.15.0.log`, `.tools/verify-release-0.15.0.log`, `.tools/verify-apk-0.15.0.json`. 이전 Download 버전은 유지했다.
+- **APK 설치·운영 브리지 업데이트/재시작·사용자 세션 종료는 하지 않았다.** GitHub·파일 열기는 브리지 0.15.0 적용이 필요하며 APK 설치/자동 연결만으로 기존 브리지를 업데이트하지 않는다. 실제 Android 뷰어의 URI 읽기/앱 선택/복귀, GitHub 인증 브라우저 복귀, 런처 마스크·테마 아이콘은 설치 후 검증한다.
+
+
+## 2026-10-07 0.14.2 APK 빌드 검증
+
+- 앱 **0.14.2/code 27**, 내장 브리지 **0.14.0**. 프로젝트 폴더 목록에서 하위 탐색 없이 Select로 바로 선택하는 변경을 포함한다. 구현 단계의 전체 UI 회귀·작은 화면 확인 이후 버전만 변경했다.
+- 빌드·v2/v3 서명·0.14.1 인증서 일치, Manifest/SDK·내장 26개 asset/직접 선택 코드, 설치 스크립트 격리 추출·권한·Download 복사 해시 검증을 통과했다. `Download/Bibimer-0.14.2.apk`로 저장했으며 해시·로그는 [NEXT_SESSION.md](../NEXT_SESSION.md)를 따른다.
+- APK 설치·운영 브리지/사용자 세션 변경은 하지 않았다. 추가 브리지 업데이트는 필요하지 않으며 실제 Android 화면 검증은 설치 후 진행한다.
+
+## 2026-10-07 0.14.1 APK 빌드 검증
+
+- 앱 **0.14.1/code 26**, 내장 브리지 **0.14.0**. 우측 사이드바 열기 버튼에 현재 탭 아이콘을 표시하는 변경을 포함한다. 기능 구현 시 아이콘 전환·닫기/재열기·한국어 설명 및 기존 Inspector UI 통합 검증을 마쳤다.
+- APK 빌드·v2/v3 서명·0.14.0 인증서 일치, Manifest/SDK·내장 26개 asset/선택 아이콘 코드, 설치 스크립트 격리 추출·권한·Download 복사 해시를 확인했다. `Download/Bibimer-0.14.1.apk`로 저장했다. 해시·로그는 [NEXT_SESSION.md](../NEXT_SESSION.md)를 따른다.
+- APK 설치는 하지 않았다. 이전 요청의 운영 브리지 업데이트는 읽기 전용으로 **0.14.0·두 세션 복원·workspace_inspector 활성화 완료**를 확인했다. 이번 아이콘 변경에 추가 브리지 업데이트는 필요하지 않다.
+
+## 2026-10-07 0.14.0 APK 빌드 검증
+
+- 사용자 빌드 요청으로 앱 **0.14.0/code 25**, 내장 브리지 **0.14.0**을 빌드했다. 우측 파일·Git 아이콘 탭과 기존 DeX·태블릿 반응형 화면·연결 보완을 포함한다.
+- 버전 변경 후 Inspector 8개·Setup 4개 검사 통과. APK v2/v3 서명 및 이전 0.13.1 인증서 일치, 패키지/SDK·Manifest, 네이티브 조회 경로, 내장 26개 asset 원본 일치, 설치 스크립트 문법·격리 추출·0700 권한, 자동 설정 페이로드 제한과 Download 복사본 SHA-256을 확인했다.
+- `Download/Bibimer-0.14.0.apk`, `Download/bibimer-setup-0.14.0.sh`로 저장했다. APK 설치·운영 브리지 업데이트/재시작은 하지 않았다. 실제 Android WebView·DeX/태블릿 검증은 설치 후 진행한다. 로그·해시는 [NEXT_SESSION.md](../NEXT_SESSION.md)에 기록했다. 아래 소스 구현 단계의 APK 대기 기록은 이번 빌드로 해소됐다.
+
+## 2026-10-07 우측 파일·Git 사이드바 (소스 / APK 반영 대기)
+
+- `python -m unittest discover -s bridge/tests`: 121개 통과. 이후 추가한 충돌·타임아웃 검사를 포함한 `test_inspector.py` 최신 8개도 통과했다. 경로·실제 워크트리 제한, 파일·Git 출력 크기, symlink/FIFO 거절, 충돌·rename·빈 저장소·detached HEAD·페이지 분할, 외부 Git 프로그램 실행 차단과 인덱스/메타데이터 보존을 검증한다.
+- `node scripts/smoke_inspector.cjs`: 임시 저장소·워크트리 및 실제 격리 브리지로 파일/미리보기·Git status/diff/history/detail·재시도·지연 응답 격리·프로젝트/워크트리 선택·초안/프로세스 유지·반응형 우측 패널·키보드·영어/한국어·구형 브리지 안내를 검증한다.
+- 기존 `smoke_ui.cjs`, `smoke_library.cjs`, `smoke_rendering.cjs`와 Android Java API 36 컴파일 통과. 브라우저의 Android 네이티브 대역 검증이며 실제 WebView/DeX 검증은 아니다. 로그·범위·배포 상태는 [NEXT_SESSION.md](../NEXT_SESSION.md)를 따른다. 새 APK 빌드·운영 브리지 적용은 하지 않았다.
+
+## 2026-10-07 0.13.1 APK 빌드 검증
+
+- 앱 **0.13.1/code 24**, 내장 브리지 **0.13.0**. DeX·태블릿 반응형 UI, 디스플레이 구성 변경 시 WebView 유지, 창 포커스 이동 중 연결 조회 유지, 저장된 연결 우선 재접속을 포함한다. 이번 변경에 브리지 업데이트는 필요하지 않다.
+- 렌더링·세션 목록·Setup·전체 UI 통합 검증 통과. 320~2560px 및 낮은 창의 배치, 고정 사이드바·모달 전환, 세션 초안/승인 보존과 기존 PTY/Chat 흐름을 확인했다. 범위와 실제 기기 제약은 [화면 기준](interface.md#dex태블릿-반응형-화면-0131)을 따른다.
+- APK v2/v3 서명·이전 인증서, 버전/SDK·DeX Manifest 플래그, 내장 asset 및 격리 설치 추출, 다운로드 복사본 검증 통과. 설치 파일은 `Download/Bibimer-0.13.1.apk`. 로그와 해시는 [NEXT_SESSION.md](../NEXT_SESSION.md)에 기록했다. 실제 설치·DeX/태블릿 검증과 운영 브리지 재시작은 수행하지 않았다.
+
 ## 2026-10-06 0.13.0 APK 빌드 검증
 
 - 앱 **0.13.0/code 23**, 내장 브리지 **0.13.0** 빌드 완료. 빈 요약 카드 숨김·표기 변경과 에이전트 간 이어가기 선택을 포함한다. APK·설치 스크립트를 Download에 저장했다.
@@ -124,6 +165,7 @@ bash -n dist/bibimer-setup.sh
 pkg install nodejs
 npm install --prefix .tools/ui --ignore-scripts --no-fund --no-audit playwright-core@1.55.1
 node scripts/smoke_ui.cjs
+node scripts/smoke_github.cjs
 node scripts/smoke_select.cjs
 node scripts/smoke_library.cjs
 node scripts/smoke_setup.cjs
@@ -269,3 +311,23 @@ UI 테스트는 임시 폴더의 실제 브리지에 연결하며 Android 네이
 - [Paseo 제공자 구조](https://github.com/getpaseo/paseo/blob/main/docs/providers.md): 에이전트별 구조화된 연결을 공통 대화 화면으로 제공하는 방식의 참고 자료다.
 - [xterm.js 터미널 시퀀스](https://xtermjs.org/docs/api/vtfeatures/): SGR 색상·문자 속성 등 PTY 렌더링 근거다.
 - [Android Bionic pidfd 헤더](https://android.googlesource.com/platform/bionic/+/refs/heads/main/libc/include/sys/pidfd.h): Android API 31에 추가된 libc 래퍼를 확인했다. 현재 Termux Python에서 직접 노출하지 않는 pidfd는 공개 libc 래퍼로 호출하고, 실제 테스트용 프로세스에 한정해 종료를 검증했다. 지원하지 않는 기기에서는 이전 버전 브리지 자동 종료를 거부한다.
+
+## 2026-10-09 GitHub 프로젝트 가져오기 검증 (소스 / APK 대기)
+
+- `bridge/tests/test_github.py`: 인증·Origin 제한, CLI 상태/저장소 필드 제한과 페이지 분할, 코드만 전달하는 로그인·취소, 실제 로컬 Git 클론·중복 요청·등록·현재 세션 유지, 재시작 작업 기록, 기존 폴더/파일/링크 및 잘못된 경로 거절, 실패/취소 파일 보존, Git 명령·환경 제한, 설치 누락·오류 원문 비노출, 저장 실패 뒤 멈춘 작업 방지를 검사한다.
+- `node scripts/smoke_github.cjs`: 격리 브리지·gh 대역·실제 로컬 Git으로 앱의 코드 로그인·목록/검색·폴더 선택·클론/등록·응답 유실 재시도·기존 입력/프로세스 보존·실패/취소·재접속·영어/한국어·320px·구형 브리지·CLI 설치 안내를 검증한다. 사용자의 인증 설정이나 원격 저장소는 변경하지 않는다.
+- 전체 브리지 **131개 통과**, 저장 실패 처리 보완 후 GitHub 전용 **9개 통과**. 기존 `smoke_ui.cjs` 전체 회귀, Java API 36 소스 컴파일(기존 생성 R.java 포함)도 통과했다. 최초 GitHub UI 검사의 한국어 연결 문구 기대값을 실제 `기기 연결됨`으로 수정했다.
+- 같은 폰의 실제 `gh 2.97.0`로 활성 인증·저장소 필드 제한을 확인하고, 공개 `octocat/Hello-World`를 임시 Termux 경로에 HTTPS 클론해 등록·token 없는 origin을 확인했다. 개인 계정명·비공개 저장소 이름·토큰은 결과 로그에 출력하지 않았다. 추가로 현재 프로젝트의 실제 비공개 원격 저장소를 별도 임시 폴더에 클론해 GitHub CLI 인증 도우미와 등록을 확인했다. 새 브라우저 로그인·조직 SSO는 검증하지 않았다.
+- 로그: `.tools/test-github.log`, `.tools/github-ui.log`, `.tools/github-ui-regression.log`, `.tools/github-bridge-regression.log`, `.tools/github-native.log`, `.tools/github-private-native.log`, `.tools/github-java.log`. 화면은 `dist/screenshots/github-import-en.png`, `github-import-ko-320.png`이며 브라우저 대역 화면이다.
+- APK·운영 브리지는 변경하지 않았다. 실제 Android 브라우저 복귀·IME·장시간 백그라운드는 다음 빌드/설치 뒤 확인한다. 구현은 앱 assets·기존 브리지 단일 파일에 포함되므로 기존 패키징 경로에 따라 다음 빌드에 반영된다.
+
+
+### 파일 링크 열기 검증
+
+```sh
+python -m unittest discover -s bridge/tests -p test_file_links.py -v
+node scripts/smoke_file_links.cjs
+node scripts/smoke_rendering.cjs
+```
+
+파일 링크 UI 테스트는 격리된 실제 브리지와 임시 Git 워크트리를 사용하며 Android 전송·뷰어 부분은 대역이다. APK 빌드 없이 AAPT2 리소스와 Java 컴파일을 확인할 수 있다. 실제 ContentProvider 읽기 권한·갤러리/PDF/텍스트 앱 실행·기본 앱 선택·복귀·백그라운드 취소는 다음 APK 설치 후 별도 확인한다.

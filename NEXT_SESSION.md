@@ -16,10 +16,170 @@
 
 - 기능을 변경할 때마다 바로 APK를 빌드하지 않는다. 구현과 필요한 소스·동작 검증을 진행하며 기능 변경을 모아 둔다.
 - **사용자가 명시적으로 빌드를 요청할 때만 APK를 빌드한다.** 작업 보고에서는 소스 구현 완료와 마지막 APK에 포함된 내용을 구분한다.
-- 현재 마지막 빌드 파일은 `Download/Bibimer-0.13.0.apk`다. 2026-10-06의 명시적 `apk 빌드` 요청으로 빈 요약 카드 수정과 에이전트 간 이어가기 선택까지 포함했다.
+- 현재 마지막 빌드 파일은 `Download/Bibimer-0.15.0.apk`다. 2026-10-10의 `apk 빌드` 요청으로 GitHub 가져오기·민트 티타늄·Android 파일 열기를 포함했다.
+
+## 사이드바 스와이프 닫기 (2026-10-10, 소스 / APK 대기)
+
+- 사용자 요청으로 모바일 모달 사이드바에 터치 스와이프 닫기를 추가했다. 왼쪽 프로젝트·세션 목록은 **왼쪽**, 오른쪽 파일·Git 패널은 **오른쪽**으로 밀어 닫는다. 손가락을 따라 패널이 움직이고 충분히 밀지 않으면 원위치로 돌아온다. 기존 닫기·바깥 탭·Back/Escape 경로를 유지한다.
+- `sidebar.js`의 공통 `BibimerDrawerSwipe`를 두 패널에서 사용한다. 10px 이동 후 바깥 방향/수평 우세를 확인하고 패널 폭 22%(최소 56px·최대 96px) 이상일 때 닫는다. 세로/대각선/반대 방향·긴 누르기·두 손가락·touchcancel·입력/편집·코드·가로 스크롤 영역·활성 텍스트 선택은 닫기로 전환하지 않는다. 중첩 모달·화면 크기 변경/포커스 이탈 때 제스처를 취소하고 스와이프 뒤 발생하는 터치 클릭이 세션이나 뒤의 화면을 누르지 않게 막는다. 키보드 클릭은 유지한다.
+- 넓은 화면의 고정 패널과 마우스 드래그에는 적용하지 않는다. 닫힌 뒤 열기 버튼에 포커스/aria-expanded를 맞추고 입력 초안·세션/프로젝트 선택을 변경하지 않는다. 모션 감소 설정에서는 복귀 전환 효과를 끈다.
+- **검증:** `scripts/smoke_drawer_swipe.cjs`의 Chromium 실제 터치 입력(CDP)으로 양쪽 닫기, 목록 클릭 방지, 실제 세로/코드 가로 스크롤, 짧은/반대/대각선/긴 누르기/두 손가락/취소/마우스 제스처, 초안·포커스, 화면 크기 변경·고정 패널·모션 감소·320px을 확인했다. 활성 텍스트 선택 방어는 브라우저 기본 선택 해제를 제외한 합성 이벤트로 검증했다. 기존 `smoke_rendering.cjs`, 실제 격리 브리지 기반 `smoke_inspector.cjs`, JS 문법·diff 검사도 통과했다. 로그 `.tools/drawer-swipe-{ui,rendering,inspector}.log`.
+- **APK 빌드·설치·브리지 변경 없음.** 현재 0.15.0 APK에는 스와이프가 없으며 다음 요청 빌드에 포함한다. 브리지 업데이트는 필요 없다. 실제 Android WebView 터치·OS 가장자리 뒤로 가기 제스처와의 동작은 설치 후 확인한다.
+
+## 0.15.0 운영 브리지 업데이트 (2026-10-10, 완료 확인)
+
+- **사이드바 스와이프 작업 시작 시 읽기 전용 확인으로 완료를 검증했다.** 최신 유지보수 상태 `complete`, 버전 0.15.0, 복원 11개/빈 세션 재생성 2개, `github_import_verified/file_links_verified: true`. 실제 health도 **0.15.0 / 활성 11개 / github_import·file_links 지원**이다. 재시작을 다시 실행하지 않았다. 아래는 설치·예약 당시 이력이다.
+
+- 사용자 `브리지 업데이트` 요청으로 운영 `~/.local/share/bibimer/`의 브리지·OpenCode/Claude 어댑터·Claude 복구 도구 네 파일을 **0.15.0** 소스와 일치하도록 설치했다. 기존 소스와 metadata는 비공개 유지보수 폴더에 백업했고 원본 일치·0700 권한을 확인했다. APK 재빌드/설치는 하지 않았다.
+- 사전 운영 상태 **0.14.0 / 프로젝트 7개 / 활성 Chat 11개(Codex 10, Claude 1)**. 현재 요청 세션만 응답 중이고 나머지는 ready, 승인·대기 입력 없음. 읽기 전용 네이티브 조회에서 **대화 있는 Codex 9개**는 저장 기록/작업 폴더 일치를 확인했다. 나머지 Codex 1개·Claude 1개는 입력·응답·도구 항목이 없는 새 빈 세션으로 아직 네이티브 기록이 없어 동일 원본 resume 대상에서 제외했다. 이 둘은 같은 폴더·권한/모델 설정·이름/보관을 적용한 빈 세션으로 다시 열며 새 네이티브 ID를 갖는다.
+- 독립 작업 **`restart-0.15.0-741dafde`**을 시작했다. 포인터 `~/.local/state/bibimer/maintenance/latest-restart.json`, 마지막 직접 확인 **`waiting_for_current_turn`**, 실제 런타임은 **아직 0.14.0**이다. 현재 응답과 후속 대기 입력이 정상 처리된 뒤 모든 세션의 ready/대기열 0을 4초 확인하고 완료 세션을 종료·재시작·복원한다. 다른 세션 변경/승인/빈 세션의 새 내용/설치 소스 변경 시 중단한다. 매 세션 종료 직전에도 ready/승인/대기열을 다시 확인한다. 재시작을 중복 예약하지 않는다.
+- 9개 원본 대화 ID·프로젝트/워크트리·권한/모델·이름/보관·프로젝트/에이전트 선택·인증을 보존한다. 11개 실행 세션 UUID는 바뀔 수 있다. 추가 모델 입력·승인 처리·대화 전달은 하지 않으며 대화/도구 출력은 로그나 유지보수 파일에 저장하지 않는다. 기존 앱 초안은 원래 세션에 남으며 새 실행 UUID로 자동 이전한다고 보장하지 않는다.
+- 격리된 **0.14.0 → 0.15.0** 브리지에서 Codex/Claude의 저장 대화 3개와 빈 세션 2개 복원, 권한/Fast·선택·별칭/보관·인증 유지, 대기 입력 처리 후 재시작·추가 모델 턴 없음, GitHub poll/파일 전송 prepare-release·완료 feed 검증이 통과했다. 다른 세션에 새 입력이 오면 세션을 종료하지 않고 유지보수만 중단하는 검사도 통과했다. 로그 `.tools/test-restart-after-turn-0.15.0.log`, `.tools/test-restart-after-turn-0.15.0-abort.log`.
+- 도우미 `.tools/stage-bridge-0.15.0.py`, `.tools/restart-after-turn-0.15.0.py`. 작업 폴더/실행 파일 0700, config/status/metadata/latest 0600이다. **다음 확인은 최신 status의 `complete`, `version: 0.15.0`, `restored_session_count: 11`, `empty_sessions_recreated: 2`, `github_import_verified/file_links_verified: true`와 실제 health의 0.15.0·기능 플래그다.** 실패면 reason/last_stage/실제 실행 상태를 먼저 확인하고 재실행을 반복하지 않는다. 예약을 런타임 업데이트 완료로 보고하지 않는다.
+
+## 0.15.0 APK 빌드 완료 (2026-10-10)
+
+- 사용자 `apk 빌드` 요청으로 앱 **0.15.0 / versionCode 28**, 내장 브리지 **0.15.0**을 빌드했다. GitHub 연결·저장소 클론/프로젝트 등록, 민트 티타늄 로고·적응형/단색 아이콘, 이미지·파일 링크를 외부 Android 앱으로 여는 기능을 포함한다. 기존 사이드바·직접 폴더 선택도 유지했다.
+- 리소스·Java/D8·APK v2/v3 서명 검증 통과. 이전 0.14.2 인증서와 일치, 패키지/SDK/Manifest·읽기 전용 ContentProvider·파일 열기/GitHub DEX 경로·27개 내장 asset 원본 일치·새 로고 리소스를 확인했다. 설치 스크립트 문법·격리 추출 원본/0700 권한·자동 연결 페이로드 **77,153 UTF-16 단위 < 220,000**·Download 복사본 해시 확인.
+- 버전 변경 뒤 Setup 테스트 **4개 통과**. 기능 소스는 앞선 전체 브리지 **139개**, 파일 링크/렌더링/GitHub UI 검증 결과를 따른다. 기존 deprecated/source8 컴파일 경고만 있으며 검증 실패 없음.
+- 파일: **`/storage/emulated/0/Download/Bibimer-0.15.0.apk`**, 380,190바이트, SHA-256 `016ef54ad8ed9d57e30038fa5e52dfc16ae38b02e9c23f14cf47aa987392b302`.
+- 파일: **`/storage/emulated/0/Download/bibimer-setup-0.15.0.sh`**, 73,299바이트, SHA-256 `09de0ce4391a75e5e4b86ef78fd5278f0562ba531e1e3f21442588a38f237448`.
+- 로그: `.tools/build-0.15.0.log`, `.tools/tests-setup-0.15.0.log`, `.tools/verify-release-0.15.0.log`, `.tools/verify-apk-0.15.0.json`. 이전 Download 버전은 유지했다.
+- **APK 설치·운영 브리지 업데이트/재시작·사용자 세션 종료는 하지 않았다.** GitHub·파일 열기는 브리지 0.15.0 적용이 필요하며 APK 설치/자동 연결만으로 기존 브리지를 업데이트하지 않는다. 실제 Android 뷰어의 URI 읽기/앱 선택/복귀, GitHub 인증 브라우저 복귀, 런처 마스크·테마 아이콘은 설치 후 검증한다.
+
+## 대화 이미지·파일 링크 → Android 앱 열기 (2026-10-09 구현, 0.15.0 APK 포함)
+
+- 사용자 요청으로 기존 파일 링크의 경로 복사를 **Android 앱으로 열기**로 바꿨다. 이미지 참조·Markdown 파일 링크의 절대/상대 경로·`file:///`·한글/공백·행/열 번호를 처리한다. 상대 경로는 클릭한 세션의 실제 워크트리를 사용하며 등록 프로젝트 기본 경로와 Download도 지원한다. HTTP(S)는 기존 외부 브라우저, 이미지 자동 요청·HTML 실행은 계속 차단한다.
+- 브리지 `LinkedFiles`, `file_links` feature, 인증된 `/v1/files` prepare/read/release 추가. 일반 파일 최대 64MiB, 청크 256KiB, 열린 핸들 8개/120초 만료. 프로젝트/워크트리/Download 범위, FD 탐색의 심볼릭 링크 거절, `.git`·브리지 상태 제외, 전송 중 파일 변경·범위 오류 확인. 파일/핸들은 브리지 메타데이터에 저장하지 않는다.
+- Android `FileLinks` 전용 전송 스레드 → 비공개 캐시 → `LinkedFileProvider` 읽기 전용 URI → `ACTION_VIEW`/ClipData/임시 읽기 권한. 파일 내용을 WebView로 반환하지 않고 일반 JS의 `/v1/files` 호출은 거절한다. 네이티브 90초 제한, 중복 클릭 방지, EN/KO 진행·실패·뷰어 없음·이전 브리지 안내. 캐시 128MiB/1시간, 시작·다음 열기에서 정리하며 연결 해제 때 전체 정리. 외부 앱 편집은 원본에 반영하지 않는다.
+- 기존 GitHub 기능의 `github.js`가 Android asset 허용 목록에 빠진 것도 보완했다. 이전 GitHub·민트 티타늄·사이드바 변경을 유지했다.
+- **검증:** 신규 Python 7개 포함 브리지 전체 **139개 통과**(120.177초). `smoke_file_links.cjs`는 실제 격리 브리지+브라우저 네이티브 대역으로 이미지/파일/URI/행 참조·워크트리·바이너리의 JS 비노출·중복 클릭·누락/뷰어 없음·안전하지 않은 스킴·원격 이미지 자동 요청 없음·EN/KO·이전 브리지·초안/실행 세션 보존을 확인했다. `smoke_rendering.cjs` 통과. 전체 Android AAPT2 리소스 컴파일·리소스 전용 링크 및 Java 컴파일 통과(기존 deprecated/source8 경고만 있음). 로그 `.tools/file-links-{python,regression,ui,rendering,java}.log`, 컴파일 산출물 `.tools/file-links-check/`.
+- **구현 당시에는 APK/D8/서명·설치·운영 브리지 변경이 없었다. 이후 위 0.15.0 APK에 포함했다.** 새 기능 사용에는 0.15.0 APK 설치와 브리지 0.15.0 적용이 필요하다. Android 실제 이미지·PDF·텍스트 앱의 URI 읽기/기본 앱·선택 화면/뷰어 없음/앱 복귀/Download 권한/백그라운드 취소는 실기기 검증 대기다. 자동 테스트의 네이티브 대역을 실제 Android 연동 검증으로 간주하지 않는다.
+
+## 민트 티타늄 로고 선택·소스 적용 (2026-10-09, 0.15.0 APK 포함)
+
+- 사용자가 세 시안 중 **민트 티타늄**을 선택해 `brand.svg`, 앱 상단 `BIBIMER` 워드마크와 Android 런처 아이콘에 적용했다. 기존 B 경로·대문자 표기·내장 Space Grotesk Bold는 유지하고 민트 금속 그라데이션·얕은 모서리·짙은 배경을 사용한다. 텍스트 clipping을 지원하지 않는 경우 단색 민트, 강제 고대비 모드에서는 CanvasText로 표시한다.
+- Android는 그라데이션 채움/테두리와 겹친 그림자 경로로 표현한다. 배경을 별도 `ic_background.xml`로 분리하고 적응형 전경을 54dp 중심으로 0.82배 조정했다. 필수 형태와 테두리의 최대 반경 **32.81dp < 33dp**를 확인했다. Android 13+ 테마 아이콘에는 새 `ic_monochrome.xml`의 단색 B를 사용해 그라데이션·그림자가 테마 마스크에 섞이지 않게 했다. SVG 미세 질감/블러는 Android 벡터에서는 단순화했다.
+- Play의 **512×512 RGBA** 아이콘도 새 디자인으로 재출력했다. 내보내기 스크립트에서 두 배경 사각형의 모서리를 모두 제거해 플랫폼이 마스크를 적용할 수 있게 했다. 소개 그래픽 파일은 재출력 전과 동일하다.
+- **검증:** Android 전체 리소스 AAPT2 컴파일·링크(리소스 전용 `.ap_`), XML 파싱·적응형 안전 영역 계산, 현재 실제 앱 assets의 브라우저 **320×568 / 393×851 / 1440×900** 표시·내장 서체/그라데이션/아이콘 로드·고대비 fallback·페이지 오류 없음, Play PNG 형식·크기, diff 검사를 통과했다. 브라우저 화면과 512px PNG를 직접 확인했다. 검사 산출물은 `.tools/mint-titanium-check/`, 화면은 `dist/design/metal-logo/mint-app-*.png`다.
+- **구현 당시에는 APK/D8/서명·설치·운영 브리지 변경이 없었다. 이후 위 0.15.0 APK에 포함했다.** 실제 Android WebView와 제조사별 런처 마스크·테마 아이콘 표시는 0.15.0 APK 설치 후 확인한다. 로고 변경 자체는 브리지 업데이트가 필요 없다. GitHub 기능은 0.15.0 APK에 포함했으며 운영 브리지 적용은 대기 중이다.
+
+## 금속 느낌 로고 시안 (2026-10-09, 디자인 검토용)
+
+- 사용자의 금속 느낌 아이콘·글자 제안에 따라 기존 B 심벌 경로와 내장 Space Grotesk Bold를 사용한 **새틴 실버 / 폴리시드 크롬 / 민트 티타늄** 3개 시안을 만들었다. 금속 그라데이션·얕은 모서리/그림자·미세 표면을 적용하고 44px 아이콘·24px 워드마크도 함께 비교했다. 시안 단계의 추천은 새틴 실버였고, 이후 사용자가 민트 티타늄을 선택해 위 항목대로 적용했다.
+- SVG: `design/metal-logo/*.svg`. 재출력: `node scripts/preview_metal_logo.cjs`. 비교 이미지·개별 PNG·자체 포함 HTML은 `dist/design/metal-logo/`에 생성한다. 비교 이미지 복사본: `Download/Bibimer-metal-logo-preview-2026-10-09.png`.
+- SVG 파싱·ID 중복·브라우저 서체 로드와 출력 이미지를 확인했다. 시안 제작 시점에는 앱 아이콘을 교체하지 않았다. 이후 선택한 민트 티타늄을 소스에 적용했으며 APK는 여전히 빌드하지 않았다. 앞선 GitHub 기능 구현 및 기존 미커밋 변경은 유지했다.
+
+## GitHub 연결 → 원하는 폴더 클론 → 프로젝트 등록 (2026-10-09 구현, 0.15.0 APK 포함)
+
+- 사용자 요청으로 **Project Add → Import from GitHub**를 추가했다. Termux의 GitHub CLI 기존 로그인 또는 앱 코드 표시·외부 브라우저 승인을 사용하며, 저장소 목록·검색(불러온 항목)·50개 페이지·공개/비공개/보관 표시를 제공한다. `owner/repository` 직접 입력도 가능하다. 설치 누락 시 `pkg install git gh` 복사·Termux 열기·수동 로그인 경로를 제공한다.
+- 기존 폴더 탐색기를 재사용해 **상위 폴더 + 새 폴더 이름**을 지정하고 최종 경로를 확인한 뒤 HTTPS로 클론한다. 성공 후 자동 등록하되 기존 프로젝트·세션 선택은 유지하며 Open project로 이동한다. 에이전트 시작·중단·입력 초안 변경은 하지 않는다. 기존 파일·빈 폴더·링크는 덮어쓰지 않는다.
+- `github_import` 기능과 인증된 `/v1/github`의 status/poll/login/cancel_login/repositories/clone/cancel_clone를 구현했다. 클론은 한 번에 하나, 최근 32건/요청 ID·본문 digest로 중복 요청을 처리한다. 화면 닫기·앱 재실행 뒤 상태를 조회하고 실패/취소 파일은 브리지가 자동 삭제하지 않는다. 재시작 뒤 진행 중 기록은 interrupted이며 자동 재개·완료 처리하지 않는다. 로그인 15분·클론 30분 제한이다.
+- 인증은 설치된 `gh`가 관리한다. 토큰·CLI 원문·클론 stdout/stderr를 WebView·로그·브리지 메타데이터에 전달하지 않는다. 로그인 공개 코드는 메모리/해당 화면에만 유지한다. GitHub.com HTTPS만 받고 임의 호스트·명령·인수를 거절한다. 클론에만 gh helper를 사용하고 전역 Git 설정·추적 환경·템플릿/후크·리다이렉트를 사용하지 않는다. GitHub Enterprise·브랜치 지정·서브모듈/LFS 자동 설치는 범위 밖이다.
+- **검증:** 전체 브리지 **131개 통과** 후 저장 실패 보완을 포함한 GitHub 전용 **9개 통과**. 새 `scripts/smoke_github.cjs`에서 대역 코드 로그인·목록/검색·실제 로컬 Git 클론·폴더 선택·응답 유실의 동일 요청 재시도·기존 입력/프로세스 보존·실패/취소·재접속·영어/한국어·320px·구형 브리지/CLI 설치 안내를 통과했다. 기존 `smoke_ui.cjs` 전체 회귀, Android Java API 36 소스 컴파일, JS/Python 문법·diff 검사도 통과했다. 최초 UI 검사의 한국어 연결 문구 기대값 및 새 Termux 버튼의 번역 키를 수정했다.
+- **실제 기기 Termux 검증:** `gh 2.97.0` 활성 인증·저장소 API, 공개 저장소와 이 프로젝트의 **실제 비공개 저장소** HTTPS 클론·등록을 격리 임시 폴더에서 확인했다. 운영 브리지·세션·인증 설정은 변경하지 않았고 GitHub 원격 쓰기는 하지 않았다. 비공개 저장소 내용·이름·인증 정보를 검증 로그에 출력하지 않았다. 새 계정의 브라우저 인증·조직 SSO·Android WebView/터치·브라우저 복귀·IME·장시간 백그라운드는 다음 APK 설치 후 검증한다.
+- 로그: `.tools/test-github.log`, `.tools/github-ui.log`, `.tools/github-ui-regression.log`, `.tools/github-bridge-regression.log`, `.tools/github-native.log`, `.tools/github-private-native.log`, `.tools/github-java.log`. 대역 화면은 `dist/screenshots/github-import-en.png`, `github-import-ko-320.png`다. API/보관 기준은 `docs/architecture.md`, 사용법은 `docs/setup.md`에 기록했다.
+- **구현 당시 APK 미빌드·운영 브리지 미적용.** 이후 2026-10-10 요청으로 앱·브리지 0.15.0 및 설치 파일을 빌드했다. 운영 브리지 적용은 대기 중이다. 기존 미커밋 파일·Git 변경을 유지한 채 기능을 추가했다.
+
+## 0.14.2 APK 빌드 완료 (2026-10-07)
+
+- 앱 **0.14.2 / versionCode 27**, 내장 브리지 **0.14.0**. 프로젝트 추가의 각 폴더 행 오른쪽 Select로 들어가지 않고 경로를 지정하는 기능을 포함했다. 기존 우측 선택 탭 아이콘과 파일·Git 탐색도 포함한다. 구현 시 전체 `smoke_ui.cjs` 회귀를 통과했고 이후 기능 소스는 변경하지 않았다.
+- 리소스·Java/D8 빌드, APK v2/v3 서명·0.14.1 인증서 일치, 패키지/버전/SDK·Manifest, 내장 26개 asset 원본 및 폴더 직접 선택 코드 포함, 설치 스크립트 문법·격리 추출/0700 권한·자동 설정 페이로드 제한과 Download 복사본 해시를 검증했다.
+- APK: **`/storage/emulated/0/Download/Bibimer-0.14.2.apk`**, 354,926바이트, SHA-256 `668d0332e48a07b8c7fd100021da5184798f46e3bef8effcfcd705987e76df02`.
+- 설치 파일: `Download/bibimer-setup-0.14.2.sh`, 66,295바이트, SHA-256 `68175fe164625065e58c0f190808ef9d6925bbabc5611ab166f26732299a61ec`. 기존 0.14.0 설치 파일과 동일하며 추가 브리지 업데이트는 필요하지 않다.
+- 로그: `.tools/build-0.14.2.log`, `.tools/verify-release-0.14.2.log`, `.tools/verify-apk-0.14.2.json`. 이전 Download 파일들은 유지했다. APK 설치·운영 브리지/사용자 세션 변경은 하지 않았다. 실제 Android 터치·WebView 검증은 설치 후 진행한다.
+
+## 프로젝트 폴더 목록에서 바로 선택 (2026-10-07, 0.14.2 APK 포함)
+
+- 사용자 요청으로 Project Add → Browse의 각 폴더 행에 **Select / 선택** 버튼을 추가했다. 폴더 이름은 기존 하위 폴더 탐색, 오른쪽 버튼은 목록 위치를 바꾸지 않고 그 폴더를 프로젝트 경로로 지정한다. 선택 후 기존 Save project로 등록·전환한다. 하단의 현재 폴더 선택도 유지한다.
+- 기존 `/v1/folders`로 선택 대상의 접근·쓰기 가능 여부와 실제 경로를 확인한다. 성공 시 생성 옵션을 끄고 등록 버튼으로 포커스를 옮긴다. 조회 중 중복 선택을 막고 취소/새 탐색 뒤 늦은 응답은 무효화한다. 폴더명은 textContent·접근성 이름으로 표시하며 영어/한국어를 지원한다. 브리지 변경은 없다.
+- 검증: 기존 실제 격리 브리지 UI 검사에서 `second-project` 폴더를 목록에서 직접 선택해 탐색 경로는 유지·등록 경로만 변경·실행 세션 유지하는 흐름을 확인했다. 360×460px 폴더 목록의 이름/선택 버튼과 하단 동작을 캡처로 확인했다. `smoke_ui.cjs` 전체 회귀·JS 문법·diff 검사 통과. 로그는 `.tools/folder-direct-selection-ui.log`다.
+- 소스 구현 후 사용자 `apk반영` 요청으로 위 **0.14.2 APK에 포함했다.** 실제 Android 터치 검증은 설치 후 진행한다. 운영 브리지·사용자 세션은 변경하지 않았다.
+
+## 0.14.1 APK 빌드 완료 (2026-10-07)
+
+- 앱 **0.14.1 / versionCode 26**, 내장 브리지 **0.14.0**. 선택한 우측 탭의 아이콘을 상단 버튼에 표시하고 닫기/다시 열기 및 언어 전환 때 유지·갱신하는 변경을 포함했다. 앞선 `smoke_inspector.cjs`·브라우저 아이콘/접근성 검증 이후 기능 소스는 변경하지 않았다.
+- 리소스·Java/D8 빌드, APK v2/v3 서명·이전 0.14.0 인증서 일치, 패키지/버전/SDK·Manifest, 내장 26개 asset 원본 및 `syncOpener` 포함, 설치 스크립트 문법·격리 추출/0700 권한·자동 설정 페이로드 제한과 Download 복사본 해시를 검증했다.
+- APK: **`/storage/emulated/0/Download/Bibimer-0.14.1.apk`**, 354,926바이트, SHA-256 `5e7004e2ea9825b437526bf3a68e496037a59e32028b7f89a4204ef4ff3ea62f`.
+- 설치 파일: `Download/bibimer-setup-0.14.1.sh`, 66,295바이트, SHA-256 `68175fe164625065e58c0f190808ef9d6925bbabc5611ab166f26732299a61ec`. 0.14.0 설치 파일과 동일하며 이번 아이콘 변경에 추가 브리지 업데이트는 필요하지 않다.
+- 로그: `.tools/build-0.14.1.log`, `.tools/verify-release-0.14.1.log`, `.tools/verify-apk-0.14.1.json`. 이전 Download 파일들은 유지했다. APK 설치는 하지 않았으며 실제 Android WebView·DeX/태블릿 검증은 설치 후 진행한다.
+
+## 우측 사이드바 버튼에 선택 탭 아이콘 표시 (2026-10-07, 0.14.1 APK 포함)
+
+- 사용자 요청으로 상단 우측 사이드바 버튼을 선택한 Files·Git status·Git history 탭과 같은 SVG 아이콘으로 표시한다. 최초는 폴더 아이콘이며 탭 변경 즉시 갱신하고 닫기/다시 열기 후에도 현재 선택을 유지한다. 접근성 이름·마우스 설명도 선택 탭과 표시 언어에 맞춘다.
+- `index.html`과 `inspector.js`만 UI 동작을 변경했다. 기존 `smoke_inspector.cjs` 통과 및 브라우저에서 세 아이콘 일치·닫기/재열기·한국어 설명 갱신을 확인했다. JS 문법·diff 검사 통과. 로그: `.tools/inspector-selected-icon.log`.
+- 소스 구현 후 사용자 `apk 반영` 요청으로 위 **0.14.1 APK에 포함했다.** 브리지 추가 변경은 필요하지 않다. 구현 중 대기했던 0.14.0 브리지 재시작은 다음 확인에서 완료됐다.
+
+## 0.14.0 운영 브리지 업데이트 (2026-10-07, 완료 확인)
+
+- **0.14.1 APK 빌드 중 읽기 전용 확인에서 완료를 검증했다.** 최신 유지보수 작업은 `stage: complete`, `version: 0.14.0`, `workspace_inspector_verified: true`, 복원 세션 2개를 기록한다. 실제 `/v1/health`도 **0.14.0 / 실행 세션 2개 / workspace_inspector 지원**이다. 아래는 예약 당시 이력이며 재실행하지 않았다.
+
+- 사용자 `브리지 업데이트` 요청으로 운영 `~/.local/share/bibimer/`의 브리지·OpenCode/Claude 어댑터·Claude 복구 도구 네 파일을 **0.14.0** 원본과 일치하도록 설치했다. 기존 파일과 metadata는 저장소 밖 비공개 유지보수 폴더에 보관했고, 원본 일치·0700 파일 권한을 확인했다. APK 재빌드·앱 설치는 수행하지 않았다.
+- 사전 운영 조회: **0.13.0 / 프로젝트 2개 / 실행 Codex Chat 2개**. 현재 대화는 응답 중, 다른 대화는 준비 상태였으며 두 대화 모두 저장된 네이티브 ID가 있고 승인·대기열은 없었다. 이전 0.13.0 유지보수는 `complete`였다.
+- 비공개 `~/.local/state/bibimer/maintenance/latest-restart.json`이 가리키는 **`restart-0.14.0-748d12b6`** 작업을 시작했고 `waiting_for_current_turn`을 확인했다. 현재 응답 완료 후 4초간 준비 상태를 확인하고 두 완료 세션을 종료·브리지를 재시작한 뒤 **동일 원본 대화 이어하기**로 다시 연다. 네이티브 대화 ID·권한/모델 설정·작업 폴더·이름/보관·프로젝트 선택·인증을 보존하고 추가 모델 입력은 보내지 않는다. 실행 세션 UUID는 바뀔 수 있다.
+- 첫 예약 중 현재 세션에 새 대기 입력 1개가 들어와 `queued_input_received`로 안전하게 취소됐으며 세션을 종료하지 않았다. 취소 결과는 비공개 `cancelled-on-new-input.json`에 보존하고, 이미 검증한 `wait_for_queue: true`로 동일 작업을 다시 예약했다. 현재 응답과 대기 입력이 정상 처리되어 모든 세션이 준비 상태일 때만 재시작한다. 대기열을 임의로 전송/삭제/재개하지 않는다. 승인·다른 세션 변경·설치 소스 변경 감지 시 중단한다. 준비 대기 한도는 30분이며 결과는 작업 폴더의 `status.json`에 기록한다. 파일/Git 내용·에이전트 출력은 유지보수 로그에 남기지 않는다.
+- 격리 브리지와 Codex 대역으로 **0.13.0 → 0.14.0**, 응답 후 재시작·동일 두 대화/설정/이름/보관/인증 보존·추가 모델 턴 없음, 새 파일·Git API 응답 검증이 통과했다. 다른 세션의 새 입력 시 실행 세션을 중단하지 않고 유지보수만 취소하는 검사도 통과했다. 로그: `.tools/test-restart-after-turn-0.14.0.log`, `.tools/test-restart-after-turn-0.14.0-abort.log`.
+- **이 기록 시점에는 파일 설치와 재시작 예약까지 완료했으며 운영 프로세스는 아직 0.13.0이다.** 다음 확인은 최신 작업 `stage: complete`·`workspace_inspector_verified: true` 및 `/v1/health`의 **0.14.0·workspace_inspector**다. 실패 시 `last_stage`·`reason`과 실제 실행 상태를 먼저 확인하고 같은 작업을 무조건 다시 실행하지 않는다. 실제 Android 화면·DeX/태블릿 검증과 구분한다.
+
+## 0.14.0 APK 빌드 완료 (2026-10-07)
+
+- 앱 **0.14.0 / versionCode 25**, 내장 브리지 **0.14.0**. 우측 Files·Git status·Git history 아이콘 탭, 파일/커밋 미리보기·diff, 좌우 반응형 패널과 이전 0.13.1의 DeX·재접속 보완을 포함한다.
+- 버전 변경 후 `test_inspector.py` 8개, `test_setup.py` 4개 통과. 앞선 기능 구현의 전체 브리지·UI 회귀 결과는 아래 기록을 따른다. 빌드의 리소스·Java/D8 컴파일과 APK v2/v3 서명 검증이 통과했다.
+- 이전 0.13.1과 인증서 일치, 패키지/버전/SDK·DeX Manifest 플래그·네이티브 `/v1/inspect` 및 inspector asset, 내장 **26개 asset** 원본 일치, 설치 스크립트 문법·격리 추출 원본/0700 권한, Download 복사본 SHA-256을 확인했다. 자동 설정 페이로드 **70,149 UTF-16 단위**로 제한 이내다. 기존 Download 버전은 유지했다.
+- APK: **`/storage/emulated/0/Download/Bibimer-0.14.0.apk`**, 354,926바이트, SHA-256 `3caabff47b5ff64b49da56502b05a29088633e3b14389c59c4b3da1adc550ca4`.
+- 설치 파일: **`/storage/emulated/0/Download/bibimer-setup-0.14.0.sh`**, 66,295바이트, SHA-256 `68175fe164625065e58c0f190808ef9d6925bbabc5611ab166f26732299a61ec`.
+- 로그: `.tools/build-0.14.0.log`, `.tools/tests-{inspector,setup}-0.14.0.log`, `.tools/verify-release-0.14.0.log`, `.tools/verify-apk-0.14.0.json`.
+- **APK 설치·운영 브리지 업데이트/재시작·사용자 세션 종료는 하지 않았다.** 파일·Git 조회에는 브리지 0.14.0 적용도 필요하다. 자동 연결은 기존 브리지를 업데이트하지 않는다. 실제 Android WebView·DeX/태블릿·IME 검증은 설치 후 진행한다.
+
+## 우측 파일·Git 사이드바 (2026-10-07, 0.14.0 APK 포함 / 운영 브리지 적용 대기)
+
+- 사용자 요청으로 상단 오른쪽 버튼과 **Files / Git status / Git history** 아이콘 탭을 추가했다. 현재 프로젝트·실제 워크트리의 폴더/숨김 파일/UTF-8 텍스트 미리보기, 브랜치·변경 상태·충돌·staged/working diff, 현재 HEAD의 커밋 목록·상세 patch를 읽기 전용으로 제공한다. 파일 200개·이력 50개씩 더 보기, 새로고침·오류 재시도·비 Git/구형 브리지 안내, 영어·한국어를 포함한다.
+- 1,280px 이상은 320~400px 우측 고정 패널, 더 작은 창은 우측 모달 서랍이다. 좌우 패널을 함께 열어도 본문·입력 영역을 유지하며 탭 방향키·Home/End·Back/Escape를 지원한다. 큰 화면 첫 연결에서 왼쪽 패널의 실제 워크트리를 즉시 불러오고, 320×460px 새 세션 화면에서 내용이 하단 메뉴를 가리던 문제도 보완했다.
+- 인증된 `/v1/inspect`와 `workspace_inspector` 기능 표시를 추가했다. 경로/워크트리 검증, 심볼릭 링크·상위 경로·`.git` 접근 거절, UTF-8 128KiB/Git 256KiB 제한, Git 명령별 5초 제한을 적용한다. Git hooks·fsmonitor·외부 diff/textconv·필터를 실행하지 않고 인덱스·파일을 변경하지 않는다. 필터 저장소는 CLI와 diff 결과가 다를 수 있다. 조회 결과는 로그·메타데이터에 저장하지 않으며 프로젝트·워크트리·연결 변경 시 늦은 응답을 폐기한다.
+- 검증: 전체 브리지 121개 통과 후 충돌·타임아웃 정리 검사를 추가한 최신 `test_inspector.py` 8개 통과. `smoke_inspector.cjs`의 실제 격리 Git/브리지 통합 검사, 기존 `smoke_ui.cjs`, `smoke_library.cjs`, `smoke_rendering.cjs` 통과. 파일/바이너리/페이지 분할·diff·이력·실제 워크트리·지연 응답 격리·초안/실행 프로세스/인덱스 보존·키보드 탭·1600/768/320px·영어/한국어·구형 브리지를 검증했다. Android Java API 36 컴파일도 통과했다.
+- 로그: `.tools/inspector-{backend,all-backend,ui,regression-ui,library,rendering}.log`. 통제된 캡처: `dist/screenshots/inspector-desktop.png`, `dist/screenshots/inspector-phone.png`. 화면 캡처는 임시 테스트 데이터다.
+- 구현 시점에는 소스만 변경했고 이후 사용자 요청에 따라 위 **0.14.0 APK·내장 브리지에 포함했다.** 앱과 브리지 0.14.0을 함께 적용해야 한다. 자동 설정은 기존 브리지를 재시작하지 않으므로 실행 세션을 보존할 업데이트 시점을 고려한다. 운영 브리지·사용자 세션은 유지했으며 실제 DeX/태블릿/Android WebView 검증은 남아 있다. 실시간 파일 감시·파일 편집·Git 변경 작업은 제공하지 않는다.
+
+## 0.13.1 반응형 UI 및 APK 빌드 완료 (2026-10-07)
+
+- 앱 **0.13.1 / versionCode 24**, 내장 브리지 **0.13.0**. 앞서 시작된 연결 수정만의 빌드는 Download에 배포하지 않았으며, 사용자 요청으로 DeX·태블릿 UI를 추가한 뒤 최종 APK를 다시 빌드했다.
+- 너비 700px 미만은 기존 휴대폰 배치, 700px 이상은 여백·본문·입력 크기를 조정하고 Chat 최대 폭 920px·Settings/Setup 최대 폭 840px를 적용한다. 1,000px 이상은 280~320px의 접을 수 있는 고정 사이드바를 제공한다. PTY는 가용 폭을 사용한다. 큰 화면/충분한 높이의 여러 줄 입력 최대 높이는 160px이며 낮은 창에서는 100px로 줄인다. 같은 DOM과 세션 상태를 유지하며 작은 창에서는 기존 모달 사이드바로 전환한다. 자세한 기준은 `docs/interface.md`에 기록했다.
+- 검증: `smoke_rendering.cjs`, `smoke_library.cjs`, `smoke_setup.cjs`, `smoke_ui.cjs` 모두 통과. 320/393/768/820/1024/1440/2560px와 1100×460의 낮은 창, 본문·입력 정렬, 전송 버튼 노출, 긴 초안의 높이 전환, 가로 넘침 없음, 모달 ↔ 고정 패널의 포커스·접힘·Back/Escape, 실제 격리 브리지의 세션 왕복·초안·대기 승인 유지 및 에이전트 변경 요청 없음 검증 포함. 태블릿·모니터·낮은 창 캡처를 직접 확인했다. Android 네이티브 API는 브라우저 대역이며 실제 DeX/태블릿 검증과 구분한다.
+- 최종 APK v2/v3 서명과 이전 0.13.0 인증서 일치, 패키지/버전/SDK, 구성 변경 플래그·크기 변경 허용, DEX 수명 주기 메서드, 내장 25개 asset 원본 일치, 설치 스크립트 문법·격리 추출 원본 및 0700 권한, Download 복사본 SHA-256 일치를 확인했다. 자동 설정 페이로드 65,977 UTF-16 단위로 제한 이내다. 기존 Download 버전들은 유지했다.
+- APK: **`/storage/emulated/0/Download/Bibimer-0.13.1.apk`**, 346,669바이트, SHA-256 `b2f3fcc1f32bf58f215ddfc46e25e1aa41de9676e984e538274d675aae291f03`.
+- 설치 파일: `Download/bibimer-setup-0.13.1.sh`, 62,123바이트, SHA-256 `4bdca88b23a61a7292672b041a62142f455252509d89bac7ac67e702272e5d43`. 브리지 내용은 0.13.0과 동일하며 이번 UI·연결 수정에 브리지 교체/재시작은 필요하지 않다.
+- 로그: `.tools/build-0.13.1.log`, `.tools/verify-release-0.13.1.log`, `.tools/verify-apk-0.13.1.json`, `.tools/responsive-{rendering,library,setup,ui}.log`. 통제된 화면: `dist/screenshots/responsive-chat-{768,1100,1440}.png`, `responsive-projects-1440.png`.
+- **APK 설치·운영 브리지/사용자 세션 재시작은 하지 않았다.** 실제 폰 ↔ DeX 이동·태블릿 분할 화면·Android WebView/IME/마우스와 Termux 오류 문구 확인은 남아 있다. 소스 검증을 실제 기기에서 끊김이 해결됐다는 보장으로 확대하지 않는다.
+
+## Set up and connect 재접속 시 Termux 오류 보완 (2026-10-07, 0.13.1 APK 포함)
+
+- 사용자가 재연결하려고 `Set up and connect`를 누르면 Termux 오류가 발생한다고 보고했다. 정확한 오류 문구·표시 위치는 질문했으나 아직 답을 받지 못해 실제 오류 원인을 확정하지 않았다. 읽기 전용 확인에서 설치 앱은 versionCode 23이며 이 폰의 `allow-external-apps=true`다. Android RUN_COMMAND 권한이나 실제 명령 실행 성공을 확인한 것은 아니다.
+- 기존 버튼은 이미 연결 정보가 저장돼 있고 브리지가 응답해도 매번 `RUN_COMMAND` 자동 설정을 호출했다. `app.js`에서 저장된 인증으로 `/v1/health`를 먼저 확인하고 성공하면 기존 화면 재접속만 수행하도록 바꿨다. 연결 불가·401은 기존 자동 설정 경로를 사용하며, 프로토콜 불일치는 오류 안내 후 중단한다. 조회 대기 중 앱이 숨겨지거나 연결 정보를 지우면 Termux 명령을 실행하지 않는다. 연속 클릭 방지도 유지한다. 영어·한국어 안내에 저장된 연결 우선 사용을 반영했다.
+- 검증: `node scripts/smoke_setup.cjs` 통과. 기존 연동 오류가 표시된 상태에서도 저장된 연결 성공 시 RUN_COMMAND 호출 0회, 연결 실패/401 시 자동 설정 진입, 숨겨진 앱에서 지연 실패 후 명령 실행 없음, 최초 설치·오류/재시도·중복 클릭·언어·320/360px 화면을 브라우저 네이티브 대역으로 확인했다. `python -m unittest discover -s bridge/tests -p test_setup.py` 4개 통과: 기존 브리지의 토큰·실행 세션·대기 승인 보존, 미설치/중복 설치 잠금·오류, 중지된 테스트 브리지 시작, 설치 스크립트 검증. JS 문법과 `git diff --check`도 통과했다.
+- 근거: [Termux RUN_COMMAND 공식 문서](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent)의 별도 명령 실행 권한·외부 앱 허용 조건을 확인했다. 재접속에 필요하지 않은 명령 실행을 생략한 수정이며, 모든 Termux 실행 오류를 해결했다고 보장하지 않는다.
+- 이전 설치본에서는 사이드바의 **Reconnect**로 기존 연결만 다시 시도할 수 있다. 오류 문구 확인 및 새 APK의 실제 재접속/자동 설정 검증이 남아 있다. 구현 단계에서는 소스만 변경했고, 이후 위 0.13.1 APK에 포함했다. APK 설치, 권한/설정 변경, 운영 브리지·사용자 세션 재시작은 하지 않았다.
+
+## DeX 전환 시 연결 유지 보완 (2026-10-07, 0.13.1 APK 포함)
+
+- 사용자가 DeX 실행 시 기존 연결이 끊긴다고 보고했다. BIBIMER 앱 연결 문제로 보고 조사했으며, 실제 DeX의 Activity 재생성·Termux 종료 여부는 아직 확인하지 않았다.
+- 기존 `MainActivity`는 디스플레이 구성 변경을 처리하지 않아 Activity/WebView가 재생성될 수 있었고, `onPause()`마다 출력 조회를 취소했다. DeX·다중 창에서 다른 창이 포커스를 받아도 발생할 수 있는 경로다. Activity 종료 자체는 원래부터 에이전트 종료 API를 호출하지 않는다.
+- Manifest에 크기·방향·밀도·UI 모드·키보드·탐색 장치 구성 변경 처리와 창 크기 변경 허용을 명시했다. `onConfigurationChanged()`는 같은 WebView를 유지하면서 배치·그리기·시스템/IME 여백만 갱신한다. 출력 조회 중단은 실제로 화면이 숨겨지는 `onStop()`으로 옮겼으며, 숨겨졌다 돌아올 때만 기존 재접속 처리를 호출한다. 포커스 왕복은 현재 조회·화면·초안을 유지한다.
+- 근거: [Samsung DeX 최적화](https://developer.samsung.com/samsung-dex/modify-optimizing.html), [Android WebView 상태 유지](https://developer.android.com/develop/adaptive-apps/cookbook/webview-state), [Android 다중 창 수명 주기](https://developer.android.com/develop/ui/views/layout/support-multi-window-mode). 공식 문서의 처리 방식과 소스 확인이며 이 폰의 DeX 재현 결과는 아니다.
+- 검증: Manifest XML 파싱 및 API 36 대상으로 최종 Android Java 전체 컴파일, `git diff --check` 통과. `node scripts/smoke_ui.cjs` 전체 통과: 새 1280×720 → 800×600 → 393×780 변경 시 같은 페이지·실행 PTY·연결 표시·입력 초안 유지와 기존 재접속·프로젝트/에이전트 전환·대기열/Steer·승인/질문·가져오기·영어/한국어 검사를 확인했다. Android 네이티브 API는 브라우저 대역이며, 실제 DeX의 구성 변경 콜백·포커스 이동 검증과 구분한다.
+- 남은 검증: 새 APK 설치 후 폰 ↔ DeX 이동, 창 크기/최대화·포커스 왕복, 최소화 후 복귀, Chat 응답 중 입력/승인/대기열 및 PTY 출력·크기, IME 여백을 확인한다. OS의 앱 프로세스 종료·Termux 종료에 대한 생존/초안 복구까지 보장하지 않는다. 구현 이후 위 0.13.1 APK에 포함했으며 APK 설치, 운영 브리지 재시작과 사용자 세션 종료는 하지 않았다.
 
 ## Google Play 출시 준비 (2026-10-06)
 
+- **현재 단계 — Google 로그인 차단(2026-10-07):** Chromium 뷰어 연결 번호를 확인한 뒤 실제 화면 80회 전송을 확인했지만 사용자가 **이 브라우저는 안전하지 않다는 메시지로 로그인할 수 없다**고 보고했다. 화면/입력 전달 성공과 Google 인증 성공을 구분한다. [Google 공식 안내](https://support.google.com/accounts/answer/7675428?hl=ko)는 자동 제어 브라우저의 로그인을 차단할 수 있다고 설명한다. 이번 자동 제어 Chromium이 원인일 가능성이 있으나 정확한 판정 이유는 확인하지 않았다. 같은 뷰어에서 재시도하도록 반복 안내하지 않는다. 기존에 로그인해 둔 **실제 모바일 Chrome의 `https://play.google.com/console/`**에서 사용자가 직접 이어가는 경로를 안내하며, 뷰어 상단에도 해당 주소를 새 탭으로 여는 링크를 추가했다. 모바일 Chrome 내부를 현재 도구로 직접 조작할 수 있다고 주장하지 않는다. 앱 목록에 BIBIMER가 이미 있는지 확인한 뒤 필요한 화면별 작업을 안내한다. Google/조직 인증·Console 내부 접근·출시는 완료되지 않았다.
+- **보존 상태:** 차단 보고 뒤 `chrome-control.py status`의 준비·연결·origin·전송 횟수만 확인했으며 `manualLogin: true`를 유지했다. 로그인 화면·DOM·입력·쿠키를 조회하지 않았고 브라우저/프로필·운영 브리지·에이전트 세션을 변경하거나 종료하지 않았다. 이 기록·출시 문서·뷰어의 직접 링크만 갱신했으며 APK/AAB 빌드·커밋/푸시는 하지 않았다.
+- **Chromium 직접 로그인 뷰어 준비 이력(2026-10-07):** Obscura 화면 연결과 실제 화면 전송은 확인했지만 사용자가 글자 표시·입력칸 선택 실패를 보고했다. 계정 없는 별도 Obscura에서 Google 입력칸 중앙의 `elementFromPoint`가 입력칸 위 DIV를 반환하고 일부 버튼 글자가 빠지는 것을 재현했다. 사용자 로그인 화면·DOM·입력은 읽지 않았다. 같은 폰의 기존 Chromium 프로세스에 **새 탭만 추가**하고 **`http://127.0.0.1:18769/`**에 새 수동 뷰어를 준비했다. Obscura·기존 Chromium 탭/프로필·운영 브리지·에이전트 세션은 유지했다. 이전 18766 페이지에도 새 뷰어 링크를 추가했다.
+- **새 연결·입력 방법:** 새 주소에서 `화면 연결` → 사용자가 보낸 6자리 연결 번호를 `python ~/.local/share/bibimer-play-browser/chrome-control.py approve <번호>`로 확인한다. 번호는 문서·로그에 기록하지 않는다. 사용자는 하단 **입력칸 선택**으로 현재 보이는 입력칸을 선택하고 키보드에 작성 → **화면에 입력** → Google **Next**를 누른다. 화면 직접 터치·확대·Tab·스크롤·입력칸 지우기도 제공한다. 비밀번호·2단계 인증번호는 사용자가 뷰어에 직접 입력한다. Wi-Fi·ADB가 필요하지 않은 같은 폰의 localhost 경로다.
+- **Chromium 구현·검증:** 저장소 밖 `~/.local/share/bibimer-play-browser/`의 `chrome-viewer.cjs`, `chrome-viewer.html`, `chrome-control.py`를 사용한다. 기존 0600 `run/control.sock`을 통해 해당 새 탭만 조작하고 뷰어 관리 API는 별도 0600 `run/chrome-view-control.sock`이다. 412×720 CSS 화면을 824×1440 PNG로 전달하고 터치는 CSS 좌표로 환산한다. 별도 합성 화면에서 미인증/다른 Origin/잘못된 번호 거절, 고해상도·확대 상태의 실제 터치 이벤트, 한글 입력·클릭·지우기·입력칸 선택이 통과했다. **계정 정보 없는 Google 로그인 페이지에서도** 누락 없는 글자 표시, 입력칸 직접 터치·선택 버튼을 확인했다. 아직 사용자의 실제 Android Chrome 터치·Google 인증 수락·Console 접근은 미검증이다.
+- **현재 로그인 보호:** 테스트 연결을 초기화하고 새 Chromium 뷰어를 `ready: true`, `manualLogin: true`, 사이트 `https://accounts.google.com`, 사용자 연결 대기 상태로 준비했다. `chrome-control.py status`는 준비·origin·연결·전송 횟수만 반환한다. 새 관리 `/cdp`의 수동 로그인 중 403과 미인증 `/api/frame`의 403을 검증했다. **수동 로그인 동안 기존 Chromium 관리 소켓을 포함한 다른 경로로도 화면·DOM·입력 내용을 읽지 않는다.** 사용자가 로그인 완료를 명시한 뒤에만 `chrome-control.py manual-complete`로 조작을 재개한다. 검사용 Obscura 프로세스만 정리했다. APK/AAB 빌드·운영 브리지 변경·커밋/푸시는 하지 않았다.
+- **이전 Obscura 직접 로그인 뷰어:** 사용자의 `내가 로그인 할 방법?` 요청으로 같은 폰의 **`http://127.0.0.1:18766/`**에 수동 입력 뷰어를 준비했다. 기존 진단 주소 18765·noVNC와 구분한다. `화면 연결`을 누르면 6자리 연결 번호가 나오고, 사용자가 보내 준 번호만 `python ~/.local/share/bibimer-play-browser/obscura-control.py approve <번호>`로 확인한다. 그러면 **같은 페이지 안에서** Google 로그인 화면이 나타난다. 사용자는 화면 입력칸을 누른 뒤 하단 `키보드`에 문자를 작성해 `화면에 입력`을 누르고, Google 화면의 `Next`를 누른다. 입력칸 지우기·Backspace·Enter·스크롤·화면 갱신도 제공한다. Wi-Fi·ADB·클립보드·앱 자동 열기에 의존하지 않는다. 연결과 전송은 성공했으나 실제 Google 입력칸 선택 실패로 위 Chromium 경로를 준비했다.
+- **Obscura 뷰어 구현·검증:** 저장소 밖 기존 도구 폴더에 `obscura-viewer.cjs`, `obscura-viewer.html`, `obscura-control.py`, 격리 검사 `check-obscura-viewer.cjs`를 추가했다. Obscura CDP는 127.0.0.1의 임의 포트와 메모리상의 인증 토큰, 관리 API는 0600 `run/obscura-control.sock`, 프로필은 0700 `obscura-profile/`이다. 연결 번호는 브라우저별 HttpOnly/SameSite=Strict 쿠키와 짝지으며 화면/입력 API에 인증·Origin 검사를 적용한다. 화면과 입력은 사용자 뷰어에 실시간으로 전달하며 파일·일반 로그에 기록하지 않는다. 원격 입력 후 뷰어의 입력 칸을 비운다. 무계정 테스트에서 미인증 화면·다른 Origin·잘못된 번호 거절, 화면 표시, 한글 입력, 클릭, 전체 지우기가 통과했다. Obscura의 좌표 클릭 기본 동작이 입력칸에 포커스를 주지 않아 값을 읽지 않는 포커스 처리를 보완했고 전체 선택 후 삭제도 검증했다.
+- **로그인 보호·후속 작업:** 계정 입력 전 Google 로그인 화면을 412×820으로 직접 확인했고 현재 `ready: true`, `manualLogin: true`, 사이트는 `https://accounts.google.com`, 연결 사용자는 아직 없다. `obscura-control.py status`는 준비·사이트 origin·연결 여부·화면 전송 횟수만 출력한다. 수동 로그인 중 일반 관리 `/cdp` 요청은 403으로 차단되는 것을 확인했다. **계정 입력 중 화면·DOM·입력 내용에 접근하지 않는다.** 사용자가 로그인 완료를 명시한 뒤에만 `obscura-control.py manual-complete`로 일반 조작을 재개한다. Google의 실제 로그인 수락·2단계 인증·Console 접근은 아직 검증하지 않았다. 새 APK 빌드·설치·운영 브리지 변경·기존 Chromium 종료는 하지 않았다. 개인 프로필·토큰·브라우저 도구는 저장소 밖에 유지하며 이번 변경을 자동 커밋/푸시하지 않았다.
+- **Obscura 인증 진입 재검토:** 저장소 동기화 후 사용자 문의로 Obscura 0.2.2를 새 비공개 임시 프로필에서 재검사했다. Play Console용 Google `ServiceLogin` 주소로 직접 진입하면 종료 코드 0으로 `accounts.google.com/v3/signin/identifier`, 제목 `Google Play Console`, 이메일 입력란이 확인됐다. 별도 렌더 검사에서도 로그인 페이지 PNG가 생성돼 실제 화면을 확인했다. 앞선 Console 직접 접속의 SIGSEGV와 구분한다. 일반 로그인 폼·쿠키 유지 기능은 공식 README에 있지만, **사용자 계정 입력·Google 로그인 수락·2단계 인증·인증된 Console 접근은 아직 검증하지 않았다.** 이번 테스트에는 계정 정보를 입력하지 않았고 임시 프로필은 정리했다. 현재 사용자에게 연결된 Obscura 로그인 세션은 없다. Obscura는 별도 엔진이므로 기존 Android Chrome 로그인 상태를 자동 공유하지 않는다. 직접 입력할 뷰어 연결과 Google 인증 호환성은 남은 작업이다. 기존 Chromium·브리지·사용자 세션은 변경하지 않았다.
 - **현재 중단 지점:** 사용자 `일단 여기까지 레포 싱크` 요청으로 브라우저 연결 문제 해결을 멈추고 출시 준비 자료와 인수인계 기록을 동기화한다. **Play Console 계정 내부에 접근하거나 로그인·업로드·심사 제출을 완료하지 않았다.** 연결 번호 확인 후에도 사용자가 화면이 안 된다고 보고했고 마지막 실제 noVNC 연결 수는 0이다. 다음 작업은 이 미해결 상태에서 시작하며 성공했던 진단 페이지와 실제 Chromium 뷰어를 구분한다.
 - **환경 제약:** 조직 개발자 계정이며 사용자는 같은 폰의 모바일 Chrome에 Play Console을 열어 두었다. 현재 Wi-Fi를 사용할 수 없으므로 무선 ADB 페어링을 다음 필수 단계로 요구하지 않는다. Termux ADB 35.0.2는 설치돼 있지만 연결 기기가 없고 mDNS 조회도 오류였다. Termux:API 앱 0.53.0·CLI 0.60.0은 설치돼 있고 배터리 상태 API는 응답한다. API 자체에는 기존 Chrome 화면 조회·클릭 기능이 없다.
 - **로컬 브라우저 도구 위치:** 저장소 밖 `~/.local/share/bibimer-play-browser/`에 `browser.cjs`, `control.py`, `diagnose.cjs`, 별도 `profile/`, noVNC 1.7.0과 ws 8.18.3이 있다. Termux Chromium 149.0.7827.155, TigerVNC 1.16.2·Openbox를 사용한다. 이번 출시 작업용 도구이며 제품 앱이나 Git 동기화 대상이 아니다. CDP는 파이프, 관리 API·VNC는 0600 Unix 소켓, 뷰어는 127.0.0.1의 인증된 HTTP/WebSocket이다. 상위 폴더 0700, 연결 키·Xauthority 0600을 유지한다.
@@ -484,7 +644,7 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 
 - 사용자가 Orca·Paseo 대비 빈약한 응답 렌더링과 넓은 간격을 개선하고 Bibimer 정체성을 담은 전문적인 아이콘을 요청했다. 앱·브리지 0.4.0, APK versionCode 7로 구현했다.
 - 중성 어두운 배경·민트 강조색, 12px 화면 여백과 작은 헤더·제어 행으로 작업 공간을 늘렸다. 도구는 접이식 상태 행, 답변은 Markdown 본문, 사용자 입력은 작은 카드로 구분한다. 긴 명령이 상태를 밀어내던 레이아웃을 수정했다.
-- `rich-text.js`: marked 15.0.12 lexer → 허용 DOM 요소로 GFM 제목·중첩 목록·체크리스트·표·인용·강조·링크를 렌더링한다. highlight.js 11.11.1로 알려진 코드 언어를 강조하고 코드 복사·줄바꿈을 제공한다. 라이브러리 체크섬·라이선스를 빌드에 고정했다. HTML은 실행하지 않고 이미지는 자동 요청 없이 참조로 표시한다. HTTP(S) 링크만 사용자가 탭하면 외부 브라우저로 열며 파일 경로 링크는 복사한다.
+- `rich-text.js`: marked 15.0.12 lexer → 허용 DOM 요소로 GFM 제목·중첩 목록·체크리스트·표·인용·강조·링크를 렌더링한다. highlight.js 11.11.1로 알려진 코드 언어를 강조하고 코드 복사·줄바꿈을 제공한다. 라이브러리 체크섬·라이선스를 빌드에 고정했다. HTML은 실행하지 않고 이미지는 자동 요청 없이 참조로 표시한다. 당시에는 HTTP(S) 링크를 탭하면 외부 브라우저로 열고 파일 경로 링크는 복사했다. 2026-10-09 소스에서 파일 링크를 Android 앱 열기로 확장했으며 위 최신 항목을 참고한다.
 - 명령·도구의 상태·종료 코드·출력, 파일별 diff와 추가/삭제 수·줄 번호, 구조화된 계획 단계·완료 개수, 제공된 작업 요약을 표시한다. 브리지는 `changes`, `truncated`, `steps`, `explanation`, `summary`를 전달하고 기존 평문 필드를 유지한다. 큰 diff의 잘림 안내와 출력 미저장을 검증했다. PTY 출력 추정이나 승인 자동 처리는 추가하지 않았다.
 - 스트리밍 중 이전 메시지를 읽는 위치를 유지하며 최신 응답 이동 버튼을 제공한다. 같은 항목 갱신·언어 전환 시 도구 접기·코드 줄바꿈 상태를 유지한다. 기존 프로젝트별 입력·질문 초안 유지도 회귀 검증했다.
 - B와 두 코드 꺾쇠를 결합한 SVG·벡터 심벌을 앱 로고와 런처에 적용했다. 적응형 아이콘(v26)과 테마용 단색 레이어(v33), 네이티브 배경·강조색도 맞췄다. SVG MIME와 네이티브 asset 허용 목록을 함께 갱신했다.

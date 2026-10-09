@@ -1,0 +1,118 @@
+/* Real isolated Git/bridge + browser native adapter; no user repositories or models. */
+const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http');
+const {spawn,execFileSync}=require('node:child_process'),assert=require('node:assert/strict');
+if(process.platform==='android')Object.defineProperty(process,'platform',{value:'linux'});
+const {chromium}=require('../.tools/ui/node_modules/playwright-core');
+const root=path.resolve(__dirname,'..'),tmp=fs.mkdtempSync(path.join(os.tmpdir(),'bibimer-inspector-'));
+const state=path.join(tmp,'state'),repo=path.join(tmp,'Workspace'),tree=path.join(tmp,'Feature tree'),other=path.join(tmp,'Plain folder');
+const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+let server,bridge,browser,held,hold=false,legacy=false,fail=false;
+async function main(){
+  fs.mkdirSync(repo);fs.mkdirSync(other);fs.mkdirSync(path.join(tmp,'bin'));
+  const python=execFileSync('which',['python'],{encoding:'utf8'}).trim();
+  fs.writeFileSync(path.join(tmp,'bin/codex'),'#!'+python+'\n'+fs.readFileSync(path.join(root,'bridge/tests/fake_codex.py'),'utf8'),{mode:0o700});
+  const git=(...args)=>execFileSync('git',['-C',repo,...args],{stdio:'pipe'});
+  git('init','-b','main');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');
+  fs.mkdirSync(path.join(repo,'src'));fs.writeFileSync(path.join(repo,'src','app.txt'),'Original content\n');
+  git('add','.');git('commit','-m','Initial <b>literal</b>');
+  git('worktree','add','-b','feature/inspector',tree);
+  fs.writeFileSync(path.join(tree,'tree-only.txt'),'Linked workspace');
+  fs.writeFileSync(path.join(repo,'src','app.txt'),'Staged line\n');git('add','.');
+  fs.writeFileSync(path.join(repo,'src','app.txt'),'Working line\n');
+  fs.writeFileSync(path.join(repo,'<unsafe>.txt'),'<script>window.leaked=true</script>');
+  fs.writeFileSync(path.join(repo,'.hidden'),'Hidden file');fs.writeFileSync(path.join(repo,'binary'),Buffer.from([0,255]));
+  fs.mkdirSync(path.join(repo,'many'));for(let i=0;i<205;i++)fs.writeFileSync(path.join(repo,'many',`file-${String(i).padStart(3,'0')}`),'x');
+  fs.writeFileSync(path.join(other,'other-only.txt'),'Other workspace');
+  server=http.createServer((req,res)=>{try{
+    const name=req.url==='/'?'index.html':req.url.slice(1);if(name.includes('..'))throw Error();
+    res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':name.endsWith('.css')?'text/css':name.endsWith('.woff2')?'font/woff2':name.endsWith('.svg')?'image/svg+xml':'text/html');
+    res.end(fs.readFileSync(path.join(root,'android/app/src/main/assets',name)));
+  }catch{res.writeHead(404).end();}});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const probe=http.createServer();await new Promise(resolve=>probe.listen(0,'127.0.0.1',resolve));const port=probe.address().port;await new Promise(resolve=>probe.close(resolve));
+  bridge=spawn('python',[path.join(root,'bridge/bibimer_bridge.py'),'serve','--state-dir',state,'--port',String(port)],{stdio:'ignore',env:{...process.env,PATH:path.join(tmp,'bin')+':'+process.env.PATH}});
+  for(let i=0;i<100&&!fs.existsSync(path.join(state,'token.json'));i++)await delay(50);
+  const token=JSON.parse(fs.readFileSync(path.join(state,'token.json')));
+  const call=async(method,url,data)=>{const response=await fetch(`http://127.0.0.1:${port}${url}`,{method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(method==='POST'?{body:JSON.stringify(data)}:{})});return{ok:response.ok,status:response.status,data:await response.json()};};
+  const project=(await call('POST','/v1/project',{path:repo,add:true})).data.project;
+  const otherProject=(await call('POST','/v1/project',{path:other,add:true})).data.project;
+  await call('POST','/v1/project',{project_id:project.id});
+  const session=(await call('POST','/v1/sessions',{project_id:project.id,agent:'shell',mode:'terminal',request_id:crypto.randomUUID()})).data.session;
+  const indexBefore=fs.readFileSync(path.join(repo,'.git/index'));
+  browser=await chromium.launch({executablePath:path.join(process.env.PREFIX,'bin/headless_shell'),headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+  const page=await browser.newPage({viewport:{width:1600,height:1000}});page.setDefaultTimeout(12000);
+  const errors=[],mutations=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.exposeFunction('nativeRequest',async(id,method,url,body)=>{
+    if(method==='POST'&&url.startsWith('/v1/sessions'))mutations.push(url);
+    let result=fail&&url==='/v1/inspect'?{ok:false,status:408,data:{code:'error_inspect_timeout'}}:await call(method,url.replace('wait=20','wait=1'),JSON.parse(body));
+    if(legacy&&url==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='workspace_inspector');
+    if(hold&&url==='/v1/inspect'){hold=false;await new Promise(resolve=>held=resolve);}
+    try{await page.evaluate(({id,result})=>window.BibimerNativeReply(id,result),{id,result});}catch{}
+  });
+  await page.addInitScript(()=>{window.Bibimer={environment:()=>JSON.stringify({paired:true,termuxInstalled:true,language:localStorage.language||'en',version:'test'}),request:(...args)=>window.nativeRequest(...args),cancelPoll:()=>{},setLanguage:value=>{localStorage.language=value;return true;},setAgentOptions:()=>true,setEnterBehavior:()=>true,setBackHandling:()=>{}};});
+  await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await page.waitForFunction(()=>document.querySelector('#connection').textContent==='Connected');
+  await page.locator('#input').fill('Keep this draft');
+  await page.locator('#inspector-open').click();
+  const row=name=>page.locator('.inspect-row').filter({has:page.locator('span').filter({hasText:new RegExp('^'+name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'$')})});
+  const back=()=>page.locator('#inspect-toolbar button').filter({hasText:'Back to list'}).click();
+  await row('src').click();await row('app.txt').click();
+  await page.waitForFunction(()=>document.querySelector('.inspect-code')?.textContent==='Working line\n');
+  assert.equal(await page.locator('#inspector').evaluate(node=>node.matches(':modal')),false);
+  await page.locator('#input').click();assert.equal(await page.locator('#input').inputValue(),'Keep this draft');
+  await back();await page.locator('#inspect-toolbar button').filter({hasText:'Root'}).click();
+  await row('<unsafe>.txt').click();await page.locator('.inspect-code').waitFor();
+  assert.equal(await page.locator('.inspect-code').innerText(),'<script>window.leaked=true</script>');
+  assert.equal(await page.evaluate(()=>window.leaked),undefined);
+  await back();await row('binary').click();await page.getByText('Preview is available for UTF-8 text files only.').waitFor();await back();
+  await row('many').click();await page.waitForFunction(()=>document.querySelectorAll('.inspect-row').length===200);
+  await page.locator('#inspect-more').click();await page.waitForFunction(()=>document.querySelectorAll('.inspect-row').length===205);
+  await page.locator('#inspect-status-tab').click();await row('src/app.txt').click();
+  await page.waitForFunction(()=>document.querySelector('.inspect-code')?.textContent.includes('+Staged line'));
+  await page.locator('#inspect-toolbar button').filter({hasText:'Working tree'}).click();
+  await page.waitForFunction(()=>document.querySelector('.inspect-code')?.textContent.includes('+Working line'));
+  await page.locator('#inspect-history-tab').click();await page.locator('.inspect-commit').click();
+  await page.waitForFunction(()=>document.querySelector('.inspect-code')?.textContent.includes('Initial <b>literal</b>'));
+  assert.equal(await page.locator('#inspect-content b').count(),0);
+  await back();
+  await page.locator('#inspect-files-tab').focus();await page.keyboard.press('End');
+  assert.equal(await page.locator('#inspect-history-tab').getAttribute('aria-selected'),'true');
+  const left=await page.locator('#sidebar').boundingBox(),right=await page.locator('#inspector').boundingBox(),work=await page.locator('#work').boundingBox();
+  assert.ok(left.x+left.width<=work.x && work.x+work.width<=right.x && work.width>=600);
+  fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
+  await page.screenshot({path:path.join(root,'dist/screenshots/inspector-desktop.png')});
+  fail=true;await page.locator('#inspect-refresh').click();await page.getByText('Reading this workspace took too long. Retry or open it in Termux.').waitFor();
+  fail=false;await page.locator('#inspect-content button').filter({hasText:'Retry'}).click();await page.locator('.inspect-commit').waitFor();
+  // A delayed result from the first workspace must not overwrite the next one.
+  hold=true;await page.locator('#inspect-files-tab').click();for(let i=0;i<50&&!held;i++)await delay(20);
+  const switchProject=async p=>{const group=page.locator('[data-project='+JSON.stringify(p.id)+']');if(!await group.evaluate(node=>node.open))await group.locator(':scope > summary').click();await group.locator('[data-key='+JSON.stringify('open/'+p.id)+']').click();};
+  await switchProject(otherProject);await row('other-only.txt').waitFor();held();held=null;
+  await delay(250);assert.equal(await row('other-only.txt').count(),1);assert.equal(await row('src').count(),0);
+  await page.locator('#inspect-status-tab').click();await page.getByText('This folder is not in a Git working tree.').waitFor();
+  await switchProject(project);await page.locator('#inspect-files-tab').click();await row('src').waitFor();
+  assert.equal(await page.locator('#input').inputValue(),'Keep this draft');
+  await page.locator('[data-worktree='+JSON.stringify(tree)+'] > summary').click();
+  await page.locator('[data-key='+JSON.stringify('new/'+project.id+'/'+tree)+']').click();
+  await row('tree-only.txt').waitFor();assert.equal(await page.locator('#inspect-root').innerText(),tree);
+  await page.locator('#inspect-status-tab').click();await page.getByText('feature/inspector',{exact:true}).last().waitFor();
+  await page.setViewportSize({width:768,height:1024});await page.waitForFunction(()=>!document.querySelector('#inspector').open);
+  await page.locator('#inspector-open').click();assert.equal(await page.locator('#inspector').evaluate(node=>node.matches(':modal')),true);
+  await page.setViewportSize({width:320,height:460});await delay(100);
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.screenshot({path:path.join(root,'dist/screenshots/inspector-phone.png')});
+  assert.equal(await page.evaluate(()=>window.BibimerBack()),true);
+  await page.locator('#tab-settings').click();await page.locator('#language-trigger').click();await page.locator('[data-value=ko]').click();
+  await page.locator('#inspector-open').click();assert.equal(await page.locator('#inspector-title').innerText(),'작업 폴더 탐색');
+  await page.keyboard.press('Escape');assert.equal(await page.locator('#inspector').isVisible(),false);
+  legacy=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
+  await page.locator('#inspector-open').click();await page.getByText('작업 폴더 탐색을 사용하려면 Termux 브리지를 업데이트하세요.').waitFor();
+  assert.ok((await call('GET','/v1/health')).data.projects.some(p=>p.sessions.some(s=>s.id===session.id&&s.state==='running')));
+  assert.ok(mutations.every(url=>url.endsWith('/resize')));
+  assert.ok(indexBefore.equals(fs.readFileSync(path.join(repo,'.git/index'))));
+  assert.deepEqual(errors,[]);
+  console.log('PASS: real files/UTF-8/binary/pagination, staged/worktree diffs, commit history/detail, inert HTML, refresh/retry, stale response isolation, project/worktree context, drafts/process/index preserved, icon-tab keyboard, two docked panes, tablet/320px drawer, Back/Escape, EN/KO and old bridge');
+}
+main().catch(error=>{console.error(error.stack);process.exitCode=1;}).finally(async()=>{
+  if(held)held();if(browser)await browser.close();if(bridge){bridge.kill('SIGTERM');await new Promise(resolve=>bridge.once('exit',resolve));}
+  if(server)await new Promise(resolve=>server.close(resolve));fs.rmSync(tmp,{recursive:true,force:true});
+});

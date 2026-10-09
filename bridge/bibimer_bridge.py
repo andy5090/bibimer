@@ -20,6 +20,7 @@ import secrets
 import select
 import shutil
 import signal
+import stat
 import socket
 import struct
 import subprocess
@@ -33,13 +34,34 @@ import urllib.parse
 import urllib.request
 import uuid
 
-VERSION = "0.13.0"
+VERSION = "0.15.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
+    "error_file_link": "This file link is not valid.",
+    "error_file_scope": "Open files from the current project, worktree or Downloads folder.",
+    "error_file_access": "Could not read this file. Check its path and Termux access.",
+    "error_file_large": "Files up to 64 MB can be opened.",
+    "error_file_busy": "Another file is being prepared. Try again shortly.",
+    "error_file_expired": "The file transfer expired. Tap the link again.",
+    "error_file_changed": "The file changed during transfer. Tap the link again.",
+    "error_file_open": "Could not open the file. Check the connection and available storage.",
+    "error_file_app": "No Android app can open this file type. Install a compatible viewer.",
+    "error_file_cancelled": "Opening was cancelled. Return to Bibimer and tap the link again.",
+
+    "error_github_tools": "Install Git and GitHub CLI in Termux first (pkg install git gh).",
+    "error_github_api": "Could not reach GitHub. Check your connection, CLI login and repository access, then refresh.",
+    "error_github_destination": "Choose an existing writable parent folder and a new folder name without slashes.",
+    "error_github_exists": "That path already exists. Choose a new folder name; existing files are never overwritten.",
+    "error_github_busy": "Finish or cancel the current clone before starting another.",
+    "error_github_clone": "Could not finish cloning or registration. Check network, repository access and free space. Files are kept; inspect the path in Termux before retrying with a new folder name.",
+    "error_github_interrupted": "Cloning was stopped and is not resumed automatically. Files are kept. Check the destination in Termux.",
+    "error_github_job": "This import is no longer in the recent list. Check the project list and destination folder.",
+    "error_github_request": "Choose a valid GitHub import action.",
+
     "error_agent_start": "Could not start the agent. Check its installation and setup in Termux.",
     "error_agent_transport": "The agent connection failed. Check the agent in Termux before trying again.",
     "error_agent_turn": "The agent could not complete this response. Check its login, model and configuration in Termux.",
@@ -117,6 +139,11 @@ ERROR_MESSAGES = {
     "error_session_action": "Choose a valid session action.",
     "error_session_delete_active": "End this session before removing it from BIBIMER.",
     "error_worktree": "This working folder is no longer available in the project's Git worktrees.",
+    "error_inspect_request": "Choose a valid file, commit or workspace view.",
+    "error_inspect_access": "This path is unavailable or cannot be previewed inside this workspace.",
+    "error_inspect_git": "Could not read Git information. Check the repository and Git installation in Termux.",
+    "error_inspect_timeout": "Reading this workspace took too long. Retry or open it in Termux.",
+    "error_inspect_large": "This listing is too large. Open a smaller folder or inspect it in Termux.",
     "error_http_request": "The request could not be handled.",
     "error_internal": "The bridge could not process the request.",
     "error_local_only": "Only the app's local connection is allowed.",
@@ -1320,6 +1347,663 @@ class CompletionFeed:
                     "events": [dict(row) for row in self.entries if row["id"] > cursor]}
 
 
+class WorkspaceInspector:
+    """Bounded, read-only views. Nothing here runs an agent or persists content."""
+    TEXT_LIMIT = 128 * 1024
+    GIT_LIMIT = 256 * 1024
+
+    def __init__(self, project):
+        self.root = Path(project["path"])
+        self.project = project
+
+    @staticmethod
+    def relative(value):
+        if not isinstance(value, str) or len(value) > 4096 or "\0" in value or value.startswith("/"):
+            raise Problem(400, "error_inspect_request")
+        parts = value.split("/") if value else []
+        if any(part in {"", ".", "..", ".git"} for part in parts):
+            raise Problem(400, "error_inspect_request")
+        return parts
+
+    @contextlib.contextmanager
+    def opened(self, relative, directory=False):
+        # Walk by directory descriptors, rejecting symlinks even during rename races.
+        parts = self.relative(relative)
+        fd = None
+        try:
+            fd = os.open(self.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            for index, part in enumerate(parts):
+                flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+                if directory or index < len(parts) - 1:
+                    flags |= os.O_DIRECTORY
+                child = os.open(part, flags, dir_fd=fd)
+                os.close(fd)
+                fd = child
+            yield fd
+        except OSError:
+            raise Problem(403, "error_inspect_access") from None
+        finally:
+            if fd is not None:
+                os.close(fd)
+
+    def files(self, data):
+        path = data.get("path", "")
+        offset = integer(data.get("offset", 0), 0, 20000)
+        hidden = data.get("hidden", False)
+        if not isinstance(hidden, bool):
+            raise Problem(400, "error_inspect_request")
+        rows = []
+        with self.opened(path, directory=True) as fd, os.scandir(fd) as entries:
+            for index, entry in enumerate(entries):
+                if index >= 20000:
+                    raise Problem(413, "error_inspect_large")
+                if entry.name == ".git" or (not hidden and entry.name.startswith(".")):
+                    continue
+                try:
+                    info = entry.stat(follow_symlinks=False)
+                except OSError:
+                    continue
+                kind = "folder" if stat.S_ISDIR(info.st_mode) else "file" if stat.S_ISREG(info.st_mode) else "link" if stat.S_ISLNK(info.st_mode) else "special"
+                rows.append({"name": entry.name, "path": "/".join(filter(None, [path, entry.name])),
+                             "kind": kind, "size": info.st_size})
+        rows.sort(key=lambda row: (row["kind"] != "folder", row["name"].casefold(), row["name"]))
+        return {"path": path, "entries": rows[offset:offset+200], "total": len(rows),
+                "next_offset": offset + 200 if offset + 200 < len(rows) else None}
+
+    def file(self, data):
+        path = data.get("path")
+        with self.opened(path) as fd:
+            info = os.fstat(fd)
+            if not stat.S_ISREG(info.st_mode):
+                raise Problem(403, "error_inspect_access")
+            chunks, remaining = [], self.TEXT_LIMIT + 1
+            while remaining:
+                block = os.read(fd, min(remaining, 16384))
+                if not block:
+                    break
+                chunks.append(block)
+                remaining -= len(block)
+        raw = b"".join(chunks)
+        truncated = len(raw) > self.TEXT_LIMIT
+        raw = raw[:self.TEXT_LIMIT]
+        try:
+            # A UTF-8 character cut at the preview boundary is not a binary file.
+            import codecs
+            text = codecs.getincrementaldecoder("utf-8")().decode(raw, final=not truncated)
+            binary = "\0" in text
+        except UnicodeDecodeError:
+            text, binary = "", True
+        return {"path": path, "size": info.st_size, "text": "" if binary else text,
+                "binary": binary, "truncated": truncated}
+
+    def git(self, args, partial=False):
+        env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+        env.update({"GIT_OPTIONAL_LOCKS": "0", "GIT_TERMINAL_PROMPT": "0", "GIT_NO_LAZY_FETCH": "1", "LC_ALL": "C"})
+        # Read views must not execute configured clean/process filters either.
+        if args[0] != "config" and not hasattr(self, "filter_overrides"):
+            code, names, _ = self.git(["config", "--null", "--name-only", "--get-regexp", r"^filter\..*\.(clean|smudge|process|required)$"])
+            self.filter_overrides = []
+            if code not in {0, 1}:
+                raise Problem(400, "error_inspect_git")
+            for name in names.decode("utf-8", "replace").split("\0"):
+                if name:
+                    self.filter_overrides.extend(["-c", name + ("=false" if name.endswith(".required") else "=")])
+        command = ["git", "--no-pager", "--literal-pathspecs", "-C", str(self.root),
+                   "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null", "-c", "color.ui=false",
+                   "-c", "diff.external=", "-c", "diff.submodule=short", *getattr(self, "filter_overrides", []), *args]
+        try:
+            process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                       stderr=subprocess.DEVNULL, env=env, start_new_session=True)
+        except OSError:
+            raise Problem(503, "error_inspect_git") from None
+        output = bytearray()
+        deadline = time.monotonic() + 5
+        truncated = False
+        try:
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise Problem(408, "error_inspect_timeout")
+                ready, _, _ = select.select([process.stdout], [], [], remaining)
+                if not ready:
+                    raise Problem(408, "error_inspect_timeout")
+                block = os.read(process.stdout.fileno(), 16384)
+                if not block:
+                    break
+                output.extend(block)
+                if len(output) > self.GIT_LIMIT:
+                    if not partial:
+                        raise Problem(413, "error_inspect_large")
+                    truncated = True
+                    break
+            if not truncated:
+                process.wait(timeout=max(.01, deadline - time.monotonic()))
+            return process.returncode if not truncated else 0, bytes(output[:self.GIT_LIMIT]), truncated
+        except subprocess.TimeoutExpired:
+            raise Problem(408, "error_inspect_timeout") from None
+        finally:
+            if process.poll() is None:
+                with contextlib.suppress(ProcessLookupError):
+                    os.killpg(process.pid, signal.SIGKILL)
+            process.wait()
+            process.stdout.close()
+
+    def required_git(self, args, partial=False):
+        code, output, truncated = self.git(args, partial)
+        if code:
+            raise Problem(400, "error_inspect_git")
+        return output, truncated
+
+    def repository(self):
+        code, output, _ = self.git(["rev-parse", "--is-inside-work-tree"])
+        return code == 0 and output.strip() == b"true"
+
+    def status(self, data):
+        output, _ = self.required_git(["status", "--porcelain=v2", "-z", "--branch", "--untracked-files=normal", "--", "."])
+        prefix = self.required_git(["rev-parse", "--show-prefix"])[0].decode("utf-8", "replace").rstrip("\n")
+        rows, branch = [], {}
+        records = iter(output.decode("utf-8", "replace").split("\0"))
+        for record in records:
+            if record.startswith("# branch."):
+                key, _, value = record[9:].partition(" ")
+                branch[key] = value
+            elif record.startswith(("1 ", "2 ", "u ", "? ")):
+                kind = record[0]
+                fields = record.split(" ", {"1":8, "2":9, "u":10, "?":1}[kind])
+                path = fields[-1]
+                original = next(records, "") if kind == "2" else None
+                if not path.startswith(prefix):
+                    continue
+                rows.append({"path": path[len(prefix):], "xy": "??" if kind == "?" else fields[1],
+                             "original": original[len(prefix):] if original and original.startswith(prefix) else None,
+                             "conflict": kind == "u"})
+        offset = integer(data.get("offset", 0), 0, 1000000)
+        return {"branch": branch, "entries": rows[offset:offset+200], "total": len(rows),
+                "next_offset": offset + 200 if offset + 200 < len(rows) else None}
+
+    def history(self, data):
+        revision = data.get("revision")
+        if revision is None:
+            code, output, _ = self.git(["rev-parse", "--verify", "HEAD"])
+            if code:
+                return {"entries": [], "revision": None, "next_offset": None}
+            revision = output.decode().strip()
+        if not isinstance(revision, str) or not re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", revision):
+            raise Problem(400, "error_inspect_request")
+        offset = integer(data.get("offset", 0), 0, 100000)
+        prefix = self.required_git(["rev-parse", "--show-prefix"])[0].strip()
+        output, _ = self.required_git(["log", "-z", "--format=%H%x00%h%x00%an%x00%aI%x00%s%x00%D",
+                                      "--max-count=51", "--skip=" + str(offset), revision, "--", *(["."] if prefix else [])])
+        fields = output.decode("utf-8", "replace").split("\0")[:-1] if output else []
+        rows = [dict(zip(["id", "short", "author", "date", "subject", "refs"], fields[i:i+6])) for i in range(0, len(fields)-5, 6)]
+        return {"entries": rows[:50], "revision": revision, "next_offset": offset + 50 if len(rows) > 50 else None}
+
+    def inspect(self, data):
+        action = data.get("action")
+        if action == "files":
+            result = self.files(data)
+        elif action == "file":
+            result = self.file(data)
+        elif action in {"status", "history", "diff", "commit"}:
+            if not self.repository():
+                return {"project_id": self.project["id"], "root": str(self.root), "is_repo": False}
+            if action == "status":
+                result = self.status(data)
+            elif action == "history":
+                result = self.history(data)
+            else:
+                if action == "diff":
+                    path = data.get("path")
+                    if not self.relative(path) or data.get("area") not in {"staged", "worktree"}:
+                        raise Problem(400, "error_inspect_request")
+                    args = ["diff", *(["--cached"] if data["area"] == "staged" else []),
+                            "--no-ext-diff", "--no-textconv", "--no-renames", "--", path]
+                else:
+                    revision = data.get("revision")
+                    if not isinstance(revision, str) or not re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", revision):
+                        raise Problem(400, "error_inspect_request")
+                    args = ["show", "--format=fuller", "--stat", "--patch", "--no-ext-diff", "--no-textconv", "--no-renames", revision, "--", "."]
+                output, truncated = self.required_git(args, partial=True)
+                result = {"text": output.decode("utf-8", "replace"), "truncated": truncated}
+            result["is_repo"] = True
+        else:
+            raise Problem(400, "error_inspect_request")
+        return {"project_id": self.project["id"], "root": str(self.root), **result}
+
+
+class LinkedFiles:
+    """Read-only, bounded transfers from a workspace or the phone's Downloads folder."""
+    LIMIT = 64 * 1024 * 1024
+    CHUNK = 256 * 1024
+    TTL = 120
+
+    def __init__(self, bridge):
+        self.bridge, self.lock, self.handles = bridge, threading.RLock(), {}
+
+    @staticmethod
+    def downloads():
+        return [Path.home() / "storage/downloads", Path("/storage/emulated/0/Download"),
+                Path("/sdcard/Download"), Path("/storage/self/primary/Download")]
+
+    @staticmethod
+    def link_path(value):
+        if not isinstance(value, str) or not value or len(value) > 8192:
+            raise Problem(400, "error_file_link")
+        if value.lower().startswith("file:"):
+            try:
+                url = urllib.parse.urlsplit(value)
+            except ValueError:
+                raise Problem(400, "error_file_link") from None
+            if url.netloc not in {"", "localhost"} or url.query:
+                raise Problem(400, "error_file_link")
+            value = url.path + ("#" + url.fragment if url.fragment else "")
+        elif re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", re.sub(r":[1-9][0-9]*(?::[1-9][0-9]*)?$", "", value)) or value.startswith("//"):
+            raise Problem(400, "error_file_link")
+        try:
+            value = urllib.parse.unquote(value, errors="strict")
+        except UnicodeError:
+            raise Problem(400, "error_file_link") from None
+        # Editor line/column references point to the same file in external viewers.
+        value = re.sub(r"(?:#L[1-9][0-9]*(?:C[1-9][0-9]*)?(?:-L?[1-9][0-9]*)?|:[1-9][0-9]*(?::[1-9][0-9]*)?)$", "", value)
+        if not value or any(ord(c) < 32 or ord(c) == 127 for c in value):
+            raise Problem(400, "error_file_link")
+        return value
+
+    @staticmethod
+    def identity(info):
+        return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+
+    def reap(self):
+        for key, item in list(self.handles.items()):
+            if item["expires"] < time.monotonic():
+                os.close(item["fd"])
+                del self.handles[key]
+
+    def prepare(self, data):
+        project = self.bridge.working_project(data)
+        with self.bridge.lock:
+            primary = dict(self.bridge.projects[project["id"]])
+        raw = self.link_path(data.get("path"))
+        try:
+            path = Path(raw).expanduser()
+        except RuntimeError:
+            raise Problem(400, "error_file_link") from None
+        if not path.is_absolute():
+            path = Path(project["path"]) / path
+        path = Path(os.path.abspath(path))
+        roots = [Path(project["path"]), Path(primary["path"]), *self.downloads()]
+        selected = None
+        for root in roots:
+            try:
+                resolved = root.resolve(strict=True)
+                for alias in (root, resolved):
+                    if path.is_relative_to(alias):
+                        relative = path.relative_to(alias).as_posix()
+                        target = resolved / relative
+                        if target.is_relative_to(self.bridge.state.resolve()) or ".git" in Path(relative).parts:
+                            raise Problem(403, "error_file_scope")
+                        selected = (resolved, relative)
+                        break
+                if selected:
+                    break
+            except (OSError, RuntimeError):
+                continue
+        if not selected:
+            raise Problem(403, "error_file_scope")
+        root, relative = selected
+        try:
+            with WorkspaceInspector({"path": str(root)}).opened(relative) as source:
+                info = os.fstat(source)
+                if not stat.S_ISREG(info.st_mode):
+                    raise Problem(400, "error_file_access")
+                if info.st_size > self.LIMIT:
+                    raise Problem(413, "error_file_large")
+                sample = os.pread(source, min(info.st_size, 4096), 0)
+                name = Path(relative).name
+                import mimetypes
+                mime = mimetypes.guess_type(name)[0] or "application/octet-stream"
+                if sample.startswith(b"\x89PNG\r\n\x1a\n"): mime = "image/png"
+                elif sample.startswith(b"\xff\xd8\xff"): mime = "image/jpeg"
+                elif sample.startswith((b"GIF87a", b"GIF89a")): mime = "image/gif"
+                elif sample.startswith(b"%PDF-"): mime = "application/pdf"
+                elif sample[:4] == b"RIFF" and sample[8:12] == b"WEBP": mime = "image/webp"
+                elif mime == "application/octet-stream" and b"\0" not in sample:
+                    try:
+                        sample.decode("utf-8")
+                        mime = "text/plain"
+                    except UnicodeError:
+                        pass
+                with self.lock:
+                    self.reap()
+                    if len(self.handles) >= 8:
+                        raise Problem(429, "error_file_busy")
+                    key = str(uuid.uuid4())
+                    self.handles[key] = {"fd": os.dup(source), "identity": self.identity(info),
+                                         "size": info.st_size, "expires": time.monotonic() + self.TTL}
+                    return {"id": key, "name": name, "mime": mime, "size": info.st_size, "chunk_size": self.CHUNK}
+        except OSError:
+            raise Problem(400, "error_file_access") from None
+        except Problem as error:
+            if error.code.startswith("error_inspect_"):
+                raise Problem(400, "error_file_access") from None
+            raise
+
+    def handle(self, data):
+        action = data.get("action")
+        if action == "prepare":
+            return self.prepare(data)
+        key = request_id(data.get("id"))
+        with self.lock:
+            self.reap()
+            item = self.handles.get(key)
+            if action == "release":
+                if item:
+                    os.close(item["fd"])
+                    del self.handles[key]
+                return {"ok": True}
+            if action != "read":
+                raise Problem(400, "error_file_link")
+            if not item:
+                raise Problem(410, "error_file_expired")
+            offset = integer(data.get("offset"), 0, item["size"])
+            try:
+                if self.identity(os.fstat(item["fd"])) != item["identity"]:
+                    raise Problem(409, "error_file_changed")
+                raw = os.pread(item["fd"], min(self.CHUNK, item["size"] - offset), offset)
+                if self.identity(os.fstat(item["fd"])) != item["identity"] or (not raw and offset < item["size"]):
+                    raise Problem(409, "error_file_changed")
+            except OSError:
+                raise Problem(400, "error_file_access") from None
+            item["expires"] = time.monotonic() + self.TTL
+            return {"data": base64.b64encode(raw).decode(), "offset": offset,
+                    "next": offset + len(raw), "done": offset + len(raw) == item["size"]}
+
+    def close(self):
+        with self.lock:
+            for item in self.handles.values():
+                os.close(item["fd"])
+            self.handles.clear()
+
+
+class GitHubImport:
+    """gh owns credentials; only allowlisted metadata crosses the bridge."""
+    RUNNING = {"cloning", "registering"}
+    REPO = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9_.-]{1,100}")
+
+    def __init__(self, bridge):
+        self.bridge, self.lock = bridge, threading.RLock()
+        self.file = bridge.state / "github-imports.json"
+        self.jobs = read_json(self.file, [])[-32:]
+        self.processes, self.closed = {}, False
+        self.login, self.login_process = {"state": "idle"}, None
+        for job in self.jobs:
+            if job["state"] in self.RUNNING:
+                job.update(state="interrupted", error="error_github_interrupted")
+        if self.jobs:
+            save_json(self.file, self.jobs)
+
+    @staticmethod
+    def environment():
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_") and k not in
+               {"GH_DEBUG", "GH_FORCE_TTY", "GH_LOG_FILE", "GH_PAGER"}}
+        env.update(GH_HOST="github.com", GH_PROMPT_DISABLED="1", GH_NO_UPDATE_NOTIFIER="1",
+                   NO_COLOR="1", LC_ALL="C", GIT_TERMINAL_PROMPT="0", GIT_CONFIG_NOSYSTEM="1",
+                   GIT_CONFIG_GLOBAL=os.devnull, GCM_INTERACTIVE="never")
+        return env
+
+    @staticmethod
+    def executable(name):
+        path = shutil.which(name)
+        if not path:
+            raise Problem(400, "error_github_tools")
+        return path
+
+    def command_json(self, args):
+        try:
+            result = subprocess.run([self.executable("gh"), *args], cwd=str(Path.home()),
+                env=self.environment(), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL, timeout=18)
+            if result.returncode or len(result.stdout) > BUFFER_LIMIT:
+                raise ValueError()
+            return json.loads(result.stdout)
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            raise Problem(400, "error_github_api") from None
+
+    def api(self, endpoint, query):
+        return self.command_json(["api", "--hostname", "github.com", "--method", "GET", endpoint, "--jq", query])
+
+    def status(self):
+        installed = bool(shutil.which("gh") and shutil.which("git"))
+        result = {"installed": installed, "account": None}
+        if installed:
+            rows = self.command_json(["auth", "status", "--hostname", "github.com", "--active",
+                "--json", "hosts", "--jq", '[.hosts["github.com"][]? | {login, state}]'])
+            if not isinstance(rows, list):
+                raise Problem(400, "error_github_api")
+            for row in rows:
+                if row.get("state") == "success" and isinstance(row.get("login"), str):
+                    result["account"] = row["login"][:100]
+                    break
+            result["auth_issue"] = bool(rows) and not result["account"]
+        return dict(result, **self.snapshot())
+
+    def snapshot(self):
+        with self.lock:
+            return {"login": dict(self.login), "jobs": [dict(job) for job in reversed(self.jobs)]}
+
+    @staticmethod
+    def terminate(process):
+        if process and process.poll() is None:
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(process.pid, signal.SIGKILL)
+            with contextlib.suppress(subprocess.TimeoutExpired):
+                process.wait(timeout=2)
+
+    def start_login(self):
+        self.executable("gh")
+        with self.lock:
+            if self.closed:
+                raise Problem(409, "error_bridge_stopping")
+            if self.login["state"] in {"starting", "waiting"}:
+                return self.snapshot()
+            self.login = {"state": "starting"}
+            threading.Thread(target=self.login_worker, args=(self.login,), daemon=True).start()
+            return self.snapshot()
+
+    def login_worker(self, attempt):
+        process = None
+        try:
+            with self.lock:
+                if attempt is not self.login or self.closed:
+                    return
+                process = subprocess.Popen([self.executable("gh"), "auth", "login", "--hostname", "github.com",
+                    "--git-protocol", "https", "--web"], env=self.environment(), cwd=str(Path.home()),
+                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True)
+                self.login_process = process
+            deadline, buffer = time.monotonic() + 900, b""
+            while process.poll() is None:
+                with self.lock:
+                    if self.closed or attempt is not self.login:
+                        return
+                if time.monotonic() > deadline:
+                    raise TimeoutError()
+                ready, _, _ = select.select([process.stderr], [], [], .25)
+                if ready:
+                    block = os.read(process.stderr.fileno(), 4096)
+                    buffer = (buffer + block)[-8192:]
+                    match = re.search(rb"First copy your one-time code: ([A-Z0-9]{4}-[A-Z0-9]{4})(?:\s|$)", buffer)
+                    if match:
+                        with self.lock:
+                            attempt.update(state="waiting", code=match[1].decode(), url="https://github.com/login/device")
+                        buffer = b""
+                    if not block:
+                        time.sleep(.05)
+            with self.lock:
+                if attempt is self.login:
+                    self.login = {"state": "complete" if process.returncode == 0 else "failed"}
+        except (OSError, Problem, TimeoutError):
+            with self.lock:
+                if attempt is self.login:
+                    self.login = {"state": "failed"}
+        finally:
+            self.terminate(process)
+            if process and process.stderr:
+                process.stderr.close()
+            with self.lock:
+                if self.login_process is process:
+                    self.login_process = None
+
+    def cancel_login(self):
+        with self.lock:
+            process = self.login_process
+            self.login, self.login_process = {"state": "idle"}, None
+        self.terminate(process)
+        return self.snapshot()
+
+    def repositories(self, data):
+        page = integer(data.get("page", 1), 1, 10000)
+        rows = self.api(f"user/repos?per_page=50&page={page}&sort=updated&direction=desc&affiliation=owner,collaborator,organization_member",
+                        '[.[] | {full_name, description, private, archived}]')
+        if not isinstance(rows, list) or len(rows) > 50:
+            raise Problem(400, "error_github_api")
+        entries = []
+        for row in rows:
+            name = row.get("full_name")
+            if not isinstance(name, str) or not self.REPO.fullmatch(name):
+                continue
+            entries.append({"name": name, "description": str(row.get("description") or "")[:300],
+                            "private": row.get("private") is True, "archived": row.get("archived") is True})
+        return {"entries": entries, "next": page + 1 if len(rows) == 50 else None}
+
+    def start_clone(self, data):
+        key = request_id(data.get("request_id"))
+        repo, parent, name = data.get("repository"), data.get("parent"), data.get("name")
+        if (not isinstance(repo, str) or not self.REPO.fullmatch(repo) or repo.split("/")[1] in {".", ".."} or
+                not isinstance(parent, str) or not parent.strip() or "\0" in parent or
+                not isinstance(name, str) or not name.strip() or name != name.strip() or
+                len(name.encode()) > 240 or name in {".", "..", ".git"} or any(c in name for c in "/\\") or
+                any(ord(c) < 32 or ord(c) == 127 for c in name)):
+            raise Problem(400, "error_github_destination")
+        digest = hashlib.sha256(json.dumps([repo, parent, name], ensure_ascii=False).encode()).hexdigest()
+        with self.lock:
+            for job in self.jobs:
+                if job["id"] == key:
+                    if job["digest"] != digest:
+                        raise Problem(409, "error_input_conflict")
+                    return {"job": dict(job)}
+            if self.closed or self.bridge.closing:
+                raise Problem(409, "error_bridge_stopping")
+            if any(job["state"] in self.RUNNING for job in self.jobs):
+                raise Problem(409, "error_github_busy")
+            self.executable("git")
+            self.executable("gh")
+            try:
+                folder = Path(parent).expanduser()
+                if not folder.is_absolute():
+                    raise Problem(400, "error_absolute_path")
+                folder = folder.resolve(strict=True)
+                if not folder.is_dir() or not os.access(folder, os.R_OK | os.W_OK | os.X_OK):
+                    raise OSError()
+                destination = folder / name
+                if os.path.lexists(destination):
+                    raise Problem(409, "error_github_exists")
+                destination.mkdir(mode=0o700)
+            except FileExistsError:
+                raise Problem(409, "error_github_exists") from None
+            except (OSError, RuntimeError, ValueError):
+                raise Problem(400, "error_github_destination") from None
+            job = {"id": key, "digest": digest, "repository": repo, "path": str(destination), "state": "cloning"}
+            self.jobs = self.jobs[-31:] + [job]
+            try:
+                save_json(self.file, self.jobs)
+                threading.Thread(target=self.clone_worker, args=(job, destination.stat()), daemon=True).start()
+            except (OSError, RuntimeError):
+                job.update(state="failed", error="error_github_clone")
+                with contextlib.suppress(OSError):
+                    save_json(self.file, self.jobs)
+                raise Problem(400, "error_github_clone") from None
+            return {"job": dict(job)}
+
+    def clone_command(self, job):
+        import shlex
+        helper = "!" + shlex.quote(self.executable("gh")) + " auth git-credential"
+        return [self.executable("git"), "-c", "credential.helper=", "-c", "credential.https://github.com.helper=" + helper,
+                "-c", "core.hooksPath=" + os.devnull, "-c", "protocol.file.allow=never", "-c", "http.followRedirects=false",
+                "clone", "--template=", "--", "https://github.com/" + job["repository"] + ".git", job["path"]]
+
+    def clone_worker(self, job, identity):
+        process = None
+        try:
+            with self.lock:
+                if self.closed or job["state"] != "cloning":
+                    return
+                process = subprocess.Popen(self.clone_command(job), env=self.environment(), cwd=str(Path.home()),
+                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                self.processes[job["id"]] = process
+            if process.wait(timeout=1800) != 0:
+                raise Problem(400, "error_github_clone")
+            with self.lock:
+                if self.closed or job["state"] != "cloning":
+                    return
+                destination = Path(job["path"])
+                current = destination.lstat()
+                if (current.st_dev, current.st_ino) != (identity.st_dev, identity.st_ino) or not stat.S_ISDIR(current.st_mode):
+                    raise Problem(400, "error_github_destination")
+                job["state"] = "registering"
+                save_json(self.file, self.jobs)
+                project = self.bridge.register({"path": job["path"], "add": True}, activate=False)
+                job.update(state="complete", project_id=project["id"])
+                save_json(self.file, self.jobs)
+        except (OSError, Problem, subprocess.TimeoutExpired):
+            with self.lock:
+                if job["state"] in self.RUNNING:
+                    job.update(state="failed", error="error_github_clone")
+                    with contextlib.suppress(OSError):
+                        save_json(self.file, self.jobs)
+        finally:
+            self.terminate(process)
+            with self.lock:
+                self.processes.pop(job["id"], None)
+
+    def cancel_clone(self, data):
+        key = request_id(data.get("id"))
+        with self.lock:
+            job = next((job for job in self.jobs if job["id"] == key), None)
+            if not job:
+                raise Problem(404, "error_github_job")
+            if job["state"] == "cloning":
+                job.update(state="cancelled", error="error_github_interrupted")
+                with contextlib.suppress(OSError):
+                    save_json(self.file, self.jobs)
+                self.terminate(self.processes.get(key))
+            return {"job": dict(job)}
+
+    def close(self):
+        with self.lock:
+            self.closed = True
+            for job in self.jobs:
+                if job["state"] in self.RUNNING:
+                    job.update(state="interrupted", error="error_github_interrupted")
+            if self.jobs:
+                with contextlib.suppress(OSError):
+                    save_json(self.file, self.jobs)
+            processes = list(self.processes.values())
+        self.cancel_login()
+        for process in processes:
+            self.terminate(process)
+
+    def handle(self, data):
+        action = data.get("action")
+        if action == "status": return self.status()
+        if action == "poll": return self.snapshot()
+        if action == "login": return self.start_login()
+        if action == "cancel_login": return self.cancel_login()
+        if action == "repositories": return self.repositories(data)
+        if action == "clone": return self.start_clone(data)
+        if action == "cancel_clone": return self.cancel_clone(data)
+        raise Problem(400, "error_github_request")
+
+
 class Bridge:
     def __init__(self, state):
         self.state = private_dir(state)
@@ -1371,6 +2055,8 @@ class Bridge:
             self.selected_sessions.setdefault(project_id, {}).setdefault(agent, snapshot["id"])
             self.selected_agents.setdefault(project_id, agent)
         self.closing = False
+        self.github = GitHubImport(self)
+        self.linked_files = LinkedFiles(self)
         self.persist()
 
     @property
@@ -1558,6 +2244,12 @@ class Bridge:
         project["path"] = path
         return project
 
+    def inspect_workspace(self, data):
+        if not isinstance(data.get("project_id"), str):
+            raise Problem(400, "error_inspect_request")
+        project = self.working_project(data)
+        return WorkspaceInspector(project).inspect(data)
+
     def select_agent(self, data):
         with self.lock:
             key, agent = data.get("project_id"), data.get("agent")
@@ -1644,7 +2336,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "project_management", "response_notifications"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "project_management", "response_notifications", "workspace_inspector", "github_import", "file_links"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -1696,7 +2388,7 @@ class Bridge:
                 "next": page[99] if len(page) > 100 else None,
                 "writable": os.access(path, os.R_OK | os.W_OK | os.X_OK)}
 
-    def register(self, data):
+    def register(self, data, *, activate=True):
         with self.lock:
             if "project_id" in data:
                 key = data["project_id"]
@@ -1727,9 +2419,10 @@ class Bridge:
             if key is None:
                 key = str(uuid.uuid4())
                 self.projects[key] = {"id": key, "name": path.name or str(path), "path": str(path)}
-            self.active_project_id = key
+            if activate or self.active_project_id is None:
+                self.active_project_id = key
             self.persist()
-            return self.project
+            return dict(self.projects[key])
 
     def history_call(self, project, method, params, agent="codex"):
         if agent not in {"codex", "claude", "opencode"}:
@@ -2253,8 +2946,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = {"project": bridge.register(data)}
         elif method == "POST" and parsed.path == "/v1/project/manage":
             result = bridge.manage_project(data)
+        elif method == "POST" and parsed.path == "/v1/files":
+            result = bridge.linked_files.handle(data)
+        elif method == "POST" and parsed.path == "/v1/github":
+            result = bridge.github.handle(data)
         elif method == "POST" and parsed.path == "/v1/folders":
             result = bridge.folders(data)
+        elif method == "POST" and parsed.path == "/v1/inspect":
+            result = bridge.inspect_workspace(data)
         elif method == "POST" and parsed.path == "/v1/session-history":
             result = bridge.session_history(data)
         elif method == "POST" and parsed.path == "/v1/commands":
@@ -2524,6 +3223,8 @@ def main():
         try:
             server.serve_forever(poll_interval=0.2)
         finally:
+            bridge.linked_files.close()
+            bridge.github.close()
             for session in list(bridge.sessions.values()):
                 session.stop()
             for session in list(bridge.sessions.values()):

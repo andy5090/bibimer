@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -37,12 +38,17 @@ public final class MainActivity extends Activity {
     private static final String PAGE = "https://" + ASSET_HOST + "/index.html";
     private static final int EXPORT_INSTALLER = 10;
     private static final Set<String> ASSETS = new HashSet<>(Arrays.asList(
-        "index.html", "app.js", "commands.js", "select.js", "sidebar.js", "app.css", "i18n.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
+        "index.html", "app.js", "commands.js", "select.js", "sidebar.js", "inspector.js", "github.js", "app.css", "i18n.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
     private final ExecutorService actions = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<Runnable>(128));
     private final ExecutorService events = Executors.newSingleThreadExecutor();
     private final ExecutorService commands = Executors.newSingleThreadExecutor();
     private final ExecutorService titles = Executors.newSingleThreadExecutor();
+    private final ExecutorService inspections = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
+        new ArrayBlockingQueue<Runnable>(8));
+    private final ExecutorService files = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
+        new ArrayBlockingQueue<Runnable>(1));
+    private final java.util.concurrent.atomic.AtomicLong fileEpoch = new java.util.concurrent.atomic.AtomicLong();
     private WebView web;
     private TokenStore tokens;
     private AppLanguage language;
@@ -51,7 +57,7 @@ public final class MainActivity extends Activity {
     private LocalBridge bridge;
     private String setupLoaded = "";
     private volatile boolean destroyed;
-    private boolean resumed, notificationsSupported;
+    private boolean resumed, notificationsSupported, stopped;
     private String notificationTarget = "{}";
 
     private synchronized void captureNotification(Intent intent) {
@@ -88,6 +94,7 @@ public final class MainActivity extends Activity {
         agentPreferences = new AgentPreferences(this);
         inputPreferences = new InputPreferences(this);
         bridge = new LocalBridge(tokens);
+        LinkedFileProvider.prune(this, 0, false);
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(17, 20, 23));
         if (Build.VERSION.SDK_INT >= 30) getWindow().setDecorFitsSystemWindows(false);
@@ -247,7 +254,36 @@ public final class MainActivity extends Activity {
 
         @JavascriptInterface public void request(String id, String method, String path, String body) {
             if (id.length() > 80 || destroyed) return;
-            ExecutorService executor = path.contains("/events?") ? events : path.endsWith("/title") ? titles : path.equals("/v1/commands") ? commands : actions;
+            if (path.equals("/v1/files")) { error(id, "error_file_link", R.string.error_file_open); return; }
+            if (path.equals("/native/open-file")) {
+                if (!method.equals("POST") || body.length() > 16384) { error(id, "error_file_link", R.string.error_file_open); return; }
+                final long epoch = fileEpoch.get();
+                try {
+                    files.execute(() -> {
+                        try {
+                            FileLinks.Opened file = FileLinks.copy(MainActivity.this, bridge, new JSONObject(body),
+                                () -> destroyed || fileEpoch.get() != epoch);
+                            runOnUiThread(() -> {
+                                if (destroyed || fileEpoch.get() != epoch || !resumed) {
+                                    error(id, "error_file_cancelled", R.string.error_file_open); return;
+                                }
+                                try {
+                                    Intent view = new Intent(Intent.ACTION_VIEW).setDataAndType(file.uri, file.mime)
+                                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                    view.setClipData(ClipData.newRawUri("BIBIMER file", file.uri));
+                                    startActivity(view);
+                                    reply(id, new JSONObject().put("ok", true).put("status", 200).put("data", new JSONObject()));
+                                } catch (android.content.ActivityNotFoundException ignored) {
+                                    error(id, "error_file_app", R.string.error_file_app);
+                                } catch (Exception ignored) { error(id, "error_file_open", R.string.error_file_open); }
+                            });
+                        } catch (FileLinks.Failure failure) { error(id, failure.code, R.string.error_file_open); }
+                        catch (Exception ignored) { error(id, "error_file_open", R.string.error_file_open); }
+                    });
+                } catch (RejectedExecutionException ignored) { error(id, "error_file_busy", R.string.error_file_open); }
+                return;
+            }
+            ExecutorService executor = path.contains("/events?") ? events : path.endsWith("/title") ? titles : path.equals("/v1/inspect") ? inspections : path.equals("/v1/commands") ? commands : actions;
             try {
                 executor.execute(() -> {
                     try { reply(id, bridge.request(method, path, body)); }
@@ -261,6 +297,8 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface public void forget() {
+            fileEpoch.incrementAndGet();
+            LinkedFileProvider.prune(MainActivity.this, 0, true);
             bridge.cancelPoll();
             TermuxSetup.forget(MainActivity.this, tokens);
             ResponseNotifications.stop(MainActivity.this, true);
@@ -386,15 +424,43 @@ public final class MainActivity extends Activity {
 
     @Override protected void onPause() {
         resumed = false;
+        // A visible DeX / multi-window activity can be paused when another window
+        // gains focus. Keep its existing poll and UI state until it is hidden.
+        super.onPause();
+    }
+
+    @Override protected void onStop() {
+        stopped = true;
         script("window.BibimerPause && window.BibimerPause();");
         bridge.cancelPoll();
-        super.onPause();
+        super.onStop();
+    }
+
+    @Override protected void onStart() {
+        super.onStart();
+        if (stopped && web != null) {
+            stopped = false;
+            script("window.BibimerResume && window.BibimerResume();");
+        }
     }
 
     @Override protected void onResume() {
         super.onResume();
         resumed = true;
-        if (web != null) script("window.BibimerResume && window.BibimerResume();");
+        if (notificationsSupported) {
+            ensureNotifications(!ResponseNotifications.preferences(this).getBoolean("asked", false));
+        }
+    }
+
+    @Override public void onConfigurationChanged(Configuration configuration) {
+        super.onConfigurationChanged(configuration);
+        // Keep the same WebView, pending native replies and session drafts when
+        // moving between phone and DeX displays. ResizeObserver fits the PTY.
+        if (web != null) {
+            web.requestLayout();
+            web.invalidate();
+            getWindow().getDecorView().requestApplyInsets();
+        }
     }
 
     @Override protected void onDestroy() {
@@ -405,6 +471,9 @@ public final class MainActivity extends Activity {
         events.shutdownNow();
         titles.shutdownNow();
         commands.shutdownNow();
+        inspections.shutdownNow();
+        fileEpoch.incrementAndGet();
+        files.shutdownNow();
         web.removeJavascriptInterface("Bibimer");
         web.destroy();
         // Activity lifecycle deliberately never calls the session stop endpoint.

@@ -19,6 +19,8 @@ async function main(){
     const get=()=>JSON.parse(localStorage.getItem('setup-state')||'{"phase":"idle","id":"","permitted":false}');
     const set=value=>localStorage.setItem('setup-state',JSON.stringify(value));
     window.setupCalls=[];
+    window.setupHealthStatus=200;
+    window.setupHealthDelay=0;
     window.setupResult=(phase,paired=false)=>{set({...get(),phase});if(paired)localStorage.setItem('paired','yes');window.BibimerResume();};
     window.Bibimer={
       environment:()=>JSON.stringify({language:localStorage.getItem('language')||'en',paired:localStorage.getItem('paired')==='yes',
@@ -29,8 +31,11 @@ async function main(){
       openGuide:()=>{},exportInstaller:()=>{},copyCommand:name=>window.setupCalls.push(name),cancelPoll:()=>{},
       forget:()=>{localStorage.removeItem('paired');set({phase:'idle',id:''});},
       request:(id,method,route)=>{
-        if(route==='/v1/health') queueMicrotask(()=>window.BibimerNativeReply(id,{ok:true,status:200,data:{protocol:1,instance:'controlled-instance',
-          features:[],agents:[{id:'shell',installed:true}],project:null,session:null}}));
+        if(route==='/v1/health') {
+          const status=window.setupHealthStatus;
+          setTimeout(()=>window.BibimerNativeReply(id,{ok:status===200,status,data:status===200?{protocol:1,instance:'controlled-instance',
+            features:[],agents:[{id:'shell',installed:true}],project:null,session:null}:{code:'error_connection_failed'}}),window.setupHealthDelay);
+        }
         else throw new Error('Unexpected request '+route);
       }
     };
@@ -85,10 +90,36 @@ async function main(){
   await page.locator('#tab-setup').click();
   assert.match(await page.locator('#quick-status').innerText(),/연결 정보를 저장/);
   assert.equal(await page.locator('#setup').isVisible(),true);
+  // Reconnecting a paired app must bypass RUN_COMMAND even after an earlier
+  // Termux integration error. A stopped bridge / rejected token still needs setup.
+  await page.evaluate(()=>window.setupResult('quick_external'));
+  await page.locator('#tab-setup').click();
+  await page.locator('#quick-connect').click();
+  await page.waitForFunction(()=>!document.querySelector('#workspace').hidden && document.querySelector('#setup').hidden);
+  assert.equal(await page.evaluate(()=>window.setupCalls.filter(item=>item==='start').length),0);
+  await page.waitForFunction(()=>!document.querySelector('#quick-connect').disabled);
+  for(const status of [0,401]) {
+    await page.evaluate(value=>{window.setupHealthStatus=value;},status);
+    await page.locator('#tab-setup').click();
+    const before=await page.evaluate(()=>window.setupCalls.filter(item=>item==='start').length);
+    await page.locator('#quick-connect').click();
+    await page.waitForFunction(count=>window.setupCalls.filter(item=>item==='start').length===count+1,before);
+    assert.equal(await page.locator('#quick-connect').isDisabled(),true);
+    await page.evaluate(()=>{window.setupHealthStatus=200;window.setupResult('connected',true);});
+    await page.waitForFunction(()=>!document.querySelector('#quick-connect').disabled);
+  }
+  await page.locator('#tab-setup').click();
+  await page.evaluate(()=>{window.setupHealthStatus=0;window.setupHealthDelay=300;window.setupCalls=[];});
+  await page.locator('#quick-connect').click();
+  await page.evaluate(()=>{document.querySelector('#quick-connect').click();window.BibimerPause();});
+  await page.waitForTimeout(900);
+  assert.deepEqual(await page.evaluate(()=>window.setupCalls),[]);
+  await page.evaluate(()=>{window.setupHealthStatus=200;window.setupHealthDelay=0;window.BibimerResume();});
+  await page.locator('#tab-setup').click();
   await page.locator('#forget').click();
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).paired),false);
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).quickSetup.phase),'idle');
   assert.deepEqual(errors,[]);
-  console.log('PASS: quick setup missing Termux, first-time permissions, copied enable command, progress/duplicate prevention, reload, failures/retry, manual fallback, automatic connection, forgetting, English/Korean and 320/360px layout; native APIs mocked');
+  console.log('PASS: quick setup missing Termux, first-time permissions, progress/duplicate prevention, reload, failures/retry, manual fallback, saved-connection reuse without RUN_COMMAND, unreachable/401 fallback, hidden-app cancellation, forgetting, English/Korean and 320/360px layout; native APIs mocked');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();if(server)await new Promise(resolve=>server.close(resolve));});

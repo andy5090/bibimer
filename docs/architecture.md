@@ -32,6 +32,7 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 
 | 메서드·경로 | 역할 | 주요 요청 값 |
 | --- | --- | --- |
+| `POST /v1/github` | GitHub 계정·저장소·클론 작업 | `action`: status/poll/login/cancel_login/repositories/clone/cancel_clone |
 | `POST /v1/pair` | 일회용 연결 코드 교환 | `code` |
 | `GET /v1/health` | 인스턴스, 전체 프로젝트·세션 상태, 선택 프로젝트, 프로그램 탐지 | 없음 |
 | `POST /v1/project` | 폴더 추가·선택 | 추가: `path`, `create`, `add: true`; 전환: `project_id` |
@@ -39,6 +40,7 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 | `POST /v1/project-agent` | 프로젝트의 선택 에이전트 변경·기존 세션 복원 (0.10.0) | `project_id`, `agent`; 프로세스를 시작/종료하지 않음 |
 | `POST /v1/project-session` | 목록의 세션 선택·새 시작 화면 (0.10.0) | `project_id`, `session_id`; null이면 `agent`의 새 시작 화면. 프로세스 변경 없음 |
 | `POST /v1/worktrees` | 실제 Git 워크트리 조회 (0.10.0) | `project_id`; 프로젝트 폴더·연결 경로·branch·available 반환 |
+| `POST /v1/inspect` | 등록 프로젝트·워크트리의 읽기 전용 파일/Git 조회 (0.14.0) | `project_id` 필수, `worktree_path` 선택, `action`: `files` / `file` / `status` / `history` / `diff` / `commit`. `workspace_inspector` 기능 표시 필요 |
 | `POST /v1/sessions/{id}/manage` | 세션 이름·보관·목록 삭제 (0.10.0) | `action`: `rename`(+ `title`), `archive`, `restore`, `delete`. 삭제는 실행 중 거절 |
 | `POST /v1/models` | 프로젝트·에이전트별 네이티브 모델/추론 목록 (0.10.0) | `project_id`, `agent`, `refresh` (선택) |
 | `POST /v1/folders` | Termux 하위 폴더 탐색, 상태 변경 없음 | `path` (기본 `~`), `hidden` (기본 false), `after` (다음 페이지의 이름 커서) |
@@ -69,6 +71,12 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 `worktree_path`는 실행·원본 기록 조회·모델 목록에서 선택 가능하다. 프로젝트의 등록 경로 또는 `git worktree list --porcelain -z`가 반환한 사용 가능한 경로만 받는다. 폴더명 공백·유니코드·줄바꿈을 보존하며 Git 조회는 별도 프로세스에서 3초 제한으로 수행한다. 워크트리를 만들거나 삭제하지 않는다. 모델 목록 캐시는 프로젝트·작업 경로·에이전트로 분리한다. 근거: [Git worktree 공식 문서](https://git-scm.com/docs/git-worktree).
 
 시작 요청은 프로젝트·프로그램·방식과 `request_id`가 같으면 같은 세션을 반환하며 다른 프로젝트의 실행 ID 재사용은 거절한다. 입력은 최근 512개 요청 ID를 기억하고 중복 전달을 막는다. 입력은 요청당 최대 16KiB다. 부분 전송이나 응답 유실 시 앱은 자동으로 재전송하지 않고 사용자가 출력을 확인하도록 안내한다.
+
+## 파일·Git 조회 (0.14.0, 운영 브리지 적용 대기)
+
+`/v1/inspect`는 인증·Host·Origin 검사 후 등록 프로젝트와 실제 Git 워크트리를 검증한다. `files`는 상대 `path`, `hidden`, `offset`을 받고 200개씩 반환한다(한 폴더 스캔 최대 20,000개). `file`은 상대 `path`의 UTF-8 내용 앞 128KiB를 반환한다. 경로 구성 요소마다 디렉터리 fd 기준 `O_NOFOLLOW`로 열며 절대 경로·상위 이동·`.git`·심볼릭 링크·일반 파일이 아닌 내용 읽기를 거절한다. `status`는 NUL 구분 porcelain v2로 파일명·rename·충돌을 읽고 200개씩 반환한다. `history`는 `offset` 및 고정된 전체 해시 `revision`으로 50개씩 반환한다. `diff`는 `path`와 `area`(`staged`/`worktree`), `commit`은 전체 해시 `revision`을 받는다.
+
+Git 조회는 셸 없이 고정 인수로 실행하며 각 명령 5초·출력 256KiB를 제한한다. 인덱스 갱신을 피하도록 optional locks를 끄고 hooks·fsmonitor·external diff·textconv·clean/process 필터를 실행하지 않는다. 필터를 사용하는 저장소의 표시 결과는 필터가 적용된 CLI 결과와 다를 수 있다. diff/커밋 상세는 잘림을 명시하고 목록은 초과 시 오류를 반환한다. 조회는 세션 잠금 밖에서 수행하고 Android에서도 별도 제한된 executor를 사용해 입력 요청과 분리한다. 결과는 응답/화면 메모리에만 있으며 일반 로그·메타데이터에 저장하지 않는다. 공식 형식: [Git status](https://git-scm.com/docs/git-status), [Git log](https://git-scm.com/docs/git-log), [Git diff](https://git-scm.com/docs/git-diff).
 
 ## 응답 완료 이벤트와 Android 알림 (0.11.0)
 
@@ -132,7 +140,7 @@ Codex [공식 `turn/steer`](https://learn.chatgpt.com/docs/app-server#steer-an-a
 
 Chat 이벤트의 파일 변경에는 `changes: [{path, diff}]`와 `truncated`, 계획에는 `steps: [{step, status}]`와 `explanation`을 전달한다. 이전 UI용 `text`도 유지한다. 파일별 diff 미리보기는 경로·변경 문자열을 합쳐 약 32Ki 문자로 제한하며 잘림을 표시한다. 에이전트가 제공한 요약에는 `summary: true`를 붙여 계획과 표시를 구분한다. 이 내용은 기존 메모리 출력 한도에 포함되며 디스크 메타데이터에는 저장하지 않는다.
 
-`rich-text.js`는 고정 버전 marked의 lexer 토큰을 DOM 요소로 바꾸고 코드만 highlight.js로 강조한다. HTML·이미지·외부 콘텐츠는 대화 DOM에서 실행하거나 자동 로드하지 않는다. 명시적인 HTTP(S) 링크 클릭은 URL 형식을 JavaScript와 네이티브에서 확인한 뒤 외부 브라우저로 전달한다. 내부 WebView의 탐색 차단과 고정 asset 허용 목록은 유지한다. 파일 경로 링크는 복사 기능만 제공한다.
+`rich-text.js`는 고정 버전 marked의 lexer 토큰을 DOM 요소로 바꾸고 코드만 highlight.js로 강조한다. HTML·이미지·외부 콘텐츠는 대화 DOM에서 실행하거나 자동 로드하지 않는다. 명시적인 HTTP(S) 링크 클릭은 URL 형식을 JavaScript와 네이티브에서 확인한 뒤 외부 브라우저로 전달한다. 내부 WebView의 탐색 차단과 고정 asset 허용 목록은 유지한다. 파일 경로 링크는 아래 읽기 전용 외부 앱 열기 경로를 사용한다(0.15.0 APK 포함, 앱 설치·브리지 적용 대기).
 
 ## OpenCode·Claude 어댑터 (0.6.0)
 
@@ -194,3 +202,24 @@ Android `AgentPreferences`는 에이전트별 마지막 선택만 `SharedPrefere
 0.8.1의 `options` API는 현재 Chat의 **다음 입력** 설정을 메타데이터에 보관하고 변경 revision을 올린다. 진행 중인 응답의 네이티브 설정을 바꾸거나 대기 승인에 응답하지 않는다. 새 입력이 실제 전송될 때 선택한 정책을 적용한다. Claude는 각 SDK query의 permissionMode, OpenCode는 다음 prompt 전의 세션 permission PATCH로 전환한다. OpenCode PATCH는 기존 규칙을 병합하므로 상속으로 되돌리는 요청은 거절하고 새 세션을 안내한다. 값과 요청 ID를 검증하고 같은 요청의 재전송은 다시 적용하지 않는다. 종료 세션·PTY에는 이 API를 허용하지 않는다.
 
 `live_agent_options`가 있는 브리지에서만 현재 Chat의 하단 컨트롤을 활성화한다. 앱은 현재 세션 설정과 새 세션 기본값을 구분하고 입력창 아래에 다음 입력/다음 세션 적용 범위를 표시한다. 변경 요청은 선택한 세션 ID에 고정하며 응답 도착 전에 프로젝트가 바뀌면 다른 세션 화면을 덮어쓰지 않는다. 선택한 값을 브리지에 반영한 뒤 Android 기본값을 저장하고 실패를 표시한다.
+
+## GitHub 가져오기 (2026-10-09 소스)
+
+`github_import` 기능 플래그와 인증된 `POST /v1/github`를 제공한다. Android는 고정 로컬 경로만 호출하고 GitHub 네트워크·파일·프로세스는 Termux에서 처리한다. `status`는 `gh auth status`의 활성 계정/상태만, `repositories`는 `gh api user/repos`의 이름·설명·비공개/보관 여부만 전달한다. 임의 호스트·URL·Git 인수·셸 명령은 API에서 받지 않는다.
+
+`login`은 독립 `gh auth login --hostname github.com --git-protocol https --web` 프로세스를 만든다. 비대화형 stderr에서 정해진 코드 형식만 추출하고 URL은 `https://github.com/login/device`로 고정한다. 토큰을 읽거나 출력 원문을 API·파일·로그에 저장하지 않는다. `poll`로 코드·상태를 확인하고 `cancel_login`으로 해당 로그인 프로세스 그룹만 종료한다. 완료·실패·취소 뒤 코드를 지우며 브리지 재시작에 로그인 프로세스를 복원하지 않는다.
+
+`clone`은 `request_id`, `repository`(owner/repository), `parent`(기존 절대/홈 경로), `name`(새 폴더명)을 검증한다. mkdir로 경로를 독점 예약하고 한 번에 하나의 클론만 실행한다. 셸 문자열 대신 Git 인수 배열, 고정 HTTPS URL, 호출 범위의 gh credential helper를 사용한다. 전역/시스템 Git 설정·주입된 Git 환경 설정·추적·askpass, 파일 프로토콜·리다이렉트·템플릿/후크를 배제해 이 클론을 수행한다. CLI 자격 증명 환경은 유지하고 기존 설정 파일은 수정하지 않는다. stdout/stderr를 폐기하며 작업 단계만 앱에 전달한다. 성공 후 예약한 폴더의 동일성을 확인하고 기존 등록 로직으로 추가하되 현재 프로젝트·세션 선택은 유지한다.
+
+`github-imports.json`(0600, 상태 폴더 0700)은 최근 32개의 요청 ID·입력 digest·저장소·경로·단계·등록 ID·오류 코드만 보관한다. 같은 ID/본문 재요청은 같은 작업을 반환하고 다른 본문은 거절한다. HTTP 응답 유실·앱 재실행 후 `poll`로 결과를 회수한다. 취소는 클론 그룹만 종료하고 브리지에서 대상 파일을 삭제하지 않는다. 재시작 때 실행 중 기록을 `interrupted`로 바꾸며 자동 재실행·등록하지 않는다. 완료 직전 장애 시 남은 Git 폴더와 프로젝트 목록을 확인해 기존 폴더 등록으로 복구한다.
+
+
+## Android 앱으로 파일 링크 열기 (0.15.0 APK 포함)
+
+`rich-text.js` → 앱의 현재 프로젝트/워크트리 문맥 → 네이티브 전용 `/native/open-file` → 인증된 `/v1/files` prepare/read/release → Android 비공개 캐시 → `LinkedFileProvider`의 `content://` URI → `ACTION_VIEW` 순서다. Android가 Termux 전용 경로를 직접 읽는 구조가 아니다. 일반 WebView 요청으로 `/v1/files`를 호출하는 것은 거절하며 바이너리·base64·인증 토큰을 JavaScript에 반환하지 않는다. shell 명령·에이전트 실행을 사용하지 않는다.
+
+브리지는 프로젝트/실제 Git 워크트리와 Download 루트만 허용하며 FD 기반 `O_NOFOLLOW` 탐색으로 내부 심볼릭 링크를 거절한다. 일반 파일·64MiB 상한을 확인하고 열린 FD의 device/inode/size/mtime/ctime을 각 읽기 전후 비교한다. 256KiB 조각, 최대 8개 전송 핸들, 마지막 사용 후 120초 만료로 제한하고 release/다음 요청의 만료 회수/종료에서 FD를 닫는다. 파일 내용이나 전송 핸들은 메타데이터 파일에 저장하지 않는다.
+
+네이티브는 전용 단일 작업 스레드에서 검증된 조각을 임시 파일로 저장하고 완료 후 캐시 파일로 옮긴다. 전송은 90초 제한을 검사하며 연결 해제/Activity 종료 때 취소한다. 앱이 포그라운드일 때만 외부 뷰어를 실행한다. 공급자는 `exported=false`, `grantUriPermissions=true`이며 완료된 UUID별 파일 URI에만 임시 읽기 권한을 부여한다. 쓰기·임의 경로·메타데이터·미완성 파일을 제공하지 않는다. 캐시는 최대 128MiB이며 1시간 지난 URI는 거절한다. 앱 시작/다음 열기 때 만료·용량 초과 파일을 정리하고 연결 해제 때 전체를 정리한다. 외부 앱이 자체 저장한 사본이나 이미 연 FD까지 회수한다고 보장하지 않는다.
+
+[Android의 안전한 파일 공유 안내](https://developer.android.com/training/secure-file-sharing)의 content URI와 임시 읽기 권한 방식에 맞췄다. 리소스·Java 컴파일 및 브리지/브라우저 검증을 마쳤지만 실제 Android 앱 간 URI 접근·기본 앱 선택·복귀 동작은 APK 설치 후 검증한다.

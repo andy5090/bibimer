@@ -17,7 +17,9 @@
   <script src="conversation.js" defer></script>
   <script src="select.js" defer></script>
   <script src="sidebar.js" defer></script>
+  <script src="inspector.js" defer></script>
   <script src="commands.js" defer></script>
+  <script src="github.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -26,6 +28,7 @@
     <button id="sidebar-open" class="icon-button" type="button" aria-label="Projects and sessions" data-i18n-aria-label="sidebar_title" aria-haspopup="dialog" aria-controls="sidebar" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
     <div class="brand"><img class="brand-mark" src="brand.svg" alt=""><div><strong class="brand-wordmark">BIBIMER</strong><small data-i18n="tagline">Coding agents at your fingertips</small></div></div>
     <span id="connection" class="badge" role="status">Not connected</span>
+    <button id="inspector-open" class="icon-button" type="button" data-i18n-aria-label="inspect_files" aria-label="Files" aria-haspopup="dialog" aria-controls="inspector" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5h6l2 2h10v13H3Z"/></svg></button>
   </header>
   <div id="notice" class="notice" role="status" hidden></div>
   <main id="work" class="page">
@@ -169,10 +172,28 @@
     <p id="version" class="version"></p>
   </main>
   <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected" aria-current="page"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button><button id="tab-settings"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h5m6 0h5M4 17h9m6 0h1"/><circle cx="12" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></svg><span data-i18n="tab_settings">Settings</span></button></nav>
+  <dialog id="inspector" aria-labelledby="inspector-title">
+    <div class="sidebar-heading"><h2 id="inspector-title" data-i18n="inspect_title">Workspace explorer</h2><button id="inspector-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close sidebar">×</button></div>
+    <div class="inspect-tabs" role="tablist" data-i18n-aria-label="inspect_views" aria-label="Workspace views">
+      <button id="inspect-files-tab" type="button" role="tab" data-view="files" aria-controls="inspect-panel" aria-selected="true" data-i18n-aria-label="inspect_files" aria-label="Files"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5h6l2 2h10v13H3Z"/></svg></button>
+      <button id="inspect-status-tab" type="button" role="tab" data-view="status" aria-controls="inspect-panel" aria-selected="false" tabindex="-1" data-i18n-aria-label="inspect_status" aria-label="Git status"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="4" r="2"/><circle cx="6" cy="20" r="2"/><circle cx="18" cy="6" r="2"/><path d="M6 6v12m12-10v3c0 4-12 1-12 6"/></svg></button>
+      <button id="inspect-history-tab" type="button" role="tab" data-view="history" aria-controls="inspect-panel" aria-selected="false" tabindex="-1" data-i18n-aria-label="inspect_history" aria-label="Git history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2 7M3 4v7h7m2-5v6l4 2"/></svg></button>
+      <button id="inspect-refresh" class="icon-button" type="button" data-i18n-aria-label="inspect_refresh" aria-label="Refresh workspace">↻</button>
+    </div>
+    <p id="inspect-root" dir="auto"></p>
+    <section id="inspect-panel" role="tabpanel" aria-labelledby="inspect-files-tab" tabindex="0">
+      <div id="inspect-toolbar"></div>
+      <p id="inspect-status" class="hint" role="status"></p>
+      <div id="inspect-content"></div>
+      <button id="inspect-more" class="secondary full" type="button" data-i18n="inspect_more" hidden>Load more</button>
+    </section>
+    <p class="inspect-footer" data-i18n="inspect_readonly">Read-only · local workspace</p>
+  </dialog>
   <dialog id="sidebar" class="sidebar" aria-labelledby="sidebar-title">
     <div class="sidebar-heading"><h2 id="sidebar-title" data-i18n="sidebar_title">Projects and sessions</h2><button id="sidebar-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close sidebar">×</button></div>
     <div class="sidebar-tools"><button id="sidebar-archived" class="quiet" type="button" aria-pressed="false" data-i18n="session_archived">Archived</button><button id="sidebar-refresh" class="icon-button" type="button" data-i18n-aria-label="sidebar_refresh" aria-label="Refresh projects">↻</button></div>
     <form id="project-form" class="card" hidden>
+      <button id="github-launch" class="secondary full" type="button" data-i18n="github_title">Import from GitHub</button>
       <label for="path" data-i18n="project_folder">Project folder</label>
       <div class="folder-input"><input id="path" placeholder="~/projects/my-project" autocomplete="off" spellcheck="false"><button id="browse-project" class="secondary" type="button" data-i18n="browse">Browse</button></div>
       <label class="check"><input type="checkbox" id="create-folder"><span data-i18n="create_folder">Create the folder if it does not exist</span></label>
@@ -226,9 +247,35 @@
     <button id="handoff-existing" class="secondary" type="button"></button>
   </dialog>
   <dialog id="delete-dialog" aria-labelledby="delete-title"><h2 id="delete-title" data-i18n="session_delete">Remove from BIBIMER</h2><p id="delete-name"></p><p data-i18n="session_delete_confirm">Remove this session from the list? The agent’s saved history and project files are kept.</p><div class="button-row"><button id="cancel-delete" class="secondary" data-i18n="cancel_project">Cancel</button><button id="confirm-delete" class="danger" data-i18n="session_delete">Remove from BIBIMER</button></div></dialog>
+  <dialog id="github-dialog" class="settings-dialog github-dialog" aria-labelledby="github-title">
+    <div class="sidebar-heading"><h2 id="github-title" data-i18n="github_title">Import from GitHub</h2><button id="github-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
+    <p class="hint" data-i18n="github_hint">Choose a repository, then clone it into a new folder in Termux and register it as a project.</p>
+    <p id="github-account"></p>
+    <div class="button-row"><button id="github-connect" class="primary" type="button" data-i18n="github_connect">Connect GitHub</button><button id="github-refresh" class="secondary" type="button" data-i18n="commands_refresh">Refresh</button></div>
+    <p id="github-auth-hint" class="hint" data-i18n="github_auth_hint">Uses GitHub CLI in Termux. Approve GitHub CLI in your browser; credentials stay in Termux. Existing CLI login is shared.</p>
+    <div id="github-tools" hidden><p data-i18n="github_tools">Install Git and GitHub CLI in Termux, then refresh.</p><div class="button-row"><button id="github-install" class="secondary" type="button" data-i18n="github_install">Copy install command</button><button id="github-termux" class="quiet" type="button" data-i18n="termux_open">Open Termux</button></div></div>
+    <button id="github-manual" class="quiet" type="button" data-i18n="github_manual">Copy Termux login command</button>
+    <div id="github-auth" hidden><p id="github-login-status" class="hint"></p><p id="github-code" dir="ltr"></p><div class="button-row"><button id="github-copy-code" class="secondary" type="button" data-i18n="github_copy_code">Copy code</button><button id="github-browser" class="primary" type="button" data-i18n="github_browser">Open GitHub</button><button id="github-cancel-login" class="quiet" type="button" data-i18n="github_cancel_login">Cancel sign-in</button></div></div>
+    <p id="github-status" role="status" class="hint"></p>
+    <section id="github-repository-section" hidden>
+      <h3 data-i18n="github_repositories">Repositories</h3>
+      <input id="github-filter" type="search" autocomplete="off" data-i18n-placeholder="github_filter" data-i18n-aria-label="github_filter" placeholder="Filter loaded repositories">
+      <div id="github-entries" role="group" data-i18n-aria-label="github_repositories" aria-label="Repositories"></div>
+      <p id="github-empty" class="hint" data-i18n="github_empty">No matching repositories loaded. Load more or enter owner/repository below.</p>
+      <button id="github-more" class="quiet" type="button" data-i18n="folder_more" hidden>Load more</button>
+      <form id="github-form">
+        <label for="github-repository" data-i18n="github_repo">Selected repository (owner/repository)</label><input id="github-repository" placeholder="owner/repository" autocomplete="off" spellcheck="false" maxlength="140" required>
+        <label for="github-parent" data-i18n="github_parent">Clone into this parent folder</label><div class="folder-input"><input id="github-parent" autocomplete="off" spellcheck="false" required><button id="github-browse" class="secondary" type="button" data-i18n="browse">Browse</button></div>
+        <label for="github-name" data-i18n="github_folder">New folder name</label><input id="github-name" autocomplete="off" spellcheck="false" maxlength="120" required>
+        <p id="github-destination" class="github-path"></p><button id="github-submit" class="primary full" type="submit" data-i18n="github_clone">Clone &amp; add project</button>
+      </form>
+    </section>
+    <p class="hint" data-i18n="github_keep_working">You can close this screen while cloning. Return here to check progress. Files from failed or cancelled imports are kept.</p>
+    <section id="github-jobs-section" hidden><h3 data-i18n="github_jobs">Recent imports</h3><div id="github-jobs"></div></section>
+  </dialog>
   <dialog id="folder-dialog" aria-labelledby="folder-title">
     <h2 id="folder-title" data-i18n="folder_title">Choose a project folder</h2>
-    <p class="hint" data-i18n="folder_hint">Browse folders in Termux on this phone.</p>
+    <p class="hint" data-i18n="folder_hint">Tap a folder name to browse, or Select to choose it here.</p>
     <div class="button-row"><button id="folder-home" class="secondary" data-i18n="folder_home">Home</button><button id="folder-up" class="secondary" data-i18n="folder_up">Up one level</button></div>
     <div id="folder-path" dir="auto"></div>
     <label class="check"><input id="folder-hidden" type="checkbox"><span data-i18n="folder_hidden">Show hidden folders</span></label>

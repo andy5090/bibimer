@@ -381,13 +381,15 @@ async function main() {
   await page.locator('#folder-up').click();
   await page.waitForFunction(()=>!document.querySelector('#folder-more').disabled);
   await page.locator('#folder-more').click();
-  await page.getByRole('button',{name:'second-project',exact:true}).click();
-  await page.waitForFunction(()=>!document.querySelector('#folder-select').disabled);
   await page.setViewportSize({width:360,height:460});
   const selectFolderBox = await page.locator('#folder-select').boundingBox();
   assert.ok(selectFolderBox.y>=0 && selectFolderBox.y+selectFolderBox.height<=460);
   await page.screenshot({path:path.join(root,'dist/screenshots/folders-en.png')});
-  await page.locator('#folder-select').click();
+  assert.equal(await page.locator('#folder-path').innerText(),browseRoot);
+  await page.getByRole('button',{name:'Select second-project',exact:true}).click();
+  await page.locator('#folder-dialog').waitFor({state:'hidden'});
+  // Selecting a listed folder validates it without navigating the browser.
+  assert.equal(await page.locator('#folder-path').innerText(),browseRoot);
   assert.equal(await page.locator('#path').inputValue(),path.join(browseRoot,'second-project'));
   assert.equal(await page.locator('#create-folder').isChecked(),false);
   assert.equal((await call('GET','/v1/health')).data.session.id,initial);
@@ -499,6 +501,22 @@ async function main() {
   await page.screenshot({path:path.join(root,'dist/screenshots/session-en.png')});
   const draft = 'Draft instruction · 작성 중';
   await page.locator('#input').fill(draft);
+  // Display-size changes must preserve the live page, draft and PTY process.
+  // Native Activity/configuration delivery still requires an installed APK.
+  await page.evaluate(() => { window.resizeStateMarker = {}; });
+  const resizeMarker = await page.evaluateHandle(() => window.resizeStateMarker);
+  for (const viewport of [{width:1280,height:720}, {width:800,height:600}, {width:393,height:780}]) {
+    await page.setViewportSize(viewport);
+    await delay(350);
+    assert.equal(await page.evaluate(marker => marker === window.resizeStateMarker, resizeMarker), true);
+    assert.equal(await page.locator('#input').inputValue(), draft);
+    assert.ok(await page.locator('#connection').evaluate(node => node.classList.contains('connected')));
+    const current = (await call('GET','/v1/health')).data.session;
+    assert.equal(current.id, initial);
+    assert.equal(current.state, 'running');
+  }
+  await resizeMarker.dispose();
+  console.log('PASS: desktop/window/phone viewport changes preserve live PTY session, connection and draft (browser adapter)');
   await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('language','ko');
   await page.locator('#tab-work').click();

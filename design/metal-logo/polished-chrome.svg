@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" role="img" aria-label="BIBIMER polished-chrome concept">
+<defs>
+ <linearGradient id="polished-chrome-surface" x1="0" y1="0" x2=".18" y2="1"><stop offset="0" stop-color="#f9fdff"/><stop offset="0.25" stop-color="#e1eaf1"/><stop offset="0.43" stop-color="#677b8e"/><stop offset="0.48" stop-color="#283d50"/><stop offset="0.5" stop-color="#f8fdff"/><stop offset="0.57" stop-color="#ffffff"/><stop offset="0.7" stop-color="#9aaebd"/><stop offset="0.88" stop-color="#dbe9f5"/><stop offset="1" stop-color="#6a8297"/></linearGradient>
+ <linearGradient id="polished-chrome-bevel" x1="0" y1="0" x2=".6" y2="1"><stop stop-color="#ebf5ff"/><stop offset=".45" stop-color="#ebf5ff" stop-opacity=".35"/><stop offset="1" stop-color="#28323b" stop-opacity=".9"/></linearGradient>
+ <radialGradient id="polished-chrome-tile" cx=".23" cy=".08" r="1"><stop stop-color="#2e353e"/><stop offset=".55" stop-color="#191e25"/><stop offset="1" stop-color="#10141b"/></radialGradient>
+ <linearGradient id="polished-chrome-rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#56606c"/><stop offset=".5" stop-color="#252c35"/><stop offset="1" stop-color="#3d454f"/></linearGradient>
+ <clipPath id="polished-chrome-letter"><path d="M27 25h10v58H27zM43 25h18l19 15-19 15H43V44h14l7-4-7-5H43zM43 54h18l19 14-19 15H43V72h14l7-4-7-4H43z"/></clipPath>
+ <filter id="polished-chrome-brush" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".025 .85" numOctaves="2" seed="12"/><feColorMatrix type="saturate" values="0"/></filter>
+ <filter id="polished-chrome-shadow" x="-50%" y="-30%" width="200%" height="200%"><feDropShadow dx="0" dy="2.6" stdDeviation="1.8" flood-color="#000" flood-opacity=".7"/></filter>
+</defs>
+<rect x=".5" y=".5" width="107" height="107" rx="26" fill="url(#polished-chrome-tile)" stroke="url(#polished-chrome-rim)" stroke-width=".6"/>
+<g filter="url(#polished-chrome-shadow)"><path d="M27 25h10v58H27zM43 25h18l19 15-19 15H43V44h14l7-4-7-5H43zM43 54h18l19 14-19 15H43V72h14l7-4-7-4H43z" fill="#3b4d62" transform="translate(0 1.05)"/><path d="M27 25h10v58H27zM43 25h18l19 15-19 15H43V44h14l7-4-7-5H43zM43 54h18l19 14-19 15H43V72h14l7-4-7-4H43z" fill="url(#polished-chrome-surface)" stroke="url(#polished-chrome-bevel)" stroke-width=".55" stroke-linejoin="round"/></g>
+<g clip-path="url(#polished-chrome-letter)" opacity="0.025"><rect x="25" y="23" width="58" height="63" filter="url(#polished-chrome-brush)"/></g>
+</svg>

@@ -15,7 +15,8 @@
   let knownProjects = [], selectedProjectId = null, multipleProjects = false, switchingProject = false;
   let stopTarget = null, catalogRequest = false;
   let canBrowse = false, folderListing = null, folderPath = "~", folderLoading = false;
-  let folderTicket = 0, folderError = null;
+  let folderTicket = 0, folderError = null, folderSelection = null;
+  let canGitHub = false, termuxHome = "~";
   let canImport = false, multiImport = false, persistentCodex = false, importProject = null, importEntries = [], importSelection = null;
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
   let canOptions = false, canLiveOptions = false, settingsBusy = false, pendingOptions = null;
@@ -26,6 +27,7 @@
   let actionTarget = null, deleteTarget = null, libraryBusy = false, worktreeLoading = false, worktreeError = null;
   let canResponseNotifications = false, notificationNavigating = false, notificationRetry, pendingNotification;
   let canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
+  let canInspect = false, canOpenFiles = false, openingFile = false;
   const worktrees = {};
   const modelCatalogs = new Map();
   const sessionTitles = new Map(), titleChecks = new Map();
@@ -62,6 +64,16 @@
     project:async id => { await changeProject({project_id:id}); sidebar.close(); tab("work"); },
     session:selectSession, create:newSession
   });
+  const inspector = new BibimerInspector(t, () => ({instance, project:projectKey(),
+    path:session?.project?.path || draftPath || project?.path, online:online && !paused && !switchingProject,
+    supported:canInspect}), data => api("POST", "/v1/inspect", data));
+
+  const github = new BibimerGitHub(t, () => ({online:online && !paused, supported:canGitHub, home:termuxHome}),
+    data => api("POST", "/v1/github", data), {
+      copy:text => native.copyText(text), link:url => native.openLink(url), termux:() => native.openTermux(), refresh:refreshSidebar,
+      browse:(path, callback) => openFolderBrowser(path, callback),
+      open:async id => { const changed = await changeProject({project_id:id}); if (changed) { projectForm(false); sidebar.close(); tab("work"); await refreshSidebar(); } return changed; }
+    });
 
   const commands = new BibimerCommands($("input"), $("commands"), t, () => {
     const agent = session?.agent, path = session?.project?.path;
@@ -233,7 +245,7 @@
       const timeout = setTimeout(() => {
         pending.delete(id);
         reject(appError("error_timeout"));
-      }, 35000);
+      }, path === "/native/open-file" ? 120000 : 35000);
       pending.set(id, {resolve, reject, timeout});
       try { native.request(id, method, path, JSON.stringify(data)); }
       catch (_) {
@@ -242,6 +254,22 @@
       }
     });
   }
+  window.BibimerOpenFile = async path => {
+    if (!online || paused || switchingProject || !projectKey()) return notice("error_connection_failed");
+    if (!canOpenFiles) return notice("file_links_update");
+    if (openingFile) return notice("error_file_busy");
+    const source = viewKey(), bridgeInstance = instance;
+    const data = {project_id:projectKey(), path};
+    const worktree = session?.project?.path || draftPath || project?.path;
+    if (worktree) data.worktree_path = worktree;
+    openingFile = true; notice("file_opening");
+    try {
+      await api("POST", "/native/open-file", data);
+      if (viewKey() === source && instance === bridgeInstance && ["file_opening", "error_file_busy"].includes(noticeData?.key)) notice(null);
+    } catch (error) {
+      if (viewKey() === source && instance === bridgeInstance) notice(error.key || "error_file_open");
+    } finally { openingFile = false; }
+  };
   window.BibimerNativeReply = (id, response) => {
     const item = pending.get(id);
     if (!item) return;
@@ -649,7 +677,7 @@
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
     renderAgents(); renderProjects(); updateEnvironment(); renderSession(); renderNotice();
     conversation.localize();
-    renderFolderBrowser();
+    renderFolderBrowser(); github.render();
     renderImport(true);
     setTimeout(resize, 30);
   }
@@ -669,6 +697,7 @@
   }
   function renderSession() {
     const live = session && ["running", "stopping"].includes(session.state);
+    $("workspace").classList.toggle("launch-mode", !live);
     let label = t("process_idle");
     if (session) {
       if (session.state === "running") label = t("process_running");
@@ -712,7 +741,7 @@
     $("edit-project").disabled = (!multipleProjects && !!live) || !online || switchingProject || busy;
     $("project-switch").disabled = !online || switchingProject || busy;
     $("browse-project").disabled = !online || switchingProject || busy;
-    renderFolderBrowser();
+    renderFolderBrowser(); github.render();
     $("project-update").hidden = !online || multipleProjects;
     $("input").disabled = !online || !session || session.state !== "running" || (isChat() && !session.ready);
     const responding = isChat() && !["ready", "failed"].includes(session.turn_state);
@@ -752,6 +781,7 @@
     $("session-note").textContent = t(!online && session ? "session_unknown" :
       session && session.state === "lost" ? "session_lost_note" : "session_kept");
     pickers.sync();
+    inspector.update();
   }
   $("copy-resume").addEventListener("click", () => {
     const target = findSession(actionTarget);
@@ -813,6 +843,8 @@
       instance = health.instance;
       multipleProjects = health.features?.includes("multiple_projects") === true;
       canBrowse = health.features?.includes("browse_folders") === true;
+      canGitHub = health.features?.includes("github_import") === true;
+      termuxHome = health.home || "~";
       canImport = health.features?.includes("import_codex_session") === true;
       multiImport = health.features?.includes("import_agent_session") === true;
       persistentCodex = health.features?.includes("persistent_codex_sessions") === true;
@@ -829,6 +861,8 @@
       canSessionTitles = health.features?.includes("session_titles") === true;
       canWorktrees = health.features?.includes("git_worktrees") === true;
       canManageProjects = health.features?.includes("project_management") === true;
+      canInspect = health.features?.includes("workspace_inspector") === true;
+      canOpenFiles = health.features?.includes("file_links") === true;
       canResponseNotifications = health.features?.includes("response_notifications") === true;
       if (JSON.stringify(knownAgents) !== JSON.stringify(health.agents)) {
         knownAgents = health.agents; renderAgents();
@@ -853,6 +887,7 @@
       setSession(entry ? entry.session : health.session);
       renderProjects();
       connected(true);
+      if (sidebar.dialog.open && canWorktrees && !worktreeLoading && knownProjects.some(row => !worktrees[row.id])) void refreshSidebar();
       native.notificationsConnected?.(canResponseNotifications);
       renderNotificationSettings();
       if (connectionError && noticeData && noticeData.key === connectionError) notice("");
@@ -1055,8 +1090,14 @@
     const input = $("input");
     input.style.height = "auto";
     // A wrapping placeholder must not increase the empty, one-row input height.
-    if (input.value) input.style.height = Math.min(100, input.scrollHeight) + "px";
+    if (input.value) input.style.height = Math.min(parseFloat(getComputedStyle(input).maxHeight) || 100, input.scrollHeight) + "px";
   }
+  let composerWidth = 0;
+  new ResizeObserver(entries => {
+    const width = entries[0].contentRect.width;
+    if (width !== composerWidth) { composerWidth = width; resizeInput(); }
+  }).observe($("input-form"));
+  matchMedia("(min-width:700px) and (min-height:650px)").addEventListener("change", resizeInput);
   $("input").addEventListener("input", () => { resizeInput(); rememberView(); });
   let composing = false;
   $("input").addEventListener("compositionstart", () => { composing = true; });
@@ -1210,7 +1251,11 @@
     $("folder-more").disabled = !online || folderLoading;
     $("folder-retry").hidden = !folderError;
     $("folder-retry").disabled = !online || folderLoading;
-    for (const button of $("folder-entries").children) button.disabled = !online || folderLoading;
+    for (const button of $("folder-entries").querySelectorAll("button")) button.disabled = !online || folderLoading;
+    for (const button of $("folder-entries").querySelectorAll(".folder-pick")) {
+      button.textContent = t("folder_pick");
+      button.setAttribute("aria-label", t("folder_pick_named", {name:button.dataset.name}));
+    }
     const status = folderError || (folderLoading ? "folder_loading" :
       folderListing && !folderListing.writable ? "folder_readonly" :
       folderListing && !folderListing.entries.length ? "folder_empty" : null);
@@ -1230,6 +1275,7 @@
       folderListing = {...result, entries:more ? [...folderListing.entries, ...result.entries] : result.entries};
       folderPath = result.path;
       for (const entry of result.entries) {
+        const row = document.createElement("div"); row.className = "folder-row";
         const button = document.createElement("button");
         button.type = "button"; button.className = "folder-entry";
         const icon = document.createElement("span");
@@ -1238,7 +1284,12 @@
         button.append(icon, name);
         button.dir = "auto";
         button.addEventListener("click", () => loadFolders(entry.path));
-        $("folder-entries").append(button);
+        const select = document.createElement("button");
+        select.type = "button"; select.className = "folder-pick";
+        select.dataset.name = entry.name; select.title = entry.path;
+        select.addEventListener("click", () => selectListedFolder(entry.path));
+        row.append(button, select);
+        $("folder-entries").append(row);
       }
       if (!more) $("folder-entries").scrollTop = 0;
     } catch (error) {
@@ -1249,26 +1300,48 @@
       if (ticket === folderTicket) { folderLoading = false; renderFolderBrowser(); }
     }
   }
-  $("browse-project").addEventListener("click", () => {
+  function openFolderBrowser(path, callback = null) {
     if (!canBrowse) { notice("browse_update"); tab("setup"); return; }
-    $("path").blur();
+    folderSelection = callback;
+    document.activeElement?.blur();
     $("folder-dialog").showModal();
-    // Fall back to Home if the add form names a folder not yet created.
-    loadFolders($("path").value.trim() || "~", false, true);
-  });
+    loadFolders(path.trim() || "~", false, true);
+  }
+  $("browse-project").addEventListener("click", () => openFolderBrowser($("path").value));
   $("folder-home").addEventListener("click", () => loadFolders("~"));
   $("folder-up").addEventListener("click", () => { if (folderListing?.parent) loadFolders(folderListing.parent); });
   $("folder-hidden").addEventListener("change", () => loadFolders(folderPath));
   $("folder-more").addEventListener("click", () => loadFolders(folderPath, true));
   $("folder-retry").addEventListener("click", () => loadFolders(folderPath));
   $("folder-cancel").addEventListener("click", () => $("folder-dialog").close());
-  $("folder-dialog").addEventListener("close", () => { ++folderTicket; folderLoading = false; });
-  $("folder-select").addEventListener("click", () => {
-    if ($("folder-select").disabled || !folderListing) return;
-    $("path").value = folderListing.path;
+  $("folder-dialog").addEventListener("close", () => { ++folderTicket; folderLoading = false; folderSelection = null; });
+  function selectFolder(path) {
+    if (folderSelection) { const callback = folderSelection; folderSelection = null; $("folder-dialog").close(); callback(path); return; }
+    $("path").value = path;
     $("create-folder").checked = false;
     $("folder-dialog").close();
     $("project-form").querySelector("button[type=submit]").focus();
+  }
+  async function selectListedFolder(path) {
+    if (!online || folderLoading || !$("folder-dialog").open) return;
+    const ticket = ++folderTicket;
+    folderLoading = true; folderError = null; renderFolderBrowser();
+    try {
+      // Validate access and resolve links without navigating into the folder.
+      const result = await api("POST", "/v1/folders", {path});
+      if (ticket !== folderTicket || !$("folder-dialog").open || !online) return;
+      if (!result.writable) { folderError = "folder_readonly"; return; }
+      selectFolder(result.path);
+    } catch (error) {
+      if (ticket !== folderTicket || !$("folder-dialog").open) return;
+      folderError = error.status === 404 ? "browse_update" : error.key || "error_folder_access";
+    } finally {
+      if (ticket === folderTicket) { folderLoading = false; renderFolderBrowser(); }
+    }
+  }
+  $("folder-select").addEventListener("click", () => {
+    if ($("folder-select").disabled || !folderListing) return;
+    selectFolder(folderListing.path);
   });
   async function changeProject(data) {
     if (switchingProject) return;
@@ -1427,7 +1500,7 @@
     } catch (error) { if (session?.id === id) notice(error.key || "error_request_failed"); }
   });
   $("forget").addEventListener("click", () => {
-    ++generation; clearTimeout(retryTimer); native.forget();
+    ++generation; clearTimeout(retryTimer); native.forget(); github.reset();
     connected(false); $("workspace").hidden = true; $("welcome").hidden = false;
     setSession(null); instance = null; projectInitialized = false; updateEnvironment();
     views.clear(); modelCatalogs.clear(); selectedAgent = "shell"; selectedProjectId = null; knownProjects = []; $("input").value = "";
@@ -1449,10 +1522,24 @@
   $("open-termux").addEventListener("click", () => native.openTermux());
   $("quick-open-termux").addEventListener("click", () => native.openTermux());
   $("quick-app-permissions").addEventListener("click", () => native.openAppPermissions?.());
-  $("quick-connect").addEventListener("click", () => {
+  $("quick-connect").addEventListener("click", async () => {
     if (quickSubmitting || $("quick-connect").disabled) return;
     quickSubmitting = true; renderQuickSetup();
-    try { native.startQuickSetup(); }
+    try {
+      // An existing connection needs no RUN_COMMAND permission or new pairing.
+      // Probe even when the last UI status was offline (e.g. returning from DeX).
+      if (environment().paired) {
+        let reachable = false;
+        try {
+          const health = await api("GET", "/v1/health");
+          if (health.protocol !== 1) { notice("error_protocol"); return; }
+          reachable = true;
+        } catch (_) { /* A stopped bridge or expired pairing needs setup below. */ }
+        if (paused || !environment().paired) return;
+        if (reachable) { notice(""); tab("work"); await connect(); return; }
+      }
+      if (!paused) native.startQuickSetup();
+    }
     catch (_) { notice("quick_start_failed"); }
     finally { setTimeout(() => { quickSubmitting = false; updateEnvironment(); }, 500); }
   });
@@ -1461,7 +1548,7 @@
   for (const button of document.querySelectorAll("[data-command]")) button.addEventListener("click", () => native.copyCommand(button.dataset.command));
   const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", interrupt:"\x03", enter:"\r"};
   for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.addEventListener("click", () => sendRaw(keys[button.dataset.key]));
-  window.BibimerPause = () => { pickers.close(); paused = true; ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); };
+  window.BibimerPause = () => { pickers.close(); paused = true; ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
   $("language").addEventListener("change", () => {
     try {
       if (!native.setLanguage($("language").value)) throw new Error();
@@ -1546,7 +1633,7 @@
     i18n.setLanguage(env.language); renderLanguage(); connect();
   };
   window.BibimerBack = () => {
-    const dialogs = [...document.querySelectorAll("dialog[open]")];
+    const dialogs = [...document.querySelectorAll("dialog[open]:not(.docked)")];
     if (dialogs.length) {
       if (dialogs[dialogs.length - 1].id === "handoff-dialog" && handoff?.busy) return true;
       dialogs[dialogs.length - 1].close(); return true;
@@ -1555,7 +1642,7 @@
     if (currentTab !== "work") { tab("work"); return true; }
     return false;
   };
-  function updateBackState() { native.setBackHandling?.(currentTab !== "work" || !$("commands").hidden || !!document.querySelector("dialog[open]")); }
+  function updateBackState() { native.setBackHandling?.(currentTab !== "work" || !$("commands").hidden || !!document.querySelector("dialog[open]:not(.docked)")); }
   const backObserver = new MutationObserver(updateBackState);
   backObserver.observe($("commands"), {attributes:true, attributeFilter:["hidden"]});
   for (const dialog of document.querySelectorAll("dialog")) backObserver.observe(dialog, {attributes:true, attributeFilter:["open"]});

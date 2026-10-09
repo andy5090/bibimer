@@ -1,18 +1,94 @@
 "use strict";
-// A modal drawer: closing or navigating it never changes a process's lifetime.
+// Touch-only dismissal for modal drawers. Keep scrolling, selection and mouse input native.
+window.BibimerDrawerSwipe = function(dialog, direction, close) {
+  let gesture = null, suppressUntil = 0, settleTimer;
+  const enabled = () => dialog.open && !dialog.classList.contains("docked") && dialog.matches(":modal") &&
+    ![...document.querySelectorAll("dialog:modal")].some(other => other !== dialog);
+  const selected = () => { const value = window.getSelection(); return value && !value.isCollapsed; };
+  const reset = (settle = false) => {
+    const dragged = gesture?.dragging;
+    if (dragged) suppressUntil = performance.now() + 400;
+    gesture = null;
+    clearTimeout(settleTimer);
+    dialog.classList.remove("drawer-swiping", "drawer-settling");
+    dialog.style.removeProperty("--drawer-offset");
+    if (settle && dragged && enabled()) {
+      dialog.classList.add("drawer-settling");
+      settleTimer = setTimeout(() => dialog.classList.remove("drawer-settling"), 180);
+    }
+  };
+  dialog.addEventListener("touchstart", event => {
+    reset();
+    if (!enabled() || event.touches.length !== 1 || selected()) return;
+    const target = event.target instanceof Element ? event.target : event.target.parentElement;
+    if (target.closest("input,textarea,select,[contenteditable]:not([contenteditable=false]),pre,code,.table-scroll")) return;
+    for (let node = target; node && node !== dialog; node = node.parentElement) {
+      if (node.scrollWidth > node.clientWidth + 1 && /auto|scroll/.test(getComputedStyle(node).overflowX)) return;
+    }
+    const touch = event.touches[0], bounds = dialog.getBoundingClientRect();
+    if (touch.clientX < bounds.left || touch.clientX > bounds.right || touch.clientY < bounds.top || touch.clientY > bounds.bottom) return;
+    gesture = {id:touch.identifier, x:touch.clientX, y:touch.clientY, width:bounds.width, start:performance.now(), distance:0, dragging:false};
+  }, {passive:true});
+  dialog.addEventListener("touchmove", event => {
+    if (!gesture) return;
+    if (!enabled() || event.touches.length !== 1 || selected()) { reset(true); return; }
+    const touch = [...event.touches].find(point => point.identifier === gesture.id);
+    if (!touch) { reset(true); return; }
+    const dx = (touch.clientX - gesture.x) * direction, dy = Math.abs(touch.clientY - gesture.y);
+    if (!gesture.dragging) {
+      if (Math.max(Math.abs(dx), dy) < 10) return;
+      // Decide once: vertical/diagonal/inward motion stays a normal interaction.
+      if (dx < 10 || dx < dy * 1.5 || performance.now() - gesture.start > 600 || !event.cancelable) { reset(); return; }
+      gesture.dragging = true;
+    }
+    if (!event.cancelable) { reset(true); return; }
+    event.preventDefault();
+    gesture.distance = Math.max(0, Math.min(dx, gesture.width));
+    dialog.classList.add("drawer-swiping");
+    dialog.style.setProperty("--drawer-offset", `${direction * gesture.distance}px`);
+  }, {passive:false});
+  dialog.addEventListener("touchend", event => {
+    if (!gesture) return;
+    if (event.touches.length || ![...event.changedTouches].some(point => point.identifier === gesture.id)) { reset(true); return; }
+    const dismiss = enabled() && gesture.dragging && gesture.distance >= Math.max(56, Math.min(96, gesture.width * .22));
+    if (gesture.dragging && event.cancelable) event.preventDefault();
+    reset(!dismiss);
+    if (dismiss) close();
+  }, {passive:false});
+  dialog.addEventListener("touchcancel", () => reset(true), {passive:true});
+  dialog.addEventListener("close", () => reset());
+  window.addEventListener("resize", () => reset());
+  window.addEventListener("blur", () => reset());
+  // A completed swipe must not select a row or click the now-exposed conversation.
+  document.addEventListener("click", event => {
+    if (event.detail > 0 && performance.now() < suppressUntil) { event.preventDefault(); event.stopImmediatePropagation(); }
+  }, true);
+};
+
+// One project tree: a modal drawer on phones, a non-modal pane in wide windows.
+// Moving between layouts never replaces its content or changes session lifetime.
 window.BibimerSidebar = class BibimerSidebar {
   constructor(t, actions) {
     this.t = t; this.actions = actions; this.expanded = new Map(); this.signature = ""; this.archived = false;
     this.dialog = document.getElementById("sidebar");
     this.list = document.getElementById("sidebar-projects");
     this.opener = document.getElementById("sidebar-open");
-    this.opener.addEventListener("click", () => { this.open(); actions.refresh(); });
-    document.getElementById("sidebar-close").addEventListener("click", () => this.close());
+    this.wide = matchMedia("(min-width: 1000px)"); this.collapsed = false;
+    this.opener.addEventListener("click", () => {
+      if (this.wide.matches && this.dialog.open) this.close(true);
+      else { this.open(); actions.refresh(); }
+    });
+    document.getElementById("sidebar-close").addEventListener("click", () => this.close(true));
     document.getElementById("sidebar-refresh").addEventListener("click", () => actions.refresh());
     document.getElementById("sidebar-archived").addEventListener("click", () => {
       this.archived = !this.archived; this.render(this.state);
     });
-    this.dialog.addEventListener("close", () => this.opener.setAttribute("aria-expanded", "false"));
+    this.dialog.addEventListener("close", () => this.syncLayout());
+    this.dialog.addEventListener("keydown", event => {
+      if (event.key === "Escape" && this.wide.matches) {
+        event.preventDefault(); this.close(true); this.opener.focus();
+      }
+    });
     let outside = false;
     const onBackdrop = event => {
       const bounds = this.dialog.getBoundingClientRect();
@@ -20,9 +96,45 @@ window.BibimerSidebar = class BibimerSidebar {
     };
     this.dialog.addEventListener("pointerdown", event => { outside = onBackdrop(event); });
     this.dialog.addEventListener("click", event => { if (outside && onBackdrop(event)) this.close(); outside = false; });
+    BibimerDrawerSwipe(this.dialog, -1, () => { this.close(true); this.opener.focus({preventScroll:true}); });
+    this.wide.addEventListener("change", () => this.changeLayout());
+    this.changeLayout();
   }
-  open() { if (!this.dialog.open) this.dialog.showModal(); this.opener.setAttribute("aria-expanded", "true"); }
-  close() { this.dialog.close(); }
+  syncLayout() {
+    this.opener.setAttribute("aria-expanded", String(this.dialog.open));
+    this.opener.setAttribute("aria-haspopup", this.wide.matches ? "false" : "dialog");
+    document.getElementById("app").classList.toggle("sidebar-docked", this.wide.matches && this.dialog.open);
+  }
+  changeLayout() {
+    const focus = document.activeElement;
+    this.dialog.close();
+    this.dialog.classList.toggle("docked", this.wide.matches);
+    this.dialog.setAttribute("role", this.wide.matches ? "navigation" : "dialog");
+    if (this.wide.matches && !this.collapsed) this.dialog.show();
+    this.syncLayout();
+    // Switching out of a modal drawer must release the rest of the page; keep
+    // composer focus unless its target has become hidden with the phone drawer.
+    if (focus && focus !== document.body) {
+      if (this.dialog.contains(focus) && !this.dialog.open) this.opener.focus({preventScroll:true});
+      else focus.focus({preventScroll:true});
+    }
+    if (this.state && this.wide.matches && this.dialog.open) this.actions.refresh();
+  }
+  open() {
+    this.collapsed = false;
+    if (!this.dialog.open) {
+      if (this.wide.matches) this.dialog.show();
+      else this.dialog.showModal();
+    }
+    this.syncLayout();
+  }
+  close(explicit = false) {
+    // Selecting a session or tab dismisses the phone drawer, but leaves the wide
+    // project pane available for the next navigation.
+    if (this.wide.matches && !explicit) return;
+    if (this.wide.matches) this.collapsed = true;
+    this.dialog.close(); this.syncLayout();
+  }
   button(text, action, className, key) {
     const button = document.createElement("button"); button.type = "button"; button.className = className || "";
     button.textContent = text; button.dataset.key = key; button.disabled = this.state.disabled;

@@ -86,6 +86,7 @@ async function main() {
     $('process').textContent='Running'; $('process').classList.add('running');
     $('turn-status').textContent='Ready for your message'; $('stop').hidden=false;
     $('input').disabled=false; $('input').placeholder='Describe a task or send a follow-up'; $('send').disabled=false;
+    window.BibimerOpenFile=path=>{window.openedFile=path;};
     window.renderer=new BibimerConversation($('conversation'),$('chat-requests'),BibimerI18n.t,async()=>{});
     renderer.enable(true);renderer.update({items,requests:[]});
   },items);
@@ -102,8 +103,8 @@ async function main() {
   assert.deepEqual(external,[]);
   await page.getByRole('button',{name:'the setup guide · Open in browser',exact:true}).click();
   assert.equal(await page.evaluate(()=>window.openedLink),'https://example.com/docs');
-  await page.getByRole('button',{name:'app.py · Copy file path',exact:true}).click();
-  assert.equal(await page.evaluate(()=>window.copiedText),'src/app.py:12');
+  await page.getByRole('button',{name:'app.py · Open in Android app',exact:true}).click();
+  assert.equal(await page.evaluate(()=>window.openedFile),'src/app.py:12');
   assert.equal(await page.getByRole('button',{name:'Unsafe',exact:true}).count(),0);
   await page.locator('.markdown .copy-button').click();
   assert.ok((await page.evaluate(()=>window.copiedText)).startsWith('from pathlib import Path'));
@@ -181,6 +182,59 @@ async function main() {
   await page.evaluate(()=>{renderer.update({items:[],retained:['answer'],requests:[]});renderer.localize();});
   assert.equal(await page.locator('.message').count(),1);
   console.log('PASS: 64 empty historical/live summaries hidden; later content keeps order; Markdown, expansion and EN/KO labels; normal plans and pruning preserved');
+  // Responsive work surfaces use the same document and draft across window sizes.
+  await page.evaluate(items=>{renderer.clear();renderer.update({items,requests:[]});},items);
+  await page.locator('#input').fill('Responsive draft · 태블릿에서도 유지');
+  for (const [width,height] of [[768,1024],[820,1180],[1024,768],[1440,900],[2560,1440],[1100,460],[393,780],[320,460]]) {
+    await page.setViewportSize({width,height});
+    await page.waitForTimeout(250);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}: no page overflow`);
+    const composer=await page.locator('#input-form').boundingBox(), send=await page.locator('#send').boundingBox();
+    const chat=await page.locator('#chat-panel').boundingBox();
+    assert.ok(send.y>=0 && send.y+send.height<=height,`${width}: send stays visible`);
+    assert.ok(chat.height>100,`${width}: conversation retains useful height`);
+    assert.ok(chat.width<=920 && Math.abs(chat.x-composer.x)<1,`${width}: aligned readable conversation/composer`);
+    assert.equal(await page.locator('#input').inputValue(),'Responsive draft · 태블릿에서도 유지');
+    if(width>=1000) {
+      const sidebar=await page.locator('#sidebar').boundingBox();
+      assert.ok(sidebar.width>=280 && sidebar.width<=320 && sidebar.x+sidebar.width<=chat.x);
+      assert.equal(await page.locator('#sidebar').evaluate(node=>node.matches(':modal')),false);
+      await page.locator('#input').click();
+      assert.equal(await page.locator('#input').evaluate(node=>node===document.activeElement),true);
+    }
+    await page.locator('#conversation').evaluate(node=>{node.scrollTop=0;});
+    if([768,1440,1100].includes(width)) await page.screenshot({path:path.join(root,`dist/screenshots/responsive-chat-${width}.png`)});
+  }
+  // A phone drawer becomes a non-modal pane without trapping the composer.
+  await page.locator('#sidebar-open').click();
+  assert.equal(await page.locator('#sidebar').evaluate(node=>node.matches(':modal')),true);
+  await page.setViewportSize({width:1440,height:900});
+  await page.waitForTimeout(200);
+  assert.equal(await page.locator('#sidebar').evaluate(node=>node.open && !node.matches(':modal')),true);
+  await page.locator('#input').click();
+  await page.locator('#sidebar-close').click();
+  assert.equal(await page.locator('#sidebar').isVisible(),false);
+  await page.locator('#sidebar-open').click();
+  assert.equal(await page.locator('#sidebar').isVisible(),true);
+  await page.setViewportSize({width:393,height:780});
+  await page.waitForTimeout(200);
+  assert.equal(await page.locator('#sidebar').isVisible(),false);
+  await page.locator('#sidebar-open').click();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#sidebar').isVisible(),false);
+  await page.setViewportSize({width:1440,height:900});
+  const longDraft='Keep this multiline draft\n'.repeat(16);
+  await page.locator('#input').fill(longDraft);
+  await page.waitForTimeout(200);
+  assert.equal(Math.round((await page.locator('#input').boundingBox()).height),160);
+  await page.setViewportSize({width:1440,height:460});
+  await page.waitForTimeout(200);
+  assert.equal(Math.round((await page.locator('#input').boundingBox()).height),100);
+  await page.setViewportSize({width:1440,height:900});
+  await page.waitForTimeout(200);
+  assert.equal(Math.round((await page.locator('#input').boundingBox()).height),160);
+  assert.equal(await page.locator('#input').inputValue(),longDraft);
+  console.log('PASS: tablet/desktop/short-window/phone layouts; aligned chat/composer, draft and focus preservation; modal-to-docked transitions, collapse and Escape');
   assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
   // Controlled icon preview, separate from actual launcher verification.
   await page.setViewportSize({width:560,height:240});

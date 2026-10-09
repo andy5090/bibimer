@@ -16,4 +16,6 @@
     <string name="notification_monitor_body">Listening for completed responses in Termux.</string>
     <string name="notification_stop_alerts">Turn off alerts</string>
     <string name="notification_response_complete">Response complete</string>
+    <string name="error_file_open">Could not open the file. Check the connection and available storage.</string>
+    <string name="error_file_app">No Android app can open this file type. Install a compatible viewer.</string>
 </resources>
