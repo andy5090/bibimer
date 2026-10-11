@@ -8,7 +8,7 @@ Bibimer의 제품 유형은 **모바일 ADE(Agent Development Environment, 에�
 
 ## 현재 출시 상태 (2026-10-12)
 
-프로덕션 **0.16.0 (30) - Initial release**와 등록정보/선언 변경 **12개**를 Google 검토에 제출했다. Console은 **검토 중인 변경사항 / 빠른 검사 실행 중**을 표시한다. 검사 통과 후 심사로 넘어가며 승인·공개 노출은 미확인이다. 기존 관리형 게시가 사용 중지되어 승인 후 자동 게시된다. [게시 개요](https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing)에서 상태를 확인한다.
+프로덕션 **0.16.0 (30) - Initial release**와 등록정보/선언 변경 **12개**를 Google 검토에 제출했다. 사전 검사 진행률·카운트다운이 사라지고 Console이 **검토 중인 변경사항 / 변경사항을 검토 중입니다**로 바뀌었다. 승인·공개 노출은 미확인이다. 기존 관리형 게시가 사용 중지되어 승인 후 자동 게시된다. [게시 개요](https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing)에서 상태를 확인한다.
 
 
 - 내부 테스트: **활성 / 0.16.0 (30) - Demo internal test / 내부 테스터에게 제공됨 / 검토되지 않음**. [참여 링크](https://play.google.com/apps/internaltest/4701718894791581363). 지정 Google 계정 한 명의 목록을 선택했다. 비공개 이메일·초대 동의·설치 여부는 공개 저장소에 넣지 않는다.

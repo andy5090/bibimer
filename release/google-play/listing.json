@@ -1,6 +1,6 @@
 {
-  "status": "submitted_for_review_pending_pre_review_checks",
-  "consoleListingStatus": "submitted_pending_pre_review_checks",
+  "status": "in_review",
+  "consoleListingStatus": "in_review",
   "appIcon": "graphics/icon-512.png",
   "developerAccount": {
     "type": "organization",
@@ -19,7 +19,7 @@
       "16-17",
       "18+"
     ],
-    "consoleStatus": "submitted_pending_pre_review_checks"
+    "consoleStatus": "in_review"
   },
   "supportEmail": "andy@andineering.com",
   "privacyPolicyUrl": "https://bibimer.app/privacy/",
@@ -85,7 +85,7 @@
     "note": "Content ratings are separate from the selected target audience of 13 and older."
   },
   "appAccess": {
-    "consoleStatus": "submitted_pending_pre_review_checks",
+    "consoleStatus": "in_review",
     "terminalInstructions": "review-instructions.txt",
     "terminalVerifiedOn": "2026-10-11",
     "terminalNeedsProviderAccount": false,
@@ -97,7 +97,7 @@
     "demoVerifiedOn": "2026-10-12"
   },
   "dataSafety": {
-    "consoleStatus": "submitted_pending_pre_review_checks",
+    "consoleStatus": "in_review",
     "savedOn": "2026-10-12",
     "collectsOrSharesData": true,
     "allCollectedDataEncryptedInTransit": false,
@@ -210,7 +210,7 @@
   "foregroundService": {
     "type": "specialUse",
     "permission": "FOREGROUND_SERVICE_SPECIAL_USE",
-    "consoleStatus": "submitted_pending_pre_review_checks",
+    "consoleStatus": "in_review",
     "declaredOn": "2026-10-12",
     "videoUrl": "https://bibimer.app/assets/notification-demo-0.16.0.mp4",
     "guideUrl": "https://bibimer.app/review/",
@@ -221,7 +221,7 @@
     "versionName": "0.16.0",
     "versionCode": 30,
     "releaseName": "0.16.0 (30) - Initial release",
-    "consoleStatus": "submitted_pending_pre_review_checks",
+    "consoleStatus": "in_review",
     "submittedOn": "2026-10-12",
     "changeCount": 12,
     "managedPublishing": false,
@@ -231,7 +231,8 @@
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
-    "note": "Submitted release and store/content declarations. Console shows pre-review checks running; Google approval and public availability are not confirmed."
+    "note": "Pre-review progress and countdown disappeared. Console now says changes are being reviewed. Google approval and public availability are not confirmed.",
+    "preReviewChecksCompleted": true
   },
   "internalTesterParticipation": {
     "consoleRegistration": "saved_one_tester",
