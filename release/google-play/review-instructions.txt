@@ -1,31 +1,31 @@
-DRAFT REVIEW INSTRUCTIONS - NOT SAVED IN PLAY CONSOLE
+REVIEW INSTRUCTIONS — BIBIMER 0.16.0 / VERSION CODE 30
 
-Instruction name: Local Termux pairing and Terminal (no account)
-Username/password: none for Bibimer or Terminal
+Instruction name: Account-free demo and optional local Termux setup
+Username/password: not required for demo or Bibimer
 
 Short Console text (500-character field):
-Bibimer has no account/paywall. Install and open official Termux on this phone. In Setup > Manual setup and pairing, save bibimer-setup.sh to Downloads. In Termux run termux-setup-storage, then bash ~/storage/downloads/bibimer-setup.sh. Enter its code in Bibimer. Add ~/projects/play-review with Create folder enabled. Choose Terminal > Start session and send pwd. Optional AI CLIs/GitHub need their own external setup; Terminal needs no provider account. No developer credentials are supplied.
+Open Bibimer > Try demo (also Setup/Settings). No account or Termux. Demo marks fictional session logs. Choose Codex, Claude Code, OpenCode or Terminal; send any text for prerecorded formats unrelated to input. Try approval/questions, queue, files/Git/GitHub samples and Settings > response notifications. No AI or shell runs. Exit demo restores normal setup; live work needs the user's Termux/tools and optional provider accounts. Guide/video: https://bibimer.app/review/
 
-Verified account-free review path:
-1. Install official Termux 0.118.3 or a compatible official release on this Android device. Open Termux once and let initialization finish.
-   Official source: https://github.com/termux/termux-app/releases/tag/v0.118.3
-2. Open Bibimer. It starts in English; Settings > Language also offers Korean.
-3. In Setup > Manual setup and pairing, save bibimer-setup.sh to Downloads. Return to Bibimer and wait for the saved confirmation before switching to Termux.
-4. In Termux, run: termux-setup-storage
-   Grant Termux the requested file access for the setup file.
-5. Run: bash ~/storage/downloads/bibimer-setup.sh
-   The script installs required Termux packages and the local bridge. Wait until the bridge is ready.
-6. Enter the one-time pairing code generated on this device into Bibimer. Each reviewer generates their own local code; no static developer code or secret is supplied.
-7. Add a project with path ~/projects/play-review and enable Create folder.
-8. Select Terminal, then Start session. Send pwd; the output shows the real Termux project folder.
-9. Switch to Settings and back to Work, or reopen Bibimer. The same Terminal session remains running.
-10. End only this test session using Session actions > End session when finished.
+Detailed guide and actual Android notification demonstration:
+https://bibimer.app/review/
+Korean guide: https://bibimer.app/ko/review/
 
-Scope and limits:
-Bibimer has no developer-hosted account, subscription, or paywall. This route verifies project/session/Terminal functions without personal agent credentials or AI-provider accounts. It uses manual setup and does not require RUN_COMMAND permission or allow-external-apps.
-AI Chat and GitHub integrations use separately installed third-party CLIs and their own account/configuration requirements. Terminal does not verify those integrations or Chat completion notifications. Full reviewer access to these integrations has not been established by this guide.
+1. Open Bibimer and choose Try demo on the welcome screen, in Setup, or in Settings.
+2. The Demo badge/banner identifies fictional sample replay. No account, Termux, payment, provider credential, location, or developer secret is required for this resource.
+3. Open the sidebar or agent selector and choose Codex, Claude Code, OpenCode, or Terminal. They show invented examples shaped after structured event formats, never actual session transcripts.
+4. Send arbitrary text to advance the examples. Chat/terminal input is ignored and not retained in sample logs. The first two sends finish automatically; every third send requests sample approval and then a question. Accepting does not run a command. Question answers are discarded.
+5. Explore sample projects/worktrees/session management, model choices, queue/Steer controls, file previews, Git status/diffs/history, conversation handoff, session import, and fictional GitHub import. Sample operations remain in memory and do not read or change device project files.
+6. In Settings enable response notifications and permit Android notifications. Start an automatic example and return Home. The ongoing foreground notification and completion notification say Demo. Tap completion to open its sample session. Turn off alerts from the ongoing notification or Settings.
+7. Exit demo returns to normal setup. Demo preferences are separate; existing normal connection/settings are preserved. Unsent normal drafts are temporarily held in process memory and restored when returning without process death. Sample workspace resets on exit or process restart.
 
-Console status:
-Adding these instructions requires confirming full access to every app feature. That confirmation was not selected and these instructions were not saved in Console. Do not represent the Terminal test as proof of every external integration.
+External integration scope:
+Bibimer is an Android development environment for user-owned Termux tools. Real shell/agent work requires Termux on the same device, a local bridge, compatible installed CLIs, and any independently configured third-party accounts. The demo gives account-free interface access; it does not run or verify live AI inference, GitHub authentication, Git operations, or Termux commands. No developer's personal agent or GitHub credentials are provided.
 
-Verification: Android emulator Medium_Phone_API_36.1, Android 36.1, Bibimer 0.15.0 / versionCode 28, official Termux 0.118.3; 2026-10-11.
+Optional account-free real Terminal path (verified separately on 0.15.0 / code 28, 2026-10-11):
+Install/open official Termux, save bibimer-setup.sh from Setup > Manual setup and pairing, run termux-setup-storage and bash ~/storage/downloads/bibimer-setup.sh in Termux, and enter the locally generated one-time code in Bibimer. Add ~/projects/play-review with Create folder, choose Terminal, start a session, and send pwd. This path requires no AI-provider account. Do not use a developer's pairing code.
+Official Termux source: https://github.com/termux/termux-app/releases/tag/v0.118.3
+
+Verification:
+Signed AAB-derived APK 0.16.0 installed as an update on Android 36.1 emulator. Demo send, provider-format switching, approval/question, file/Git views, terminal replay, EN/KO UI, small-screen layout, background completion alert, notification session navigation and stop monitoring were checked. Demo implementation uses fabricated structured events. Physical-device/live-provider tests and Google reviewer acceptance remain separate.
+
+Console status: Saved in Play Console on 2026-10-12; included with the initial production submission for Google review. Acceptance of the demo review resource and live external integration scope is for Google to determine.

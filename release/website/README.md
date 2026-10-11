@@ -44,3 +44,7 @@ python3 -m http.server 8877 --bind 127.0.0.1 --directory release/website/public
 ```
 
 앱 Settings에 기존 외부 브라우저 열기 경로로 고정된 `https://bibimer.app/privacy/` 버튼을 추가하고 사용자 요청의 캡처용 APK에 포함했다. 영어·한국어 표시와 외부 Chrome 실행을 에뮬레이터에서 확인했다. Chrome 최초 실행 약관 단계에서 멈췄으므로 앱에서 정책 페이지 로드·실기기 브라우저 호출은 미검증이다. 기존 휴대폰 배포 APK는 교체하지 않았다. 기본 CLI OAuth 권한으로 zone setting·RUM 설정 변경은 403이므로 권한을 확대하지 않았다. Cloudflare 공식 문서의 `no-transform` 헤더로 이메일 가림과 Web Analytics 자동 삽입을 막는다. Play 앱 서명 인증서는 확인했으나 HTTPS App Links의 앱 intent filter·라우팅은 구현하지 않았다. `assetlinks.json`도 해당 기능과 함께 구현·검증할 때 게시한다.
+
+## 계정 없는 데모 안내 (2026-10-12)
+
+`/review/`와 `/ko/review/`는 별도 언어의 체험·심사 안내이며 두 정책에도 데모 처리 범위를 추가했다. 계정 없이 가상 구조화 로그를 재생하고 실제 AI 요청·명령·프로젝트 파일 접근을 하지 않는다. 58.1초 MP4는 실제 Android 포그라운드 서비스·알림·세션 이동·끄기를 가상 완료 이벤트로 시연한다. 제공자 인증·실제 AI 응답 검증으로 주장하지 않는다. 영상은 자체 호스팅이며 광고·외부 플레이어 스크립트가 없다. 두 안내의 393px 가로 넘침 없음, 영상 metadata 58.1초 로드를 브라우저에서 확인했다. 정책의 처음 시행일은 유지했다. 최종 배포 `https://60e7bace.bibimer.pages.dev`.

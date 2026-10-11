@@ -14,7 +14,7 @@ Bibimer is an **ADE (Agent Development Environment)**. Connected agents such as 
 
 ## Availability
 
-Bibimer is in active development. **The Google Play release is being prepared; there is no public APK release yet.** To try the current development version, follow the [build guide](docs/development.md) (currently in Korean).
+Bibimer is in active development. **The first Google Play release (0.16.0) has been submitted for review; public availability is not yet confirmed.** Invitation-only internal testing is available. There is no public GitHub APK release. To build the current development version, follow the [build guide](docs/development.md) (currently in Korean).
 
 The app targets Android 8.0 or later (API 26+). Compatibility with every Android version, device, or agent installation has not been verified.
 

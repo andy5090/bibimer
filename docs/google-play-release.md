@@ -1,28 +1,41 @@
 # Google Play 출시 준비
 
-2026-10-12 기준 Bibimer는 **출시 준비 중**이다. 현재 앱은 `app.bibimer`, `0.15.0 / versionCode 28`, 최소 API 26·target API 36이다. 기존 배포물은 로컬 개발 키로 서명한 APK이며 Play에 제출한 AAB가 아니다. 별도 업로드 키로 출시용 AAB 서명 빌드·번들 검증·테스트 에뮬레이터 설치를 완료했다. Play 내부 테스트에 versionCode 28로 업로드·초안 저장했다. 테스터 배포·프로덕션 심사는 아직 수행하지 않았다.
+2026-10-12 현재 앱은 **`app.bibimer` · `0.16.0 / versionCode 30` · 최소 API 26 · target API 36**이다. 계정 없는 가상 데모를 추가한 서명 AAB를 Play 내부 테스트에 게시했고 지정 테스터 1명에게 제공된다. 프로덕션 공개 출시·Google 승인·Google Play를 통한 실제 설치 검증은 완료하지 않았다. 내장 브리지는 0.15.0이며 실제 휴대폰 설치본과 운영 브리지는 유지했다.
 
 Bibimer의 제품 유형은 **모바일 ADE(Agent Development Environment, 에이전트 개발 환경)**다. 프로젝트·워크트리·코딩 에이전트 세션·대화·터미널을 관리하고, 실제 코딩 작업은 사용자가 연결한 에이전트가 수행한다. 슬로건은 **내 손안의 에이전트 개발 환경**이다. 영어·한국어 스토어 설명과 소개 그래픽, 웹사이트에 반영했으며 앱의 새 소개 문구는 2026-10-12 출시용 AAB에 포함했다. 기존 휴대폰 설치 APK는 교체하지 않았다.
 
 사용자가 **조직 개발자 계정**을 사용한다고 확인했다. 신규 개인 계정의 12명·14일 비공개 테스트 요건은 이 출시 일정에 적용하지 않는다. 조직 계정의 인증 완료 여부와 Console에 표시되는 출시 제한은 별도로 확인한다.
 
-## 제출 전 남은 작업
+## 현재 출시 상태 (2026-10-12)
 
-| 항목 | 현재 상태와 다음 작업 |
+프로덕션 **0.16.0 (30) - Initial release**와 등록정보/선언 변경 **12개**를 Google 검토에 제출했다. Console은 **검토 중인 변경사항 / 빠른 검사 실행 중**을 표시한다. 검사 통과 후 심사로 넘어가며 승인·공개 노출은 미확인이다. 기존 관리형 게시가 사용 중지되어 승인 후 자동 게시된다. [게시 개요](https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing)에서 상태를 확인한다.
+
+
+- 내부 테스트: **활성 / 0.16.0 (30) - Demo internal test / 내부 테스터에게 제공됨 / 검토되지 않음**. [참여 링크](https://play.google.com/apps/internaltest/4701718894791581363). 지정 Google 계정 한 명의 목록을 선택했다. 비공개 이메일·초대 동의·설치 여부는 공개 저장소에 넣지 않는다.
+- AAB: `bibimer-0.16.0-30-release.aab`, SHA-256 `dd893a74e5cc3ba796d303035bd983e00bf4da3f2671af9654dc0a1b2e3cf7ab`. 기존 업로드 키로 서명했으며 번들·서명·SDK·asset 일치와 에뮬레이터 업데이트 설치를 확인했다. 초기 28과 교정 전 29는 아티팩트 라이브러리에 남기고 출시에서 제외했다. 난독화를 사용하지 않아 매핑 파일 경고 1개만 표시됐다.
+- 로그인 세부정보: [영어 안내](../release/google-play/review-instructions.txt)·[공개 체험 안내](https://bibimer.app/review/)를 **계정 없는 데모 리소스**로 저장했다. 실제 로그·개인 제공자 자격 증명을 사용하지 않는다. 모든 기능 접근 확인은 격리된 예제 UI에 대한 선언이며 실제 외부 AI/CLI/GitHub 연동 검증이나 Google 수락 보장이 아니다.
+- 대상 연령 **13~15·16~17·18+**, 데이터 보안 전체 설문, FGS `specialUse` 설명·영상 링크를 **저장하고 첫 출시와 함께 검토에 제출**했다. 데이터 보안은 실제 외부 도구의 선택적 콘텐츠 전송을 공개하며 데모 자체의 AI 요청·입력 기록은 없다.
+- [알림 영상](https://bibimer.app/assets/notification-demo-0.16.0.mp4)은 58.1초의 실제 Android 캡처다. 가상 완료 이벤트로 실제 포그라운드 서비스·지속 알림·완료 알림·세션 이동·끄기를 시연한다. 실제 제공자 인증이나 AI 응답으로 표현하지 않는다. [한국어 안내](https://bibimer.app/ko/review/)는 별도 경로다.
+- 검증: Python 9개, Java 95개 행동 단언/11개 시나리오, Node 초안·실제 전송 controller·언어 상태 회귀 테스트, Android compile/D8·bundletool·서명 검증 통과. 에뮬레이터에서 예제 전송·서식·승인·질문·파일/Git·터미널·EN/KO·320dp·모드 복원·Android 백그라운드 알림을 확인했다. 큐/Steer·GitHub/handoff/import는 UI 요청 계약과 단위 검증이다. 실제 기기·paired 정상 모드 초안 복원·실제 제공자 실행·Google Play 설치는 별도 검증이 필요하다.
+
+현재 준비 항목을 제외한 아래 날짜별 기록은 이전 준비 이력이다. 최신 Console 검토 상태는 위 기록과 `listing.json`을 확인한다.
+
+## 현재 준비 항목과 후속 확인
+
+| 항목 | 상태 |
 | --- | --- |
-| Play Console 계정 | **조직 계정 사용 확인**. 사용자가 생성한 Bibimer 앱을 기존 로그인된 Chrome에서 직접 설정했다(2026-10-11). 광고·정부·금융·건강 없음과 생산성 카테고리, 공개 연락처를 저장했다. 조직 인증 완료 여부·실제 출시 제한은 별도 확인 필요. |
-| 패키지 | `app.bibimer`를 유지한다. 소유 계정의 Play 내부 테스트에서 첫 AAB가 versionCode 28로 정상 인식됐다. |
-| 빌드 | `scripts/build_aab.py` 추가. 출시 AAB 서명 빌드·bundletool 검증·에뮬레이터 설치 완료. Play 내부 테스트 초안 업로드·저장 완료. 테스터 선택·Play에서 설치 검증은 남아 있다. |
-| 서명 | 저장소 밖 별도 업로드 키로 AAB를 서명했다. Play 앱 서명 인증서를 다운로드하고 배포 인증서 SHA-256과 업로드 인증서를 각각 확인했다. 업로드 키의 안전한 별도 백업은 남아 있다. |
-| 개인정보처리방침 | [영어 정책](https://bibimer.app/privacy/)·[한국어 정책](https://bibimer.app/ko/privacy/) 게시. 앤디니어링(Andineering), andy@andineering.com, 시행일 2026-10-11. 앱 Settings 버튼은 캡처용 APK에 포함했고 외부 브라우저 실행을 확인했다. 실기기 확인 필요. |
-| 등록 정보 | [영어·한국어 문구와 이미지](../release/google-play/listing.json)를 Console에 저장, **검토를 위해 전송 준비 완료**. 지원 이메일·웹사이트 저장. 대상 연령은 사용자 13세 이상 선택이나 앱 액세스 선행 조건으로 Console 미적용. |
-| 가격·국가 | **무료**, 프로덕션의 **지원하는 전체 국가·지역** 저장 확인. Console은 기타 국가를 포함해 **178개 행 타겟팅됨, 0개 타겟팅되지 않음**을 표시한다. 국가 수와 Console 행 수는 구분한다. |
-| 콘텐츠 등급·광고 ID | 사용자 IARC 약관 동의 후 설문 저장, **IARC 완료됨**. 한국 3세 이상·유럽 PEGI 3 등으로 산정했으며 대상 연령 13세 이상과 별개다. 광고 ID 사용 **아니요** 저장. |
-| 이미지 | [512×512 아이콘](../release/google-play/graphics/icon-512.png), [영어](../release/google-play/graphics/feature-en-US.png)·[한국어](../release/google-play/graphics/feature-ko-KR.png) 1024×500 소개 그래픽, [실제 Android 앱 스크린샷](../release/google-play/screenshots/README.md) **언어별 4장·총 8장** 업로드·저장 완료. Work 첫 화면은 출시용 AAB에서 다시 캡처했고 Setup·Settings·실제 연결된 Terminal 화면을 함께 제공한다. |
-| 데이터 보안 | **설문 전체 초안 저장**. 메시지·파일/문서·기타 사용자 생성 콘텐츠의 선택적 수집/공유, 앱 기능 목적과 공개 삭제 요청 URL을 입력했다. 재조회에서 기존 답변 보존·마지막 저장 성공을 확인했다. 대상 연령 설정을 완료해야 설문을 제출할 수 있다. |
-| 앱 액세스 | 개인 계정·키 제공 없이 수동 Termux 연결·Terminal 실행을 에뮬레이터에서 검증했다. [영어 심사 안내 초안](../release/google-play/review-instructions.txt)을 준비했으나 Console의 모든 기능 접근 확인은 미완료라 저장하지 않았다. 외부 에이전트·GitHub 기능의 심사 접근은 별도 준비가 필요하다. |
-| 포그라운드 서비스 | `specialUse` 선언 사유·사용자 영향·실제 시연 영상 준비 필요. |
-| 실제 동작 | 새 기기 설치, Android 권한, WebView/IME, 백그라운드/잠금 화면 알림, 세 에이전트의 실제 응답·승인·재접속 검증 필요. |
+| 계정·패키지 | 사용자 확인 조직 계정, `app.bibimer`. 프로덕션 제출이 가능하며 조직·법적 프로필은 임의 변경하지 않았다. |
+| 빌드·서명 | AAB 30 검증·내부 테스트 게시·프로덕션 제출 완료. Play 배포 인증서와 업로드 인증서를 확인했다. 저장소 밖 업로드 키의 안전한 별도 백업은 남아 있다. |
+| 정책·연락처 | 별도 영어/한국어 공개 정책에 데모와 삭제 안내를 반영했다. 운영 주체 앤디니어링(Andineering), 공개 문의 andy@andineering.com. |
+| 등록정보·이미지 | 영어·한국어 설명, 아이콘·소개 그래픽, 언어별 스크린샷 **5장**을 저장·제출했다. [화면별 출처](../release/google-play/screenshots/README.md). |
+| 가격·국가 | 무료, 지원 국가 177개와 기타 국가 포함. Console의 178개 행과 실제 명명된 국가 수를 구분한다. |
+| 등급·대상 | IARC 설문 완료·제출, 사용자 선택 13세 이상 대상(13~15·16~17·18+) 반영. 콘텐츠 등급과 대상 연령은 별개다. |
+| 데이터 보안 | 전체 설문 최종 저장·제출. 메시지·파일/문서·기타 사용자 생성 콘텐츠의 선택적 수집/공유·앱 기능 목적과 삭제 URL을 공개한다. 모든 외부 도구의 전송 암호화를 보장하지 않는다. |
+| 심사 접근 | [영어 안내](../release/google-play/review-instructions.txt)와 무계정 데모를 제출했다. 개인 외부 계정·키는 제공하지 않는다. 실제 제공자 실행은 데모로 검증했다고 주장하지 않는다. |
+| 완료 알림 | FGS specialUse 설명과 실제 Android 조작 영상 제출. 가상 완료 이벤트로 서비스·알림 이동·끄기를 확인했으며 실제 기기·절전·실제 제공자의 동작은 별도 검증 대상이다. |
+| 내부 테스터 | 지정 계정 1명 등록·트랙 활성. 참여 동의 및 Google Play 설치는 미확인이다. 기존 개발 APK의 서명과 Play 서명은 구분해야 하며 운영 앱 데이터를 임의 제거하지 않는다. |
+| 프로덕션 | 제출 후 Google 사전 검사/심사 대기. 관리형 게시가 꺼져 승인되면 자동 게시된다. 실제 공개 노출을 확인한 뒤 출시 완료로 기록한다. |
+| App Links | HTTPS intent filter·라우팅·assetlinks.json은 미구현이다. Play 배포 인증서 지문은 확보했다. |
 
 신규 앱은 Android App Bundle과 Play App Signing을 사용한다. 패키지 이름은 등록 후 변경할 수 없으며, 업데이트마다 versionCode를 올린다. target API 36은 현재 신규 제출 요구사항에 맞는다. [앱 등록](https://support.google.com/googleplay/android-developer/answer/9859152), [API 요구사항](https://support.google.com/googleplay/android-developer/answer/11926878), [앱 서명](https://support.google.com/googleplay/android-developer/answer/9842756).
 
