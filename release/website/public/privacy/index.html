@@ -62,10 +62,17 @@
     <h3>4. Notifications and permissions</h3>
     <p>With notification permission and response monitoring enabled, completion alerts can include project and session names and up to 180 characters from the completed response. The public lock-screen version uses a general completion message. Android notification settings and other apps with notification access can affect who can see notification content. You can stop monitoring in Settings or from its ongoing notification.</p>
     <p>Termux command access requires your Android permission and Termux external-app settings. Bibimer uses that access for the setup and development actions you request. Completion previews are not stored in bridge metadata files or ordinary logs.</p>
-    <h3>5. Retention, deletion, and control</h3>
+    <h3 id="data-deletion">5. Retention, deletion, and control</h3>
     <p>App settings and connection information remain until you clear the app's data or uninstall it. Recent bridge output and queued messages are limited to the running session's memory and may disappear on process termination or bridge restart. Termux project files, session metadata, and native agent records are stored separately; their lifetime depends on your actions and the agent's retention settings.</p>
     <p>Removing a project registration or deleting an ended session from Bibimer's list removes only its Bibimer registration information. It does not delete project folders, Git worktrees, or original agent records. Use Termux and the relevant agents to delete those files and records. Uninstalling Bibimer does not remove them. Request deletion of provider-held information directly from that provider.</p>
     <p>Bibimer does not create a separate Bibimer user account. GitHub and AI provider accounts are managed by those services. You can disconnect Bibimer from the local bridge in the app and revoke external service access using the relevant service or tool.</p>
+    <h4>Request deletion or help removing your data</h4>
+    <ol>
+      <li>Email <a href="mailto:andy@andineering.com?subject=Bibimer%20data%20deletion">andy@andineering.com</a> with the subject <strong>Bibimer data deletion</strong>.</li>
+      <li>Tell us whether your request concerns app settings, Termux files, agent or provider records, or previous support messages. Do not send passwords, API keys, or private project files.</li>
+      <li>Andineering handles requests for information it holds, including support correspondence, and can explain how to remove local data. We do not hold copies of your Termux project files or agent records. Delete those on your device; request deletion of provider-held data directly from that provider.</li>
+    </ol>
+    <p>Local data remains until you delete it as described above. External providers determine retention for their own records. Support correspondence is kept only as needed to resolve your request or meet applicable legal obligations; you may request its deletion at the same email address.</p>
     <h3>6. Age range</h3>
     <p>Bibimer is intended for users aged 13 and older. External agents, providers, and development services have their own age and account requirements, which may be higher.</p>
     <h3>7. Website hosting</h3>

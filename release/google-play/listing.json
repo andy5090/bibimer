@@ -88,11 +88,62 @@
     "terminalVerifiedOn": "2026-10-11",
     "terminalNeedsProviderAccount": false,
     "externalAgentAndGitHubAccess": "not_verified_for_reviewer",
-    "developerCredentialsSupplied": false
+    "developerCredentialsSupplied": false,
+    "reviewApproach": "awaiting_user_choice_of_explicit_demo_or_separate_review_accounts"
   },
   "dataSafety": {
-    "consoleStatus": "pending",
-    "note": "The attempted partial draft did not persist. Unconfirmed answers were discarded; data collection/sharing scope still needs verification."
+    "consoleStatus": "saved_draft_pending_target_audience",
+    "savedOn": "2026-10-12",
+    "collectsOrSharesData": true,
+    "allCollectedDataEncryptedInTransit": false,
+    "encryptionNote": "Bibimer uses authenticated HTTP only on same-device loopback. Encryption for every user-configured external CLI, tool, and endpoint has not been established; no all-data encryption badge is claimed.",
+    "accountCreation": "not_supported_by_bibimer",
+    "externalAccounts": "Optional GitHub and AI integrations use independently created accounts authenticated by Termux CLIs. Terminal needs no provider account.",
+    "deletionRequests": true,
+    "deletionRequestUrl": "https://bibimer.app/privacy/#data-deletion",
+    "deletionScope": "Andineering handles held support correspondence and provides local removal guidance. Device files and original agent records are removed on-device; provider-held data is deleted through that provider.",
+    "dataTypes": [
+      {
+        "type": "other_in_app_messages",
+        "collected": true,
+        "shared": true,
+        "required": false,
+        "ephemeral": false,
+        "collectionPurposes": [
+          "app_functionality"
+        ],
+        "sharingPurposes": [
+          "app_functionality"
+        ]
+      },
+      {
+        "type": "files_and_documents",
+        "collected": true,
+        "shared": true,
+        "required": false,
+        "ephemeral": false,
+        "collectionPurposes": [
+          "app_functionality"
+        ],
+        "sharingPurposes": [
+          "app_functionality"
+        ]
+      },
+      {
+        "type": "other_user_generated_content",
+        "collected": true,
+        "shared": true,
+        "required": false,
+        "ephemeral": false,
+        "collectionPurposes": [
+          "app_functionality"
+        ],
+        "sharingPurposes": [
+          "app_functionality"
+        ]
+      }
+    ],
+    "note": "Full survey draft saved and persisted on reopening. Final submission requires target audience. External agent-specific account, usage, and diagnostic data flows remain subject to the supported installations and settings used for release."
   },
   "setupDashboard": {
     "completed": 8,
@@ -102,7 +153,7 @@
       "target_audience",
       "data_safety"
     ],
-    "verifiedOn": "2026-10-11"
+    "verifiedOn": "2026-10-12"
   },
   "consoleListingUpdatedOn": "2026-10-12",
   "productSlogan": "내 손안의 에이전트 개발 환경",
@@ -127,7 +178,27 @@
     "signingMaterial": "Stored outside the repository with owner-only permissions.",
     "consoleAcceptedVersionCode": 28,
     "released": false,
-    "consoleDraftUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/1/prepare"
+    "consoleDraftUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/1/prepare",
+    "internalTestReview": {
+      "verifiedOn": "2026-10-12",
+      "warnings": [
+        "no_testers_selected",
+        "no_deobfuscation_mapping_file"
+      ],
+      "mappingFileRequiredForCurrentBuild": false,
+      "rolloutStarted": false,
+      "note": "The current build uses D8 without R8/ProGuard obfuscation. Tester Google account email requested; no testers registered yet."
+    }
   },
-  "consoleScreenshotsUpdatedOn": "2026-10-12"
+  "consoleScreenshotsUpdatedOn": "2026-10-12",
+  "playAppSigning": {
+    "consoleStatus": "active",
+    "verifiedOn": "2026-10-12",
+    "deploymentCertificateSha256": "D7:7B:81:67:43:76:F3:39:0D:7D:05:B7:D3:11:5D:C7:30:77:D5:59:B4:53:2E:C7:DC:34:E8:CC:4B:AC:B5:3B",
+    "hybridClassicalCertificateSha256": "FD:88:C7:16:FF:E6:95:F1:41:3A:9F:16:D7:55:D9:16:2C:23:DC:DB:42:C6:AD:B9:B0:90:58:46:C4:6A:D8:02",
+    "hybridPqcCertificateSha256": "18:70:66:97:A1:D8:C7:51:1F:1D:45:66:BF:85:57:9B:2C:83:C0:2E:C2:3A:38:2D:B3:97:28:1F:D5:B9:20:3E",
+    "uploadCertificateSha256": "A7:B7:46:09:C2:17:6E:3B:4D:76:C7:76:3B:BF:36:78:67:01:B3:93:3B:FB:E5:85:68:08:EA:E3:63:DC:A1:BA",
+    "uploadCertificateMatchesLocalKey": true,
+    "httpsAppLinksImplemented": false
+  }
 }

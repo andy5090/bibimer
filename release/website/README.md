@@ -16,6 +16,8 @@ Bibimer는 **모바일 ADE(Agent Development Environment, 에이전트 개발 �
 
 2026-10-11 사용자 요청으로 홈 소개의 대상 연령 문장을 제거했고 정책의 연령 안내는 유지한다. 2026-10-12 사용자 요청으로 GitHub 저장소를 공개 전환한 뒤 두 홈의 링크를 `https://github.com/andy5090/bibimer`로 변경했다. 슬로건은 **내 손안의 에이전트 개발 환경**이며 프로젝트 파일과 개발 도구를 같은 휴대폰에서 실행하는 장점을 설명한다. 데스크톱과 393px 두 언어 화면의 가독성·가로 넘침 없음을 확인했다. 배포: `https://be3a065b.bibimer.pages.dev`.
 
+2026-10-12 출시 준비 중 두 정책의 `#data-deletion`에 삭제 요청 절차를 구체화했다. `andy@andineering.com`으로 요청할 수 있으며 운영자가 보관한 문의 정보, 기기의 Termux 파일·에이전트 기록, 외부 제공자가 보관한 정보를 구분한다. 비밀번호·API 키·비공개 프로젝트 파일을 보내지 않도록 안내한다. 최신 배포는 `https://added5db.bibimer.pages.dev`다. 두 공개 정책 HTTP 200·원본 일치·no-transform, 데스크톱 및 393px 두 언어의 가로 넘침 없음을 확인했다. 처리 구조와 원래 시행일은 유지한다.
+
 ## 조회와 배포
 
 2026-10-11 `npx cf`로 Cloudflare 인증을 확인하고 `bibimer` Pages 프로젝트를 생성했다. 같은 CLI로 조회한 `bibimer.app`은 `registrable: true`, standard, 첫해 USD 8.20·갱신 USD 14.20이었다. 사용자의 구매 지시에 따라 가용성을 재확인하고 계정 기본 결제수단으로 **1년 USD 8.20 등록을 완료**했다. 등록 상태 active, 만료 2027-10-11 06:00:18 UTC, 자동 갱신 false, WHOIS redaction, 도메인 잠금 true를 확인했다. 갱신은 자동 실행되지 않으며 당시의 가격을 다시 확인해야 한다.
@@ -41,4 +43,4 @@ Pages 기본 주소 `bibimer.pages.dev`를 유지하며 새 도메인의 루트 
 python3 -m http.server 8877 --bind 127.0.0.1 --directory release/website/public
 ```
 
-앱 Settings에 기존 외부 브라우저 열기 경로로 고정된 `https://bibimer.app/privacy/` 버튼을 추가하고 사용자 요청의 캡처용 APK에 포함했다. 영어·한국어 표시와 외부 Chrome 실행을 에뮬레이터에서 확인했다. Chrome 최초 실행 약관 단계에서 멈췄으므로 앱에서 정책 페이지 로드·실기기 브라우저 호출은 미검증이다. 기존 휴대폰 배포 APK는 교체하지 않았다. 기본 CLI OAuth 권한으로 zone setting·RUM 설정 변경은 403이므로 권한을 확대하지 않았다. Cloudflare 공식 문서의 `no-transform` 헤더로 이메일 가림과 Web Analytics 자동 삽입을 막는다. 앱 링크용 `assetlinks.json`은 Play App Signing의 실제 앱 서명 인증서가 확정된 뒤 게시한다.
+앱 Settings에 기존 외부 브라우저 열기 경로로 고정된 `https://bibimer.app/privacy/` 버튼을 추가하고 사용자 요청의 캡처용 APK에 포함했다. 영어·한국어 표시와 외부 Chrome 실행을 에뮬레이터에서 확인했다. Chrome 최초 실행 약관 단계에서 멈췄으므로 앱에서 정책 페이지 로드·실기기 브라우저 호출은 미검증이다. 기존 휴대폰 배포 APK는 교체하지 않았다. 기본 CLI OAuth 권한으로 zone setting·RUM 설정 변경은 403이므로 권한을 확대하지 않았다. Cloudflare 공식 문서의 `no-transform` 헤더로 이메일 가림과 Web Analytics 자동 삽입을 막는다. Play 앱 서명 인증서는 확인했으나 HTTPS App Links의 앱 intent filter·라우팅은 구현하지 않았다. `assetlinks.json`도 해당 기능과 함께 구현·검증할 때 게시한다.
