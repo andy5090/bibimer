@@ -237,8 +237,9 @@
   "internalTesterParticipation": {
     "consoleRegistration": "saved_one_tester",
     "invitePageVerified": true,
-    "invitationAccepted": false,
-    "acceptanceStatus": "awaiting_user_confirmation_of_invite_email_and_usage_information_consent",
+    "invitationAccepted": true,
+    "acceptanceStatus": "accepted_after_user_confirmation_of_invite_email_and_usage_information_consent",
+    "participationPageStatus": "You’re a tester for app.bibimer (unreviewed)",
     "googlePlayInstallVerified": false
   }
 }

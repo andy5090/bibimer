@@ -11,7 +11,7 @@ Bibimer의 제품 유형은 **모바일 ADE(Agent Development Environment, 에�
 프로덕션 **0.16.0 (30) - Initial release**와 등록정보/선언 변경 **12개**를 Google 검토에 제출했다. 사전 검사 진행률·카운트다운이 사라지고 Console이 **검토 중인 변경사항 / 변경사항을 검토 중입니다**로 바뀌었다. 승인·공개 노출은 미확인이다. 기존 관리형 게시가 사용 중지되어 승인 후 자동 게시된다. [게시 개요](https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing)에서 상태를 확인한다.
 
 
-- 내부 테스트: **활성 / 0.16.0 (30) - Demo internal test / 내부 테스터에게 제공됨 / 검토되지 않음**. [참여 링크](https://play.google.com/apps/internaltest/4701718894791581363). 지정 Google 계정 한 명의 목록을 선택했다. 비공개 이메일·초대 동의·설치 여부는 공개 저장소에 넣지 않는다.
+- 내부 테스트: **활성 / 0.16.0 (30) - Demo internal test / 내부 테스터에게 제공됨 / 검토되지 않음**. [참여 링크](https://play.google.com/apps/internaltest/4701718894791581363). 지정 Google 계정 한 명의 목록을 선택했고 사용자 동의 후 초대를 수락했다. Google의 **You’re a tester** 상태를 확인했다. 비공개 이메일은 공개 저장소에 넣지 않으며 실제 Google Play 설치는 미확인이다.
 - AAB: `bibimer-0.16.0-30-release.aab`, SHA-256 `dd893a74e5cc3ba796d303035bd983e00bf4da3f2671af9654dc0a1b2e3cf7ab`. 기존 업로드 키로 서명했으며 번들·서명·SDK·asset 일치와 에뮬레이터 업데이트 설치를 확인했다. 초기 28과 교정 전 29는 아티팩트 라이브러리에 남기고 출시에서 제외했다. 난독화를 사용하지 않아 매핑 파일 경고 1개만 표시됐다.
 - 로그인 세부정보: [영어 안내](../release/google-play/review-instructions.txt)·[공개 체험 안내](https://bibimer.app/review/)를 **계정 없는 데모 리소스**로 저장했다. 실제 로그·개인 제공자 자격 증명을 사용하지 않는다. 모든 기능 접근 확인은 격리된 예제 UI에 대한 선언이며 실제 외부 AI/CLI/GitHub 연동 검증이나 Google 수락 보장이 아니다.
 - 대상 연령 **13~15·16~17·18+**, 데이터 보안 전체 설문, FGS `specialUse` 설명·영상 링크를 **저장하고 첫 출시와 함께 검토에 제출**했다. 데이터 보안은 실제 외부 도구의 선택적 콘텐츠 전송을 공개하며 데모 자체의 AI 요청·입력 기록은 없다.
@@ -33,8 +33,8 @@ Bibimer의 제품 유형은 **모바일 ADE(Agent Development Environment, 에�
 | 데이터 보안 | 전체 설문 최종 저장·제출. 메시지·파일/문서·기타 사용자 생성 콘텐츠의 선택적 수집/공유·앱 기능 목적과 삭제 URL을 공개한다. 모든 외부 도구의 전송 암호화를 보장하지 않는다. |
 | 심사 접근 | [영어 안내](../release/google-play/review-instructions.txt)와 무계정 데모를 제출했다. 개인 외부 계정·키는 제공하지 않는다. 실제 제공자 실행은 데모로 검증했다고 주장하지 않는다. |
 | 완료 알림 | FGS specialUse 설명과 실제 Android 조작 영상 제출. 가상 완료 이벤트로 서비스·알림 이동·끄기를 확인했으며 실제 기기·절전·실제 제공자의 동작은 별도 검증 대상이다. |
-| 내부 테스터 | 지정 계정 1명 등록·트랙 활성. 참여 동의 및 Google Play 설치는 미확인이다. 기존 개발 APK의 서명과 Play 서명은 구분해야 하며 운영 앱 데이터를 임의 제거하지 않는다. |
-| 프로덕션 | 제출 후 Google 사전 검사/심사 대기. 관리형 게시가 꺼져 승인되면 자동 게시된다. 실제 공개 노출을 확인한 뒤 출시 완료로 기록한다. |
+| 내부 테스터 | 지정 계정 1명 등록·트랙 활성·사용자 동의 후 참여 완료. 실제 Google Play 설치는 미확인이다. 기존 개발 APK의 서명과 Play 서명은 구분해야 하며 운영 앱 데이터를 임의 제거하지 않는다. |
+| 프로덕션 | 사전 검사 완료 후 Google 검토 중. 관리형 게시가 꺼져 승인되면 자동 게시된다. 실제 공개 노출을 확인한 뒤 출시 완료로 기록한다. |
 | App Links | HTTPS intent filter·라우팅·assetlinks.json은 미구현이다. Play 배포 인증서 지문은 확보했다. |
 
 신규 앱은 Android App Bundle과 Play App Signing을 사용한다. 패키지 이름은 등록 후 변경할 수 없으며, 업데이트마다 versionCode를 올린다. target API 36은 현재 신규 제출 요구사항에 맞는다. [앱 등록](https://support.google.com/googleplay/android-developer/answer/9859152), [API 요구사항](https://support.google.com/googleplay/android-developer/answer/11926878), [앱 서명](https://support.google.com/googleplay/android-developer/answer/9842756).
