@@ -1,6 +1,8 @@
 # Google Play 출시 준비
 
-2026-10-06 기준 Bibimer는 **출시 준비 중**이다. 현재 앱은 `app.bibimer`, `0.13.0 / versionCode 23`, 최소 API 26·target API 36이다. 기존 배포물은 로컬 개발 키로 서명한 APK이며 Play에 제출한 AAB가 아니다. 새 AAB 빌드 경로를 추가했지만 실제 번들 빌드·Play 업로드·심사는 아직 수행하지 않았다.
+2026-10-12 기준 Bibimer는 **출시 준비 중**이다. 현재 앱은 `app.bibimer`, `0.15.0 / versionCode 28`, 최소 API 26·target API 36이다. 기존 배포물은 로컬 개발 키로 서명한 APK이며 Play에 제출한 AAB가 아니다. 별도 업로드 키로 출시용 AAB 서명 빌드·번들 검증·테스트 에뮬레이터 설치를 완료했다. Play 내부 테스트에 versionCode 28로 업로드·초안 저장했다. 테스터 배포·프로덕션 심사는 아직 수행하지 않았다.
+
+Bibimer의 제품 유형은 **모바일 ADE(Agent Development Environment, 에이전트 개발 환경)**다. 프로젝트·워크트리·코딩 에이전트 세션·대화·터미널을 관리하고, 실제 코딩 작업은 사용자가 연결한 에이전트가 수행한다. 슬로건은 **내 손안의 에이전트 개발 환경**이다. 영어·한국어 스토어 설명과 소개 그래픽, 웹사이트에 반영했으며 앱의 새 소개 문구는 2026-10-12 출시용 AAB에 포함했다. 기존 휴대폰 설치 APK는 교체하지 않았다.
 
 사용자가 **조직 개발자 계정**을 사용한다고 확인했다. 신규 개인 계정의 12명·14일 비공개 테스트 요건은 이 출시 일정에 적용하지 않는다. 조직 계정의 인증 완료 여부와 Console에 표시되는 출시 제한은 별도로 확인한다.
 
@@ -8,15 +10,17 @@
 
 | 항목 | 현재 상태와 다음 작업 |
 | --- | --- |
-| Play Console 계정 | **조직 계정 사용 확인**. Obscura의 표시·입력 오류 후 Chromium 뷰어 연결·화면 전송은 성공했으나 사용자가 안전하지 않은 브라우저라는 오류로 **Google 로그인 차단**을 보고했다(2026-10-07). 기존에 로그인한 실제 모바일 Chrome의 Console에서 사용자가 직접 진행하는 경로를 안내한다. 에이전트의 계정 내부 접근·조직 인증 상태·Console 출시 제한은 아직 확인하지 않았다. 상세 인수인계는 NEXT_SESSION.md를 따른다. |
-| 패키지 | 현재 `app.bibimer`를 유지한다. 첫 업로드 전 소유 계정에서 등록 가능 여부를 확인한다. |
-| 빌드 | `scripts/build_aab.py` 추가. 업로드 키 준비 후 실제 AAB 빌드·bundletool 검증·내부 테스트 설치 필요. |
-| 서명 | 현재 개발 인증서는 출시용으로 사용하지 않는다. 별도 업로드 키와 Play App Signing 설정 필요. |
-| 개인정보처리방침 | [내용 초안](privacy-policy-draft.md). 운영 주체·문의 이메일·시행일 확정, 공개 웹 주소 및 앱 내 접근 경로 추가 필요. |
-| 등록 정보 | [영어·한국어 문구](../release/google-play/listing.json) 준비. 지원 이메일·배포 국가·무료/유료·대상 연령·콘텐츠 등급은 소유자가 확정한다. |
-| 이미지 | [512×512 아이콘](../release/google-play/graphics/icon-512.png)과 [영어](../release/google-play/graphics/feature-en-US.png)·[한국어](../release/google-play/graphics/feature-ko-KR.png) 1024×500 소개 그래픽 준비. 실제 앱 화면 최소 2장 필요. 기존 브라우저 대역 캡처를 실제 앱 검증 결과로 쓰지 않는다. |
-| 데이터 보안 | 아래 데이터 흐름에 따라 앱 간 전송·AI 제공자 전송 및 사용자 요청 예외 적용 여부를 확정한다. |
-| 앱 액세스 | Termux 설치·연동·브리지 연결·에이전트 로그인까지 심사자가 재현할 안내와 필요한 테스트 접근 제공 필요. |
+| Play Console 계정 | **조직 계정 사용 확인**. 사용자가 생성한 Bibimer 앱을 기존 로그인된 Chrome에서 직접 설정했다(2026-10-11). 광고·정부·금융·건강 없음과 생산성 카테고리, 공개 연락처를 저장했다. 조직 인증 완료 여부·실제 출시 제한은 별도 확인 필요. |
+| 패키지 | `app.bibimer`를 유지한다. 소유 계정의 Play 내부 테스트에서 첫 AAB가 versionCode 28로 정상 인식됐다. |
+| 빌드 | `scripts/build_aab.py` 추가. 출시 AAB 서명 빌드·bundletool 검증·에뮬레이터 설치 완료. Play 내부 테스트 초안 업로드·저장 완료. 테스터 선택·Play에서 설치 검증은 남아 있다. |
+| 서명 | 저장소 밖 별도 업로드 키로 AAB를 서명했다. Console은 Google Play 서명 활성 상태를 표시한다. Play 앱 서명 인증서 확인·업로드 키의 안전한 별도 백업은 남아 있다. |
+| 개인정보처리방침 | [영어 정책](https://bibimer.app/privacy/)·[한국어 정책](https://bibimer.app/ko/privacy/) 게시. 앤디니어링(Andineering), andy@andineering.com, 시행일 2026-10-11. 앱 Settings 버튼은 캡처용 APK에 포함했고 외부 브라우저 실행을 확인했다. 실기기 확인 필요. |
+| 등록 정보 | [영어·한국어 문구와 이미지](../release/google-play/listing.json)를 Console에 저장, **검토를 위해 전송 준비 완료**. 지원 이메일·웹사이트 저장. 대상 연령은 사용자 13세 이상 선택이나 앱 액세스 선행 조건으로 Console 미적용. |
+| 가격·국가 | **무료**, 프로덕션의 **지원하는 전체 국가·지역** 저장 확인. Console은 기타 국가를 포함해 **178개 행 타겟팅됨, 0개 타겟팅되지 않음**을 표시한다. 국가 수와 Console 행 수는 구분한다. |
+| 콘텐츠 등급·광고 ID | 사용자 IARC 약관 동의 후 설문 저장, **IARC 완료됨**. 한국 3세 이상·유럽 PEGI 3 등으로 산정했으며 대상 연령 13세 이상과 별개다. 광고 ID 사용 **아니요** 저장. |
+| 이미지 | [512×512 아이콘](../release/google-play/graphics/icon-512.png), [영어](../release/google-play/graphics/feature-en-US.png)·[한국어](../release/google-play/graphics/feature-ko-KR.png) 1024×500 소개 그래픽, [실제 Android 앱 스크린샷](../release/google-play/screenshots/README.md) **언어별 4장·총 8장** 업로드·저장 완료. Work 첫 화면은 출시용 AAB에서 다시 캡처했고 Setup·Settings·실제 연결된 Terminal 화면을 함께 제공한다. |
+| 데이터 보안 | 미완료. 부분 임시저장 시도가 재조회에 남지 않았고 미확정 입력은 취소했다. 아래 데이터 흐름에 따라 앱 간 전송·AI 제공자 전송 및 사용자 요청 예외 적용 여부를 확정한다. |
+| 앱 액세스 | 개인 계정·키 제공 없이 수동 Termux 연결·Terminal 실행을 에뮬레이터에서 검증했다. [영어 심사 안내 초안](../release/google-play/review-instructions.txt)을 준비했으나 Console의 모든 기능 접근 확인은 미완료라 저장하지 않았다. 외부 에이전트·GitHub 기능의 심사 접근은 별도 준비가 필요하다. |
 | 포그라운드 서비스 | `specialUse` 선언 사유·사용자 영향·실제 시연 영상 준비 필요. |
 | 실제 동작 | 새 기기 설치, Android 권한, WebView/IME, 백그라운드/잠금 화면 알림, 세 에이전트의 실제 응답·승인·재접속 검증 필요. |
 
@@ -26,7 +30,7 @@
 
 기존 조직 계정에서 조직·신원 인증이 완료됐는지 확인한다. 조직의 법적 이름·주소와 연결된 결제 프로필, D-U-N-S 정보가 필요한 인증 항목이며 일부 정부 기관 등의 예외는 Google 안내를 따른다. 조직 웹사이트와 연락처, 공개 개발자 이메일·전화번호도 계정에서 확인한다. Google에만 제공하는 연락처와 Play에 공개되는 연락처는 구분한다. [조직 계정 정보와 인증](https://support.google.com/googleplay/android-developer/answer/13628312).
 
-스토어·개인정보처리방침의 운영 주체에는 실제 조직명을 사용하고, 사용자가 연락할 수 있는 공개 지원 이메일을 지정한다. 조직명·지원 이메일·조직 웹사이트 주소는 아직 미정이다. 공개 정책은 기존 조직 웹사이트의 접근 가능한 페이지로 제공할 수 있다.
+스토어·개인정보처리방침의 운영 주체는 사용자 확인 **앤디니어링(Andineering)**, 공개 지원 이메일은 **andy@andineering.com**이다. 제품 사이트는 https://bibimer.app/ 이며 조직 계정의 법적 정보·인증 항목을 임의 변경한 것은 아니다. [사이트 소스·배포 안내](../release/website/README.md)를 따른다.
 
 ## 휴대폰에서 AAB 준비
 
@@ -47,7 +51,7 @@ python scripts/build_aab.py --unsigned
 
 결과는 `dist/play/bibimer-<versionName>-<versionCode>-unsigned.aab`다. **미서명 파일은 Play 제출용이 아니다.** `bundletool validate` 성공도 실제 설치나 Play 승인 결과를 뜻하지 않는다.
 
-실제 서명 빌드는 저장소 밖의 업로드 키를 준비한 뒤 실행한다. 아래는 소유자가 직접 키와 비밀번호를 관리하는 예시이며 이번 작업에서 키를 생성하지 않았다. 비밀번호를 채팅·문서·명령 인수에 쓰지 않는다. 명령은 Bash에서 실행한다.
+실제 서명 빌드는 저장소 밖의 업로드 키를 준비한 뒤 실행한다. 2026-10-12 사용자 요청으로 별도 업로드 키를 저장소 밖에 준비했다. `dist/play/bibimer-0.15.0-28-release.aab`와 같은 이름의 검증 기록 JSON을 생성했고 테스트 에뮬레이터에서 파생 APK 실행을 확인했다. 아래는 최초 준비·직접 관리 예시다. 이미 준비한 키를 다시 생성하지 않는다. 비밀번호를 채팅·문서·명령 인수에 쓰지 않는다. 명령은 Bash에서 실행한다.
 
 ```bash
 install -d -m 700 "$HOME/.local/share/bibimer-signing"
@@ -66,7 +70,7 @@ unset BIBIMER_STORE_PASSWORD
 
 키 비밀번호가 저장소 비밀번호와 다를 때만 `BIBIMER_KEY_PASSWORD`도 같은 방식으로 입력하고 실행 후 해제한다. 키와 비밀번호는 안전하게 별도 백업한다. 스크립트는 키를 생성하지 않으며 저장소 내부 키·다른 사용자가 읽을 수 있는 키·알려진 개발 인증서를 거절한다. 환경 변수 이름만 서명 도구 인수로 전달한다.
 
-출력은 `dist/play/bibimer-<versionName>-<versionCode>-release.aab`, 같은 이름의 `.json`(버전·서명 여부·SHA-256), `bibimer-setup.sh`다. 마지막 APK와 운영 브리지는 자동으로 교체하지 않는다. 첫 내부 테스트 업로드 전에 버전 코드를 결정한다. 현재 코드 23이 Play에서 사용된 적 있는지는 Console에서 확인한다.
+출력은 `dist/play/bibimer-<versionName>-<versionCode>-release.aab`, 같은 이름의 `.json`(버전·서명 여부·SHA-256), `bibimer-setup.sh`다. 마지막 APK와 운영 브리지는 자동으로 교체하지 않는다. 첫 내부 테스트 업로드 전에 버전 코드를 결정한다. 현재 코드 28이 Play에서 사용된 적 있는지는 Console에서 확인한다.
 
 Play App Signing의 **앱 서명 키**와 로컬 **업로드 키**는 용도가 다르다. 기존 개발 APK와 Play 앱의 서명이 달라지면 같은 `app.bibimer` 패키지를 덮어 설치할 수 없다. 테스트용 별도 기기를 우선 사용하고, 기존 기기의 제거·재설치는 사용자 선택으로 진행한다. 앱 제거 시 앱 설정·연결 토큰은 사라지며 Termux의 파일·원본 에이전트 기록과는 구분한다.
 
@@ -83,11 +87,11 @@ Play App Signing의 **앱 서명 키**와 로컬 **업로드 키**는 용도가 
 
 앱 소스에는 광고·분석 SDK나 Bibimer 운영 서버 전송이 없다. 하지만 **이 사실만으로 수집·공유 없음을 신고하지 않는다.** Google은 로컬에서만 처리한 데이터와 다른 앱에 전달하는 데이터를 구분하며, 사용자 요청에 따른 전송에는 조건부 공유 예외가 있다. 실제 에이전트 설정·전송과 UI 안내를 확인해 답한다. [Data safety 작성 기준](https://support.google.com/googleplay/android-developer/answer/10787469).
 
-개인정보처리방침은 로그인·지역 제한 없는 공개 웹 주소로 제공하고 앱에서도 접근할 수 있어야 한다. 비공개 GitHub 문서는 공개 주소를 대체하지 못한다. `bibimer.app`은 아직 확보된 도메인이 아니므로 실제 정책 주소로 등록하지 않는다. [사용자 데이터 정책](https://support.google.com/googleplay/android-developer/answer/10144311).
+개인정보처리방침은 로그인·지역 제한 없는 공개 웹 주소로 제공하고 앱에서도 접근할 수 있어야 한다. 영어 `/privacy/`·한국어 `/ko/privacy/`의 공개 접근을 브라우저에서 확인했다. 앱 내 정책 링크는 캡처용 APK에 포함했고 에뮬레이터에서 외부 Chrome 실행을 확인했다. Chrome 최초 실행의 약관 단계에서 멈췄으므로 에뮬레이터의 정책 페이지 로드·실기기 호출은 미검증이다. `bibimer.app`은 `npx cf`로 조회 후 사용자 구매 지시에 따라 1년 USD 8.20 등록·연결을 완료했다. 자동 갱신은 꺼져 있고 만료일은 2027-10-11이다. 갱신 조회가는 USD 14.20/년이었다. [사용자 데이터 정책](https://support.google.com/googleplay/android-developer/answer/10144311).
 
 ## 스토어 문구와 그래픽
 
-`release/google-play/listing.json`은 업로드 도구용 API 요청이 아닌 등록 내용 초안이다. 두 언어의 제목·짧은 설명·전체 설명을 각각 30·80·4,000자 이내로 작성했다. 미정인 가격·국가·연락처·정책 URL은 자동 제출하지 않는다.
+`release/google-play/listing.json`은 업로드 도구용 API 요청이 아닌 등록 내용과 이미지 경로의 기록이다. 두 언어의 제목·짧은 설명·전체 설명을 각각 30·80·4,000자 이내로 작성했다. 공개 이메일·웹사이트·정책 URL과 두 언어의 이미지까지 Console에 저장했다. 기본 등록정보는 검토 전송 준비 상태이며 앱 자체는 출시 준비 중이다. 사용자 선택에 따라 가격은 무료, 국가는 지원하는 전체 국가·지역으로 저장했다. 기록의 `ALL_AVAILABLE`은 이 선택을 나타내며 API 국가 코드가 아니다.
 
 `release/google-play/graphics/`의 아이콘은 기존 B 심벌의 도형·색상을 유지하고 Play가 마스킹할 정사각형으로 출력했다. 소개 그래픽의 BIBIMER 텍스트는 앱에 포함된 Space Grotesk Bold를 사용한다. 우측 프로젝트·대화·터미널 그림은 기능을 설명하는 도형이며 실제 앱 스크린샷이 아니다.
 
@@ -97,7 +101,7 @@ Play App Signing의 **앱 서명 키**와 로컬 **업로드 키**는 용도가 
 node scripts/export_play_graphics.cjs
 ```
 
-출력 규격은 512×512 RGBA PNG 아이콘, 1024×500 RGB PNG 소개 그래픽이다. 실제 화면 캡처는 개인 데이터 없는 전용 테스트 프로젝트에서 준비하고, 전화기 스크린샷은 JPEG 또는 RGB PNG, 각 변 320~3,840px, 긴 변이 짧은 변의 2배 이하인 규격을 확인한다. [Play 이미지 요구사항](https://support.google.com/googleplay/android-developer/answer/9866151).
+출력 규격은 512×512 RGBA PNG 아이콘, 1024×500 RGB PNG 소개 그래픽이다. 사용자 요청으로 캡처용 APK를 빌드·설치한 Android 에뮬레이터에서 Work 시작·Setup·Settings를 영어·한국어로 캡처했다. 이후 공식 Termux 설치·연결과 테스트 프로젝트의 `pwd` 실행을 확인하고 Terminal 원본 PNG를 추가했다. 1080×1920, 9:16, 언어별 4장씩이며 순서와 저장 상태를 Console에서 확인했다. 개인 데이터·가짜 대화는 포함하지 않았다. [캡처 환경과 검증 범위](../release/google-play/screenshots/README.md), [Play 이미지 요구사항](https://support.google.com/googleplay/android-developer/answer/9866151).
 
 ## Termux 연동과 심사
 
@@ -105,7 +109,9 @@ node scripts/export_play_graphics.cjs
 
 외부 실행 코드 다운로드·다른 앱 연동은 [Device and Network Abuse 정책](https://support.google.com/googleplay/android-developer/answer/16559646)에 비추어 전체 동작을 설명해야 한다. **Termux에서 실행한다는 이유만으로 자동 면제라고 단정하지 않는다.** 자동 설정부터 에이전트 준비까지 다운로드 대상·실행 주체·권한·사용자 동작을 심사 안내에 기록한다. Google의 해당 구조 허용 여부는 아직 확인되지 않았다.
 
-심사 접근 안내는 [설정 가이드](setup.md)를 바탕으로 영어로 제공한다. Termux 배포처·버전, 최초 실행, Android 명령 권한, `allow-external-apps`, 자동/수동 코드 연결, 샘플 프로젝트 등록, 실제로 검증한 에이전트의 준비·로그인·응답 확인까지 포함한다. 심사에 필요한 유효한 계정 정보는 Console의 비공개 앱 액세스 항목으로 제공하고 저장소·공개 문서에 넣지 않는다. 시연 영상만으로 기능 접근을 대신했다고 간주하지 않는다.
+심사 접근 안내는 [설정 가이드](setup.md)를 바탕으로 영어로 제공한다. 사용자 제안에 따라 개인 에이전트 계정 대신 **계정 없는 Terminal** 경로를 검증했다. 공식 Termux 0.118.3 설치·최초 실행 → Bibimer 수동 설치 파일 내보내기 → 저장 완료 확인 → `termux-setup-storage` → `bash ~/storage/downloads/bibimer-setup.sh` → 기기에서 생성한 코드로 연결 → `~/projects/play-review` 생성 → Terminal 실행·`pwd` → Settings 왕복과 앱 재열기 후 같은 실행 세션 유지를 확인했다. 수동 경로에는 `RUN_COMMAND`와 `allow-external-apps`가 필요하지 않다. 자동 연결·실기기·AI 모델 응답 검증으로 확대해 해석하지 않는다.
+
+[영어 안내 초안](../release/google-play/review-instructions.txt)은 500자 Console 요약과 상세 재현 절차를 포함한다. Console은 안내 추가 시 **앱의 모든 기능에 전체 접근을 제공한다는 확인**을 요구한다. Terminal 검증으로 외부 에이전트 Chat·GitHub 인증·완료 알림까지 검증한 것은 아니므로 해당 확인을 선택하지 않았고 안내는 Console 미저장이다. 개인 계정·API 키를 심사자에게 제공할 필요가 있다고 단정하지 않는다. 전체 기능 접근을 요구하는 [Google 심사 접근 기준](https://support.google.com/googleplay/android-developer/answer/15748846?hl=en)에 맞는 독립 테스트 접근이나 다른 검증 수단을 준비한다. 시연 영상만으로 전체 기능 접근을 대신했다고 간주하지 않는다.
 
 ## 포그라운드 서비스 설명 초안
 

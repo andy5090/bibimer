@@ -6,17 +6,92 @@
 
 ## GitHub 저장소
 
-- 비공개 저장소: [andy5090/bibimer](https://github.com/andy5090/bibimer).
+- 공개 저장소: [andy5090/bibimer](https://github.com/andy5090/bibimer).
 - 로컬 `origin`: `https://github.com/andy5090/bibimer.git`.
 - 기본 작업 브랜치: `main`, 원격 추적 브랜치: `origin/main`.
-- 2026-09-13 사용자 요청으로 저장소 생성·로컬 연결. GitHub에서 `isPrivate: true` 및 소유 계정 확인.
+- 2026-09-13 비공개로 생성·로컬 연결했고 2026-10-12 사용자 요청으로 공개 전환했다. GitHub `visibility: PUBLIC`과 비로그인 README 접근을 확인했다.
 - 소스·문서를 Git으로 관리하며 APK·도구 캐시·서명 키·환경 변수 파일은 제외한다. Git 작성자는 이 저장소에만 설정하고 GitHub 비공개 이메일을 사용한다.
 
 ## 빌드 진행 원칙 (2026-10-01 사용자 요청)
 
 - 기능을 변경할 때마다 바로 APK를 빌드하지 않는다. 구현과 필요한 소스·동작 검증을 진행하며 기능 변경을 모아 둔다.
 - **사용자가 명시적으로 빌드를 요청할 때만 APK를 빌드한다.** 작업 보고에서는 소스 구현 완료와 마지막 APK에 포함된 내용을 구분한다.
-- 현재 마지막 빌드 파일은 `Download/Bibimer-0.15.0.apk`다. 2026-10-10의 `apk 빌드` 요청으로 GitHub 가져오기·민트 티타늄·Android 파일 열기를 포함했다.
+- 휴대폰용 마지막 배포 파일은 `Download/Bibimer-0.15.0.apk`다. 2026-10-10의 `apk 빌드` 요청으로 GitHub 가져오기·민트 티타늄·Android 파일 열기를 포함했다. 2026-10-11에는 별도 승인으로 Mac의 `dist/bibimer-debug.apk`를 스토어 캡처용으로 빌드했다. 기존 휴대폰 배포 파일·운영 앱·브리지는 교체하지 않았다.
+
+## 공개 저장소·사용자 README·출시 AAB (2026-10-12)
+
+- 사용자 요청으로 `andy5090/bibimer`를 공개로 전환했다. GitHub 소개도 모바일 ADE·같은 휴대폰 Termux 직접 개발로 수정했다. 공개 전 현재 파일과 Git 기록 56개 커밋·638개 파일 객체에서 주요 제공자 인증 키 패턴과 비밀 키 경로를 점검했으며 해당 패턴은 발견되지 않았다. 정규식 검사로 모든 종류의 비밀 정보를 보장한 것은 아니다. 서명 키·비밀번호·도구 캐시·세션 증빙은 저장소에 넣지 않는다.
+- 기본 `README.md`를 영어 사용자 안내로 다시 쓰고 `README.ko.md`를 별도로 제공한다. 제품 소개·배포 준비 상태·실제 화면·수동 설치·프로젝트와 터미널 시작·에이전트 준비·세션 데이터·도움말 순서로 줄였다. 운영 브리지 이력과 APK별 변경 기록은 기존 개발 문서에 남긴다. README 상대 링크와 이미지 파일, 원격 표시·비로그인 접근을 확인했다.
+- 사용자 표현 수정에 따라 슬로건은 **내 손안의 에이전트 개발 환경**이다. 한 손 사용을 전제로 홍보하지 않는다. README와 두 언어 웹사이트는 **프로젝트 파일·Git·개발 명령·호환 에이전트가 같은 휴대폰의 Termux에서 실행되어 별도의 개발 PC나 원격 호스트 없이 직접 개발**한다는 점을 설명한다. 모바일 ADE 자체가 코딩 에이전트라는 표현은 사용하지 않는다.
+- Play Console의 두 언어 자세한 설명과 한국어 소개 그래픽을 같은 메시지로 수정·저장했다. 리뷰 단계에서 영어·한국어 문구와 각 스크린샷 4장씩을 확인했으며 저장 뒤 등록정보 상태는 검토 전송 준비 완료다. 확장 프로그램 파일 첨부가 차단되어 Chrome 기본 파일 선택창으로 한국어 1024×500 RGB PNG를 업로드했다.
+- 웹사이트 두 홈의 GitHub 링크를 공개 저장소로 변경하고 Cloudflare Pages `https://be3a065b.bibimer.pages.dev`에 배포했다. 기본 영어와 한국어 홈의 원격 HTML 일치, 두 언어 393px 화면의 가로 넘침 없음, 데스크톱 표시를 확인했다. 실제 기기 성능이나 모든 개발 도구 호환성을 약속하지 않는다.
+- 명시적 사용자 승인으로 출시용 업로드 키를 저장소 밖 `~/.local/share/bibimer-signing/upload.jks`에 생성했다. PKCS12·RSA 3072·별칭 `bibimer-upload`, 폴더 0700·키와 비밀번호 파일 0600이다. 암호는 같은 비공개 폴더의 `upload-password`에만 보관하고 출력·명령 인수·Git·배포에 넣지 않았다. 공개 인증서는 `upload-certificate.pem`에 내보냈다. 키와 비밀번호의 안전한 별도 백업이 필요하다. Play 앱 서명 키와는 구분한다.
+- `dist/play/bibimer-0.15.0-28-release.aab`를 서명 빌드했다. 패키지 `app.bibimer`, 최소 API 26·target 36, 내장 브리지 0.15.0이다. jarsigner와 bundletool 1.18.3 검증, 릴리스 도구 테스트 7개가 통과했다. 번들의 SHA-256은 `2aeea5cf819694827f758aa49cdb3c6d090a1fbbfd49119fa17db9cac913862a`이다. APK와 설정 파일의 배포 여부는 별개다.
+- Play Console 내부 테스트에 AAB를 업로드했고 **28 (0.15.0)·API 26 이상·target SDK 36·전체 ABI**로 인식됐다. 두 언어 출시 노트와 `0.15.0 (28) - Internal test`를 초안 저장했으며 **변경사항이 저장되었습니다**를 확인했다. Console은 Google Play 서명·자동 보호 활성 상태를 표시했다. 새 서비스 약관 동의는 요청하지 않았다. 테스터 선택·배포·프로덕션 심사 제출은 진행하지 않았다. 앱 서명 인증서 확인과 앱 액세스·타겟층·데이터 보안 설정은 남아 있다.
+- AAB에서 서명된 universal APK를 생성해 테스트 에뮬레이터에 설치하고 영어 첫 실행·새 소개 문구·한국어 전환·앱 재실행 후 언어 유지와 한국어 첫 화면을 확인했다. 기존 캡처용 앱만 에뮬레이터에서 제거했으며 Termux 데이터와 실제 휴대폰·운영 브리지는 유지했다. 앱 배포·심사 승인·모든 기능 검증을 뜻하지 않는다. 빌드에는 기존 Java 8 옵션·deprecated API 경고가 있었으며 오류는 없었다.
+- 출시 AAB의 실제 영어·한국어 Work 첫 화면으로 두 등록정보의 첫 스크린샷을 교체했다. Work → Setup → Settings → Terminal 순서와 언어별 4장을 확인하고 저장 뒤 **검토를 위해 전송 준비 완료**를 확인했다. 실제 캡처 JPEG는 1080×1920이다. 검증에 사용한 에뮬레이터와 로컬 그래픽 미리보기 서버는 종료했다.
+
+## Play 남은 설정·Terminal 검증·웹 링크 (2026-10-11)
+
+- 사용자 선택 **무료**, **지원하는 전체 국가·지역**을 확인·저장했다. 프로덕션 국가 화면은 기타 국가를 포함해 **178개 행 타겟팅됨, 미타겟팅 0개**를 표시한다. 광고 ID 사용 **아니요**를 저장했다. 사용자 IARC 약관 동의 후 콘텐츠 등급 설문을 저장했으며 상태 **완료됨**, 한국 3세 이상·유럽 PEGI 3 등이다. 등급과 사용자 선택 대상 연령 13세 이상은 별개다. 새 설문의 온라인 콘텐츠는 외부 에이전트를 통한 생성형 AI 접근을 고려해 **예**로 답했다.
+- 기본 설정은 Console 대시보드 **8/11 완료**다. **로그인 세부정보·타겟층·데이터 보안**이 남는다. 대상 연령은 앱 액세스 선행 조건 때문에 여전히 Console 미적용이다. 데이터 보안 부분 임시저장 시도는 재조회에 남지 않았으며 미확정 답변은 취소했다. **데이터 보안 저장 완료로 보고하지 않는다.**
+- 사용자 제안에 따라 개인 에이전트 계정·API 키 대신 계정 없는 **Terminal** 경로를 에뮬레이터에서 검증했다. 공식 Termux **0.118.3** 설치·최초 실행, 수동 `bibimer-setup.sh` 내보내기·저장 완료 후 `termux-setup-storage`와 Bash 설치, 기기에서 생성한 일회용 코드 연결, 실제 `~/projects/play-review` 생성, Terminal 세션·`pwd` 출력, Settings 왕복·앱 재열기 후 같은 세션 실행 유지를 확인했다. `RUN_COMMAND`와 `allow-external-apps`는 사용하지 않았다. AI 제공자 계정·모델 실행·자동 연결·실기기 완료 알림을 검증한 것은 아니다.
+- [영어 심사 안내 초안](release/google-play/review-instructions.txt)을 작성했다. Console 500자 필드용 **494자** 요약과 상세 단계가 있다. 안내 추가 시 **모든 기능에 전체 접근을 제공한다는 확인**이 필수라 해당 확인을 선택하지 않고 미저장 변경을 취소했다. 개인 계정 제공을 전제로 진행하지 않는다. 외부 AI/GitHub 연동의 독립 심사 접근 또는 적절한 검증 수단을 준비해야 한다.
+- 실제 연결된 Terminal 화면을 영어·한국어 스토어에 한 장씩 추가했다. **언어별 4장·총 8장** 정식 저장 후 재진입해 각 언어의 `04-terminal.png`·**4/8**·검토 전송 준비 상태를 확인했다. 캡처는 기존 0.15.0/code 28 APK를 사용했으며 새 첫 화면 문구는 이 설치본에 포함되지 않는다. 증빙 `dist/play-release-setup/store-terminal-en.png`, `store-terminal-ko.png`; 개인정보·가짜 대화 없이 실제 테스트 폴더/명령을 표시한다. 일회용 코드가 있던 임시 캡처는 제거했다. 검증용 Terminal 세션만 앱의 종료 메뉴로 종료한 뒤 상태를 확인하고 에뮬레이터를 중지했다. 실제 휴대폰·운영 브리지·기존 사용자 세션은 건드리지 않았다.
+- 사용자 웹사이트 요청으로 영어·한국어 **홈 소개의 Bibimer 13세 이상 문장**을 제거하고 **개발자 GitHub 링크**를 추가했다. 개인정보처리방침의 연령 안내는 유지했다. `andy5090/bibimer`는 조회 당시 **PRIVATE**였으므로 우선 공개 프로필 `https://github.com/andy5090`을 연결했다. 저장소 공개 범위는 변경하지 않았고 링크 경로 선택 질문은 사용자 응답 대기다. Cloudflare Pages 배포 `https://af37b337.bibimer.pages.dev`; 공개 홈·정책 네 경로의 HTTP 200·원본 HTML·no-transform 및 기본 데스크톱/393px 모바일 표시와 링크·넘침 없음을 확인했다. 시각 판정 98점 pass, `.omx/state/website-links/ralph-progress.json`. 증빙 `dist/play-release-setup/website-published-ko.png`.
+- 출시용 업로드 키는 준비되지 않았다. `scripts/build_aab.py --unsigned --check`는 Mac SDK/JDK 경로를 설정해 통과했으나 **AAB를 빌드하지 않았다**. 기존 캡처용 키를 출시 키로 사용하지 않는다. 사용자에게 **출시용 AAB 빌드와 저장소 밖 업로드 키 준비**를 별도로 요청해 응답을 기다린다. Play App Signing·AAB 업로드·내부 테스트·FGS 시연 영상·전체 기능 심사 접근·심사 제출·출시는 아직 진행하지 않았다.
+
+## Play Console 휴대폰 개발 소개 반영 (2026-10-11)
+
+- 사용자 **플레이 콘솔에도 반영** 요청으로 영어·한국어의 짧은 설명과 전체 설명 도입부를 수정·정식 저장했다. **Start developing on your phone. / 휴대폰 하나로 개발을 시작하세요.**를 앞세우고 Termux를 휴대폰에서 Git·개발 도구를 실행하는 앱으로 소개한다. Bibimer는 프로젝트·세션·대화·터미널을 관리하는 모바일 ADE이며 실제 코딩 작업은 연결한 에이전트가 수행한다고 설명했다.
+- `release/google-play/listing.json`과 Console을 맞췄다. 영어 짧은 설명 **78/80**, 전체 **2047/4000**; 한국어 **55/80**, 전체 **1119/4000**. 제목과 기존 기능·설정·데이터 처리 설명은 유지했다. 저장 후 등록정보 목록의 **검토를 위해 전송 준비 완료**와 재진입한 영어·한국어 네 입력란의 원본 일치를 확인했다. 증빙 `dist/play-mobile-copy/saved-en.jpg`, `saved-ko.jpg`. JSON·문구 길이·diff 검사 통과.
+- 아이콘·소개 그래픽·실제 스크린샷은 그대로이며 새 APK/AAB 빌드·설치·심사 제출·출시를 진행하지 않았다. 설치본과 실제 스크린샷의 첫 화면 문구는 다음 요청 빌드·재캡처 때 반영한다.
+- 사용자가 **신규 배포 때 검수 없이 인앱 업데이트가 가능한지** 질문했다. [Play In-app updates](https://developer.android.com/guide/playcore/in-app-updates)는 Play에 배포된 업데이트를 앱 안에서 설치하도록 안내하는 기능이며 정식 배포 검토 절차를 생략하지 않는다. [기기·네트워크 악용 정책](https://support.google.com/googleplay/android-developer/answer/16559646?hl=en)은 Play 밖의 자체 APK/DEX/JAR/SO 업데이트를 금지하며 WebView JavaScript 같은 인터프리터 코드에는 예외를 두되 모든 Play 정책 준수를 요구한다. [게시·검토 도움말](https://support.google.com/googleplay/android-developer/answer/9859654?hl=en)에 따르면 내부 테스트 업데이트는 일반적으로 사전 검토가 없으나 최초 릴리스·이전 거절 등의 예외와 사후 검토가 있다.
+- 현재 앱은 `MainActivity.java`의 앱 asset 경로에서 HTML·JS·번역을 읽으므로 소스 문구 변경에도 앱 재배포가 필요하다. 향후 문구·가이드 등 데이터만 원격으로 공급하는 설계는 별도 검토할 수 있으나 **이번에는 원격 업데이트·Play In-app updates를 구현하거나 의존성을 추가하지 않았다.**
+
+## 첫 화면 한국어·휴대폰 개발 소개 (2026-10-11, 소스 / APK 대기)
+
+- 사용자 요청으로 `find-skills`에서 한국어 문구 개선 스킬을 찾아 `daleseo/korean-skills`의 **humanizer**를 확인하고 `skill-installer`로 `/Users/andy/.codex/skills/korean-humanizer`에 설치·적용했다. [스킬 원본](https://github.com/daleseo/korean-skills/blob/main/skills/humanizer/SKILL.md). 영어 관용구 직역·추상적인 표현을 줄이고, 사용자의 추가 요청에 따라 휴대폰 자체에서 개발한다는 장점과 Termux의 역할을 설명한다. 설치한 스킬은 다음 턴부터 스킬 목록에 제공된다.
+- 앱 첫 화면을 **안드로이드에서 직접 개발 → 휴대폰 하나로 / 개발을 시작하세요.**로 바꿨다. 본문은 **프로젝트를 관리하고 코딩 에이전트와 작업하세요. Termux는 휴대폰에서 Git과 개발 도구를 실행하는 앱입니다.**, 버튼은 **개발 환경 준비하기**다. Bibimer는 프로젝트·에이전트 작업을 관리하는 ADE라는 구분을 유지한다. Git·개발 도구 실행 설명은 [Termux 공식 소개](https://termux.dev/en/)를 확인했다.
+- `i18n.js`의 첫 화면 네 키와 `index.html`의 영어 기본 본문만 수정했다. 영어도 **Start developing / on your phone.**와 같은 설명으로 맞췄다. 번역투 대신 구체적인 행동을 설명하며 화면 구조·연결·언어 저장 동작은 수정하지 않았다.
+- **검증:** JS 문법·영어 기본값·양쪽 번역 키·영어 HTML 기본 문구 일치·diff 검사 및 기존 빌드 단위 테스트 **7개 통과**. 실제 앱 HTML·CSS·i18n을 사용하는 정적 소스 미리보기로 영어·한국어 각각 **393×780 / 320×460**에서 제목 두 줄·설명·버튼 표시와 가로 넘침 없음을 확인했다. 시각 점검 **98점 pass**, `.omx/state/welcome-copy/ralph-progress.json`; 증빙 `dist/welcome-copy/`. 검증용 서버는 종료했다.
+- **APK/AAB 재빌드·설치·스토어 캡처 교체 없음.** 현재 설치본과 Play 스크린샷에는 이전 첫 화면 문구가 남아 있다. 다음 사용자 요청 빌드 후 Android WebView 화면과 새 스토어 캡처를 확인한다. 소스 미리보기에는 Android 연결 대역이나 가짜 에이전트 데이터를 사용하지 않았다.
+
+## 제품 정의·ADE 소개 문구 수정 (2026-10-11)
+
+- 사용자가 Bibimer 자체는 코딩 에이전트가 아니라 Orca처럼 ADE라고 정정했다. **모바일 ADE(Agent Development Environment, 에이전트 개발 환경)**로 정의하고, 실제 코딩 작업은 연결한 Codex·Claude·OpenCode 등의 에이전트가 수행한다고 구분한다. 슬로건은 **한 손으로 지휘하는 에이전트 개발 환경**, 앱 영어 문구는 **Your agent development environment**다. 이 결정은 이전 소개 문구 지침을 대체한다.
+- `AGENTS.md`, `README.md`, 앱 `i18n.js`·`index.html`, `release/google-play/listing.json`, `scripts/export_play_graphics.cjs`, 영어·한국어 웹 홈·정책과 개인정보 문서에 반영했다. 에이전트의 기능·데이터 처리·정책 시행일은 바꾸지 않았다. 이전 도메인 미확보 README 항목도 실제 운영 주소로 맞췄다.
+- Play Console의 두 언어 짧은 설명·전체 설명·소개 그래픽을 수정·저장했다. 저장 후 다시 열어 영어 설명 원본 일치와 언어별 그래픽·기존 실제 스크린샷 3장씩 보존을 확인했다. 소개 그래픽은 기존 HTML·도형·서체 구성에서 문구를 바꾸고 1024×500 RGB PNG로 다시 출력했다. 기존 아이콘·실제 앱 캡처 6장은 유지했다. AI 애셋 표시는 아이콘과 소개 그래픽 3개에만 적용했다. 심사 제출·출시는 하지 않았다.
+- Cloudflare Pages 프로덕션 배포 **https://5292d5b8.bibimer.pages.dev**. 영어·한국어 홈·정책 네 경로 HTTPS 200·원본 일치·스크립트 없음·보안 헤더 유지, 데스크톱·모바일 한국어 표시와 가로 넘침 없음을 확인했다. JS 문법·등록 JSON/문구 길이·PNG 크기/색상·HTML lang/canonical/hreflang·diff 검사, 기존 빌드 단위 테스트 **7개 통과**. 시각 점검 98점 pass를 `.omx/state/ade-positioning/ralph-progress.json`에 기록했다. 증빙 `dist/ade-positioning/`.
+- 이번 문구 수정으로 **APK/AAB를 재빌드하지 않았다**. 앱 슬로건은 소스에만 반영했고 기존 폰 배포 APK와 앞서 만든 캡처용 APK는 유지했다. 다음 요청 빌드에 반영한다.
+
+## 스토어 이미지·에뮬레이터 캡처 (2026-10-11)
+
+- 사용자 **캡처용 APK 빌드 진행**, **ADB로 조작·캡처 진행** 승인으로 현재 소스를 빌드하고 `Medium_Phone_API_36.1`에 설치했다. `app.bibimer`, **0.15.0 / versionCode 28**, Android 36.1 Google APIs Play Store ARM64, ADB 대상 `emulator-5554`만 사용했다. 실제 휴대폰·운영 Termux·사용자 세션은 변경하지 않았다.
+- `dist/bibimer-debug.apk`, SHA-256 **c5a72ed89f94804daebf5f65a97d39e9d707b5c6463871429d901daf60912249**. Mac의 별도 로컬 개발 키(`.tools/bibimer-debug.keystore`, 0600)로 서명한 캡처 전용 파일이며 기존 폰 APK 서명·출시 업로드 키와 구분한다. AAB·Play App Signing·내부 테스트 업로드는 수행하지 않았다.
+- 리소스·Java/D8 빌드, APK v2/v3 서명·설치, **27개 내장 asset 원본 일치**, 릴리스 빌드 단위 테스트 **7개 통과**. 기존 Java source8/deprecation 경고 3개만 있었다. 빌드 로그 `.tools/store-capture-build.log`.
+- 실제 앱의 Work 시작·Setup·Settings를 영어·한국어로 캡처했다. 기본 영어 표시·앱 내 한국어 선택을 확인했다. 원본 `dist/store-capture/{work,setup,settings}-{en,ko}.png`, 저장소 파일 `release/google-play/screenshots/{en-US,ko-KR}/01-work.jpg`, `02-setup.jpg`, `03-settings.jpg`. JPEG **1080×1920·9:16·각 8MB 미만**, `sips` 품질 95 변환이며 화면 합성·가짜 대화·브라우저 대역은 사용하지 않았다. 이 AVD는 연결 전·Termux 미설치 상태이므로 에이전트 실행·연동·알림 완료를 검증한 화면은 아니다.
+- Play Console에 **아이콘 1개·언어별 소개 그래픽 2개·언어별 스크린샷 3장씩 총 6장**을 업로드하고 정식 저장했다. 영어·한국어 등록정보를 다시 열어 해당 언어 그래픽과 Work → Setup → Settings 순서 보존을 확인했다. 등록정보 상태 **검토를 위해 전송 준비 완료**, 대시보드 **7/11 완료**. AI 애셋 라벨 창에서 그래픽 3개 선택·실제 캡처 6개 미선택을 확인했다. 앱 심사 전송·출시는 하지 않았다.
+- Chrome 확장 파일 URL 접근을 확대하지 않고 macOS 기본 파일 선택창으로 업로드했다. 증빙 `dist/play-setup/saved-ko-assets.jpg`, `dashboard-7-of-11.jpg`. 상세 캡처 범위는 `release/google-play/screenshots/README.md`, 저장 내용은 `release/google-play/listing.json`.
+- 정책 버튼은 캡처용 APK에 포함했고 에뮬레이터에서 외부 Chrome 실행을 관찰했다. Chrome 최초 실행 약관 화면은 진행하지 않았으므로 정책 페이지 로드와 실기기 호출은 미검증이다. 공개 정책 URL은 별도 브라우저에서 검증했다.
+- 캡처 완료 후 AVD 화면 크기 오버라이드를 해제해 원래 **1080×2400**으로 복원하고 작업용 에뮬레이터를 종료했다. 웹 미리보기 서버 8877도 중지했다. 설치된 캡처 앱·이미지 파일은 유지한다.
+
+## 웹사이트 언어별 페이지 (2026-10-11)
+
+- 사용자 요청으로 한 페이지에 병기하던 영어·한국어 본문을 정적 i18n 경로로 분리했다. 영어 홈 `/`, 한국어 홈 `/ko/`, 영어 정책 `/privacy/`, 한국어 정책 `/ko/privacy/`. 모든 소개·메뉴·문의·푸터를 해당 언어로 제공하고 언어 전환은 홈↔홈·정책↔정책으로 이동한다. 기본 URL은 영어이며 Play Console의 기존 정책 주소를 유지한다.
+- HTML `lang`, 각 페이지 `canonical`, 영어·한국어·기본 언어 `hreflang`을 지정했다. 병기 섹션과 앵커 이동을 제거했고 외부 스크립트·의존성은 추가하지 않았다. 정책의 처리 내용·시행일은 유지한다.
+- Cloudflare Pages `bibimer` 프로덕션에 재배포했다. 네 공개 경로 **HTTPS 200·원본 일치·스크립트 없음·보안 헤더 유지**, HTML 내부 링크·중복 ID·정책 언어 하나, 데스크톱·모바일 언어 전환 및 가로 넘침 없음을 확인했다. 증빙 `dist/website-i18n/ko-home.jpg`, 배포 `https://a2ae0cc0.bibimer.pages.dev`.
+
+## Google Play 설정·Cloudflare 사이트 (2026-10-11)
+
+- 사용자 등록 앱 Bibimer를 기존 로그인된 Chrome Play Console에서 설정했다. 광고 없음·정부 앱 아님·금융 기능 없음·건강 기능 없음을 저장했고 카테고리는 생산성이다. 영어 `Bibimer`·한국어 `Bibimer 비비머`의 설명과 이미지를 저장했다. 이미지의 최종 상태는 위 스토어 캡처 항목을 따른다.
+- 사용자가 운영 주체 **앤디니어링**, 개발자명 **Andineering**, 공개 지원 이메일 **andy@andineering.com**, 대상 연령 **13세 이상**을 확인했다. Console에 공개 이메일·웹사이트 `https://bibimer.app/`·정책 URL `https://bibimer.app/privacy/`를 저장했다. 이미지 저장 후 대시보드 **7/11 완료**, 기본 등록정보를 다시 열어 영어·한국어 문구와 이미지 보존을 확인했다. 실제 게시·심사 제출은 수행하지 않았다.
+- 사용자 지시대로 **`npx cf`**를 사용해 Cloudflare 인증·도메인 가용성을 확인한 뒤 **`bibimer.app` 1년 USD 8.20 구매·등록을 완료**했다. 만료 **2027-10-11 06:00:18 UTC**, 자동 갱신 **false**, WHOIS **redaction**, 잠금 **true**, 등록 상태 **active**. 조회 당시 갱신가는 USD 14.20/년이었다. 계정의 저장된 기본 결제수단·기본 등록 연락처를 사용했고 자격 증명·연락처 원문을 저장소에 넣지 않았다.
+- `release/website/public/`의 영어·한국어 소개·정책·기존 아이콘·자체 호스팅 Space Grotesk Bold를 Cloudflare Pages `bibimer`에 배포했다. 프로젝트 생성·Registrar·DNS·사용자 지정 도메인은 `cf@1.0.0-beta.14`, 이 버전이 지원하지 않는 기존 Pages 업로드는 `wrangler@4.149.0`을 사용했다. npm 의존성 추가 없음. 루트 CNAME `bibimer.app → bibimer.pages.dev`, DNS zone·도메인 검증·HTTPS 인증서 **active** 확인. Pages 기본 주소도 유지한다.
+- 기본 Cloudflare 변환이 이메일 링크 가림·분석 beacon을 삽입하는 문제를 발견했다. CLI OAuth에는 zone setting/RUM 변경 권한이 없어 403이었으며 권한 확대는 하지 않았다. 공식 문서의 `Cache-Control: public, max-age=0, must-revalidate, no-transform`과 CSP로 스크립트 없는 정적 내용을 유지한다. 재배포 후 루트·정책·아이콘·서체 **HTTPS 200 + 원본 일치**, 보안 헤더·없는 경로 **404**, 공개 브라우저의 정책·메일 링크, 모바일 가로 넘침 없음 확인. 초기 기본 urllib User-Agent 요청은 403이었다; 실제 브라우저와 Mozilla User-Agent에서 공개 접근을 확인한 범위다.
+- 앱 Settings에 **Privacy policy / 개인정보처리방침** 버튼을 추가하고 기존 `openGuide` 외부 브라우저 열기로 고정 URL을 연다. `index.html`, `i18n.js`, `MainActivity.java` 각 한 줄 추가이며 외부 콘텐츠를 권한 있는 WebView에 로드하지 않는다. **소스 연결·번역·JS 문법 확인, 캡처용 APK 반영·에뮬레이터 외부 브라우저 실행 확인, 기존 폰 배포 APK 미반영·실기기 호출 미검증**. Mac의 기존 SDK·JDK로 승인받은 캡처 빌드를 완료했다. 기존 릴리스 빌드 단위 테스트 **7개 통과**, HTML/JSON 검증·diff 검사 완료.
+- 다음 출시 작업: 심사자가 Termux·브리지·외부 에이전트 인증까지 재현할 **앱 액세스 안내/테스트 접근**이 필요하다. 제공자 테스트 자격 증명이 없어 전체 접근 보장 선언을 저장하지 않았다. Console **대상 연령은 앱 액세스 완료 선행 조건으로 미적용**이며 로컬 listing·웹 정책에만 13세 이상을 기록했다. 데이터 보안·콘텐츠 등급·배포 국가·가격·FGS 영상·업로드 키/AAB·내부 테스트도 남았다. 수집/공유 없음을 임의 신고하지 않는다. 출시용 APK/AAB 빌드는 별도 사용자 요청 후 진행한다.
+- 소스와 배포 안내: `release/website/README.md`, `docs/privacy-policy-draft.md`, `docs/google-play-release.md`, `release/google-play/listing.json`. 결과 스크린샷은 Git 제외 `dist/play-setup/`에 보관한다.
 
 ## 사이드바 스와이프 닫기 (2026-10-10, 소스 / APK 대기)
 
@@ -24,7 +99,7 @@
 - `sidebar.js`의 공통 `BibimerDrawerSwipe`를 두 패널에서 사용한다. 10px 이동 후 바깥 방향/수평 우세를 확인하고 패널 폭 22%(최소 56px·최대 96px) 이상일 때 닫는다. 세로/대각선/반대 방향·긴 누르기·두 손가락·touchcancel·입력/편집·코드·가로 스크롤 영역·활성 텍스트 선택은 닫기로 전환하지 않는다. 중첩 모달·화면 크기 변경/포커스 이탈 때 제스처를 취소하고 스와이프 뒤 발생하는 터치 클릭이 세션이나 뒤의 화면을 누르지 않게 막는다. 키보드 클릭은 유지한다.
 - 넓은 화면의 고정 패널과 마우스 드래그에는 적용하지 않는다. 닫힌 뒤 열기 버튼에 포커스/aria-expanded를 맞추고 입력 초안·세션/프로젝트 선택을 변경하지 않는다. 모션 감소 설정에서는 복귀 전환 효과를 끈다.
 - **검증:** `scripts/smoke_drawer_swipe.cjs`의 Chromium 실제 터치 입력(CDP)으로 양쪽 닫기, 목록 클릭 방지, 실제 세로/코드 가로 스크롤, 짧은/반대/대각선/긴 누르기/두 손가락/취소/마우스 제스처, 초안·포커스, 화면 크기 변경·고정 패널·모션 감소·320px을 확인했다. 활성 텍스트 선택 방어는 브라우저 기본 선택 해제를 제외한 합성 이벤트로 검증했다. 기존 `smoke_rendering.cjs`, 실제 격리 브리지 기반 `smoke_inspector.cjs`, JS 문법·diff 검사도 통과했다. 로그 `.tools/drawer-swipe-{ui,rendering,inspector}.log`.
-- **APK 빌드·설치·브리지 변경 없음.** 현재 0.15.0 APK에는 스와이프가 없으며 다음 요청 빌드에 포함한다. 브리지 업데이트는 필요 없다. 실제 Android WebView 터치·OS 가장자리 뒤로 가기 제스처와의 동작은 설치 후 확인한다.
+- **구현 당시 APK 빌드·설치·브리지 변경 없음.** 휴대폰 배포 0.15.0 APK에는 스와이프가 없으며 2026-10-11 캡처용 APK에는 현재 소스를 포함했다. 브리지 업데이트는 필요 없다. 실제 Android WebView 터치·OS 가장자리 뒤로 가기 제스처와의 동작은 별도 확인한다.
 
 ## 0.15.0 운영 브리지 업데이트 (2026-10-10, 완료 확인)
 

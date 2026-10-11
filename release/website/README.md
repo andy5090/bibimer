@@ -1,0 +1,44 @@
+# Bibimer 정적 웹사이트
+
+Bibimer는 **모바일 ADE(Agent Development Environment, 에이전트 개발 환경)**다. 같은 휴대폰의 Termux에서 프로젝트·코딩 에이전트 세션·대화·터미널을 관리한다. 슬로건은 **내 손안의 에이전트 개발 환경**이며 실제 코딩 작업은 연결한 에이전트가 수행한다.
+
+- 영어 사이트(기본): https://bibimer.app/
+- 한국어 사이트: https://bibimer.app/ko/
+- 영어 개인정보처리방침: https://bibimer.app/privacy/
+- 한국어 개인정보처리방침: https://bibimer.app/ko/privacy/
+- 운영 주체: 앤디니어링 (Andineering)
+- 지원·개인정보 문의: andy@andineering.com
+- 정책 시행일: 2026-10-11
+
+`public/`만 Cloudflare Pages에 직접 업로드한다. HTML·자체 호스팅 서체·기존 앱 아이콘으로 구성하며 JavaScript, 계정, 문의 폼, 광고, 분석 스크립트를 포함하지 않는다. 서체 라이선스는 `public/assets/SpaceGrotesk-OFL.txt`에 있다. `_headers`에 정적 페이지용 보안 헤더와 `Cache-Control: public, max-age=0, must-revalidate, no-transform`을 지정하고 `404.html`로 없는 경로의 HTTP 404를 유지한다. 앱 소스·서명 키·세션 기록은 업로드하지 않는다.
+
+언어별 URL을 사용하는 정적 i18n 구성이다. 각 페이지는 선택한 언어의 본문만 제공하고, 언어 전환은 같은 종류의 페이지로 이동한다. 한국어 홈의 정책 링크·정책의 홈 링크는 한국어 경로를 유지한다. 각 문서에 `lang`, 자기 URL의 `canonical`, 상호 연결된 `hreflang`을 지정했다. 브라우저 언어에 따른 자동 이동 없이 기본 URL은 영어로 열리며 Play Console에 등록한 `/privacy/` 주소를 유지한다.
+
+2026-10-11 사용자 요청으로 홈 소개의 대상 연령 문장을 제거했고 정책의 연령 안내는 유지한다. 2026-10-12 사용자 요청으로 GitHub 저장소를 공개 전환한 뒤 두 홈의 링크를 `https://github.com/andy5090/bibimer`로 변경했다. 슬로건은 **내 손안의 에이전트 개발 환경**이며 프로젝트 파일과 개발 도구를 같은 휴대폰에서 실행하는 장점을 설명한다. 데스크톱과 393px 두 언어 화면의 가독성·가로 넘침 없음을 확인했다. 배포: `https://be3a065b.bibimer.pages.dev`.
+
+## 조회와 배포
+
+2026-10-11 `npx cf`로 Cloudflare 인증을 확인하고 `bibimer` Pages 프로젝트를 생성했다. 같은 CLI로 조회한 `bibimer.app`은 `registrable: true`, standard, 첫해 USD 8.20·갱신 USD 14.20이었다. 사용자의 구매 지시에 따라 가용성을 재확인하고 계정 기본 결제수단으로 **1년 USD 8.20 등록을 완료**했다. 등록 상태 active, 만료 2027-10-11 06:00:18 UTC, 자동 갱신 false, WHOIS redaction, 도메인 잠금 true를 확인했다. 갱신은 자동 실행되지 않으며 당시의 가격을 다시 확인해야 한다.
+
+```sh
+npx --yes cf@1.0.0-beta.14 auth whoami
+npx --yes cf@1.0.0-beta.14 registrar registrations check bibimer.app
+```
+
+이 버전의 `cf pages deploy`는 기존 Pages 파일 업로드를 지원하지 않아 Cloudflare 공식 Wrangler로 배포했다. 새 프로젝트 생성은 다시 실행할 필요 없다. 저장소에 npm 의존성을 추가하지 않았다.
+
+```sh
+npx --yes wrangler@4.149.0 whoami
+npx --yes wrangler@4.149.0 pages deploy release/website/public \
+  --project-name bibimer --branch main --commit-dirty=true
+```
+
+Pages 기본 주소 `bibimer.pages.dev`를 유지하며 새 도메인의 루트 CNAME을 해당 주소로 연결했다. Pages 사용자 지정 도메인·DNS zone·HTTPS 인증서 활성화를 확인했다. 공개 영어·한국어 홈과 정책 네 경로, 서체·아이콘의 HTTPS 200과 소스 일치, 보안 헤더, 없는 경로의 404를 확인했다. `no-transform` 적용 뒤 이메일 가림·분석 스크립트가 삽입되지 않아 HTML이 원본과 일치한다. 브라우저에서 데스크톱과 모바일 크기, 정책 이동·언어 전환·가로 넘침 없음을 확인했다. 기본 Python urllib User-Agent의 첫 요청은 403이었고 일반 브라우저와 Mozilla User-Agent 요청은 성공했다. 자동 클라이언트 전체의 접근을 보장한 검증은 아니다.
+
+로컬 미리보기는 종료 후 서버를 중지한다.
+
+```sh
+python3 -m http.server 8877 --bind 127.0.0.1 --directory release/website/public
+```
+
+앱 Settings에 기존 외부 브라우저 열기 경로로 고정된 `https://bibimer.app/privacy/` 버튼을 추가하고 사용자 요청의 캡처용 APK에 포함했다. 영어·한국어 표시와 외부 Chrome 실행을 에뮬레이터에서 확인했다. Chrome 최초 실행 약관 단계에서 멈췄으므로 앱에서 정책 페이지 로드·실기기 브라우저 호출은 미검증이다. 기존 휴대폰 배포 APK는 교체하지 않았다. 기본 CLI OAuth 권한으로 zone setting·RUM 설정 변경은 403이므로 권한을 확대하지 않았다. Cloudflare 공식 문서의 `no-transform` 헤더로 이메일 가림과 Web Analytics 자동 삽입을 막는다. 앱 링크용 `assetlinks.json`은 Play App Signing의 실제 앱 서명 인증서가 확정된 뒤 게시한다.

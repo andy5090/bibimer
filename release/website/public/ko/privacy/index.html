@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Bibimer의 정보 처리, 코딩 에이전트 연동, 개인정보 문의와 사용자 제어 방법을 안내합니다.">
+  <title>Bibimer · 개인정보처리방침</title>
+  <link rel="canonical" href="https://bibimer.app/ko/privacy/">
+  <link rel="alternate" hreflang="en" href="https://bibimer.app/privacy/">
+  <link rel="alternate" hreflang="ko" href="https://bibimer.app/ko/privacy/">
+  <link rel="alternate" hreflang="x-default" href="https://bibimer.app/privacy/">
+  <style>
+    @font-face { font-family: "Space Grotesk"; src: url("/assets/SpaceGrotesk-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #202c2b; background: #f7faf8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 800px; margin: auto; padding: 40px 24px 80px; }
+    header { border-bottom: 1px solid #cddad3; padding-bottom: 24px; }
+    .brand { font-family: "Space Grotesk", system-ui, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: .04em; }
+    h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.2; margin: 20px 0; }
+    h2 { font-size: 23px; margin: 36px 0 12px; }
+    h3 { font-size: 18px; margin: 28px 0 8px; }
+    p, li, dd { line-height: 1.8; overflow-wrap: anywhere; }
+    p { margin: 12px 0; }
+    a { color: #15604e; text-underline-offset: 3px; }
+    a:focus-visible { outline: 3px solid #15604e; outline-offset: 4px; }
+    nav { display: flex; gap: 24px; flex-wrap: wrap; }
+    nav a { display: inline-block; padding: 8px 0; }
+    nav a[aria-current="page"] { font-weight: 700; text-decoration-thickness: 2px; }
+    dl { display: grid; grid-template-columns: 110px 1fr; gap: 8px 16px; margin: 24px 0; }
+    dt { font-weight: 600; line-height: 1.8; }
+    dd { margin: 0; }
+    footer { margin-top: 40px; color: #53645b; }
+    @media (max-width: 420px) { main { padding: 24px 18px 48px; } dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 12px; } }
+    @media print { body { background: white; } main { max-width: none; padding: 0; } nav { display: none; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <a class="brand" href="/ko/">BIBIMER</a>
+    <h1>개인정보처리방침</h1>
+    <nav aria-label="언어 선택"><a href="/privacy/" lang="en" hreflang="en">English</a><a href="/ko/privacy/" lang="ko" hreflang="ko" aria-current="page">한국어</a></nav>
+  </header>
+  <article id="korean" lang="ko" aria-labelledby="ko-title">
+    <h2 id="ko-title">Bibimer 개인정보처리방침</h2>
+    <dl>
+      <dt>앱</dt><dd>Bibimer (app.bibimer)</dd>
+      <dt>운영 주체</dt><dd>앤디니어링 (Andineering)</dd>
+      <dt>문의</dt><dd><a href="mailto:andy@andineering.com">andy@andineering.com</a></dd>
+      <dt>시행일</dt><dd>2026년 10월 11일</dd>
+    </dl>
+    <h3>1. 처리 목적과 정보</h3>
+    <p>Bibimer는 같은 Android 휴대폰의 Termux에서 프로젝트와 코딩 에이전트 세션을 관리하는 모바일 에이전트 개발 환경(ADE)입니다. 프로젝트 이름·폴더 경로, 세션 식별자·설정, 입력·답변, 터미널·도구 출력, 사용자가 작업 대상으로 선택한 파일을 처리합니다. 프로젝트·세션 표시, 지시 전달, 결과 확인 및 사용자가 요청한 기능 제공을 위해 사용합니다.</p>
+    <p>Android 화면은 같은 기기의 인증된 브리지와 통신합니다. 앱은 설정과 연결 정보를 앱 전용 저장소에 보관하며 연결 토큰은 Android Keystore로 암호화합니다. 프로젝트·세션 메타데이터와 에이전트 기록은 Termux에서 별도로 보관합니다. 현재 Android 앱에는 광고·분석 SDK와 대화를 Bibimer 운영 서버로 업로드하는 기능이 없습니다.</p>
+    <h3>2. 코딩 에이전트와 외부 서비스</h3>
+    <p>지시를 전송하면 선택한 에이전트가 입력·코드·파일·대화 맥락·도구 요청을 설정된 AI 제공자나 다른 서비스로 전송할 수 있습니다. 처리와 보관은 사용하는 에이전트·제공자·계정·권한·설정에 따라 달라집니다. 로컬 브리지 연결이 모든 AI 처리를 기기 안에서 수행한다는 뜻은 아닙니다.</p>
+    <p>다른 에이전트로 대화를 이어갈 때는 사용자가 확인하고 전송한 맥락을 대상 에이전트에 전달하며 해당 기록에 남을 수 있습니다. 도구 설치나 외부 링크 열기 때 Termux·패키지 저장소·개발 도구·외부 웹사이트도 요청을 처리합니다. 선택한 서비스의 방침을 확인하세요.</p>
+    <h3>3. GitHub 연결과 파일 열기</h3>
+    <p>GitHub 가져오기는 Termux의 GitHub CLI로 인증하고 접근 가능한 저장소를 조회한 뒤 선택한 저장소를 클론합니다. 자격 증명은 Termux의 GitHub CLI가 관리합니다. Bibimer는 계정 상태·저장소 정보와 필요한 일시적 로그인 코드를 표시하며 인증 토큰을 WebView나 일반 로그에 전달하지 않습니다. 클론한 파일은 사용자가 선택한 폴더에 남습니다.</p>
+    <p>프로젝트나 Download의 파일을 다른 Android 앱으로 열면 앱 전용 캐시에 임시 복사본을 만들고 선택한 뷰어에 임시 읽기 권한을 부여합니다. 뷰어는 자신의 처리 방침에 따라 파일을 사용합니다. 복사본을 수정해도 원본 프로젝트 파일은 바뀌지 않습니다. 캐시 복사본에는 용량·만료 제한이 있으며 이후 앱 사용이나 연결 해제 때 정리됩니다.</p>
+    <h3>4. 알림과 권한</h3>
+    <p>알림 권한과 응답 감시를 켜면 완료 알림에 프로젝트·세션 이름과 완료 답변 앞부분 최대 180자가 포함될 수 있습니다. 공개 잠금 화면 버전에는 일반 완료 문구를 사용합니다. Android 알림 설정과 알림 접근 권한을 가진 다른 앱에 따라 내용에 접근할 수 있습니다. Settings나 지속 알림에서 감시를 중지할 수 있습니다.</p>
+    <p>Termux 명령 접근에는 Android 권한과 Termux 외부 앱 연동 설정이 필요합니다. Bibimer는 사용자가 요청한 설치·개발 작업을 전달하는 데 사용합니다. 완료 미리보기는 브리지 메타데이터 파일이나 일반 로그에 저장하지 않습니다.</p>
+    <h3>5. 보관·삭제·사용자 제어</h3>
+    <p>앱 설정과 연결 정보는 앱 데이터 삭제나 앱 제거 때까지 보관합니다. 최근 브리지 출력과 대기 입력은 실행 중인 세션의 제한된 메모리에 유지하며 프로세스 종료나 브리지 재시작 때 사라질 수 있습니다. Termux의 프로젝트 파일·세션 메타데이터·원본 에이전트 기록은 별도로 저장하며 보관 기간은 사용자의 조작과 에이전트 설정에 따릅니다.</p>
+    <p>프로젝트 등록 해제나 종료된 세션의 목록 삭제는 Bibimer의 등록 정보만 제거합니다. 프로젝트 폴더·Git 워크트리·원본 에이전트 기록을 지우지 않습니다. 실제 파일과 기록은 Termux와 해당 에이전트에서 별도로 삭제하세요. Bibimer를 제거해도 삭제되지 않습니다. 제공자에 보관된 정보는 해당 제공자에 삭제를 요청하세요.</p>
+    <p>Bibimer 자체 사용자 계정은 만들지 않습니다. GitHub·AI 제공자 계정은 각 서비스가 관리합니다. 앱에서 로컬 브리지 연결을 해제하고 관련 서비스나 도구에서 외부 서비스 접근을 철회할 수 있습니다.</p>
+    <h3>6. 대상 연령</h3>
+    <p>Bibimer는 13세 이상 사용자를 대상으로 합니다. 외부 에이전트·제공자·개발 서비스에는 별도의 연령·계정 요건이 있으며 더 높은 연령을 요구할 수 있습니다.</p>
+    <h3>7. 웹사이트 호스팅</h3>
+    <p>이 웹사이트는 Cloudflare Pages에서 제공합니다. Cloudflare는 웹사이트 전송과 보호를 위해 IP 주소·트래픽 정보 등 접속 요청 정보를 처리하며 해외 인프라에서 처리할 수 있습니다. 자세한 내용은 <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare 개인정보처리방침</a>에서 확인할 수 있습니다. 이 정적 사이트에는 앤디니어링이 추가한 계정·문의 폼·광고·분석 스크립트가 없습니다.</p>
+    <h3>8. 문의와 변경</h3>
+    <p>개인정보 문의와 열람·정정·삭제 요청은 위 연락처로 받습니다. 문의에 답변하고 처리하기 위해 발신 이메일·문의 내용·첨부파일을 처리합니다. 문의에 필요한 정보만 보내 주세요. 처리 방식이 달라지면 방침 내용과 시행일을 갱신합니다.</p>
+  </article>
+  <footer><p>Bibimer · 내 손안의 에이전트 개발 환경</p><a href="/ko/">홈으로</a></footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,31 @@
+DRAFT REVIEW INSTRUCTIONS - NOT SAVED IN PLAY CONSOLE
+
+Instruction name: Local Termux pairing and Terminal (no account)
+Username/password: none for Bibimer or Terminal
+
+Short Console text (500-character field):
+Bibimer has no account/paywall. Install and open official Termux on this phone. In Setup > Manual setup and pairing, save bibimer-setup.sh to Downloads. In Termux run termux-setup-storage, then bash ~/storage/downloads/bibimer-setup.sh. Enter its code in Bibimer. Add ~/projects/play-review with Create folder enabled. Choose Terminal > Start session and send pwd. Optional AI CLIs/GitHub need their own external setup; Terminal needs no provider account. No developer credentials are supplied.
+
+Verified account-free review path:
+1. Install official Termux 0.118.3 or a compatible official release on this Android device. Open Termux once and let initialization finish.
+   Official source: https://github.com/termux/termux-app/releases/tag/v0.118.3
+2. Open Bibimer. It starts in English; Settings > Language also offers Korean.
+3. In Setup > Manual setup and pairing, save bibimer-setup.sh to Downloads. Return to Bibimer and wait for the saved confirmation before switching to Termux.
+4. In Termux, run: termux-setup-storage
+   Grant Termux the requested file access for the setup file.
+5. Run: bash ~/storage/downloads/bibimer-setup.sh
+   The script installs required Termux packages and the local bridge. Wait until the bridge is ready.
+6. Enter the one-time pairing code generated on this device into Bibimer. Each reviewer generates their own local code; no static developer code or secret is supplied.
+7. Add a project with path ~/projects/play-review and enable Create folder.
+8. Select Terminal, then Start session. Send pwd; the output shows the real Termux project folder.
+9. Switch to Settings and back to Work, or reopen Bibimer. The same Terminal session remains running.
+10. End only this test session using Session actions > End session when finished.
+
+Scope and limits:
+Bibimer has no developer-hosted account, subscription, or paywall. This route verifies project/session/Terminal functions without personal agent credentials or AI-provider accounts. It uses manual setup and does not require RUN_COMMAND permission or allow-external-apps.
+AI Chat and GitHub integrations use separately installed third-party CLIs and their own account/configuration requirements. Terminal does not verify those integrations or Chat completion notifications. Full reviewer access to these integrations has not been established by this guide.
+
+Console status:
+Adding these instructions requires confirming full access to every app feature. That confirmation was not selected and these instructions were not saved in Console. Do not represent the Terminal test as proof of every external integration.
+
+Verification: Android emulator Medium_Phone_API_36.1, Android 36.1, Bibimer 0.15.0 / versionCode 28, official Termux 0.118.3; 2026-10-11.

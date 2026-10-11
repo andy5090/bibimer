@@ -11,9 +11,13 @@ node_modules/
 __pycache__/
 *.pyc
 .tools/
+.cloudflare/
+.wrangler/
 dist/
 *.keystore
 *.jks
+*.p12
+*.pfx
 android/app/src/main/assets/vendor/
 android/app/src/main/assets/bibimer-setup.sh
 android/app/src/main/assets/setup-connect.py

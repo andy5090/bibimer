@@ -335,6 +335,7 @@ public final class MainActivity extends Activity {
             else if (guide.equals("codex")) url = "https://github.com/openai/codex";
             else if (guide.equals("claude")) url = "https://code.claude.com/docs/en/setup";
             else if (guide.equals("opencode")) url = "https://opencode.ai/docs/";
+            else if (guide.equals("privacy")) url = "https://bibimer.app/privacy/";
             else return;
             runOnUiThread(() -> {
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
