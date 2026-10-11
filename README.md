@@ -38,6 +38,10 @@ Actual Android emulator screenshots. The terminal screen shows a local project a
 
 You need Bibimer and Termux installed on the **same Android phone**. Start with terminal mode; install and authenticate a coding agent when you want to use agent features.
 
+To preview the interface first, choose **Try demo** on the welcome screen, in Setup, or in Settings. Demo replays fictional Codex, Claude Code, and OpenCode examples with code, diffs, tables, and tool events. Chat and terminal input is ignored; no agent or command runs. Demo requires no account or Termux. Choose **Exit demo** to return to normal setup; your existing connection and settings are preserved.
+
+[Demo guide and notification video](https://bibimer.app/review/)
+
 ### 1. Prepare Termux
 
 Install Termux from a source listed in its [official installation guide](https://github.com/termux/termux-app#installation), then open it once and let its initial setup finish. Termux provides the command-line environment where your files, tools, and sessions run.

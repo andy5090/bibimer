@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bibimer · 체험·심사 안내</title>
+  <link rel="canonical" href="https://bibimer.app/ko/review/">
+  <link rel="alternate" hreflang="en" href="https://bibimer.app/review/">
+  <link rel="alternate" hreflang="ko" href="https://bibimer.app/ko/review/">
+  <link rel="alternate" hreflang="x-default" href="https://bibimer.app/review/">
+  <style>
+    @font-face { font-family: "Space Grotesk"; src: url("/assets/SpaceGrotesk-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #202c2b; background: #f7faf8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 800px; margin: auto; padding: 40px 24px 80px; }
+    header { border-bottom: 1px solid #cddad3; padding-bottom: 24px; }
+    .brand { font-family: "Space Grotesk", system-ui, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: .04em; }
+    h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.2; margin: 20px 0; }
+    h2 { font-size: 23px; margin: 36px 0 12px; }
+    h3 { font-size: 18px; margin: 28px 0 8px; }
+    p, li, dd { line-height: 1.8; overflow-wrap: anywhere; }
+    p { margin: 12px 0; }
+    a { color: #15604e; text-underline-offset: 3px; }
+    a:focus-visible { outline: 3px solid #15604e; outline-offset: 4px; }
+    nav { display: flex; gap: 24px; flex-wrap: wrap; }
+    nav a { display: inline-block; padding: 8px 0; }
+    nav a[aria-current="page"] { font-weight: 700; text-decoration-thickness: 2px; }
+    dl { display: grid; grid-template-columns: 110px 1fr; gap: 8px 16px; margin: 24px 0; }
+    dt { font-weight: 600; line-height: 1.8; }
+    dd { margin: 0; }
+    footer { margin-top: 40px; color: #53645b; }
+    @media (max-width: 420px) { main { padding: 24px 18px 48px; } dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 12px; } }
+    @media print { body { background: white; } main { max-width: none; padding: 0; } nav { display: none; } }
+
+    video { display: block; width: 100%; max-height: 72vh; background: #14211c; border-radius: 12px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <a class="brand" href="/ko/">BIBIMER</a>
+    <h1>체험·심사 안내</h1>
+    <nav aria-label="언어 선택"><a href="/review/" lang="en" hreflang="en">English</a><a href="/ko/review/" lang="ko" hreflang="ko" aria-current="page">한국어</a></nav>
+  </header>
+  <article>
+    <h2>가상 예제로 실제 Android 기능을 확인하세요</h2>
+    <p>계정이나 Termux 없이 화면을 둘러볼 수 있습니다. 데모는 실제 기록을 사용하지 않은 가상의 세션 로그를 재생합니다. 입력에 답하거나 명령을 실행하거나 AI 제공자에 요청을 보내지 않습니다.</p>
+    <ol><li>Bibimer 0.16.0의 첫 화면이나 준비·설정에서 <strong>데모 체험하기</strong>를 누르세요. 데모 안내는 계속 표시됩니다.</li><li>프로젝트 사이드바에서 예제 Codex·Claude Code·OpenCode·터미널 세션을 선택하세요. 코드·표·diff·계획·도구 카드 등 서로 다른 가상 예제를 확인할 수 있습니다.</li><li>아무 내용이나 보내면 다음 예제를 재생합니다. 응답은 미리 준비되어 있으며 입력과 관계없습니다. 첫 두 예제는 자동으로 끝나고 세 번째마다 승인 카드와 질문이 나옵니다. 예제 승인을 눌러도 명령은 실행하지 않습니다.</li><li>예제 프로젝트·워크트리·세션 관리·모델·대기열·파일 미리보기·Git 변경·기록·가상의 GitHub 가져오기를 둘러보세요. 예제 작업은 격리된 데모 안에서만 처리합니다.</li><li>알림을 체험하려면 설정에서 응답 완료 알림을 켜고 Android 알림 권한을 허용하세요. 자동으로 끝나는 예제를 시작한 뒤 Android 홈으로 이동하고 알림 창을 여세요. 지속 알림과 완료 알림에는 데모라고 표시됩니다. 완료 알림을 누르면 해당 예제 세션을 열며 지속 알림이나 설정에서 감시를 끌 수 있습니다.</li><li><strong>데모 나가기</strong>를 누르면 실제 Termux 준비 화면으로 돌아갑니다. 실제 에이전트 작업에는 Termux와 별도로 준비한 제공자 도구가 필요합니다. 데모가 외부 연동의 실제 검증을 대신하지는 않습니다.</li></ol>
+    <h2 id="notifications">완료 알림 시연</h2>
+    <p>이 영상은 가상의 완료 이벤트로 실제 Android 포그라운드 서비스·알림 제어·세션 이동을 보여줍니다. 예제 알림의 동작을 확인하는 영상이며 실제 코딩 에이전트 응답이나 제공자 연동 검증 영상은 아닙니다.</p>
+    <video controls preload="metadata" aria-label="완료 알림 시연">
+      <source src="/assets/notification-demo-0.16.0.mp4" type="video/mp4">
+      <a href="/assets/notification-demo-0.16.0.mp4">영상 다운로드</a>
+    </video>
+    <p><a href="/assets/notification-demo-0.16.0.mp4">영상 다운로드</a></p>
+  </article>
+  <footer><p>Bibimer · Andineering</p><nav><a href="/ko/privacy/">개인정보처리방침</a><a href="/ko/">홈으로</a></nav></footer>
+</main>
+</body>
+</html>

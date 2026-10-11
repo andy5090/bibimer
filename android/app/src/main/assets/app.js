@@ -33,6 +33,15 @@
   const sessionTitles = new Map(), titleChecks = new Map();
   let canSessionTitles = false, titleLoading = false;
   const lastOptions = environment().agentOptions || {};
+  const demo = environment().demo === true;
+  restoreNormalDraftViews();
+  function restoreNormalDraftViews() {
+    if (demo || !native.takeNormalDraftViews) return;
+    try {
+      const restored = JSON.parse(native.takeNormalDraftViews()).views;
+      for (const [key, view] of restored || []) views.set(key, view);
+    } catch (_) { noticeData = {key:"demo_drafts_failed", suffix:null}; }
+  }
   let enterBehavior = environment().enterBehavior === "send" ? "send" : "newline";
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
     claude:["inherit","default","acceptEdits","plan","bypassPermissions"], opencode:["inherit","ask","allow"]};
@@ -255,6 +264,7 @@
     });
   }
   window.BibimerOpenFile = async path => {
+    if (demo) return notice("demo_file");
     if (!online || paused || switchingProject || !projectKey()) return notice("error_connection_failed");
     if (!canOpenFiles) return notice("file_links_update");
     if (openingFile) return notice("error_file_busy");
@@ -280,13 +290,20 @@
   function uuid() { return crypto.randomUUID(); }
   function connected(value) {
     online = value;
-    $("connection").textContent = t(value ? "connection_on" : "connection_off");
+    $("connection").textContent = t(demo ? "demo_connection" : value ? "connection_on" : "connection_off");
     $("connection").className = "badge" + (value ? " connected" : "");
     renderSession();
   }
   function updateEnvironment() {
     renderNotificationSettings();
     const env = environment();
+    $("demo-banner").hidden = !demo;
+    $("demo-preferences-hint").hidden = !demo;
+    for (const id of ["demo-setup", "demo-settings"]) {
+      $(id).textContent = t(demo ? "demo_exit" : "demo_try");
+      $(id).dataset.i18n = demo ? "demo_exit" : "demo_try";
+    }
+    for (const id of ["forget", "open-termux", "quick-open-termux", "quick-app-permissions", "export-installer", "pair"]) $(id).disabled = demo;
     $("termux-status").textContent = t(env.termuxInstalled ? "installed" : "install_needed");
     $("termux-status").className = "badge" + (env.termuxInstalled ? " connected" : "");
     $("reconnect-welcome").hidden = !env.paired;
@@ -299,7 +316,7 @@
     const setup = env.quickSetup || {phase:"idle"}, waiting = ["running", "connecting"].includes(setup.phase);
     const phase = !env.termuxInstalled ? "quick_termux_missing" : setup.phase.startsWith("quick_") ? setup.phase : "quick_" + setup.phase;
     $("quick-status").textContent = t(i18n.has(phase) ? phase : "quick_start_failed");
-    $("quick-connect").disabled = !env.termuxInstalled || waiting || quickSubmitting;
+    $("quick-connect").disabled = demo || !env.termuxInstalled || waiting || quickSubmitting;
     $("quick-connect").setAttribute("aria-busy", String(waiting || quickSubmitting));
     if (["quick_external", "quick_permission"].includes(setup.phase)) $("quick-permissions").open = true;
     if (setup.phase === "connected" && setup.id && quickHandled !== setup.id && env.paired) {
@@ -324,7 +341,7 @@
     updateMode();
     $("agent-diagnostics").replaceChildren(...knownAgents.filter(agent => agent.id !== "shell").map(agent => {
       const row = document.createElement("p"); row.className = "hint";
-      row.textContent = t("agent_" + agent.id) + " · " + t(!agent.installed ? "install_needed" : agent.issue || "installed");
+      row.textContent = t("agent_" + agent.id) + " · " + t(demo ? "demo_title" : !agent.installed ? "install_needed" : agent.issue || "installed");
       return row;
     }));
   }
@@ -338,13 +355,23 @@
   function viewKey() { return canLibrary ? activeViewKey : canSwitchAgents ? projectKey() + "/" + selectedAgent : projectKey(); }
   function rememberView() {
     const key = viewKey();
-    if (!projectKey()) return;
+    if (!projectKey() || !key) return;
     const questions = {...views.get(key)?.questions};
     for (const [id, request] of conversation.requests) {
       questions[id] = Object.fromEntries([...request.fields].map(([name,input]) => [name,{value:input.value,selections:input.bibimerSelections || []}]));
     }
     views.set(key, {text:$("input").value, start:$("input").selectionStart, end:$("input").selectionEnd,
       agent:selectedAgent, mode:$("mode").value, questions});
+  }
+  function keepNormalDraftViews() {
+    try {
+      rememberView();
+      const snapshot = JSON.stringify({views:[...views].filter(([key]) => typeof key === "string").map(([key, view]) => [key, {
+        text:view.text || "", start:view.start || 0, end:view.end || 0, agent:view.agent || "shell", mode:view.mode || "terminal", questions:view.questions || {}
+      }])});
+      if (native.saveNormalDraftViews?.(snapshot)) return true;
+    } catch (_) { }
+    notice("demo_drafts_failed"); return false;
   }
   function restoreQuestions(event) {
     const view = views.get(viewKey());
@@ -670,7 +697,7 @@
     i18n.apply();
     $("language").value = i18n.language();
     renderInputPreferences();
-    $("connection").textContent = t(online ? "connection_on" : instance ? "connection_off" : "connection_initial");
+    $("connection").textContent = t(demo ? "demo_connection" : online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
     $("project-path").textContent = project ? project.path : t("project_location");
     $("version").textContent = t("version_note", {version:environment().version || "—"});
@@ -826,7 +853,7 @@
     if (visible) { sidebar.open(); $("path").focus(); }
   }
   async function connect() {
-    if (paused || !environment().paired) return;
+    if (paused || (!environment().paired && !demo)) return;
     const ticket = ++generation;
     clearTimeout(retryTimer);
     try {
@@ -876,7 +903,7 @@
       $("project-name").textContent = project ? project.name : t("project_empty");
       $("project-path").textContent = project ? project.path : t("project_location");
       if (selectedChanged) {
-        $("path").value = project ? project.path : "~/projects/my-project";
+        $("path").value = project ? project.path : demo ? "/demo/projects/my-project" : "~/projects/my-project";
         projectForm(!project);
         projectInitialized = true;
       }
@@ -1069,7 +1096,7 @@
     let ok = false;
     const chat = isChat();
     try {
-      const invocation = await commands.invocation(text);
+      const invocation = demo ? {} : await commands.invocation(text);
       if (chat) {
         const action = steer ? "steer" : canQueue ? "queue" : "message";
         const result = await api("POST", `/v1/sessions/${id}/${action}`, {text, ...invocation, request_id:uuid(),
@@ -1511,9 +1538,13 @@
   });
   for (const name of ["work", "setup", "settings"]) $("tab-" + name).addEventListener("click", () => tab(name));
   $("go-setup").addEventListener("click", () => tab("setup"));
+  for (const id of ["demo-welcome", "demo-setup", "demo-settings", "demo-exit-banner"]) $(id).addEventListener("click", () => {
+    if (!demo && !keepNormalDraftViews()) return;
+    ++generation; paused = true; clearTimeout(retryTimer); native.cancelPoll?.(); native.setDemoMode?.(!demo);
+  });
   $("edit-project").addEventListener("click", () => {
     const visible = $("project-form").hidden;
-    if (visible && multipleProjects) { $("path").value = "~/projects/"; $("create-folder").checked = true; }
+    if (visible && multipleProjects) { $("path").value = demo ? "/demo/projects/" : "~/projects/"; $("create-folder").checked = true; }
     projectForm(visible);
   });
   $("cancel-project").addEventListener("click", () => { projectForm(false); $("edit-project").focus(); });
@@ -1564,7 +1595,7 @@
     $("response-notifications").checked = settings?.enabled !== false;
     $("response-notifications").disabled = !native.setResponseNotifications;
     let key = !settings ? "notifications_app_update" : !settings.enabled ? "notifications_off" :
-      !env.paired ? "notifications_connect" : !online ? "notifications_reconnecting" :
+      !env.paired && !demo ? "notifications_connect" : !online ? "notifications_reconnecting" :
       !canResponseNotifications ? "notifications_update" : !settings.allowed ? "notifications_permission" :
       "notifications_" + ({listening:"listening", reconnecting:"reconnecting", failed:"failed", unsupported:"update", unpaired:"connect"}[settings.state] || "stopped");
     $("notifications-status").textContent = t(key);
@@ -1648,5 +1679,5 @@
   for (const dialog of document.querySelectorAll("dialog")) backObserver.observe(dialog, {attributes:true, attributeFilter:["open"]});
   i18n.setLanguage(environment().language);
   renderLanguage();
-  if (environment().paired) connect();
+  if (environment().paired || demo) connect();
 })();

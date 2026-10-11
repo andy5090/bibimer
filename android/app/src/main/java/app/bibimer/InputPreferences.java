@@ -9,7 +9,7 @@ final class InputPreferences {
     private volatile String enterBehavior;
 
     InputPreferences(Context context) {
-        preferences = context.getSharedPreferences("input", Context.MODE_PRIVATE);
+        preferences = context.getSharedPreferences(DemoMode.preferenceName(context, "input"), Context.MODE_PRIVATE);
         enterBehavior = "send".equals(preferences.getString("enter_behavior", "newline")) ? "send" : "newline";
     }
 

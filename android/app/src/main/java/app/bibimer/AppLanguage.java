@@ -14,7 +14,7 @@ final class AppLanguage {
 
     AppLanguage(Context context) {
         this.context = context;
-        preferences = context.getSharedPreferences("appearance", Context.MODE_PRIVATE);
+        preferences = context.getSharedPreferences(DemoMode.preferenceName(context, "appearance"), Context.MODE_PRIVATE);
         language = "ko".equals(preferences.getString("language", "en")) ? "ko" : "en";
     }
 

@@ -2,6 +2,18 @@
 (() => {
   // Each entry is [English default, Korean]. Terminal output is never translated.
   const strings = {
+    demo_title: ["Demo · sample replay", "데모 · 예제 재생"],
+    demo_try: ["Try demo", "데모 체험하기"],
+    demo_exit: ["Exit demo", "데모 나가기"],
+    demo_banner: ["Fictional session logs. Prerecorded responses are unrelated to your input. No AI or shell commands run.", "가상의 세션 로그입니다. 입력과 관계없이 준비된 예제를 재생하며 AI·셸 명령을 실행하지 않습니다."],
+    demo_intro: ["Explore fictional Codex, Claude Code and OpenCode sessions without an account or Termux. Sample replay ignores your input and makes no AI requests, shell commands or device file changes.", "계정이나 Termux 없이 Codex·Claude Code·OpenCode의 가상 세션을 둘러보세요. 예제 재생은 입력을 사용하지 않으며 AI 요청·셸 명령·기기 파일 변경도 하지 않습니다."],
+    demo_preferences: ["Demo settings are separate. Real response alerts pause during demo; your Termux sessions keep running. Exiting restores normal settings and monitoring.", "데모 설정은 따로 저장합니다. 데모 중 실제 응답 알림은 잠시 쉬지만 Termux 세션은 계속 실행됩니다. 나가면 기존 설정과 알림 확인으로 돌아갑니다."],
+    demo_drafts_failed: ["Could not keep your unsent drafts in memory, so demo was not opened. Send or clear large drafts and try again.", "미전송 초안을 메모리에 보관할 수 없어 데모를 열지 않았습니다. 큰 초안을 보내거나 정리한 뒤 다시 시도해 주세요."],
+    demo_connection: ["Demo", "데모"],
+    demo_file: ["This is a fictional sample file. Open Files to preview it; no device file is opened.", "가상의 예제 파일입니다. 파일 패널에서 미리 볼 수 있으며 기기의 파일은 열지 않습니다."],
+    error_demo_request: ["This action is unavailable in the isolated demo. Exit demo to use Termux.", "격리된 데모에서는 이 작업을 할 수 없습니다. Termux를 사용하려면 데모에서 나가세요."],
+    error_demo_path: ["Demo folders exist only under /demo. No device folders are accessed.", "데모 폴더는 /demo 아래에만 있습니다. 기기의 폴더에는 접근하지 않습니다."],
+    error_demo_limit: ["The sample workspace limit was reached. Exit and reopen demo to start again.", "예제 공간의 한도에 도달했습니다. 데모를 나갔다가 다시 열면 처음부터 체험할 수 있습니다."],
     github_title: ["Import from GitHub", "GitHub에서 가져오기"],
     github_hint: ["Choose a repository, then clone it into a new folder in Termux and register it as a project.", "저장소를 선택하고 Termux의 새 폴더에 클론해 프로젝트로 등록합니다."],
     github_connect: ["Connect GitHub", "GitHub 연결"],

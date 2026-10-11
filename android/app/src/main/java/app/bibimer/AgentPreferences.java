@@ -9,7 +9,7 @@ final class AgentPreferences {
     private final SharedPreferences preferences;
 
     AgentPreferences(Context context) {
-        preferences = context.getSharedPreferences("agent_options", Context.MODE_PRIVATE);
+        preferences = context.getSharedPreferences(DemoMode.preferenceName(context, "agent_options"), Context.MODE_PRIVATE);
     }
 
     private JSONObject validate(String agent, String json) throws Exception {

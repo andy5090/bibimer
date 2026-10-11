@@ -32,6 +32,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 public final class MainActivity extends Activity {
     private static final String ASSET_HOST = "appassets.androidplatform.net";
@@ -59,9 +60,15 @@ public final class MainActivity extends Activity {
     private volatile boolean destroyed;
     private boolean resumed, notificationsSupported, stopped;
     private String notificationTarget = "{}";
+    // Unsent normal UI views only; never written to preferences, Bundle, files or logs.
+    private final NormalDraftStore normalDrafts = new NormalDraftStore();
 
     private synchronized void captureNotification(Intent intent) {
         if (intent == null || !ResponseNotificationService.OPEN_SESSION.equals(intent.getAction())) return;
+        boolean demoNotification = intent.getBooleanExtra("notification_demo", false);
+        if (demoNotification && !DemoMode.enabled(this)) return;
+        // Tapping an actual completion explicitly returns to its real workspace.
+        if (!demoNotification && DemoMode.enabled(this)) changeDemoMode(false);
         String project = intent.getStringExtra("notification_project"), session = intent.getStringExtra("notification_session");
         if (project != null && session != null && project.matches("[a-f0-9-]{36}") && session.matches("[a-f0-9-]{36}")) {
             try { notificationTarget = new JSONObject().put("project_id", project).put("session_id", session).toString(); }
@@ -71,13 +78,30 @@ public final class MainActivity extends Activity {
     }
 
     private void ensureNotifications(boolean prompt) {
-        if (resumed && !tokens.get().isEmpty()) ResponseNotifications.ensure(this, notificationsSupported, prompt);
+        if (resumed && (DemoMode.enabled(this) || !tokens.get().isEmpty())) ResponseNotifications.ensure(this, notificationsSupported, prompt);
         script("window.BibimerNotificationStatus && window.BibimerNotificationStatus();");
     }
 
+    private synchronized void changeDemoMode(boolean enabled) {
+        if (enabled == DemoMode.enabled(this)) return;
+        if (enabled && !normalDrafts.ready()) return;
+        if (bridge != null) bridge.cancelPoll();
+        fileEpoch.incrementAndGet(); ResponseNotifications.stop(this, false);
+        if (!DemoMode.set(this, enabled)) { if (web != null) web.loadUrl(PAGE); return; }
+        if (!enabled) {
+            android.app.NotificationManager manager = getSystemService(android.app.NotificationManager.class);
+            for (android.service.notification.StatusBarNotification item : manager.getActiveNotifications())
+                if (item.getTag() != null && item.getTag().startsWith("demo-response/")) manager.cancel(item.getTag(), item.getId());
+        }
+        language = new AppLanguage(this); agentPreferences = new AgentPreferences(this); inputPreferences = new InputPreferences(this);
+        notificationTarget = "{}"; notificationsSupported = false;
+        if (web != null) web.loadUrl(PAGE);
+    }
+
     @Override protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent); setIntent(intent); captureNotification(intent);
-        script("window.BibimerOpenNotification && window.BibimerOpenNotification();");
+        super.onNewIntent(intent); setIntent(intent);
+        boolean previousMode = DemoMode.enabled(this); captureNotification(intent);
+        if (previousMode == DemoMode.enabled(this)) script("window.BibimerOpenNotification && window.BibimerOpenNotification();");
     }
 
     @Override protected synchronized void onSaveInstanceState(Bundle saved) {
@@ -94,7 +118,7 @@ public final class MainActivity extends Activity {
         agentPreferences = new AgentPreferences(this);
         inputPreferences = new InputPreferences(this);
         bridge = new LocalBridge(tokens);
-        LinkedFileProvider.prune(this, 0, false);
+        if (!DemoMode.enabled(this)) LinkedFileProvider.prune(this, 0, false);
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(17, 20, 23));
         if (Build.VERSION.SDK_INT >= 30) getWindow().setDecorFitsSystemWindows(false);
@@ -166,13 +190,22 @@ public final class MainActivity extends Activity {
     }
 
     private void reply(String id, JSONObject result) {
-        script("window.BibimerNativeReply && window.BibimerNativeReply(" + JSONObject.quote(id) + "," + result + ");");
+        reply(id, result, DemoMode.epoch());
+    }
+
+    private void reply(String id, JSONObject result, long epoch) {
+        String source = "window.BibimerNativeReply && window.BibimerNativeReply(" + JSONObject.quote(id) + "," + result + ");";
+        runOnUiThread(() -> { if (!destroyed && epoch == DemoMode.epoch()) web.evaluateJavascript(source, null); });
     }
 
     private void error(String id, String code, int message) {
+        error(id, code, message, DemoMode.epoch());
+    }
+
+    private void error(String id, String code, int message, long epoch) {
         try {
             reply(id, new JSONObject().put("ok", false).put("status", 0)
-                .put("data", new JSONObject().put("code", code).put("error", language.text(message))));
+                .put("data", new JSONObject().put("code", code).put("error", language.text(message))), epoch);
         } catch (Exception ignored) { }
     }
 
@@ -191,6 +224,9 @@ public final class MainActivity extends Activity {
     }
 
     private final class NativeApi {
+        private boolean requestCurrent(boolean demo, long epoch) {
+            return !destroyed && demo == DemoMode.enabled(MainActivity.this) && epoch == DemoMode.epoch();
+        }
         @JavascriptInterface public void setBackHandling(boolean enabled) {
             runOnUiThread(() -> backHandling(enabled));
         }
@@ -201,6 +237,7 @@ public final class MainActivity extends Activity {
                     tokens.reload(); setupLoaded = setup.optString("id");
                 }
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
+                    .put("demo", DemoMode.enabled(MainActivity.this))
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
                     .put("agentOptions", agentPreferences.get())
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
@@ -241,7 +278,40 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface public boolean setLanguage(String value) {
-            return language.set(value);
+            boolean saved = language.set(value);
+            if (saved && DemoMode.enabled(MainActivity.this)) DemoMode.language("ko".equals(value));
+            return saved;
+        }
+
+        @JavascriptInterface public void setDemoMode(boolean enabled) {
+            runOnUiThread(() -> changeDemoMode(enabled));
+        }
+
+        @JavascriptInterface public boolean saveNormalDraftViews(String value) {
+            synchronized (MainActivity.this) {
+                if (DemoMode.enabled(MainActivity.this) || value == null || value.length() > NormalDraftStore.MAX_CHARACTERS) return false;
+                try {
+                    JSONObject snapshot = new JSONObject(value);
+                    JSONArray views = snapshot.getJSONArray("views");
+                    if (snapshot.length() != 1 || views.length() > 1024) return false;
+                    for (int i = 0; i < views.length(); i++) {
+                        JSONArray entry = views.getJSONArray(i);
+                        if (entry.length() != 2 || !(entry.get(0) instanceof String)) return false;
+                        JSONObject view = entry.getJSONObject(1);
+                        if (view.length() != 6 || !(view.get("text") instanceof String) ||
+                                !(view.get("start") instanceof Number) || !(view.get("end") instanceof Number) ||
+                                !(view.get("agent") instanceof String) || !(view.get("mode") instanceof String) ||
+                                !(view.get("questions") instanceof JSONObject)) return false;
+                    }
+                    return normalDrafts.save(value, DemoMode.enabled(MainActivity.this));
+                } catch (Exception invalid) { return false; }
+            }
+        }
+
+        @JavascriptInterface public String takeNormalDraftViews() {
+            synchronized (MainActivity.this) {
+                return normalDrafts.take(DemoMode.enabled(MainActivity.this));
+            }
         }
 
         @JavascriptInterface public boolean setEnterBehavior(String value) {
@@ -254,49 +324,68 @@ public final class MainActivity extends Activity {
 
         @JavascriptInterface public void request(String id, String method, String path, String body) {
             if (id.length() > 80 || destroyed) return;
-            if (path.equals("/v1/files")) { error(id, "error_file_link", R.string.error_file_open); return; }
+            final boolean demo = DemoMode.enabled(MainActivity.this);
+            final long demoEpoch = DemoMode.epoch();
+            if (demo) {
+                try { (path.contains("/events?") ? events : actions).execute(() -> {
+                    try {
+                        if (!DemoMode.enabled(MainActivity.this) || demoEpoch != DemoMode.epoch()) return;
+                        JSONObject result = DemoMode.request(method, path, body, demoEpoch);
+                        if (DemoMode.enabled(MainActivity.this) && demoEpoch == DemoMode.epoch()) reply(id, result, demoEpoch);
+                    } catch (Exception ignored) { if (requestCurrent(demo, demoEpoch)) error(id, "error_demo_request", R.string.error_connection_failed, demoEpoch); }
+                }); } catch (RejectedExecutionException ignored) { if (requestCurrent(demo, demoEpoch)) error(id, "error_input_busy", R.string.error_input_busy, demoEpoch); }
+                return;
+            }
+            if (path.equals("/v1/files")) { error(id, "error_file_link", R.string.error_file_open, demoEpoch); return; }
             if (path.equals("/native/open-file")) {
-                if (!method.equals("POST") || body.length() > 16384) { error(id, "error_file_link", R.string.error_file_open); return; }
+                if (!method.equals("POST") || body.length() > 16384) { error(id, "error_file_link", R.string.error_file_open, demoEpoch); return; }
                 final long epoch = fileEpoch.get();
                 try {
                     files.execute(() -> {
                         try {
+                            if (DemoMode.enabled(MainActivity.this) || demoEpoch != DemoMode.epoch()) return;
                             FileLinks.Opened file = FileLinks.copy(MainActivity.this, bridge, new JSONObject(body),
-                                () -> destroyed || fileEpoch.get() != epoch);
+                                () -> destroyed || fileEpoch.get() != epoch || DemoMode.enabled(MainActivity.this) || demoEpoch != DemoMode.epoch());
                             runOnUiThread(() -> {
+                                if (!requestCurrent(demo, demoEpoch)) return;
                                 if (destroyed || fileEpoch.get() != epoch || !resumed) {
-                                    error(id, "error_file_cancelled", R.string.error_file_open); return;
+                                    error(id, "error_file_cancelled", R.string.error_file_open, demoEpoch); return;
                                 }
                                 try {
                                     Intent view = new Intent(Intent.ACTION_VIEW).setDataAndType(file.uri, file.mime)
                                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                                     view.setClipData(ClipData.newRawUri("BIBIMER file", file.uri));
                                     startActivity(view);
-                                    reply(id, new JSONObject().put("ok", true).put("status", 200).put("data", new JSONObject()));
+                                    reply(id, new JSONObject().put("ok", true).put("status", 200).put("data", new JSONObject()), demoEpoch);
                                 } catch (android.content.ActivityNotFoundException ignored) {
-                                    error(id, "error_file_app", R.string.error_file_app);
-                                } catch (Exception ignored) { error(id, "error_file_open", R.string.error_file_open); }
+                                    error(id, "error_file_app", R.string.error_file_app, demoEpoch);
+                                } catch (Exception ignored) { error(id, "error_file_open", R.string.error_file_open, demoEpoch); }
                             });
-                        } catch (FileLinks.Failure failure) { error(id, failure.code, R.string.error_file_open); }
-                        catch (Exception ignored) { error(id, "error_file_open", R.string.error_file_open); }
+                        } catch (FileLinks.Failure failure) { if (requestCurrent(demo, demoEpoch)) error(id, failure.code, R.string.error_file_open, demoEpoch); }
+                        catch (Exception ignored) { if (requestCurrent(demo, demoEpoch)) error(id, "error_file_open", R.string.error_file_open, demoEpoch); }
                     });
-                } catch (RejectedExecutionException ignored) { error(id, "error_file_busy", R.string.error_file_open); }
+                } catch (RejectedExecutionException ignored) { error(id, "error_file_busy", R.string.error_file_open, demoEpoch); }
                 return;
             }
             ExecutorService executor = path.contains("/events?") ? events : path.endsWith("/title") ? titles : path.equals("/v1/inspect") ? inspections : path.equals("/v1/commands") ? commands : actions;
             try {
                 executor.execute(() -> {
-                    try { reply(id, bridge.request(method, path, body)); }
+                    try {
+                        if (DemoMode.enabled(MainActivity.this) || demoEpoch != DemoMode.epoch()) return;
+                        JSONObject result = bridge.request(method, path, body);
+                        if (!DemoMode.enabled(MainActivity.this) && demoEpoch == DemoMode.epoch()) reply(id, result, demoEpoch);
+                    }
                     catch (Exception ignored) {
-                        error(id, "error_connection_failed", R.string.error_connection_failed);
+                        if (requestCurrent(demo, demoEpoch)) error(id, "error_connection_failed", R.string.error_connection_failed, demoEpoch);
                     }
                 });
             } catch (RejectedExecutionException ignored) {
-                error(id, "error_input_busy", R.string.error_input_busy);
+                error(id, "error_input_busy", R.string.error_input_busy, demoEpoch);
             }
         }
 
         @JavascriptInterface public void forget() {
+            if (DemoMode.enabled(MainActivity.this)) return;
             fileEpoch.incrementAndGet();
             LinkedFileProvider.prune(MainActivity.this, 0, true);
             bridge.cancelPoll();
@@ -305,11 +394,16 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface public void startQuickSetup() {
-            runOnUiThread(() -> TermuxSetup.start(MainActivity.this));
+            if (DemoMode.enabled(MainActivity.this)) return;
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> { if (requestCurrent(false, epoch)) TermuxSetup.start(MainActivity.this); });
         }
 
         @JavascriptInterface public void openAppPermissions() {
+            if (DemoMode.enabled(MainActivity.this)) return;
+            final long epoch = DemoMode.epoch();
             runOnUiThread(() -> {
+                if (!requestCurrent(false, epoch)) return;
                 try { startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                     Uri.parse("package:" + getPackageName()))); }
                 catch (Exception ignored) { TermuxSetup.fail(MainActivity.this, "quick_permission"); }
@@ -321,7 +415,10 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface public void openTermux() {
+            if (DemoMode.enabled(MainActivity.this)) return;
+            final long epoch = DemoMode.epoch();
             runOnUiThread(() -> {
+                if (!requestCurrent(false, epoch)) return;
                 Intent intent = getPackageManager().getLaunchIntentForPackage("com.termux");
                 if (intent == null) toast(R.string.install_termux_first);
                 else startActivity(intent);
@@ -329,6 +426,7 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface public void openGuide(String guide) {
+            if (DemoMode.enabled(MainActivity.this) && !guide.equals("privacy")) return;
             String url;
             if (guide.equals("termux")) url = "https://f-droid.org/packages/com.termux/";
             else if (guide.equals("termux-help")) url = "https://github.com/termux/termux-app#installation";
@@ -344,6 +442,7 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface public void openLink(String url) {
+            if (DemoMode.enabled(MainActivity.this)) return;
             if (url == null || url.length() > 8192 || url.matches("(?s).*[\\x00-\\x20].*")) return;
             Uri uri = Uri.parse(url);
             if (!("https".equals(uri.getScheme()) || "http".equals(uri.getScheme())) ||
@@ -355,6 +454,7 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface public void copyCommand(String name) {
+            if (DemoMode.enabled(MainActivity.this)) return;
             String command;
             if (name.equals("storage")) command = "termux-setup-storage";
             else if (name.equals("external-apps")) command = "mkdir -p ~/.termux && " +
@@ -385,7 +485,10 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface public void exportInstaller() {
+            if (DemoMode.enabled(MainActivity.this)) return;
+            final long epoch = DemoMode.epoch();
             runOnUiThread(() -> {
+                if (!requestCurrent(false, epoch)) return;
                 try {
                     Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
                     intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -401,6 +504,7 @@ public final class MainActivity extends Activity {
         super.onRequestPermissionsResult(request, permissions, grants);
         if (request == ResponseNotifications.PERMISSION_REQUEST) ensureNotifications(false);
         if (request == TermuxSetup.REQUEST_PERMISSION) {
+            if (DemoMode.enabled(this)) return;
             if (TermuxSetup.permitted(this)) TermuxSetup.start(this);
             else TermuxSetup.fail(this, "quick_permission");
         }
@@ -409,6 +513,7 @@ public final class MainActivity extends Activity {
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
         if (request == EXPORT_INSTALLER && result == RESULT_OK && data != null && data.getData() != null) {
+            if (DemoMode.enabled(this)) return;
             Uri target = data.getData();
             actions.execute(() -> {
                 try (InputStream input = getAssets().open("bibimer-setup.sh");
