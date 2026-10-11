@@ -1,221 +1,89 @@
-# BIBIMER · 비비머
+# BIBIMER
 
-**한 손으로 지휘하는 코딩 에이전트.**
+**An agent development environment on your Android phone.**
 
-**같은 휴대폰의 Termux에서 코딩 에이전트를 실행하고, 폰에서 직접 개발 과정을 진행하는 Android 앱.**
+English · [한국어](README.ko.md)
 
-프로젝트 이름은 **Bibimer(비비머)**다. 비빔밥의 ‘비빔’에 ‘-er’를 붙여, 서로 다른 프로젝트와 에이전트를 모아 함께 일하게 하는 도구라는 뜻을 담는다.
+[Website](https://bibimer.app/) · [Privacy](https://bibimer.app/privacy/) · [Support](mailto:andy@andineering.com)
 
-텍스트 로고는 **BIBIMER**로 표기하고 앱에 포함한 Space Grotesk Bold를 사용한다. 최신 빌드는 **0.15.0 APK / versionCode 28**, 내장 브리지는 **0.15.0**이다. GitHub 저장소 가져오기, 민트 티타늄 로고, Android 앱으로 이미지·파일 링크 열기를 포함했다. 설치 파일은 `Download/Bibimer-0.15.0.apk`, 브리지 설치 파일은 `Download/bibimer-setup-0.15.0.sh`다. **APK 설치·운영 브리지 업데이트는 별도이며 GitHub·파일 열기는 브리지 0.15.0 적용도 필요하다.**
+Bibimer brings your projects, Git worktrees, coding-agent sessions, conversations, and terminals together in an Android app. Your project files and development tools live in **Termux on the same phone**, so you can develop directly on your smartphone without a separate development computer or remote host.
 
-**모바일 사이드바 스와이프 닫기를 소스에 추가했다.** 왼쪽 목록은 왼쪽으로, 오른쪽 파일·Git 패널은 오른쪽으로 밀어 닫는다. **현재 0.15.0 APK에는 미포함이며 다음 요청 빌드에 반영한다.** 브리지 변경은 필요 없다.
+Modern Android phones can run a Linux command-line environment with Git, Python, Node.js, and many other development tools through Termux. Bibimer gives that environment a mobile interface: open a project, run a terminal, direct a compatible coding agent, and review its work from your phone.
 
-**운영 브리지 업데이트(2026-10-10):** 실제 런타임 **0.15.0**, 세션 11개 복원, GitHub 가져오기·파일 링크 API 검증 완료를 확인했다. 저장 대화 9개는 동일 원본으로 복원했고 빈 세션 2개는 새로 열었다. 상세는 [NEXT_SESSION.md](NEXT_SESSION.md)를 참고한다.
+Bibimer is an **ADE (Agent Development Environment)**. Connected agents such as Codex, Claude Code, and OpenCode perform the coding work. Each agent needs a Termux-compatible installation and any required provider authentication.
 
-**대화의 이미지·파일 링크를 Android 앱으로 여는 기능을 소스에 추가했다.** 링크를 누르면 현재 프로젝트·워크트리 또는 Download 폴더의 파일을 준비해 이미지·PDF·문서 등을 지원하는 앱으로 전달한다. **0.15.0 APK에 포함했으며 앱 설치와 브리지 0.15.0 적용이 필요하다.** 실제 Android 뷰어 실행은 설치 후 검증한다. [파일 링크 안내](docs/setup.md#이미지파일-링크-열기-0150-apk-포함--운영-적용-대기)를 참고한다.
+## Availability
 
-**민트 티타늄 아이콘·글자 로고를 소스에 적용했다.** 기존 B 심벌과 Space Grotesk Bold에 은은한 민트 금속 광택을 더했다. **0.15.0 APK에 포함했다.**
+Bibimer is in active development. **The Google Play release is being prepared; there is no public APK release yet.** To try the current development version, follow the [build guide](docs/development.md) (currently in Korean).
 
-**GitHub 저장소를 원하는 폴더에 클론하고 프로젝트로 등록하는 기능을 소스에 추가했다.** Project Add → Import from GitHub에서 Termux GitHub CLI 계정을 연결하고 저장소·상위 폴더·새 폴더 이름을 선택한다. 기존 로그인 사용, 브라우저 코드 로그인, 접근 가능한 공개·비공개 저장소 목록, 진행 상태 확인·취소를 제공한다. **0.15.0 APK에 포함했으며 앱 설치와 브리지 0.15.0 적용이 필요하다.** [사용 흐름과 검증 범위](docs/setup.md#github-저장소-가져오기-0150-apk-포함--운영-적용-대기)를 참고한다.
+The app targets Android 8.0 or later (API 26+). Compatibility with every Android version, device, or agent installation has not been verified.
 
-**0.14.0 APK에 우측 사이드바의 Files·Git status·Git history 아이콘 탭을 포함했다.** 현재 프로젝트·워크트리의 폴더와 텍스트 파일, 변경 파일의 staged/working diff, 커밋 목록과 상세를 읽기 전용으로 조회한다. 큰 창에서는 좌우 패널을 함께 고정하고 작은 창에서는 우측 서랍으로 연다. **브리지 0.14.0 적용도 필요하며 APK 설치·자동 연결만으로 기존 브리지를 업데이트하지 않는다.** 파일은 `Download/Bibimer-0.14.0.apk`와 `Download/bibimer-setup-0.14.0.sh`다. [조회 범위와 화면 기준](docs/interface.md#우측-파일git-사이드바-0140)을 참고한다.
+## What you can do
 
-**0.13.1에는 DeX·태블릿 반응형 화면과 연결 유지 보완을 포함했다.** 넓은 창에서는 접을 수 있는 프로젝트 사이드바를 대화 옆에 표시하고, 태블릿에서는 본문·입력창·여백을 조정한다. Chat은 읽기 편한 폭을 유지하며 터미널은 가용 폭을 사용한다. DeX 구성 변경 때 기존 WebView를 유지하고, `Set up and connect`는 저장된 연결부터 확인한다. **이 변경에는 브리지 업데이트가 필요하지 않다.** 브라우저·패키징 검증은 통과했으며 실제 DeX·태블릿 검증은 설치 후 진행한다. [화면 기준](docs/interface.md#dex태블릿-반응형-화면-0131)을 참고한다.
+- **Develop on your phone.** Keep project files in Termux, run your development commands, and use compatible coding agents on the same device.
+- **Organize your workspace.** Switch between projects, existing Git worktrees, and multiple agent sessions from the sidebar.
+- **Use chat and a terminal.** Read structured agent responses and tool activity, respond to approval requests, or work directly in an interactive shell.
+- **Manage ongoing work.** Queue follow-up instructions, choose supported models and options, and review the conversation context before passing it to another agent.
+- **Inspect project files and Git changes.** Browse files, view diffs, and import GitHub repositories into a folder you choose in Termux.
+- **Make the app yours.** Choose English or Korean, configure the Enter key, and enable response notifications. Delivery depends on Android permissions and background restrictions.
 
-**에이전트 간 대화 이어가기 선택 기능을 소스에 추가했다.** Codex·Claude·OpenCode 전환 시 기존 세션 열기 또는 현재 대화를 전달해 새 세션에서 이어가기를 선택한다. **0.13.0 APK에 포함했으며 이어가기에는 브리지 0.13.0 적용도 필요하다.** 빈 Activity summary 카드를 숨기고 내용이 있으면 Agent summary / 에이전트 요약으로 표시하는 수정도 포함했다.
+<p>
+  <img src="release/google-play/screenshots/en-US/02-setup.jpg" alt="Bibimer setup screen with Termux connection options" width="260">
+  <img src="release/google-play/screenshots/en-US/04-terminal.png" alt="Bibimer running a shell in a project on the same Android phone" width="260">
+</p>
 
-프로젝트·세션 탐색은 **열고 닫는 모바일 사이드바**, 에이전트·권한·설정의 선택 목록은 **앱 자체 하단 시트**로 제공한다. **0.10.0 APK에 포함했다.**
+Actual Android emulator screenshots. The terminal screen shows a local project and a real shell command; no coding-agent account is required for terminal mode.
 
-0.10.0에 **입력창 아래 모델·추론 수준 선택과 Codex/Claude/OpenCode 전환**을 추가했다. 설치된 에이전트의 모델 목록을 조회하고 마지막 선택을 에이전트별로 저장한다. 프로젝트 안에서도 에이전트별 실행 세션·대기열·입력 초안을 유지하며 왕복한다. 이 확장에는 앱과 브리지 0.10.0을 함께 적용해야 한다.
+## Get started
 
-**2026-10-04 사이드바**에는 프로젝트와 기존 Git 워크트리별 세션을 접고 펼치는 목록, Project Add, 새 세션·저장된 세션 가져오기를 추가했다. 같은 에이전트의 여러 세션을 유지하고 세션 ID별로 입력 초안·대기열·승인을 구분한다. 대화창 아래의 **Stop this session**은 제거했으며 ⋯ 세션 관리에서 이름 변경·보관·복원·종료·목록 삭제를 제공한다. 보관은 실행을 유지하고 삭제는 종료된 세션을 BIBIMER 목록에서만 제거한다. **앱과 브리지 0.10.0을 함께 사용한다.**
+You need Bibimer and Termux installed on the **same Android phone**. Start with terminal mode; install and authenticate a coding agent when you want to use agent features.
 
-**프로젝트 이름 옆 ⋯ → Project settings**에서 이름 변경·폴더 경로 확인/복사·등록 해제를 제공하는 소스를 추가했다. 등록 해제는 파일·워크트리·에이전트 원본 기록을 유지하며 실행 중인 세션이 있으면 거절한다. **이 메뉴와 Settings 버전 표시 수정을 0.11.0 APK에 포함했다.** 프로젝트 관리에는 브리지 0.11.0 적용도 필요하다.
+### 1. Prepare Termux
 
-**각 Chat 응답 완료 시 Android 알림**을 보내는 소스를 추가했다. 프로젝트·에이전트·보관 여부와 관계없이 완료를 확인하고 알림을 누르면 해당 세션을 연다. Settings에서 알림을 끄거나 Android 권한 설정을 열 수 있다. 백그라운드 확인에는 지속 알림을 사용한다. **이 폰의 앱·브리지 0.11.0 적용을 확인했으며, 실제 알림 표시·잠금 화면/백그라운드 검증은 진행 중**이다. [알림 안내](docs/setup.md#응답-완료-알림-0110--실기기-검증-대기)를 참고한다.
+Install Termux from a source listed in its [official installation guide](https://github.com/termux/termux-app#installation), then open it once and let its initial setup finish. Termux provides the command-line environment where your files, tools, and sessions run.
 
-**0.11.3 APK에는 이전 알림에서 같은 원본 대화의 현재 실행으로 이동하는 수정과, 입력 영역의 기본 높이를 54px에서 39px로 줄인 변경을 포함했다. 기존 브리지 0.11.2와 함께 사용한다.** 같은 대화를 이어받은 세션이 있으면 그 세션을 열며, 복사 대화로 이동하거나 새 대화를 자동 실행하지 않는다.
+### 2. Connect Bibimer
 
-**응답 내용 미리보기를 0.11.1 APK에 포함했다. 브리지 0.11.1 적용도 필요**하다. 완료 알림 본문에 실제 답변 앞부분을 최대 180자로 표시하고 프로젝트·세션 이름을 함께 제공하도록 소스를 수정했다.
+Open Bibimer's **Setup** screen. The manual path is:
 
-**Setup → Set up and connect(설정하고 연결)**도 포함했다. 최초 Termux 설치·실행과 연동 허용을 마치면 필요한 Python·브리지 설치, 실행, 일회용 코드 수신과 연결을 앱에서 이어간다. 기존 브리지는 그대로 연결하며 실행 세션을 재시작하지 않는다. **2026-10-04 APK 빌드 완료, Android 실기기 검증 대기**다. [설정 안내](docs/setup.md#앱에서-자동-연결-0100--실기기-검증-대기)를 참고한다.
+1. Expand **Manual setup and pairing** and choose **Save setup file**.
+2. Save the file as `bibimer-setup.sh` in Android's Downloads folder.
+3. In Termux, run `termux-setup-storage` and grant the requested file access. If the Downloads folder is already accessible, skip this step.
+4. Once permission is granted, run:
 
-- 저장소·폴더 이름: `bibimer`
-- GitHub: [andy5090/bibimer](https://github.com/andy5090/bibimer) — 비공개 저장소, 기본 브랜치 `main`.
-- 작업 경로: `/data/data/com.termux/files/home/projects/bibimer`
-- 향후 웹사이트 후보: `bibimer.app` — 아직 도메인을 확보하지 않았다.
+   ```sh
+   bash ~/storage/downloads/bibimer-setup.sh
+   ```
 
-## 제품 방향
+5. The script prepares Python if needed, installs the local Bibimer bridge, and starts it. Enter the one-time code shown in Termux into Bibimer's **Connect this app** section.
 
-Bibimer는 휴대폰에 설치해 사용하는 Android 앱이다. 프로젝트 파일, 에이전트 CLI, 개발 명령의 실행 환경을 같은 휴대폰의 Termux에 두고, 사용자는 앱에서 개발 과정을 진행한다. 별도의 개발 PC나 원격 개발 호스트를 기본 사용 흐름의 전제로 삼지 않는다.
+The app also offers **Set up and connect**, which requires Android's Termux command permission and Termux's external-app integration setting. Follow the in-app prompts. The complete automatic setup flow still needs further device testing; manual connection and terminal use have been verified on an Android emulator.
 
-Orca·Paseo는 프로젝트 및 에이전트 관리 경험의 벤치마킹 대상이다. Bibimer는 이 관리 경험을 휴대폰 자체에서 개발하는 흐름에 맞게 구상하며, 해당 제품과의 기능 호환성을 전제하지 않는다.
+### 3. Open a project
 
-사용자는 Android 앱에서 프로젝트를 선택하고 Codex CLI 또는 Claude Code 등의 에이전트 세션을 시작한다. 작업 지시, 에이전트의 코드 변경과 개발 명령 실행, 결과 확인, 후속 입력을 휴대폰에서 이어가는 경험을 목표로 한다. 실제 명령과 파일 작업은 같은 기기의 Termux에서 수행하며, 다른 프로젝트로 이동하거나 앱을 다시 열어도 기존 세션으로 돌아갈 수 있어야 한다. 사용할 수 있는 에이전트와 개발 도구의 범위는 실제 기기에서 검증한다.
+Open the sidebar and choose **Project Add**. Browse to a Termux folder, or enter a path such as `~/projects/my-project` and choose to create the folder if needed. Save the project, select **Terminal**, and start a session.
 
-휴대폰에서 한 손으로 프로젝트 전환, 작업 상태 확인, 에이전트 입력을 이어갈 수 있도록 주요 조작의 위치와 터치 편의성을 설계한다.
+Try a shell command such as `pwd` from the input field. Your command runs in that project's folder on your phone.
 
-## 제품 화면 계획
+### 4. Add a coding agent
 
-현재 소스 구현은 준비 안내, 별도 앱 설정, 프로젝트·워크트리·세션 사이드바와 대화·터미널 화면이다. 0.10.0 앱·브리지에서는 같은 프로젝트·에이전트에서도 여러 세션을 동시에 실행할 수 있다. 전체 작업 보드는 다음 단계다.
+Prepare a compatible Codex, Claude Code, or OpenCode installation in Termux, including its provider login or API configuration. Choose the agent in Bibimer and start a session. Supported models and options depend on the installed agent. General Linux installation instructions do not guarantee Android/Termux compatibility.
 
-- 프로젝트 목록: 이름, Termux 내부 경로, 활성 세션, 최근 활동.
-- 프로젝트 상세: 세션 목록, 실행할 에이전트 선택, 새 작업 시작.
-- 세션 화면: 서식 있는 대화 또는 PTY 터미널, 자체 입력창, 승인·질문 응답, 연결 상태, 실행 상태, 명시적 종료.
-- 전체 작업 보드: 여러 프로젝트의 실행 중·완료·실패 작업을 모아 보기. 입력 대기 판별은 에이전트별 지원 범위를 검증한 뒤 제공.
+Bibimer starts in English, regardless of the device language. Choose **Settings → Language → 한국어** to switch to Korean; your choice is saved. Your input, project names, and terminal output are not translated.
 
-## 구조 가설
+## Sessions and local data
 
-```text
-같은 Android 휴대폰
-    ├─ Bibimer Android 앱
-    │      ↕ 로컬 연결·명령·출력 이벤트
-    └─ Termux 내부 브리지
-           ├─ 프로젝트 A / 파일·에이전트 세션·개발 명령
-           └─ 프로젝트 B / 파일·에이전트 세션·개발 명령
-```
+Switching screens or closing Bibimer does not request that your sessions stop. Reconnect to continue while Termux and the bridge are still running. Android may stop background processes; restarting the bridge does not restore lost processes or their terminal output.
 
-Android 앱은 UI와 제어를, Termux 내부 브리지는 프로젝트 경로와 실행 세션 관리를 담당한다. 앱이 Termux의 전용 파일 경로를 직접 읽을 수 있다고 가정하지 않는다.
+Archiving a session keeps its work running. Removing an ended session from Bibimer removes its listing, while project files and the agent's own history stay in Termux. Worktree creation and deletion are handled with Git in Termux.
 
-첫 구현은 Java Android 앱, 앱에 포함한 WebView/xterm.js 화면, Python 표준 라이브러리 기반 Termux 브리지로 구성했다. 터미널은 PTY를 사용한다. 대화는 Codex App Server, OpenCode의 로컬 서버 API, Claude Agent SDK를 통해 연결한다. Claude 대화에는 Termux의 Node.js와 별도 SDK 설치가 필요하다. 이 폰의 Termux에서 AAPT2·javac·D8·apksigner로 APK를 빌드한다. 앱 연결은 `127.0.0.1:8765`의 인증된 HTTP 요청과 출력 long polling을 사용한다.
+The app connects to a bridge on the phone's loopback address. Bibimer has no advertising or analytics SDK and does not upload your conversations to a Bibimer service. **A connected agent may send instructions, code, or files to its configured provider and tools.** Provider fees and policies apply separately. See the [privacy policy](https://bibimer.app/privacy/) for details.
 
-앱의 기본 언어는 **영어**다. 기기 언어와 관계없이 영어로 시작하며, **Settings → Language → 한국어**에서 변경한 설정을 저장한다. 화면·오류·설치 안내는 두 언어를 지원한다. 언어 변경은 실행 세션과 작성 중인 입력을 유지하며 사용자 입력·터미널 출력은 그대로 표시한다. 사용자와의 설명 및 프로젝트 문서는 한국어로 작성한다.
+## Help and development
 
-앱과 브리지는 8자리 일회용 코드로 연결한다. 이후 인증 토큰은 Android Keystore로 암호화해 앱 전용 저장소에 보관하고, Termux에서는 권한을 제한한 상태 폴더에 보관한다. 세션 출력은 브리지 메모리의 최근 1MiB만 유지한다.
+- [Detailed setup and troubleshooting](docs/setup.md) (Korean)
+- [Build and development guide](docs/development.md) (Korean)
+- [Report a bug or request a feature](https://github.com/andy5090/bibimer/issues)
+- Support: [andy@andineering.com](mailto:andy@andineering.com)
 
-## 대화와 터미널
-
-세션을 시작하기 전에 실행할 프로그램과 인터페이스를 선택한다. 실행 방식은 새 세션을 시작할 때 선택하며, 0.10.0 앱·브리지에서는 입력창 아래 Agent 선택으로 기존 에이전트 세션에 돌아갈 수 있다. 처음 선택한 에이전트는 Start session으로 시작한다.
-
-| 방식 | 제공 기능 | 현재 지원 |
-| --- | --- | --- |
-| Chat · formatted text | GFM Markdown, 목록·표, 코드 강조·복사·줄바꿈, 도구 실행, 파일 diff, 자체 입력, 승인·질문·응답 중단 | Codex·OpenCode·Claude. 제공자가 전달하는 구조화된 항목에 따라 세부 표시가 다름 |
-| Terminal · PTY | CLI 원본 화면, ANSI 16색·256색·트루컬러·굵기, ASCII 도형, 특수 키, 자체 명령 입력창 | 셸, 설치된 Codex·OpenCode·Claude CLI |
-
-대화 화면은 각 에이전트가 전달한 구조화된 이벤트를 표시한다. **Interrupt response(응답 중단)**는 현재 응답만 중단하고 다음 입력을 받을 세션을 유지한다. 0.10.0 앱·브리지에서는 프로세스 종료를 **⋯ → End session(세션 종료)**으로 옮겼다. OpenCode·Claude는 0.6.0부터 새 대화와 세션 가져오기를 제공하며, 실제 실행 가능한 CLI와 로그인·모델 설정이 필요하다. 첨부 파일·음성 입력은 아직 구현하지 않았다.
-
-**선택 질문 UI 검증(2026-10-06):** 구조화된 질문의 선택 버튼·단일/복수 선택·답변 전송은 설치된 0.12.0 APK assets와 브리지 대역 통합 검사에서 동작했다. 다만 이 폰의 Codex는 기본 모드 질문 기능이 꺼져 있어 현재 운영 설정에서는 일반 텍스트로 답할 수 있다. 격리 프로세스에서만 해당 기능을 켰을 때 실제 질문·선택·모델 답변까지 확인했다. Claude는 인증 오류, OpenCode는 제공자 관련 오류로 실제 질문 검증을 완료하지 못했다. 운영 설정은 유지했으며 실제 Android 화면·터치 검증도 남아 있다. 상세 결과는 [NEXT_SESSION.md](NEXT_SESSION.md)를 참고한다.
-
-0.4.0은 화면 간격을 줄이고 답변과 작업 과정을 중심으로 배치한다. 펼쳐 둔 도구·코드 줄바꿈 상태를 유지하며, 이전 메시지를 읽을 때 새 출력으로 스크롤을 이동하지 않는다. **Jump to latest**로 최신 응답으로 돌아간다. 새 B 심벌을 런처와 앱 내부에 함께 적용했다. [화면·렌더링과 아이콘](docs/interface.md)에 지원 범위와 설계를 기록했다.
-
-0.9.0 앱·브리지에서 Chat 응답 중에도 입력하고 **Queue(대기열)**로 다음 작업을 예약한다. Codex의 **Steer(방향 수정)**는 현재 응답에 지시를 추가한다. 대기열 개별 취소·중단/실패 후 재개를 지원하며 승인 요청에 임의 응답하지 않는다. 대기열은 앱을 다시 열어도 브리지가 살아 있으면 유지되고, 에이전트·브리지 종료 시에는 사라진다.
-
-**0.10.0 이상 앱·브리지**에서는 대기 메시지 옆의 **Steer**로 해당 항목을 현재 Codex 응답에 전달할 수 있다. 수락이 확인되면 그 항목만 대기열에서 제거하며 작성 중인 입력은 유지한다. 거절·전달 여부 불명 시 메시지를 남기고 대기열을 일시정지한다. 전달 여부가 불명인 항목은 대화를 확인한 뒤 취소해야 대기열을 재개할 수 있다.
-
-0.9.0부터 별도 **Settings(설정) → Enter key(Enter 키)**에서 **New line(줄바꿈)** 또는 **Send(보내기)**를 선택한다. 기본은 **줄바꿈**이며 저장된 설정이 없는 기존 설치본에도 적용한다. 선택은 이 휴대폰에 저장해 모든 프로젝트·세션의 Chat/PTY 공통 입력창에 사용한다. 줄바꿈 모드에서는 Send/Queue 버튼으로 전송하고, 보내기 모드에서는 Enter로 전송·대기열 추가한다. **Shift+Enter / Ctrl+Enter**와 Meta·Alt+Enter는 항상 줄바꿈하며 한글 조합 중 Enter와 키 반복은 전송하지 않는다. PTY 직접 입력과 터미널의 Enter 특수 키는 기존 동작을 유지한다.
-
-0.10.0 앱·브리지에서는 상단 왼쪽 버튼으로 사이드바를 열고 **Project Add(프로젝트 추가)**로 폴더를 등록한다. 프로젝트를 펼쳐 세션을 선택하며 ↗로 프로젝트를 연다. **+ New session**은 기존 세션을 유지하며 새 시작 화면을 연다. 실행 중인 세션과 세션별 입력 초안·승인·질문을 유지하며, 선택한 세션의 최근 출력을 다시 표시한다. 입력 초안은 현재 앱 화면의 메모리에 보관하므로 앱 프로세스가 종료되면 복원하지 않는다.
-
-기존 프로젝트는 **Project Add → Browse(찾아보기)**에서 Termux 폴더를 탐색하고 **Select folder(폴더 선택) → Save project(프로젝트 등록)**으로 불러온다. 홈·상위 폴더 이동과 숨김 폴더 표시를 지원하며 경로를 직접 입력할 수도 있다. 폴더 탐색에는 앱·브리지 0.3.1 이상이 필요하다.
-
-## `/` 스킬·명령 선택 (앱·브리지 0.12.0)
-
-실행 중인 에이전트의 공통 입력창 첫 글자로 `/`를 입력하면 현재 프로젝트·워크트리에서 사용 가능한 목록이 열린다. 이름·설명으로 검색하고 항목을 눌러 선택한 뒤 인자를 입력해 Send/Queue로 보낸다. 목록이 열린 동안 ↑/↓로 이동하고 Enter/Tab으로 선택한다. 선택 자체는 전송하지 않으며 Escape·Android 뒤로 가기로 닫는다. Shift/Ctrl+Enter 줄바꿈과 한글 조합 Enter 처리는 유지한다.
-
-- **Codex:** 활성 스킬을 네이티브 `skills/list`로 조회하고, Chat 전송 시 `$name` 텍스트와 명시적 skill 항목으로 호출한다. 대기열·직접/대기 메시지 Steer에도 스킬 정보가 유지된다. CLI 전용 `/` 메뉴 전체를 Chat에 제공하는 것은 아니다.
-- **Claude:** SDK `supportedCommands()`가 반환하는 스킬·사용자 명령·SDK에서 사용할 수 있는 내장 명령을 `/name`으로 호출한다. 일반 assistant 메시지 없이 반환되는 명령 결과도 표시한다.
-- **OpenCode:** 네이티브 `/command` 목록의 명령·스킬을 전용 세션 command API로 실행한다. 실행 중 승인·응답 중단을 계속 처리하며 모델·추론 수준 설정을 함께 전달한다.
-
-목록 조회·선택만으로 에이전트 턴을 실행하지 않는다. Refresh로 목록을 새로고침하며 조회 실패·빈 목록·구형 브리지는 안내를 표시한다. Chat에서 찾을 수 없거나 이름이 중복된 항목은 목록에서 선택해야 한다. PTY의 공통 입력창에서는 Codex 스킬을 `$name`, Claude·OpenCode는 `/name`으로 전송하고, 목록에 없는 CLI 명령은 원래 입력대로 전달한다. 일반 셸·PTY 직접 키 입력은 유지한다.
-
-구현은 [Codex App Server의 스킬 API](https://learn.chatgpt.com/docs/app-server), [Claude SDK 명령](https://code.claude.com/docs/en/agent-sdk/slash-commands), [OpenCode 서버 API](https://dev.opencode.ai/docs/server/)와 설치된 CLI 스키마를 기준으로 한다. 실제 기기의 세 에이전트 목록 조회와 격리된 실행/브라우저 테스트를 확인했으며, 새 APK 설치 후 Android 키보드 및 실제 모델 응답 검증은 남아 있다.
-
-## 모델·추론 수준과 에이전트 전환 (앱·브리지 0.10.0)
-
-입력창 아래 **Agent / Model / Reasoning**을 눌러 자체 목록에서 선택한다. Codex·Claude·OpenCode가 반환한 모델과 해당 모델의 effort/variant만 표시하며 ↻로 목록을 새로고침한다. 모델을 바꾸면 추론 수준은 새 모델의 기본값으로 돌린다. 선택은 에이전트별로 저장하고 Chat에서는 **다음 입력부터** 적용한다. 현재 응답·승인에는 영향을 주지 않으며 대기열은 실제 전송할 때 해당 세션의 설정을 사용한다.
-
-기존 0.12.0에서는 에이전트를 전환하면 그 에이전트의 기존 세션·출력·대기열·입력/질문 초안으로 돌아간다. 기존 프로세스를 종료하거나 대화를 다른 제공자에게 자동으로 전달하지 않는다. 에이전트마다 새 세션을 시작하거나 해당 도구의 저장된 세션을 가져올 수 있다. 새 에이전트 CLI 플러그인을 임의로 등록하는 기능은 아니다.
-
-### 다른 에이전트로 대화 이어가기 (앱·브리지 0.13.0)
-
-Chat에서 Agent를 바꾸거나 세션 관리의 **Continue with another agent**를 누르면 전환 방식을 선택한다.
-
-- **Continue & send**: 전달할 최근 대화를 확인·수정하고 다음 지시를 입력한다. 선택한 에이전트의 새 세션이 같은 프로젝트·Git 워크트리 폴더에서 시작된다. 원본 세션과 이미 실행 중인 대상 에이전트 세션은 유지하며, 새 세션의 **Open source**로 원본에 돌아간다.
-- **Open … session without sharing**: 해당 프로젝트에서 마지막으로 선택한 대상 에이전트 세션으로 돌아간다. 대화를 보내거나 세션을 새로 실행하지 않는다.
-
-이어가기에는 완료된 사용자 입력·답변 중 최근 최대 24개·12,000바이트를 사용하고 다음 지시는 최대 4,000바이트다. 긴 대화는 일부 생략되므로 미리보기에서 보완할 수 있다. 도구 출력·추론 과정·PTY 출력은 포함하지 않는다. 대상 에이전트에 저장된 권한·모델·추론 수준·Fast를 적용하고 전송 전에 표시한다. 네이티브 세션 ID는 각 에이전트에 새로 생성되며 전달 본문은 해당 에이전트의 대화 기록에 남는다.
-
-미리보기·취소만으로 세션이나 모델 턴을 시작하지 않는다. 원본의 응답·승인·대기열 처리가 끝난 뒤 전달할 수 있으며, 미리보기 후 원본이 바뀌면 다시 불러와 확인한다. 브리지를 재시작해 원본 대화가 메모리에 없으면 해당 Chat을 먼저 이어서 열어야 한다. 격리된 세 에이전트 대역과 브라우저로 검증했으며 실제 APK·모델 사용 검증은 새 빌드 후 진행한다.
-
-PTY 설정 변경은 다음 실행에 적용한다. Codex·Claude는 모델과 추론 수준, OpenCode는 모델을 실행 인수로 전달한다. 현재 OpenCode PTY의 추론 수준은 자체 메뉴에서 선택하고 앱에서는 Chat에 제공한다. OpenCode Chat에서 명시한 모델을 에이전트 기본값으로 되돌리려면 새 세션이 필요하며 목록의 다른 모델로 전환하는 것은 가능하다.
-
-## 권한과 Codex Fast
-
-**입력창 바로 아래**에서 테두리 없는 텍스트 메뉴로 권한을 선택하고, 번개 아이콘이 있는 **Fast 칩**을 눌러 켜거나 끈다. Fast는 켜지면 민트색과 채워진 번개, 꺼지면 회색과 윤곽선 번개로 표시한다. Codex는 기본값·읽기 전용·프로젝트 쓰기와 승인·Full Access(YOLO), Claude는 기본값·일반 승인·파일 편집 허용·계획·bypass, OpenCode는 기본값·도구 승인 요청·bypass를 제공한다. 마지막 선택을 에이전트별로 저장해 다른 프로젝트·다음 세션·가져오기에 사용한다. 세부 설명은 옆의 ⓘ에서 확인한다.
-
-0.8.1부터 **진행 중인 Chat에서도 권한을 변경**할 수 있다. 변경은 해당 세션의 **다음 입력부터** 적용하며 현재 응답과 대기 승인은 유지한다. 앱을 다시 열어도 다음 입력에 사용할 설정이 유지되고 다른 실행 세션에는 영향을 주지 않는다. Codex·Claude는 기본 권한으로 돌아갈 수 있다. OpenCode는 대화 중 승인 요청↔bypass 전환을 지원하며 기본값 복원에는 새 세션이 필요하다.
-
-Fast는 기본 꺼짐이며 실제 제공 여부·사용량은 계정과 모델에 따라 다르다. PTY 실행 중 하단 선택은 **다음 세션**의 기본값을 바꾼다. 현재 PTY의 권한·속도는 CLI에서 변경하고 Codex의 Fast는 `/fast`를 사용한다. CLI에서 직접 바꾼 값은 앱 기본값과 자동 동기화하지 않는다.
-
-YOLO는 Codex 승인과 샌드박스 제한을 해제하고, Claude bypass는 도구 권한 확인을 생략한다. OpenCode는 네이티브 도구 규칙을 적용한다. 선택하지 않은 모드로 자동 전환하거나 대기 요청에 임의 응답하지 않는다. **대화 중 변경에는 앱·브리지 0.8.1**이 필요하다.
-
-## 저장된 세션 가져오기
-
-프로젝트를 연 뒤 **Saved sessions(저장된 세션)**에서 에이전트와 같은 폴더의 저장 세션을 선택한다. 0.6.0은 Codex·OpenCode·Claude를 지원한다. 제목 검색·최근 순 목록·더 보기를 제공하며 **Continue original(원본 이어하기)**가 기본이다. 별도 대화가 필요하면 **Import a copy(복사해서 가져오기)**를 선택한다. 가져오면 최근 기록을 서식 있는 대화로 표시하고 같은 맥락에서 후속 지시를 보낼 수 있다.
-
-실행 중인 CLI 터미널에 연결하는 기능은 아니다. 원본을 다른 CLI에서 사용 중이면 복사 방식을 사용한다. 가져오기만으로 새 모델 작업을 시작하거나 과거 승인 요청을 되살리지 않는다. 0.9.0에서는 해당 프로젝트에 실행 세션이 있으면 가져오기를 막는다. 0.10.0 앱·브리지에서는 같은 에이전트의 다른 세션을 유지한 채 가져올 수 있으며, 동일한 원본을 이미 실행 중이면 중복 이어하기를 거절한다.
-
-사이드바의 목록·보관 상태·사용자가 지정한 이름·네이티브 세션 ID는 브리지 재시작 후에도 유지한다. 종료·유실된 Chat은 **⋯ → Continue session(세션 이어하기)**로 에이전트 원본을 다시 연다. PTY 출력은 복원하지 않으며 원본 기록·CLI가 없으면 이어하기에 실패할 수 있다. 워크트리는 실제 Git 목록에서 읽고 기존 경로로 실행한다. 워크트리 자동 생성·삭제는 아직 제공하지 않는다.
-
-**세션 제목 표시 수정을 0.11.2 APK에 포함했다. 브리지 0.11.2도 함께 적용한다.** 직접 지정한 이름을 우선하고, 원본 에이전트 제목이나 첫 입력으로 대화를 구분하며 긴 제목은 사이드바에 두 줄로 표시한다. 기존 세션은 사이드바에서 원본 제목을 다시 조회한다. 원본 기록을 읽을 수 없으면 에이전트·날짜·ID 표시를 유지한다.
-
-0.7.0부터 새 Codex Chat은 기존 CLI와 같은 `$CODEX_HOME`(기본 `~/.codex`)에 저장한다. 첫 입력 이후 Codex의 세션 목록과 앱의 저장된 세션에서 찾을 수 있고, **Resume in CLI(CLI에서 이어하기)**로 같은 ID를 여는 명령을 복사한다. CLI로 옮기기 전에 앱의 해당 세션을 종료한다. OpenCode·Claude의 기록도 각 에이전트의 저장 규칙을 따른다. Bibimer는 대화 내용을 자체 디스크 로그에 저장하지 않고, 미리보기는 최근 최대 50항목과 기존 메모리 한도까지만 표시한다. PTY 화면과 전체 과거 기록 탐색은 복원하지 않는다. 세 에이전트 지원에는 앱·브리지 0.6.0과 호환되는 CLI가 필요하다.
-
-## 처음 사용하는 사람의 준비
-
-Termux나 개발 도구가 이미 설치되어 있다고 전제하지 않는다. 앱의 **Setup(준비)** 화면에서 다음 순서를 안내한다.
-
-1. Termux 설치 안내를 열고 설치·초기 실행을 진행한다.
-2. 앱에 포함된 `bibimer-setup.sh`를 다운로드 폴더에 저장한다.
-3. 안내된 명령을 Termux에서 실행해 필요한 Python과 브리지를 준비한다.
-4. Termux에 표시된 연결 코드를 앱에 입력한다.
-5. 프로젝트를 등록하고 터미널 또는 설치된 에이전트를 실행한다.
-
-설치는 Android와 Termux 화면에서 사용자가 이어서 진행한다. Termux가 없는 새 기기에서 이 흐름 전체를 완료할 수 있는지는 아직 검증 전이다. 에이전트 설치·로그인도 별도로 필요하며, 명령이 발견되었다고 Android 실행 지원이 확인된 것은 아니다. 자세한 내용은 [설치 및 사용 안내](docs/setup.md)에 기록한다.
-
-## 개발 버전 빌드와 실행
-
-Termux에서 저장소 루트를 기준으로 실행한다.
-
-```sh
-pkg install python openjdk-21 aapt2 d8 apksigner
-python scripts/build_apk.py
-termux-open --view --content-type application/vnd.android.package-archive "$PWD/dist/bibimer-debug.apk"
-```
-
-브리지는 앱의 준비 안내를 따르거나, 개발 중에는 저장소에서 직접 시작할 수 있다.
-
-```sh
-python bridge/bibimer_bridge.py start
-```
-
-시작 명령을 Termux 터미널에서 실행하면 앱에 입력할 연결 코드가 표시된다. 첫 다운로드에는 인터넷 연결이 필요하다. 모델 요청의 네트워크 사용 여부는 실행할 에이전트 구성에 따른다.
-
-- [빌드 및 검증 방법](docs/development.md)
-- [브리지 구조와 API](docs/architecture.md)
-- [Google Play 출시 준비](docs/google-play-release.md) — AAB 빌드 경로·등록 문구·그래픽 초안. 실제 AAB 빌드·제출·심사 전이다.
-
-## 첫 번째 마일스톤
-
-**같은 휴대폰에 설치한 Android 앱과 Termux로 프로젝트 하나에서 에이전트 하나를 실행하고, 앱 재접속 후 같은 세션에 입력을 이어 보낼 수 있다.**
-
-1. 실제 Android 앱 설치·실행 및 같은 기기의 Termux와 연결·브리지 시작 방법 검증.
-2. Termux 내부 프로젝트 경로 등록 및 유효성 검사.
-3. 설치된 에이전트 하나로 터미널 세션 실행·출력·입력 확인.
-4. 앱 연결 종료와 실행 세션 종료를 구분하고 재접속 검증.
-5. 명시적 중지와 프로세스 종료 결과 표시.
-
-프로젝트별 여러 세션·기존 Git worktree별 실행·대기열을 제공한다. 다음 단계는 상태 알림과 전체 작업 보드다. 원격 기기 제어, 자동 에이전트 협업, 클라우드 동기화는 초기 범위에서 제외한다.
-
-## 현재 상태
-
-2026-10-06 최신 앱은 **`Download/Bibimer-0.13.0.apk`(versionCode 23)**다. 빈 요약 카드 숨김과 에이전트 간 대화 이어가기 선택을 포함하며 이어가기에는 브리지 0.13.0도 필요하다. 입력 첫 글자 `/`의 스킬·명령 목록과 Codex·Claude·OpenCode 네이티브 호출을 포함하며 브리지 0.12.0 적용도 필요하다. 원본 세션 제목·첫 입력 표시와 사이드바의 두 줄 제목을 포함한다. 알림 본문에 실제 답변의 짧은 미리보기를 표시한다. 응답 완료 알림, 프로젝트 설정·등록 해제 메뉴, 실제 설치 버전 표시 수정을 추가했다. 사이드바·세션 관리, 자체 선택 목록, 모델·추론 수준·에이전트 전환, 대기 메시지 Steer, 자동 설정·연결 안내, Responding 애니메이션을 포함한다. BIBIMER 로고·서체, Project Add/Full Access 표기, Queue·Steer, 별도 Settings·Enter 동작 선택을 포함한다. Enter 기본은 줄바꿈이다. 브리지 설치 파일은 `Download/bibimer-setup-0.13.0.sh`로 제공한다. APK 설치만으로 실행 중인 브리지를 업데이트하지 않는다. 0.8.2에서는 권한 선택을 테두리 없는 텍스트 메뉴로, Fast를 번개 아이콘 토글 칩으로 다듬었다. 0.8.1에서는 입력창 아래 권한·Fast 바로 선택과 대화 중 권한 변경을 추가했다. 0.8.0의 권한 잠금을 해제하고 변경한 설정을 다음 입력에 적용한다. 0.7.0에서는 Codex 새 대화의 영구 저장, 저장 목록의 원본 이어하기 기본값, CLI 이어하기 명령 복사를 추가했다. 실제 Codex 0.156.1과 로컬 응답 대역으로 저장·기본 목록·종료 후 같은 ID/입력 복원을 확인했다. 실제 모델 요청은 보내지 않았다.
-
-앱에서 중단했던 Claude 복구 작업도 이어받았다. 현재 폰의 arm64 Termux/glibc에서 공식 Claude 2.1.283을 별도로 설치하고 버전 확인·SDK 초기 연결·Chat 준비·PTY 출력을 검증했다. 기존 전역 Claude 명령과 로그인 설정을 교체하지 않으며, 정상 사용자 CLI가 있으면 우선 사용한다. 다른 기기의 Android 지원이나 실제 모델 작업까지 검증한 것은 아니다.
-
-기존 앱 대화는 별도 저장소가 아닌 0.6.0 브리지의 임시 메모리 세션이었다. 남아 있는 65개 표시 기록은 저장소 밖의 비공개 복구 파일로 보존했고 작업 파일을 이어받았다. 이 기록은 전체 모델 맥락과 동일하지 않으며 이전 임시 세션의 완전한 복원을 보장하지 않는다.
-
-Settings·Enter 설정·로고는 APK 업데이트로 사용할 수 있다. **새 세션 관리·모델 선택·대기 메시지 Steer는 브리지 0.10.0 설치·재시작 후 사용**한다. 사용자 요청으로 운영 브리지 재시작을 완료했고 2026-10-05 상태 파일과 실제 API에서 **0.10.0·모델/세션 목록/워크트리/대기 메시지 Steer 지원, 같은 Codex 대화와 두 실행 세션·권한/Fast·프로젝트·인증 유지**를 확인했다. 프로젝트 설정 메뉴에 필요한 추가 API는 아직 운영 브리지에 적용하지 않았다. 자세한 기록은 [다음 세션 시작점](NEXT_SESSION.md)에 남겼다. APK 설치·실기기 검증은 별도로 필요하다. 새 앱은 설정 기능이 없는 브리지에서 에이전트 시작·가져오기를 막고 업데이트를 안내한다. 실제 Android 키보드·WebView·화면 잠금 및 신규 설치 흐름 검증은 남아 있다.
-
-- [초기 검증 계획](docs/bootstrap.md)
-- [다음 세션 시작점](NEXT_SESSION.md)
+Developed by **Andineering**. Bibimer is independent of Termux and the supported agent providers.
