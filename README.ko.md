@@ -29,15 +29,15 @@ Bibimer는 개발 중이며 **첫 Google Play 버전(0.16.0)을 심사에 제출
 
 ## 주요 화면
 
-**에이전트 대화(가상 데모) · 로컬 터미널 · Termux 준비**
+**로컬 터미널 · Termux 준비 · 설정**
 
 <p>
-  <a href="release/google-play/screenshots/ko-KR/05-demo.png"><img src="release/google-play/screenshots/ko-KR/05-demo.png" alt="코드 서식과 가상 Codex 예제를 보여주는 Bibimer 대화 화면" width="240"></a>
   <a href="release/google-play/screenshots/ko-KR/04-terminal.png"><img src="release/google-play/screenshots/ko-KR/04-terminal.png" alt="같은 기기의 Termux 프로젝트에서 실제 셸 명령을 실행한 Bibimer 터미널" width="240"></a>
   <a href="release/google-play/screenshots/ko-KR/02-setup.jpg"><img src="release/google-play/screenshots/ko-KR/02-setup.jpg" alt="Termux 설치와 같은 휴대폰의 앱 연결을 안내하는 Bibimer 준비 화면" width="240"></a>
+  <a href="release/google-play/screenshots/ko-KR/03-settings.jpg"><img src="release/google-play/screenshots/ko-KR/03-settings.jpg" alt="입력 방식과 언어, 응답 완료 알림을 선택하는 Bibimer 설정 화면" width="240"></a>
 </p>
 
-이미지를 누르면 원본 크기로 볼 수 있습니다. 모두 Android 에뮬레이터에서 캡처한 실제 앱 화면입니다. 대화 화면의 내용은 가상 데모이며, 터미널 화면은 로컬 프로젝트에서 셸 명령을 실행한 결과입니다. 터미널 모드에는 코딩 에이전트 계정이 필요하지 않습니다.
+이미지를 누르면 원본 크기로 볼 수 있습니다. 모두 Android 에뮬레이터에서 캡처한 실제 앱 화면입니다. 터미널 화면은 같은 기기의 Termux 프로젝트에서 셸 명령을 실행한 결과입니다.
 
 ## 처음 사용하기
 
