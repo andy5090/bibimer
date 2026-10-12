@@ -45,8 +45,6 @@ Bibimer와 Termux를 **같은 Android 휴대폰**에 설치하세요. 터미널�
 
 화면부터 둘러보고 싶다면 첫 화면이나 준비·설정에서 **데모 체험하기**를 누르세요. Codex·Claude Code·OpenCode의 가상 예제로 코드·diff·표·도구 실행 표시를 확인할 수 있습니다. 대화·터미널 입력은 사용하지 않으며 에이전트나 명령을 실행하지 않습니다. 계정이나 Termux 없이 체험할 수 있고, **데모 나가기**를 누르면 기존 연결과 설정을 유지한 채 실제 개발 환경 준비로 돌아갑니다.
 
-[데모 안내와 알림 시연 영상](https://bibimer.app/ko/review/)
-
 ### 1. Termux 준비
 
 [Termux 공식 설치 안내](https://github.com/termux/termux-app#installation)에 나온 배포처에서 설치한 뒤 한 번 실행해 초기 준비를 마칩니다. 프로젝트 파일과 개발 도구, 실행 세션은 이 환경에서 다룹니다.

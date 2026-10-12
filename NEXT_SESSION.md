@@ -23,6 +23,7 @@
 - 사용자 요청에 따라 영어·한국어 README 대표 화면에서 가상 데모를 제거했다. 현재 구성은 **실제 로컬 터미널 → Termux 준비 → 설정** 3장이다. 언어별 기존 스토어 캡처 `04-terminal.png`·`02-setup.jpg`·`03-settings.jpg`를 재사용하고 원본 이미지 링크·설명·alt를 제공한다. 기존 너비 240px와 줄바꿈 구조를 유지했다.
 - 모두 정상 모드의 실제 Android 에뮬레이터 캡처(0.15.0/code 28)다. 새 이미지 합성·앱 소스 변경·APK/AAB 빌드는 없다. 양쪽 README의 이미지 3장·언어별 경로·원본 링크·alt, 원본과 캡션의 일치, `git diff --check`를 확인했다.
 - GitHub에 게시한 두 언어 README의 교체 반영과 이미지 로딩·배치를 확인했다. 시각 판정 **95점 pass**, `.omx/state/readme-gallery/ralph-progress.json`; 현재 증빙 `dist/readme-gallery/github-readme-normal-ko.jpg`.
+- 사용자 지적에 따라 두 언어 README에서 심사용 데모 안내·알림 시연 영상 링크를 제거했다. README는 제품 기능과 설치·사용 안내를 제공한다. Console에 제출한 앱 접근·FGS 심사 리소스와 공개 `/review/` 경로는 계속 사용한다. README의 해당 링크 제거와 `git diff --check`를 확인했다.
 
 ## 프로덕션 첫 출시 제출 현황 (2026-10-12)
 
