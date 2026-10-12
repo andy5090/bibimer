@@ -2,11 +2,11 @@
 
 ## 0.17.0 업데이트 준비 (2026-10-12)
 
-사용자의 빌드·Play Console 배포 요청으로 전체 화면 파일 뷰어를 **0.17.0 / versionCode 32**에 포함했다. 개발용 APK는 기존 로컬 개발 인증서로 서명·검증해 `Download/Bibimer-0.17.0.apk`로 제공한다. 검증용 `dist/play/bibimer-0.17.0-32-unsigned.aab`는 bundletool/Manifest/DEX/30개 assets 검사를 통과했으나 **미서명으로 Play 제출 불가**다. 영어·한국어 [출시 메모](../release/google-play/release-notes/0.17.0.txt)는 준비했다.
+사용자의 빌드·Play Console 배포 요청으로 최신 0.16.1의 심사 접근 제한과 전체 화면 파일 뷰어를 **0.17.0 / versionCode 32**에 포함했다. `dist/play/bibimer-0.17.0-32-release.aab`를 Doppler에 보관한 기존 업로드 키로 서명하고 Play 업로드 인증서 일치·bundletool/Manifest/DEX/30개 assets·심사 코드 digest 포함/원문 미포함을 검증했다. 개발용 APK는 기존 로컬 개발 인증서로 서명해 `Download/Bibimer-0.17.0.apk`로 제공한다. 영어·한국어 [출시 메모](../release/google-play/release-notes/0.17.0.txt)도 준비했다.
 
-현재 Termux에는 이전 출시 업로드 키가 없고 인증된 Console 브라우저 연결도 확인되지 않았다. 기존 키가 있는 작업 환경에서 출시 서명과 Console의 최신 사용 코드/심사 상태를 확인한 뒤 업로드·출시를 이어가야 한다. 기존 0.16.1(31) 심사·공개 여부는 이번에 재조회하지 않았으며 변경하지 않았다. 새 업데이트는 **Play 미업로드/미배포**로 기록한다. 기존 키 생성/교체나 서명 변경으로 이 차단을 우회하지 않는다. 빌드 해시·검증은 [NEXT_SESSION.md](../NEXT_SESSION.md)를 따른다.
+현재 Termux 작업용 Chromium에서 Console이 Google 로그인 화면으로 이동해 업로드를 진행하지 못했다. 로그인된 Console 환경에서 최신 사용 코드/심사 상태를 확인한 뒤 기존 사용자 요청 범위에서 업로드·출시/심사 제출을 이어간다. 기존 0.16.1(31) 심사를 변경하지 않았고 이번에 재조회하지도 않았다. 새 업데이트는 **출시 서명·검증 완료, Play 미업로드/미배포**로 기록한다. 빌드 해시·검증은 [NEXT_SESSION.md](../NEXT_SESSION.md)를 따른다.
 
-2026-10-12 현재 앱은 **`app.bibimer` · `0.16.1 / versionCode 31` · 최소 API 26 · target API 36**이다. 비공개 코드로 제한한 심사용 예제를 포함한 서명 AAB를 내부 테스트에 게시했고 지정 테스터 1명에게 제공된다. 프로덕션 공개 출시·Google 승인·Google Play를 통한 실제 설치 검증은 완료하지 않았다. 내장 브리지는 0.15.0이며 실제 휴대폰 설치본과 운영 브리지는 유지했다.
+2026-10-12 현재 Play에 제출한 앱은 **`app.bibimer` · `0.16.1 / versionCode 31` · 최소 API 26 · target API 36**이다. 비공개 코드로 제한한 심사용 예제를 포함한 서명 AAB를 내부 테스트에 게시했고 지정 테스터 1명에게 제공된다. 프로덕션 공개 출시·Google 승인·Google Play를 통한 실제 설치 검증은 완료하지 않았다. 내장 브리지는 0.15.0이며 실제 휴대폰 설치본과 운영 브리지는 유지했다.
 
 Bibimer의 제품 유형은 **모바일 ADE(Agent Development Environment, 에이전트 개발 환경)**다. 프로젝트·워크트리·코딩 에이전트 세션·대화·터미널을 관리하고, 실제 코딩 작업은 사용자가 연결한 에이전트가 수행한다. 슬로건은 **내 손안의 에이전트 개발 환경**이다. 영어·한국어 스토어 설명과 소개 그래픽, 웹사이트에 반영했으며 앱의 새 소개 문구는 2026-10-12 출시용 AAB에 포함했다. 기존 휴대폰 설치 APK는 교체하지 않았다.
 

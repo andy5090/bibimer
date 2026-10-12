@@ -1,5 +1,17 @@
 # Bibimer 다음 세션 시작점
 
+## 0.17.0 빌드·Play 배포 준비 (2026-10-12, 출시 서명 완료·Console 로그인 대기)
+
+- 사용자가 **빌드해서 Play Console에 배포**를 요청했다. 원격 최신 두 커밋(`44a9d51`·`90bb125`)을 조회해 심사자용 접근 제한·0.16.1(31) 제출·Doppler 공유 기록을 발견했고, 파일 뷰어와 충돌 없이 병합했다. 앱은 **0.17.0 / versionCode 32**, 내장 브리지는 **0.15.0**이다. 31은 이미 출시 이력에 있으므로 초기 로컬 31 검증물을 폐기 대상으로 분리하고 최종 32를 다시 빌드했다. 공개 데모 버튼을 복원하지 않는다.
+- 출시 AAB: `dist/play/bibimer-0.17.0-32-release.aab`, SHA-256 **3f501a4d88832ffe9ca688c34adf08249eae29426cbef93599fb022615ab7012**. 기존 업로드 키로 서명했고 Play 등록 업로드 인증서 지문과 일치한다. AAPT2/javac/D8·bundletool 1.18.3 validate·jarsigner, 번들 Manifest의 0.17.0(32)/API 26~36/debuggable false, 30개 assets/뷰어·Mermaid 라이선스 원본 일치, Native 허용 경로/ContentProvider DEX를 검증했다.
+- 개발용 APK: `dist/bibimer-debug.apk`, **1,973,750바이트**, SHA-256 **a22a8ee0b06127189373ef92e8cb0df46f6837c112f66f9aa1459380f49b968b**. v2/v3 서명·기존 휴대폰용 0.15.0 개발 인증서 일치, 패키지/버전/SDK·30개 assets를 확인했다. **`/storage/emulated/0/Download/Bibimer-0.17.0.apk`**를 최종 코드 32로 교체하고 바이트 일치를 확인했다. Play 앱 서명과는 다른 개발용 파일이며 앱 설치는 하지 않았다.
+- Doppler `bibimer/prd`의 기존 업로드 키·암호·별칭·심사 코드를 이번 작업에만 가져왔다. Termux의 Go DNS와 CA 경로 문제를 `--enable-dns-resolver`/TCP DNS와 `SSL_CERT_FILE=$PREFIX/etc/tls/cert.pem`으로 해결했으며 TLS 검증을 끄지 않았다. 기존 업로드 키의 공개 인증서 일치를 확인한 뒤 저장소 밖 기존 문서 경로에 0700 폴더/0600 파일로 보관했다. 새 키·토큰·권한을 만들지 않았고 값 원문을 출력하지 않았다. 상시 다운로드나 빌드 스크립트의 Doppler 자동 연동은 추가하지 않았다.
+- 두 빌드에 기존 심사 코드의 SHA-256만 포함했고 원문 코드가 어떤 archive 항목에도 없는지 확인했다. `reviewAccessConfigured: true`, 미설정/과거 인증 없는 데모 활성화는 계속 거절한다. 영어 320자·한국어 170자의 출시 메모 `release/google-play/release-notes/0.17.0.txt`를 준비했다.
+- 최신 병합 후 Python **14개**, ReviewAccess Java **17개 단언**, Demo **95개 단언/11개 시나리오**, Node 접근 UI/입력 계약/초안, `smoke_inspector.cjs`·`smoke_file_links.cjs`·`smoke_rendering.cjs`와 `smoke_ui.cjs` 전체 회귀를 통과했다. 로그 `.tools/build-{apk,aab}-0.17.0-32.log`, `.tools/tests-release-0.17.0-32.log`, `.tools/release-0.17.0-32-verification.json`, `.tools/file-viewer-build-verification-32.json`. 실제 Android 설치·파일 앱 호출은 미확인이다.
+- **남은 차단은 Play Console 로그인**이다. 이번 작업용 Termux Chromium을 시작하고 게시 개요로 이동했으나 `https://accounts.google.com/v3/signin/identifier`로 리디렉션됐다. 로그인 화면의 DOM·입력·화면·쿠키를 조회하지 않았다. 사용자에게 기존 로그인된 Mac 환경에서 이어가기 또는 휴대폰 작업용 브라우저에서 직접 로그인을 질문했다. 기존 0.16.1(31) 심사는 취소하거나 변경하지 않았으며 최신 상태 재조회도 못했다.
+- **로그인된 Console 환경이 준비되면 기존 배포 요청 범위에서** 최신 코드/심사 상태 확인 → 서명 번들 업로드 → 현재 심사 상태에 맞는 내부 테스트·프로덕션 출시/심사 제출 → 최종 상태 확인을 계속한다. 32의 충돌 여부는 실제 Console에서 확인해야 한다. 이전 Mac 작업 환경에서도 같은 Doppler 값으로 재빌드할 수 있다. 비밀번호·코드는 채팅에 요구하지 않는다. 현재 상태는 **출시 빌드/서명/검증 완료, Play 미업로드/미배포**다. `listing.json`의 실제 출시 기록 0.16.1(31)과 `pendingUpdate` 0.17.0(32)를 구분한다.
+
+
 ## 개발 기기 간 키 공유 · Doppler (2026-10-12)
 
 - 사용자 요청으로 기존 Doppler `andy` 워크플레이스에 **`bibimer` 프로젝트**를 새로 만들었다. **`prd`**에 `BIBIMER_UPLOAD_KEYSTORE_BASE64`(기존 PKCS12 업로드 키 원본의 Base64), `BIBIMER_STORE_PASSWORD`, `BIBIMER_UPLOAD_ALIAS`, `BIBIMER_REVIEW_CODE`를 보관했다. 별칭 외 세 값은 masked로 등록했다. 원문 값은 문서·출력·Git에 넣지 않는다.
@@ -7,7 +19,7 @@
 - 다른 기기는 같은 Doppler 워크플레이스·프로젝트 접근 권한으로 필요할 때 가져다 사용할 수 있다. 사용자는 **공유 보관만** 요청했다. 매 빌드 다운로드, 빌드 스크립트 연동, 환경 변수 자동 주입, APK/AAB 빌드를 추가하지 않았다. 기기별 파일 경로는 공유 값으로 저장하지 않았다.
 - 일반 앱·브리지 개발에는 공용 Bibimer 서비스 API 키가 없다. Termux 연결 토큰과 제공자·GitHub 인증은 기기별로 준비한다. 출시 AAB에는 기존 업로드 키·암호·별칭이 필요하고, 심사 예제를 포함하려면 심사 코드 파일도 준비한다. Play App Signing의 앱 서명 키는 Google이 관리하며 이 Doppler 보관 대상과 구분한다.
 
-## 최신: 심사용 데모 접근 제한 · 0.16.1 (2026-10-12)
+## 최근 제출: 심사용 데모 접근 제한 · 0.16.1 (2026-10-12)
 
 - 사용자 요청은 데모를 앱 등록·심사용으로 제한하는 것이다. 첫 화면·Setup·일반 Settings의 체험 버튼과 공개 README·스토어 설명의 데모 홍보를 제거했다. Settings의 **Review access / 심사자용 접근**에서 비공개 코드를 입력해야 격리된 가상 작업 공간을 열 수 있다. 공개 홈에는 심사 자료 링크가 없다.
 - 코드 원문은 저장소 밖 `~/.local/share/bibimer-review/review-code`(0600, 상위 폴더 0700), Console 비공개 Password와 위 Doppler `bibimer/prd`에 보관한다. Git·웹사이트·도구 출력·로그·AAB에는 원문을 넣지 않았다. `BIBIMER_REVIEW_CODE_FILE`로 SHA-256만 빌드에 포함하며 미설정 빌드는 접근을 거절한다. 인증 없는 과거 데모 설정과 `setDemoMode(true)` 직접 호출도 막는다. 정상 설정·연결·초안 분리와 기존 Termux 프로세스 보존을 유지한다.
@@ -38,15 +50,6 @@
 - **사용자가 명시적으로 빌드를 요청할 때만 APK를 빌드한다.** 작업 보고에서는 소스 구현 완료와 마지막 APK에 포함된 내용을 구분한다.
 - 휴대폰용 마지막 배포 파일은 `Download/Bibimer-0.15.0.apk`다. 2026-10-10의 `apk 빌드` 요청으로 GitHub 가져오기·민트 티타늄·Android 파일 열기를 포함했다. 2026-10-11에는 별도 승인으로 Mac의 `dist/bibimer-debug.apk`를 스토어 캡처용으로 빌드했다. 기존 휴대폰 배포 파일·운영 앱·브리지는 교체하지 않았다.
 
-## 0.17.0 빌드·Play 배포 준비 (2026-10-12, 출시 서명/업로드 대기)
-
-- 사용자가 **빌드해서 Play Console에 배포**를 요청했다. 파일 뷰어 누적 변경을 앱 **0.17.0 / versionCode 31**, 내장 브리지 **0.15.0**으로 빌드했다. 실제 Console의 최신 사용 코드는 현재 환경에서 재조회하지 못했으므로 업로드 전 31의 사용 가능 여부를 확인해야 한다. 기존 0.16.0(30) 심사를 취소하거나 Console 등록 상태를 변경하지 않았다.
-- 개발용 APK: `dist/bibimer-debug.apk`, **1,973,750바이트**, SHA-256 **1159cf77836b0bed40a683892331dc324ffdd5b05f295d93c4989af14d0f165f**. v2/v3 서명·기존 휴대폰용 0.15.0 개발 인증서 일치, 패키지/버전/SDK·DEX·30개 assets 원본 일치를 확인했다. **`/storage/emulated/0/Download/Bibimer-0.17.0.apk`**로 복사했고 바이트 일치를 확인했다. 앱 설치는 하지 않았다. Play 배포 인증서와는 다른 개발용 APK다.
-- 검증용 **미서명** AAB: `dist/play/bibimer-0.17.0-31-unsigned.aab`, SHA-256 **827209afa0878a7d14b04586b5793409927acb2fc2e10738f67a9196145dec4d**. AAPT2/javac/D8·bundletool 1.18.3 validate, 번들 Manifest의 0.17.0(31)/API 26~36/debuggable false, 30개 assets·파일 뷰어/Mermaid 라이선스·네이티브 허용 경로/ContentProvider DEX를 검증했다. **출시 서명이 없어 Play에 제출할 수 없다.** 서명 AAB를 빌드/검증한 것으로 기록하지 않는다.
-- 출시 메모 `release/google-play/release-notes/0.17.0.txt`에 영어 320자·한국어 170자를 준비했다. 출시 도구/가상 backend Python **9개**, Java 데모 **95개 단언/11개 시나리오**, Setup **4개**를 재검증했다. 앞선 파일 뷰어 통합/전체 UI 회귀 검증을 따르며 실제 Android 설치·파일 앱 호출은 미확인이다. 로그 `.tools/build-{apk,aab}-0.17.0-31.log`, `.tools/file-viewer-build-verification.json`.
-- **배포 차단 원인:** 현재 Termux에는 기록된 저장소 밖 `~/.local/share/bibimer-signing/upload.jks`·`upload-password`가 없고 출시 서명 환경 변수도 없다. `~/.local`·`~/.config`·Download의 기존 JKS/업로드 키 경로 검색에서 사용할 키를 찾지 못했다. 이전 로컬 Console 브라우저 세 연결도 모두 종료돼 인증된 Console 접근을 확인할 수 없다. 새 업로드 키 생성/키 재설정·사용자 앱 제거·로그인 입력 수집은 하지 않았다.
-- 사용자에게 기존 키의 Termux 경로 또는 이전 Mac 작업 환경에서 이어가기를 질문했다. **기존 업로드 키와 인증된 Console 환경이 준비되면 기존 사용자 요청 범위에서 출시 서명 → 코드 충돌 확인 → 번들 업로드 → 현재 심사 상태에 맞는 출시/심사 제출 → 최종 Console 상태 확인을 계속한다.** 비밀번호를 채팅에 보내도록 요구하지 않는다. `listing.json`의 실제 출시 기록은 0.16.0(30)을 유지하고 0.17.0은 별도 pendingUpdate로 구분한다. 현재 상태는 **빌드 검증 완료, Play 미업로드/미배포**다.
-
 ## 전체 화면 파일 뷰어 (2026-10-12, 0.17.0 개발 APK 포함·Play 미배포)
 
 - 파일 탐색기에서 파일을 누르면 사이드바 내용 대신 대화 위의 전체 화면 dialog에 표시한다. 모바일 사이드바를 닫고 넓은 화면의 고정 패널은 유지한다. 파일명·상대 경로·닫기·Back/Escape·미리보기/원본 보기·파일 새로고침·Android 앱으로 열기를 제공한다. Git status의 미추적 파일도 같은 뷰어를 사용하며 diff·커밋 상세는 기존 패널에 표시한다. 세션·대화·초안·대기열·승인을 변경하지 않는다.
@@ -55,7 +58,7 @@
 - `file-viewer.js`, Android asset 허용 목록, 빌드 도구의 SHA-512 고정 Mermaid **12.1.0** UMD 번들/라이선스를 추가했다. 라이브러리는 첫 다이어그램에서 지연 로드한다. HTML/SVG는 실행 요소·URL·이벤트 속성을 제거하고 스크립트·외부 자원·탐색·폼을 차단하는 CSP와 sandbox srcdoc iframe으로 표시한다. 하위 프레임에도 Native interface가 노출될 수 있어 allow-scripts/allow-same-origin을 허용하지 않는다. Mermaid는 strict·HTML label 비활성·16,000자/500간선과 설정/내장 마크업 제한을 적용하며 실패하면 원문을 보여 준다.
 - 프로젝트·워크트리·브리지 인스턴스 변경 시 뷰어를 닫고, 닫기/재조회 뒤 늦은 파일/다이어그램 응답을 폐기한다. 기존 128KiB 텍스트/64MiB 외부 전송 제한을 유지한다. 잘린 문서는 원문으로 표시한다. 문서·다이어그램 출력은 메타데이터/일반 로그에 저장하지 않는다. 기존 `/v1/inspect`와 `/native/open-file`을 재사용하므로 브리지 소스 변경·재시작은 없다.
 - 검증: 실제 임시 Git/브리지와 Chromium Android API 대역의 `smoke_inspector.cjs`에서 구문 강조·복사, Markdown/HTML/Mermaid·원본 전환, 외부 자원 요청 없음·HTML 스크립트 비실행·iframe origin 격리, 실패/설정 지시문 다이어그램, 잘림/바이너리, 다섯 Office/이미지/PDF 요청과 프로젝트/워크트리 일치·앱 없음 재시도, 늦은 응답 폐기, 초안/실행 세션/인덱스 보존, 320/393/1600px·영어/한국어·Back/Escape를 확인했다. 기존 `smoke_file_links.cjs`, `smoke_rendering.cjs`, 브리지 inspector **8개**/file_links **7개**, 출시 도구 **7개**, 최신 리소스를 사용한 Android 전체 Java 컴파일, JS 문법·diff 검사를 통과했다. 기존 Java 8/deprecated 경고만 있다. 화면 증빙은 `dist/screenshots/file-viewer-{markdown-phone,markdown-desktop,phone-ko}.png`다.
-- 실제 Android WebView의 srcdoc/CSP·TalkBack·소프트 키보드/창 전환, 설치된 문서/이미지/PDF 앱의 열기·읽기 권한·돌아오기는 새 APK에서 검증해야 한다. JavaScript로 동작하는 HTML과 상대 CSS/이미지 로딩은 이번 정적 미리보기에서 지원하지 않는다. 구현 당시에는 APK/AAB 빌드·설치·버전 변경·운영 브리지 적용을 하지 않았고, 이후 사용자 요청으로 위 0.17.0 개발 APK/미서명 AAB에 포함했다. 운영 브리지·앱 설치 상태는 유지한다.
+- 실제 Android WebView의 srcdoc/CSP·TalkBack·소프트 키보드/창 전환, 설치된 문서/이미지/PDF 앱의 열기·읽기 권한·돌아오기는 새 APK에서 검증해야 한다. JavaScript로 동작하는 HTML과 상대 CSS/이미지 로딩은 이번 정적 미리보기에서 지원하지 않는다. 구현 당시에는 APK/AAB 빌드·설치·버전 변경·운영 브리지 적용을 하지 않았고, 이후 사용자 요청으로 위 0.17.0 개발 APK/출시 서명 AAB에 포함했다. 운영 브리지·앱 설치 상태는 유지한다.
 - 기존 `smoke_ui.cjs` 전체 회귀도 통과했다. 프로젝트/워크트리·세 에이전트 전환, 입력/질문 초안·대기열/Steer·승인·가져오기·PTY·재접속·설정/IME·영어/한국어 검증을 포함한다. 변경 전 HEAD에서도 재현된 테스트의 옛 첫 화면 문구와 Settings의 작은 화면 무스크롤 가정을 현재 UI에 맞춰 수정했다. 제품 첫 화면/Settings 동작은 이번 작업에서 변경하지 않았다.
 
 ## README 대표 화면 (2026-10-12)

@@ -144,7 +144,7 @@ Chat 이벤트의 파일 변경에는 `changes: [{path, diff}]`와 `truncated`, 
 
 2026-10-12 파일 뷰어 소스는 `file-viewer.js`에서 기존 `/v1/inspect`의 `file` 조회와 `/native/open-file`을 사용한다. 파일 탐색기는 목록을 유지하고 파일 내용을 전체 화면 dialog로 전달한다. 프로젝트·워크트리·브리지 인스턴스를 캡처해 결과를 구분하고 변경 시 닫는다. Office·이미지·PDF의 선택은 텍스트 조회를 거치지 않고 기존 네이티브 파일 전송을 호출한다. 일반 텍스트는 GFM/구문 강조/원본을 DOM으로 표시한다.
 
-HTML과 Mermaid SVG는 `sandbox=""` srcdoc iframe으로 표시한다. 문서에서 실행 요소·이벤트 속성·자원/탐색 URL을 제거한 뒤, 스크립트·네트워크·프레임·폼을 차단하는 CSP를 문서 맨 앞에 넣는다. Android의 JavascriptInterface는 하위 프레임에도 노출될 수 있으므로 iframe의 스크립트 실행 차단을 유지하며 `allow-scripts`나 `allow-same-origin`을 추가하지 않는다. 최상위 CSP의 frame-src는 self로 한정하고 Android의 asset 허용 목록·네트워크 차단·탐색 차단도 유지한다. Mermaid 12.1.0은 SHA-512/라이선스를 고정한 로컬 UMD 번들로 지연 로드하고 strict·htmlLabels false·설정/마크업 제한을 적용한다. 0.17.0 개발 APK에 포함했으며 WebView 실기기 검증·출시 서명 AAB·Play 배포는 남아 있다. [Mermaid 보안 설정](https://mermaid.js.org/config/schema-docs/config-properties-securitylevel.html), [Android 파일 읽기 권한 전달](https://developer.android.com/training/secure-file-sharing/share-file)을 참고한다.
+HTML과 Mermaid SVG는 `sandbox=""` srcdoc iframe으로 표시한다. 문서에서 실행 요소·이벤트 속성·자원/탐색 URL을 제거한 뒤, 스크립트·네트워크·프레임·폼을 차단하는 CSP를 문서 맨 앞에 넣는다. Android의 JavascriptInterface는 하위 프레임에도 노출될 수 있으므로 iframe의 스크립트 실행 차단을 유지하며 `allow-scripts`나 `allow-same-origin`을 추가하지 않는다. 최상위 CSP의 frame-src는 self로 한정하고 Android의 asset 허용 목록·네트워크 차단·탐색 차단도 유지한다. Mermaid 12.1.0은 SHA-512/라이선스를 고정한 로컬 UMD 번들로 지연 로드하고 strict·htmlLabels false·설정/마크업 제한을 적용한다. 0.17.0 개발 APK에 포함했으며 출시 서명 AAB도 검증했고 WebView 실기기 검증·Play 배포는 남아 있다. [Mermaid 보안 설정](https://mermaid.js.org/config/schema-docs/config-properties-securitylevel.html), [Android 파일 읽기 권한 전달](https://developer.android.com/training/secure-file-sharing/share-file)을 참고한다.
 
 ## OpenCode·Claude 어댑터 (0.6.0)
 
