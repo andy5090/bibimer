@@ -1,5 +1,5 @@
 {
-  "status": "in_review",
+  "status": "published",
   "consoleListingStatus": "published",
   "appIcon": "graphics/icon-512.png",
   "developerAccount": {
@@ -183,8 +183,8 @@
     "consoleUploadStatus": "published_internal_test",
     "consoleAcceptedVersionCode": 32,
     "released": true,
-    "releasedTrack": "internal_testing",
-    "productionReleased": false,
+    "releasedTrack": "production_and_internal_testing",
+    "productionReleased": true,
     "internalTestReview": {
       "verifiedOn": "2026-10-12",
       "warnings": [
@@ -228,26 +228,31 @@
     "versionName": "0.17.0",
     "versionCode": 32,
     "releaseName": "0.17.0 (32) - Full-screen file viewer",
-    "consoleStatus": "submitted_pre_review_checks",
+    "consoleStatus": "available_on_google_play",
     "submittedOn": "2026-10-12",
     "changeCount": 1,
     "managedPublishing": false,
     "publishAfterApproval": true,
-    "publicAvailabilityConfirmed": false,
+    "publicAvailabilityConfirmed": true,
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
-    "note": "Version 32 submission accepted; automated pre-review checks running. Version 31 remains publicly available until approval and publication of the update.",
-    "preReviewChecksCompleted": false
+    "note": "Fresh Console latest releases show version 32 available in production and internal testing. Device installation/update visibility remains a separate verification.",
+    "preReviewChecksCompleted": true,
+    "approvedOn": "2026-10-12",
+    "publishedAtLocal": "2026-10-12 17:22 Asia/Seoul"
   },
   "internalTesterParticipation": {
     "consoleRegistration": "saved_one_tester",
     "invitePageVerified": true,
     "invitationAccepted": true,
     "acceptanceStatus": "accepted_after_user_confirmation_of_invite_email_and_usage_information_consent",
-    "participationPageStatus": "You’re a tester for app.bibimer (unreviewed)",
-    "googlePlayInstallVerified": false
+    "participationPageStatus": "You’re a tester for Bibimer (app.bibimer)",
+    "googlePlayInstallVerified": false,
+    "optInRecheckedOn": "2026-10-12",
+    "selectedListRechecked": true,
+    "storeOfferedVersionName": "0.17.0"
   },
   "reviewAccessRestrictionUpdate": {
     "status": "approved_in_version_31_retained_in_version_32",
@@ -273,7 +278,7 @@
     "versionName": "0.17.0",
     "versionCode": 32,
     "preparedOn": "2026-10-12",
-    "status": "submitted_pre_review_checks",
+    "status": "published_production_and_internal",
     "file": "bibimer-0.17.0-32-release.aab",
     "sha256": "177f2ecd43fa39a80994fe58ccc2c56bb41207279aeef2494ccb2618e729fad1",
     "signed": true,
@@ -304,9 +309,9 @@
     "macRebuiltOn": "2026-10-12",
     "termuxOriginalBundleSha256": "3f501a4d88832ffe9ca688c34adf08249eae29426cbef93599fb022615ab7012",
     "releasedTrack": "internal_testing",
-    "productionReleased": false,
+    "productionReleased": true,
     "consoleInternalTestStatus": "active_available_to_existing_tester",
-    "consoleProductionStatus": "submitted_pre_review_checks"
+    "consoleProductionStatus": "available_on_google_play"
   },
   "previousProductionRelease": {
     "versionName": "0.16.1",
@@ -330,9 +335,10 @@
   },
   "publicStoreUrl": "https://play.google.com/store/apps/details?id=app.bibimer",
   "currentPublicVersion": {
-    "versionName": "0.16.1",
-    "versionCode": 31,
+    "versionName": "0.17.0",
+    "versionCode": 32,
     "verifiedOn": "2026-10-12",
-    "publicStorePageVerified": true
+    "publicStorePageVerified": true,
+    "verificationEvidence": "Fresh Console version 32 available in production and internal testing; opted-in account Play details display 0.17.0 and device compatibility."
   }
 }

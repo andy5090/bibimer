@@ -7,7 +7,7 @@
 - Mac AAB: `dist/play/bibimer-0.17.0-32-release.aab`, SHA-256 `177f2ecd43fa39a80994fe58ccc2c56bb41207279aeef2494ccb2618e729fad1`. 아래 Termux 빌드 해시와 구분한다. 내장 브리지 0.15.0, 패키지 `app.bibimer`, 최소 API 26·target 36이다.
 - 기존 0.16.1(31)은 **Google Play에 제공됨 / 전체 출시**, 2026-10-12 오후 3:59 게시를 확인했다. [공개 스토어](https://play.google.com/store/apps/details?id=app.bibimer)에서 앱 이름·개발자·설치 버튼·정상 모드 이미지 3장을 확인했다. 기존 공개 버전을 철회하지 않았다.
 - 내부 테스트는 **활성 / 0.17.0 (32) - Full-screen file viewer / 내부 테스터에게 제공됨**, 오후 4:58 게시를 확인했다. 기존 테스터 목록과 참여 동의를 유지했다. 실제 Play 설치는 미확인이다.
-- 프로덕션은 **0.17.0 (32) - Full-screen file viewer**를 출시율 100%·모든 기존 대상 국가로 저장하고 변경 **1개**를 Google에 전송했다. 현재 자동 사전 검사 진행 중이며 완료 후 Google 심사로 넘어간다. 관리형 게시 사용 중지에 따라 승인 후 자동 게시된다. 업데이트의 승인·공개 제공은 아직 확인되지 않았다.
+- 프로덕션은 **0.17.0 (32) - Full-screen file viewer**를 출시율 100%·모든 기존 대상 국가로 저장하고 변경 **1개**를 Google에 전송했다. 이후 새로 로드한 Console에서 **0.17.0(32) Google Play에 제공됨 / 전체 출시**, 오후 **5:22** 게시를 확인했다. 내부 테스트는 같은 32를 제공한다. 실제 기기의 업데이트 표시·설치는 별도 확인 대상이다.
 - 영어 320자·한국어 170자의 [출시 메모](../release/google-play/release-notes/0.17.0.txt)를 두 트랙에 적용했다. 매핑 파일 경고 1개 외 오류는 없으며 이 빌드는 난독화를 사용하지 않는다.
 - 14개 Python 테스트, ReviewAccess Java 17개 단언, Demo 95개 단언/11개 시나리오, Node 접근 UI/입력 계약/초안과 변경 JS 구문 검사를 통과했다. bundletool·서명·Manifest/DEX·30개 assets·새 뷰어/Mermaid·업로드 인증서 일치·동일 심사 digest·원문 코드/암호 미포함을 확인했다. 새 APK 생성·설치·사용자 기기 변경은 하지 않았다. 실제 Android 파일 뷰어/외부 앱·Play 설치 검증은 별개다.
 - [심사 안내](../release/google-play/review-instructions.txt)는 기존 비공개 코드를 그대로 사용한다. EN/KO 웹 안내 첫 단계의 오래된 앱 버전 번호를 제거하고 공개 본문을 확인했다. Pages 배포 `https://cfd319f4.bibimer.pages.dev`. 공개 README에 데모 홍보를 복원하지 않았다.
@@ -44,7 +44,7 @@ Bibimer의 제품 유형은 **모바일 ADE(Agent Development Environment, 에�
 | 심사 접근 | [영어 안내](../release/google-play/review-instructions.txt)와 비공개 코드가 필요한 심사용 예제를 제출했다. 개인 외부 계정·키는 제공하지 않는다. 실제 제공자 실행은 데모로 검증했다고 주장하지 않는다. |
 | 완료 알림 | FGS specialUse 설명과 실제 Android 조작 영상 제출. 가상 완료 이벤트로 서비스·알림 이동·끄기를 확인했으며 실제 기기·절전·실제 제공자의 동작은 별도 검증 대상이다. |
 | 내부 테스터 | 지정 계정 1명 등록·트랙 활성·사용자 동의 후 참여 완료. 실제 Google Play 설치는 미확인이다. 기존 개발 APK의 서명과 Play 서명은 구분해야 하며 운영 앱 데이터를 임의 제거하지 않는다. |
-| 프로덕션 | 기존 31은 공개 출시됨. 업데이트 32는 제출 후 자동 사전 검사 진행 중이며 관리형 게시가 꺼져 승인 후 자동 게시된다. |
+| 프로덕션 | 업데이트 32 공개 승인·전체 출시 완료. 내부 테스트도 32이며 실제 기기 업데이트 설치는 별도 확인한다. |
 | App Links | HTTPS intent filter·라우팅·assetlinks.json은 미구현이다. Play 배포 인증서 지문은 확보했다. |
 
 신규 앱은 Android App Bundle과 Play App Signing을 사용한다. 패키지 이름은 등록 후 변경할 수 없으며, 업데이트마다 versionCode를 올린다. target API 36은 현재 신규 제출 요구사항에 맞는다. [앱 등록](https://support.google.com/googleplay/android-developer/answer/9859152), [API 요구사항](https://support.google.com/googleplay/android-developer/answer/11926878), [앱 서명](https://support.google.com/googleplay/android-developer/answer/9842756).
