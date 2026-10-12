@@ -38,6 +38,26 @@
 - **사용자가 명시적으로 빌드를 요청할 때만 APK를 빌드한다.** 작업 보고에서는 소스 구현 완료와 마지막 APK에 포함된 내용을 구분한다.
 - 휴대폰용 마지막 배포 파일은 `Download/Bibimer-0.15.0.apk`다. 2026-10-10의 `apk 빌드` 요청으로 GitHub 가져오기·민트 티타늄·Android 파일 열기를 포함했다. 2026-10-11에는 별도 승인으로 Mac의 `dist/bibimer-debug.apk`를 스토어 캡처용으로 빌드했다. 기존 휴대폰 배포 파일·운영 앱·브리지는 교체하지 않았다.
 
+## 0.17.0 빌드·Play 배포 준비 (2026-10-12, 출시 서명/업로드 대기)
+
+- 사용자가 **빌드해서 Play Console에 배포**를 요청했다. 파일 뷰어 누적 변경을 앱 **0.17.0 / versionCode 31**, 내장 브리지 **0.15.0**으로 빌드했다. 실제 Console의 최신 사용 코드는 현재 환경에서 재조회하지 못했으므로 업로드 전 31의 사용 가능 여부를 확인해야 한다. 기존 0.16.0(30) 심사를 취소하거나 Console 등록 상태를 변경하지 않았다.
+- 개발용 APK: `dist/bibimer-debug.apk`, **1,973,750바이트**, SHA-256 **1159cf77836b0bed40a683892331dc324ffdd5b05f295d93c4989af14d0f165f**. v2/v3 서명·기존 휴대폰용 0.15.0 개발 인증서 일치, 패키지/버전/SDK·DEX·30개 assets 원본 일치를 확인했다. **`/storage/emulated/0/Download/Bibimer-0.17.0.apk`**로 복사했고 바이트 일치를 확인했다. 앱 설치는 하지 않았다. Play 배포 인증서와는 다른 개발용 APK다.
+- 검증용 **미서명** AAB: `dist/play/bibimer-0.17.0-31-unsigned.aab`, SHA-256 **827209afa0878a7d14b04586b5793409927acb2fc2e10738f67a9196145dec4d**. AAPT2/javac/D8·bundletool 1.18.3 validate, 번들 Manifest의 0.17.0(31)/API 26~36/debuggable false, 30개 assets·파일 뷰어/Mermaid 라이선스·네이티브 허용 경로/ContentProvider DEX를 검증했다. **출시 서명이 없어 Play에 제출할 수 없다.** 서명 AAB를 빌드/검증한 것으로 기록하지 않는다.
+- 출시 메모 `release/google-play/release-notes/0.17.0.txt`에 영어 320자·한국어 170자를 준비했다. 출시 도구/가상 backend Python **9개**, Java 데모 **95개 단언/11개 시나리오**, Setup **4개**를 재검증했다. 앞선 파일 뷰어 통합/전체 UI 회귀 검증을 따르며 실제 Android 설치·파일 앱 호출은 미확인이다. 로그 `.tools/build-{apk,aab}-0.17.0-31.log`, `.tools/file-viewer-build-verification.json`.
+- **배포 차단 원인:** 현재 Termux에는 기록된 저장소 밖 `~/.local/share/bibimer-signing/upload.jks`·`upload-password`가 없고 출시 서명 환경 변수도 없다. `~/.local`·`~/.config`·Download의 기존 JKS/업로드 키 경로 검색에서 사용할 키를 찾지 못했다. 이전 로컬 Console 브라우저 세 연결도 모두 종료돼 인증된 Console 접근을 확인할 수 없다. 새 업로드 키 생성/키 재설정·사용자 앱 제거·로그인 입력 수집은 하지 않았다.
+- 사용자에게 기존 키의 Termux 경로 또는 이전 Mac 작업 환경에서 이어가기를 질문했다. **기존 업로드 키와 인증된 Console 환경이 준비되면 기존 사용자 요청 범위에서 출시 서명 → 코드 충돌 확인 → 번들 업로드 → 현재 심사 상태에 맞는 출시/심사 제출 → 최종 Console 상태 확인을 계속한다.** 비밀번호를 채팅에 보내도록 요구하지 않는다. `listing.json`의 실제 출시 기록은 0.16.0(30)을 유지하고 0.17.0은 별도 pendingUpdate로 구분한다. 현재 상태는 **빌드 검증 완료, Play 미업로드/미배포**다.
+
+## 전체 화면 파일 뷰어 (2026-10-12, 0.17.0 개발 APK 포함·Play 미배포)
+
+- 파일 탐색기에서 파일을 누르면 사이드바 내용 대신 대화 위의 전체 화면 dialog에 표시한다. 모바일 사이드바를 닫고 넓은 화면의 고정 패널은 유지한다. 파일명·상대 경로·닫기·Back/Escape·미리보기/원본 보기·파일 새로고침·Android 앱으로 열기를 제공한다. Git status의 미추적 파일도 같은 뷰어를 사용하며 diff·커밋 상세는 기존 패널에 표시한다. 세션·대화·초안·대기열·승인을 변경하지 않는다.
+- 코드/설정 파일은 기존 highlight.js의 지원 언어로 구문 강조·복사·줄바꿈을 제공한다. Markdown은 제목·표·목록·코드와 Mermaid 블록을 렌더링하고 `.mmd`/`.mermaid`는 다이어그램을 표시한다. HTML은 인라인 CSS를 포함한 정적 미리보기로 표시한다. Markdown·HTML·Mermaid의 원본은 별도 버튼으로 확인한다.
+- Office(doc/docx·ppt/pptx·xls/xlsx)·이미지·PDF는 선택 즉시 기존 네이티브 파일 전송과 읽기 전용 ContentProvider/ACTION_VIEW로 설치된 Android 앱에 열기를 요청한다. **PDF는 우선 외부 앱 방식**이며 자체 페이지 탐색·확대·검색 UI는 추가하지 않았다. 앱 없음/전송 실패 안내와 재시도를 제공한다. 바이너리/비 UTF-8 파일도 외부 앱으로 열 수 있다.
+- `file-viewer.js`, Android asset 허용 목록, 빌드 도구의 SHA-512 고정 Mermaid **12.1.0** UMD 번들/라이선스를 추가했다. 라이브러리는 첫 다이어그램에서 지연 로드한다. HTML/SVG는 실행 요소·URL·이벤트 속성을 제거하고 스크립트·외부 자원·탐색·폼을 차단하는 CSP와 sandbox srcdoc iframe으로 표시한다. 하위 프레임에도 Native interface가 노출될 수 있어 allow-scripts/allow-same-origin을 허용하지 않는다. Mermaid는 strict·HTML label 비활성·16,000자/500간선과 설정/내장 마크업 제한을 적용하며 실패하면 원문을 보여 준다.
+- 프로젝트·워크트리·브리지 인스턴스 변경 시 뷰어를 닫고, 닫기/재조회 뒤 늦은 파일/다이어그램 응답을 폐기한다. 기존 128KiB 텍스트/64MiB 외부 전송 제한을 유지한다. 잘린 문서는 원문으로 표시한다. 문서·다이어그램 출력은 메타데이터/일반 로그에 저장하지 않는다. 기존 `/v1/inspect`와 `/native/open-file`을 재사용하므로 브리지 소스 변경·재시작은 없다.
+- 검증: 실제 임시 Git/브리지와 Chromium Android API 대역의 `smoke_inspector.cjs`에서 구문 강조·복사, Markdown/HTML/Mermaid·원본 전환, 외부 자원 요청 없음·HTML 스크립트 비실행·iframe origin 격리, 실패/설정 지시문 다이어그램, 잘림/바이너리, 다섯 Office/이미지/PDF 요청과 프로젝트/워크트리 일치·앱 없음 재시도, 늦은 응답 폐기, 초안/실행 세션/인덱스 보존, 320/393/1600px·영어/한국어·Back/Escape를 확인했다. 기존 `smoke_file_links.cjs`, `smoke_rendering.cjs`, 브리지 inspector **8개**/file_links **7개**, 출시 도구 **7개**, 최신 리소스를 사용한 Android 전체 Java 컴파일, JS 문법·diff 검사를 통과했다. 기존 Java 8/deprecated 경고만 있다. 화면 증빙은 `dist/screenshots/file-viewer-{markdown-phone,markdown-desktop,phone-ko}.png`다.
+- 실제 Android WebView의 srcdoc/CSP·TalkBack·소프트 키보드/창 전환, 설치된 문서/이미지/PDF 앱의 열기·읽기 권한·돌아오기는 새 APK에서 검증해야 한다. JavaScript로 동작하는 HTML과 상대 CSS/이미지 로딩은 이번 정적 미리보기에서 지원하지 않는다. 구현 당시에는 APK/AAB 빌드·설치·버전 변경·운영 브리지 적용을 하지 않았고, 이후 사용자 요청으로 위 0.17.0 개발 APK/미서명 AAB에 포함했다. 운영 브리지·앱 설치 상태는 유지한다.
+- 기존 `smoke_ui.cjs` 전체 회귀도 통과했다. 프로젝트/워크트리·세 에이전트 전환, 입력/질문 초안·대기열/Steer·승인·가져오기·PTY·재접속·설정/IME·영어/한국어 검증을 포함한다. 변경 전 HEAD에서도 재현된 테스트의 옛 첫 화면 문구와 Settings의 작은 화면 무스크롤 가정을 현재 UI에 맞춰 수정했다. 제품 첫 화면/Settings 동작은 이번 작업에서 변경하지 않았다.
+
 ## README 대표 화면 (2026-10-12)
 
 - 사용자 요청에 따라 영어·한국어 README 대표 화면에서 가상 데모를 제거했다. 현재 구성은 **실제 로컬 터미널 → Termux 준비 → 설정** 3장이다. 언어별 기존 스토어 캡처 `04-terminal.png`·`02-setup.jpg`·`03-settings.jpg`를 재사용하고 원본 이미지 링크·설명·alt를 제공한다. 기존 너비 240px와 줄바꿈 구조를 유지했다.

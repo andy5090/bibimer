@@ -1,0 +1,14 @@
+<en-US>
+Open project files in a full-screen viewer.
+Preview Markdown, static HTML and Mermaid diagrams, or switch to raw source.
+Read code with syntax highlighting, copy and line wrapping.
+Open Office documents, images and PDFs with installed Android apps.
+Return to your conversation with drafts and running sessions preserved.
+</en-US>
+<ko-KR>
+프로젝트 파일을 전체 화면 뷰어로 확인하세요.
+Markdown·정적 HTML·Mermaid 미리보기와 원본 보기 전환을 지원합니다.
+코드 구문 강조·복사·줄바꿈 기능을 제공합니다.
+Office 문서·이미지·PDF는 설치된 Android 앱으로 엽니다.
+대화로 돌아와도 초안과 실행 중인 세션이 유지됩니다.
+</ko-KR>

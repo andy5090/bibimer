@@ -21,6 +21,9 @@ SRC = ROOT / "android" / "app" / "src" / "main"
 SDK_URL = "https://dl.google.com/android/repository/platform-36_r02.zip"
 SDK_SHA1 = "2c1a80dd4d9f7d0e6dd336ec603d9b5c55a6f576"
 VENDORS = [
+    ("https://registry.npmjs.org/mermaid/-/mermaid-12.1.0.tgz",
+     "wlVCp+8eTupfCeeFvoZNNiTuHrvag0P2jz/ILgb/f/6jkVokUefOcujefi8qUe/j2asHiSePncVsz/xzzA80LQ==",
+     {"package/dist/mermaid.min.js": "mermaid.js", "package/LICENSE": "mermaid-LICENSE.txt"}),
     ("https://registry.npmjs.org/marked/-/marked-15.0.12.tgz",
      "8dD6FusOQSrpv9Z1rdNMdlSgQOIP880DHqnohobOmYLElGEqAL/JvxvuxZO16r4HtjTlfPRDC1hbvxC9dPN2nA==",
      {"package/lib/marked.umd.js": "marked.js", "package/LICENSE.md": "marked-LICENSE.txt"}),

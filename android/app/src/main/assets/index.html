@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'none'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>BIBIMER</title>
   <link rel="preload" href="fonts/SpaceGrotesk-Bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="vendor/xterm.css">
@@ -17,6 +17,7 @@
   <script src="conversation.js" defer></script>
   <script src="select.js" defer></script>
   <script src="sidebar.js" defer></script>
+  <script src="file-viewer.js" defer></script>
   <script src="inspector.js" defer></script>
   <script src="commands.js" defer></script>
   <script src="github.js" defer></script>
@@ -322,6 +323,12 @@
       <p id="import-models-hint" class="hint"></p><button id="import-models-refresh" class="quiet" type="button" data-i18n="models_refresh">Refresh models</button>
       <p id="import-settings-hint" class="hint"></p><button id="import-settings-done" type="button" class="primary" data-i18n="settings_done">Done</button></dialog>
   <dialog id="stop-dialog"><h2 data-i18n="stop_title">Stop this session?</h2><p data-i18n="stop_body">This stops the agent and commands running in this session.</p><div class="button-row"><button id="cancel-stop" class="secondary" data-i18n="stop_cancel">Keep working</button><button id="confirm-stop" class="danger" data-i18n="stop_confirm">Stop session</button></div></dialog>
+  <dialog id="file-viewer" aria-labelledby="file-title" aria-describedby="file-path">
+    <div class="file-heading"><div><h2 id="file-title"></h2><small id="file-path"></small></div><button id="file-close" type="button" aria-label="Close file"><span aria-hidden="true">×</span></button></div>
+    <div class="file-toolbar"><button id="file-preview" type="button"></button><button id="file-raw" type="button"></button><button id="file-refresh" type="button"></button><button id="file-external" type="button"></button></div>
+    <p id="file-status" role="status"></p>
+    <div id="file-content" tabindex="0"></div>
+  </dialog>
   <dialog id="select-dialog" class="select-sheet" aria-labelledby="select-title">
     <div class="select-handle" aria-hidden="true"></div>
     <div class="select-heading"><h2 id="select-title">Choose an option</h2><button id="select-close" type="button" aria-label="Close choices"><span aria-hidden="true">×</span></button></div>

@@ -6,7 +6,7 @@ const {chromium}=require('../.tools/ui/node_modules/playwright-core');
 const root=path.resolve(__dirname,'..'),tmp=fs.mkdtempSync(path.join(os.tmpdir(),'bibimer-inspector-'));
 const state=path.join(tmp,'state'),repo=path.join(tmp,'Workspace'),tree=path.join(tmp,'Feature tree'),other=path.join(tmp,'Plain folder');
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-let server,bridge,browser,held,hold=false,legacy=false,fail=false;
+let server,bridge,browser,held,heldExternal,hold=false,holdExternal=false,legacy=false,fail=false,externalFailure=false;
 async function main(){
   fs.mkdirSync(repo);fs.mkdirSync(other);fs.mkdirSync(path.join(tmp,'bin'));
   const python=execFileSync('which',['python'],{encoding:'utf8'}).trim();
@@ -20,6 +20,14 @@ async function main(){
   fs.writeFileSync(path.join(repo,'src','app.txt'),'Staged line\n');git('add','.');
   fs.writeFileSync(path.join(repo,'src','app.txt'),'Working line\n');
   fs.writeFileSync(path.join(repo,'<unsafe>.txt'),'<script>window.leaked=true</script>');
+  fs.writeFileSync(path.join(repo,'code.py'),'def greet(name):\n    return "Hello " + name\n');
+  fs.writeFileSync(path.join(repo,'guide.md'),'# File guide\n\n**Formatted** text\n\n| Name | Type |\n| --- | --- |\n| app | Code |\n\n```mermaid\nflowchart LR\n A[Phone] --> B[Termux]\n```\n');
+  fs.writeFileSync(path.join(repo,'page.html'),'<h1>HTML preview</h1><p>Readable text</p><style>h1{color:rgb(10, 80, 120)}</style><script>parent.leaked=true;Bibimer.openTermux()</script><img src="https://invalid.example/leak"><iframe src="https://invalid.example/frame"></iframe><a href="https://invalid.example/link">Link</a><input autofocus onfocus="parent.leaked=true">');
+  fs.writeFileSync(path.join(repo,'diagram.mmd'),'flowchart LR\n A[Phone] --> B[Termux]\n');
+  fs.writeFileSync(path.join(repo,'broken.mmd'),'not a diagram\n');
+  fs.writeFileSync(path.join(repo,'hostile.mmd'),'%%{init: {"securityLevel":"loose"}}%%\nflowchart LR\n A[Bad] --> B[Config]');
+  fs.writeFileSync(path.join(repo,'large.html'),'<h1>Truncated</h1>'+('x'.repeat(140000)));
+  for(const name of ['document.docx','slides.pptx','sheet.xlsx','picture.png','document.pdf'])fs.writeFileSync(path.join(repo,name),'Fixture');
   fs.writeFileSync(path.join(repo,'.hidden'),'Hidden file');fs.writeFileSync(path.join(repo,'binary'),Buffer.from([0,255]));
   fs.mkdirSync(path.join(repo,'many'));for(let i=0;i<205;i++)fs.writeFileSync(path.join(repo,'many',`file-${String(i).padStart(3,'0')}`),'x');
   fs.writeFileSync(path.join(other,'other-only.txt'),'Other workspace');
@@ -41,30 +49,78 @@ async function main(){
   const indexBefore=fs.readFileSync(path.join(repo,'.git/index'));
   browser=await chromium.launch({executablePath:path.join(process.env.PREFIX,'bin/headless_shell'),headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
   const page=await browser.newPage({viewport:{width:1600,height:1000}});page.setDefaultTimeout(12000);
-  const errors=[],mutations=[];page.on('pageerror',error=>errors.push(error.message));
+  const errors=[],mutations=[],openedFiles=[],remote=[];page.on('pageerror',error=>errors.push(error.message));
+  page.on('request',request=>{if(!request.url().startsWith('http://127.0.0.1:'))remote.push(request.url());});
   await page.exposeFunction('nativeRequest',async(id,method,url,body)=>{
+    if(url==='/native/open-file'){
+      openedFiles.push(JSON.parse(body));
+      if(holdExternal){holdExternal=false;await new Promise(resolve=>heldExternal=resolve);}
+      return page.evaluate(({id,result})=>window.BibimerNativeReply(id,result),{id,result:externalFailure?{ok:false,status:400,data:{code:'error_file_app'}}:{ok:true,status:200,data:{}}});
+    }
     if(method==='POST'&&url.startsWith('/v1/sessions'))mutations.push(url);
     let result=fail&&url==='/v1/inspect'?{ok:false,status:408,data:{code:'error_inspect_timeout'}}:await call(method,url.replace('wait=20','wait=1'),JSON.parse(body));
     if(legacy&&url==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='workspace_inspector');
     if(hold&&url==='/v1/inspect'){hold=false;await new Promise(resolve=>held=resolve);}
     try{await page.evaluate(({id,result})=>window.BibimerNativeReply(id,result),{id,result});}catch{}
   });
-  await page.addInitScript(()=>{window.Bibimer={environment:()=>JSON.stringify({paired:true,termuxInstalled:true,language:localStorage.language||'en',version:'test'}),request:(...args)=>window.nativeRequest(...args),cancelPoll:()=>{},setLanguage:value=>{localStorage.language=value;return true;},setAgentOptions:()=>true,setEnterBehavior:()=>true,setBackHandling:()=>{}};});
+  await page.addInitScript(()=>{window.Bibimer={environment:()=>JSON.stringify({paired:true,termuxInstalled:true,language:localStorage.language||'en',version:'test'}),request:(...args)=>window.nativeRequest(...args),copyText:text=>{window.copiedText=text;},cancelPoll:()=>{},setLanguage:value=>{localStorage.language=value;return true;},setAgentOptions:()=>true,setEnterBehavior:()=>true,setBackHandling:()=>{}};});
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.waitForFunction(()=>document.querySelector('#connection').textContent==='Connected');
   await page.locator('#input').fill('Keep this draft');
   await page.locator('#inspector-open').click();
   const row=name=>page.locator('.inspect-row').filter({has:page.locator('span').filter({hasText:new RegExp('^'+name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'$')})});
   const back=()=>page.locator('#inspect-toolbar button').filter({hasText:'Back to list'}).click();
+  const closeFile=()=>page.locator('#file-close').click();
   await row('src').click();await row('app.txt').click();
-  await page.waitForFunction(()=>document.querySelector('.inspect-code')?.textContent==='Working line\n');
+  await page.waitForFunction(()=>document.querySelector('#file-content code')?.textContent==='Working line\n');
   assert.equal(await page.locator('#inspector').evaluate(node=>node.matches(':modal')),false);
+  assert.equal(await page.locator('#file-viewer').evaluate(node=>node.matches(':modal')),true);
+  assert.equal(await page.locator('#inspect-content .inspect-code').count(),0);
+  await closeFile();
   await page.locator('#input').click();assert.equal(await page.locator('#input').inputValue(),'Keep this draft');
-  await back();await page.locator('#inspect-toolbar button').filter({hasText:'Root'}).click();
-  await row('<unsafe>.txt').click();await page.locator('.inspect-code').waitFor();
-  assert.equal(await page.locator('.inspect-code').innerText(),'<script>window.leaked=true</script>');
+  await page.locator('#inspect-toolbar button').filter({hasText:'Root'}).click();
+  await row('<unsafe>.txt').click();await page.locator('#file-content code').waitFor();
+  assert.equal(await page.locator('#file-content code').innerText(),'<script>window.leaked=true</script>');
   assert.equal(await page.evaluate(()=>window.leaked),undefined);
-  await back();await row('binary').click();await page.getByText('Preview is available for UTF-8 text files only.').waitFor();await back();
+  await closeFile();await row('binary').click();await page.getByText('This file cannot be previewed as text. Open it with an Android app.').waitFor();await closeFile();
+  await row('code.py').click();await page.locator('#file-content .hljs-keyword').first().waitFor();
+  await page.locator('#file-content .copy-button').click();assert.equal(await page.evaluate(()=>window.copiedText),'def greet(name):\n    return "Hello " + name\n');await closeFile();
+  await row('guide.md').click();await page.locator('#file-content table').waitFor();
+  await page.frameLocator('#file-content iframe').locator('svg').waitFor();
+  await page.screenshot({path:path.join(root,'dist/screenshots/file-viewer-markdown-desktop.png')});
+  await page.setViewportSize({width:393,height:780});await page.screenshot({path:path.join(root,'dist/screenshots/file-viewer-markdown-phone.png')});
+  await page.setViewportSize({width:1600,height:1000});
+  await page.locator('#file-raw').click();assert.ok((await page.locator('#file-content code').innerText()).startsWith('# File guide'));
+  assert.equal(await page.locator('#file-content table,#file-content iframe').count(),0);await closeFile();await page.locator('#inspector-open').click();
+  await row('diagram.mmd').click();await page.frameLocator('#file-content iframe').locator('svg').waitFor();
+  assert.equal(await page.locator('#file-content iframe').getAttribute('sandbox'),'');
+  await page.locator('#file-raw').click();assert.ok((await page.locator('#file-content code').innerText()).includes('flowchart LR'));await closeFile();
+  for(const name of ['broken.mmd','hostile.mmd']){await row(name).click();await page.getByText('This diagram could not be previewed.',{exact:false}).waitFor();await closeFile();}
+  await row('page.html').click();const html=page.frameLocator('#file-content iframe');await html.locator('h1').waitFor();
+  assert.equal(await html.locator('h1').innerText(),'HTML preview');assert.equal(await html.locator('h1').evaluate(n=>getComputedStyle(n).color),'rgb(10, 80, 120)');
+  assert.equal(await html.locator('p').evaluate(n=>getComputedStyle(n).color),'rgb(17, 17, 17)');
+  assert.equal(await html.locator('script,iframe,img[src],a[href],[onfocus]').count(),0);
+  assert.equal(await html.locator('body').evaluate(()=>{try{void parent.document;return false;}catch{return true;}}),true);
+  assert.equal(await page.evaluate(()=>window.leaked),undefined);
+  await page.locator('#file-raw').click();assert.ok((await page.locator('#file-content code').innerText()).includes('Bibimer.openTermux()'));await closeFile();
+  await row('large.html').click();await page.getByText('Only part of this file is shown.', {exact:false}).waitFor();
+  assert.equal(await page.locator('#file-content iframe').count(),0);await closeFile();
+  for(const name of ['document.docx','slides.pptx','sheet.xlsx','picture.png','document.pdf']){
+    await row(name).click();await page.waitForFunction(()=>!document.querySelector('#file-viewer').open);
+    assert.equal(openedFiles.at(-1).path,name);assert.equal(openedFiles.at(-1).project_id,project.id);assert.equal(openedFiles.at(-1).worktree_path,repo);
+  }
+  externalFailure=true;await row('document.pdf').click();await page.getByText('No Android app can open this file type.',{exact:false}).waitFor();
+  externalFailure=false;await page.locator('#file-external').click();await page.waitForFunction(()=>!document.querySelector('#file-viewer').open);
+  holdExternal=true;await row('document.docx').click();for(let i=0;i<50&&!heldExternal;i++)await delay(20);
+  await closeFile();await row('document.pdf').click();await page.getByText('Another file is being prepared.',{exact:false}).waitFor();
+  heldExternal();heldExternal=null;await page.waitForFunction(()=>!document.querySelector('#file-external').disabled);
+  assert.equal(await page.locator('#file-title').innerText(),'document.pdf');
+  await page.locator('#file-external').click();await page.waitForFunction(()=>!document.querySelector('#file-viewer').open);
+  assert.deepEqual(remote,[]);
+  // Closing while a file read is held must prevent its content from returning.
+  hold=true;await row('code.py').click();for(let i=0;i<50&&!held;i++)await delay(20);
+  await closeFile();await row('guide.md').click();await page.locator('#file-content table').waitFor();
+  held();held=null;await delay(100);assert.equal(await page.locator('#file-title').innerText(),'guide.md');await closeFile();
   await row('many').click();await page.waitForFunction(()=>document.querySelectorAll('.inspect-row').length===200);
   await page.locator('#inspect-more').click();await page.waitForFunction(()=>document.querySelectorAll('.inspect-row').length===205);
   await page.locator('#inspect-status-tab').click();await row('src/app.txt').click();
@@ -100,9 +156,18 @@ async function main(){
   await page.setViewportSize({width:320,height:460});await delay(100);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:path.join(root,'dist/screenshots/inspector-phone.png')});
+  await page.locator('#inspect-files-tab').click();await row('tree-only.txt').click();await page.locator('#file-content code').waitFor();
+  assert.equal(await page.locator('#inspector').evaluate(node=>node.open),false);
+  assert.equal(await page.locator('#file-viewer').evaluate(node=>node.matches(':modal')),true);
+  const fileBounds=await page.locator('#file-viewer').boundingBox();assert.equal(fileBounds.width,320);assert.equal(fileBounds.height,460);
+  assert.ok(await page.locator('#file-external').evaluate(node=>node.getBoundingClientRect().right<=innerWidth));
+  assert.equal(await page.evaluate(()=>window.BibimerBack()),true);assert.equal(await page.locator('#file-viewer').isVisible(),false);
+  await page.locator('#inspector-open').click();
   assert.equal(await page.evaluate(()=>window.BibimerBack()),true);
   await page.locator('#tab-settings').click();await page.locator('#language-trigger').click();await page.locator('[data-value=ko]').click();
   await page.locator('#inspector-open').click();assert.equal(await page.locator('#inspector-title').innerText(),'작업 폴더 탐색');
+  await row('tree-only.txt').click();await page.locator('#file-raw').getByText('원본 보기',{exact:true}).waitFor();
+  await page.screenshot({path:path.join(root,'dist/screenshots/file-viewer-phone-ko.png')});await closeFile();await page.locator('#inspector-open').click();
   await page.keyboard.press('Escape');assert.equal(await page.locator('#inspector').isVisible(),false);
   legacy=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
   await page.locator('#inspector-open').click();await page.getByText('작업 폴더 탐색을 사용하려면 Termux 브리지를 업데이트하세요.').waitFor();
@@ -110,9 +175,9 @@ async function main(){
   assert.ok(mutations.every(url=>url.endsWith('/resize')));
   assert.ok(indexBefore.equals(fs.readFileSync(path.join(repo,'.git/index'))));
   assert.deepEqual(errors,[]);
-  console.log('PASS: real files/UTF-8/binary/pagination, staged/worktree diffs, commit history/detail, inert HTML, refresh/retry, stale response isolation, project/worktree context, drafts/process/index preserved, icon-tab keyboard, two docked panes, tablet/320px drawer, Back/Escape, EN/KO and old bridge');
+  console.log('PASS: fullscreen files, code highlighting/copy, Markdown/HTML/Mermaid previews and raw source, isolated HTML/no network, invalid/config diagrams, truncated/binary fallback, scoped native Office/image/PDF opens and no-app retry, delayed viewer close isolation, files/pagination/diffs/history, project/worktree context, drafts/process/index preserved, 320px/EN/KO/Back/Escape and old bridge');
 }
 main().catch(error=>{console.error(error.stack);process.exitCode=1;}).finally(async()=>{
-  if(held)held();if(browser)await browser.close();if(bridge){bridge.kill('SIGTERM');await new Promise(resolve=>bridge.once('exit',resolve));}
+  if(held)held();if(heldExternal)heldExternal();if(browser)await browser.close();if(bridge){bridge.kill('SIGTERM');await new Promise(resolve=>bridge.once('exit',resolve));}
   if(server)await new Promise(resolve=>server.close(resolve));fs.rmSync(tmp,{recursive:true,force:true});
 });

@@ -264,5 +264,32 @@
     "consoleAccessInstructions": "saved_private_password_and_461_character_english_guide",
     "instructions": "review-instructions.txt",
     "previousProductionReviewVersionCode": 30
+  },
+  "pendingUpdate": {
+    "versionName": "0.17.0",
+    "versionCode": 32,
+    "preparedOn": "2026-10-12",
+    "status": "source_merged_preparing_corrected_bundle_and_existing_credentials",
+    "file": "bibimer-0.17.0-32-unsigned.aab",
+    "sha256": null,
+    "signed": false,
+    "bundleValidated": false,
+    "packagedAssetsMatchSource": false,
+    "sourceBridgeVersion": "0.15.0",
+    "releaseNotesFile": "release/google-play/release-notes/0.17.0.txt",
+    "consoleUploaded": false,
+    "released": false,
+    "consoleVersionCodeAvailabilityVerified": false,
+    "previousConsoleStateRechecked": false,
+    "existingUploadKeyAvailableInCurrentEnvironment": false,
+    "authenticatedConsoleAvailableInCurrentEnvironment": false,
+    "developmentApk": {
+      "file": "Bibimer-0.17.0.apk",
+      "sha256": null,
+      "signatureType": "local_development",
+      "previousDevelopmentCertificateMatches": true,
+      "googlePlayArtifact": false,
+      "deviceInstallVerified": false
+    }
   }
 }

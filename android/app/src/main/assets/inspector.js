@@ -1,7 +1,8 @@
 "use strict";
 window.BibimerInspector = class BibimerInspector {
-  constructor(t, context, request) {
+  constructor(t, context, request, openFile) {
     this.t = t; this.context = context; this.request = request;
+    this.openFile = openFile;
     this.dialog = document.getElementById("inspector");
     this.opener = document.getElementById("inspector-open");
     this.content = document.getElementById("inspect-content");
@@ -138,7 +139,13 @@ window.BibimerInspector = class BibimerInspector {
     const button = this.node("button", text, className); button.type = "button";
     button.addEventListener("click", callback); return button;
   }
-  preview(detail) { this.detail = detail; this.load(); }
+  preview(detail) {
+    if (detail.action === "file") {
+      if (!this.wide.matches) this.close();
+      this.openFile(detail.path); return;
+    }
+    this.detail = detail; this.load();
+  }
   render(keepScroll = false) {
     const t = this.t, blocked = this.unavailable(), result = this.result;
     this.syncOpener();

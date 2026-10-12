@@ -73,9 +73,11 @@
     project:async id => { await changeProject({project_id:id}); sidebar.close(); tab("work"); },
     session:selectSession, create:newSession
   });
-  const inspector = new BibimerInspector(t, () => ({instance, project:projectKey(),
+  const fileContext = () => ({instance, project:projectKey(),
     path:session?.project?.path || draftPath || project?.path, online:online && !paused && !switchingProject,
-    supported:canInspect}), data => api("POST", "/v1/inspect", data));
+    supported:canInspect, filesSupported:canOpenFiles, demo});
+  const fileViewer = new BibimerFileViewer(t, fileContext, data => api("POST", "/v1/inspect", data), openAndroidFile);
+  const inspector = new BibimerInspector(t, fileContext, data => api("POST", "/v1/inspect", data), path => fileViewer.open(path));
 
   const github = new BibimerGitHub(t, () => ({online:online && !paused, supported:canGitHub, home:termuxHome}),
     data => api("POST", "/v1/github", data), {
@@ -263,22 +265,25 @@
       }
     });
   }
+  async function openAndroidFile(path, ctx = fileContext()) {
+    if (demo) throw appError("demo_file");
+    if (!ctx.online || !online || paused || switchingProject || !ctx.project || fileViewer.key(ctx) !== fileViewer.key(fileContext())) throw appError("error_connection_failed");
+    if (!canOpenFiles) throw appError("file_links_update");
+    if (openingFile) throw appError("error_file_busy");
+    const data = {project_id:ctx.project, path, worktree_path:ctx.path};
+    openingFile = true;
+    try { await api("POST", "/native/open-file", data); }
+    finally { openingFile = false; }
+  }
   window.BibimerOpenFile = async path => {
-    if (demo) return notice("demo_file");
-    if (!online || paused || switchingProject || !projectKey()) return notice("error_connection_failed");
-    if (!canOpenFiles) return notice("file_links_update");
-    if (openingFile) return notice("error_file_busy");
     const source = viewKey(), bridgeInstance = instance;
-    const data = {project_id:projectKey(), path};
-    const worktree = session?.project?.path || draftPath || project?.path;
-    if (worktree) data.worktree_path = worktree;
-    openingFile = true; notice("file_opening");
+    notice("file_opening");
     try {
-      await api("POST", "/native/open-file", data);
+      await openAndroidFile(path);
       if (viewKey() === source && instance === bridgeInstance && ["file_opening", "error_file_busy"].includes(noticeData?.key)) notice(null);
     } catch (error) {
       if (viewKey() === source && instance === bridgeInstance) notice(error.key || "error_file_open");
-    } finally { openingFile = false; }
+    }
   };
   window.BibimerNativeReply = (id, response) => {
     const item = pending.get(id);
@@ -806,6 +811,7 @@
       session && session.state === "lost" ? "session_lost_note" : "session_kept");
     pickers.sync();
     inspector.update();
+    fileViewer.update();
   }
   $("copy-resume").addEventListener("click", () => {
     const target = findSession(actionTarget);

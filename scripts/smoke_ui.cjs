@@ -179,7 +179,7 @@ async function main() {
   }
   await page.goto(`http://127.0.0.1:${assets.address().port}/`);
   assert.equal(await page.locator('html').getAttribute('lang'),'en');
-  assert.equal(await page.locator('#go-setup [data-i18n]').innerText(),'Set up this phone');
+  assert.equal(await page.locator('#go-setup [data-i18n]').innerText(),'Set up for development');
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
   await closeSidebar(); await page.locator('#tab-settings').click();
   assert.equal(await page.locator('#settings').isVisible(),true);
@@ -236,6 +236,7 @@ async function main() {
   for (const lang of ['en','ko']) {
     await choose('language',lang);
     await page.setViewportSize({width:360,height:460});
+    await page.locator('#enter-behavior-trigger').scrollIntoViewIfNeeded();
     const settingBox = await page.locator('#enter-behavior-trigger').boundingBox(), navBox = await page.locator('.bottom-nav').boundingBox();
     assert.ok(settingBox.y>=0 && settingBox.y+settingBox.height<navBox.y);
     assert.ok(navBox.y+navBox.height<=460);

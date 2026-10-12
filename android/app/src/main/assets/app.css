@@ -356,6 +356,13 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 }
 
 /* Finger tracking applies only while a modal drawer owns a horizontal swipe. */
+#file-viewer{position:fixed;inset:0;margin:0;width:100%;max-width:none;height:100%;max-height:none;border:0;border-radius:0;padding:12px;background:var(--bg);overflow:hidden}
+#file-viewer[open]{display:flex;flex-direction:column;gap:8px}
+.file-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0}.file-heading>div{min-width:0}.file-heading h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.file-heading small{display:block;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}.file-heading button{font-size:24px;flex-shrink:0;min-width:44px}
+.file-toolbar{display:flex;flex-wrap:wrap;gap:4px;flex-shrink:0}.file-toolbar button{font-size:12px}.file-toolbar [aria-pressed=true]{background:var(--raised);color:var(--accent)}
+#file-status{margin:0;flex-shrink:0}#file-status:empty{display:none}#file-content{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}#file-content>.code-block{margin:0;max-width:none}#file-content .code-block pre{max-height:none}#file-content>.markdown{max-width:960px;margin:0 auto;padding:0 4px 24px}
+.file-frame{display:block;width:100%;height:100%;min-height:300px;border:0;background:white}.file-diagram{height:480px;min-height:0;margin:8px 0;overflow:auto}.file-diagram .file-frame{background:var(--bg)}
+@media(min-width:700px){#file-viewer{padding:16px 24px}}
 #sidebar.drawer-swiping,#inspector.drawer-swiping { transform:translateX(var(--drawer-offset,0px))!important; transition:none; user-select:none; }
 #sidebar.drawer-settling,#inspector.drawer-settling { transform:translateX(0)!important; transition:transform .16s ease-out; }
 @media(prefers-reduced-motion:reduce) { #sidebar.drawer-settling,#inspector.drawer-settling { transition:none; } }
