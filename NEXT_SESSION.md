@@ -22,6 +22,7 @@
 
 - 영어·한국어 README의 이미지 영역을 **대화(가상 데모) → 실제 로컬 터미널 → Termux 준비** 3장으로 보완했다. 언어별 기존 스토어 캡처를 재사용하고 원본 이미지 링크·설명·alt를 추가했다. 이미지 너비는 240px이며 작은 화면에서는 자연스럽게 줄을 바꾼다.
 - 대화는 실제 에이전트 기록이 아닌 가상 데모라는 점을 캡션에 명시했다. 기존 PNG/JPEG 원본을 그대로 사용하며 새 이미지 합성·앱 소스 변경·APK/AAB 빌드는 없다. 양쪽 README의 이미지 3장·언어별 경로·원본 링크·alt·이미지 형식, 원본과 캡션의 일치, `git diff --check`를 확인했다.
+- GitHub에 게시한 두 언어 갤러리의 로딩·배치를 확인했다. 한국어 393px 화면에서 세로 줄바꿈·가로 넘침 없음(`scrollWidth = innerWidth = 393`)을 확인하고 브라우저 크기를 복원했다. 시각 판정 **95점 pass**, `.omx/state/readme-gallery/ralph-progress.json`; 증빙 `dist/readme-gallery/github-readme-{en,ko,ko-mobile}.jpg`.
 
 ## 프로덕션 첫 출시 제출 현황 (2026-10-12)
 
