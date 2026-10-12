@@ -1,9 +1,16 @@
 # Bibimer 다음 세션 시작점
 
+## 개발 기기 간 키 공유 · Doppler (2026-10-12)
+
+- 사용자 요청으로 기존 Doppler `andy` 워크플레이스에 **`bibimer` 프로젝트**를 새로 만들었다. **`prd`**에 `BIBIMER_UPLOAD_KEYSTORE_BASE64`(기존 PKCS12 업로드 키 원본의 Base64), `BIBIMER_STORE_PASSWORD`, `BIBIMER_UPLOAD_ALIAS`, `BIBIMER_REVIEW_CODE`를 보관했다. 별칭 외 세 값은 masked로 등록했다. 원문 값은 문서·출력·Git에 넣지 않는다.
+- Doppler에서 다시 읽어 원본과 네 항목이 모두 일치하는지, 키의 Base64를 복원하면 기존 파일과 동일한지 확인했다. 출시 자격 증명은 `dev`·`stg`에 복제하지 않았다. 새로운 서비스 토큰·계정 권한·Google 앱 서명 키를 만들지 않았으며 기존 로컬 키·코드를 유지했다.
+- 다른 기기는 같은 Doppler 워크플레이스·프로젝트 접근 권한으로 필요할 때 가져다 사용할 수 있다. 사용자는 **공유 보관만** 요청했다. 매 빌드 다운로드, 빌드 스크립트 연동, 환경 변수 자동 주입, APK/AAB 빌드를 추가하지 않았다. 기기별 파일 경로는 공유 값으로 저장하지 않았다.
+- 일반 앱·브리지 개발에는 공용 Bibimer 서비스 API 키가 없다. Termux 연결 토큰과 제공자·GitHub 인증은 기기별로 준비한다. 출시 AAB에는 기존 업로드 키·암호·별칭이 필요하고, 심사 예제를 포함하려면 심사 코드 파일도 준비한다. Play App Signing의 앱 서명 키는 Google이 관리하며 이 Doppler 보관 대상과 구분한다.
+
 ## 최신: 심사용 데모 접근 제한 · 0.16.1 (2026-10-12)
 
 - 사용자 요청은 데모를 앱 등록·심사용으로 제한하는 것이다. 첫 화면·Setup·일반 Settings의 체험 버튼과 공개 README·스토어 설명의 데모 홍보를 제거했다. Settings의 **Review access / 심사자용 접근**에서 비공개 코드를 입력해야 격리된 가상 작업 공간을 열 수 있다. 공개 홈에는 심사 자료 링크가 없다.
-- 코드 원문은 저장소 밖 `~/.local/share/bibimer-review/review-code`(0600, 상위 폴더 0700)와 Console 비공개 Password에만 보관한다. Git·웹사이트·도구 출력·로그·AAB에는 원문을 넣지 않았다. `BIBIMER_REVIEW_CODE_FILE`로 SHA-256만 빌드에 포함하며 미설정 빌드는 접근을 거절한다. 인증 없는 과거 데모 설정과 `setDemoMode(true)` 직접 호출도 막는다. 정상 설정·연결·초안 분리와 기존 Termux 프로세스 보존을 유지한다.
+- 코드 원문은 저장소 밖 `~/.local/share/bibimer-review/review-code`(0600, 상위 폴더 0700), Console 비공개 Password와 위 Doppler `bibimer/prd`에 보관한다. Git·웹사이트·도구 출력·로그·AAB에는 원문을 넣지 않았다. `BIBIMER_REVIEW_CODE_FILE`로 SHA-256만 빌드에 포함하며 미설정 빌드는 접근을 거절한다. 인증 없는 과거 데모 설정과 `setDemoMode(true)` 직접 호출도 막는다. 정상 설정·연결·초안 분리와 기존 Termux 프로세스 보존을 유지한다.
 - 앱 **0.16.1 / versionCode 31**, 내장 브리지 **0.15.0**. 기존 업로드 키로 `dist/play/bibimer-0.16.1-31-release.aab`를 서명했다. SHA-256 **4e5cacead042bd2208995b36500846a702811f3541be2a608bc9dfa890041e59**. bundletool·jarsigner·aapt2/javac/D8, 내장 asset 원본 일치·코드 원문 미포함 확인 완료. APK 생성·설치·실제 휴대폰/운영 브리지 변경은 하지 않았다.
 - 내부 테스트 **활성 / 0.16.1 (31) - Restricted review access / 내부 테스터에게 제공됨 / 검토되지 않음**을 확인했다. 이전 승인으로 등록·참여한 테스터 목록을 유지했다. 비공개 이메일은 저장소에 넣지 않는다. `dist/review-access/internal31-live.jpg`가 증빙이다. 실제 Google Play 설치는 미확인이다.
 - 공개 데모 버전 30의 프로덕션 심사를 철회했다. 이 작업은 변경사항을 편집 가능한 대기 상태로 돌렸으며 등급·국가·정책·데이터 보안 선언을 보존했다. 버전 31만 선택해 수정 등록정보와 기존 선언 변경 **12개**를 다시 제출했다. 자동 사전 검사 진행률·카운트다운이 사라지고 **검토 중인 변경사항 / 변경사항을 검토 중입니다**로 전환됐다. Google 승인과 공개 노출은 미확인이다. 증빙은 `dist/review-access/production31-in-review.jpg`다. 기존 관리형 게시가 꺼져 승인 후 자동 게시된다.
