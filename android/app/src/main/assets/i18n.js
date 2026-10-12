@@ -3,10 +3,14 @@
   // Each entry is [English default, Korean]. Terminal output is never translated.
   const strings = {
     demo_title: ["Demo · sample replay", "데모 · 예제 재생"],
-    demo_try: ["Try demo", "데모 체험하기"],
     demo_exit: ["Exit demo", "데모 나가기"],
     demo_banner: ["Fictional session logs. Prerecorded responses are unrelated to your input. No AI or shell commands run.", "가상의 세션 로그입니다. 입력과 관계없이 준비된 예제를 재생하며 AI·셸 명령을 실행하지 않습니다."],
-    demo_intro: ["Explore fictional Codex, Claude Code and OpenCode sessions without an account or Termux. Sample replay ignores your input and makes no AI requests, shell commands or device file changes.", "계정이나 Termux 없이 Codex·Claude Code·OpenCode의 가상 세션을 둘러보세요. 예제 재생은 입력을 사용하지 않으며 AI 요청·셸 명령·기기 파일 변경도 하지 않습니다."],
+    review_access: ["Review access", "심사자용 접근"],
+    review_access_hint: ["For authorized reviewers. Enter the access code provided in your review instructions.", "앱 심사용 기능입니다. 안내받은 접근 코드를 입력하세요."],
+    review_access_code: ["Access code", "접근 코드"],
+    review_access_enter: ["Open review demo", "심사용 데모 열기"],
+    review_access_invalid: ["Review access could not be verified. Check your access code and try again.", "심사용 접근을 열지 못했습니다. 코드를 확인하고 다시 시도해 주세요."],
+    review_access_unavailable: ["Review access is unavailable in this version.", "이 버전에서는 심사용 접근을 사용할 수 없습니다."],
     demo_preferences: ["Demo settings are separate. Real response alerts pause during demo; your Termux sessions keep running. Exiting restores normal settings and monitoring.", "데모 설정은 따로 저장합니다. 데모 중 실제 응답 알림은 잠시 쉬지만 Termux 세션은 계속 실행됩니다. 나가면 기존 설정과 알림 확인으로 돌아갑니다."],
     demo_drafts_failed: ["Could not keep your unsent drafts in memory, so demo was not opened. Send or clear large drafts and try again.", "미전송 초안을 메모리에 보관할 수 없어 데모를 열지 않았습니다. 큰 초안을 보내거나 정리한 뒤 다시 시도해 주세요."],
     demo_connection: ["Demo", "데모"],

@@ -13,13 +13,20 @@ import java.util.Map;
 final class DemoMode {
     private static final DemoWorkspace workspace = new DemoWorkspace();
     private static volatile long epoch;
-    static boolean enabled(Context context) { return context.getSharedPreferences("demo_mode", Context.MODE_PRIVATE).getBoolean("enabled", false); }
+    static boolean enabled(Context context) {
+        android.content.SharedPreferences preferences = context.getSharedPreferences("demo_mode", Context.MODE_PRIVATE);
+        return ReviewAccess.authorized(preferences.getBoolean("enabled", false), ReviewAccessConfig.DIGEST, preferences.getString("authenticated_digest", ""));
+    }
     static String preferenceName(Context context, String name) { return enabled(context) ? "demo_" + name : name; }
     static long epoch() { return epoch; }
-    static boolean set(Context context, boolean enabled) {
+    static boolean set(Context context, boolean enabled, String code) {
+        if (enabled && !ReviewAccess.verify(ReviewAccessConfig.DIGEST, code)) return false;
         synchronized (ResponseNotifications.CURSOR_LOCK) {
             synchronized (workspace) {
-                if (!context.getSharedPreferences("demo_mode", Context.MODE_PRIVATE).edit().putBoolean("enabled", enabled).commit()) return false;
+                android.content.SharedPreferences.Editor preferences = context.getSharedPreferences("demo_mode", Context.MODE_PRIVATE).edit().putBoolean("enabled", enabled);
+                if (enabled) preferences.putString("authenticated_digest", ReviewAccessConfig.DIGEST);
+                else preferences.remove("authenticated_digest");
+                if (!preferences.commit()) return false;
                 ++epoch;
                 workspace.reset("ko".equals(new AppLanguage(context).get()));
                 return true;

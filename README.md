@@ -14,7 +14,7 @@ Bibimer is an **ADE (Agent Development Environment)**. Connected agents such as 
 
 ## Availability
 
-Bibimer is in active development. **The first Google Play release (0.16.0) has been submitted for review; public availability is not yet confirmed.** Invitation-only internal testing is available. There is no public GitHub APK release. To build the current development version, follow the [build guide](docs/development.md) (currently in Korean).
+Bibimer is in active development. **The first Google Play release (0.16.1) has been submitted for review; public availability is not yet confirmed.** Invitation-only internal testing is available. There is no public GitHub APK release. To build the current development version, follow the [build guide](docs/development.md) (currently in Korean).
 
 The app targets Android 8.0 or later (API 26+). Compatibility with every Android version, device, or agent installation has not been verified.
 
@@ -42,8 +42,6 @@ Click a screenshot to view it at full size. These are actual Android emulator ca
 ## Get started
 
 You need Bibimer and Termux installed on the **same Android phone**. Start with terminal mode; install and authenticate a coding agent when you want to use agent features.
-
-To preview the interface first, choose **Try demo** on the welcome screen, in Setup, or in Settings. Demo replays fictional Codex, Claude Code, and OpenCode examples with code, diffs, tables, and tool events. Chat and terminal input is ignored; no agent or command runs. Demo requires no account or Termux. Choose **Exit demo** to return to normal setup; your existing connection and settings are preserved.
 
 ### 1. Prepare Termux
 

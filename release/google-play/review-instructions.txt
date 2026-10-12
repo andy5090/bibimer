@@ -1,17 +1,18 @@
-REVIEW INSTRUCTIONS — BIBIMER 0.16.0 / VERSION CODE 30
+REVIEW INSTRUCTIONS — BIBIMER 0.16.1 / VERSION CODE 31
 
-Instruction name: Account-free demo and optional local Termux setup
-Username/password: not required for demo or Bibimer
+Instruction name: Restricted review demo and local Termux
+Username: not required
+Password: private review access code supplied only in Play Console; not published here.
 
-Short Console text (500-character field):
-Open Bibimer > Try demo (also Setup/Settings). No account or Termux. Demo marks fictional session logs. Choose Codex, Claude Code, OpenCode or Terminal; send any text for prerecorded formats unrelated to input. Try approval/questions, queue, files/Git/GitHub samples and Settings > response notifications. No AI or shell runs. Exit demo restores normal setup; live work needs the user's Termux/tools and optional provider accounts. Guide/video: https://bibimer.app/review/
+Short Console text (500-character field, 461 characters):
+Open Settings > Review access. Enter the code in the Password field above. No account or Termux is needed. Clearly labeled fictional sessions preview Codex, Claude Code, OpenCode, Terminal, approval/questions, files/Git and notification controls. Submitted text does not affect prerecorded responses; no AI or shell runs. Exit demo restores normal setup. Live work uses the user's Termux and independently authenticated tools. Guide: https://bibimer.app/review/
 
 Detailed guide and actual Android notification demonstration:
 https://bibimer.app/review/
 Korean guide: https://bibimer.app/ko/review/
 
-1. Open Bibimer and choose Try demo on the welcome screen, in Setup, or in Settings.
-2. The Demo badge/banner identifies fictional sample replay. No account, Termux, payment, provider credential, location, or developer secret is required for this resource.
+1. Open Bibimer > Settings > Review access. Enter the reusable code from the private Password field in Play Console. A correct code is required to enter this review resource; public Try demo buttons are removed. No geographic, account, expiry or network restriction is applied to the code.
+2. The Demo badge/banner identifies fictional sample replay. No account, Termux, payment, provider credential or location is required. The app does not detect a review environment or alter normal development behavior for reviewers.
 3. Open the sidebar or agent selector and choose Codex, Claude Code, OpenCode, or Terminal. They show invented examples shaped after structured event formats, never actual session transcripts.
 4. Send arbitrary text to advance the examples. Chat/terminal input is ignored and not retained in sample logs. The first two sends finish automatically; every third send requests sample approval and then a question. Accepting does not run a command. Question answers are discarded.
 5. Explore sample projects/worktrees/session management, model choices, queue/Steer controls, file previews, Git status/diffs/history, conversation handoff, session import, and fictional GitHub import. Sample operations remain in memory and do not read or change device project files.
@@ -26,6 +27,11 @@ Install/open official Termux, save bibimer-setup.sh from Setup > Manual setup an
 Official Termux source: https://github.com/termux/termux-app/releases/tag/v0.118.3
 
 Verification:
-Signed AAB-derived APK 0.16.0 installed as an update on Android 36.1 emulator. Demo send, provider-format switching, approval/question, file/Git views, terminal replay, EN/KO UI, small-screen layout, background completion alert, notification session navigation and stop monitoring were checked. Demo implementation uses fabricated structured events. Physical-device/live-provider tests and Google reviewer acceptance remain separate.
+Version 31: access verifier tests (17 Java assertions), default-deny and legacy preference tests, direct native enable bypass test, actual UI controller tests with native adapter, Android compile/D8, bundletool validation and upload-key signature verification passed. EN/KO source UI was checked at 393×852 in a browser. Version 31 APK installation, physical-device runtime and Google Play installation have not been verified.
 
-Console status: Saved in Play Console on 2026-10-12; included with the initial production submission for Google review. Acceptance of the demo review resource and live external integration scope is for Google to determine.
+Version 30: earlier signed AAB-derived APK on an Android 36.1 emulator verified fabricated sample formats, approval/question, file/Git views, terminal replay and Android background notifications. The linked 58.1-second notification video is from version 30. It does not demonstrate the new access-code entry in version 31 or live AI-provider execution.
+
+Private build configuration:
+BIBIMER_REVIEW_CODE_FILE points to an owner-only file outside the repository containing a random 32-character lowercase hexadecimal code. Only SHA-256 is compiled into the application. Unconfigured builds deny access; legacy public-demo preferences and direct setDemoMode(true) do not grant entry. Never publish the code in source, logs, listing metadata or website pages.
+
+Console status: The version 30 production review was withdrawn on 2026-10-12. The protected version 31 and these instructions replace it; current submission and internal test status are recorded in docs/google-play-release.md and listing.json. Google determines whether this isolated sample resource meets review access requirements. No developer's personal agent or GitHub credentials are supplied.

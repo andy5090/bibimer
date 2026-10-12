@@ -97,10 +97,12 @@ def main():
         if not shutil.which(command):
             raise ValueError("빌드 도구가 없습니다: " + command)
     info = manifest_info()
+    review_digest = apk.review_access_digest()
     signing = None if args.unsigned else signing_config()
     if args.check:
         print(json.dumps({**info, "mode": "unsigned" if args.unsigned else "signed",
-                          "configuration": "ok", "bundleBuilt": False}, ensure_ascii=False, indent=2))
+                          "configuration": "ok", "reviewAccessConfigured": bool(review_digest),
+                          "bundleBuilt": False}, ensure_ascii=False, indent=2))
         return
 
     android_jar, setup = apk.prepare_inputs()
@@ -111,7 +113,7 @@ def main():
     apk.BUILD.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="aab-", dir=apk.BUILD) as folder:
         build = Path(folder)
-        apk.compile_android(android_jar, build, proto=True)
+        apk.compile_android(android_jar, build, proto=True, review_digest=review_digest)
         module = build / "base.zip"
         pack_module(build / "unsigned.apk", build / "dex", module)
         config = build / "BundleConfig.json"
@@ -140,6 +142,7 @@ def main():
         shutil.copyfile(bundle, output)
         (distribution / "bibimer-setup.sh").write_text(setup)
         report = {**info, "signed": bool(signing), "bundletool": BUNDLETOOL_VERSION,
+                  "reviewAccessConfigured": bool(review_digest),
                   "sha256": hashlib.sha256(output.read_bytes()).hexdigest(), "file": output.name}
         output.with_suffix(".json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         print("완료:", output)

@@ -5,7 +5,9 @@ import zlib
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tarfile
@@ -142,7 +144,38 @@ def prepare_inputs():
     return android_jar, installer()
 
 
-def compile_android(android_jar, build, proto=False):
+def review_access_digest():
+    """Load only a private external review code; default builds deny access."""
+    configured = os.environ.get("BIBIMER_REVIEW_CODE_FILE")
+    if not configured:
+        return ""
+    path = Path(configured).expanduser().resolve()
+    if not path.is_file() or path.is_relative_to(ROOT):
+        raise ValueError("심사 코드는 저장소 밖의 비공개 파일을 지정하세요.")
+    info = path.stat()
+    if info.st_mode & 0o077 or info.st_size > 34:
+        raise ValueError("심사 코드 파일의 접근 권한과 길이를 확인하세요(chmod 600).")
+    code = path.read_bytes().rstrip(b"\r\n")
+    if not re.fullmatch(rb"[0-9a-f]{32}", code):
+        raise ValueError("심사 코드는 무작위로 생성한 32자리 소문자 16진수여야 합니다.")
+    return hashlib.sha256(code).hexdigest()
+
+
+def write_review_access_config(build, digest):
+    if digest and not re.fullmatch(r"[0-9a-f]{64}", digest):
+        raise ValueError("심사 코드 digest 형식을 확인하세요.")
+    target = build / "generated" / "app" / "bibimer" / "ReviewAccessConfig.java"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        'package app.bibimer;\nfinal class ReviewAccessConfig {\n'
+        f'    static final String DIGEST = "{digest}";\n'
+        '    private ReviewAccessConfig() {}\n}\n', encoding="utf-8")
+    return target
+
+
+def compile_android(android_jar, build, proto=False, review_digest=None):
+    if review_digest is None:
+        review_digest = review_access_digest()
     build.mkdir(parents=True, exist_ok=True)
     for directory in ("classes", "generated", "dex"):
         target = build / directory
@@ -155,6 +188,7 @@ def compile_android(android_jar, build, proto=False):
         "-o", build / "unsigned.apk", "--manifest", SRC / "AndroidManifest.xml",
         "-I", android_jar, "--java", build / "generated", "-A", SRC / "assets",
         "--min-sdk-version", "26", "--target-sdk-version", "36", build / "resources.zip")
+    write_review_access_config(build, review_digest)
     sources = sorted((SRC / "java").rglob("*.java")) + sorted((build / "generated").rglob("*.java"))
     run("javac", "-encoding", "UTF-8", "--release", "8", "-classpath", android_jar,
         "-d", build / "classes", *sources)

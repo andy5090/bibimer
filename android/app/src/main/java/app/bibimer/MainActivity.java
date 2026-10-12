@@ -83,11 +83,15 @@ public final class MainActivity extends Activity {
     }
 
     private synchronized void changeDemoMode(boolean enabled) {
-        if (enabled == DemoMode.enabled(this)) return;
-        if (enabled && !normalDrafts.ready()) return;
+        changeDemoMode(enabled, null);
+    }
+
+    private synchronized boolean changeDemoMode(boolean enabled, String code) {
+        if (enabled == DemoMode.enabled(this)) return true;
+        if (enabled && (!normalDrafts.ready() || !ReviewAccess.verify(ReviewAccessConfig.DIGEST, code))) return false;
         if (bridge != null) bridge.cancelPoll();
         fileEpoch.incrementAndGet(); ResponseNotifications.stop(this, false);
-        if (!DemoMode.set(this, enabled)) { if (web != null) web.loadUrl(PAGE); return; }
+        if (!DemoMode.set(this, enabled, code)) { if (web != null) web.loadUrl(PAGE); return false; }
         if (!enabled) {
             android.app.NotificationManager manager = getSystemService(android.app.NotificationManager.class);
             for (android.service.notification.StatusBarNotification item : manager.getActiveNotifications())
@@ -96,6 +100,7 @@ public final class MainActivity extends Activity {
         language = new AppLanguage(this); agentPreferences = new AgentPreferences(this); inputPreferences = new InputPreferences(this);
         notificationTarget = "{}"; notificationsSupported = false;
         if (web != null) web.loadUrl(PAGE);
+        return true;
     }
 
     @Override protected void onNewIntent(Intent intent) {
@@ -238,6 +243,7 @@ public final class MainActivity extends Activity {
                 }
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("demo", DemoMode.enabled(MainActivity.this))
+                    .put("reviewAccessConfigured", ReviewAccess.configured(ReviewAccessConfig.DIGEST))
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
                     .put("agentOptions", agentPreferences.get())
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
@@ -284,7 +290,17 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface public void setDemoMode(boolean enabled) {
-            runOnUiThread(() -> changeDemoMode(enabled));
+            if (!enabled) runOnUiThread(() -> changeDemoMode(false));
+        }
+
+        @JavascriptInterface public boolean enterReviewDemo(String code) {
+            synchronized (MainActivity.this) {
+                if (DemoMode.enabled(MainActivity.this) || !normalDrafts.ready() || !ReviewAccess.verify(ReviewAccessConfig.DIGEST, code)) return false;
+            }
+            runOnUiThread(() -> {
+                if (!changeDemoMode(true, code)) script("window.BibimerReviewEntryFailed && window.BibimerReviewEntryFailed();");
+            });
+            return true;
         }
 
         @JavascriptInterface public boolean saveNormalDraftViews(String value) {

@@ -1,5 +1,6 @@
 """Release packaging checks without downloading tools or building/installing an APK."""
 import os
+import hashlib
 from pathlib import Path
 import subprocess
 import sys
@@ -14,6 +15,46 @@ import build_apk
 
 
 class ReleaseBuildTests(unittest.TestCase):
+    def test_review_access_is_disabled_when_not_configured(self):
+        with patch.dict(os.environ, {}, clear=True), tempfile.TemporaryDirectory() as folder:
+            self.assertEqual(build_apk.review_access_digest(), "")
+            target = build_apk.write_review_access_config(Path(folder), "")
+            self.assertIn('DIGEST = ""', target.read_text())
+
+    def test_review_config_contains_digest_without_plaintext(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            code = b"0123456789abcdef0123456789abcdef"
+            private = root / "review-code"
+            private.write_bytes(code + b"\n")
+            private.chmod(0o600)
+            with patch.dict(os.environ, {"BIBIMER_REVIEW_CODE_FILE": str(private)}, clear=True):
+                digest = build_apk.review_access_digest()
+            self.assertEqual(digest, hashlib.sha256(code).hexdigest())
+            generated = build_apk.write_review_access_config(root / "build", digest).read_text()
+            self.assertIn(digest, generated)
+            self.assertNotIn(code.decode(), generated)
+
+    def test_review_code_rejects_public_file_and_weak_or_invalid_input(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            private = root / "review-code"
+            with patch.dict(os.environ, {"BIBIMER_REVIEW_CODE_FILE": str(private)}, clear=True):
+                for content, mode in [(b"0123456789abcdef0123456789abcdef", 0o644),
+                                      (b"short", 0o600), (b"x" * 35, 0o600),
+                                      (b'"' * 32, 0o600)]:
+                    with self.subTest(mode=mode, length=len(content)):
+                        private.write_bytes(content)
+                        private.chmod(mode)
+                        with self.assertRaises(ValueError):
+                            build_apk.review_access_digest()
+                private.write_bytes(b"0123456789abcdef0123456789abcdef")
+                with patch.object(build_apk, "ROOT", root.resolve()):
+                    with self.assertRaises(ValueError):
+                        build_apk.review_access_digest()
+            with self.assertRaises(ValueError):
+                build_apk.write_review_access_config(root / "build", '"invalid"')
+
     def test_module_preserves_resources_assets_and_dex(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

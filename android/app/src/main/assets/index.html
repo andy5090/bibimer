@@ -38,7 +38,6 @@
       <h1 data-i18n="welcome_title">Start developing<br>on your phone.</h1>
       <p data-i18n="welcome_body">Manage projects and work with coding agents. Termux is an app that runs Git and development tools on your phone.</p>
       <button class="primary" id="go-setup"><span data-i18n="setup_device">Set up for development</span><span aria-hidden="true">↗</span></button>
-      <button id="demo-welcome" class="secondary" type="button" data-i18n="demo_try">Try demo</button>
       <button id="reconnect-welcome" class="secondary" data-i18n="reconnect_existing" hidden>Reconnect to your bridge</button>
     </div>
     <section id="workspace" hidden>
@@ -97,7 +96,6 @@
   </main>
   <main id="setup" class="page scroll" hidden>
     <div class="section-heading"><span class="eyebrow" data-i18n="setup_eyebrow">GET YOUR PHONE READY</span><h1 data-i18n="setup_title">A workspace on your phone.</h1><p data-i18n="setup_intro">Follow these steps to install Termux and connect the app.</p></div>
-    <section class="card"><h2 data-i18n="demo_title">Demo · sample replay</h2><p data-i18n="demo_intro">Explore fictional Codex, Claude Code and OpenCode sessions without an account or Termux. Sample replay ignores your input and makes no AI requests, shell commands or device file changes.</p><button id="demo-setup" class="secondary" type="button" data-i18n="demo_try">Try demo</button></section>
     <section class="card setup-step">
       <div class="step-heading"><span class="step-number">1</span><h2 data-i18n="termux_install">Install Termux</h2><span id="termux-status" class="badge">Checking</span></div>
       <p data-i18n="termux_body">Termux stores your projects and runs development commands on this phone. Open it once after installation to finish its initial setup.</p>
@@ -152,7 +150,7 @@
   </main>
   <main id="settings" class="page scroll" hidden>
     <div class="section-heading"><h1 data-i18n="tab_settings">Settings</h1><p data-i18n="app_settings_intro">Choose your input behavior, language and notifications.</p></div>
-    <section class="card preference-card"><h2 data-i18n="demo_title">Demo · sample replay</h2><p data-i18n="demo_intro">Explore fictional Codex, Claude Code and OpenCode sessions without an account or Termux. Sample replay ignores your input and makes no AI requests, shell commands or device file changes.</p><p id="demo-preferences-hint" class="hint" data-i18n="demo_preferences" hidden>Demo settings are separate. Real response alerts pause during demo; your Termux sessions keep running. Exiting restores normal settings and monitoring.</p><button id="demo-settings" class="secondary" type="button" data-i18n="demo_try">Try demo</button></section>
+    <section id="demo-settings-card" class="card preference-card" hidden><h2 data-i18n="demo_title">Demo · sample replay</h2><p data-i18n="demo_banner">Fictional session logs. Prerecorded responses are unrelated to your input. No AI or shell commands run.</p><p id="demo-preferences-hint" class="hint" data-i18n="demo_preferences">Demo settings are separate. Real response alerts pause during demo; your Termux sessions keep running. Exiting restores normal settings and monitoring.</p><button id="demo-settings-exit" class="secondary" type="button" data-i18n="demo_exit">Exit demo</button></section>
     <section class="card preference-card">
       <div class="preference-row"><label for="enter-behavior" data-i18n="enter_behavior_label">Enter key</label>
         <select id="enter-behavior" aria-describedby="enter-behavior-hint enter-modifiers-hint"><option value="newline" data-i18n="enter_newline">New line</option><option value="send" data-i18n="enter_send">Send</option></select>
@@ -174,8 +172,19 @@
     </section>
     <p class="hint preferences-saved" data-i18n="app_settings_saved">Saved on this phone for all projects and sessions.</p>
     <button type="button" class="quiet" data-guide="privacy" data-i18n="privacy_policy">Privacy policy</button>
+    <button id="review-access-open" type="button" class="quiet review-access-link" data-i18n="review_access" aria-haspopup="dialog" aria-controls="review-access-dialog">Review access</button>
     <p id="version" class="version"></p>
   </main>
+  <dialog id="review-access-dialog" class="settings-dialog" aria-labelledby="review-access-title" aria-describedby="review-access-hint">
+    <h2 id="review-access-title" data-i18n="review_access">Review access</h2>
+    <p id="review-access-hint" class="hint" data-i18n="review_access_hint">For authorized reviewers. Enter the access code provided in your review instructions.</p>
+    <form id="review-access-form" novalidate>
+      <label for="review-access-code" data-i18n="review_access_code">Access code</label>
+      <input id="review-access-code" type="password" maxlength="128" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="review-access-status">
+      <p id="review-access-status" class="hint danger-text" role="status" aria-live="polite"></p>
+      <div class="button-row"><button id="review-access-cancel" class="secondary" type="button" data-i18n="cancel_project">Cancel</button><button id="review-access-submit" class="primary" type="submit" data-i18n="review_access_enter">Open review demo</button></div>
+    </form>
+  </dialog>
   <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected" aria-current="page"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button><button id="tab-settings"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h5m6 0h5M4 17h9m6 0h1"/><circle cx="12" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></svg><span data-i18n="tab_settings">Settings</span></button></nav>
   <dialog id="inspector" aria-labelledby="inspector-title">
     <div class="sidebar-heading"><h2 id="inspector-title" data-i18n="inspect_title">Workspace explorer</h2><button id="inspector-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close sidebar">×</button></div>

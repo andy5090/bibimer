@@ -298,11 +298,8 @@
     renderNotificationSettings();
     const env = environment();
     $("demo-banner").hidden = !demo;
-    $("demo-preferences-hint").hidden = !demo;
-    for (const id of ["demo-setup", "demo-settings"]) {
-      $(id).textContent = t(demo ? "demo_exit" : "demo_try");
-      $(id).dataset.i18n = demo ? "demo_exit" : "demo_try";
-    }
+    $("demo-settings-card").hidden = !demo;
+    $("review-access-open").hidden = demo;
     for (const id of ["forget", "open-termux", "quick-open-termux", "quick-app-permissions", "export-installer", "pair"]) $(id).disabled = demo;
     $("termux-status").textContent = t(env.termuxInstalled ? "installed" : "install_needed");
     $("termux-status").className = "badge" + (env.termuxInstalled ? " connected" : "");
@@ -1538,10 +1535,33 @@
   });
   for (const name of ["work", "setup", "settings"]) $("tab-" + name).addEventListener("click", () => tab(name));
   $("go-setup").addEventListener("click", () => tab("setup"));
-  for (const id of ["demo-welcome", "demo-setup", "demo-settings", "demo-exit-banner"]) $(id).addEventListener("click", () => {
-    if (!demo && !keepNormalDraftViews()) return;
-    ++generation; paused = true; clearTimeout(retryTimer); native.cancelPoll?.(); native.setDemoMode?.(!demo);
+  for (const id of ["demo-settings-exit", "demo-exit-banner"]) $(id).addEventListener("click", () => {
+    ++generation; paused = true; clearTimeout(retryTimer); native.cancelPoll?.(); native.setDemoMode?.(false);
   });
+  $("review-access-open").addEventListener("click", () => {
+    if (demo || currentTab !== "settings") return;
+    $("review-access-code").value = ""; $("review-access-status").textContent = "";
+    $("review-access-dialog").showModal(); $("review-access-code").focus();
+  });
+  $("review-access-cancel").addEventListener("click", () => $("review-access-dialog").close());
+  $("review-access-dialog").addEventListener("close", () => {
+    $("review-access-code").value = ""; $("review-access-status").textContent = "";
+    if (!demo && !paused) $("review-access-open").focus({preventScroll:true});
+  });
+  $("review-access-form").addEventListener("submit", event => {
+    event.preventDefault();
+    if (demo || currentTab !== "settings") return;
+    if (!environment().reviewAccessConfigured) { $("review-access-status").textContent = t("review_access_unavailable"); $("review-access-code").value = ""; return; }
+    if (!keepNormalDraftViews()) { $("review-access-status").textContent = t("demo_drafts_failed"); $("review-access-code").value = ""; return; }
+    let accepted = false;
+    try { accepted = native.enterReviewDemo?.($("review-access-code").value.trim()) === true; } catch (_) { }
+    $("review-access-code").value = "";
+    if (!accepted) { $("review-access-status").textContent = t("review_access_invalid"); $("review-access-code").focus(); return; }
+    ++generation; paused = true; clearTimeout(retryTimer); native.cancelPoll?.(); $("review-access-dialog").close();
+  });
+  window.BibimerReviewEntryFailed = () => {
+    paused = false; notice("review_access_invalid"); if (environment().paired) connect();
+  };
   $("edit-project").addEventListener("click", () => {
     const visible = $("project-form").hidden;
     if (visible && multipleProjects) { $("path").value = demo ? "/demo/projects/" : "~/projects/"; $("create-folder").checked = true; }
