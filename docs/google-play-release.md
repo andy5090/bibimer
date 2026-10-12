@@ -1,18 +1,22 @@
 # Google Play 출시 준비
 
-## 0.17.0 업데이트 준비 (2026-10-12)
+## 0.17.0 업데이트 업로드·제출 (2026-10-12)
 
-사용자의 빌드·Play Console 배포 요청으로 최신 0.16.1의 심사 접근 제한과 전체 화면 파일 뷰어를 **0.17.0 / versionCode 32**에 포함했다. `dist/play/bibimer-0.17.0-32-release.aab`를 Doppler에 보관한 기존 업로드 키로 서명하고 Play 업로드 인증서 일치·bundletool/Manifest/DEX/30개 assets·심사 코드 digest 포함/원문 미포함을 검증했다. 개발용 APK는 기존 로컬 개발 인증서로 서명해 `Download/Bibimer-0.17.0.apk`로 제공한다. 영어·한국어 [출시 메모](../release/google-play/release-notes/0.17.0.txt)도 준비했다.
+원격 `main`의 **`2f70985`**까지 Mac을 동기화했다. 전체 화면 파일 뷰어·Markdown/정적 HTML/Mermaid·원본 전환·코드 구문 강조와 Android 문서 앱 열기를 포함한 **0.17.0 / versionCode 32**를 기존 업로드 키와 심사 코드로 재빌드해 Play에 업로드했다. 새 키나 빌드의 Doppler 자동 연동은 추가하지 않았다.
 
-현재 Termux 작업용 Chromium에서 Console이 Google 로그인 화면으로 이동해 업로드를 진행하지 못했다. 로그인된 Console 환경에서 최신 사용 코드/심사 상태를 확인한 뒤 기존 사용자 요청 범위에서 업로드·출시/심사 제출을 이어간다. 기존 0.16.1(31) 심사를 변경하지 않았고 이번에 재조회하지도 않았다. 새 업데이트는 **출시 서명·검증 완료, Play 미업로드/미배포**로 기록한다. 빌드 해시·검증은 [NEXT_SESSION.md](../NEXT_SESSION.md)를 따른다.
-
-2026-10-12 현재 Play에 제출한 앱은 **`app.bibimer` · `0.16.1 / versionCode 31` · 최소 API 26 · target API 36**이다. 비공개 코드로 제한한 심사용 예제를 포함한 서명 AAB를 내부 테스트에 게시했고 지정 테스터 1명에게 제공된다. 프로덕션 공개 출시·Google 승인·Google Play를 통한 실제 설치 검증은 완료하지 않았다. 내장 브리지는 0.15.0이며 실제 휴대폰 설치본과 운영 브리지는 유지했다.
+- Mac AAB: `dist/play/bibimer-0.17.0-32-release.aab`, SHA-256 `177f2ecd43fa39a80994fe58ccc2c56bb41207279aeef2494ccb2618e729fad1`. 아래 Termux 빌드 해시와 구분한다. 내장 브리지 0.15.0, 패키지 `app.bibimer`, 최소 API 26·target 36이다.
+- 기존 0.16.1(31)은 **Google Play에 제공됨 / 전체 출시**, 2026-10-12 오후 3:59 게시를 확인했다. [공개 스토어](https://play.google.com/store/apps/details?id=app.bibimer)에서 앱 이름·개발자·설치 버튼·정상 모드 이미지 3장을 확인했다. 기존 공개 버전을 철회하지 않았다.
+- 내부 테스트는 **활성 / 0.17.0 (32) - Full-screen file viewer / 내부 테스터에게 제공됨**, 오후 4:58 게시를 확인했다. 기존 테스터 목록과 참여 동의를 유지했다. 실제 Play 설치는 미확인이다.
+- 프로덕션은 **0.17.0 (32) - Full-screen file viewer**를 출시율 100%·모든 기존 대상 국가로 저장하고 변경 **1개**를 Google에 전송했다. 현재 자동 사전 검사 진행 중이며 완료 후 Google 심사로 넘어간다. 관리형 게시 사용 중지에 따라 승인 후 자동 게시된다. 업데이트의 승인·공개 제공은 아직 확인되지 않았다.
+- 영어 320자·한국어 170자의 [출시 메모](../release/google-play/release-notes/0.17.0.txt)를 두 트랙에 적용했다. 매핑 파일 경고 1개 외 오류는 없으며 이 빌드는 난독화를 사용하지 않는다.
+- 14개 Python 테스트, ReviewAccess Java 17개 단언, Demo 95개 단언/11개 시나리오, Node 접근 UI/입력 계약/초안과 변경 JS 구문 검사를 통과했다. bundletool·서명·Manifest/DEX·30개 assets·새 뷰어/Mermaid·업로드 인증서 일치·동일 심사 digest·원문 코드/암호 미포함을 확인했다. 새 APK 생성·설치·사용자 기기 변경은 하지 않았다. 실제 Android 파일 뷰어/외부 앱·Play 설치 검증은 별개다.
+- [심사 안내](../release/google-play/review-instructions.txt)는 기존 비공개 코드를 그대로 사용한다. EN/KO 웹 안내 첫 단계의 오래된 앱 버전 번호를 제거하고 공개 본문을 확인했다. Pages 배포 `https://cfd319f4.bibimer.pages.dev`. 공개 README에 데모 홍보를 복원하지 않았다.
 
 Bibimer의 제품 유형은 **모바일 ADE(Agent Development Environment, 에이전트 개발 환경)**다. 프로젝트·워크트리·코딩 에이전트 세션·대화·터미널을 관리하고, 실제 코딩 작업은 사용자가 연결한 에이전트가 수행한다. 슬로건은 **내 손안의 에이전트 개발 환경**이다. 영어·한국어 스토어 설명과 소개 그래픽, 웹사이트에 반영했으며 앱의 새 소개 문구는 2026-10-12 출시용 AAB에 포함했다. 기존 휴대폰 설치 APK는 교체하지 않았다.
 
 사용자가 **조직 개발자 계정**을 사용한다고 확인했다. 신규 개인 계정의 12명·14일 비공개 테스트 요건은 이 출시 일정에 적용하지 않는다. 조직 계정의 인증 완료 여부와 Console에 표시되는 출시 제한은 별도로 확인한다.
 
-## 현재 출시 상태 (2026-10-12)
+## 이전: 0.16.1 초기 제출 기록 (현재 공개 출시됨)
 
 공개 데모가 있던 **0.16.0(30)의 프로덕션 심사를 철회**하고, **0.16.1 (31) - Restricted review access**와 수정한 등록정보·선언 변경 **12개**를 다시 제출했다. 자동 사전 검사 진행률·카운트다운이 사라지고 Console은 **검토 중인 변경사항 / 변경사항을 검토 중입니다**로 전환됐다. Google 승인·공개 노출은 미확인이다. 기존 관리형 게시가 사용 중지되어 승인 후 자동 게시된다. [게시 개요](https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing)에서 상태를 확인한다.
 
@@ -24,14 +28,14 @@ Bibimer의 제품 유형은 **모바일 ADE(Agent Development Environment, 에�
 - 대상 연령 **13~15·16~17·18+**, IARC·데이터 보안·정책·가격·국가 선언을 보존하고 새 출시와 함께 제출했다. FGS specialUse 자료의 기존 58.1초 알림 영상은 0.16.0의 실제 Android 조작이며 새 코드 입력 과정을 포함하지 않는다. 안내 사이트는 EN/KO가 분리되어 있고 코드 원문이 없으며 검색 색인을 막았다.
 - 검증: Python **14개**, 접근 검증 Java **17개 단언**, 기존 가상 작업 공간 **95개 단언/11개 시나리오**, Node 접근 UI·초안·입력 계약 통과. 393×852 EN/KO 소스 UI와 코드 입력·취소·실패 상태를 브라우저에서 확인했다. Android 네이티브 대역 검사를 설치된 31 앱의 동작 확인으로 표현하지 않는다. 실제 기기·Play 설치·실제 제공자 실행은 미확인이다.
 
-현재 준비 항목을 제외한 아래 날짜별 기록은 이전 준비 이력이다. 최신 Console 검토 상태는 위 기록과 `listing.json`을 확인한다.
+아래 날짜별 기록은 이전 준비 이력이다. 최신 업데이트 상태는 문서 첫 항목과 `listing.json`을 따른다.
 
 ## 현재 준비 항목과 후속 확인
 
 | 항목 | 상태 |
 | --- | --- |
 | 계정·패키지 | 사용자 확인 조직 계정, `app.bibimer`. 프로덕션 제출이 가능하며 조직·법적 프로필은 임의 변경하지 않았다. |
-| 빌드·서명 | AAB 31 검증·내부 테스트 게시·프로덕션 제출 완료. Play 배포 인증서와 업로드 인증서를 확인했다. 저장소 밖 업로드 키의 안전한 별도 백업은 남아 있다. |
+| 빌드·서명 | AAB 32 검증·내부 테스트 게시·프로덕션 업데이트 제출 완료. Play 배포 인증서와 업로드 인증서를 확인했다. 같은 키·비밀번호·별칭·심사 코드를 Doppler bibimer/prd에 공유 보관했다. |
 | 정책·연락처 | 별도 영어/한국어 공개 정책에 데모와 삭제 안내를 반영했다. 운영 주체 앤디니어링(Andineering), 공개 문의 andy@andineering.com. |
 | 등록정보·이미지 | 영어·한국어 설명, 아이콘·소개 그래픽, 언어별 정상 모드 스크린샷 **3장**을 저장·제출했다. [화면별 출처](../release/google-play/screenshots/README.md). |
 | 가격·국가 | 무료, 지원 국가 177개와 기타 국가 포함. Console의 178개 행과 실제 명명된 국가 수를 구분한다. |
@@ -40,7 +44,7 @@ Bibimer의 제품 유형은 **모바일 ADE(Agent Development Environment, 에�
 | 심사 접근 | [영어 안내](../release/google-play/review-instructions.txt)와 비공개 코드가 필요한 심사용 예제를 제출했다. 개인 외부 계정·키는 제공하지 않는다. 실제 제공자 실행은 데모로 검증했다고 주장하지 않는다. |
 | 완료 알림 | FGS specialUse 설명과 실제 Android 조작 영상 제출. 가상 완료 이벤트로 서비스·알림 이동·끄기를 확인했으며 실제 기기·절전·실제 제공자의 동작은 별도 검증 대상이다. |
 | 내부 테스터 | 지정 계정 1명 등록·트랙 활성·사용자 동의 후 참여 완료. 실제 Google Play 설치는 미확인이다. 기존 개발 APK의 서명과 Play 서명은 구분해야 하며 운영 앱 데이터를 임의 제거하지 않는다. |
-| 프로덕션 | 자동 사전 검사 완료 후 Google 검토 중. 관리형 게시가 꺼져 승인되면 자동 게시된다. 실제 공개 노출을 확인한 뒤 출시 완료로 기록한다. |
+| 프로덕션 | 기존 31은 공개 출시됨. 업데이트 32는 제출 후 자동 사전 검사 진행 중이며 관리형 게시가 꺼져 승인 후 자동 게시된다. |
 | App Links | HTTPS intent filter·라우팅·assetlinks.json은 미구현이다. Play 배포 인증서 지문은 확보했다. |
 
 신규 앱은 Android App Bundle과 Play App Signing을 사용한다. 패키지 이름은 등록 후 변경할 수 없으며, 업데이트마다 versionCode를 올린다. target API 36은 현재 신규 제출 요구사항에 맞는다. [앱 등록](https://support.google.com/googleplay/android-developer/answer/9859152), [API 요구사항](https://support.google.com/googleplay/android-developer/answer/11926878), [앱 서명](https://support.google.com/googleplay/android-developer/answer/9842756).

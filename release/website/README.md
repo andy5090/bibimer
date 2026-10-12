@@ -54,3 +54,5 @@ python3 -m http.server 8877 --bind 127.0.0.1 --directory release/website/public
 일반 홈과 공개 README는 데모 체험·알림 시연을 홍보하지 않는다. 심사 리소스 `/review/`·`/ko/review/`는 Console의 비공개 코드가 필요한 **0.16.1 Settings → Review access** 진입을 안내한다. 심사 안내에는 검색 색인을 막는 `noindex, nofollow`를 추가했다. 페이지 자체는 Google 심사 자료 확인을 위해 공개지만 접근 코드 원문은 없다. 앱 데모는 코드 인증을 통과해야 사용할 수 있다.
 
 영어·한국어 정책에 코드의 기기 내 확인과 원문 미보관을 반영했다. 알림 영상은 기존 0.16.0의 실제 Android 조작이며 새 코드 입력 과정을 포함하지 않는다고 명시했다. 영상은 변경하지 않았다. 최신 배포는 `https://0d4a8150.bibimer.pages.dev`다. 공개 두 언어 안내와 정책의 갱신된 본문·언어 이동, 안내의 `noindex, nofollow` 적용을 브라우저에서 확인했다.
+
+2026-10-12의 0.17.0 출시 준비에서 심사 안내 첫 단계의 버전 번호를 제거했다. 새 버전에서도 같은 Settings → Review access와 비공개 코드를 사용하므로 오래된 버전을 설치하라고 안내하지 않는다. EN/KO 공개 본문을 브라우저에서 확인했다. 배포: `https://cfd319f4.bibimer.pages.dev`.

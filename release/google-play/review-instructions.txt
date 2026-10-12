@@ -1,4 +1,4 @@
-REVIEW INSTRUCTIONS — BIBIMER 0.16.1 / VERSION CODE 31
+REVIEW INSTRUCTIONS — BIBIMER 0.17.0 / VERSION CODE 32
 
 Instruction name: Restricted review demo and local Termux
 Username: not required
@@ -27,11 +27,11 @@ Install/open official Termux, save bibimer-setup.sh from Setup > Manual setup an
 Official Termux source: https://github.com/termux/termux-app/releases/tag/v0.118.3
 
 Verification:
-Version 31: access verifier tests (17 Java assertions), default-deny and legacy preference tests, direct native enable bypass test, actual UI controller tests with native adapter, Android compile/D8, bundletool validation and upload-key signature verification passed. EN/KO source UI was checked at 393×852 in a browser. Version 31 APK installation, physical-device runtime and Google Play installation have not been verified.
+Versions 31 and 32: access verifier tests (17 Java assertions), default-deny and legacy preference tests, direct native enable bypass test, actual UI controller tests with native adapter, Android compile/D8, bundletool validation and upload-key signature verification passed. EN/KO source UI was checked at 393×852 in a browser. Version 32 APK installation, physical-device runtime and Google Play installation have not been verified. Version 32 also includes the full-screen project file viewer; sample file previews use the same viewer.
 
-Version 30: earlier signed AAB-derived APK on an Android 36.1 emulator verified fabricated sample formats, approval/question, file/Git views, terminal replay and Android background notifications. The linked 58.1-second notification video is from version 30. It does not demonstrate the new access-code entry in version 31 or live AI-provider execution.
+Version 30: earlier signed AAB-derived APK on an Android 36.1 emulator verified fabricated sample formats, approval/question, file/Git views, terminal replay and Android background notifications. The linked 58.1-second notification video is from version 30. It does not demonstrate the private code entry or full-screen file viewer in version 32, or live AI-provider execution.
 
 Private build configuration:
 BIBIMER_REVIEW_CODE_FILE points to an owner-only file outside the repository containing a random 32-character lowercase hexadecimal code. Only SHA-256 is compiled into the application. Unconfigured builds deny access; legacy public-demo preferences and direct setDemoMode(true) do not grant entry. Never publish the code in source, logs, listing metadata or website pages.
 
-Console status: The version 30 production review was withdrawn on 2026-10-12. The protected version 31 and these instructions replace it; current submission and internal test status are recorded in docs/google-play-release.md and listing.json. Google determines whether this isolated sample resource meets review access requirements. No developer's personal agent or GitHub credentials are supplied.
+Console status: The version 30 production review was withdrawn on 2026-10-12. The protected version 31 is now available on Google Play. Version 32 retains the same private access code and entry path; current update submission and internal test status are recorded in docs/google-play-release.md and listing.json. Google determines whether this isolated sample resource meets review access requirements. No developer's personal agent or GitHub credentials are supplied.

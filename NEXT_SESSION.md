@@ -1,13 +1,25 @@
 # Bibimer 다음 세션 시작점
 
-## Mac에서 배포 이어가기 (2026-10-12 사용자 선택)
+## 최신: Mac 동기화·0.17.0 Play 업로드/제출 (2026-10-12)
+
+- 사용자 요청으로 깨끗한 Mac `main`을 원격 **`2f70985`**까지 fast-forward했다. 전체 화면 파일 뷰어, Markdown·정적 HTML·Mermaid·원본/구문 강조, 기존 Android 앱으로 문서/이미지/PDF 열기가 포함된 **0.17.0 / versionCode 32**다. 내장 브리지는 0.15.0이며 이번 업로드에 브리지 변경·재시작은 없다.
+- 로그인된 Console 최신 버전 목록에서 31이 **Google Play에 제공됨 / 전체 출시 / 178개 국가**이고, 32는 미사용임을 확인했다. 기존 31은 2026-10-12 오후 3:59에 게시됐다. 공개 스토어 `https://play.google.com/store/apps/details?id=app.bibimer`의 Bibimer·Andineering·설치 버튼·정상 화면 3장도 확인했다. 시작 시 게시 개요의 오래된 화면에는 심사 중으로 남아 있었으므로 최신 조회 결과를 따른다.
+- Git으로 전달되지 않는 AAB를 이 Mac의 기존 저장소 밖 0600 업로드 키·비밀번호·심사 코드로 재빌드했다. Doppler 상시 다운로드나 빌드 자동 연동은 추가하지 않았다. 최종 Mac 번들 **`dist/play/bibimer-0.17.0-32-release.aab`**, SHA-256 **177f2ecd43fa39a80994fe58ccc2c56bb41207279aeef2494ccb2618e729fad1**. 아래 Termux 원본 해시 `3f501a4…`는 별도 빌드 이력이다.
+- Python **14개**, 접근 검증 Java **17개 단언**, 가상 작업 공간 **95개 단언/11개 시나리오**, Node 접근 UI·초안·입력 계약과 변경 JS 구문 검사를 통과했다. aapt2/javac/D8·bundletool/jarsigner, 기존 Play 업로드 인증서 일치, Manifest 0.17.0(32)/API 26~36/debuggable false, **30개 assets** 원본 일치·새 뷰어/Mermaid 포함·동일 심사 digest·원문 코드/암호 미포함을 확인했다. 기존 Java 8/deprecated 경고 외 빌드 오류는 없다.
+- Chrome 기본 파일 선택기로 AAB를 업로드했고 Console이 **32(0.17.0), API 26+, target 36**으로 인식했다. `0.17.0 (32) - Full-screen file viewer`와 영어 320자·한국어 170자의 출시 메모를 저장했다. 난독화하지 않는 빌드에 매핑 파일 경고 1개가 있으며 오류는 없다. 프로덕션 출시율 100%·모든 대상 국가를 유지한다.
+- 내부 테스트 **활성 / 0.17.0 (32) - Full-screen file viewer / 내부 테스터에게 제공됨**, 게시 10월 12일 오후 4:58을 확인했다. 기존 테스터/동의/접근 목록을 유지했고 개인정보를 저장소에 넣지 않는다. 증빙 `dist/play-0.17.0/internal32-live.jpg`.
+- 프로덕션 변경 **1개**를 Google에 전송했다. 최종 관찰은 **검토 중인 변경사항** 안의 자동 사전 검사 진행 중이며 검사가 완료되면 Google 심사로 넘어간다. 증빙 `dist/play-0.17.0/production32-submitted.jpg`. 기존 관리형 게시 사용 중지에 따라 승인 후 자동 게시된다. 기존 공개 31을 철회하거나 중단하지 않았다. 최신 상태는 Console 게시 개요와 `listing.json`을 따른다.
+- 심사 전용 코드·Settings → Review access·가상 예제 안내를 유지했다. EN/KO 심사 안내 첫 단계에서 오래된 앱 버전 번호만 제거해 같은 경로를 안내한다. 기존 알림 영상은 0.16.0 촬영 이력을 명시하며 새 파일 뷰어 시연으로 주장하지 않는다. Pages 배포 **https://cfd319f4.bibimer.pages.dev**, 공개 두 언어 본문 확인 완료. README에서 데모 홍보를 복원하지 않았다.
+- 이번 Mac 작업에서는 APK 생성·설치·사용자 기기의 앱/데이터 변경을 하지 않았다. 새 파일 뷰어의 실제 Android WebView/TalkBack·외부 앱 파일 열기/복귀·Google Play 설치는 별도 확인 대상이다. 변경 로그 `.tools/aab-0.17.0-32-mac.log`. 아래 Mac 인계·Termux 빌드 기록의 로그인 대기는 이번 작업에서 해결했다.
+
+## 이전: Mac 배포 인계 (2026-10-12, 아래 로그인 대기는 해결됨)
 
 - 사용자가 **저장소 동기화 후 Mac에서 진행**하기로 선택했다. `main`의 파일 뷰어·0.17.0(32) 소스와 출시 검증/메모를 `origin/main`에 반영했다. Mac에서 로컬 변경을 보존하며 최신 `main`을 가져온 뒤 아래 출시 준비 상태에서 이어간다.
 - **APK/AAB·`.tools`·저장소 밖 서명 파일은 Git 동기화 대상이 아니다.** 이미 서명한 Termux AAB를 별도로 가져오거나, Mac의 기존 업로드 키와 Doppler `bibimer/prd`의 동일한 값으로 0.17.0(32)를 재빌드한다. 파일 경로는 기기에 맞게 지정하고 암호/코드를 채팅·로그·Git에 넣지 않는다. 재빌드하면 해시는 새 결과로 갱신한다.
 - Mac 출시 빌드에도 `BIBIMER_UPLOAD_KEYSTORE`, `BIBIMER_UPLOAD_ALIAS`, `BIBIMER_STORE_PASSWORD`와 저장소 밖 0600 심사 코드 파일을 가리키는 **`BIBIMER_REVIEW_CODE_FILE`**이 필요하다. 키만 설정하고 심사 코드를 빠뜨리면 심사용 접근이 차단된다. 빌드 전후 `reviewAccessConfigured: true`, 기존 업로드 인증서 일치, 원문 코드 미포함을 확인한다. 새 키·심사 코드를 만들 필요는 없다.
 - 다음 작업은 **로그인된 Play Console의 최신 심사/사용 코드 확인 → AAB 업로드 → 출시·심사 제출 → 최종 상태 확인**이다. 버전 코드 32가 실제 Console에서 아직 사용 가능한지 먼저 확인한다. 기존 사용자의 빌드·배포 요청은 계속 유효하다. 현재 0.17.0은 서명·검증만 완료했고 Play에는 업로드하지 않았다.
 
-## 0.17.0 빌드·Play 배포 준비 (2026-10-12, 출시 서명 완료·Console 로그인 대기)
+## 이전: Termux 0.17.0 빌드·Mac 인계 전 기록
 
 - 사용자가 **빌드해서 Play Console에 배포**를 요청했다. 원격 최신 두 커밋(`44a9d51`·`90bb125`)을 조회해 심사자용 접근 제한·0.16.1(31) 제출·Doppler 공유 기록을 발견했고, 파일 뷰어와 충돌 없이 병합했다. 앱은 **0.17.0 / versionCode 32**, 내장 브리지는 **0.15.0**이다. 31은 이미 출시 이력에 있으므로 초기 로컬 31 검증물을 폐기 대상으로 분리하고 최종 32를 다시 빌드했다. 공개 데모 버튼을 복원하지 않는다.
 - 출시 AAB: `dist/play/bibimer-0.17.0-32-release.aab`, SHA-256 **3f501a4d88832ffe9ca688c34adf08249eae29426cbef93599fb022615ab7012**. 기존 업로드 키로 서명했고 Play 등록 업로드 인증서 지문과 일치한다. AAPT2/javac/D8·bundletool 1.18.3 validate·jarsigner, 번들 Manifest의 0.17.0(32)/API 26~36/debuggable false, 30개 assets/뷰어·Mermaid 라이선스 원본 일치, Native 허용 경로/ContentProvider DEX를 검증했다.

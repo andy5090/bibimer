@@ -14,7 +14,7 @@ Bibimer는 **ADE(Agent Development Environment, 에이전트 개발 환경)**입
 
 ## 설치와 배포
 
-Bibimer는 개발 중이며 **첫 Google Play 버전(0.16.1)을 심사에 제출했습니다. 공개 스토어 출시는 아직 확인되지 않았습니다.** 초대받은 사용자는 내부 테스트에 참여할 수 있습니다. GitHub 공개 APK 배포본은 없으며 개발 버전 빌드는 [빌드 안내](docs/development.md)를 참고하세요.
+[Google Play](https://play.google.com/store/apps/details?id=app.bibimer)에서 Bibimer를 설치할 수 있습니다. **현재 공개 버전은 0.16.1이며, 0.17.0 업데이트를 심사에 제출했습니다.** 초대받은 사용자는 내부 테스트에 참여할 수 있습니다. GitHub 공개 APK 배포본은 없으며 개발 버전 빌드는 [빌드 안내](docs/development.md)를 참고하세요.
 
 앱의 최소 Android 버전은 8.0(API 26)입니다. 모든 Android 버전과 기기, 에이전트 설치 환경에서 동작을 확인한 것은 아닙니다.
 
