@@ -27,12 +27,17 @@ The app targets Android 8.0 or later (API 26+). Compatibility with every Android
 - **Inspect project files and Git changes.** Browse files, view diffs, and import GitHub repositories into a folder you choose in Termux.
 - **Make the app yours.** Choose English or Korean, configure the Enter key, and enable response notifications. Delivery depends on Android permissions and background restrictions.
 
+## Screenshots
+
+**Agent chat (fictional demo) · Local terminal · Termux setup**
+
 <p>
-  <img src="release/google-play/screenshots/en-US/02-setup.jpg" alt="Bibimer setup screen with Termux connection options" width="260">
-  <img src="release/google-play/screenshots/en-US/04-terminal.png" alt="Bibimer running a shell in a project on the same Android phone" width="260">
+  <a href="release/google-play/screenshots/en-US/05-demo.png"><img src="release/google-play/screenshots/en-US/05-demo.png" alt="Bibimer agent chat displaying a fictional Codex example with formatted code" width="240"></a>
+  <a href="release/google-play/screenshots/en-US/04-terminal.png"><img src="release/google-play/screenshots/en-US/04-terminal.png" alt="Bibimer running a real shell command in a local Termux project" width="240"></a>
+  <a href="release/google-play/screenshots/en-US/02-setup.jpg"><img src="release/google-play/screenshots/en-US/02-setup.jpg" alt="Bibimer guiding Termux installation and connection on the same Android phone" width="240"></a>
 </p>
 
-Actual Android emulator screenshots. The terminal screen shows a local project and a real shell command; no coding-agent account is required for terminal mode.
+Click a screenshot to view it at full size. These are actual Android emulator captures. The chat screen shows fictional demo content, while the terminal shows a real shell command in a local project. Terminal mode needs no coding-agent account.
 
 ## Get started
 
