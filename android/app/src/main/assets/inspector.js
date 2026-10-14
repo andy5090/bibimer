@@ -141,7 +141,6 @@ window.BibimerInspector = class BibimerInspector {
   }
   preview(detail) {
     if (detail.action === "file") {
-      if (!this.wide.matches) this.close();
       this.openFile(detail.path); return;
     }
     this.detail = detail; this.load();
@@ -174,10 +173,10 @@ window.BibimerInspector = class BibimerInspector {
       }
     } else if (this.view === "files") {
       this.toolbar.append(this.button(t("inspect_root"), () => { this.path = ""; this.load(); }, "quiet"));
-      if (this.path) this.toolbar.append(this.button("↑ " + t("inspect_parent"), () => { this.path = this.path.split("/").slice(0,-1).join("/"); this.load(); }, "quiet"));
       const hidden = this.button(t("inspect_hidden"), () => { this.hidden = !this.hidden; this.load(); }, "quiet");
       hidden.setAttribute("aria-pressed", String(this.hidden)); this.toolbar.append(hidden);
       this.toolbar.append(this.node("span", this.path || "/", "inspect-location"));
+      if (this.path) this.content.append(this.button("↑ " + t("inspect_parent"), () => { this.path = this.path.split("/").slice(0,-1).join("/"); this.load(); }, "inspect-row inspect-parent"));
     }
     if (this.error) this.content.append(this.button(t("inspect_retry"), () => this.load(), "secondary"));
     if (!result) return;

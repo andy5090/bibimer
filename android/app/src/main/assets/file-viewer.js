@@ -59,7 +59,7 @@
       for (const mode of ["preview", "raw"]) document.getElementById("file-" + mode).onclick = () => { this.mode = mode; this.render(); };
       this.dialog.addEventListener("close", () => {
         ++this.ticket; ++this.renderTicket; this.result = null; this.content.replaceChildren(); this.loading = false;
-        document.getElementById("inspector-open").focus({preventScroll:true});
+        if (!document.getElementById("inspector").open) document.getElementById("inspector-open").focus({preventScroll:true});
       });
     }
     key(ctx) { return JSON.stringify([ctx.instance, ctx.project, ctx.path]); }
