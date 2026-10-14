@@ -34,7 +34,6 @@
     h1 { font: 700 clamp(40px, 6vw, 72px)/1.05 "Space Grotesk", sans-serif; letter-spacing: -.04em; margin: 20px 0 24px; max-width: 720px; }
     p { line-height: 1.8; max-width: 710px; overflow-wrap: anywhere; }
     .lead { font-size: 19px; color: #486052; }
-    .icon { width: 100%; height: auto; border-radius: 24%; }
     .links { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 28px; }
     .contact { padding: 13px 22px; border-radius: 8px; background: #19372c; color: white; text-decoration: none; }
     .status { color: #546b5b; font-size: 14px; }
@@ -49,32 +48,85 @@
     .name-story h2 { font-size: 21px; margin-bottom: 10px; }
     .name-story p { font-size: 15px; color: #486052; }
     footer { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 32px 0; margin-top: 54px; border-top: 1px solid #d3ded4; font-size: 13px; color: #486052; }
-    @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } .hero .icon { width: 112px; grid-row: 1; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
+    @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
     .language-nav { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 16px 0; font-size: 13px; }
     .language-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; line-height: 1.5; }
     .language-nav a:hover { background: #e7efe5; }
     .language-nav a[aria-current="page"] { background: #19372c; color: #fff; font-weight: 600; }
+    .header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 20px; flex-wrap: wrap; }
   </style>
+  <link rel="stylesheet" href="/assets/language.css">
+  <script src="/assets/language.js" defer></script>
+  <link rel="stylesheet" href="/assets/hero.css">
 </head>
 <body>
 <div class="shell">
   <header>
-    <a class="brand" href="/id/">BIBIMER</a>
-    <nav aria-label="Navigasi utama"><a href="/id/privacy/">Privasi</a><a href="mailto:andy@andineering.com">Bantuan</a></nav>
+    <a class="brand" href="/id/"><img src="/assets/icon.png" alt="" width="28" height="28">BIBIMER</a>
+    <div class="header-actions"><nav aria-label="Navigasi utama"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">Bantuan</a></nav><nav class="language-nav" aria-label="Bahasa situs web"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id" aria-current="page">Bahasa Indonesia</a></nav></div>
   </header>
-  <nav class="language-nav" aria-label="Bahasa situs web"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id" aria-current="page">Bahasa Indonesia</a></nav>
   <main>
     <section class="hero" aria-labelledby="headline">
       <div>
         <div class="eyebrow">Android + Termux</div>
         <h1 id="headline">Ponsel Anda.<br>Lingkungan pengembangan Anda.</h1>
         <p class="lead">Jadikan ponsel Android Anda sebagai lingkungan pengembangan. Bibimer adalah ADE seluler yang menyatukan proyek, sesi agen pemrograman, percakapan, dan terminal dengan Termux di ponsel yang sama.</p>
-        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=id">Dapatkan Bibimer di Google Play</a><a href="https://github.com/andy5090/bibimer">Repositori GitHub</a></div>
+        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=id"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Dapatkan Bibimer di Google Play</a><a class="guide-link" href="/id/guide/">Panduan penggunaan<span aria-hidden="true"> →</span></a></div>
         <p class="status">Gratis · Android 8.0 atau lebih baru · Termux di ponsel yang sama</p>
         <p class="status">Situs ini tersedia dalam bahasa Indonesia. Aplikasi yang saat ini tersedia di Google Play mendukung bahasa Inggris dan Korea; bahasa tambahan untuk aplikasi sedang disiapkan.</p>
       </div>
-      <img class="icon" src="/assets/icon.png" alt="Ikon aplikasi Bibimer" width="512" height="512">
+      <!-- hero-visual:start -->
+      <div class="hero-demo">
+        <fieldset class="hero-slider">
+          <legend data-hero-copy="sliderTitle">Lingkungan pengembangan yang selalu bersama Anda</legend>
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-local" checked>
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-mobile">
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-terminal">
+          <div class="scene-controls">
+            <label for="scene-local"><span class="scene-number" aria-hidden="true">01</span><span data-hero-copy="localTab">Di ponsel Anda</span></label>
+            <label for="scene-mobile"><span class="scene-number" aria-hidden="true">02</span><span data-hero-copy="mobileTab">Untuk seluler</span></label>
+            <label for="scene-terminal"><span class="scene-number" aria-hidden="true">03</span><span data-hero-copy="terminalTab">Percakapan</span></label>
+          </div>
+          <div class="hero-scenes">
+            <section class="hero-scene scene-local" aria-labelledby="local-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="localKicker">SATU PONSEL ANDROID</span><h2 id="local-title" data-hero-copy="localTitle">Ruang kerja Anda ada di sini.</h2></div>
+              <div class="diagram-stage">
+                <div class="local-phone">
+                  <div class="phone-speaker" aria-hidden="true"></div>
+                  <div class="phone-label" data-hero-copy="phoneBoundary">Ponsel Android Anda</div>
+                  <div class="app-layer"><div class="layer-heading"><span class="layer-symbol" aria-hidden="true">B</span><strong>BIBIMER</strong><span class="layer-tag" data-hero-copy="androidApp">Aplikasi Android</span></div><p data-hero-copy="appRole">Proyek · Percakapan · Terminal</p></div>
+                  <div class="local-link"><span aria-hidden="true">↕</span><span data-hero-copy="localLink">Terhubung di perangkat yang sama</span></div>
+                  <div class="termux-layer"><div class="layer-heading"><span class="layer-symbol terminal-symbol" aria-hidden="true">&gt;_</span><strong>Termux</strong></div><div class="tool-tags"><span>Git</span><span>Python</span><span>Node.js</span></div><p class="agents-label" data-hero-copy="agentsLabel">Agen pemrograman</p><p class="agent-names">Codex · Claude Code · OpenCode</p><div class="files-label"><span aria-hidden="true">⌁</span><span data-hero-copy="filesLabel">Berkas proyek dan perintah pengembangan</span></div></div>
+                  <div class="phone-home" aria-hidden="true"></div>
+                </div>
+              </div>
+              <p class="scene-note" data-hero-copy="localNote">Ponsel Anda menjadi komputer pengembangan. Tidak perlu komputer terpisah.</p>
+            </section>
+            <section class="hero-scene scene-mobile" aria-labelledby="mobile-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="mobileKicker">DARI EVENT AGEN KE ANTARMUKA SELULER</span><h2 id="mobile-title" data-hero-copy="mobileTitle">Pekerjaan terlihat lebih jelas.</h2></div>
+              <div class="diagram-stage mobile-stage">
+                <div class="event-source"><span class="event-symbol" aria-hidden="true">{ }</span><div><strong data-hero-copy="eventsTitle">Event terstruktur dari agen</strong><span data-hero-copy="eventsOrigin">Dari agen yang kompatibel di Termux</span></div></div>
+                <div class="format-link"><span aria-hidden="true">↓</span><span data-hero-copy="formatLink">Ditampilkan oleh BIBIMER</span></div>
+                <div class="mobile-format">
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">≡</span><div><strong data-hero-copy="conversationTitle">Percakapan yang mudah dibaca</strong><span data-hero-copy="conversationBody">Respons, kode, dan daftar berformat</span></div></div>
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">&gt;_</span><div><strong data-hero-copy="toolsTitle">Aktivitas alat yang terlihat</strong><span data-hero-copy="toolsBody">Ikuti perintah dan hasilnya</span></div></div>
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">✓</span><div><strong data-hero-copy="approvalTitle">Persetujuan di tangan Anda</strong><span data-hero-copy="approvalBody">Tinjau permintaan sebelum mengizinkan</span></div></div>
+                </div>
+              </div>
+              <p class="scene-note" data-hero-copy="mobileNote">Diagram alur antarmuka. Masukan Anda dan keluaran agen tetap dalam bahasa aslinya.</p>
+            </section>
+            <section class="hero-scene scene-terminal" aria-labelledby="terminal-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="terminalKicker">APLIKASI SAAT DIGUNAKAN</span><h2 id="terminal-title" data-hero-copy="terminalTitle">Baca jawaban dan kode dengan nyaman.</h2></div>
+              <div class="diagram-stage capture-stage"><a class="terminal-capture" href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="Percakapan berformat" data-hero-alt="terminalImage" width="1080" height="1920" loading="lazy"></a></div>
+              <p class="scene-note" data-hero-copy="terminalNote">Percakapan contoh di antarmuka asli berbahasa Inggris. Buka gambar untuk melihat lebih dekat.</p>
+            </section>
+          </div>
+        </fieldset>
+        <p class="provider-note" data-hero-copy="providerNote">Proyek dan alat berjalan di ponsel Anda. Agen yang terhubung dapat menggunakan penyedia AI daring.</p>
+      </div>
+      <!-- hero-visual:end -->
     </section>
+    <section class="product-gallery" aria-labelledby="gallery-title"><div class="eyebrow">Lihat ruang kerja Anda</div><h2 id="gallery-title">Percakapan, proyek, dan berkas</h2><p>Antarmuka Bibimer asli dengan proyek dan percakapan contoh. Tidak menggunakan log sesi pribadi. Antarmuka berbahasa Inggris.</p><div class="gallery-grid"><figure><a href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="Percakapan berformat" width="1080" height="1920" loading="lazy"></a><figcaption>Percakapan berformat</figcaption></figure><figure><a href="/assets/examples/en/02-projects.jpg"><img src="/assets/examples/en/02-projects.jpg" alt="Proyek dan sesi agen" width="1080" height="1920" loading="lazy"></a><figcaption>Proyek dan sesi agen</figcaption></figure><figure><a href="/assets/examples/en/03-files.jpg"><img src="/assets/examples/en/03-files.jpg" alt="Navigasi berkas proyek" width="1080" height="1920" loading="lazy"></a><figcaption>Navigasi berkas proyek</figcaption></figure><figure><a href="/assets/examples/en/04-code.jpg"><img src="/assets/examples/en/04-code.jpg" alt="Kode dengan sorotan sintaks" width="1080" height="1920" loading="lazy"></a><figcaption>Kode dengan sorotan sintaks</figcaption></figure></div></section>
     <section class="features" aria-label="Fitur">
       <div><h3>Proyek Anda, di ponsel Anda</h3><p>Berkas proyek, Git, dan alat pengembangan yang kompatibel berjalan di Termux pada ponsel Anda. Kelola proyek dan worktree yang sudah ada tanpa komputer pengembangan terpisah atau host jarak jauh.</p></div>
       <div><h3>Percakapan dan terminal</h3><p>Ikuti percakapan terstruktur dan aktivitas alat. Kirim instruksi, tanggapi permintaan persetujuan, dan antrekan pesan lanjutan.</p></div>

@@ -34,7 +34,6 @@
     h1 { font: 700 clamp(40px, 6vw, 72px)/1.2 "Space Grotesk", sans-serif; letter-spacing: -.03em; margin: 20px 0 24px; max-width: 720px; }
     p { line-height: 1.8; max-width: 710px; overflow-wrap: anywhere; }
     .lead { font-size: 19px; color: #486052; }
-    .icon { width: 100%; height: auto; border-radius: 24%; }
     .links { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 28px; }
     .contact { padding: 13px 22px; border-radius: 8px; background: #19372c; color: white; text-decoration: none; }
     .status { color: #546b5b; font-size: 14px; }
@@ -49,32 +48,85 @@
     .name-story h2 { font-size: 21px; margin-bottom: 10px; }
     .name-story p { font-size: 15px; color: #486052; }
     footer { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 32px 0; margin-top: 54px; border-top: 1px solid #d3ded4; font-size: 13px; color: #486052; }
-    @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } .hero .icon { width: 112px; grid-row: 1; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
+    @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
     .language-nav { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 16px 0; font-size: 13px; }
     .language-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; line-height: 1.5; }
     .language-nav a:hover { background: #e7efe5; }
     .language-nav a[aria-current="page"] { background: #19372c; color: #fff; font-weight: 600; }
+    .header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 20px; flex-wrap: wrap; }
   </style>
+  <link rel="stylesheet" href="/assets/language.css">
+  <script src="/assets/language.js" defer></script>
+  <link rel="stylesheet" href="/assets/hero.css">
 </head>
 <body>
 <div class="shell">
   <header>
-    <a class="brand" href="/ko/">BIBIMER</a>
-    <nav aria-label="주요 메뉴"><a href="/ko/privacy/">개인정보처리방침</a><a href="mailto:andy@andineering.com">문의</a></nav>
+    <a class="brand" href="/ko/"><img src="/assets/icon.png" alt="" width="28" height="28">BIBIMER</a>
+    <div class="header-actions"><nav aria-label="주요 메뉴"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">문의</a></nav><nav class="language-nav" aria-label="웹사이트 언어"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko" aria-current="page">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a></nav></div>
   </header>
-  <nav class="language-nav" aria-label="웹사이트 언어"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko" aria-current="page">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a></nav>
   <main>
     <section class="hero" aria-labelledby="headline">
       <div>
         <div class="eyebrow">Android + Termux</div>
         <h1 id="headline">내 손안의<br>에이전트 개발 환경</h1>
         <p class="lead">스마트폰 자체가 개발 환경이 됩니다. Bibimer는 같은 휴대폰의 Termux와 연결해 프로젝트·코딩 에이전트 세션·대화·터미널을 관리하는 모바일 에이전트 개발 환경(ADE)입니다.</p>
-        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=ko">Google Play에서 설치</a><a href="https://github.com/andy5090/bibimer">GitHub 저장소</a></div>
+        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=ko"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Google Play에서 설치</a><a class="guide-link" href="/ko/guide/">사용법 보기<span aria-hidden="true"> →</span></a></div>
         <p class="status">무료 · Android 8.0 이상 · 같은 휴대폰의 Termux와 함께 사용</p>
         <p class="status">웹사이트는 6개 언어로 볼 수 있습니다. 현재 Google Play 앱은 영어·한국어를 지원하며, 추가 언어는 준비 중입니다.</p>
       </div>
-      <img class="icon" src="/assets/icon.png" alt="Bibimer 앱 아이콘" width="512" height="512">
+      <!-- hero-visual:start -->
+      <div class="hero-demo">
+        <fieldset class="hero-slider">
+          <legend data-hero-copy="sliderTitle">폰 하나로 이어가는 개발</legend>
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-local" checked>
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-mobile">
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-terminal">
+          <div class="scene-controls">
+            <label for="scene-local"><span class="scene-number" aria-hidden="true">01</span><span data-hero-copy="localTab">폰 안의 개발 환경</span></label>
+            <label for="scene-mobile"><span class="scene-number" aria-hidden="true">02</span><span data-hero-copy="mobileTab">모바일에 맞게</span></label>
+            <label for="scene-terminal"><span class="scene-number" aria-hidden="true">03</span><span data-hero-copy="terminalTab">대화 화면</span></label>
+          </div>
+          <div class="hero-scenes">
+            <section class="hero-scene scene-local" aria-labelledby="local-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="localKicker">하나의 ANDROID 휴대폰</span><h2 id="local-title" data-hero-copy="localTitle">개발 환경이 폰 안에 있습니다.</h2></div>
+              <div class="diagram-stage">
+                <div class="local-phone">
+                  <div class="phone-speaker" aria-hidden="true"></div>
+                  <div class="phone-label" data-hero-copy="phoneBoundary">내 Android 휴대폰</div>
+                  <div class="app-layer"><div class="layer-heading"><span class="layer-symbol" aria-hidden="true">B</span><strong>BIBIMER</strong><span class="layer-tag" data-hero-copy="androidApp">Android 앱</span></div><p data-hero-copy="appRole">프로젝트 · 대화 · 터미널</p></div>
+                  <div class="local-link"><span aria-hidden="true">↕</span><span data-hero-copy="localLink">같은 기기 안에서 연결</span></div>
+                  <div class="termux-layer"><div class="layer-heading"><span class="layer-symbol terminal-symbol" aria-hidden="true">&gt;_</span><strong>Termux</strong></div><div class="tool-tags"><span>Git</span><span>Python</span><span>Node.js</span></div><p class="agents-label" data-hero-copy="agentsLabel">코딩 에이전트</p><p class="agent-names">Codex · Claude Code · OpenCode</p><div class="files-label"><span aria-hidden="true">⌁</span><span data-hero-copy="filesLabel">프로젝트 파일과 개발 명령</span></div></div>
+                  <div class="phone-home" aria-hidden="true"></div>
+                </div>
+              </div>
+              <p class="scene-note" data-hero-copy="localNote">휴대폰 자체가 개발 컴퓨터입니다. 별도의 PC를 준비할 필요가 없습니다.</p>
+            </section>
+            <section class="hero-scene scene-mobile" aria-labelledby="mobile-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="mobileKicker">에이전트 출력에서 모바일 화면으로</span><h2 id="mobile-title" data-hero-copy="mobileTitle">작업 내용을 보기 편하게.</h2></div>
+              <div class="diagram-stage mobile-stage">
+                <div class="event-source"><span class="event-symbol" aria-hidden="true">{ }</span><div><strong data-hero-copy="eventsTitle">에이전트의 구조화된 이벤트</strong><span data-hero-copy="eventsOrigin">Termux에서 실행하는 호환 에이전트</span></div></div>
+                <div class="format-link"><span aria-hidden="true">↓</span><span data-hero-copy="formatLink">BIBIMER가 화면으로 정리</span></div>
+                <div class="mobile-format">
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">≡</span><div><strong data-hero-copy="conversationTitle">읽기 편한 대화</strong><span data-hero-copy="conversationBody">서식을 살린 답변, 코드, 목록</span></div></div>
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">&gt;_</span><div><strong data-hero-copy="toolsTitle">도구 실행 과정</strong><span data-hero-copy="toolsBody">실행한 명령과 결과 확인</span></div></div>
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">✓</span><div><strong data-hero-copy="approvalTitle">직접 결정하는 승인</strong><span data-hero-copy="approvalBody">요청 내용을 확인한 뒤 허용</span></div></div>
+                </div>
+              </div>
+              <p class="scene-note" data-hero-copy="mobileNote">화면 구성 흐름을 나타낸 도식입니다. 입력과 에이전트 출력은 원래 언어를 유지합니다.</p>
+            </section>
+            <section class="hero-scene scene-terminal" aria-labelledby="terminal-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="terminalKicker">실제 앱 화면</span><h2 id="terminal-title" data-hero-copy="terminalTitle">답변과 코드를 편하게 읽으세요.</h2></div>
+              <div class="diagram-stage capture-stage"><a class="terminal-capture" href="/assets/examples/ko/01-chat.jpg"><img src="/assets/examples/ko/01-chat.jpg" alt="서식 있는 대화" data-hero-alt="terminalImage" width="1080" height="1920" loading="lazy"></a></div>
+              <p class="scene-note" data-hero-copy="terminalNote">실제 UI에 예시 대화를 넣은 화면입니다. 이미지를 누르면 크게 볼 수 있습니다.</p>
+            </section>
+          </div>
+        </fieldset>
+        <p class="provider-note" data-hero-copy="providerNote">프로젝트와 개발 도구는 휴대폰에서 실행합니다. 연결한 에이전트는 온라인 AI 제공자를 이용할 수 있습니다.</p>
+      </div>
+      <!-- hero-visual:end -->
     </section>
+    <section class="product-gallery" aria-labelledby="gallery-title"><div class="eyebrow">화면으로 살펴보기</div><h2 id="gallery-title">대화부터 프로젝트와 파일까지</h2><p>실제 Bibimer UI에 예시 프로젝트와 대화를 넣었습니다. 개인 세션 기록은 사용하지 않았습니다.</p><div class="gallery-grid"><figure><a href="/assets/examples/ko/01-chat.jpg"><img src="/assets/examples/ko/01-chat.jpg" alt="서식 있는 대화" width="1080" height="1920" loading="lazy"></a><figcaption>서식 있는 대화</figcaption></figure><figure><a href="/assets/examples/ko/02-projects.jpg"><img src="/assets/examples/ko/02-projects.jpg" alt="프로젝트와 에이전트 세션" width="1080" height="1920" loading="lazy"></a><figcaption>프로젝트와 에이전트 세션</figcaption></figure><figure><a href="/assets/examples/ko/03-files.jpg"><img src="/assets/examples/ko/03-files.jpg" alt="프로젝트 파일 탐색" width="1080" height="1920" loading="lazy"></a><figcaption>프로젝트 파일 탐색</figcaption></figure><figure><a href="/assets/examples/ko/04-code.jpg"><img src="/assets/examples/ko/04-code.jpg" alt="구문을 강조한 코드 보기" width="1080" height="1920" loading="lazy"></a><figcaption>구문을 강조한 코드 보기</figcaption></figure></div></section>
     <section class="features" aria-label="주요 기능">
       <div><h3>휴대폰에서 이어가는 프로젝트</h3><p>프로젝트 파일과 Git, 호환되는 개발 도구를 휴대폰의 Termux에서 실행합니다. 별도의 개발 컴퓨터나 원격 호스트 없이 프로젝트와 기존 워크트리를 관리하세요.</p></div>
       <div><h3>대화와 터미널</h3><p>구조화된 대화와 도구 실행을 확인하세요. 지시를 보내고, 승인 요청에 응답하고, 후속 입력을 대기열에 추가할 수 있습니다.</p></div>

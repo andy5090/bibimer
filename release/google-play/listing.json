@@ -31,9 +31,10 @@
     "en-US": {
       "featureGraphic": "graphics/feature-en-US.png",
       "phoneScreenshots": [
-        "screenshots/en-US/04-terminal.png",
-        "screenshots/en-US/02-setup.jpg",
-        "screenshots/en-US/03-settings.jpg"
+        "screenshots/examples/en-US/01-chat.jpg",
+        "screenshots/examples/en-US/02-projects.jpg",
+        "screenshots/examples/en-US/03-files.jpg",
+        "screenshots/examples/en-US/04-code.jpg"
       ],
       "title": "Bibimer",
       "shortDescription": "Start developing on your phone. Manage projects and coding agents with Termux.",
@@ -42,9 +43,10 @@
     "ko-KR": {
       "featureGraphic": "graphics/feature-ko-KR.png",
       "phoneScreenshots": [
-        "screenshots/ko-KR/04-terminal.png",
-        "screenshots/ko-KR/02-setup.jpg",
-        "screenshots/ko-KR/03-settings.jpg"
+        "screenshots/examples/ko-KR/01-chat.jpg",
+        "screenshots/examples/ko-KR/02-projects.jpg",
+        "screenshots/examples/ko-KR/04-code.jpg",
+        "screenshots/examples/ko-KR/03-files.jpg"
       ],
       "title": "Bibimer 비비머",
       "shortDescription": "휴대폰 하나로 개발을 시작하세요. Termux와 연결해 프로젝트와 코딩 에이전트 작업을 관리하세요.",
@@ -208,7 +210,7 @@
     },
     "productionSubmitted": true
   },
-  "consoleScreenshotsUpdatedOn": "2026-10-12",
+  "consoleScreenshotsUpdatedOn": "2026-10-15",
   "playAppSigning": {
     "consoleStatus": "active",
     "verifiedOn": "2026-10-12",
@@ -228,7 +230,7 @@
     "guideUrl": "https://bibimer.app/review/",
     "videoScope": "Actual Android foreground-service controls and notification navigation using fictional completion events; no live provider account."
   },
-  "consoleScreenshotsStatus": "submitted_for_review",
+  "consoleScreenshotsStatus": "submitted_for_review_prechecks_running",
   "productionRelease": {
     "versionName": "0.17.1",
     "versionCode": 33,
@@ -471,5 +473,11 @@
       "publishedAtLocal": "2026-10-12 15:59 Asia/Seoul",
       "publicStoreUrl": "https://play.google.com/store/apps/details?id=app.bibimer"
     }
-  ]
+  ],
+  "screenshotsExampleData": {
+    "description": "Actual app UI rendered with synthetic projects, conversations and files; not private logs or real model execution",
+    "dimensions": "1080x1920",
+    "aiAssetLabels": "All eight new screenshot assets declared AI-generated/modified in Play Console",
+    "submission": "English and Korean phone screenshots only; existing app version unchanged"
+  }
 }

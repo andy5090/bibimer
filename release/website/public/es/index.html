@@ -34,7 +34,6 @@
     h1 { font: 700 clamp(40px, 6vw, 72px)/1.05 "Space Grotesk", sans-serif; letter-spacing: -.04em; margin: 20px 0 24px; max-width: 720px; }
     p { line-height: 1.8; max-width: 710px; overflow-wrap: anywhere; }
     .lead { font-size: 19px; color: #486052; }
-    .icon { width: 100%; height: auto; border-radius: 24%; }
     .links { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 28px; }
     .contact { padding: 13px 22px; border-radius: 8px; background: #19372c; color: white; text-decoration: none; }
     .status { color: #546b5b; font-size: 14px; }
@@ -49,32 +48,85 @@
     .name-story h2 { font-size: 21px; margin-bottom: 10px; }
     .name-story p { font-size: 15px; color: #486052; }
     footer { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 32px 0; margin-top: 54px; border-top: 1px solid #d3ded4; font-size: 13px; color: #486052; }
-    @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } .hero .icon { width: 112px; grid-row: 1; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
+    @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
     .language-nav { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 16px 0; font-size: 13px; }
     .language-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; line-height: 1.5; }
     .language-nav a:hover { background: #e7efe5; }
     .language-nav a[aria-current="page"] { background: #19372c; color: #fff; font-weight: 600; }
+    .header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 20px; flex-wrap: wrap; }
   </style>
+  <link rel="stylesheet" href="/assets/language.css">
+  <script src="/assets/language.js" defer></script>
+  <link rel="stylesheet" href="/assets/hero.css">
 </head>
 <body>
 <div class="shell">
   <header>
-    <a class="brand" href="/es/">BIBIMER</a>
-    <nav aria-label="Navegación principal"><a href="/es/privacy/">Privacidad</a><a href="mailto:andy@andineering.com">Soporte</a></nav>
+    <a class="brand" href="/es/"><img src="/assets/icon.png" alt="" width="28" height="28">BIBIMER</a>
+    <div class="header-actions"><nav aria-label="Navegación principal"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">Ayuda</a></nav><nav class="language-nav" aria-label="Idioma del sitio web"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es" aria-current="page">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a></nav></div>
   </header>
-  <nav class="language-nav" aria-label="Idioma del sitio web"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es" aria-current="page">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a></nav>
   <main>
     <section class="hero" aria-labelledby="headline">
       <div>
         <div class="eyebrow">Android + Termux</div>
         <h1 id="headline">Tu teléfono.<br>Tu entorno de desarrollo.</h1>
         <p class="lead">Convierte tu teléfono Android en un entorno de desarrollo. Bibimer es un entorno de desarrollo con agentes (ADE) para móviles que reúne proyectos, sesiones de agentes de programación, chats y terminales con Termux en el mismo teléfono.</p>
-        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=es">Descarga Bibimer en Google Play</a><a href="https://github.com/andy5090/bibimer">Repositorio en GitHub</a></div>
+        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=es"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Descarga Bibimer en Google Play</a><a class="guide-link" href="/es/guide/">Cómo empezar<span aria-hidden="true"> →</span></a></div>
         <p class="status">Gratis · Android 8.0 o posterior · Termux en el mismo teléfono</p>
         <p class="status">Este sitio web está disponible en español. La aplicación actual de Google Play admite inglés y coreano; estamos preparando más idiomas para la aplicación.</p>
       </div>
-      <img class="icon" src="/assets/icon.png" alt="Icono de la aplicación Bibimer" width="512" height="512">
+      <!-- hero-visual:start -->
+      <div class="hero-demo">
+        <fieldset class="hero-slider">
+          <legend data-hero-copy="sliderTitle">Un entorno de desarrollo que va contigo</legend>
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-local" checked>
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-mobile">
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-terminal">
+          <div class="scene-controls">
+            <label for="scene-local"><span class="scene-number" aria-hidden="true">01</span><span data-hero-copy="localTab">En tu teléfono</span></label>
+            <label for="scene-mobile"><span class="scene-number" aria-hidden="true">02</span><span data-hero-copy="mobileTab">Para el móvil</span></label>
+            <label for="scene-terminal"><span class="scene-number" aria-hidden="true">03</span><span data-hero-copy="terminalTab">Conversaciones</span></label>
+          </div>
+          <div class="hero-scenes">
+            <section class="hero-scene scene-local" aria-labelledby="local-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="localKicker">UN SOLO TELÉFONO ANDROID</span><h2 id="local-title" data-hero-copy="localTitle">Tu entorno de trabajo está aquí.</h2></div>
+              <div class="diagram-stage">
+                <div class="local-phone">
+                  <div class="phone-speaker" aria-hidden="true"></div>
+                  <div class="phone-label" data-hero-copy="phoneBoundary">Tu teléfono Android</div>
+                  <div class="app-layer"><div class="layer-heading"><span class="layer-symbol" aria-hidden="true">B</span><strong>BIBIMER</strong><span class="layer-tag" data-hero-copy="androidApp">Aplicación Android</span></div><p data-hero-copy="appRole">Proyectos · Conversaciones · Terminal</p></div>
+                  <div class="local-link"><span aria-hidden="true">↕</span><span data-hero-copy="localLink">Conectados en el mismo dispositivo</span></div>
+                  <div class="termux-layer"><div class="layer-heading"><span class="layer-symbol terminal-symbol" aria-hidden="true">&gt;_</span><strong>Termux</strong></div><div class="tool-tags"><span>Git</span><span>Python</span><span>Node.js</span></div><p class="agents-label" data-hero-copy="agentsLabel">Agentes de programación</p><p class="agent-names">Codex · Claude Code · OpenCode</p><div class="files-label"><span aria-hidden="true">⌁</span><span data-hero-copy="filesLabel">Archivos del proyecto y comandos de desarrollo</span></div></div>
+                  <div class="phone-home" aria-hidden="true"></div>
+                </div>
+              </div>
+              <p class="scene-note" data-hero-copy="localNote">Tu teléfono es la máquina de desarrollo. No necesitas otra computadora.</p>
+            </section>
+            <section class="hero-scene scene-mobile" aria-labelledby="mobile-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="mobileKicker">DE EVENTOS DEL AGENTE A LA INTERFAZ MÓVIL</span><h2 id="mobile-title" data-hero-copy="mobileTitle">Una vista más clara del trabajo.</h2></div>
+              <div class="diagram-stage mobile-stage">
+                <div class="event-source"><span class="event-symbol" aria-hidden="true">{ }</span><div><strong data-hero-copy="eventsTitle">Eventos estructurados del agente</strong><span data-hero-copy="eventsOrigin">De agentes compatibles en Termux</span></div></div>
+                <div class="format-link"><span aria-hidden="true">↓</span><span data-hero-copy="formatLink">Presentados por BIBIMER</span></div>
+                <div class="mobile-format">
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">≡</span><div><strong data-hero-copy="conversationTitle">Conversaciones legibles</strong><span data-hero-copy="conversationBody">Respuestas, código y listas con formato</span></div></div>
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">&gt;_</span><div><strong data-hero-copy="toolsTitle">Actividad de las herramientas</strong><span data-hero-copy="toolsBody">Sigue los comandos y sus resultados</span></div></div>
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">✓</span><div><strong data-hero-copy="approvalTitle">Tú decides qué aprobar</strong><span data-hero-copy="approvalBody">Revisa las solicitudes antes de permitirlas</span></div></div>
+                </div>
+              </div>
+              <p class="scene-note" data-hero-copy="mobileNote">Diagrama del flujo de la interfaz. Tus entradas y las respuestas del agente conservan su idioma original.</p>
+            </section>
+            <section class="hero-scene scene-terminal" aria-labelledby="terminal-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="terminalKicker">LA APLICACIÓN EN ACCIÓN</span><h2 id="terminal-title" data-hero-copy="terminalTitle">Respuestas y código fáciles de leer.</h2></div>
+              <div class="diagram-stage capture-stage"><a class="terminal-capture" href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="Conversación con formato" data-hero-alt="terminalImage" width="1080" height="1920" loading="lazy"></a></div>
+              <p class="scene-note" data-hero-copy="terminalNote">Conversación de ejemplo en la interfaz real, en inglés. Abre la imagen para verla en detalle.</p>
+            </section>
+          </div>
+        </fieldset>
+        <p class="provider-note" data-hero-copy="providerNote">Los proyectos y las herramientas se ejecutan en tu teléfono. Los agentes conectados pueden usar proveedores de IA en línea.</p>
+      </div>
+      <!-- hero-visual:end -->
     </section>
+    <section class="product-gallery" aria-labelledby="gallery-title"><div class="eyebrow">Mira tu espacio de trabajo</div><h2 id="gallery-title">Conversaciones, proyectos y archivos</h2><p>Interfaz real de Bibimer con proyectos y conversaciones de ejemplo. No se utilizan registros privados. Interfaz en inglés.</p><div class="gallery-grid"><figure><a href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="Conversación con formato" width="1080" height="1920" loading="lazy"></a><figcaption>Conversación con formato</figcaption></figure><figure><a href="/assets/examples/en/02-projects.jpg"><img src="/assets/examples/en/02-projects.jpg" alt="Proyectos y sesiones de agentes" width="1080" height="1920" loading="lazy"></a><figcaption>Proyectos y sesiones de agentes</figcaption></figure><figure><a href="/assets/examples/en/03-files.jpg"><img src="/assets/examples/en/03-files.jpg" alt="Exploración de archivos" width="1080" height="1920" loading="lazy"></a><figcaption>Exploración de archivos</figcaption></figure><figure><a href="/assets/examples/en/04-code.jpg"><img src="/assets/examples/en/04-code.jpg" alt="Código con resaltado de sintaxis" width="1080" height="1920" loading="lazy"></a><figcaption>Código con resaltado de sintaxis</figcaption></figure></div></section>
     <section class="features" aria-label="Funciones">
       <div><h3>Tus proyectos, en tu teléfono</h3><p>Los archivos de tus proyectos, Git y las herramientas de desarrollo compatibles se ejecutan en Termux, en tu teléfono. Gestiona proyectos y árboles de trabajo existentes sin un ordenador de desarrollo ni un servidor remoto.</p></div>
       <div><h3>Chat y terminal</h3><p>Sigue conversaciones estructuradas y la actividad de las herramientas. Envía instrucciones, responde a solicitudes de aprobación y añade mensajes de seguimiento a la cola.</p></div>

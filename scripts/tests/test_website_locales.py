@@ -21,7 +21,7 @@ class WebsiteLocalesTests(unittest.TestCase):
     def test_localized_routes_and_equivalent_page_navigation(self):
         for locale in LOCALES:
             base = '/' if locale == 'en' else f'/{locale}/'
-            for suffix in ('', 'privacy/'):
+            for suffix in ('', 'privacy/', 'guide/'):
                 with self.subTest(locale=locale, page=suffix):
                     page = Page(ROOT / (base + suffix).lstrip('/') / 'index.html')
                     self.assertEqual([a['lang'] for t, a in page.tags if t == 'html'], [locale])
@@ -34,14 +34,17 @@ class WebsiteLocalesTests(unittest.TestCase):
                     self.assertEqual([a['hreflang'] for a in switches if a.get('aria-current') == 'page'], [locale])
                     ids = [a['id'] for _, a in page.tags if 'id' in a]
                     self.assertEqual(len(ids), len(set(ids)))
-                    self.assertFalse(any(t in ('script', 'select') for t, _ in page.tags))
+                    self.assertFalse(any(t == 'select' for t, _ in page.tags))
+                    scripts = [a for t, a in page.tags if t == 'script']
+                    self.assertEqual([a.get('src') for a in scripts], ['/assets/language.js'])
+                    self.assertTrue(all('defer' in a for a in scripts))
                     for tag, attrs in page.tags:
                         for key in ('href', 'src'):
                             path = urlsplit(attrs.get(key, '')).path
                             if attrs.get(key, '').startswith('/'):
                                 target = ROOT / path.lstrip('/')
                                 self.assertTrue(target.exists(), str(target))
-                    if suffix:
+                    if suffix == 'privacy/':
                         counts = Counter(t for t, _ in page.tags)
                         self.assertEqual(counts['h3'], 8)
                         self.assertEqual(counts['li'], 3)

@@ -37,12 +37,14 @@
     @media print { body { background: white; } main { max-width: none; padding: 0; } nav { display: none; } }
 
     video { display: block; width: 100%; max-height: 72vh; background: #14211c; border-radius: 12px; margin: 20px 0; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; }
+    .brand img { width: 28px; height: 28px; border-radius: 7px; }
   </style>
 </head>
 <body>
 <main>
   <header>
-    <a class="brand" href="/ko/">BIBIMER</a>
+    <a class="brand" href="/ko/"><img src="/assets/icon.png" alt="" width="28" height="28">BIBIMER</a>
     <h1>앱 심사 안내</h1>
     <nav aria-label="언어 선택"><a href="/review/" lang="en" hreflang="en">English</a><a href="/ko/review/" lang="ko" hreflang="ko" aria-current="page">한국어</a></nav>
   </header>

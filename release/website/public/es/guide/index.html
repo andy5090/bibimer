@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Prepara Bibimer y Termux en el mismo teléfono Android, abre un proyecto y ejecuta tu primer comando de terminal.">
+  <title>Bibimer · Primeros pasos con Bibimer</title>
+  <link rel="icon" href="/favicon.ico?v=20261014" sizes="16x16 32x32" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon.svg?v=20261014" sizes="any" type="image/svg+xml">
+  <link rel="canonical" href="https://bibimer.app/es/guide/">
+  <link rel="alternate" hreflang="en" href="https://bibimer.app/guide/">
+  <link rel="alternate" hreflang="ko" href="https://bibimer.app/ko/guide/">
+  <link rel="alternate" hreflang="es" href="https://bibimer.app/es/guide/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://bibimer.app/zh-Hans/guide/">
+  <link rel="alternate" hreflang="pt-BR" href="https://bibimer.app/pt-BR/guide/">
+  <link rel="alternate" hreflang="id" href="https://bibimer.app/id/guide/">
+  <link rel="alternate" hreflang="x-default" href="https://bibimer.app/guide/">
+  <link rel="stylesheet" href="/assets/guide.css">
+  <link rel="stylesheet" href="/assets/language.css">
+  <script src="/assets/language.js" defer></script>
+</head>
+<body>
+<div class="guide-shell">
+  <header>
+    <a class="brand" href="/es/"><img src="/assets/icon.png" alt="" width="28" height="28">BIBIMER</a>
+    <div class="header-actions"><nav aria-label="Navegación de la guía"><a href="/es/">Inicio</a><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">Soporte</a></nav><nav class="language-nav" aria-label="Idioma del sitio web"><a href="/guide/" lang="en" hreflang="en">English</a><a href="/ko/guide/" lang="ko" hreflang="ko">한국어</a><a href="/es/guide/" lang="es" hreflang="es" aria-current="page">Español</a><a href="/zh-Hans/guide/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/guide/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/guide/" lang="id" hreflang="id">Bahasa Indonesia</a></nav></div>
+  </header>
+  <main>
+    <section class="guide-intro" aria-labelledby="guide-title">
+      <p class="eyebrow">Tu primer proyecto, en tu teléfono</p>
+      <h1 id="guide-title">Primeros pasos con Bibimer</h1>
+      <p class="lead">Necesitas Bibimer y Termux en el <strong>mismo teléfono Android</strong>. Termux ejecuta las herramientas de desarrollo y guarda los archivos; Bibimer reúne proyectos, sesiones de agentes, chats y terminales en una interfaz móvil.</p>
+      <a class="install-link" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=es"><img src="/assets/google-play.svg" width="24" height="24" alt="">Obtener Bibimer en Google Play</a>
+      <p class="availability">La app actual de Google Play está disponible en inglés y coreano. Se están preparando más idiomas para la app. Esta guía conserva los nombres de los botones en inglés para que puedas encontrarlos en la versión publicada.</p>
+    </section>
+    <section class="step" aria-labelledby="step-1"><h2 id="step-1"><span class="step-number" aria-hidden="true">01</span>Instala y abre Termux</h2><p>Instala Termux desde una de las fuentes indicadas en su <a href="https://github.com/termux/termux-app#installation">guía oficial de instalación</a>. Ábrelo una vez y espera a que termine la configuración inicial.</p><p>Instala Termux y sus complementos desde la misma fuente. No necesitas un ordenador de desarrollo aparte para seguir esta guía.</p></section>
+    <section class="step" aria-labelledby="step-2"><h2 id="step-2"><span class="step-number" aria-hidden="true">02</span>Conecta Bibimer con Termux</h2><p>En Bibimer, abre <strong>Setup → Manual setup and pairing → Save setup file</strong>. Guarda el archivo como <code>bibimer-setup.sh</code> en la carpeta de descargas de Android.</p><p>En Termux, ejecuta este comando y concede el permiso de acceso a archivos. Omítelo si ya puedes acceder a la carpeta de descargas.</p><pre><code>termux-setup-storage</code></pre><p>Después ejecuta:</p><pre><code>bash ~/storage/downloads/bibimer-setup.sh</code></pre><p>El script prepara Python si hace falta, instala el puente local de Bibimer y lo inicia. Introduce el <strong>código de un solo uso de 8 dígitos</strong> que aparece en Termux en la sección <strong>Connect this app</strong> de Bibimer. El código es válido durante cinco minutos.</p><p>Si guardaste el archivo con otro nombre o en otra carpeta, ajusta la ruta del comando.</p></section>
+    <section class="step" aria-labelledby="step-3"><h2 id="step-3"><span class="step-number" aria-hidden="true">03</span>Abre un proyecto y prueba el terminal</h2><p>Abre la barra lateral y elige <strong>Project Add</strong>. Busca una carpeta de Termux o escribe una ruta como <code>~/projects/my-project</code> y elige crearla si hace falta. Guarda el proyecto.</p><p>Selecciona <strong>Terminal</strong> e inicia una sesión. Escribe y envía este comando:</p><pre><code>pwd</code></pre><p>La salida muestra la carpeta actual del proyecto en tu teléfono. Esta primera comprobación no requiere una cuenta de un proveedor de IA.</p></section>
+    <section class="step" aria-labelledby="step-4"><h2 id="step-4"><span class="step-number" aria-hidden="true">04</span>Añade un agente de programación cuando lo necesites</h2><p>Prepara una instalación compatible de <strong>Codex, Claude Code u OpenCode</strong> en Termux, incluido el inicio de sesión o la configuración de API que requiera su proveedor. Después elige el agente en Bibimer e inicia una sesión.</p><p>Los modelos y las opciones dependen del agente instalado. Las instrucciones generales para Linux no garantizan compatibilidad con Android/Termux. Las tarifas y políticas de datos del proveedor se aplican por separado.</p></section>
+    <section class="step" aria-labelledby="step-5"><h2 id="step-5"><span class="step-number" aria-hidden="true">05</span>Organiza tu trabajo</h2><p>Usa la barra lateral para cambiar entre proyectos, worktrees de Git existentes y sesiones. Chat muestra las respuestas estructuradas y las solicitudes de aprobación de los agentes compatibles; Terminal ofrece su interfaz de línea de comandos. Abre el explorador de archivos para revisar los archivos del proyecto, el estado de Git y los cambios.</p><p>Cambiar de pantalla o cerrar Bibimer no solicita detener las sesiones. Android puede detener procesos en segundo plano; reiniciar el puente no recupera procesos perdidos ni su salida de terminal. Archivar una sesión mantiene su trabajo en ejecución. Crea o elimina worktrees de Git en Termux.</p><p>Usa <strong>Settings → Language</strong> para elegir el idioma de la app. Tu entrada, los nombres de los proyectos y la salida del terminal no se traducen.</p></section>
+    <section class="support-card" aria-labelledby="support-title">
+      <h2 id="support-title">¿Necesitas ayuda?</h2>
+      <p>Si falla la conexión, comprueba que Termux y el puente sigan en ejecución. Al pedir ayuda, indica el paso al que llegaste y el mensaje de error. No envíes contraseñas, claves API ni archivos privados del proyecto.</p>
+      <div class="support-links"><a href="https://github.com/andy5090/bibimer/issues">Informar de un problema en GitHub</a><a href="mailto:andy@andineering.com">andy@andineering.com</a></div>
+    </section>
+  </main>
+  <footer><span>Bibimer · Tu entorno de desarrollo con agentes.</span><a href="/es/privacy/">Privacidad</a></footer>
+</div>
+</body>
+</html>

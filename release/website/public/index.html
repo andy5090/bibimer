@@ -34,7 +34,6 @@
     h1 { font: 700 clamp(40px, 6vw, 72px)/1.05 "Space Grotesk", sans-serif; letter-spacing: -.04em; margin: 20px 0 24px; max-width: 720px; }
     p { line-height: 1.8; max-width: 710px; overflow-wrap: anywhere; }
     .lead { font-size: 19px; color: #486052; }
-    .icon { width: 100%; height: auto; border-radius: 24%; }
     .links { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 28px; }
     .contact { padding: 13px 22px; border-radius: 8px; background: #19372c; color: white; text-decoration: none; }
     .status { color: #546b5b; font-size: 14px; }
@@ -49,32 +48,85 @@
     .name-story h2 { font-size: 21px; margin-bottom: 10px; }
     .name-story p { font-size: 15px; color: #486052; }
     footer { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 32px 0; margin-top: 54px; border-top: 1px solid #d3ded4; font-size: 13px; color: #486052; }
-    @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } .hero .icon { width: 112px; grid-row: 1; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
+    @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
     .language-nav { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 16px 0; font-size: 13px; }
     .language-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; line-height: 1.5; }
     .language-nav a:hover { background: #e7efe5; }
     .language-nav a[aria-current="page"] { background: #19372c; color: #fff; font-weight: 600; }
+    .header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 20px; flex-wrap: wrap; }
   </style>
+  <link rel="stylesheet" href="/assets/language.css">
+  <script src="/assets/language.js" defer></script>
+  <link rel="stylesheet" href="/assets/hero.css">
 </head>
 <body>
 <div class="shell">
   <header>
-    <a class="brand" href="/">BIBIMER</a>
-    <nav aria-label="Main navigation"><a href="/privacy/">Privacy</a><a href="mailto:andy@andineering.com">Support</a></nav>
+    <a class="brand" href="/"><img src="/assets/icon.png" width="28" height="28" alt="">BIBIMER</a>
+    <div class="header-actions"><nav aria-label="Main navigation"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">Support</a></nav><nav class="language-nav" aria-label="Website language"><a href="/" lang="en" hreflang="en" aria-current="page">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a></nav></div>
   </header>
-  <nav class="language-nav" aria-label="Website language"><a href="/" lang="en" hreflang="en" aria-current="page">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a></nav>
   <main>
     <section class="hero" aria-labelledby="headline">
       <div>
         <div class="eyebrow">Android + Termux</div>
         <h1 id="headline">Your phone.<br>Your dev environment.</h1>
         <p class="lead">Turn your Android phone into a development environment. Bibimer is a mobile ADE that brings projects, coding-agent sessions, chats, and terminals together with Termux on the same phone.</p>
-        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=en">Get Bibimer on Google Play</a><a href="https://github.com/andy5090/bibimer">GitHub repository</a></div>
+        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=en"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Get Bibimer on Google Play</a><a class="guide-link" href="/guide/">Read the guide<span aria-hidden="true"> →</span></a></div>
         <p class="status">Free · Android 8.0 or later · Termux on the same phone</p>
         <p class="status">The website is available in six languages. The current Google Play app supports English and Korean; additional app languages are in preparation.</p>
       </div>
-      <img class="icon" src="/assets/icon.png" alt="Bibimer app icon" width="512" height="512">
+      <!-- hero-visual:start -->
+      <div class="hero-demo">
+        <fieldset class="hero-slider">
+          <legend data-hero-copy="sliderTitle">A development environment that goes with you</legend>
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-local" checked>
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-mobile">
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-terminal">
+          <div class="scene-controls">
+            <label for="scene-local"><span class="scene-number" aria-hidden="true">01</span><span data-hero-copy="localTab">On your phone</span></label>
+            <label for="scene-mobile"><span class="scene-number" aria-hidden="true">02</span><span data-hero-copy="mobileTab">Made for mobile</span></label>
+            <label for="scene-terminal"><span class="scene-number" aria-hidden="true">03</span><span data-hero-copy="terminalTab">Chat in focus</span></label>
+          </div>
+          <div class="hero-scenes">
+            <section class="hero-scene scene-local" aria-labelledby="local-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="localKicker">ONE ANDROID PHONE</span><h2 id="local-title" data-hero-copy="localTitle">Your workspace lives here.</h2></div>
+              <div class="diagram-stage">
+                <div class="local-phone">
+                  <div class="phone-speaker" aria-hidden="true"></div>
+                  <div class="phone-label" data-hero-copy="phoneBoundary">Your Android phone</div>
+                  <div class="app-layer"><div class="layer-heading"><span class="layer-symbol" aria-hidden="true">B</span><strong>BIBIMER</strong><span class="layer-tag" data-hero-copy="androidApp">Android app</span></div><p data-hero-copy="appRole">Projects · Conversations · Terminal</p></div>
+                  <div class="local-link"><span aria-hidden="true">↕</span><span data-hero-copy="localLink">Connected on the same device</span></div>
+                  <div class="termux-layer"><div class="layer-heading"><span class="layer-symbol terminal-symbol" aria-hidden="true">&gt;_</span><strong>Termux</strong></div><div class="tool-tags"><span>Git</span><span>Python</span><span>Node.js</span></div><p class="agents-label" data-hero-copy="agentsLabel">Coding agents</p><p class="agent-names">Codex · Claude Code · OpenCode</p><div class="files-label"><span aria-hidden="true">⌁</span><span data-hero-copy="filesLabel">Project files &amp; development commands</span></div></div>
+                  <div class="phone-home" aria-hidden="true"></div>
+                </div>
+              </div>
+              <p class="scene-note" data-hero-copy="localNote">Your phone is the development machine. No separate computer required.</p>
+            </section>
+            <section class="hero-scene scene-mobile" aria-labelledby="mobile-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="mobileKicker">FROM AGENT EVENTS TO MOBILE UI</span><h2 id="mobile-title" data-hero-copy="mobileTitle">A clearer view of the work.</h2></div>
+              <div class="diagram-stage mobile-stage">
+                <div class="event-source"><span class="event-symbol" aria-hidden="true">{ }</span><div><strong data-hero-copy="eventsTitle">Structured agent events</strong><span data-hero-copy="eventsOrigin">From compatible agents in Termux</span></div></div>
+                <div class="format-link"><span aria-hidden="true">↓</span><span data-hero-copy="formatLink">Presented by BIBIMER</span></div>
+                <div class="mobile-format">
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">≡</span><div><strong data-hero-copy="conversationTitle">Readable conversations</strong><span data-hero-copy="conversationBody">Formatted answers, code, and lists</span></div></div>
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">&gt;_</span><div><strong data-hero-copy="toolsTitle">Visible tool activity</strong><span data-hero-copy="toolsBody">Follow commands and their results</span></div></div>
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">✓</span><div><strong data-hero-copy="approvalTitle">Approvals in your hands</strong><span data-hero-copy="approvalBody">Review requests before allowing them</span></div></div>
+                </div>
+              </div>
+              <p class="scene-note" data-hero-copy="mobileNote">A diagram of the interface flow. Your input and agent output keep their original language.</p>
+            </section>
+            <section class="hero-scene scene-terminal" aria-labelledby="terminal-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="terminalKicker">THE APP IN ACTION</span><h2 id="terminal-title" data-hero-copy="terminalTitle">Readable answers and code.</h2></div>
+              <div class="diagram-stage capture-stage"><a class="terminal-capture" href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="Formatted conversation" data-hero-alt="terminalImage" width="1080" height="1920" loading="lazy"></a></div>
+              <p class="scene-note" data-hero-copy="terminalNote">Example conversation in the actual interface. Open the image for a closer look.</p>
+            </section>
+          </div>
+        </fieldset>
+        <p class="provider-note" data-hero-copy="providerNote">Projects and tools run on your phone. Connected agents may use online AI providers.</p>
+      </div>
+      <!-- hero-visual:end -->
     </section>
+    <section class="product-gallery" aria-labelledby="gallery-title"><div class="eyebrow">See your workspace</div><h2 id="gallery-title">Conversations, projects, and files</h2><p>Actual Bibimer interface with example projects and conversations. No private session logs are used.</p><div class="gallery-grid"><figure><a href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="Formatted conversation" width="1080" height="1920" loading="lazy"></a><figcaption>Formatted conversation</figcaption></figure><figure><a href="/assets/examples/en/02-projects.jpg"><img src="/assets/examples/en/02-projects.jpg" alt="Projects and agent sessions" width="1080" height="1920" loading="lazy"></a><figcaption>Projects and agent sessions</figcaption></figure><figure><a href="/assets/examples/en/03-files.jpg"><img src="/assets/examples/en/03-files.jpg" alt="Project file navigation" width="1080" height="1920" loading="lazy"></a><figcaption>Project file navigation</figcaption></figure><figure><a href="/assets/examples/en/04-code.jpg"><img src="/assets/examples/en/04-code.jpg" alt="Code with syntax highlighting" width="1080" height="1920" loading="lazy"></a><figcaption>Code with syntax highlighting</figcaption></figure></div></section>
     <section class="features" aria-label="Features">
       <div><h3>Your projects, on your phone</h3><p>Your project files, Git, and compatible development tools run in Termux on your phone. Manage projects and existing worktrees without a separate development computer or remote host.</p></div>
       <div><h3>Chat and terminal</h3><p>Follow structured conversations and tool activity. Send instructions, respond to approvals, and queue follow-up messages.</p></div>

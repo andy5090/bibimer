@@ -1,5 +1,21 @@
 # Bibimer 다음 세션 시작점
 
+## 최신: 웹사이트 소개·사용법·언어 선택과 Play 이미지 (2026-10-15)
+
+- 사용자 요청으로 아이콘을 헤더 BIBIMER 앞에, GitHub을 헤더로 이동했다. Google Play 설치 버튼에는 공식 Play 페이지에서 가져온 컬러 prism SVG를 기존 버튼 스타일에 넣고, 옆에 **사용법 보기**를 배치했다. 6개 언어의 `guide/`에 Termux 준비→수동 연결→프로젝트/터미널→호환 에이전트 설정→세션/파일 관리를 제공한다.
+- 큰 로고 대신 같은 Android 폰의 Bibimer→Termux→개발 도구/에이전트 구조, 구조화 이벤트의 모바일 표시, 대화 예시를 CSS radio 슬라이더로 설명한다. 자동 재생·새 의존성 없이 키보드 조작한다. 별도 갤러리는 서식 있는 대화·여러 프로젝트/세션·파일 탐색·코드 뷰어를 보여준다.
+- 소개 화면은 **실제 앱 UI + 합성 예시 데이터**이며 개인 로그나 심사용 데모 모드를 사용하지 않았다. Chrome CUA에서 432×768 CSS/2.5 배율로 1080×1920 JPEG EN/KO 각4장을 캡처했다. 테스트 fixture의 애니메이션·자동화 포인터를 제외했으며 이미지 픽셀 편집이나 APK 빌드는 없다. `release/google-play/screenshots/examples/`와 웹 `assets/examples/`가 동일하다. 생성 fixture는 Git 제외 `.tools/product_screenshots_fixture.py`다.
+- 웹 언어 메뉴는 자체 검색 드롭다운·현재 언어·키보드 탐색·Escape/바깥 클릭 닫기·포커스 복귀를 제공한다. 기본 홈/정책/가이드 URL은 저장된 명시적 선택→브라우저 언어→영어 fallback이며 명시 locale URL은 유지한다. 저장 불가 시 검증된 `?lang=`으로 영어 선택 루프를 방지한다. 중국어 번체를 간체로 자동 대체하지 않는다. 정책에 기기 내 언어 저장을 반영(시행일10월15일), CSP는 자체 JS만 허용한다.
+- **Cloudflare Pages https://b9943f47.bibimer.pages.dev 배포 완료.** 공개18페이지 HTTP200·원본·CSP/no-transform, 잘못된 경로404, 공개8이미지/아이콘/스크립트 바이트 일치. 실제320/393px를 확인한 36개 페이지의 문서/드롭다운 경계, 검색/키보드/외부 클릭·슬라이더·가이드 이동 검증. Node 언어 동작/Python페이지 구조/구문/diff 검사 통과. 시각 판정96점 pass, `.omx/state/website-hero/ralph-progress.json`, `dist/website-hero/`.
+- **Play Console EN/KO 휴대전화 스크린샷 변경 두 건 제출 완료.** 새4장씩으로 교체하고 채팅·프로젝트를 먼저 배치했다. 새8애셋의 AI 생성/수정 표시를 적용했다. 게시 개요의 ‘검토 중인 변경사항’과 자동 사전 검사 진행 중을 확인했다. 승인/공개 완료는 아직 아님. 새 AAB·앱 설명·트랙·가격·국가 변경은 없다. 현재 앱은0.17.1(33). 증빙 `dist/website-hero/play-screenshots-submitted.jpg`.
+- Chrome 확장 파일 접근 권한 제한으로 chooser.setFiles가 막혔으나 macOS 기본 Open 창으로 필요한 JPG만 업로드했다. 확장 권한을 변경하지 않았다. 예전 실제 Android 캡처/README 화면은 유지한다.
+
+## 최신: 앱 시스템 언어 기본값 (2026-10-15, 미배포)
+
+- 사용자 명시 승인에 따라 기존 영어 고정 지침을 대체했다. `AppLanguage`는 저장값이 없으면 Android 언어 우선순위 중 지원 언어를 고르고 없으면 영어로 표시한다. 기존 명시적 영어 포함 수동 선택은 유지한다. `system` 설정과 여섯 언어를 분리해 저장하며 Settings에 **시스템 설정 따르기**를 제공한다. 전체582키×6언어.
+- Activity가 locale/layoutDirection 변경을 처리하고 재개/기기 언어 변경에서 WebView를 다시 로드하지 않고 문구만 갱신한다. 입력 초안/세션을 보존하며 현재 지원 UI는 LTR 유지. 정책 URL·네이티브 메시지·설치 안내는 적용 언어를 사용한다. 심사 데모 설정 격리와 저장 실패 원복도 유지한다.
+- Node582키/실제UI컨트롤러·Java언어2검사, Demo UI/Drafts/ReviewAccess 3회귀, JS구문·AAPT2리소스·전체AndroidJava컴파일 통과(기존Java8/deprecation경고). **APK/AAB 빌드·버전 변경 없음.** 실제 Android 설정 변경/백그라운드 복귀/알림 언어는 다음 명시적 빌드 뒤 기기 검증한다. 원어민 번역 검수도 남아 있다.
+
 ## 최신: Bibimer 이름 유래 소개 (2026-10-15)
 
 - 사용자 설명을 바탕으로 Android 앱·Termux·코딩 에이전트를 함께 ‘비빈다’는 **비빔(bibim) + -er → Bibimer(비비머)** 유래를 웹사이트 6개 언어의 `#name-story`와 EN/KO README에 추가했다. 새 사실이나 음식 유래를 덧붙이지 않았으며 제품 자체를 코딩 에이전트로 표현하지 않는다. AGENTS.md에도 명명 의미를 기록했다.

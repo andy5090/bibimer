@@ -8,11 +8,23 @@ Bibimer는 **모바일 ADE(Agent Development Environment, 에이전트 개발 �
 - 한국어 개인정보처리방침: https://bibimer.app/ko/privacy/
 - 운영 주체: 앤디니어링 (Andineering)
 - 지원·개인정보 문의: andy@andineering.com
-- 정책 시행일: 2026-10-11
+- 정책 시행일: 2026-10-15
 
-`public/`만 Cloudflare Pages에 직접 업로드한다. HTML·자체 호스팅 서체·기존 앱 아이콘으로 구성하며 JavaScript, 계정, 문의 폼, 광고, 분석 스크립트를 포함하지 않는다. 서체 라이선스는 `public/assets/SpaceGrotesk-OFL.txt`에 있다. `_headers`에 정적 페이지용 보안 헤더와 `Cache-Control: public, max-age=0, must-revalidate, no-transform`을 지정하고 `404.html`로 없는 경로의 HTTP 404를 유지한다. 앱 소스·서명 키·세션 기록은 업로드하지 않는다.
+`public/`만 Cloudflare Pages에 직접 업로드한다. HTML·CSS·자체 호스팅 서체·이미지와 언어 선택용 자체 JavaScript로 구성한다. 계정, 문의 폼, 광고, 분석 스크립트는 없다. 서체 라이선스는 `public/assets/SpaceGrotesk-OFL.txt`에 있다. `_headers`에 정적 페이지용 보안 헤더와 `Cache-Control: public, max-age=0, must-revalidate, no-transform`을 지정하고 `404.html`로 없는 경로의 HTTP 404를 유지한다. 앱 소스·서명 키·세션 기록은 업로드하지 않는다.
 
-언어별 URL을 사용하는 정적 i18n 구성이다. 각 페이지는 선택한 언어의 본문만 제공하고, 언어 전환은 같은 종류의 페이지로 이동한다. 한국어 홈의 정책 링크·정책의 홈 링크는 한국어 경로를 유지한다. 각 문서에 `lang`, 자기 URL의 `canonical`, 상호 연결된 `hreflang`을 지정했다. 브라우저 언어에 따른 자동 이동 없이 기본 URL은 영어로 열리며 Play Console에 등록한 `/privacy/` 주소를 유지한다.
+언어별 URL을 사용하는 정적 i18n 구성이다. 각 페이지는 선택한 언어의 본문만 제공하고, 언어 전환은 같은 종류의 페이지로 이동한다. 한국어 홈의 정책 링크·정책의 홈 링크는 한국어 경로를 유지한다. 각 문서에 `lang`, 자기 URL의 `canonical`, 상호 연결된 `hreflang`을 지정했다. 기본 홈·정책·사용법 URL은 저장된 명시적 선택 또는 브라우저 언어에 맞춰 이동한다. 지원 언어가 없으면 영어를 사용하고 직접 지정한 언어 경로는 유지한다. 선택은 `bibimer.website.language`로 기기 브라우저에 저장한다. Play Console의 `/privacy/` 주소는 유지한다.
+
+## 소개 화면·사용법·시스템 언어 (2026-10-15)
+
+아이콘을 BIBIMER 앞에, GitHub·문의·자체 언어 선택기를 헤더에 배치했다. 설치 버튼은 기존 디자인에 Google Play 원본 컬러 아이콘을 추가했고 옆의 사용법 버튼은 각 언어의 `guide/`로 연결한다. Google Play SVG는 공식 Play 페이지의 prism 경로·색상을 그대로 자체 호스팅한다. 출처 https://play.google.com/store/apps/details?id=app.bibimer (2026-10-15).
+
+6개 언어 사용법은 Termux 준비, 앱 연결, 프로젝트/터미널, 코딩 에이전트 설정, 세션·파일 관리를 설명한다. 소개의 CSS radio 슬라이더는 같은 폰의 Android 앱–Termux–에이전트 구조·모바일 서식·채팅 예시를 보여준다. 네 장의 실제 UI + 합성 데이터 화면을 별도 갤러리로 제공하며 실제 사용자 기록이나 모델 실행 증거로 소개하지 않는다.
+
+언어 메뉴는 검색·키보드 탐색·Escape/외부 클릭 닫기·포커스 복귀를 지원한다. 기본 홈·정책·사용법 URL은 저장된 수동 선택 → 브라우저 언어 → 영어 순으로 이동하고 명시적 locale URL을 존중한다. 중국어 번체를 간체로 자동 변환하지 않는다. localStorage 불가 시 검증된 `?lang=` 선택을 유지한다. 자체 `language.js`만 사용하도록 CSP `script-src 'self'`를 적용했으며 외부 요청/분석 SDK는 없다. 정책에 기기 내 언어 설정 저장을 반영했다.
+
+배포 **https://b9943f47.bibimer.pages.dev**. 공개18페이지 HTTP200·원본/CSP/no-transform·404, 공개8이미지/아이콘/스크립트 바이트, 320/393px 36페이지/드롭다운 경계, 검색/키보드/슬라이더를 확인했다. Node 언어 동작·Python 페이지 구조 검사 통과, 시각 판정96점 pass. 증빙 `dist/website-hero/`.
+
+아래 날짜별 기록의 ‘JS 없음/영어 고정’은 당시 상태이며 이 변경으로 대체됐다.
 
 ## 이름 유래 소개 (2026-10-15)
 
