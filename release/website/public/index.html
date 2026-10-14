@@ -45,6 +45,9 @@
     .setup { padding: 28px 32px; background: #e7efe5; border-radius: 12px; }
     .setup h2 { font-size: 21px; margin-bottom: 10px; }
     .setup p { margin: 10px 0; font-size: 15px; }
+    .name-story { padding-top: 40px; }
+    .name-story h2 { font-size: 21px; margin-bottom: 10px; }
+    .name-story p { font-size: 15px; color: #486052; }
     footer { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 32px 0; margin-top: 54px; border-top: 1px solid #d3ded4; font-size: 13px; color: #486052; }
     @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } .hero .icon { width: 112px; grid-row: 1; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
     .language-nav { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 16px 0; font-size: 13px; }
@@ -83,6 +86,10 @@
       <p>Termux brings a Linux command-line environment to Android, with Git, Python, Node.js, and many other tools. Install it on the same phone and follow Bibimer's setup guide. Start with terminal mode; compatible agent installations and provider authentication are separate steps.</p>
       <p>Agents may send your prompts, code, and files to their configured providers and tools. Provider fees and age requirements depend on the services you use.</p>
       <a href="https://github.com/termux/termux-app#installation">Termux installation guide</a>
+    </section>
+    <section class="name-story" id="name-story" aria-labelledby="name-title">
+      <h2 id="name-title">Why Bibimer?</h2>
+      <p>Bibimer takes its name from <span lang="ko">비빔</span> (<em>bibim</em>), Korean for mixing things together, plus the suffix <strong>-er</strong>. It reflects the idea of mixing an Android app, Termux, and coding agents into one development environment.</p>
     </section>
   </main>
   <footer><span>© 2026 Andineering</span><span>Bibimer is independent of Termux and the supported agent makers.</span><a href="/privacy/">Privacy policy</a></footer>

@@ -12,6 +12,10 @@ Modern Android phones can run a Linux command-line environment with Git, Python,
 
 Bibimer is an **ADE (Agent Development Environment)**. Connected agents such as Codex, Claude Code, and OpenCode perform the coding work. Each agent needs a Termux-compatible installation and any required provider authentication.
 
+## Why Bibimer?
+
+Bibimer takes its name from **비빔 (bibim)**, Korean for mixing things together, plus the suffix **-er**. It reflects the idea of mixing an Android app, Termux, and coding agents into one development environment.
+
 ## Availability
 
 Bibimer is available on [Google Play](https://play.google.com/store/apps/details?id=app.bibimer). **Version 0.17.1 is available in production and to invited internal testers.** There is no public GitHub APK release. To build the current development version, follow the [build guide](docs/development.md) (currently in Korean).

@@ -12,6 +12,10 @@ Android 휴대폰도 개발 환경이 될 수 있습니다. Termux를 설치하�
 
 Bibimer는 **ADE(Agent Development Environment, 에이전트 개발 환경)**입니다. 실제 코딩 작업은 연결한 Codex, Claude Code, OpenCode 같은 에이전트가 수행합니다. 에이전트는 Termux에서 실행 가능한 설치본과 필요한 제공자 인증을 따로 준비해야 합니다.
 
+## 왜 비비머인가요?
+
+Android 앱, Termux, 코딩 에이전트를 하나로 비볐습니다. 세 가지를 함께 쓰는 개발 환경이라는 뜻을 담아, **‘비빔’에 ‘-er’를 붙여 Bibimer(비비머)**라는 이름을 지었습니다.
+
 ## 설치와 배포
 
 [Google Play](https://play.google.com/store/apps/details?id=app.bibimer)에서 Bibimer를 설치할 수 있습니다. **정식 출시와 내부 테스트 모두 0.17.1을 제공합니다.** GitHub 공개 APK 배포본은 없으며 개발 버전 빌드는 [빌드 안내](docs/development.md)를 참고하세요.

@@ -1,5 +1,11 @@
 # Bibimer 다음 세션 시작점
 
+## 최신: Bibimer 이름 유래 소개 (2026-10-15)
+
+- 사용자 설명을 바탕으로 Android 앱·Termux·코딩 에이전트를 함께 ‘비빈다’는 **비빔(bibim) + -er → Bibimer(비비머)** 유래를 웹사이트 6개 언어의 `#name-story`와 EN/KO README에 추가했다. 새 사실이나 음식 유래를 덧붙이지 않았으며 제품 자체를 코딩 에이전트로 표현하지 않는다. AGENTS.md에도 명명 의미를 기록했다.
+- 기존 타이포그래피·색상으로 짧은 소개 섹션을 추가했다. 의존성·스크립트·앱 변경 없음. 한국어 humanizer 의미 보존 6항 점검, 기존 웹사이트 언어 구조 검사·diff 검사 통과. CUA에서 6개 언어 320/393px 가로 넘침·원문 요소 보존, 한국어 모바일·데스크톱을 확인했다. 시각 판정 97점 pass, `.omx/state/name-story/ralph-progress.json`, 증빙 `dist/name-story/`.
+- Cloudflare Pages **https://5c279648.bibimer.pages.dev** 배포 완료. 공개 12개 홈/정책의 HTTP 200·원본 일치·기존 보안 헤더/no-transform·없는 경로 404를 확인했다. 공개 한국어 소개 https://bibimer.app/ko/#name-story . APK/AAB 빌드·Play 변경 없음. 로컬 서버 종료·viewport 복원 완료.
+
 ## 최신: 중국어 간체 앱 소스·웹사이트 6개 언어 (2026-10-14)
 
 - 사용자가 다음 번역 대상과 웹사이트 언어 지원을 요청해 **중국어 간체 `zh-Hans`**를 추가했다. `i18n-zh-Hans.js`의 **580개 문구**와 `values-b+zh+Hans/strings.xml`의 **21개 Android 문구**, 선택 UI·저장 허용값·asset 연결을 반영했다. 개발 소스는 EN/KO/pt-BR/es/id/zh-Hans 6개 언어다. AI 코딩 에이전트는 중국어 `智能体`로 표현하고 Bibimer 자체와 구분한다.
