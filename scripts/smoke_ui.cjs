@@ -356,11 +356,15 @@ async function main() {
   await page.locator('#path').fill(browseRoot);
   await openSidebar(); await page.locator('#browse-project').click();
   await page.waitForFunction(()=>document.querySelectorAll('.folder-entry').length===100 && !document.querySelector('#folder-more').disabled);
+  assert.equal(await page.locator('#folder-entries > :first-child').getAttribute('id'),'folder-up');
+  assert.equal(await page.locator('#folder-up').getAttribute('title'),path.dirname(browseRoot));
   await page.screenshot({path:path.join(root,'dist/screenshots/folders-list-en.png')});
   assert.equal(await page.locator('.folder-entry', {hasText:'.hidden'}).count(),0);
   assert.equal(await page.locator('.folder-entry', {hasText:'not-a-folder.txt'}).count(),0);
   await page.locator('#folder-more').click();
   await page.waitForFunction(()=>document.querySelectorAll('.folder-entry').length===106);
+  assert.equal(await page.locator('#folder-entries > :first-child').getAttribute('id'),'folder-up');
+  assert.equal(await page.locator('#folder-up').count(),1);
   await page.locator('#folder-hidden').check();
   await page.getByRole('button',{name:'.hidden',exact:true}).waitFor();
   await page.locator('#folder-more').click();

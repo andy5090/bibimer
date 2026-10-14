@@ -305,10 +305,10 @@
   <dialog id="folder-dialog" aria-labelledby="folder-title">
     <h2 id="folder-title" data-i18n="folder_title">Choose a project folder</h2>
     <p class="hint" data-i18n="folder_hint">Tap a folder name to browse, or Select to choose it here.</p>
-    <div class="button-row"><button id="folder-home" class="secondary" data-i18n="folder_home">Home</button><button id="folder-up" class="secondary" data-i18n="folder_up">Up one level</button></div>
+    <div class="button-row"><button id="folder-home" class="secondary" data-i18n="folder_home">Home</button></div>
     <div id="folder-path" dir="auto"></div>
     <label class="check"><input id="folder-hidden" type="checkbox"><span data-i18n="folder_hidden">Show hidden folders</span></label>
-    <div id="folder-entries" role="group" aria-label="Folders" data-i18n-aria-label="folders"></div>
+    <div id="folder-entries" role="group" aria-label="Folders" data-i18n-aria-label="folders"><button id="folder-up" class="folder-parent" hidden><span aria-hidden="true">↰ .. </span><span data-i18n="folder_up">Up one level</span></button></div>
     <p id="folder-status" role="status"></p>
     <div class="button-row"><button id="folder-more" class="quiet" data-i18n="folder_more" hidden>Load more</button><button id="folder-retry" class="quiet" data-i18n="folder_retry" hidden>Try again</button></div>
     <div class="button-row folder-actions"><button id="folder-cancel" class="secondary" data-i18n="cancel_project">Cancel</button><button id="folder-select" class="primary" data-i18n="folder_select">Select folder</button></div>

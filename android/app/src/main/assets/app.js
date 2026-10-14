@@ -1370,7 +1370,6 @@
   function renderFolderBrowser() {
     $("folder-path").textContent = folderPath;
     $("folder-home").disabled = !online;
-    $("folder-up").disabled = !online || folderLoading || !folderListing?.parent;
     $("folder-hidden").disabled = !online;
     $("folder-select").disabled = !online || folderLoading || !!folderError || !folderListing?.writable;
     $("folder-more").hidden = !folderListing?.next || !!folderError;
@@ -1378,6 +1377,9 @@
     $("folder-retry").hidden = !folderError;
     $("folder-retry").disabled = !online || folderLoading;
     for (const button of $("folder-entries").querySelectorAll("button")) button.disabled = !online || folderLoading;
+    $("folder-up").hidden = !folderListing?.parent;
+    $("folder-up").disabled = !online || folderLoading || !folderListing?.parent;
+    $("folder-up").title = folderListing?.parent || "";
     for (const button of $("folder-entries").querySelectorAll(".folder-pick")) {
       button.textContent = t("folder_pick");
       button.setAttribute("aria-label", t("folder_pick_named", {name:button.dataset.name}));
@@ -1393,7 +1395,7 @@
     const ticket = ++folderTicket;
     const after = more ? folderListing?.next : null;
     folderLoading = true; folderError = null; folderPath = path;
-    if (!more) { folderListing = null; $("folder-entries").replaceChildren(); }
+    if (!more) { folderListing = null; $("folder-entries").replaceChildren($("folder-up")); }
     renderFolderBrowser();
     try {
       const result = await api("POST", "/v1/folders", {path, hidden:$("folder-hidden").checked, ...(after ? {after} : {})});
@@ -1493,7 +1495,7 @@
   $("project-switch").addEventListener("blur", renderProjects);
   $("project-form").addEventListener("submit", async event => {
     event.preventDefault();
-    if (await changeProject({path:$("path").value, create:$("create-folder").checked, add:multipleProjects}, true)) { projectForm(false); sidebar.close(); await refreshSidebar(); }
+    if (await changeProject({path:$("path").value, create:$("create-folder").checked, add:multipleProjects}, true)) { projectForm(false); sidebar.close(); tab("work"); await refreshSidebar(); }
   });
   function renderImport(rebuild = false) {
     if (!$("import-dialog").open) return;

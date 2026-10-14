@@ -5,10 +5,10 @@ window.BibimerGitHub = class {
     this.t=t; this.context=context; this.request=request; this.actions=actions;
     this.$=id=>document.getElementById("github-"+id);
     this.state={login:{state:"idle"},jobs:[]}; this.entries=[]; this.next=null;
-    this.loading=false; this.error=null; this.pending=null; this.timer=null; this.epoch=0;
+    this.loading=false; this.error=null; this.pending=null; this.timer=null; this.epoch=0; this.openIntent=null;
     this.$("launch").addEventListener("click",()=>this.open());
     this.$("close").addEventListener("click",()=>this.$("dialog").close());
-    this.$("dialog").addEventListener("close",()=>{clearTimeout(this.timer);});
+    this.$("dialog").addEventListener("close",()=>{clearTimeout(this.timer);this.openIntent=null;});
     this.$("refresh").addEventListener("click",()=>this.refresh());
     this.$("connect").addEventListener("click",()=>this.perform("login"));
     this.$("cancel-login").addEventListener("click",()=>this.perform("cancel_login"));
@@ -44,7 +44,7 @@ window.BibimerGitHub = class {
       this.accept(data);
       if(previous!=="complete" && data.login.state==="complete"){await this.refresh();return;}
     }catch(error){if(epoch===this.epoch)this.error=error.key||"error_github_api";}
-    this.render();this.schedule();
+    this.render();await this.openCompletedClone();this.schedule();
   }
   accept(data) {
     const completed = new Set(this.state.jobs.filter(job=>job.state==="complete").map(job=>job.id));
@@ -68,7 +68,7 @@ window.BibimerGitHub = class {
         this.entries=list.entries;this.next=list.next;
       }
     }catch(error){if(epoch===this.epoch)this.error=error.key||"error_github_api";}
-    finally{if(epoch===this.epoch){this.loading=false;this.render();this.schedule();}}
+    finally{if(epoch===this.epoch){this.loading=false;this.render();await this.openCompletedClone();this.schedule();}}
   }
   async repositories(more) {
     if(this.loading || !this.context().online)return;
@@ -78,7 +78,7 @@ window.BibimerGitHub = class {
       if(epoch!==this.epoch)return;
       this.entries=[...new Map([...(more?this.entries:[]),...data.entries].map(row=>[row.name,row])).values()];this.next=data.next;
     }catch(error){if(epoch===this.epoch)this.error=error.key||"error_github_api";}
-    finally{if(epoch===this.epoch){this.loading=false;this.render();this.schedule();}}
+    finally{if(epoch===this.epoch){this.loading=false;this.render();await this.openCompletedClone();this.schedule();}}
   }
   async perform(action,extra={}) {
     if(this.loading || !this.context().online || !this.context().supported)return;
@@ -91,14 +91,33 @@ window.BibimerGitHub = class {
     }catch(error){
       if(epoch!==this.epoch)return;
       if(action==="clone" && (!error.status || error.status>=500))this.error="github_uncertain";
-      else {this.error=error.key||"error_github_api";if(action==="clone")this.pending=null;}
-    }finally{if(epoch===this.epoch){this.loading=false;this.render();this.schedule();}}
+      else {this.error=error.key||"error_github_api";if(action==="clone"){this.pending=null;this.openIntent=null;}}
+    }finally{if(epoch===this.epoch){this.loading=false;this.render();await this.openCompletedClone();this.schedule();}}
   }
   async clone() {
     if(this.$("submit").disabled)return;
     if(!this.pending)this.pending={action:"clone",request_id:crypto.randomUUID(),repository:this.$("repository").value.trim(),
       parent:this.$("parent").value.trim(),name:this.$("name").value.trim()};
+    this.openIntent={id:this.pending.request_id};
     await this.perform("clone",this.pending);
+  }
+  async openCompletedClone() {
+    const intent=this.openIntent;
+    if(!intent || intent.opening || this.loading || !this.context().online || !this.$("dialog").open)return;
+    const job=this.state.jobs.find(job=>job.id===intent.id);
+    if(!job)return;
+    if(["failed","cancelled"].includes(job.state)){this.openIntent=null;return;}
+    if(job.state!=="complete" || !job.project_id)return;
+    intent.opening=true;const epoch=this.epoch;
+    try {
+      const opened=await this.actions.open(job.project_id);
+      if(epoch===this.epoch && this.openIntent===intent){
+        this.openIntent=null;
+        if(opened)this.$("dialog").close();
+      }
+    } catch(error) {
+      if(epoch===this.epoch && this.openIntent===intent){this.openIntent=null;this.error=error.key||"error_request_failed";this.render();}
+    }
   }
   rememberClone(job) {
     if(job && ["cloning","registering","complete"].includes(job.state))this.actions.rememberClone?.(job.path);
@@ -177,7 +196,7 @@ window.BibimerGitHub = class {
     this.renderRepositories();this.renderJobs();
   }
   reset() {
-    ++this.epoch;clearTimeout(this.timer);this.loading=false;this.pending=null;this.error=null;
+    ++this.epoch;clearTimeout(this.timer);this.loading=false;this.pending=null;this.openIntent=null;this.error=null;
     this.state={login:{state:"idle"},jobs:[]};this.entries=[];this.next=null;
     this.$("dialog").close();
   }

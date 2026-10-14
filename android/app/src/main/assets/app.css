@@ -381,3 +381,5 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 #workspace-details-dialog { max-height:85dvh; overflow-y:auto; }
 #workspace-branch, #workspace-path { overflow-wrap:anywhere; white-space:pre-wrap; user-select:text; font:12px/1.6 monospace; }
 #workspace-branch-section .hint { margin-top:0; }
+
+.folder-parent { display:block; width:100%; text-align:start; min-height:44px; border-radius:0; border-bottom:1px solid var(--line); color:var(--green); }

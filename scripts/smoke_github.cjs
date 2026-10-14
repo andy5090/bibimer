@@ -71,6 +71,8 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
       else holdPoll=false;
     }
     if(holdPoll&&url==='/v1/github'&&data.action==='poll')result.data.jobs=[];
+    // Android may forbid listing /; model a readable but read-only root for the UI boundary.
+    if(url==='/v1/folders'&&data.path==='/')result={ok:true,status:200,data:{path:'/',parent:null,entries:[],next:null,writable:false}};
     try{await page.evaluate(({id,result})=>window.BibimerNativeReply(id,result),{id,result});}catch{}
   });
   await page.exposeFunction('nativeBrowser',()=>fs.writeFileSync(path.join(tmp,'authenticated'),'yes'));
@@ -92,7 +94,14 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   await page.locator('#github-more').click();await page.waitForFunction(()=>document.querySelectorAll('.github-repository').length===51);
   await page.locator('#github-filter').fill('repo-2-0');assert.equal(await page.locator('.github-repository').count(),1);
   await page.locator('.github-repository').click();assert.equal(await page.locator('#github-name').inputValue(),'repo-2-0');
+  await page.locator('#github-parent').fill('/');await page.locator('#github-browse').click();
+  await page.waitForFunction(()=>document.querySelector('#folder-path').textContent==='/'&&document.querySelector('#folder-entries').getAttribute('aria-busy')==='false');
+  assert.equal(await page.locator('#folder-up').isVisible(),false,'root has no parent row');
+  assert.equal(await page.locator('#folder-select').isDisabled(),true,'read-only root cannot be selected');
+  await page.locator('#folder-cancel').click();
   await page.locator('#github-parent').fill(tmp);await page.locator('#github-browse').click();
+  await page.waitForFunction(()=>document.querySelector('#folder-entries').firstElementChild.id==='folder-up'&&!document.querySelector('#folder-up').disabled);
+  assert.equal(await page.locator('#folder-up').getAttribute('title'),path.dirname(tmp));
   await page.locator('.folder-row').filter({hasText:'Projects 한글'}).locator('.folder-pick').click();
   assert.equal(await page.locator('#github-parent').inputValue(),parent);
   assert.equal(await page.evaluate(()=>localStorage.projectParent),parent);
@@ -102,12 +111,19 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
   await page.screenshot({path:path.join(root,'dist/screenshots/github-import-en.png')});
   lose=true;await page.locator('#github-submit').click();await page.getByText('The request may have been accepted. Check again to recover the same import.').waitFor();
-  await page.locator('#github-submit').click();await page.getByText('Project registered',{exact:true}).waitFor();
+  await page.locator('#github-submit').click();
+  await page.waitForFunction(()=>document.querySelector('#project-name').textContent==='가져온 프로젝트'&&!document.querySelector('#github-dialog').open);
+  assert.equal(await page.locator('#sidebar').isVisible(),false,'clone completion closes sidebar');
   assert.equal(cloneRequests.length,2);assert.equal(cloneRequests[0].request_id,cloneRequests[1].request_id);
   assert.equal(fs.readFileSync(path.join(parent,'가져온 프로젝트','hello.txt'),'utf8'),'Cloned content\n');
-  let health=(await call('GET','/v1/health')).data;assert.equal(health.projects.length,2);assert.equal(health.project.id,project.id);assert.equal(health.session.id,session.id);
-  await page.locator('#github-close').click();await page.locator('#sidebar-close').click();assert.equal(await page.locator('#input').inputValue(),'Keep my existing draft');
+  let health=(await call('GET','/v1/health')).data;assert.equal(health.projects.length,2);assert.notEqual(health.project.id,project.id);assert.equal(health.session,null);
+  assert.equal(health.active_sessions,1,'auto-open does not start or terminate sessions');
+  await page.locator('#sidebar-open').click();
+  await page.locator('.sidebar-project[data-project="'+project.id+'"] .sidebar-project-open').click();
+  await page.waitForFunction(()=>document.querySelector('#project-name').textContent==='source');
+  assert.equal(await page.locator('#input').inputValue(),'Keep my existing draft');
   await open();await page.getByText('Project registered',{exact:true}).waitFor();
+  assert.equal((await call('GET','/v1/health')).data.project.id,project.id,'history does not auto-open completed imports');
   await page.locator('#github-submit').click();await page.getByText('That path already exists. Choose a new folder name; existing files are never overwritten.').waitFor();
   await page.locator('#github-repository').fill('fixture/fail');await page.locator('#github-name').fill('failed-copy');await page.locator('#github-submit').click();await page.getByText('Import failed',{exact:true}).waitFor();
   assert.equal(fs.readFileSync(path.join(parent,'failed-copy','partial'),'utf8'),'keep');
@@ -137,15 +153,19 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   await page.waitForFunction(folder=>document.querySelector('#folder-path').textContent===folder&&!document.querySelector('#folder-select').disabled,existing);
   await page.locator('#folder-select').click();assert.equal(await page.locator('#create-folder').isChecked(),false);
   await page.locator('#project-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#project-name').textContent==='existing');
+  assert.equal(await page.locator('#sidebar').isVisible(),false,'existing project registration closes sidebar');
   await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
   await open();await page.locator('.github-repository').first().waitFor();
   assert.equal(await page.locator('#github-parent').inputValue(),otherParent,'opening existing folder also updates clone default');
   await page.locator('#github-browse').click();await page.waitForFunction(folder=>document.querySelector('#folder-path').textContent===folder&&!document.querySelector('#folder-select').disabled,otherParent);
   await page.locator('#folder-cancel').click();await page.locator('#github-close').click();await page.locator('#sidebar-close').click();
+  await page.locator('#tab-settings').click();
   await page.locator('#sidebar-open').click();if(!await page.locator('#path').isVisible())await page.locator('#edit-project').click();
   assert.equal(await page.locator('#path').inputValue(),otherParent+'/');
   const created=path.join(otherParent,'typed new project');await page.locator('#path').fill(created);
   await page.locator('#project-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#project-name').textContent==='typed new project');
+  assert.equal(await page.locator('#sidebar').isVisible(),false,'new project registration closes sidebar');
+  assert.equal(await page.locator('#workspace').isVisible(),true,'registration from Settings opens the work page');
   assert.ok(fs.statSync(created).isDirectory());assert.equal(await page.evaluate(()=>localStorage.projectFolder),created,'typed creation remembers resolved path');
   await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
   await open();assert.equal(await page.locator('#github-parent').inputValue(),otherParent);await page.locator('#github-close').click();await page.locator('#sidebar-close').click();
@@ -157,7 +177,7 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   assert.equal((await call('GET','/v1/health')).data.active_sessions,1);
   assert.deepEqual(errors,[]);
   for(const name of fs.readdirSync(state).filter(name=>name.endsWith('.json'))){const data=fs.readFileSync(path.join(state,name),'utf8');assert.ok(!data.includes('SECRET_OUTPUT')&&!data.includes('ABCD-1234'));}
-  console.log('PASS: GitHub login/list/filter, shared remembered parent/browse folders after reload, confirmed selection vs cancel, existing project open and typed sibling creation, real clone/registration/lost-reply retry, session/draft preservation, failures, EN/KO 320px, old bridge and missing CLI.');
+  console.log('PASS: GitHub login/list/filter, shared remembered parent/browse folders after reload, confirmed selection vs cancel, existing project open and typed sibling creation, parent-first list/root, real clone/registration/lost-reply retry with automatic opening and sidebar dismissal, session/draft preservation, failures, EN/KO 320px, old bridge and missing CLI.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{
   if(browser)await browser.close();if(bridge){bridge.kill('SIGTERM');await Promise.race([new Promise(resolve=>bridge.once('exit',resolve)),delay(3000)]);}
