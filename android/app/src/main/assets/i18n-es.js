@@ -436,6 +436,8 @@ window.BibimerTranslations.es = {
   setup_eyebrow: "PREPARA TU TELÉFONO",
   setup_title: "Un espacio de trabajo en tu teléfono.",
   setup_intro: "Sigue estos pasos para instalar Termux y conectar la app.",
+  language_system: "Predeterminado del sistema",
+  language_system_hint: "Sigue las preferencias de idioma del dispositivo. Si ninguno es compatible, se usa inglés.",
   language_label: "Idioma",
   language_hint: "Elige el idioma de la app.",
   termux_install: "Instalar Termux",

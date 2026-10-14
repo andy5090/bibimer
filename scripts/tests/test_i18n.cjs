@@ -15,6 +15,7 @@ const locales = ["pt-BR", "es", "id", "zh-Hans"];
 const placeholders = text => [...text.matchAll(/\{(\w+)\}/g)].map(match => match[1]).sort();
 const html = fs.readFileSync(path.join(assets, "index.html"), "utf8");
 const native = fs.readFileSync(path.join(root, "android/app/src/main/java/app/bibimer/MainActivity.java"), "utf8");
+assert.ok(html.includes('value="system" data-i18n="language_system"'), "System choice is localized");
 const context = vm.createContext({window:{}, navigator:{language:"es"}});
 for (const locale of locales) {
   const filename = `i18n-${locale}.js`;
@@ -35,7 +36,7 @@ for (const locale of locales) {
 }
 vm.runInContext(source, context);
 const i18n = context.window.BibimerI18n;
-assert.equal(i18n.language(), "en", "First run stays English regardless of system language");
+assert.equal(i18n.language(), "en", "Translation runtime falls back to English until the native resolved language is applied");
 assert.equal(i18n.t("language_label"), "Language");
 for (const locale of ["ko", ...locales]) {
   i18n.setLanguage(locale);
@@ -68,3 +69,43 @@ for (const invalid of ["fr", "pt", "__proto__", null, undefined]) {
   assert.equal(i18n.language(), "en");
 }
 console.log(`i18n: ${Object.keys(base).length} keys × 6 locales; catalog coverage, interpolation, fallback, selection and asset loading passed`);
+
+// Exercise the actual UI controller: native resolves the device preference list;
+// a locale refresh must not reconnect, start sessions or overwrite user drafts.
+const appSource = fs.readFileSync(path.join(assets, "app.js"), "utf8");
+const refresh = appSource.match(/  function refreshLanguage\(force = false\) \{[\s\S]*?\n  \}/);
+const change = appSource.match(/  \$\("language"\)\.addEventListener\("change", \(\) => \{[\s\S]*?\n  \}\);/);
+assert.ok(refresh); assert.ok(change);
+let env = {language:"ko", languagePreference:"system"}, rendered = 0, saved = true, listener, warning;
+const languageControl = {value:"system", addEventListener(event, handler) { listener = handler; }};
+const draft = {text:"原文 · 초안 · unsent", session:"existing-session"};
+const ui = vm.createContext({
+  languagePreference:"system", i18n, environment:() => env,
+  renderLanguage() { rendered++; languageControl.value = env.languagePreference; },
+  $:() => languageControl, pickers:{sync() {}}, notice(key) { warning = key; }, draft,
+  native:{setLanguage(value) {
+    if (!saved) return false;
+    env = {languagePreference:value, language:value === "system" ? "zh-Hans" : value};
+    return true;
+  }}
+});
+vm.runInContext(refresh[0] + "\n" + change[0], ui);
+vm.runInContext("refreshLanguage(true)", ui);
+assert.equal(i18n.language(), "ko"); assert.equal(ui.languagePreference, "system");
+const initialRenders = rendered;
+vm.runInContext("refreshLanguage()", ui); assert.equal(rendered, initialRenders);
+env = {language:"es", languagePreference:"system"};
+vm.runInContext("refreshLanguage()", ui); assert.equal(i18n.language(), "es");
+languageControl.value = "en"; listener(); assert.equal(i18n.language(), "en");
+assert.equal(ui.languagePreference, "en");
+languageControl.value = "system"; listener(); assert.equal(i18n.language(), "zh-Hans");
+assert.equal(ui.languagePreference, "system");
+saved = false; languageControl.value = "pt-BR"; listener();
+assert.equal(i18n.language(), "zh-Hans"); assert.equal(languageControl.value, "system");
+assert.equal(warning, "language_save_failed");
+assert.deepEqual(draft, {text:"原文 · 초안 · unsent", session:"existing-session"});
+const manifest = fs.readFileSync(path.join(root, "android/app/src/main/AndroidManifest.xml"), "utf8");
+const changes = manifest.match(/android:configChanges="([^"]+)"/)[1].split("|");
+assert.ok(changes.includes("locale") && changes.includes("layoutDirection"), "Language changes preserve the Activity and WebView");
+assert.ok(native.includes("window.BibimerRefreshLanguage"), "Native lifecycle refreshes language without reloading the WebView");
+console.log("Language UI: resolved system preference, manual override, dynamic refresh, failed save and preserved draft passed");

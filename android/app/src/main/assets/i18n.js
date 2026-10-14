@@ -436,6 +436,8 @@
     setup_eyebrow: ["GET YOUR PHONE READY", "처음 한 번, 기기 준비"],
     setup_title: ["A workspace on your phone.", "폰 안에 개발 환경을."],
     setup_intro: ["Follow these steps to install Termux and connect the app.", "Termux 설치부터 앱 연결까지 순서대로 진행하세요."],
+    language_system: ["System default", "시스템 설정 따르기"],
+    language_system_hint: ["Follows your device language preferences. English is used when none are supported.", "기기의 언어 설정을 따릅니다. 지원하는 언어가 없으면 영어로 표시합니다."],
     language_label: ["Language", "언어"],
     language_hint: ["Choose your app language.", "앱에서 사용할 언어를 선택하세요."],
     termux_install: ["Install Termux", "Termux 설치"],

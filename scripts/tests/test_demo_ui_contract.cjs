@@ -51,7 +51,7 @@ assert.ok(languageMatch);
 const labels = new Map();
 const languageContext = vm.createContext({
   $: id => { if (!labels.has(id)) labels.set(id, {}); return labels.get(id); },
-  demo:true, online:true, instance:"sample", project:null,
+  demo:true, online:true, instance:"sample", project:null, languagePreference:"ko",
   i18n:{apply() {}, language:() => "ko"}, t:key => key,
   environment:() => ({version:"0.16.0"}), conversation:{localize() {}}, github:{render() {}},
   renderInputPreferences() {}, renderAgents() {}, renderProjects() {}, updateEnvironment() {},

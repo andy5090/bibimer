@@ -22,7 +22,7 @@ Bibimer is available on [Google Play](https://play.google.com/store/apps/details
 
 The app targets Android 8.0 or later (API 26+). Compatibility with every Android version, device, or agent installation has not been verified.
 
-The development source adds Brazilian Portuguese, Spanish, Indonesian, and Simplified Chinese. These translations are not yet included in the Google Play release; see the [localization roadmap](docs/localization.md) (Korean).
+The development source adds Brazilian Portuguese, Spanish, Indonesian, and Simplified Chinese. It also follows your system language by default, with a saved manual choice taking priority. These changes are not yet included in the Google Play release; see the [localization roadmap](docs/localization.md) (Korean).
 
 ## What you can do
 
@@ -80,7 +80,7 @@ Try a shell command such as `pwd` from the input field. Your command runs in tha
 
 Prepare a compatible Codex, Claude Code, or OpenCode installation in Termux, including its provider login or API configuration. Choose the agent in Bibimer and start a session. Supported models and options depend on the installed agent. General Linux installation instructions do not guarantee Android/Termux compatibility.
 
-Bibimer starts in English, regardless of the device language. Choose **Settings → Language → 한국어** to switch to Korean; your choice is saved. Your input, project names, and terminal output are not translated.
+The current Google Play version starts in English, regardless of the device language. Choose **Settings → Language → 한국어** to switch to Korean; your choice is saved. Your input, project names, and terminal output are not translated.
 
 ## Sessions and local data
 

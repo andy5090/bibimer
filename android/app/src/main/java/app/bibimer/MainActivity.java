@@ -139,6 +139,7 @@ public final class MainActivity extends Activity {
             return insets;
         });
         web = new WebView(this);
+        web.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         web.setBackgroundColor(Color.rgb(17, 20, 23));
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -245,6 +246,7 @@ public final class MainActivity extends Activity {
                     .put("demo", DemoMode.enabled(MainActivity.this))
                     .put("reviewAccessConfigured", ReviewAccess.configured(ReviewAccessConfig.DIGEST))
                     .put("termuxInstalled", termuxInstalled()).put("language", language.get())
+                    .put("languagePreference", language.preference())
                     .put("agentOptions", agentPreferences.get())
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
                     .put("notifications", ResponseNotifications.status(MainActivity.this))
@@ -285,7 +287,7 @@ public final class MainActivity extends Activity {
 
         @JavascriptInterface public boolean setLanguage(String value) {
             boolean saved = language.set(value);
-            if (saved && DemoMode.enabled(MainActivity.this)) DemoMode.language("ko".equals(value));
+            if (saved && DemoMode.enabled(MainActivity.this)) DemoMode.language("ko".equals(language.get()));
             return saved;
         }
 
@@ -566,9 +568,16 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private void refreshLanguage() {
+        if (language == null) return;
+        if (DemoMode.enabled(this)) DemoMode.language("ko".equals(language.get()));
+        script("window.BibimerRefreshLanguage && window.BibimerRefreshLanguage();");
+    }
+
     @Override protected void onResume() {
         super.onResume();
         resumed = true;
+        refreshLanguage();
         if (notificationsSupported) {
             ensureNotifications(!ResponseNotifications.preferences(this).getBoolean("asked", false));
         }
@@ -576,6 +585,7 @@ public final class MainActivity extends Activity {
 
     @Override public void onConfigurationChanged(Configuration configuration) {
         super.onConfigurationChanged(configuration);
+        refreshLanguage();
         // Keep the same WebView, pending native replies and session drafts when
         // moving between phone and DeX displays. ResizeObserver fits the PTY.
         if (web != null) {

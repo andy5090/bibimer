@@ -436,6 +436,8 @@ window.BibimerTranslations["zh-Hans"] = {
   setup_eyebrow: "准备你的手机",
   setup_title: "手机上的开发工作区。",
   setup_intro: "按以下步骤安装 Termux 并连接应用。",
+  language_system: "跟随系统",
+  language_system_hint: "遵循设备的语言偏好。如果没有支持的语言，则使用英语。",
   language_label: "语言",
   language_hint: "选择应用显示语言。",
   termux_install: "安装 Termux",

@@ -436,6 +436,8 @@ window.BibimerTranslations.id = {
   setup_eyebrow: "SIAPKAN PONSEL ANDA",
   setup_title: "Ruang kerja di ponsel Anda.",
   setup_intro: "Ikuti langkah berikut untuk memasang Termux dan menghubungkan aplikasi.",
+  language_system: "Ikuti sistem",
+  language_system_hint: "Mengikuti preferensi bahasa perangkat. Bahasa Inggris digunakan jika tidak ada bahasa yang didukung.",
   language_label: "Bahasa",
   language_hint: "Pilih bahasa aplikasi Anda.",
   termux_install: "Pasang Termux",

@@ -42,6 +42,7 @@
       for (const [key, view] of restored || []) views.set(key, view);
     } catch (_) { noticeData = {key:"demo_drafts_failed", suffix:null}; }
   }
+  let languagePreference = "system";
   let enterBehavior = environment().enterBehavior === "send" ? "send" : "newline";
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
     claude:["inherit","default","acceptEdits","plan","bypassPermissions"], opencode:["inherit","ask","allow"]};
@@ -695,9 +696,17 @@
     pickers.sync();
   }
   function isChat() { return session?.mode === "chat"; }
+  function refreshLanguage(force = false) {
+    const env = environment();
+    const previous = i18n.language(), previousPreference = languagePreference;
+    languagePreference = env.languagePreference || env.language || "system";
+    i18n.setLanguage(env.language);
+    if (force || previous !== i18n.language() || previousPreference !== languagePreference) renderLanguage();
+  }
   function renderLanguage() {
     i18n.apply();
-    $("language").value = i18n.language();
+    $("language").value = languagePreference;
+    $("language-hint").textContent = t(languagePreference === "system" ? "language_system_hint" : "language_hint");
     renderInputPreferences();
     $("connection").textContent = t(demo ? "demo_connection" : online ? "connection_on" : instance ? "connection_off" : "connection_initial");
     $("project-name").textContent = project ? project.name : t("project_empty");
@@ -1609,10 +1618,10 @@
   $("language").addEventListener("change", () => {
     try {
       if (!native.setLanguage($("language").value)) throw new Error();
-      i18n.setLanguage($("language").value);
-      renderLanguage();
+      refreshLanguage(true);
     } catch (_) {
-      $("language").value = i18n.language();
+      $("language").value = languagePreference;
+      pickers.sync();
       notice("language_save_failed");
     }
   });
@@ -1683,11 +1692,12 @@
     } catch (_) { notice("enter_save_failed"); }
     renderInputPreferences();
   });
+  window.BibimerRefreshLanguage = () => refreshLanguage();
   window.BibimerResume = () => {
     paused = false;
     const env = environment();
     enterBehavior = env.enterBehavior === "send" ? "send" : "newline";
-    i18n.setLanguage(env.language); renderLanguage(); connect();
+    refreshLanguage(true); connect();
   };
   window.BibimerBack = () => {
     const dialogs = [...document.querySelectorAll("dialog[open]:not(.docked)")];
@@ -1703,7 +1713,6 @@
   const backObserver = new MutationObserver(updateBackState);
   backObserver.observe($("commands"), {attributes:true, attributeFilter:["hidden"]});
   for (const dialog of document.querySelectorAll("dialog")) backObserver.observe(dialog, {attributes:true, attributeFilter:["open"]});
-  i18n.setLanguage(environment().language);
-  renderLanguage();
+  refreshLanguage(true);
   if (environment().paired || demo) connect();
 })();
