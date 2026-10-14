@@ -237,6 +237,12 @@
     <form id="project-rename-form"><label for="project-settings-name" data-i18n="project_name">Project name</label><div class="folder-input"><input id="project-settings-name" maxlength="120" required autocomplete="off"><button id="project-rename" class="secondary" type="submit" data-i18n="session_rename">Rename</button></div></form>
     <p class="hint" data-i18n="worktree_main">Project folder</p><p id="project-settings-path" dir="auto"></p>
     <button id="project-copy-path" class="secondary" type="button" data-i18n="project_copy_path">Copy folder path</button>
+    <div class="project-order-controls" role="group" aria-labelledby="project-order-title">
+      <p id="project-order-title" class="hint" data-i18n="project_order">Project order</p>
+      <p id="project-order-position" class="hint" role="status" aria-live="polite"></p>
+      <div class="button-row"><button id="project-move-up" class="secondary" type="button"><span aria-hidden="true">↑ </span><span data-i18n="project_move_up">Move up</span></button><button id="project-move-down" class="secondary" type="button"><span aria-hidden="true">↓ </span><span data-i18n="project_move_down">Move down</span></button></div>
+      <p id="project-order-update" class="hint" data-i18n="project_order_update" hidden>Update the Termux bridge to reorder projects.</p>
+    </div>
     <p id="project-settings-error" class="hint danger-text" role="status" hidden></p>
     <p id="project-management-update" class="hint" data-i18n="project_management_update" hidden>Update the bridge to rename or remove projects.</p>
     <button id="project-remove" class="quiet danger-text" type="button" data-i18n="project_remove">Remove project</button>

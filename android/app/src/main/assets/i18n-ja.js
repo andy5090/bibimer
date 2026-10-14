@@ -1,6 +1,11 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "project_order": "プロジェクトの順序",
+  "project_move_up": "上へ移動",
+  "project_move_down": "下へ移動",
+  "project_order_position": "{count} 件中 {position} 番目",
+  "project_order_update": "プロジェクトの順序を変更するには、Termux ブリッジを更新してください。",
   "workspace_details": "作業フォルダーの詳細",
   "workspace_branch": "ブランチ / HEAD",
   "workspace_copy_branch": "ブランチ / HEAD をコピー",

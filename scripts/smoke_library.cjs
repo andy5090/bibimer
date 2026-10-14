@@ -6,7 +6,7 @@ const {chromium}=require('../.tools/ui/node_modules/playwright-core');
 const root=path.resolve(__dirname,'..'),tmp=fs.mkdtempSync(path.join(os.tmpdir(),'bibimer-library-'));
 const state=path.join(tmp,'state'),projectPath=path.join(tmp,'Mobile studio'),worktreePath=path.join(tmp,'feature 한글');
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-let assets,bridge,browser,hideManagement=false,rejectManagement=false,hideNotifications=false;
+let assets,bridge,browser,hideManagement=false,hideOrdering=false,rejectManagement=false,hideNotifications=false;
 async function main(){
   fs.mkdirSync(projectPath);fs.mkdirSync(path.join(tmp,'bin'));
   const python=execFileSync('which',['python'],{encoding:'utf8'}).trim();
@@ -37,6 +37,7 @@ async function main(){
     if(method==='POST'&&endpoint.startsWith('/v1/sessions'))agentMutations.push(endpoint);
     const result=rejectManagement&&endpoint==='/v1/project/manage'?{ok:false,status:409,data:{code:'error_project_delete_active'}}:await call(method,endpoint.replace('wait=20','wait=1'),JSON.parse(body));
     if(hideNotifications&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='response_notifications');
+    if(hideOrdering&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='project_ordering');
     if(hideManagement&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='project_management');
     try{await page.evaluate(({id,result})=>window.BibimerNativeReply(id,result),{id,result});}catch{}
   });
@@ -123,7 +124,7 @@ async function main(){
   assert.equal((await call('GET','/v1/health')).data.active_sessions,1);
   await sidebar();await openGroup(project.id);await page.locator('[data-worktree='+JSON.stringify(worktreePath)+']').waitFor();
   const linked=page.locator('[data-worktree='+JSON.stringify(worktreePath)+']');await linked.locator(':scope > summary').click();
-  await linked.locator('[data-new-project]').click();assert.equal(await page.locator('#project-path').innerText(),worktreePath);
+  await linked.locator('[data-new-project]').click();await page.waitForFunction(expected=>document.querySelector('#project-path').title.endsWith(expected),worktreePath);
   const third=await launch();assert.equal((await call('GET','/v1/health')).data.session.project.path,worktreePath);
   await page.locator('#input').fill('Worktree draft');await select(first);await select(third);assert.equal(await page.locator('#input').inputValue(),'Worktree draft');
   await sidebar();await openGroup(other.id);await page.locator('[data-key='+JSON.stringify('new/'+other.id+'/'+secondPath)+']').click();
@@ -218,7 +219,7 @@ async function main(){
   await page.locator('#tab-settings').click();await page.locator('#response-notifications').uncheck();
   await page.evaluate(target=>localStorage.notificationTarget=JSON.stringify(target),{project_id:project.id,session_id:third});
   await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
-  await page.waitForFunction(expected=>document.querySelector('#project-path').textContent===expected,worktreePath);
+  await page.waitForFunction(expected=>document.querySelector('#project-path').title.endsWith(expected),worktreePath);
   await page.locator('#tab-settings').click();assert.equal(await page.locator('#response-notifications').isChecked(),false);
   await page.locator('#response-notifications').check();await page.locator('#tab-work').click();
   console.log('PASS: notification target consumed on fresh page connection; stored disabled preference restored');
@@ -227,6 +228,31 @@ async function main(){
   const projectSettings=async id=>{await sidebar();await page.locator('[data-project='+JSON.stringify(id)+'] .sidebar-project-more').click();await page.locator('#project-settings-dialog').waitFor({state:'visible'});};
   await closeSidebar();await page.locator('#tab-settings').click();await choose('language','en');await page.locator('#tab-work').click();
   await page.locator('#input').fill('Keep current project draft');
+  const projectIds=()=>page.locator('.sidebar-project').evaluateAll(nodes=>nodes.map(node=>node.dataset.project));
+  await projectSettings(other.id);
+  const activeBeforeOrder=(await call('GET','/v1/health')).data;
+  assert.equal(await page.locator('#project-move-down').isDisabled(),true);
+  await page.locator('#project-move-up').click();
+  await page.waitForFunction(id=>document.querySelector('.sidebar-project')?.dataset.project===id,other.id);
+  assert.deepEqual(await projectIds(),[other.id,project.id]);
+  assert.equal(await page.locator('#project-settings-dialog').isVisible(),true);
+  assert.equal(await page.locator('#project-move-up').isDisabled(),true);
+  assert.equal(await page.locator('#project-order-position').innerText(),'1 of 2');
+  assert.equal(await page.locator('#input').inputValue(),'Keep current project draft');
+  const activeAfterOrder=(await call('GET','/v1/health')).data;
+  assert.equal(activeAfterOrder.project.id,activeBeforeOrder.project.id);
+  assert.equal(activeAfterOrder.session.id,activeBeforeOrder.session.id);
+  assert.equal(activeAfterOrder.active_sessions,3);
+  rejectManagement=true;await page.locator('#project-move-down').click();
+  await page.locator('#project-settings-error').waitFor();
+  assert.deepEqual(await projectIds(),[other.id,project.id],'rejected reorder preserves the list');
+  rejectManagement=false;await page.locator('#project-move-down').click();
+  await page.waitForFunction(id=>document.querySelector('.sidebar-project')?.dataset.project===id,project.id);
+  await page.locator('#project-move-up').click();
+  await page.waitForFunction(id=>document.querySelector('.sidebar-project')?.dataset.project===id,other.id);
+  await page.locator('#project-settings-close').click();
+  await page.locator('#sidebar-refresh').click();assert.deepEqual(await projectIds(),[other.id,project.id]);
+  await page.screenshot({path:path.join(root,'dist/screenshots/project-order-320-en.png')});
   await sidebar();const folded=page.locator('[data-project='+JSON.stringify(project.id)+']');if(await folded.evaluate(node=>node.open))await folded.locator(':scope > summary').click();
   await projectSettings(project.id);assert.equal(await folded.evaluate(node=>node.open),false);
   assert.equal(await page.locator('#project-remove').isDisabled(),true);
@@ -247,6 +273,12 @@ async function main(){
   await closeSidebar();await page.locator('#tab-settings').click();await choose('language','ko');await page.locator('#tab-work').click();await projectSettings(project.id);
   await page.screenshot({path:path.join(root,'dist/screenshots/project-settings-320-ko.png')});assert.equal(await page.locator('#project-settings-title').innerText(),'프로젝트 설정');
   await page.keyboard.press('Escape');await closeSidebar();
+  hideOrdering=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');await projectSettings(other.id);
+  assert.deepEqual(await projectIds(),[other.id,project.id],'saved order survives reload');
+  assert.equal(await page.locator('#project-order-update').isVisible(),true);
+  assert.equal(await page.locator('#project-move-up').isDisabled(),true);assert.equal(await page.locator('#project-move-down').isDisabled(),true);
+  assert.equal(await page.locator('#project-rename').isEnabled(),true,'older bridge can still rename projects');
+  await page.locator('#project-settings-close').click();hideOrdering=false;
   hideManagement=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');await projectSettings(project.id);
   assert.equal(await page.locator('#project-management-update').isVisible(),true);assert.equal(await page.locator('#project-rename').isDisabled(),true);assert.equal(await page.locator('#project-remove').isDisabled(),true);assert.equal(await page.locator('#project-copy-path').isDisabled(),false);
   hideManagement=false;await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
@@ -265,7 +297,7 @@ async function main(){
   await page.locator('#sidebar-refresh').click();
   for(const id of [other.id,project.id]){await projectSettings(id);await page.waitForFunction(()=>!document.querySelector('#project-remove').disabled);await page.locator('#project-remove').click();await page.locator('#project-delete-confirm').click();await page.locator('#project-settings-dialog').waitFor({state:'hidden'});}
   await page.locator('#project-form').waitFor({state:'visible'});assert.equal(await page.locator('#launch').isDisabled(),true);assert.equal((await call('GET','/v1/health')).data.projects.length,0);assert.equal((await call('GET','/v1/health')).data.session,null);assert.ok(fs.existsSync(projectPath)&&fs.existsSync(worktreePath)&&fs.existsSync(secondPath));
-  console.log('PASS: project menu while collapsed; rename keeps draft/approval/processes; literal long name; copy path; polling edit preservation; small English/Korean dialogs; Back/Escape; old bridge guidance; removal cancel/failure/retry; unrelated project draft; last project removal; folders kept');
+  console.log('PASS: project reordering/persistence/boundaries/failure/retry/feature gating keeps active sessions/draft; project menu while collapsed; rename keeps draft/approval/processes; literal long name; copy path; polling edit preservation; small English/Korean dialogs; Back/Escape; old bridge guidance; removal cancel/failure/retry; unrelated project draft; last project removal; folders kept');
   assert.deepEqual(errors,[]);
   console.log('PASS: same-agent sessions; draft/project/worktree isolation; pending approval kept; rename literal text; archive/restore without stop; delete scoped inactive session/cancel; real Git worktree launch; sidebar focus/polling; 320/360/393px; English/Korean; Back/Escape/backdrop; reload');
 }

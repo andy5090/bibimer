@@ -1,6 +1,11 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "project_order": "项目顺序",
+  "project_move_up": "上移",
+  "project_move_down": "下移",
+  "project_order_position": "第 {position} 个，共 {count} 个",
+  "project_order_update": "请更新 Termux 桥接程序以调整项目顺序。",
   "workspace_details": "工作文件夹详情",
   "workspace_branch": "分支 / HEAD",
   "workspace_copy_branch": "复制分支 / HEAD",

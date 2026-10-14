@@ -29,6 +29,54 @@ class ProjectManagementTests(BridgeTestCase):
             self.assertTrue(session.condition.wait_for(lambda: session.state == "exited", timeout=5))
         session.process.wait(timeout=5)
 
+    def test_project_order_persists_without_changing_selected_project_or_live_session(self):
+        first, second, third = self.add("same-a"), self.add("same-b"), self.add("same-c")
+        session = self.launch(second)
+        self.api("POST", "/v1/project", {"project_id": first["id"]})
+        selected = dict(self.bridge.selected_sessions)
+        process = self.bridge.get_session(session["id"]).process
+        self.assertIn("project_ordering", self.bridge.health()["features"])
+        status, result = self.manage(third, "move_up")
+        expected = [first["id"], third["id"], second["id"]]
+        self.assertEqual((200, expected), (status, result["project_order"]))
+        self.assertEqual(expected, [row["id"] for row in self.bridge.health()["projects"]])
+        self.assertEqual(first["id"], self.bridge.active_project_id)
+        self.assertEqual(selected, self.bridge.selected_sessions)
+        self.assertIsNone(process.poll())
+        restored = module.Bridge(self.state)
+        self.assertEqual(expected, [row["id"] for row in restored.health()["projects"]])
+        self.assertEqual(first["id"], restored.active_project_id)
+        self.assertEqual("lost", restored.snapshot_by_id(session["id"])["state"])
+        self.assertIsNone(process.poll(), "reloading metadata does not touch the original process")
+        fourth = self.add("new-at-end")
+        self.assertEqual(expected + [fourth["id"]], list(self.bridge.projects))
+        self.assertEqual(200, self.manage(third, "rename", name="same-a")[0])
+        self.assertEqual(200, self.manage(third, "delete")[0])
+        self.assertEqual([first["id"], second["id"], fourth["id"]], list(self.bridge.projects))
+
+    def test_project_order_boundaries_and_invalid_requests_do_not_change_metadata(self):
+        first, second = self.add("first"), self.add("second")
+        before = (self.state / "metadata.json").read_bytes()
+        self.assertEqual(200, self.manage(first, "move_up")[0])
+        self.assertEqual(200, self.manage(second, "move_down")[0])
+        self.assertEqual(401, self.api("POST", "/v1/project/manage", {
+            "project_id": first["id"], "action": "move_down"}, auth=False)[0])
+        self.assertEqual(404, self.manage({"id": "missing"}, "move_up")[0])
+        self.assertEqual(before, (self.state / "metadata.json").read_bytes())
+        self.assertEqual(200, self.manage(first, "move_down")[0])
+        self.assertEqual([second["id"], first["id"]], list(self.bridge.projects))
+        self.assertEqual(200, self.manage(first, "delete")[0])
+        self.assertEqual([second["id"]], self.manage(second, "move_up")[1]["project_order"])
+
+    def test_project_order_save_failure_rolls_back_memory_and_disk(self):
+        first, second = self.add("first"), self.add("second")
+        before = (self.state / "metadata.json").read_bytes()
+        with patch.object(self.bridge, "persist", side_effect=OSError("fixture disk full")):
+            status, error = self.manage(second, "move_up")
+        self.assertEqual((500, "error_request_failed"), (status, error["code"]))
+        self.assertEqual([first["id"], second["id"]], list(self.bridge.projects))
+        self.assertEqual(before, (self.state / "metadata.json").read_bytes())
+
     def test_rename_keeps_process_folder_identity_and_other_project_selection(self):
         project = self.add("alpha")
         session = self.launch(project)

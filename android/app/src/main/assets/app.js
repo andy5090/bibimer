@@ -26,7 +26,7 @@
   let canLibrary = false, canWorktrees = false, activeViewKey = null, draftPath = null, importPath = null;
   let actionTarget = null, deleteTarget = null, libraryBusy = false, worktreeLoading = false, worktreeError = null;
   let canResponseNotifications = false, notificationNavigating = false, notificationRetry, pendingNotification;
-  let canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
+  let canOrderProjects = false, canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   let canInspect = false, canOpenFiles = false, openingFile = false;
   const worktrees = {};
   const worktreeChecks = new Map();
@@ -617,6 +617,12 @@
   function renderProjectSettings() {
     const target = knownProjects.find(row => row.id === projectActionTarget);
     const disabled = !online || !canManageProjects || !target || libraryBusy || busy || switchingProject;
+    const position = knownProjects.findIndex(row => row.id === projectActionTarget);
+    const orderDisabled = !online || !canOrderProjects || !target || libraryBusy || busy || switchingProject;
+    $("project-order-position").textContent = target ? t("project_order_position", {position:position + 1, count:knownProjects.length}) : "";
+    $("project-move-up").disabled = orderDisabled || position <= 0;
+    $("project-move-down").disabled = orderDisabled || position >= knownProjects.length - 1;
+    $("project-order-update").hidden = canOrderProjects;
     const live = projectHasActiveSessions(target);
     $("project-settings-path").textContent = target?.path || "";
     $("project-settings-name").disabled = $("project-rename").disabled = disabled;
@@ -633,11 +639,18 @@
     }
   }
   async function manageProject(id, action, name) {
-    if (!canManageProjects || !online || libraryBusy || busy || switchingProject) return;
+    const reordering = action === "move_up" || action === "move_down";
+    if (!(reordering ? canOrderProjects : canManageProjects) || !online || libraryBusy || busy || switchingProject) return;
     libraryBusy = true; projectActionError = null;
-    ++generation; clearTimeout(retryTimer); native.cancelPoll?.(); renderSession();
+    const ticket = ++generation; clearTimeout(retryTimer); native.cancelPoll?.(); renderSession();
     try {
       const result = await api("POST", "/v1/project/manage", {project_id:id, action, ...(name !== undefined ? {name} : {})});
+      if (ticket !== generation) return;
+      if (reordering) {
+        const ranks = new Map(result.project_order.map((key, index) => [key, index]));
+        knownProjects.sort((a, b) => (ranks.get(a.id) ?? ranks.size) - (ranks.get(b.id) ?? ranks.size));
+        return;
+      }
       if (result.project) {
         knownProjects = knownProjects.map(row => row.id === id ? {...row, ...result.project} : row);
         if (projectKey() === id) project = {...project, ...result.project};
@@ -655,6 +668,7 @@
       $("project-delete-dialog").close(); $("project-settings-dialog").close();
       notice(""); await connect();
     } catch (error) {
+      if (ticket !== generation) return;
       projectActionError = error.key || "error_request_failed";
       if (!$("project-settings-dialog").open) notice(projectActionError);
     } finally { libraryBusy = false; renderProjects(); renderSession(); startPoll(); }
@@ -665,6 +679,9 @@
     [...$("sidebar-projects").querySelectorAll("[data-key]")].find(node => node.dataset.key === key)?.focus({preventScroll:true});
   });
   $("project-rename-form").addEventListener("submit", event => { event.preventDefault(); manageProject(projectActionTarget, "rename", $("project-settings-name").value); });
+  for (const action of ["move_up", "move_down"]) {
+    $("project-" + action.replace("_", "-")).addEventListener("click", () => manageProject(projectActionTarget, action));
+  }
   $("project-copy-path").addEventListener("click", () => {
     const target = knownProjects.find(row => row.id === projectActionTarget);
     if (target) native.copyText(target.path);
@@ -986,6 +1003,7 @@
       canSessionTitles = health.features?.includes("session_titles") === true;
       canWorktrees = health.features?.includes("git_worktrees") === true;
       canManageProjects = health.features?.includes("project_management") === true;
+      canOrderProjects = health.features?.includes("project_ordering") === true;
       canInspect = health.features?.includes("workspace_inspector") === true;
       canOpenFiles = health.features?.includes("file_links") === true;
       canResponseNotifications = health.features?.includes("response_notifications") === true;

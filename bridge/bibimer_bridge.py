@@ -2172,6 +2172,20 @@ class Bridge:
             key, action = data.get("project_id"), data.get("action")
             if not isinstance(key, str) or key not in self.projects:
                 raise Problem(404, "error_project_missing")
+            if action in ("move_up", "move_down"):
+                keys = list(self.projects)
+                index = keys.index(key)
+                destination = index + (-1 if action == "move_up" else 1)
+                if 0 <= destination < len(keys):
+                    keys[index], keys[destination] = keys[destination], keys[index]
+                    previous = self.projects
+                    self.projects = {item: previous[item] for item in keys}
+                    try:
+                        self.persist()
+                    except OSError:
+                        self.projects = previous
+                        raise Problem(500, "error_request_failed") from None
+                return {"project_order": list(self.projects)}
             if action == "rename":
                 name = data.get("name")
                 if not isinstance(name, str) or not name.strip() or len(name) > 120 or any(ord(c) < 32 for c in name):
@@ -2342,7 +2356,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "project_management", "response_notifications", "workspace_inspector", "github_import", "file_links"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "project_management", "project_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 

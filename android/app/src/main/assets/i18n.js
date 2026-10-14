@@ -3,6 +3,11 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    project_order: ["Project order", "프로젝트 순서"],
+    project_move_up: ["Move up", "위로 이동"],
+    project_move_down: ["Move down", "아래로 이동"],
+    project_order_position: ["{position} of {count}", "{count}개 중 {position}번째"],
+    project_order_update: ["Update the Termux bridge to reorder projects.", "프로젝트 순서를 바꾸려면 Termux 브리지를 업데이트하세요."],
     workspace_details: ["Working folder details", "작업 위치 정보"],
     workspace_branch: ["Branch / HEAD", "브랜치 / HEAD"],
     workspace_copy_branch: ["Copy branch / HEAD", "브랜치 / HEAD 복사"],

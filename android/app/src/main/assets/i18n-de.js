@@ -1,6 +1,11 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "project_order": "Projektreihenfolge",
+  "project_move_up": "Nach oben",
+  "project_move_down": "Nach unten",
+  "project_order_position": "{position} von {count}",
+  "project_order_update": "Aktualisiere die Termux-Bridge, um Projekte neu anzuordnen.",
   "workspace_details": "Details zum Arbeitsordner",
   "workspace_branch": "Branch / HEAD",
   "workspace_copy_branch": "Branch / HEAD kopieren",

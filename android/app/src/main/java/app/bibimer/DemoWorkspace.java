@@ -188,7 +188,7 @@ final class DemoWorkspace {
             "projects", rows, "agents", agents, "session", selected == null ? null : selected.snapshot(), "features", Arrays.asList(
             "multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "agent_options", "live_agent_options",
             "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands",
-            "git_worktrees", "project_management", "response_notifications", "workspace_inspector", "github_import", "agent_handoff", "file_links"));
+            "git_worktrees", "project_management", "project_ordering", "response_notifications", "workspace_inspector", "github_import", "agent_handoff", "file_links"));
     }
     private String samplePath(String path) {
         if (path.equals("~") || path.isEmpty()) return HOME;
@@ -289,6 +289,17 @@ final class DemoWorkspace {
         }
         if (path.equals("/v1/project/manage")) {
             Map<String, Object> project = project(data);
+            if (text(data, "action").equals("move_up") || text(data, "action").equals("move_down")) {
+                List<String> keys = new ArrayList<>(projects.keySet()); String key = text(project, "id");
+                int index = keys.indexOf(key), destination = index + (text(data, "action").equals("move_up") ? -1 : 1);
+                if (destination >= 0 && destination < keys.size()) {
+                    keys.set(index, keys.get(destination)); keys.set(destination, key);
+                    Map<String, Map<String, Object>> ordered = new LinkedHashMap<>();
+                    for (String id : keys) ordered.put(id, projects.get(id));
+                    projects.clear(); projects.putAll(ordered);
+                }
+                return object("project_order", keys);
+            }
             if (text(data, "action").equals("rename")) {
                 String name = text(data, "name").trim(); require(!name.isEmpty() && name.length() <= 120, "error_demo_request"); project.put("name", name);
                 for (Session session : sessions.values()) if (session.project.get("id").equals(project.get("id"))) session.project.put("name", name);

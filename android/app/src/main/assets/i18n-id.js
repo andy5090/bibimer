@@ -1,6 +1,11 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "project_order": "Urutan proyek",
+  "project_move_up": "Pindah ke atas",
+  "project_move_down": "Pindah ke bawah",
+  "project_order_position": "{position} dari {count}",
+  "project_order_update": "Perbarui bridge Termux untuk mengubah urutan proyek.",
   "workspace_details": "Detail folder kerja",
   "workspace_branch": "Branch / HEAD",
   "workspace_copy_branch": "Salin branch / HEAD",

@@ -2,6 +2,7 @@ package app.bibimer;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** Runs the demo protocol without Android, agents, Termux, credentials or a test dependency. */
@@ -182,6 +183,16 @@ public final class DemoWorkspaceTest {
     private static void projectResponseContract() {
         Fixture f = new Fixture(); String firstId = f.projectId();
         Map<String, Object> second = map(f.post("/v1/project", "path", "/demo/projects/second").get("project"));
+        check(list(f.health().get("features")).contains("project_ordering"), "Demo advertises memory-only project ordering");
+        String secondId = text(second, "id");
+        Map<String, Object> order = f.post("/v1/project/manage", "project_id", secondId, "action", "move_up");
+        check(list(order.get("project_order")).equals(Arrays.asList(secondId, firstId)), "Move up returns ordered IDs");
+        check(text(list(f.health().get("projects")).get(0), "id").equals(secondId), "Health follows project order");
+        check(text(map(f.health().get("project")), "id").equals(secondId), "Reordering leaves active project unchanged");
+        f.post("/v1/project/manage", "project_id", secondId, "action", "move_up");
+        check(text(list(f.health().get("projects")).get(0), "id").equals(secondId), "Top boundary is a no-op");
+        f.post("/v1/project/manage", "project_id", secondId, "action", "move_down");
+        check(text(list(f.health().get("projects")).get(0), "id").equals(firstId), "Move down restores original order");
         Map<String, Object> renamed = f.post("/v1/project/manage", "project_id", firstId, "action", "rename", "name", "Renamed sample");
         check(text(map(renamed.get("project")), "id").equals(firstId), "Rename response returns its requested target");
         check(text(map(f.health().get("project")), "id").equals(text(second, "id")), "Rename does not change active project");

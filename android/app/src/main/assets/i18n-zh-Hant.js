@@ -1,6 +1,11 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "project_order": "專案順序",
+  "project_move_up": "上移",
+  "project_move_down": "下移",
+  "project_order_position": "第 {position} 個，共 {count} 個",
+  "project_order_update": "請更新 Termux 橋接程式以調整專案順序。",
   "workspace_details": "工作資料夾詳情",
   "workspace_branch": "分支 / HEAD",
   "workspace_copy_branch": "複製分支 / HEAD",
