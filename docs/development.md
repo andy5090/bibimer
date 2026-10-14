@@ -1,5 +1,12 @@
 # 개발 및 검증
 
+## 0.17.1 AAB 내부 테스트 (2026-10-14)
+
+- 앱 0.17.1/versionCode 33, 내장 브리지 0.15.0. 상위 폴더 첫 행과 뷰어 아래 탐색기 유지를 기존 업로드 키·심사 코드로 빌드했다. 새 키·Doppler 자동 다운로드·APK 배포 파일은 만들지 않았다.
+- `dist/play/bibimer-0.17.1-33-release.aab`, SHA-256 `b52c3d5fbb632b81308a6696ba9a7c97cb8fc2c9dd19fe856541599802ec2b09`. bundletool/jarsigner·기존 업로드 인증서 일치·Manifest 33/MAIN/LAUNCHER·30개 assets 원본 일치·심사 digest 포함·코드/암호 원문 미포함을 확인했다. 빌드 로그 `.tools/aab-0.17.1-33-mac.log`, 검증 `.tools/aab-0.17.1-33-verification.json`.
+- Python 14개, ReviewAccess Java 17개 단언, Demo 95개 단언/11개 시나리오, Node 접근 UI·입력 계약·초안 검사와 변경 JS 구문 검사를 통과했다. 탐색기 UI는 앞선 CUA/격리 브리지 검증을 따른다. 별도 Mac Git 정리 검사 1건 실패와 전체 smoke 도구 미설치는 `NEXT_SESSION.md`에 기록돼 있다. 브리지 소스·운영 세션은 변경하지 않았다.
+- 내부 테스트는 10월 14일 12:37 **내부 테스터에게 제공됨**으로 게시됐다. 프로덕션은 0.17.0(32)이며 공개 출시를 제출하지 않았다. 실제 Play 설치·Android WebView·Back·외부 문서 앱 복귀는 테스트 기기에서 확인한다.
+
 ## 심사용 데모 접근 제한 · 0.16.1 AAB (2026-10-12)
 
 심사용 예제 공간은 Settings의 **Review access / 심사자용 접근**에서 비공개 코드로 연다. 일반 첫 화면·Setup의 데모 체험 버튼과 Settings의 체험 소개는 제거한다. 심사 코드 원문은 저장소 밖 0600 파일에 보관하고 `BIBIMER_REVIEW_CODE_FILE`로 빌드에 전달한다. 공통 빌드 스크립트가 생성하는 `ReviewAccessConfig.DIGEST`에는 SHA-256만 들어가며, 설정 없는 빌드에서는 접근을 거절한다. 코드 원문을 Git·로그·공개 페이지에 넣지 않는다.

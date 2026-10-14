@@ -1,0 +1,10 @@
+<en-US>
+Parent folder navigation now appears at the top of the file list.
+The file explorer stays open beneath the document and code viewer.
+Closing the viewer returns you to the same folder and scroll position.
+</en-US>
+<ko-KR>
+상위 폴더 이동을 파일 목록 맨 위로 옮겼습니다.
+문서나 코드를 열어도 파일 탐색기는 열린 상태로 유지됩니다.
+뷰어를 닫으면 같은 폴더와 스크롤 위치로 돌아옵니다.
+</ko-KR>
