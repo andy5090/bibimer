@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Como o Bibimer processa informações, conecta agentes de programação e atende a solicitações de privacidade.">
+  <title>Bibimer · Política de privacidade</title>
+  <link rel="icon" href="/favicon.ico?v=20261014" sizes="16x16 32x32" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon.svg?v=20261014" sizes="any" type="image/svg+xml">
+  <link rel="canonical" href="https://bibimer.app/pt-BR/privacy/">
+  <link rel="alternate" hreflang="en" href="https://bibimer.app/privacy/">
+  <link rel="alternate" hreflang="ko" href="https://bibimer.app/ko/privacy/">
+  <link rel="alternate" hreflang="es" href="https://bibimer.app/es/privacy/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://bibimer.app/zh-Hans/privacy/">
+  <link rel="alternate" hreflang="pt-BR" href="https://bibimer.app/pt-BR/privacy/">
+  <link rel="alternate" hreflang="id" href="https://bibimer.app/id/privacy/">
+  <link rel="alternate" hreflang="x-default" href="https://bibimer.app/privacy/">
+  <style>
+    @font-face { font-family: "Space Grotesk"; src: url("/assets/SpaceGrotesk-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #202c2b; background: #f7faf8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 800px; margin: auto; padding: 40px 24px 80px; }
+    header { border-bottom: 1px solid #cddad3; padding-bottom: 24px; }
+    .brand { font-family: "Space Grotesk", system-ui, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: .04em; }
+    h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.2; margin: 20px 0; }
+    h2 { font-size: 23px; margin: 36px 0 12px; }
+    h3 { font-size: 18px; margin: 28px 0 8px; }
+    p, li, dd { line-height: 1.8; overflow-wrap: anywhere; }
+    p { margin: 12px 0; }
+    a { color: #15604e; text-underline-offset: 3px; }
+    a:focus-visible { outline: 3px solid #15604e; outline-offset: 4px; }
+    nav { display: flex; gap: 24px; flex-wrap: wrap; }
+    nav a { display: inline-block; padding: 8px 0; }
+    nav a[aria-current="page"] { font-weight: 700; text-decoration-thickness: 2px; }
+    dl { display: grid; grid-template-columns: 110px 1fr; gap: 8px 16px; margin: 24px 0; }
+    dt { font-weight: 600; line-height: 1.8; }
+    dd { margin: 0; }
+    footer { margin-top: 40px; color: #53645b; }
+    @media (max-width: 420px) { main { padding: 24px 18px 48px; } dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 12px; } }
+    @media print { body { background: white; } main { max-width: none; padding: 0; } nav { display: none; } }
+    .language-nav { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 16px 0; font-size: 13px; }
+    .language-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; line-height: 1.5; }
+    .language-nav a:hover { background: #e7efe5; }
+    .language-nav a[aria-current="page"] { background: #19372c; color: #fff; font-weight: 600; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <a class="brand" href="/pt-BR/">BIBIMER</a>
+    <h1>Política de privacidade</h1>
+    <nav class="language-nav" aria-label="Idioma do site"><a href="/privacy/" lang="en" hreflang="en">English</a><a href="/ko/privacy/" lang="ko" hreflang="ko">한국어</a><a href="/es/privacy/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/privacy/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/privacy/" lang="pt-BR" hreflang="pt-BR" aria-current="page">Português (Brasil)</a><a href="/id/privacy/" lang="id" hreflang="id">Bahasa Indonesia</a></nav>
+  </header>
+  <article id="policy" lang="pt-BR" aria-labelledby="policy-title">
+    <h2 id="policy-title">Política de privacidade do Bibimer</h2>
+    <dl>
+      <dt>Aplicativo</dt><dd>Bibimer (app.bibimer)</dd>
+      <dt>Operador</dt><dd>Andineering</dd>
+      <dt>Contato</dt><dd><a href="mailto:andy@andineering.com">andy@andineering.com</a></dd>
+      <dt>Data de vigência</dt><dd>11 de outubro de 2026</dd>
+    </dl>
+    <h3>1. Finalidade e informações processadas</h3>
+    <p>Bibimer é um ambiente móvel de desenvolvimento com agentes (ADE) para gerenciar projetos e sessões de agentes de programação no Termux, no mesmo celular Android. Ele processa nomes de projetos e caminhos de pastas, identificadores e configurações de sessões, instruções, respostas, saídas do terminal e das ferramentas, além dos arquivos com os quais você escolhe trabalhar. Essas informações são usadas para exibir seus projetos e sessões, enviar suas instruções, mostrar resultados e oferecer os recursos que você solicita.</p>
+    <p>A interface Android se comunica com uma ponte autenticada no mesmo dispositivo. O aplicativo armazena preferências e informações de conexão em seu armazenamento privado, com o token de conexão criptografado pelo Android Keystore. O Termux armazena separadamente os metadados de projetos e sessões e os registros dos agentes. O aplicativo Android atual não inclui SDKs de publicidade ou análise de uso nem recursos que enviem suas conversas a um servidor operado pelo Bibimer.</p>
+    <p>O acesso à demonstração para análise do aplicativo exige um código privado, verificado localmente sem reter o código informado. O modo de demonstração reproduz registros fictícios de sessões de exemplo a partir da memória. As entradas na conversa e no terminal não afetam as respostas preparadas e não são retidas nos registros de exemplo. A reprodução da demonstração não executa agentes ou comandos, não acessa seus arquivos de projeto e não contata provedores. As preferências da demonstração são armazenadas separadamente; ao sair, o espaço de trabalho de exemplo é redefinido e suas configurações normais são restauradas. Se você optar por abrir esta política de privacidade, seu navegador poderá ser iniciado.</p>
+    <h3>2. Agentes de programação e serviços externos</h3>
+    <p>Quando você envia uma instrução, o agente selecionado pode transmitir instruções, código, arquivos, contexto da conversa e solicitações de ferramentas aos provedores de IA e outros serviços configurados. O processamento e a retenção dependem do agente, do provedor, da conta, das permissões e das configurações que você usa. Uma conexão com a ponte local não significa que o processamento de IA permaneça no seu dispositivo.</p>
+    <p>Se você optar por continuar uma conversa com outro agente, o contexto que revisar e enviar será entregue a esse agente e poderá ser mantido nos registros dele. O Termux, os repositórios de pacotes, as ferramentas de desenvolvimento e os sites externos também processam solicitações quando você instala ferramentas ou abre seus links. Consulte as políticas dos serviços que escolher.</p>
+    <h3>3. GitHub e abertura de arquivos</h3>
+    <p>A importação do GitHub usa o GitHub CLI no Termux para autenticar, listar os repositórios aos quais você tem acesso e clonar o repositório escolhido. O GitHub CLI gerencia suas credenciais no Termux. O Bibimer exibe o estado da conta, informações do repositório e um código temporário de login quando necessário; ele não envia o token de autenticação à sua WebView nem aos logs comuns. Os arquivos clonados permanecem na pasta que você escolher.</p>
+    <p>Quando você escolhe abrir um arquivo de projeto ou da pasta Download em outro aplicativo Android, o Bibimer cria uma cópia temporária em seu cache privado e concede ao visualizador escolhido acesso temporário de leitura. O visualizador passa a processar o arquivo de acordo com suas próprias práticas. Editar essa cópia não altera o arquivo original do projeto. As cópias em cache têm limites de tamanho e prazo de validade e são removidas em usos posteriores do aplicativo ou na desconexão.</p>
+    <h3>4. Notificações e permissões</h3>
+    <p>Com a permissão de notificações e o monitoramento de respostas ativados, os alertas de conclusão podem incluir os nomes do projeto e da sessão e até 180 caracteres da resposta concluída. A versão pública para a tela de bloqueio usa uma mensagem genérica de conclusão. As configurações de notificação do Android e outros aplicativos com acesso às notificações podem afetar quem consegue ver seu conteúdo. Você pode interromper o monitoramento em Configurações ou pela notificação permanente correspondente.</p>
+    <p>O acesso a comandos do Termux exige sua permissão no Android e a configuração de integração com aplicativos externos no Termux. O Bibimer usa esse acesso para as ações de configuração e desenvolvimento que você solicita. As prévias de conclusão não são armazenadas nos arquivos de metadados da ponte nem nos logs comuns.</p>
+    <h3 id="data-deletion">5. Retenção, exclusão e controle</h3>
+    <p>As configurações do aplicativo e as informações de conexão permanecem até você limpar os dados do aplicativo ou desinstalá-lo. As saídas recentes da ponte e as mensagens na fila ficam restritas à memória da sessão em execução e podem desaparecer quando o processo é encerrado ou a ponte é reiniciada. Os arquivos de projeto do Termux, os metadados das sessões e os registros nativos dos agentes são armazenados separadamente; seu tempo de retenção depende das suas ações e das configurações de retenção do agente.</p>
+    <p>Remover o cadastro de um projeto ou excluir uma sessão encerrada da lista do Bibimer remove apenas suas informações de cadastro no Bibimer. Isso não exclui pastas de projetos, worktrees do Git nem registros originais dos agentes. Use o Termux e os agentes correspondentes para excluir esses arquivos e registros. Desinstalar o Bibimer não os remove. Solicite a exclusão de informações mantidas por um provedor diretamente a ele.</p>
+    <p>O Bibimer não cria uma conta de usuário Bibimer separada. As contas do GitHub e dos provedores de IA são gerenciadas por esses serviços. Você pode desconectar o Bibimer da ponte local pelo aplicativo e revogar o acesso a serviços externos usando o serviço ou a ferramenta correspondente.</p>
+    <h4>Solicite a exclusão dos seus dados ou ajuda para removê-los</h4>
+    <ol>
+      <li>Envie um e-mail para <a href="mailto:andy@andineering.com?subject=Bibimer%20data%20deletion">andy@andineering.com</a> com o assunto <strong>Bibimer data deletion</strong> (exclusão de dados do Bibimer).</li>
+      <li>Informe se sua solicitação se refere a configurações do aplicativo, arquivos do Termux, registros de agentes ou provedores ou mensagens de suporte anteriores. Não envie senhas, chaves de API nem arquivos privados de projetos.</li>
+      <li>A Andineering atende a solicitações sobre informações que mantém, incluindo mensagens de suporte, e pode explicar como remover dados locais. Não mantemos cópias dos arquivos dos seus projetos do Termux nem dos registros dos agentes. Exclua-os no seu dispositivo; solicite a exclusão de dados mantidos por provedores diretamente a eles.</li>
+    </ol>
+    <p>Os dados locais permanecem até você excluí-los conforme descrito acima. Os provedores externos determinam a retenção dos próprios registros. As mensagens de suporte são mantidas apenas pelo tempo necessário para resolver sua solicitação ou cumprir obrigações legais aplicáveis; você pode solicitar sua exclusão pelo mesmo endereço de e-mail.</p>
+    <h3>6. Faixa etária</h3>
+    <p>O Bibimer é destinado a pessoas com 13 anos ou mais. Agentes, provedores e serviços de desenvolvimento externos têm seus próprios requisitos de idade e conta, que podem ser mais restritivos.</p>
+    <h3>7. Hospedagem do site</h3>
+    <p>Este site é hospedado no Cloudflare Pages. A Cloudflare processa informações de solicitações, como endereços IP e dados de tráfego, para disponibilizar e proteger o site. Sua infraestrutura pode processar informações em diferentes países. Consulte os detalhes na <a href="https://www.cloudflare.com/privacypolicy/">política de privacidade da Cloudflare</a>. Este site estático não tem contas, formulário de contato, publicidade nem scripts de análise de uso adicionados pela Andineering.</p>
+    <h3>8. Contato e alterações</h3>
+    <p>Envie dúvidas sobre privacidade e solicitações de acesso, correção ou exclusão para o endereço de contato acima. Quando você entra em contato, processamos seu endereço de e-mail, sua mensagem e eventuais anexos para responder e resolver sua solicitação. Inclua apenas as informações necessárias. Esta política e sua data de vigência serão atualizadas quando as práticas de tratamento de dados do aplicativo mudarem.</p>
+  </article>
+  <footer><p>Bibimer · Seu ambiente de desenvolvimento com agentes.</p><a href="/pt-BR/">Início</a></footer>
+</main>
+</body>
+</html>

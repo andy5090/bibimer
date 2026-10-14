@@ -39,7 +39,7 @@ public final class MainActivity extends Activity {
     private static final String PAGE = "https://" + ASSET_HOST + "/index.html";
     private static final int EXPORT_INSTALLER = 10;
     private static final Set<String> ASSETS = new HashSet<>(Arrays.asList(
-        "index.html", "app.js", "commands.js", "select.js", "sidebar.js", "inspector.js", "file-viewer.js", "github.js", "app.css", "i18n.js", "i18n-pt-BR.js", "i18n-es.js", "i18n-id.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/mermaid.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
+        "index.html", "app.js", "commands.js", "select.js", "sidebar.js", "inspector.js", "file-viewer.js", "github.js", "app.css", "i18n.js", "i18n-pt-BR.js", "i18n-es.js", "i18n-id.js", "i18n-zh-Hans.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/mermaid.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
     private final ExecutorService actions = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<Runnable>(128));
     private final ExecutorService events = Executors.newSingleThreadExecutor();
@@ -449,7 +449,7 @@ public final class MainActivity extends Activity {
             else if (guide.equals("codex")) url = "https://github.com/openai/codex";
             else if (guide.equals("claude")) url = "https://code.claude.com/docs/en/setup";
             else if (guide.equals("opencode")) url = "https://opencode.ai/docs/";
-            else if (guide.equals("privacy")) url = "https://bibimer.app/privacy/";
+            else if (guide.equals("privacy")) url = language.privacyUrl();
             else return;
             runOnUiThread(() -> {
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }

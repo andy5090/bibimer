@@ -11,7 +11,7 @@ const baseStart = source.indexOf("const strings = ") + "const strings = ".length
 const baseEnd = source.indexOf("\n  };", baseStart) + "\n  }".length;
 const base = vm.runInNewContext(`(${source.slice(baseStart, baseEnd)})`);
 assert.ok(Object.keys(base).length > 500, "Read the complete base catalog");
-const locales = ["pt-BR", "es", "id"];
+const locales = ["pt-BR", "es", "id", "zh-Hans"];
 const placeholders = text => [...text.matchAll(/\{(\w+)\}/g)].map(match => match[1]).sort();
 const html = fs.readFileSync(path.join(assets, "index.html"), "utf8");
 const native = fs.readFileSync(path.join(root, "android/app/src/main/java/app/bibimer/MainActivity.java"), "utf8");
@@ -67,4 +67,4 @@ for (const invalid of ["fr", "pt", "__proto__", null, undefined]) {
   i18n.setLanguage(invalid);
   assert.equal(i18n.language(), "en");
 }
-console.log(`i18n: ${Object.keys(base).length} keys × 5 locales; catalog coverage, interpolation, fallback, selection and asset loading passed`);
+console.log(`i18n: ${Object.keys(base).length} keys × 6 locales; catalog coverage, interpolation, fallback, selection and asset loading passed`);

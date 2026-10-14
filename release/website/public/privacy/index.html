@@ -10,6 +10,10 @@
   <link rel="canonical" href="https://bibimer.app/privacy/">
   <link rel="alternate" hreflang="en" href="https://bibimer.app/privacy/">
   <link rel="alternate" hreflang="ko" href="https://bibimer.app/ko/privacy/">
+  <link rel="alternate" hreflang="es" href="https://bibimer.app/es/privacy/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://bibimer.app/zh-Hans/privacy/">
+  <link rel="alternate" hreflang="pt-BR" href="https://bibimer.app/pt-BR/privacy/">
+  <link rel="alternate" hreflang="id" href="https://bibimer.app/id/privacy/">
   <link rel="alternate" hreflang="x-default" href="https://bibimer.app/privacy/">
   <style>
     @font-face { font-family: "Space Grotesk"; src: url("/assets/SpaceGrotesk-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
@@ -35,6 +39,10 @@
     footer { margin-top: 40px; color: #53645b; }
     @media (max-width: 420px) { main { padding: 24px 18px 48px; } dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 12px; } }
     @media print { body { background: white; } main { max-width: none; padding: 0; } nav { display: none; } }
+    .language-nav { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 16px 0; font-size: 13px; }
+    .language-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; line-height: 1.5; }
+    .language-nav a:hover { background: #e7efe5; }
+    .language-nav a[aria-current="page"] { background: #19372c; color: #fff; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -42,7 +50,7 @@
   <header>
     <a class="brand" href="/">BIBIMER</a>
     <h1>Privacy policy</h1>
-    <nav aria-label="Policy language"><a href="/privacy/" lang="en" hreflang="en" aria-current="page">English</a><a href="/ko/privacy/" lang="ko" hreflang="ko">한국어</a></nav>
+    <nav class="language-nav" aria-label="Website language"><a href="/privacy/" lang="en" hreflang="en" aria-current="page">English</a><a href="/ko/privacy/" lang="ko" hreflang="ko">한국어</a><a href="/es/privacy/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/privacy/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/privacy/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/privacy/" lang="id" hreflang="id">Bahasa Indonesia</a></nav>
   </header>
   <article id="english" lang="en" aria-labelledby="en-title">
     <h2 id="en-title">Bibimer privacy policy</h2>

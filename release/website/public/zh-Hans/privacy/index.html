@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Bibimer 如何处理信息、连接编程智能体以及处理隐私请求。">
+  <title>Bibimer · 隐私政策</title>
+  <link rel="icon" href="/favicon.ico?v=20261014" sizes="16x16 32x32" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon.svg?v=20261014" sizes="any" type="image/svg+xml">
+  <link rel="canonical" href="https://bibimer.app/zh-Hans/privacy/">
+  <link rel="alternate" hreflang="en" href="https://bibimer.app/privacy/">
+  <link rel="alternate" hreflang="ko" href="https://bibimer.app/ko/privacy/">
+  <link rel="alternate" hreflang="es" href="https://bibimer.app/es/privacy/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://bibimer.app/zh-Hans/privacy/">
+  <link rel="alternate" hreflang="pt-BR" href="https://bibimer.app/pt-BR/privacy/">
+  <link rel="alternate" hreflang="id" href="https://bibimer.app/id/privacy/">
+  <link rel="alternate" hreflang="x-default" href="https://bibimer.app/privacy/">
+  <style>
+    @font-face { font-family: "Space Grotesk"; src: url("/assets/SpaceGrotesk-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #202c2b; background: #f7faf8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 800px; margin: auto; padding: 40px 24px 80px; }
+    header { border-bottom: 1px solid #cddad3; padding-bottom: 24px; }
+    .brand { font-family: "Space Grotesk", system-ui, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: .04em; }
+    h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.2; margin: 20px 0; }
+    h2 { font-size: 23px; margin: 36px 0 12px; }
+    h3 { font-size: 18px; margin: 28px 0 8px; }
+    p, li, dd { line-height: 1.8; overflow-wrap: anywhere; }
+    p { margin: 12px 0; }
+    a { color: #15604e; text-underline-offset: 3px; }
+    a:focus-visible { outline: 3px solid #15604e; outline-offset: 4px; }
+    nav { display: flex; gap: 24px; flex-wrap: wrap; }
+    nav a { display: inline-block; padding: 8px 0; }
+    nav a[aria-current="page"] { font-weight: 700; text-decoration-thickness: 2px; }
+    dl { display: grid; grid-template-columns: 110px 1fr; gap: 8px 16px; margin: 24px 0; }
+    dt { font-weight: 600; line-height: 1.8; }
+    dd { margin: 0; }
+    footer { margin-top: 40px; color: #53645b; }
+    @media (max-width: 420px) { main { padding: 24px 18px 48px; } dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 12px; } }
+    @media print { body { background: white; } main { max-width: none; padding: 0; } nav { display: none; } }
+    .language-nav { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 16px 0; font-size: 13px; }
+    .language-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; line-height: 1.5; }
+    .language-nav a:hover { background: #e7efe5; }
+    .language-nav a[aria-current="page"] { background: #19372c; color: #fff; font-weight: 600; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <a class="brand" href="/zh-Hans/">BIBIMER</a>
+    <h1>隐私政策</h1>
+    <nav class="language-nav" aria-label="网站语言"><a href="/privacy/" lang="en" hreflang="en">English</a><a href="/ko/privacy/" lang="ko" hreflang="ko">한국어</a><a href="/es/privacy/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/privacy/" lang="zh-Hans" hreflang="zh-Hans" aria-current="page">简体中文</a><a href="/pt-BR/privacy/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/privacy/" lang="id" hreflang="id">Bahasa Indonesia</a></nav>
+  </header>
+  <article id="zh-Hans" lang="zh-Hans" aria-labelledby="zh-Hans-title">
+    <h2 id="zh-Hans-title">Bibimer 隐私政策</h2>
+    <dl>
+      <dt>应用</dt><dd>Bibimer (app.bibimer)</dd>
+      <dt>运营方</dt><dd>Andineering</dd>
+      <dt>联系方式</dt><dd><a href="mailto:andy@andineering.com">andy@andineering.com</a></dd>
+      <dt>生效日期</dt><dd>2026 年 10 月 11 日</dd>
+    </dl>
+    <h3>1. 用途与处理的信息</h3>
+    <p>Bibimer 是一款移动智能体开发环境（ADE），用于管理同一部 Android 手机上 Termux 中的项目和编程智能体会话。它会处理项目名称和文件夹路径、会话标识符与设置、指令、回复、终端和工具输出，以及你选择使用的文件。这些信息用于显示项目和会话、发送指令、展示结果，以及提供你请求的功能。</p>
+    <p>Android 界面与同一设备上经过身份验证的桥接服务通信。应用将偏好设置和连接信息存储在其私有存储空间中，并使用 Android Keystore 加密连接令牌。Termux 单独存储项目和会话元数据以及智能体记录。当前 Android 应用不含广告或分析 SDK，也没有将对话上传至 Bibimer 运营服务器的功能。</p>
+    <p>审核演示需要使用私密访问码，访问码在本地验证，提交后不会保留。演示模式从内存中回放虚构的示例会话日志。聊天和终端输入不会影响预设回复，也不会保存在示例记录中。演示回放不会运行智能体或命令，不会访问你的项目文件，也不会联系服务提供商。演示偏好设置单独保存；退出演示时会重置示例工作区，并恢复你的正常设置。如果你选择打开本隐私政策，应用可能会启动浏览器。</p>
+    <h3>2. 编程智能体与外部服务</h3>
+    <p>发送指令时，你选择的智能体可能会将提示词、代码、文件、对话上下文和工具请求传输给其配置的 AI 提供商及其他服务。处理与保留方式取决于你使用的智能体、提供商、账号、权限和设置。连接本地桥接服务并不意味着 AI 处理仅在设备上进行。</p>
+    <p>如果你选择通过另一智能体继续对话，你查看并发送的上下文会传递给该智能体，并可能保存在其记录中。安装工具或打开链接时，Termux、软件包仓库、开发工具和外部网站也会处理相关请求。请查阅你所选择服务的政策。</p>
+    <h3>3. GitHub 与文件打开</h3>
+    <p>GitHub 导入功能使用 Termux 中的 GitHub CLI 进行身份验证、列出你有权访问的仓库，并克隆你选择的仓库。GitHub CLI 在 Termux 中管理其凭据。Bibimer 显示账号状态、仓库信息，以及在需要时显示临时登录码；不会将身份验证令牌发送到 WebView 或普通日志。克隆的文件保存在你选择的文件夹中。</p>
+    <p>当你选择在其他 Android 应用中打开项目文件或下载文件时，Bibimer 会在其私有缓存中创建临时副本，并授予所选查看器临时读取权限。查看器随后会按其自身惯例处理该文件。编辑此副本不会更改原始项目文件。缓存副本有大小和有效期限制，会在后续使用应用或断开连接时清理。</p>
+    <h3>4. 通知与权限</h3>
+    <p>授予通知权限并开启回复监测后，完成通知可能包含项目和会话名称，以及已完成回复中的最多 180 个字符。锁屏公开版本使用通用的完成提示。Android 通知设置及其他拥有通知读取权限的应用可能影响谁能看到通知内容。你可以在设置中或通过常驻通知停止监测。</p>
+    <p>Termux 命令访问需要你授予 Android 权限，并启用 Termux 的外部应用相关设置。Bibimer 使用该权限执行你请求的设置和开发操作。完成回复的预览不会存储在桥接服务元数据文件或普通日志中。</p>
+    <h3 id="data-deletion">5. 保留、删除与控制</h3>
+    <p>应用设置和连接信息会保留，直到你清除应用数据或卸载应用。桥接服务的近期输出和排队消息仅保存在运行中会话的内存里，可能随进程终止或桥接服务重启而消失。Termux 项目文件、会话元数据和智能体原生记录单独存储，其保留时间取决于你的操作和智能体的保留设置。</p>
+    <p>在 Bibimer 列表中取消项目注册或删除已结束的会话，只会移除对应的 Bibimer 注册信息，不会删除项目文件夹、Git 工作树或智能体原始记录。请使用 Termux 和相应智能体删除这些文件和记录。卸载 Bibimer 不会移除它们。对于服务提供商持有的信息，请直接向该提供商请求删除。</p>
+    <p>Bibimer 不创建独立的 Bibimer 用户账号。GitHub 和 AI 提供商账号由相应服务管理。你可以在应用中断开 Bibimer 与本地桥接服务的连接，并通过相应服务或工具撤销外部服务的访问权限。</p>
+    <h4>请求删除数据或获取数据移除帮助</h4>
+    <ol>
+      <li>请发送邮件至 <a href="mailto:andy@andineering.com?subject=Bibimer%20data%20deletion">andy@andineering.com</a>，主题填写 <strong>Bibimer data deletion</strong>。</li>
+      <li>请说明你的请求涉及应用设置、Termux 文件、智能体或提供商记录，还是此前的支持邮件。请勿发送密码、API 密钥或私密项目文件。</li>
+      <li>Andineering 处理其所持信息（包括支持通信记录）的相关请求，也可以说明如何移除本地数据。我们不持有你的 Termux 项目文件或智能体记录副本。请在设备上删除这些数据；对于提供商持有的数据，请直接向该提供商请求删除。</li>
+    </ol>
+    <p>本地数据会保留，直到你按上述方式删除。外部提供商自行决定其记录的保留期限。支持通信记录仅在解决请求或履行适用法律义务所需的期间内保留；你可以通过同一邮箱请求删除。</p>
+    <h3>6. 年龄范围</h3>
+    <p>Bibimer 面向 13 岁及以上用户。外部智能体、提供商和开发服务有各自的年龄及账号要求，可能高于此年龄。</p>
+    <h3>7. 网站托管</h3>
+    <p>本网站托管于 Cloudflare Pages。Cloudflare 会处理 IP 地址、流量数据等请求信息，以提供网站服务并保护网站。其基础设施可能在不同国家或地区处理信息。详情请查阅 <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare 隐私政策</a>。本静态网站不提供账号或联系表单，Andineering 未添加广告或分析脚本。</p>
+    <h3>8. 联系方式与政策变更</h3>
+    <p>如有隐私问题，或需要访问、更正、删除信息，请发送至上述联系邮箱。联系时，我们会处理你的电子邮箱地址、邮件内容和附件，以回复并解决请求。请仅提供处理请求所需的信息。应用的数据处理方式发生变化时，我们将更新本政策及其生效日期。</p>
+  </article>
+  <footer><p>Bibimer · 你的智能体开发环境。</p><a href="/zh-Hans/">首页</a></footer>
+</main>
+</body>
+</html>

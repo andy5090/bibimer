@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Desarrolla en tu teléfono Android con Bibimer y Termux. Gestiona proyectos, sesiones de agentes, chats, terminales y vistas previas de archivos. Gratis en Google Play.">
+  <title>Bibimer · Tu entorno de desarrollo con agentes en el móvil</title>
+  <link rel="icon" href="/favicon.ico?v=20261014" sizes="16x16 32x32" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon.svg?v=20261014" sizes="any" type="image/svg+xml">
+  <link rel="canonical" href="https://bibimer.app/es/">
+  <link rel="alternate" hreflang="en" href="https://bibimer.app/">
+  <link rel="alternate" hreflang="ko" href="https://bibimer.app/ko/">
+  <link rel="alternate" hreflang="es" href="https://bibimer.app/es/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://bibimer.app/zh-Hans/">
+  <link rel="alternate" hreflang="pt-BR" href="https://bibimer.app/pt-BR/">
+  <link rel="alternate" hreflang="id" href="https://bibimer.app/id/">
+  <link rel="alternate" hreflang="x-default" href="https://bibimer.app/">
+  <style>
+    @font-face { font-family: "Space Grotesk"; src: url("/assets/SpaceGrotesk-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+    :root { color-scheme: light; color: #19372c; background: #f6f9f4; font-family: system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    a { color: inherit; text-underline-offset: 4px; }
+    a:focus-visible { outline: 3px solid #146d50; outline-offset: 5px; }
+    .shell { width: min(100% - 48px, 1060px); margin: auto; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 28px 0; border-bottom: 1px solid #d3ded4; }
+    .brand { font: 700 24px "Space Grotesk", sans-serif; letter-spacing: .04em; text-decoration: none; }
+    nav { display: flex; gap: 24px; flex-wrap: wrap; font-size: 14px; }
+    nav a { padding: 8px 0; }
+    .hero { padding: 78px 0 60px; display: grid; grid-template-columns: 1fr 210px; align-items: center; gap: 54px; }
+    .hero > div { min-width: 0; }
+    h1 { overflow-wrap: anywhere; hyphens: auto; }
+    .eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 650; }
+    h1 { font: 700 clamp(40px, 6vw, 72px)/1.05 "Space Grotesk", sans-serif; letter-spacing: -.04em; margin: 20px 0 24px; max-width: 720px; }
+    p { line-height: 1.8; max-width: 710px; overflow-wrap: anywhere; }
+    .lead { font-size: 19px; color: #486052; }
+    .icon { width: 100%; height: auto; border-radius: 24%; }
+    .links { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 28px; }
+    .contact { padding: 13px 22px; border-radius: 8px; background: #19372c; color: white; text-decoration: none; }
+    .status { color: #546b5b; font-size: 14px; }
+    .features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; border-top: 1px solid #d3ded4; padding: 36px 0 48px; }
+    h2 { font-size: 28px; line-height: 1.4; margin: 0 0 20px; }
+    h3 { font-size: 18px; margin: 0 0 12px; }
+    .features p { margin: 0; font-size: 15px; color: #486052; }
+    .setup { padding: 28px 32px; background: #e7efe5; border-radius: 12px; }
+    .setup h2 { font-size: 21px; margin-bottom: 10px; }
+    .setup p { margin: 10px 0; font-size: 15px; }
+    footer { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 32px 0; margin-top: 54px; border-top: 1px solid #d3ded4; font-size: 13px; color: #486052; }
+    @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } .hero .icon { width: 112px; grid-row: 1; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
+    .language-nav { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 16px 0; font-size: 13px; }
+    .language-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; line-height: 1.5; }
+    .language-nav a:hover { background: #e7efe5; }
+    .language-nav a[aria-current="page"] { background: #19372c; color: #fff; font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <a class="brand" href="/es/">BIBIMER</a>
+    <nav aria-label="Navegación principal"><a href="/es/privacy/">Privacidad</a><a href="mailto:andy@andineering.com">Soporte</a></nav>
+  </header>
+  <nav class="language-nav" aria-label="Idioma del sitio web"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es" aria-current="page">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a></nav>
+  <main>
+    <section class="hero" aria-labelledby="headline">
+      <div>
+        <div class="eyebrow">Android + Termux</div>
+        <h1 id="headline">Tu teléfono.<br>Tu entorno de desarrollo.</h1>
+        <p class="lead">Convierte tu teléfono Android en un entorno de desarrollo. Bibimer es un entorno de desarrollo con agentes (ADE) para móviles que reúne proyectos, sesiones de agentes de programación, chats y terminales con Termux en el mismo teléfono.</p>
+        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=es">Descarga Bibimer en Google Play</a><a href="https://github.com/andy5090/bibimer">Repositorio en GitHub</a></div>
+        <p class="status">Gratis · Android 8.0 o posterior · Termux en el mismo teléfono</p>
+        <p class="status">Este sitio web está disponible en español. La aplicación actual de Google Play admite inglés y coreano; estamos preparando más idiomas para la aplicación.</p>
+      </div>
+      <img class="icon" src="/assets/icon.png" alt="Icono de la aplicación Bibimer" width="512" height="512">
+    </section>
+    <section class="features" aria-label="Funciones">
+      <div><h3>Tus proyectos, en tu teléfono</h3><p>Los archivos de tus proyectos, Git y las herramientas de desarrollo compatibles se ejecutan en Termux, en tu teléfono. Gestiona proyectos y árboles de trabajo existentes sin un ordenador de desarrollo ni un servidor remoto.</p></div>
+      <div><h3>Chat y terminal</h3><p>Sigue conversaciones estructuradas y la actividad de las herramientas. Envía instrucciones, responde a solicitudes de aprobación y añade mensajes de seguimiento a la cola.</p></div>
+      <div><h3>Elige tu agente</h3><p>Conecta instalaciones compatibles de Codex, Claude y OpenCode. Elige entre los modelos y las opciones que admite el agente instalado.</p></div>
+      <div><h3>Consulta archivos y cambios de Git</h3><p>Lee código con resaltado de sintaxis y examina diferencias de Git. Previsualiza Markdown, HTML estático y diagramas Mermaid. Abre documentos de Office, imágenes y PDF con aplicaciones Android compatibles.</p></div>
+    </section>
+    <section class="setup" aria-labelledby="setup-title">
+      <h2 id="setup-title">Empieza con Termux</h2>
+      <p>Termux ofrece un entorno de línea de comandos de Linux en Android, con Git, Python, Node.js y muchas otras herramientas. Instálalo en el mismo teléfono y sigue la guía de configuración de Bibimer. Empieza con el modo terminal; la instalación de agentes compatibles y la autenticación con sus proveedores se realizan por separado.</p>
+      <p>Los agentes pueden enviar tus instrucciones, código y archivos a los proveedores y herramientas que tengan configurados. Las tarifas y los requisitos de edad dependen de los servicios que uses.</p>
+      <a href="https://github.com/termux/termux-app#installation">Guía de instalación de Termux</a>
+    </section>
+  </main>
+  <footer><span>© 2026 Andineering</span><span>Bibimer es independiente de Termux y de los creadores de los agentes compatibles.</span><a href="/es/privacy/">Política de privacidad</a></footer>
+</div>
+</body>
+</html>

@@ -14,7 +14,7 @@ class AppLanguageTests(unittest.TestCase):
         def strings(folder):
             return {e.attrib["name"]: e.text for e in ET.parse(SRC / "res" / folder / "strings.xml").getroot()}
         base = strings("values")
-        for folder in ("values-ko", "values-pt-rBR", "values-es", "values-in"):
+        for folder in ("values-ko", "values-pt-rBR", "values-es", "values-in", "values-b+zh+Hans"):
             translated = strings(folder)
             self.assertEqual(base.keys(), translated.keys(), folder)
             self.assertTrue(all(text and text.strip() for text in translated.values()), folder)
@@ -75,18 +75,21 @@ class AppLanguageTests(unittest.TestCase):
                         Locale.setDefault(Locale.forLanguageTag("es"));
                         Device device = new Device(); AppLanguage app = new AppLanguage(device);
                         check(app.get().equals("en"));
-                        for (String code : new String[]{"en", "ko", "pt-BR", "es", "id"}) {
+                        for (String code : new String[]{"en", "ko", "pt-BR", "es", "id", "zh-Hans"}) {
                             check(app.set(code)); check(app.get().equals(code));
                             check(new AppLanguage(device).get().equals(code));
                             check(app.text(1).equals(code));
+                            String policy = "https://bibimer.app/" + (code.equals("en") ? "" : code + "/") + "privacy/";
+                            check(app.privacyUrl().equals(policy));
                         }
-                        for (String code : new String[]{null, "fr", "pt", "__proto__", ""}) {
-                            check(!app.set(code)); check(app.get().equals("id"));
+                        for (String code : new String[]{null, "fr", "pt", "zh", "zh-CN", "zh-Hant", "../../", "https://example.org", "__proto__", ""}) {
+                            check(!app.set(code)); check(app.get().equals("zh-Hans"));
                         }
                         device.store.fail = true; check(!app.set("es"));
-                        check(app.get().equals("id")); check(new AppLanguage(device).get().equals("id"));
+                        check(app.get().equals("zh-Hans")); check(new AppLanguage(device).get().equals("zh-Hans"));
                         device.store.saved = "unknown"; check(new AppLanguage(device).get().equals("en"));
-                        System.out.println("AppLanguage: default, five locales, reload, resource locale, invalid input and failed save passed");
+                        check(new AppLanguage(device).privacyUrl().equals("https://bibimer.app/privacy/"));
+                        System.out.println("AppLanguage: default, six locales, reload, resource locale, privacy URL, invalid input and failed save passed");
                     }
                 }''',
         }

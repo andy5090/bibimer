@@ -34,8 +34,13 @@ final class AppLanguage {
         return context.createConfigurationContext(configuration).getString(resource);
     }
 
+    String privacyUrl() {
+        String selected = language;
+        return "https://bibimer.app/" + ("en".equals(selected) ? "" : selected + "/") + "privacy/";
+    }
+
     private static boolean supported(String value) {
         return "en".equals(value) || "ko".equals(value) || "pt-BR".equals(value)
-            || "es".equals(value) || "id".equals(value);
+            || "es".equals(value) || "id".equals(value) || "zh-Hans".equals(value);
     }
 }

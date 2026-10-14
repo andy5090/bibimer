@@ -18,7 +18,7 @@ Bibimer는 **ADE(Agent Development Environment, 에이전트 개발 환경)**입
 
 앱의 최소 Android 버전은 8.0(API 26)입니다. 모든 Android 버전과 기기, 에이전트 설치 환경에서 동작을 확인한 것은 아닙니다.
 
-개발 소스에는 브라질 포르투갈어·스페인어·인도네시아어를 추가했습니다. 아직 Google Play 배포본에는 포함되지 않았습니다. [언어 확대 우선순위](docs/localization.md)를 참고하세요.
+개발 소스에는 브라질 포르투갈어·스페인어·인도네시아어·중국어 간체를 추가했습니다. 아직 Google Play 배포본에는 포함되지 않았습니다. [언어 확대 우선순위](docs/localization.md)를 참고하세요.
 
 ## 주요 기능
 

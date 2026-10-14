@@ -1,5 +1,15 @@
 # Bibimer 다음 세션 시작점
 
+## 최신: 중국어 간체 앱 소스·웹사이트 6개 언어 (2026-10-14)
+
+- 사용자가 다음 번역 대상과 웹사이트 언어 지원을 요청해 **중국어 간체 `zh-Hans`**를 추가했다. `i18n-zh-Hans.js`의 **580개 문구**와 `values-b+zh+Hans/strings.xml`의 **21개 Android 문구**, 선택 UI·저장 허용값·asset 연결을 반영했다. 개발 소스는 EN/KO/pt-BR/es/id/zh-Hans 6개 언어다. AI 코딩 에이전트는 중국어 `智能体`로 표현하고 Bibimer 자체와 구분한다.
+- `AppLanguage.privacyUrl()`은 허용된 저장 언어로 고정 `bibimer.app`의 정책 주소를 만든다. 영어는 `/privacy/`, 나머지는 `/{locale}/privacy/`이며 Settings의 정책 열기가 이를 사용한다. 잘못된 저장값은 영어로 돌아가고 임의 경로나 URL을 언어로 받지 않는다. 첫 실행 영어·사용자 입력/터미널 원문·기존 언어 split 정책을 유지한다.
+- 웹사이트는 EN/KO에 **es/zh-Hans/pt-BR/id 홈·전체 개인정보처리방침**을 추가했다. 언어별 URL과 본문, 6개 언어의 같은 종류 페이지로 이동하는 키보드 접근 가능한 링크 메뉴, 현재 언어 강조, canonical/hreflang을 제공한다. 기존 HTML/CSS를 재사용하고 JS·의존성·네이티브 select를 추가하지 않았다. 심사 안내는 기존 EN/KO 전용이며 공개 홈에서 홍보하지 않는다. 새 홈은 **공개 앱은 영어·한국어, 추가 앱 언어는 준비 중**이라고 명시한다. 정책 처리 내용·시행일은 유지한다.
+- Cloudflare Pages **https://a4349ffb.bibimer.pages.dev** 배포 완료. `https://bibimer.app/` 아래 12개 홈/정책의 HTTP 200·원본 일치·기존 CSP/no-transform, 없는 경로 404를 검증했다. 중국어 공개 주소는 **https://bibimer.app/zh-Hans/**다. 기존 Play 개인정보 URL `/privacy/`를 유지한다.
+- **Node 580키 × 6언어**, Python **17개**, 기존 Demo/ReviewAccess Node 회귀, JS 구문, AAPT2·전체 Android Java 컴파일, diff 검사를 통과했다. Java 8/deprecation 기존 경고만 남는다. CUA에서 웹 12페이지를 320/393px로 확인하고, 정책 언어 전환 키보드 Enter·정책→동일 언어 홈 이동·중국어 데스크톱을 확인했다. 포르투갈어 긴 제목의 가로 넘침은 grid 자식 최소 폭과 단어 줄바꿈으로 수정했다.
+- 중국어 앱 첫 화면·설치 안내·설정을 320/393px로 검증했고, 선택 저장 후 reload·Escape/포커스 복귀·명령 원문 보존·가로 넘침 없음·콘솔 오류 없음을 확인했다. UI는 격리된 로컬 소스/네이티브 API 대역이며 실제 Android 실행 검증으로 주장하지 않는다. 시각 판정 **95점 pass**, `.omx/state/localization-zh/ralph-progress.json`, 증빙 `dist/localization-zh/`다.
+- **앱 APK/AAB 빌드·Play 업로드·버전 변경 없음. 공개/내부 0.17.1(33)은 영어·한국어 그대로**다. 원어민 검수, 실제 Android 언어 리소스/알림/외부 정책 열기, Play 언어별 등록정보는 후속이다. 다음 번역은 중국어 번체·러시아어이며 새 앱 언어는 다음 명시적 빌드 요청에 포함한다. 테스트 서버·격리 셸·앱 미리보기 탭 종료 및 viewport 복원을 완료한다.
+
 ## 최신: 언어 확대 우선순위·3개 번역 소스 (2026-10-14, 미배포)
 
 - 사용자 요청으로 세계 대상 언어 우선순위를 정리했다. 초기 브라질 성장 중심 제안은 사용자의 중국어·러시아어 질문을 반영해 수정했다. **스페인어·중국어 간체 최우선 → 브라질 포르투갈어·중국어 번체·러시아어 → 인도네시아어·일본어·독일어·프랑스어**다. 국가별 GitHub 계정·모국어/총 화자 수·제품 수요를 동일시하지 않는다. 근거·가설과 후속 기준은 `docs/localization.md`에 있다.

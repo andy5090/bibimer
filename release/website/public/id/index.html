@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Kembangkan proyek di ponsel Android dengan Bibimer dan Termux. Kelola proyek, sesi agen, percakapan, terminal, dan pratinjau berkas. Gratis di Google Play.">
+  <title>Bibimer · Lingkungan pengembangan dengan agen di ponsel Anda</title>
+  <link rel="icon" href="/favicon.ico?v=20261014" sizes="16x16 32x32" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon.svg?v=20261014" sizes="any" type="image/svg+xml">
+  <link rel="canonical" href="https://bibimer.app/id/">
+  <link rel="alternate" hreflang="en" href="https://bibimer.app/">
+  <link rel="alternate" hreflang="ko" href="https://bibimer.app/ko/">
+  <link rel="alternate" hreflang="es" href="https://bibimer.app/es/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://bibimer.app/zh-Hans/">
+  <link rel="alternate" hreflang="pt-BR" href="https://bibimer.app/pt-BR/">
+  <link rel="alternate" hreflang="id" href="https://bibimer.app/id/">
+  <link rel="alternate" hreflang="x-default" href="https://bibimer.app/">
+  <style>
+    @font-face { font-family: "Space Grotesk"; src: url("/assets/SpaceGrotesk-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+    :root { color-scheme: light; color: #19372c; background: #f6f9f4; font-family: system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    a { color: inherit; text-underline-offset: 4px; }
+    a:focus-visible { outline: 3px solid #146d50; outline-offset: 5px; }
+    .shell { width: min(100% - 48px, 1060px); margin: auto; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 28px 0; border-bottom: 1px solid #d3ded4; }
+    .brand { font: 700 24px "Space Grotesk", sans-serif; letter-spacing: .04em; text-decoration: none; }
+    nav { display: flex; gap: 24px; flex-wrap: wrap; font-size: 14px; }
+    nav a { padding: 8px 0; }
+    .hero { padding: 78px 0 60px; display: grid; grid-template-columns: 1fr 210px; align-items: center; gap: 54px; }
+    .hero > div { min-width: 0; }
+    h1 { overflow-wrap: anywhere; hyphens: auto; }
+    .eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 650; }
+    h1 { font: 700 clamp(40px, 6vw, 72px)/1.05 "Space Grotesk", sans-serif; letter-spacing: -.04em; margin: 20px 0 24px; max-width: 720px; }
+    p { line-height: 1.8; max-width: 710px; overflow-wrap: anywhere; }
+    .lead { font-size: 19px; color: #486052; }
+    .icon { width: 100%; height: auto; border-radius: 24%; }
+    .links { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 28px; }
+    .contact { padding: 13px 22px; border-radius: 8px; background: #19372c; color: white; text-decoration: none; }
+    .status { color: #546b5b; font-size: 14px; }
+    .features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; border-top: 1px solid #d3ded4; padding: 36px 0 48px; }
+    h2 { font-size: 28px; line-height: 1.4; margin: 0 0 20px; }
+    h3 { font-size: 18px; margin: 0 0 12px; }
+    .features p { margin: 0; font-size: 15px; color: #486052; }
+    .setup { padding: 28px 32px; background: #e7efe5; border-radius: 12px; }
+    .setup h2 { font-size: 21px; margin-bottom: 10px; }
+    .setup p { margin: 10px 0; font-size: 15px; }
+    footer { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 32px 0; margin-top: 54px; border-top: 1px solid #d3ded4; font-size: 13px; color: #486052; }
+    @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } .hero .icon { width: 112px; grid-row: 1; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
+    .language-nav { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 16px 0; font-size: 13px; }
+    .language-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; line-height: 1.5; }
+    .language-nav a:hover { background: #e7efe5; }
+    .language-nav a[aria-current="page"] { background: #19372c; color: #fff; font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <a class="brand" href="/id/">BIBIMER</a>
+    <nav aria-label="Navigasi utama"><a href="/id/privacy/">Privasi</a><a href="mailto:andy@andineering.com">Bantuan</a></nav>
+  </header>
+  <nav class="language-nav" aria-label="Bahasa situs web"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id" aria-current="page">Bahasa Indonesia</a></nav>
+  <main>
+    <section class="hero" aria-labelledby="headline">
+      <div>
+        <div class="eyebrow">Android + Termux</div>
+        <h1 id="headline">Ponsel Anda.<br>Lingkungan pengembangan Anda.</h1>
+        <p class="lead">Jadikan ponsel Android Anda sebagai lingkungan pengembangan. Bibimer adalah ADE seluler yang menyatukan proyek, sesi agen pemrograman, percakapan, dan terminal dengan Termux di ponsel yang sama.</p>
+        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=id">Dapatkan Bibimer di Google Play</a><a href="https://github.com/andy5090/bibimer">Repositori GitHub</a></div>
+        <p class="status">Gratis · Android 8.0 atau lebih baru · Termux di ponsel yang sama</p>
+        <p class="status">Situs ini tersedia dalam bahasa Indonesia. Aplikasi yang saat ini tersedia di Google Play mendukung bahasa Inggris dan Korea; bahasa tambahan untuk aplikasi sedang disiapkan.</p>
+      </div>
+      <img class="icon" src="/assets/icon.png" alt="Ikon aplikasi Bibimer" width="512" height="512">
+    </section>
+    <section class="features" aria-label="Fitur">
+      <div><h3>Proyek Anda, di ponsel Anda</h3><p>Berkas proyek, Git, dan alat pengembangan yang kompatibel berjalan di Termux pada ponsel Anda. Kelola proyek dan worktree yang sudah ada tanpa komputer pengembangan terpisah atau host jarak jauh.</p></div>
+      <div><h3>Percakapan dan terminal</h3><p>Ikuti percakapan terstruktur dan aktivitas alat. Kirim instruksi, tanggapi permintaan persetujuan, dan antrekan pesan lanjutan.</p></div>
+      <div><h3>Pilih agen Anda</h3><p>Hubungkan instalasi Codex, Claude, dan OpenCode yang kompatibel. Pilih model dan opsi yang didukung oleh agen yang Anda instal.</p></div>
+      <div><h3>Baca berkas dan perubahan Git</h3><p>Baca kode dengan penyorotan sintaks dan periksa perbedaan di Git. Lihat pratinjau Markdown, HTML statis, dan diagram Mermaid. Buka dokumen Office, gambar, dan PDF dengan aplikasi Android yang kompatibel.</p></div>
+    </section>
+    <section class="setup" aria-labelledby="setup-title">
+      <h2 id="setup-title">Mulai dengan Termux</h2>
+      <p>Termux menghadirkan lingkungan baris perintah Linux di Android, dengan Git, Python, Node.js, dan banyak alat lainnya. Instal di ponsel yang sama dan ikuti panduan penyiapan Bibimer. Mulailah dengan mode terminal; instalasi agen yang kompatibel dan autentikasi penyedia merupakan langkah terpisah.</p>
+      <p>Agen dapat mengirim prompt, kode, dan berkas Anda ke penyedia serta alat yang dikonfigurasi. Biaya penyedia dan persyaratan usia bergantung pada layanan yang Anda gunakan.</p>
+      <a href="https://github.com/termux/termux-app#installation">Panduan instalasi Termux</a>
+    </section>
+  </main>
+  <footer><span>© 2026 Andineering</span><span>Bibimer tidak berafiliasi dengan Termux maupun pembuat agen yang didukung.</span><a href="/id/privacy/">Kebijakan privasi</a></footer>
+</div>
+</body>
+</html>
