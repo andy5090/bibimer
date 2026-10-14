@@ -55,6 +55,7 @@ public final class MainActivity extends Activity {
     private AppLanguage language;
     private AgentPreferences agentPreferences;
     private InputPreferences inputPreferences;
+    private ProjectLocations projectLocations;
     private LocalBridge bridge;
     private String setupLoaded = "";
     private volatile boolean destroyed;
@@ -122,6 +123,7 @@ public final class MainActivity extends Activity {
         language = new AppLanguage(this);
         agentPreferences = new AgentPreferences(this);
         inputPreferences = new InputPreferences(this);
+        projectLocations = new ProjectLocations(this);
         bridge = new LocalBridge(tokens);
         if (!DemoMode.enabled(this)) LinkedFileProvider.prune(this, 0, false);
         FrameLayout root = new FrameLayout(this);
@@ -249,6 +251,8 @@ public final class MainActivity extends Activity {
                     .put("languagePreference", language.preference())
                     .put("agentOptions", agentPreferences.get())
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
+                    .put("lastProjectParent", projectLocations.parent())
+                    .put("lastProjectFolder", projectLocations.folder())
                     .put("notifications", ResponseNotifications.status(MainActivity.this))
                     .put("quickSetup", setup)
                     .put("version", appVersion()).toString();
@@ -334,6 +338,10 @@ public final class MainActivity extends Activity {
 
         @JavascriptInterface public boolean setEnterBehavior(String value) {
             return inputPreferences.setEnterBehavior(value);
+        }
+
+        @JavascriptInterface public boolean setProjectLocation(String parent, String folder) {
+            return projectLocations.set(parent, folder);
         }
 
         @JavascriptInterface public boolean setAgentOptions(String agent, String value) {

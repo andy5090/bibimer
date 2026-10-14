@@ -36,6 +36,9 @@
   let canSessionTitles = false, titleLoading = false;
   const lastOptions = environment().agentOptions || {};
   const demo = environment().demo === true;
+  let projectLocation = {parent:demo ? "" : absoluteFolder(environment().lastProjectParent),
+    folder:demo ? "" : absoluteFolder(environment().lastProjectFolder)};
+  let projectPathEdited = false;
   restoreNormalDraftViews();
   function restoreNormalDraftViews() {
     if (demo || !native.takeNormalDraftViews) return;
@@ -86,7 +89,9 @@
     data => api("POST", "/v1/github", data), {
       copy:text => native.copyText(text), link:url => native.openLink(url), termux:() => native.openTermux(), refresh:refreshSidebar,
       browse:(path, callback) => openFolderBrowser(path, callback),
-      open:async id => { const changed = await changeProject({project_id:id}); if (changed) { projectForm(false); sidebar.close(); tab("work"); await refreshSidebar(); } return changed; }
+      parent:() => projectLocation.parent,
+      rememberClone:path => rememberProjectLocation(parentFolder(path), true),
+      open:async id => { const changed = await changeProject({project_id:id}, true); if (changed) { projectForm(false); sidebar.close(); tab("work"); await refreshSidebar(); } return changed; }
     });
 
   const commands = new BibimerCommands($("input"), $("commands"), t, () => {
@@ -98,6 +103,25 @@
   function environment() {
     try { return JSON.parse(native.environment()); }
     catch (_) { return {paired:false, termuxInstalled:false}; }
+  }
+  function absoluteFolder(path) {
+    return typeof path === "string" && path.startsWith("/") && path.length <= 4096 && !/[\x00-\x1f\x7f]/.test(path) ? path.replace(/\/+$/, "") || "/" : "";
+  }
+  function parentFolder(path) {
+    const folder = absoluteFolder(path);
+    return folder ? folder.slice(0, folder.lastIndexOf("/")) || "/" : "";
+  }
+  function newProjectPath() {
+    return (projectLocation.parent || (demo ? "/demo/projects" : "~/projects")).replace(/\/$/, "") + "/";
+  }
+  function rememberProjectLocation(path, isParent = false) {
+    const folder = absoluteFolder(path), parent = isParent ? folder : parentFolder(folder);
+    if (!parent || !folder) return;
+    if (parent === projectLocation.parent && folder === projectLocation.folder) return;
+    if (!demo && native.setProjectLocation) {
+      try { if (!native.setProjectLocation(parent, folder)) return; } catch (_) { return; }
+    }
+    projectLocation = {parent, folder};
   }
   function savedOptions(agent) {
     const value = lastOptions[agent] || {};
@@ -977,7 +1001,8 @@
       $("project-name").textContent = project ? project.name : t("project_empty");
       $("project-path").textContent = project ? project.path : t("project_location");
       if (selectedChanged) {
-        $("path").value = project ? project.path : demo ? "/demo/projects/my-project" : "~/projects/my-project";
+        $("path").value = project ? project.path : projectLocation.parent ? newProjectPath() : demo ? "/demo/projects/my-project" : "~/projects/my-project";
+        projectPathEdited = false;
         projectForm(!project);
         projectInitialized = true;
       }
@@ -1408,7 +1433,8 @@
     $("folder-dialog").showModal();
     loadFolders(path.trim() || "~", false, true);
   }
-  $("browse-project").addEventListener("click", () => openFolderBrowser($("path").value));
+  $("path").addEventListener("input", () => { projectPathEdited = true; });
+  $("browse-project").addEventListener("click", () => openFolderBrowser(projectPathEdited ? $("path").value : projectLocation.folder || $("path").value));
   $("folder-home").addEventListener("click", () => loadFolders("~"));
   $("folder-up").addEventListener("click", () => { if (folderListing?.parent) loadFolders(folderListing.parent); });
   $("folder-hidden").addEventListener("change", () => loadFolders(folderPath));
@@ -1417,6 +1443,7 @@
   $("folder-cancel").addEventListener("click", () => $("folder-dialog").close());
   $("folder-dialog").addEventListener("close", () => { ++folderTicket; folderLoading = false; folderSelection = null; });
   function selectFolder(path) {
+    rememberProjectLocation(path, !!folderSelection);
     if (folderSelection) { const callback = folderSelection; folderSelection = null; $("folder-dialog").close(); callback(path); return; }
     $("path").value = path;
     $("create-folder").checked = false;
@@ -1444,12 +1471,13 @@
     if ($("folder-select").disabled || !folderListing) return;
     selectFolder(folderListing.path);
   });
-  async function changeProject(data) {
+  async function changeProject(data, rememberLocation = false) {
     if (switchingProject) return;
     switchingProject = true; ++generation; clearTimeout(retryTimer); renderSession();
     if (native.cancelPoll) native.cancelPoll();
     try {
       const result = await api("POST", "/v1/project", data);
+      if (rememberLocation) rememberProjectLocation(result.project.path);
       selectedProjectId = result.project.id || null;
       projectInitialized = false;
       notice(""); await connect();
@@ -1465,7 +1493,7 @@
   $("project-switch").addEventListener("blur", renderProjects);
   $("project-form").addEventListener("submit", async event => {
     event.preventDefault();
-    if (await changeProject({path:$("path").value, create:$("create-folder").checked, add:multipleProjects})) { projectForm(false); sidebar.close(); await refreshSidebar(); }
+    if (await changeProject({path:$("path").value, create:$("create-folder").checked, add:multipleProjects}, true)) { projectForm(false); sidebar.close(); await refreshSidebar(); }
   });
   function renderImport(rebuild = false) {
     if (!$("import-dialog").open) return;
@@ -1642,7 +1670,7 @@
   };
   $("edit-project").addEventListener("click", () => {
     const visible = $("project-form").hidden;
-    if (visible && multipleProjects) { $("path").value = demo ? "/demo/projects/" : "~/projects/"; $("create-folder").checked = true; }
+    if (visible && multipleProjects) { $("path").value = newProjectPath(); projectPathEdited = false; $("create-folder").checked = true; }
     projectForm(visible);
   });
   $("cancel-project").addEventListener("click", () => { projectForm(false); $("edit-project").focus(); });

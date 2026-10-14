@@ -26,7 +26,8 @@ window.BibimerGitHub = class {
     this.$("form").addEventListener("submit",event=>{event.preventDefault();this.clone();});
   }
   async open() {
-    if(!this.$("parent").value)this.$("parent").value=this.context().home||"~";
+    if(!this.pending && !this.state.jobs.some(job=>["cloning","registering"].includes(job.state)))
+      this.$("parent").value=this.actions.parent?.()||this.$("parent").value||this.context().home||"~";
     this.$("dialog").showModal(); this.render(); await this.refresh();
   }
   schedule() {
@@ -50,6 +51,7 @@ window.BibimerGitHub = class {
     this.state={...this.state,...data};
     if(this.state.jobs.some(job=>job.state==="complete"&&!completed.has(job.id)))void this.actions.refresh();
     if(this.pending && this.state.jobs.some(job=>job.id===this.pending.request_id)){
+      this.rememberClone(this.state.jobs.find(job=>job.id===this.pending.request_id));
       this.pending=null;this.error=null;
     }
   }
@@ -84,7 +86,7 @@ window.BibimerGitHub = class {
     try{
       const data=await this.request({action,...extra});
       if(epoch!==this.epoch)return;
-      if(data.job){this.state.jobs=[data.job,...this.state.jobs.filter(job=>job.id!==data.job.id)];this.pending=null;}
+      if(data.job){this.state.jobs=[data.job,...this.state.jobs.filter(job=>job.id!==data.job.id)];if(action==="clone")this.rememberClone(data.job);this.pending=null;}
       else this.accept(data);
     }catch(error){
       if(epoch!==this.epoch)return;
@@ -97,6 +99,9 @@ window.BibimerGitHub = class {
     if(!this.pending)this.pending={action:"clone",request_id:crypto.randomUUID(),repository:this.$("repository").value.trim(),
       parent:this.$("parent").value.trim(),name:this.$("name").value.trim()};
     await this.perform("clone",this.pending);
+  }
+  rememberClone(job) {
+    if(job && ["cloning","registering","complete"].includes(job.state))this.actions.rememberClone?.(job.path);
   }
   renderRepositories() {
     const disabled=this.loading||!this.context().online||!!this.pending||this.state.jobs.some(job=>["cloning","registering"].includes(job.state));

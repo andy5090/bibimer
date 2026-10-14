@@ -432,7 +432,7 @@ async function main() {
   await page.locator('#folder-cancel').click();
   await page.locator('#path').fill(path.join(browseRoot,'second-project'));
   await page.locator('#project-form button[type=submit]').click();
-  await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
+  await page.waitForFunction(()=>document.querySelector('#project-path').title.endsWith('/second-project'));
   const projectB = (await call('GET','/v1/health')).data.project.id;
   assert.notEqual(projectA,projectB);
   console.log('PASS: folder browsing, hidden folders, pagination, Unicode names, missing-folder retry, cancel/stale replies, existing project import, old bridge guidance and mobile layout in both languages');
@@ -477,7 +477,7 @@ async function main() {
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited');
   assert.equal((await call('GET','/v1/health')).data.active_sessions,1);
   await choose('project-switch',projectA);
-  await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/project'));
+  await page.waitForFunction(()=>document.querySelector('#project-path').title.endsWith('/project'));
   await page.waitForFunction(()=>!document.querySelector('#input').disabled);
   assert.equal(await page.locator('#input').inputValue(),'');
   assert.equal((await call('GET','/v1/health')).data.session.id,initial);
@@ -795,7 +795,7 @@ async function main() {
     await choose('quick-permission','workspace-write');
     await page.waitForFunction(()=>!document.querySelector('#quick-permission').disabled);
     await choose('project-switch',projectB);
-    await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
+    await page.waitForFunction(()=>document.querySelector('#project-path').title.endsWith('/second-project'));
     assert.equal((await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.requests[0].id,pendingBefore);
     await choose('project-switch',projectA);
     await page.locator('.request-card').waitFor();
@@ -810,7 +810,7 @@ async function main() {
     await page.locator('#input').fill('question'); await page.locator('#send').click();
     await page.locator('.request-card input').fill('한국어 · draft');
     await choose('project-switch',projectB);
-    await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
+    await page.waitForFunction(()=>document.querySelector('#project-path').title.endsWith('/second-project'));
     await choose('project-switch',projectA);
     await page.waitForFunction(()=>document.querySelector('.request-card input')?.value==='한국어 · draft');
     await closeSidebar(); await page.locator('#tab-settings').click(); await choose('language','ko'); await page.locator('#tab-work').click();
@@ -857,7 +857,7 @@ async function main() {
     await page.waitForFunction(()=>document.querySelector('#input').value==='' && document.querySelectorAll('.queue-entry').length===1);
     assert.equal(await page.locator('#send').innerText(),'대기열');
     await choose('project-switch',projectB);
-    await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
+    await page.waitForFunction(()=>document.querySelector('#project-path').title.endsWith('/second-project'));
     assert.equal(await page.locator('#chat-queue').isVisible(),false);
     await choose('project-switch',projectA);
     await page.locator('.queue-entry').waitFor();
@@ -1039,7 +1039,7 @@ async function main() {
       await page.locator('.question-options button').last().click();
       assert.equal(await page.locator('.question-options [aria-pressed="true"]').count(),2);
       await choose('project-switch',projectB);
-      await page.waitForFunction(()=>document.querySelector('#project-path').textContent.endsWith('/second-project'));
+      await page.waitForFunction(()=>document.querySelector('#project-path').title.endsWith('/second-project'));
       await choose('project-switch',projectA);
       await page.waitForFunction(()=>document.querySelectorAll('.question-options [aria-pressed="true"]').length===2);
       await closeSidebar(); await page.locator('#tab-settings').click(); await choose('language','ko'); await page.locator('#tab-work').click();

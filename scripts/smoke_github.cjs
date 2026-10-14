@@ -74,7 +74,10 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
     try{await page.evaluate(({id,result})=>window.BibimerNativeReply(id,result),{id,result});}catch{}
   });
   await page.exposeFunction('nativeBrowser',()=>fs.writeFileSync(path.join(tmp,'authenticated'),'yes'));
-  await page.addInitScript(()=>{window.Bibimer={environment:()=>JSON.stringify({paired:true,termuxInstalled:true,language:localStorage.language||'en',version:'test'}),request:(...args)=>window.nativeRequest(...args),cancelPoll:()=>{},setLanguage:value=>{localStorage.language=value;return true;},setAgentOptions:()=>true,setEnterBehavior:()=>true,setBackHandling:()=>{},copyText:text=>window.copied=text,openLink:url=>{window.opened=url;window.nativeBrowser();},openTermux:()=>{}};});
+  await page.addInitScript(()=>{window.Bibimer={environment:()=>JSON.stringify({paired:true,termuxInstalled:true,language:localStorage.language||'en',version:'test',
+    lastProjectParent:localStorage.projectParent||'',lastProjectFolder:localStorage.projectFolder||''}),
+    setProjectLocation:(parent,folder)=>{localStorage.projectParent=parent;localStorage.projectFolder=folder;return true;},
+    request:(...args)=>window.nativeRequest(...args),cancelPoll:()=>{},setLanguage:value=>{localStorage.language=value;return true;},setAgentOptions:()=>true,setEnterBehavior:()=>true,setBackHandling:()=>{},copyText:text=>window.copied=text,openLink:url=>{window.opened=url;window.nativeBrowser();},openTermux:()=>{}};});
   const url=`http://127.0.0.1:${server.address().port}`;
   await page.goto(url);await page.waitForFunction(()=>document.querySelector('#connection').textContent==='Connected');
   await page.locator('#input').fill('Keep my existing draft');
@@ -92,6 +95,8 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   await page.locator('#github-parent').fill(tmp);await page.locator('#github-browse').click();
   await page.locator('.folder-row').filter({hasText:'Projects 한글'}).locator('.folder-pick').click();
   assert.equal(await page.locator('#github-parent').inputValue(),parent);
+  assert.equal(await page.evaluate(()=>localStorage.projectParent),parent);
+  assert.equal(await page.evaluate(()=>localStorage.projectFolder),parent);
   assert.equal(await page.locator('#path').inputValue(),'~/projects/');
   await page.locator('#github-name').fill('가져온 프로젝트');
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
@@ -112,12 +117,38 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   await page.locator('#github-close').click();await page.locator('#sidebar-close').click();
   await page.evaluate(()=>{localStorage.language='ko';});await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
   await open();await page.locator('.github-repository').first().waitFor();await page.setViewportSize({width:320,height:568});
+  assert.equal(await page.locator('#github-parent').inputValue(),parent,'clone parent survives page/app recreation');
   await page.locator('.github-repository').first().click();await page.locator('#github-parent').fill(parent);await page.locator('#github-name').fill('새 폴더');
   await page.screenshot({path:path.join(root,'dist/screenshots/github-import-ko-320.png')});
   const bounds=await page.locator('#github-dialog').evaluate(node=>({width:node.clientWidth,scroll:node.scrollWidth}));assert.ok(bounds.scroll<=bounds.width+1);
   const jobs=await call('POST','/v1/github',{action:'poll'});const complete=jobs.data.jobs.find(job=>job.state==='complete');
   await page.getByText('프로젝트 열기',{exact:true}).click();await page.waitForFunction(()=>document.querySelector('#project-name').textContent==='가져온 프로젝트');
   assert.equal((await call('GET','/v1/health')).data.project.id,complete.project_id);
+  const imported=path.join(parent,'가져온 프로젝트');
+  assert.equal(await page.evaluate(()=>localStorage.projectFolder),imported,'opening cloned project remembers its canonical folder');
+  await page.locator('#sidebar-open').click();if(!await page.locator('#path').isVisible())await page.locator('#edit-project').click();
+  assert.equal(await page.locator('#path').inputValue(),parent+'/','next project is a sibling of the opened project');
+  await page.locator('#browse-project').click();
+  await page.waitForFunction(folder=>document.querySelector('#folder-path').textContent===folder&&!document.querySelector('#folder-select').disabled,imported);
+  await page.locator('#folder-up').click();await page.waitForFunction(folder=>document.querySelector('#folder-path').textContent===folder, parent);
+  await page.locator('#folder-cancel').click();assert.equal(await page.evaluate(()=>localStorage.projectFolder),imported,'navigation and cancellation do not change selection');
+  const otherParent=path.join(tmp,'다른 projects'),existing=path.join(otherParent,'existing');fs.mkdirSync(existing,{recursive:true});
+  await page.locator('#path').fill(existing);await page.locator('#browse-project').click();
+  await page.waitForFunction(folder=>document.querySelector('#folder-path').textContent===folder&&!document.querySelector('#folder-select').disabled,existing);
+  await page.locator('#folder-select').click();assert.equal(await page.locator('#create-folder').isChecked(),false);
+  await page.locator('#project-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#project-name').textContent==='existing');
+  await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
+  await open();await page.locator('.github-repository').first().waitFor();
+  assert.equal(await page.locator('#github-parent').inputValue(),otherParent,'opening existing folder also updates clone default');
+  await page.locator('#github-browse').click();await page.waitForFunction(folder=>document.querySelector('#folder-path').textContent===folder&&!document.querySelector('#folder-select').disabled,otherParent);
+  await page.locator('#folder-cancel').click();await page.locator('#github-close').click();await page.locator('#sidebar-close').click();
+  await page.locator('#sidebar-open').click();if(!await page.locator('#path').isVisible())await page.locator('#edit-project').click();
+  assert.equal(await page.locator('#path').inputValue(),otherParent+'/');
+  const created=path.join(otherParent,'typed new project');await page.locator('#path').fill(created);
+  await page.locator('#project-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#project-name').textContent==='typed new project');
+  assert.ok(fs.statSync(created).isDirectory());assert.equal(await page.evaluate(()=>localStorage.projectFolder),created,'typed creation remembers resolved path');
+  await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
+  await open();assert.equal(await page.locator('#github-parent').inputValue(),otherParent);await page.locator('#github-close').click();await page.locator('#sidebar-close').click();
   // Feature gating and missing tooling guidance, with no login/clone side effect.
   legacy=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');await open();
   await page.getByText('GitHub에서 프로젝트를 가져오려면 Termux 브리지를 업데이트하세요.').waitFor();assert.ok(await page.locator('#github-connect').isDisabled());
@@ -126,7 +157,7 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   assert.equal((await call('GET','/v1/health')).data.active_sessions,1);
   assert.deepEqual(errors,[]);
   for(const name of fs.readdirSync(state).filter(name=>name.endsWith('.json'))){const data=fs.readFileSync(path.join(state,name),'utf8');assert.ok(!data.includes('SECRET_OUTPUT')&&!data.includes('ABCD-1234'));}
-  console.log('PASS: GitHub code login, literal repository list/pagination/filter, shared folder selection, real clone + registration, lost-reply retry, session/draft preservation, existing paths, failure/cancel, reopen, EN/KO 320px, old bridge and missing CLI.');
+  console.log('PASS: GitHub login/list/filter, shared remembered parent/browse folders after reload, confirmed selection vs cancel, existing project open and typed sibling creation, real clone/registration/lost-reply retry, session/draft preservation, failures, EN/KO 320px, old bridge and missing CLI.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{
   if(browser)await browser.close();if(bridge){bridge.kill('SIGTERM');await Promise.race([new Promise(resolve=>bridge.once('exit',resolve)),delay(3000)]);}
