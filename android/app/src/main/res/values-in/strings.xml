@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_demo_monitor_title">BIBIMER · Notifikasi demo</string>
+    <string name="notification_demo_monitor_body">Memantau pemutaran contoh fiktif. Tanpa koneksi agen atau Termux.</string>
+    <string name="notification_demo_complete">Pemutaran contoh demo selesai</string>
+    <string name="error_connection_failed">Tidak dapat menghubungi bridge Termux. Pastikan bridge berjalan di Termux.</string>
+    <string name="error_input_busy">Masukan sedang mengantre. Coba lagi sebentar.</string>
+    <string name="install_termux_first">Pasang Termux terlebih dahulu.</string>
+    <string name="browser_required">Browser diperlukan untuk membuka panduan pemasangan.</string>
+    <string name="clipboard_label">Perintah pengaturan Bibimer</string>
+    <string name="command_copied">Perintah disalin. Tempel dan jalankan di Termux.</string>
+    <string name="file_picker_failed">Tidak dapat membuka pemilih berkas.</string>
+    <string name="installer_saved">Berkas pengaturan disimpan. Lanjutkan ke langkah berikutnya di Persiapan.</string>
+    <string name="installer_save_failed">Tidak dapat menyimpan berkas pengaturan.</string>
+    <string name="notification_channel_responses">Respons agen</string>
+    <string name="notification_channel_description">Notifikasi saat respons Chat selesai.</string>
+    <string name="notification_channel_monitor">Pemantauan respons</string>
+    <string name="notification_monitor_title">BIBIMER · Notifikasi respons</string>
+    <string name="notification_monitor_body">Menunggu respons yang selesai di Termux.</string>
+    <string name="notification_stop_alerts">Nonaktifkan notifikasi</string>
+    <string name="notification_response_complete">Respons selesai</string>
+    <string name="error_file_open">Tidak dapat membuka berkas. Periksa koneksi dan ruang penyimpanan yang tersedia.</string>
+    <string name="error_file_app">Tidak ada aplikasi Android yang dapat membuka jenis berkas ini. Pasang aplikasi penampil yang kompatibel.</string>
+</resources>

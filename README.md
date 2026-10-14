@@ -18,6 +18,8 @@ Bibimer is available on [Google Play](https://play.google.com/store/apps/details
 
 The app targets Android 8.0 or later (API 26+). Compatibility with every Android version, device, or agent installation has not been verified.
 
+The development source adds Brazilian Portuguese, Spanish, and Indonesian. These translations are not yet included in the Google Play release; see the [localization roadmap](docs/localization.md) (Korean).
+
 ## What you can do
 
 - **Develop on your phone.** Keep project files in Termux, run your development commands, and use compatible coding agents on the same device.

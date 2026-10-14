@@ -15,13 +15,14 @@ final class AppLanguage {
     AppLanguage(Context context) {
         this.context = context;
         preferences = context.getSharedPreferences(DemoMode.preferenceName(context, "appearance"), Context.MODE_PRIVATE);
-        language = "ko".equals(preferences.getString("language", "en")) ? "ko" : "en";
+        String saved = preferences.getString("language", "en");
+        language = supported(saved) ? saved : "en";
     }
 
     String get() { return language; }
 
     synchronized boolean set(String value) {
-        if (!"en".equals(value) && !"ko".equals(value)) return false;
+        if (!supported(value)) return false;
         if (!preferences.edit().putString("language", value).commit()) return false;
         language = value;
         return true;
@@ -31,5 +32,10 @@ final class AppLanguage {
         Configuration configuration = new Configuration(context.getResources().getConfiguration());
         configuration.setLocales(new LocaleList(Locale.forLanguageTag(language)));
         return context.createConfigurationContext(configuration).getString(resource);
+    }
+
+    private static boolean supported(String value) {
+        return "en".equals(value) || "ko".equals(value) || "pt-BR".equals(value)
+            || "es".equals(value) || "id".equals(value);
     }
 }

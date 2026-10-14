@@ -18,7 +18,7 @@ BUNDLETOOL_URL = ("https://github.com/google/bundletool/releases/download/"
                   f"{BUNDLETOOL_VERSION}/bundletool-all-{BUNDLETOOL_VERSION}.jar")
 # Digest published on the official GitHub release asset.
 BUNDLETOOL_SHA256 = "a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29"
-# Both languages must remain available after a Play install, irrespective of OS locale.
+# All app languages must remain available after a Play install, irrespective of OS locale.
 BUNDLE_CONFIG = {"optimizations": {"splitsConfig": {"splitDimension": [
     {"value": "LANGUAGE", "negate": True}
 ]}}}

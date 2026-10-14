@@ -100,7 +100,7 @@ class ReleaseBuildTests(unittest.TestCase):
                     self.assertIn(output / "unsigned.apk", link)
                     self.assertFalse(any(call.args[0] in ("keytool", "apksigner") for call in run.call_args_list))
 
-    def test_both_app_languages_are_kept(self):
+    def test_all_app_languages_are_kept(self):
         dimensions = build_aab.BUNDLE_CONFIG["optimizations"]["splitsConfig"]["splitDimension"]
         self.assertIn({"value": "LANGUAGE", "negate": True}, dimensions)
         self.assertEqual(build_aab.manifest_info()["targetSdk"], 36)

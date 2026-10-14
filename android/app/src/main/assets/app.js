@@ -435,7 +435,7 @@
     if (value.display_title || sessionTitles.get(value.id)) return value.display_title || sessionTitles.get(value.id);
     const date = new Date(value.started_at * 1000);
     return t("agent_" + value.agent) + " · " + (Number.isNaN(date.getTime()) ? value.id.slice(0,8) :
-      date.toLocaleString(i18n.language() === "ko" ? "ko-KR" : "en-US", {month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})) + " · " + value.id.slice(0,4);
+      date.toLocaleString(i18n.language() === "en" ? "en-US" : i18n.language(), {month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})) + " · " + value.id.slice(0,4);
   }
   function sessionStatus(value) {
     return t(value.state === "running" ? value.mode === "chat" ? "chat_state_" + value.turn_state : "process_running" :
@@ -1419,7 +1419,7 @@
         title.textContent = entry.title || t("import_untitled"); title.dir = "auto";
         const detail = document.createElement("small");
         const date = Number.isFinite(entry.updated_at) ? new Date(entry.updated_at * 1000) : null;
-        detail.textContent = [date && !Number.isNaN(date.getTime()) ? date.toLocaleString(i18n.language() === "ko" ? "ko-KR" : "en-US", {dateStyle:"medium",timeStyle:"short"}) : "", entry.id.slice(0,8)].filter(Boolean).join(" · ");
+        detail.textContent = [date && !Number.isNaN(date.getTime()) ? date.toLocaleString(i18n.language() === "en" ? "en-US" : i18n.language(), {dateStyle:"medium",timeStyle:"short"}) : "", entry.id.slice(0,8)].filter(Boolean).join(" · ");
         button.append(title, detail);
         button.addEventListener("click", () => { importSelection = entry.id; renderImport(); });
         return button;

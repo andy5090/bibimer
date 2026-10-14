@@ -1,6 +1,7 @@
 "use strict";
 (() => {
-  // Each entry is [English default, Korean]. Terminal output is never translated.
+  // English is the fallback; Korean stays inline and added locales live in separate catalogs.
+  // User input, agent content and terminal output are never translated.
   const strings = {
     demo_title: ["Demo · sample replay", "데모 · 예제 재생"],
     demo_exit: ["Exit demo", "데모 나가기"],
@@ -581,14 +582,22 @@
     error_inspect_timeout: ["Reading this workspace took too long. Retry or open it in Termux.", "작업 폴더 조회 시간이 초과됐습니다. 다시 시도하거나 Termux에서 확인하세요."],
     error_inspect_large: ["This listing is too large. Open a smaller folder or inspect it in Termux.", "목록이 너무 큽니다. 더 작은 폴더를 열거나 Termux에서 확인하세요."]
   };
+  const translations = window.BibimerTranslations || {};
+  const languages = ["en", "ko", "pt-BR", "es", "id"];
   let language = "en";
   const legacyErrors = new Map();
   for (const [key, values] of Object.entries(strings)) {
     if (key.startsWith("error_")) for (const text of values) legacyErrors.set(text, key);
   }
+  for (const catalog of Object.values(translations)) {
+    for (const [key, text] of Object.entries(catalog)) {
+      if (Object.hasOwn(strings, key) && key.startsWith("error_")) legacyErrors.set(text, key);
+    }
+  }
   function t(key, values = {}) {
     const entry = strings[key];
-    const message = entry ? (entry[language === "ko" ? 1 : 0] || entry[0]) : key;
+    const translated = language === "ko" ? entry?.[1] : translations[language]?.[key];
+    const message = entry ? (translated || entry[0]) : key;
     return message.replace(/\{(\w+)\}/g, (match, name) => values[name] === undefined ? match : String(values[name]));
   }
   function apply() {
@@ -602,7 +611,7 @@
   }
   window.BibimerI18n = {
     t, apply, has: key => Object.hasOwn(strings, key), language: () => language,
-    setLanguage: value => { language = value === "ko" ? "ko" : "en"; },
+    setLanguage: value => { language = languages.includes(value) ? value : "en"; },
     // Version 0.1.0 bridges have no error code. Translate those known messages
     // without restarting their live sessions or touching terminal transcripts.
     errorKey: data => strings[data.code] && data.code.startsWith("error_") ? data.code :

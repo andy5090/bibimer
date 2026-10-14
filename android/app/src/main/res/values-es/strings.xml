@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_demo_monitor_title">BIBIMER · Alertas de la demo</string>
+    <string name="notification_demo_monitor_body">Siguiendo la reproducción de un ejemplo ficticio. Sin agente ni conexión con Termux.</string>
+    <string name="notification_demo_complete">Reproducción del ejemplo de la demo completada</string>
+    <string name="error_connection_failed">No se pudo conectar con el puente de Termux. Comprueba que esté en ejecución en Termux.</string>
+    <string name="error_input_busy">Hay entradas pendientes de procesar. Vuelve a intentarlo en un momento.</string>
+    <string name="install_termux_first">Primero instala Termux.</string>
+    <string name="browser_required">Se necesita un navegador para abrir la guía de instalación.</string>
+    <string name="clipboard_label">Comando de configuración de Bibimer</string>
+    <string name="command_copied">Comando copiado. Pégalo y ejecútalo en Termux.</string>
+    <string name="file_picker_failed">No se pudo abrir el selector de archivos.</string>
+    <string name="installer_saved">Archivo de configuración guardado. Continúa con el siguiente paso en Preparación.</string>
+    <string name="installer_save_failed">No se pudo guardar el archivo de configuración.</string>
+    <string name="notification_channel_responses">Respuestas del agente</string>
+    <string name="notification_channel_description">Alertas cuando termina una respuesta de Chat.</string>
+    <string name="notification_channel_monitor">Monitoreo de respuestas</string>
+    <string name="notification_monitor_title">BIBIMER · Notificaciones de respuestas</string>
+    <string name="notification_monitor_body">Esperando respuestas completadas en Termux.</string>
+    <string name="notification_stop_alerts">Desactivar alertas</string>
+    <string name="notification_response_complete">Respuesta completada</string>
+    <string name="error_file_open">No se pudo abrir el archivo. Comprueba la conexión y el espacio disponible.</string>
+    <string name="error_file_app">Ninguna app de Android puede abrir este tipo de archivo. Instala un visor compatible.</string>
+</resources>
