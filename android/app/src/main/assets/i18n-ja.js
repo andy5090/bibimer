@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "workspace_details": "作業フォルダーの詳細",
+  "workspace_branch": "ブランチ / HEAD",
+  "workspace_copy_branch": "ブランチ / HEAD をコピー",
+  "workspace_folder": "作業フォルダー",
   demo_title: "デモ · サンプル再生",
   demo_exit: "デモを終了",
   demo_banner: "架空のセッション記録です。入力内容に関係なく、用意された応答を再生します。AI やシェルコマンドは実行されません。",

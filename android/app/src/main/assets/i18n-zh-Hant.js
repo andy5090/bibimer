@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "workspace_details": "工作資料夾詳情",
+  "workspace_branch": "分支 / HEAD",
+  "workspace_copy_branch": "複製分支 / HEAD",
+  "workspace_folder": "工作資料夾",
   demo_title: "示範 · 範例重播",
   demo_exit: "退出示範",
   demo_banner: "虛構的工作階段紀錄。預設回覆與輸入內容無關，不會執行 AI 或 shell 指令。",

@@ -3,6 +3,10 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    workspace_details: ["Working folder details", "작업 위치 정보"],
+    workspace_branch: ["Branch / HEAD", "브랜치 / HEAD"],
+    workspace_copy_branch: ["Copy branch / HEAD", "브랜치 / HEAD 복사"],
+    workspace_folder: ["Working folder", "작업 폴더"],
     demo_title: ["Demo · sample replay", "데모 · 예제 재생"],
     demo_exit: ["Exit demo", "데모 나가기"],
     demo_banner: ["Fictional session logs. Prerecorded responses are unrelated to your input. No AI or shell commands run.", "가상의 세션 로그입니다. 입력과 관계없이 준비된 예제를 재생하며 AI·셸 명령을 실행하지 않습니다."],

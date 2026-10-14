@@ -10,6 +10,40 @@ from test_bridge import module
 
 
 class LibraryTests(ChatFixture):
+    def test_worktree_location_metadata_tracks_git_without_changing_folders(self):
+        self.register()
+        project = self.bridge.project.copy()
+        root = Path(project["path"])
+        def git(*args):
+            return subprocess.run(["git", "-C", str(root), *args], check=True,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode().strip()
+        def trees():
+            return self.bridge.worktrees({"project_id": project["id"]})["worktrees"]
+        self.assertNotIn("branch", trees()[0])
+        git("init", "-b", "main")
+        self.assertEqual("main", trees()[0]["branch"], "unborn branch is still named")
+        git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "--allow-empty", "-m", "fixture")
+        head = git("rev-parse", "HEAD")
+        self.assertEqual(head, trees()[0]["head"])
+        self.assertFalse(trees()[0]["detached"])
+        linked = self.root / "linked 한글"
+        git("worktree", "add", "-b", "feature/login", str(linked))
+        self.assertEqual("feature/login", trees()[1]["branch"])
+        git("checkout", "-b", "changed-externally")
+        self.assertEqual("changed-externally", trees()[0]["branch"])
+        git("checkout", "--detach", "HEAD")
+        detached = trees()[0]
+        self.assertTrue(detached["detached"])
+        self.assertEqual("", detached["branch"])
+        self.assertEqual(head, detached["head"])
+        nested = root / "nested"
+        nested.mkdir()
+        self.bridge.projects[project["id"]]["path"] = str(nested)
+        self.assertEqual(str(nested), trees()[0]["path"])
+        self.assertTrue(trees()[0]["detached"])
+        self.assertEqual(head, trees()[0]["head"])
+        self.assertEqual("", git("status", "--porcelain"), "metadata reads do not mutate Git")
+
     def test_automatic_title_uses_first_user_message_and_never_persists_text(self):
         first = self.chat()
         self.message("PRIVATE_FIRST_TITLE 한글 🙂")
@@ -170,7 +204,7 @@ class LibraryTests(ChatFixture):
             return subprocess.run(["git", "-C", project["path"], *args], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         git("init", "-b", "main")
         git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "--allow-empty", "-m", "fixture")
-        linked = self.root / "feature 한글 space"
+        linked = (self.root / "feature 한글 space").resolve()
         git("worktree", "add", "-b", "feature", str(linked))
         result = self.api("POST", "/v1/worktrees", {"project_id": project["id"]})[1]["worktrees"]
         self.assertEqual([project["path"], str(linked)], [row["path"] for row in result])

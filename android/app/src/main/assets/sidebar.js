@@ -1,4 +1,11 @@
 "use strict";
+// Exact path matching keeps a session's worktree separate from the project's root.
+window.BibimerWorkspaceInfo = function(path, groups = []) {
+  const group = groups.find(row => row.path === path && row.available !== false);
+  const folder = (path || "").split("/").filter(Boolean).pop() || path || "";
+  const branch = group?.branch || (group?.detached ? "HEAD" + (group.head ? " · " + group.head.slice(0, 8) : "") : "");
+  return {path, folder, branch, label:branch ? "⑂ " + branch + (group.primary ? "" : " · " + folder) : folder};
+};
 // Touch-only dismissal for modal drawers. Keep scrolling, selection and mouse input native.
 window.BibimerDrawerSwipe = function(dialog, direction, close) {
   let gesture = null, suppressUntil = 0, settleTimer;
@@ -182,10 +189,12 @@ window.BibimerSidebar = class BibimerSidebar {
       for (const session of project.sessions) if (!groups.some(group => group.path === session.path)) groups.push({path:session.path, name:session.path.split("/").pop(), available:false});
       for (const group of groups) {
         const matching = project.sessions.filter(row => row.path === group.path && row.archived === this.archived);
-        const container = groups.length > 1 ? this.details("tree/" + project.id + "/" + group.path,
-          group.primary ? t("worktree_main") : group.branch || group.name, "sidebar-worktree", group.primary || matching.some(row => row.id === state.sessionId)) : document.createElement("div");
+        const info = window.BibimerWorkspaceInfo(group.path, [group]);
+        const showGroup = groups.length > 1 || !!info.branch;
+        const container = showGroup ? this.details("tree/" + project.id + "/" + group.path,
+          info.branch ? info.label : group.primary ? t("worktree_main") : group.name, "sidebar-worktree", group.primary || matching.some(row => row.id === state.sessionId)) : document.createElement("div");
         container.dataset.worktree = group.path;
-        if (groups.length > 1) { container.firstChild.title = group.path; projectNode.append(container); }
+        if (showGroup) { container.firstChild.title = group.path; projectNode.append(container); }
         else projectNode.append(container);
         const controls = document.createElement("div"); controls.className = "sidebar-project-actions";
         if (!this.archived) {

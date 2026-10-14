@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.es = {
+  "workspace_details": "Detalles de la carpeta de trabajo",
+  "workspace_branch": "Rama / HEAD",
+  "workspace_copy_branch": "Copiar rama / HEAD",
+  "workspace_folder": "Carpeta de trabajo",
   demo_title: "Demo · reproducción de ejemplo",
   demo_exit: "Salir de la demo",
   demo_banner: "Registros de sesiones ficticias. Las respuestas grabadas no dependen de lo que escribas. No se ejecuta IA ni ningún comando de shell.",

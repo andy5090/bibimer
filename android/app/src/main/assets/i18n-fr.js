@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "workspace_details": "Détails du dossier de travail",
+  "workspace_branch": "Branche / HEAD",
+  "workspace_copy_branch": "Copier la branche / HEAD",
+  "workspace_folder": "Dossier de travail",
   "demo_title": "Démo · lecture d’exemples",
   "demo_exit": "Quitter la démo",
   "demo_banner": "Journaux de sessions fictives. Les réponses préenregistrées ne dépendent pas de votre saisie. Aucune IA ni commande shell n’est exécutée.",

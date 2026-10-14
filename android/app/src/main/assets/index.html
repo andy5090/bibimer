@@ -51,7 +51,7 @@
     </div>
     <section id="workspace" hidden>
       <div class="project-summary">
-        <div class="project-label"><strong id="project-name">Add a project</strong><select id="project-switch" aria-label="Switch project" data-i18n-aria-label="switch_project" hidden></select><small id="project-path">A working folder in Termux</small></div>
+        <div class="project-label"><strong id="project-name">Add a project</strong><select id="project-switch" aria-label="Switch project" data-i18n-aria-label="switch_project" hidden></select><button id="project-path" type="button" aria-haspopup="dialog" aria-controls="workspace-details-dialog" disabled>A working folder in Termux</button></div>
         <button id="new-session" class="icon-button" type="button" aria-label="New session" data-i18n-aria-label="session_new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
         <button id="session-more" class="icon-button" type="button" aria-label="Session actions" data-i18n-aria-label="session_actions" aria-haspopup="dialog">⋯</button>
       </div>
@@ -225,6 +225,12 @@
     <div id="sidebar-projects"></div>
     <p id="sidebar-status" class="hint" role="status"></p>
     <div class="sidebar-footer"><button class="secondary" id="edit-project" data-i18n="add_project">Project Add</button><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
+  </dialog>
+  <dialog id="workspace-details-dialog" class="settings-dialog" aria-labelledby="workspace-details-title">
+    <div class="sidebar-heading"><h2 id="workspace-details-title" data-i18n="workspace_details">Working folder details</h2><button id="workspace-details-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
+    <div id="workspace-branch-section"><p class="hint" data-i18n="workspace_branch">Branch / HEAD</p><p id="workspace-branch" dir="auto"></p><button id="workspace-copy-branch" class="secondary" type="button" data-i18n="workspace_copy_branch">Copy branch / HEAD</button></div>
+    <p class="hint" data-i18n="workspace_folder">Working folder</p><p id="workspace-path" dir="auto"></p>
+    <button id="workspace-copy-path" class="secondary" type="button" data-i18n="project_copy_path">Copy folder path</button>
   </dialog>
   <dialog id="project-settings-dialog" class="settings-dialog" aria-labelledby="project-settings-title">
     <div class="sidebar-heading"><h2 id="project-settings-title" data-i18n="project_settings">Project settings</h2><button id="project-settings-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>

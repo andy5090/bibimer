@@ -2221,10 +2221,16 @@ class Bridge:
                         continue
                     path = str(Path(path).resolve())
                     branch = str(fields.get("branch", "")).removeprefix("refs/heads/")
+                    metadata = {"branch": branch, "head": str(fields.get("HEAD", "")),
+                                "detached": fields.get("detached") is True}
+                    # A registered subfolder uses its containing Git worktree's ref.
+                    # Keep the registered root and allowed worktree paths unchanged.
+                    if Path(root).is_relative_to(path):
+                        entries[0].update(metadata)
                     if path == root:
-                        entries[0]["branch"] = branch
+                        continue
                     else:
-                        entries.append({"path": path, "name": Path(path).name, "branch": branch,
+                        entries.append({"path": path, "name": Path(path).name, **metadata,
                                         "primary": False, "available": Path(path).is_dir() and not fields.get("prunable")})
         except (OSError, subprocess.TimeoutExpired):
             pass

@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "workspace_details": "Details zum Arbeitsordner",
+  "workspace_branch": "Branch / HEAD",
+  "workspace_copy_branch": "Branch / HEAD kopieren",
+  "workspace_folder": "Arbeitsordner",
   "demo_title": "Demo · Beispielwiedergabe",
   "demo_exit": "Demo verlassen",
   "demo_banner": "Fiktive Sitzungsprotokolle. Die aufgezeichneten Antworten sind unabhängig von deiner Eingabe. Es werden weder KI noch Shell-Befehle ausgeführt.",

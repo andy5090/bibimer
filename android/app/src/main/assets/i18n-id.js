@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "workspace_details": "Detail folder kerja",
+  "workspace_branch": "Branch / HEAD",
+  "workspace_copy_branch": "Salin branch / HEAD",
+  "workspace_folder": "Folder kerja",
   demo_title: "Demo · pemutaran contoh",
   demo_exit: "Keluar dari demo",
   demo_banner: "Log sesi fiktif. Respons yang sudah disiapkan tidak berkaitan dengan masukan Anda. Tidak ada AI atau perintah shell yang dijalankan.",

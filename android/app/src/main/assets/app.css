@@ -373,3 +373,11 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 #sidebar.drawer-swiping,#inspector.drawer-swiping { transform:translateX(var(--drawer-offset,0px))!important; transition:none; user-select:none; }
 #sidebar.drawer-settling,#inspector.drawer-settling { transform:translateX(0)!important; transition:transform .16s ease-out; }
 @media(prefers-reduced-motion:reduce) { #sidebar.drawer-settling,#inspector.drawer-settling { transition:none; } }
+
+/* Current session location: compact, but large enough to tap without opening project settings. */
+#project-path { display:block; width:100%; min-height:28px; padding:3px 0; border:0; border-radius:4px; background:transparent; text-align:start; font-size:12px; font-weight:400; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#project-path:not(:disabled):hover { color:var(--green); }
+#project-path:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+#workspace-details-dialog { max-height:85dvh; overflow-y:auto; }
+#workspace-branch, #workspace-path { overflow-wrap:anywhere; white-space:pre-wrap; user-select:text; font:12px/1.6 monospace; }
+#workspace-branch-section .hint { margin-top:0; }

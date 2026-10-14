@@ -29,6 +29,8 @@
   let canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   let canInspect = false, canOpenFiles = false, openingFile = false;
   const worktrees = {};
+  const worktreeChecks = new Map();
+  let workspaceDetails = null;
   const modelCatalogs = new Map();
   const sessionTitles = new Map(), titleChecks = new Map();
   let canSessionTitles = false, titleLoading = false;
@@ -458,13 +460,70 @@
     const sourceInstance = instance;
     try {
       for (const entry of [...knownProjects]) {
-        const result = await api("POST", "/v1/worktrees", {project_id:entry.id});
         if (sourceInstance !== instance) return;
-        worktrees[entry.id] = result.worktrees;
+        await refreshProjectWorktrees(entry, true);
       }
     } catch (error) { worktreeError = error.key || "error_request_failed"; }
     finally { worktreeLoading = false; renderSidebar(); }
   }
+  async function refreshProjectWorktrees(entry, force = false) {
+    if (!entry?.id || !online || paused || !canWorktrees) return;
+    const previous = worktreeChecks.get(entry.id);
+    if (previous?.path === entry.path && (previous.loading || (!force && Date.now() - previous.time < 10000))) return;
+    const check = {path:entry.path, time:Date.now(), loading:true}, sourceInstance = instance;
+    worktreeChecks.set(entry.id, check);
+    const current = () => instance === sourceInstance && worktreeChecks.get(entry.id) === check &&
+      knownProjects.some(row => row.id === entry.id && row.path === entry.path);
+    try {
+      const result = await api("POST", "/v1/worktrees", {project_id:entry.id});
+      if (current()) { worktrees[entry.id] = result.worktrees; worktreeError = null; }
+    } catch (error) {
+      if (current()) { delete worktrees[entry.id]; worktreeError = error.key || "error_request_failed"; }
+    } finally {
+      check.loading = false;
+      if (current()) { renderWorkspaceSummary(); renderWorkspaceDetails(); renderSidebar(); }
+    }
+  }
+  function currentWorkspaceInfo() {
+    const path = session?.project?.path || draftPath || project?.path || "";
+    return window.BibimerWorkspaceInfo(path, worktrees[projectKey()] || []);
+  }
+  function renderWorkspaceSummary() {
+    const info = currentWorkspaceInfo(), button = $("project-path");
+    button.textContent = info.label || t("project_location");
+    button.title = [info.branch, info.path].filter(Boolean).join("\n");
+    button.disabled = !info.path;
+    button.setAttribute("aria-label", t("workspace_details") + (info.label ? ": " + info.label : ""));
+  }
+  function renderWorkspaceDetails() {
+    if (!workspaceDetails) return;
+    const info = window.BibimerWorkspaceInfo(workspaceDetails.path, worktrees[workspaceDetails.id] || []);
+    $("workspace-branch-section").hidden = !info.branch;
+    $("workspace-branch").textContent = info.branch;
+    $("workspace-path").textContent = info.path;
+  }
+  $("project-path").addEventListener("click", () => {
+    const info = currentWorkspaceInfo();
+    if (!info.path) return;
+    workspaceDetails = {id:projectKey(), path:info.path};
+    renderWorkspaceDetails(); $("workspace-details-dialog").showModal();
+    void refreshProjectWorktrees(project, true);
+  });
+  $("workspace-details-close").addEventListener("click", () => $("workspace-details-dialog").close());
+  $("workspace-details-dialog").addEventListener("click", event => {
+    if (event.target !== event.currentTarget) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) event.currentTarget.close();
+  });
+  $("workspace-details-dialog").addEventListener("close", () => { workspaceDetails = null; });
+  $("workspace-copy-path").addEventListener("click", () => {
+    if (workspaceDetails) native.copyText(workspaceDetails.path);
+  });
+  $("workspace-copy-branch").addEventListener("click", () => {
+    if (!workspaceDetails) return;
+    const info = window.BibimerWorkspaceInfo(workspaceDetails.path, worktrees[workspaceDetails.id] || []);
+    if (info.branch) native.copyText(info.branch);
+  });
   async function refreshSessionTitles() {
     if (!online || paused || !canSessionTitles || titleLoading || !sidebar.dialog.open) return;
     titleLoading = true;
@@ -560,7 +619,7 @@
         if (projectKey() === id) project = {...project, ...result.project};
       } else {
         knownProjects = knownProjects.filter(row => row.id !== id);
-        delete worktrees[id]; modelCatalogs.clear();
+        delete worktrees[id]; worktreeChecks.delete(id); modelCatalogs.clear();
         if (projectKey() === id) {
           const next = knownProjects.find(row => row.id === result.active_project_id) || knownProjects[0] || null;
           selectedProjectId = next?.id || null; adoptProject(next); setSession(next?.session || null);
@@ -799,7 +858,8 @@
     $("handoff-source").textContent = session?.handoff ? t("handoff_from", {agent:t("agent_" + session.handoff.source_agent)}) : "";
     $("handoff-source").disabled = !online || !findSession(session?.handoff?.source_session_id);
     $("session-title").textContent = session ? sessionTitle(session) : t("session_new");
-    $("project-path").textContent = session?.project?.path || draftPath || project?.path || t("project_location");
+    renderWorkspaceSummary(); renderWorkspaceDetails();
+    void refreshProjectWorktrees(project);
     renderSessionActions(); renderProjectSettings(); renderSidebar();
     for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.disabled = $("input").disabled;
     $("terminal-empty").hidden = !!session;
@@ -877,6 +937,8 @@
         setSession(null);
         modelCatalogs.clear();
         sessionTitles.clear(); titleChecks.clear();
+        worktreeChecks.clear();
+        for (const key of Object.keys(worktrees)) delete worktrees[key];
         notice(lostQueue ? "queue_lost" : "bridge_restarted");
       }
       instance = health.instance;
@@ -1545,6 +1607,7 @@
     views.clear(); modelCatalogs.clear(); selectedAgent = "shell"; selectedProjectId = null; knownProjects = []; $("input").value = "";
     sessionTitles.clear(); titleChecks.clear();
     for (const key of Object.keys(worktrees)) delete worktrees[key];
+    worktreeChecks.clear(); workspaceDetails = null;
     activeViewKey = null; draftPath = null; sidebar.close(); $("session-dialog").close();
     notice("connection_forgotten");
   });
