@@ -8,6 +8,10 @@
     "zh-Hans": ["网站语言", "搜索语言", "没有匹配的语言"],
     "pt-BR": ["Idioma do site", "Buscar idiomas", "Nenhum idioma encontrado"],
     id: ["Bahasa situs web", "Cari bahasa", "Tidak ada bahasa yang cocok"],
+    ja: ["ウェブサイトの言語", "言語を検索", "一致する言語がありません"],
+    "zh-Hant": ["網站語言", "搜尋語言", "沒有符合的語言"],
+    fr: ["Langue du site", "Rechercher une langue", "Aucune langue correspondante"],
+    de: ["Sprache der Website", "Sprachen suchen", "Keine passende Sprache gefunden"],
   };
 
   function matchLanguage(preferences, available) {

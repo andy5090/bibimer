@@ -169,46 +169,31 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.17.1",
-    "versionCode": 33,
+    "versionName": "0.18.0",
+    "versionCode": 34,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "b52c3d5fbb632b81308a6696ba9a7c97cb8fc2c9dd19fe856541599802ec2b09",
-    "file": "bibimer-0.17.1-33-release.aab",
+    "sha256": "155409cd26bd421498f2c0568cbce8840ebf85e78316c1a84eacb3246f4f4647",
+    "file": "bibimer-0.18.0-34-release.aab",
     "bundleValidated": true,
     "uploadCertificateMatchesPlay": true,
     "packagedAssetsMatchSource": true,
-    "packagedAssetCount": 30,
+    "packagedAssetCount": 38,
     "privateReviewCodeIncluded": false,
     "privatePasswordIncluded": false,
     "manifestLaunchable": true,
-    "status": "built_and_verified",
-    "builtOn": "2026-10-14",
+    "status": "published_internal_test",
+    "builtOn": "2026-10-15",
     "signatureVerified": true,
-    "universalApkEmulatorInstallVerified": false,
-    "consoleUploadStatus": "published_internal_test_and_production",
-    "consoleAcceptedVersionCode": 33,
+    "universalApkEmulatorInstallVerified": true,
+    "consoleUploadStatus": "published_internal_test",
+    "consoleAcceptedVersionCode": 34,
     "released": true,
-    "releasedTrack": "production",
-    "productionReleased": true,
-    "sourceBridgeVersion": "0.15.0",
-    "internalTestParticipationUrl": "https://play.google.com/apps/internaltest/4701718894791581363",
-    "signingMaterial": "Existing owner-only Mac files outside repository; no new keys or automatic Doppler downloads.",
-    "internalTestReview": {
-      "verifiedOn": "2026-10-14",
-      "warnings": [
-        "no_deobfuscation_mapping_file"
-      ],
-      "errors": [],
-      "mappingFileRequiredForCurrentBuild": false,
-      "rolloutStarted": true,
-      "releaseName": "0.17.1 (33) - File explorer navigation",
-      "note": "Internal track active; user reported installing the internal test version and successful operation on 2026-10-14. This is a user report, not agent physical-device verification."
-    },
-    "productionSubmitted": true
+    "releasedTrack": "internal_testing",
+    "productionReleased": false
   },
   "consoleScreenshotsUpdatedOn": "2026-10-15",
   "playAppSigning": {
@@ -230,7 +215,7 @@
     "guideUrl": "https://bibimer.app/review/",
     "videoScope": "Actual Android foreground-service controls and notification navigation using fictional completion events; no live provider account."
   },
-  "consoleScreenshotsStatus": "submitted_for_review_prechecks_running",
+  "consoleScreenshotsStatus": "published",
   "productionRelease": {
     "versionName": "0.17.1",
     "versionCode": 33,
@@ -297,40 +282,37 @@
   },
   "pendingUpdate": {
     "package": "app.bibimer",
-    "versionName": "0.17.1",
-    "versionCode": 33,
+    "versionName": "0.18.0",
+    "versionCode": 34,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "b52c3d5fbb632b81308a6696ba9a7c97cb8fc2c9dd19fe856541599802ec2b09",
-    "file": "bibimer-0.17.1-33-release.aab",
+    "sha256": "155409cd26bd421498f2c0568cbce8840ebf85e78316c1a84eacb3246f4f4647",
+    "file": "bibimer-0.18.0-34-release.aab",
     "bundleValidated": true,
     "uploadCertificateMatchesPlay": true,
     "packagedAssetsMatchSource": true,
-    "packagedAssetCount": 30,
+    "packagedAssetCount": 38,
     "privateReviewCodeIncluded": false,
     "privatePasswordIncluded": false,
     "manifestLaunchable": true,
-    "preparedOn": "2026-10-14",
-    "status": "published_production",
+    "preparedOn": "2026-10-15",
+    "status": "published_internal_test",
     "sourceBridgeVersion": "0.15.0",
-    "releaseNotesFile": "release/google-play/release-notes/0.17.1.txt",
+    "releaseNotesFile": "release/google-play/release-notes/0.18.0.txt",
     "consoleUploaded": true,
     "released": true,
-    "releasedTrack": "production",
-    "productionReleased": true,
-    "productionSubmitted": true,
-    "consoleVersionCodeAvailabilityVerified": true,
+    "releasedTrack": "internal_testing",
+    "productionReleased": false,
+    "productionSubmitted": false,
     "consoleInternalTestStatus": "active_available_to_existing_testers",
-    "consoleProductionStatus": "available_on_google_play",
     "signatureVerified": true,
-    "existingUploadKeyAvailableInCurrentEnvironment": true,
-    "authenticatedConsoleAvailableInCurrentEnvironment": true,
     "developmentApkBuilt": false,
     "deviceInstallVerified": true,
-    "deviceInstallVerificationMethod": "user_report"
+    "deviceInstallVerificationMethod": "signed_universal_apk_on_android_emulator",
+    "physicalDeviceVerified": false
   },
   "previousProductionRelease": {
     "versionName": "0.17.0",
@@ -438,19 +420,21 @@
     "consoleProductionStatus": "available_on_google_play"
   },
   "internalTestRelease": {
-    "versionName": "0.17.1",
-    "versionCode": 33,
-    "releaseName": "0.17.1 (33) - File explorer navigation",
+    "versionName": "0.18.0",
+    "versionCode": 34,
+    "releaseName": "0.18.0 (34) - Ten languages",
     "consoleStatus": "active_available_to_existing_testers",
-    "publishedOn": "2026-10-14",
-    "publishedAtLocal": "2026-10-14 12:37 Asia/Seoul",
-    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/4/details",
-    "releaseNotesFile": "release/google-play/release-notes/0.17.1.txt",
+    "publishedOn": "2026-10-15",
+    "publishedAtLocal": "2026-10-15 02:39 Asia/Seoul",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/5/details",
+    "releaseNotesFile": "release/google-play/release-notes/0.18.0.txt",
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
-    "productionSubmitted": true,
-    "userReportedInstallAndWorkingOn": "2026-10-14"
+    "errors": [],
+    "productionSubmitted": false,
+    "emulatorInstallVerified": true,
+    "physicalDeviceVerified": false
   },
   "productionReleaseHistory": [
     {
@@ -479,5 +463,49 @@
     "dimensions": "1080x1920",
     "aiAssetLabels": "All eight new screenshot assets declared AI-generated/modified in Play Console",
     "submission": "English and Korean phone screenshots only; existing app version unchanged"
-  }
+  },
+  "previousInternalTestRelease": {
+    "versionName": "0.17.1",
+    "versionCode": 33,
+    "releaseName": "0.17.1 (33) - File explorer navigation",
+    "consoleStatus": "active_available_to_existing_testers",
+    "publishedOn": "2026-10-14",
+    "publishedAtLocal": "2026-10-14 12:37 Asia/Seoul",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/4/details",
+    "releaseNotesFile": "release/google-play/release-notes/0.17.1.txt",
+    "warnings": [
+      "no_deobfuscation_mapping_file"
+    ],
+    "productionSubmitted": true,
+    "userReportedInstallAndWorkingOn": "2026-10-14"
+  },
+  "consoleScreenshotsVerifiedOn": "2026-10-15",
+  "sourceLanguages": [
+    "en",
+    "ko",
+    "pt-BR",
+    "es",
+    "id",
+    "zh-Hans",
+    "ja",
+    "zh-Hant",
+    "fr",
+    "de"
+  ],
+  "internalTestLanguages": [
+    "en",
+    "ko",
+    "pt-BR",
+    "es",
+    "id",
+    "zh-Hans",
+    "ja",
+    "zh-Hant",
+    "fr",
+    "de"
+  ],
+  "productionLanguages": [
+    "en",
+    "ko"
+  ]
 }

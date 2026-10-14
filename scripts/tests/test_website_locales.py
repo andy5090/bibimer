@@ -6,7 +6,7 @@ from urllib.parse import urlsplit
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2] / 'release/website/public'
-LOCALES = ('en', 'ko', 'es', 'zh-Hans', 'pt-BR', 'id')
+LOCALES = ('en', 'ko', 'es', 'zh-Hans', 'pt-BR', 'id', 'ja', 'zh-Hant', 'fr', 'de')
 
 class Page(HTMLParser):
     def __init__(self, file):

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Bibimer と Termux で Android スマートフォンを開発環境に。プロジェクト、エージェントのセッション、会話、ターミナル、ファイルをまとめて管理。Google Play で無料配信中。">
+  <title>Bibimer · スマートフォンのエージェント開発環境</title>
+  <link rel="icon" href="/favicon.ico?v=20261014" sizes="16x16 32x32" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon.svg?v=20261014" sizes="any" type="image/svg+xml">
+  <link rel="canonical" href="https://bibimer.app/ja/">
+  <link rel="alternate" hreflang="en" href="https://bibimer.app/">
+  <link rel="alternate" hreflang="ko" href="https://bibimer.app/ko/">
+  <link rel="alternate" hreflang="es" href="https://bibimer.app/es/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://bibimer.app/zh-Hans/">
+  <link rel="alternate" hreflang="pt-BR" href="https://bibimer.app/pt-BR/">
+  <link rel="alternate" hreflang="id" href="https://bibimer.app/id/">
+  <link rel="alternate" hreflang="ja" href="https://bibimer.app/ja/">
+  <link rel="alternate" hreflang="zh-Hant" href="https://bibimer.app/zh-Hant/">
+  <link rel="alternate" hreflang="fr" href="https://bibimer.app/fr/">
+  <link rel="alternate" hreflang="de" href="https://bibimer.app/de/">
+  <link rel="alternate" hreflang="x-default" href="https://bibimer.app/">
+  <style>
+    @font-face { font-family: "Space Grotesk"; src: url("/assets/SpaceGrotesk-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+    :root { color-scheme: light; color: #19372c; background: #f6f9f4; font-family: system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    a { color: inherit; text-underline-offset: 4px; }
+    a:focus-visible { outline: 3px solid #146d50; outline-offset: 5px; }
+    .shell { width: min(100% - 48px, 1060px); margin: auto; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 28px 0; border-bottom: 1px solid #d3ded4; }
+    .brand { font: 700 24px "Space Grotesk", sans-serif; letter-spacing: .04em; text-decoration: none; }
+    nav { display: flex; gap: 24px; flex-wrap: wrap; font-size: 14px; }
+    nav a { padding: 8px 0; }
+    .hero { padding: 78px 0 60px; display: grid; grid-template-columns: 1fr 210px; align-items: center; gap: 54px; }
+    .hero > div { min-width: 0; }
+    h1 { overflow-wrap: anywhere; hyphens: auto; }
+    .eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 650; }
+    h1 { font: 700 clamp(40px, 6vw, 72px)/1.05 "Space Grotesk", sans-serif; letter-spacing: -.04em; margin: 20px 0 24px; max-width: 720px; }
+    p { line-height: 1.8; max-width: 710px; overflow-wrap: anywhere; }
+    .lead { font-size: 19px; color: #486052; }
+    .links { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 28px; }
+    .contact { padding: 13px 22px; border-radius: 8px; background: #19372c; color: white; text-decoration: none; }
+    .status { color: #546b5b; font-size: 14px; }
+    .features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; border-top: 1px solid #d3ded4; padding: 36px 0 48px; }
+    h2 { font-size: 28px; line-height: 1.4; margin: 0 0 20px; }
+    h3 { font-size: 18px; margin: 0 0 12px; }
+    .features p { margin: 0; font-size: 15px; color: #486052; }
+    .setup { padding: 28px 32px; background: #e7efe5; border-radius: 12px; }
+    .setup h2 { font-size: 21px; margin-bottom: 10px; }
+    .setup p { margin: 10px 0; font-size: 15px; }
+    .name-story { padding-top: 40px; }
+    .name-story h2 { font-size: 21px; margin-bottom: 10px; }
+    .name-story p { font-size: 15px; color: #486052; }
+    footer { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 32px 0; margin-top: 54px; border-top: 1px solid #d3ded4; font-size: 13px; color: #486052; }
+    @media (max-width: 700px) { .shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } nav { gap: 16px; } .brand { font-size: 20px; } .hero { grid-template-columns: 1fr; padding: 44px 0 36px; gap: 32px; } h1 { margin-top: 16px; } .features { grid-template-columns: 1fr; gap: 26px; } .setup { padding: 24px; } }
+    .language-nav { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 16px 0; font-size: 13px; }
+    .language-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; line-height: 1.5; }
+    .language-nav a:hover { background: #e7efe5; }
+    .language-nav a[aria-current="page"] { background: #19372c; color: #fff; font-weight: 600; }
+    .header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 20px; flex-wrap: wrap; }
+  </style>
+  <link rel="stylesheet" href="/assets/language.css">
+  <script src="/assets/language.js" defer></script>
+  <link rel="stylesheet" href="/assets/hero.css">
+</head>
+<body>
+<div class="shell">
+  <header>
+    <a class="brand" href="/ja/"><img src="/assets/icon.png" width="28" height="28" alt="">BIBIMER</a>
+    <div class="header-actions"><nav aria-label="メインナビゲーション"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">お問い合わせ</a></nav><nav class="language-nav" aria-label="ウェブサイトの言語"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a><a href="/ja/" lang="ja" hreflang="ja" aria-current="page">日本語</a><a href="/zh-Hant/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a><a href="/fr/" lang="fr" hreflang="fr">Français</a><a href="/de/" lang="de" hreflang="de">Deutsch</a></nav></div>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="headline">
+      <div>
+        <div class="eyebrow">Android + Termux</div>
+        <h1 id="headline">スマホが、<br>開発環境に。</h1>
+        <p class="lead">Android スマートフォンを開発環境に。Bibimer は、同じ端末の Termux と連携してプロジェクト、コーディングエージェントのセッション、会話、ターミナルをまとめるモバイル ADE です。</p>
+        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=ja"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Google Play で入手</a><a class="guide-link" href="/ja/guide/">使い方を見る<span aria-hidden="true"> →</span></a></div>
+        <p class="status">無料 · Android 8.0 以降 · 同じ端末に Termux が必要</p>
+        <p class="status">ウェブサイトは 10 言語に対応しています。現在の Google Play アプリは英語と韓国語に対応し、日本語などの追加言語は次回の公開リリースに向けて準備中です。</p>
+      </div>
+      <!-- hero-visual:start -->
+      <div class="hero-demo">
+        <fieldset class="hero-slider">
+          <legend data-hero-copy="sliderTitle">開発環境を、いつもそばに</legend>
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-local" checked>
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-mobile">
+          <input class="scene-radio" type="radio" name="hero-scene" id="scene-terminal">
+          <div class="scene-controls">
+            <label for="scene-local"><span class="scene-number" aria-hidden="true">01</span><span data-hero-copy="localTab">スマートフォンで開発</span></label>
+            <label for="scene-mobile"><span class="scene-number" aria-hidden="true">02</span><span data-hero-copy="mobileTab">モバイルに最適化</span></label>
+            <label for="scene-terminal"><span class="scene-number" aria-hidden="true">03</span><span data-hero-copy="terminalTab">会話を見やすく</span></label>
+          </div>
+          <div class="hero-scenes">
+            <section class="hero-scene scene-local" aria-labelledby="local-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="localKicker">ANDROID スマートフォン 1 台で</span><h2 id="local-title" data-hero-copy="localTitle">ここが、あなたの作業環境。</h2></div>
+              <div class="diagram-stage">
+                <div class="local-phone">
+                  <div class="phone-speaker" aria-hidden="true"></div>
+                  <div class="phone-label" data-hero-copy="phoneBoundary">あなたの Android スマートフォン</div>
+                  <div class="app-layer"><div class="layer-heading"><span class="layer-symbol" aria-hidden="true">B</span><strong>BIBIMER</strong><span class="layer-tag" data-hero-copy="androidApp">Android アプリ</span></div><p data-hero-copy="appRole">プロジェクト · 会話 · ターミナル</p></div>
+                  <div class="local-link"><span aria-hidden="true">↕</span><span data-hero-copy="localLink">同じ端末内で接続</span></div>
+                  <div class="termux-layer"><div class="layer-heading"><span class="layer-symbol terminal-symbol" aria-hidden="true">&gt;_</span><strong>Termux</strong></div><div class="tool-tags"><span>Git</span><span>Python</span><span>Node.js</span></div><p class="agents-label" data-hero-copy="agentsLabel">コーディングエージェント</p><p class="agent-names">Codex · Claude Code · OpenCode</p><div class="files-label"><span aria-hidden="true">⌁</span><span data-hero-copy="filesLabel">プロジェクトファイルと開発コマンド</span></div></div>
+                  <div class="phone-home" aria-hidden="true"></div>
+                </div>
+              </div>
+              <p class="scene-note" data-hero-copy="localNote">スマートフォンそのものが開発マシンに。別のパソコンは必要ありません。</p>
+            </section>
+            <section class="hero-scene scene-mobile" aria-labelledby="mobile-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="mobileKicker">エージェントのイベントをモバイル UI へ</span><h2 id="mobile-title" data-hero-copy="mobileTitle">作業の流れが、よく見える。</h2></div>
+              <div class="diagram-stage mobile-stage">
+                <div class="event-source"><span class="event-symbol" aria-hidden="true">{ }</span><div><strong data-hero-copy="eventsTitle">構造化されたエージェントイベント</strong><span data-hero-copy="eventsOrigin">Termux 内の対応エージェントから</span></div></div>
+                <div class="format-link"><span aria-hidden="true">↓</span><span data-hero-copy="formatLink">BIBIMER が表示</span></div>
+                <div class="mobile-format">
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">≡</span><div><strong data-hero-copy="conversationTitle">読みやすい会話</strong><span data-hero-copy="conversationBody">書式付きの応答、コード、リスト</span></div></div>
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">&gt;_</span><div><strong data-hero-copy="toolsTitle">ツールの動作を確認</strong><span data-hero-copy="toolsBody">コマンドと実行結果を追跡</span></div></div>
+                  <div class="format-row"><span class="format-symbol" aria-hidden="true">✓</span><div><strong data-hero-copy="approvalTitle">承認はあなたの判断で</strong><span data-hero-copy="approvalBody">リクエストを確認してから許可</span></div></div>
+                </div>
+              </div>
+              <p class="scene-note" data-hero-copy="mobileNote">インターフェースの仕組みを示した図です。入力内容とエージェントの出力は元の言語を保ちます。</p>
+            </section>
+            <section class="hero-scene scene-terminal" aria-labelledby="terminal-title">
+              <div class="scene-heading"><span class="scene-kicker" data-hero-copy="terminalKicker">実際のアプリ画面</span><h2 id="terminal-title" data-hero-copy="terminalTitle">応答もコードも読みやすく。</h2></div>
+              <div class="diagram-stage capture-stage"><a class="terminal-capture" href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="書式付きの会話" data-hero-alt="terminalImage" width="1080" height="1920" loading="lazy"></a></div>
+              <p class="scene-note" data-hero-copy="terminalNote">実際のインターフェースに表示した会話例です。画像を開くと詳しく確認できます。</p>
+            </section>
+          </div>
+        </fieldset>
+        <p class="provider-note" data-hero-copy="providerNote">プロジェクトとツールはスマートフォン上で動作します。接続したエージェントはオンラインの AI プロバイダーを利用する場合があります。</p>
+      </div>
+      <!-- hero-visual:end -->
+    </section>
+    <section class="product-gallery" aria-labelledby="gallery-title"><div class="eyebrow">作業環境を見てみる</div><h2 id="gallery-title">会話、プロジェクト、ファイルをひとつに</h2><p>実際の Bibimer 画面にサンプルのプロジェクトと会話を表示しています。個人のセッション記録は使用していません。</p><div class="gallery-grid"><figure><a href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="書式付きの会話" width="1080" height="1920" loading="lazy"></a><figcaption>書式付きの会話</figcaption></figure><figure><a href="/assets/examples/en/02-projects.jpg"><img src="/assets/examples/en/02-projects.jpg" alt="プロジェクトとエージェントのセッション" width="1080" height="1920" loading="lazy"></a><figcaption>プロジェクトとエージェントのセッション</figcaption></figure><figure><a href="/assets/examples/en/03-files.jpg"><img src="/assets/examples/en/03-files.jpg" alt="プロジェクトファイルの閲覧" width="1080" height="1920" loading="lazy"></a><figcaption>プロジェクトファイルの閲覧</figcaption></figure><figure><a href="/assets/examples/en/04-code.jpg"><img src="/assets/examples/en/04-code.jpg" alt="構文強調表示付きのコード" width="1080" height="1920" loading="lazy"></a><figcaption>構文強調表示付きのコード</figcaption></figure></div></section>
+    <section class="features" aria-label="機能">
+      <div><h3>スマートフォンに、あなたのプロジェクト</h3><p>プロジェクトファイル、Git、対応する開発ツールをスマートフォンの Termux で扱えます。別の開発用パソコンやリモートホストを用意せず、プロジェクトと既存のワークツリーを管理できます。</p></div>
+      <div><h3>チャットとターミナル</h3><p>構造化された会話とツールの動作を確認できます。指示の送信、承認リクエストへの回答、追加メッセージのキュー登録に対応しています。</p></div>
+      <div><h3>使いたいエージェントを選択</h3><p>対応する Codex、Claude、OpenCode を接続できます。インストールしたエージェントが対応するモデルやオプションから選択してください。</p></div>
+      <div><h3>ファイルと Git の変更を確認</h3><p>構文強調表示でコードを読み、Git の差分を確認できます。Markdown、静的 HTML、Mermaid 図のプレビューに対応。Office 文書、画像、PDF は対応する Android アプリで開けます。</p></div>
+    </section>
+    <section class="setup" aria-labelledby="setup-title">
+      <h2 id="setup-title">まずは Termux から</h2>
+      <p>Termux を使うと、Android で Git、Python、Node.js などを備えた Linux コマンドライン環境を利用できます。同じ端末にインストールし、Bibimer の準備ガイドに従ってください。まずはターミナルモードから始めましょう。対応するエージェントのインストールとプロバイダーの認証は別途必要です。</p>
+      <p>エージェントは、プロンプト、コード、ファイルを設定済みのプロバイダーやツールに送信する場合があります。料金や年齢要件は利用するサービスによって異なります。</p>
+      <a href="https://github.com/termux/termux-app#installation">Termux インストールガイド</a>
+    </section>
+    <section class="name-story" id="name-story" aria-labelledby="name-title">
+      <h2 id="name-title">Bibimer という名前について</h2>
+      <p>Bibimer は、混ぜ合わせることを意味する韓国語の <span lang="ko">비빔</span>（<em>bibim</em>）に、接尾辞の <strong>-er</strong> を加えた名前です。Android アプリ、Termux、コーディングエージェントを混ぜ合わせ、ひとつの開発環境にするという思いを込めています。</p>
+    </section>
+  </main>
+  <footer><span>© 2026 Andineering</span><span>Bibimer は Termux および対応エージェントの開発元とは独立した製品です。</span><a href="/ja/privacy/">プライバシーポリシー</a></footer>
+</div>
+</body>
+</html>

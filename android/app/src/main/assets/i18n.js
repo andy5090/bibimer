@@ -585,7 +585,7 @@
     error_inspect_large: ["This listing is too large. Open a smaller folder or inspect it in Termux.", "목록이 너무 큽니다. 더 작은 폴더를 열거나 Termux에서 확인하세요."]
   };
   const translations = window.BibimerTranslations || {};
-  const languages = ["en", "ko", "pt-BR", "es", "id", "zh-Hans"];
+  const languages = ["en", "ko", "pt-BR", "es", "id", "zh-Hans", "ja", "zh-Hant", "fr", "de"];
   let language = "en";
   const legacyErrors = new Map();
   for (const [key, values] of Object.entries(strings)) {

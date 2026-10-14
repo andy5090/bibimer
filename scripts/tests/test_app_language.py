@@ -14,7 +14,7 @@ class AppLanguageTests(unittest.TestCase):
         def strings(folder):
             return {e.attrib["name"]: e.text for e in ET.parse(SRC / "res" / folder / "strings.xml").getroot()}
         base = strings("values")
-        for folder in ("values-ko", "values-pt-rBR", "values-es", "values-in", "values-b+zh+Hans"):
+        for folder in ("values-ko", "values-pt-rBR", "values-es", "values-in", "values-b+zh+Hans", "values-ja", "values-b+zh+Hant", "values-fr", "values-de"):
             translated = strings(folder)
             self.assertEqual(base.keys(), translated.keys(), folder)
             self.assertTrue(all(text and text.strip() for text in translated.values()), folder)
@@ -95,20 +95,20 @@ class AppLanguageTests(unittest.TestCase):
                             {"en-GB", "en"}, {"ko-KR", "ko"}, {"es-MX", "es"}, {"pt-PT", "pt-BR"},
                             {"pt-BR", "pt-BR"}, {"id-ID", "id"}, {"in-ID", "id"}, {"zh", "zh-Hans"},
                             {"zh-CN", "zh-Hans"}, {"zh-SG", "zh-Hans"}, {"zh-Hans-TW", "zh-Hans"},
-                            {"zh-TW", "en"}, {"zh-HK", "en"}, {"zh-MO", "en"}, {"zh-Hant-CN", "en"},
-                            {"fr-FR", "en"}, {"ar", "en"}
+                            {"zh-TW", "zh-Hant"}, {"zh-HK", "zh-Hant"}, {"zh-MO", "zh-Hant"}, {"zh-Hant-CN", "zh-Hant"},
+                            {"fr-FR", "fr"}, {"fr-CA", "fr"}, {"ja-JP", "ja"}, {"de-AT", "de"}, {"zh-Hans-HK", "zh-Hans"}, {"zh-Latn", "en"}, {"ar", "en"}
                         };
                         for (String[] row : cases) {
                             device.locales(row[0]); check(app.get().equals(row[1]));
                             check(app.text(1).equals(row[1]));
                             check(app.preference().equals("system"));
                         }
-                        device.locales("zh-Hant-TW", "fr", "es-AR", "ko"); check(app.get().equals("es"));
-                        device.locales("fr", "pt-PT", "ko"); check(app.get().equals("pt-BR"));
+                        device.locales("zh-Hant-TW", "fr", "es-AR", "ko"); check(app.get().equals("zh-Hant"));
+                        device.locales("ar", "pt-PT", "ko"); check(app.get().equals("pt-BR"));
                         device.locales("en", "ko"); check(app.get().equals("en"));
                         device.locales(); check(app.get().equals("en"));
                         device.locales("ko-KR");
-                        for (String code : new String[]{"en", "ko", "pt-BR", "es", "id", "zh-Hans"}) {
+                        for (String code : new String[]{"en", "ko", "pt-BR", "es", "id", "zh-Hans", "ja", "zh-Hant", "fr", "de"}) {
                             check(app.set(code)); check(app.get().equals(code)); check(app.preference().equals(code));
                             check(new AppLanguage(device).get().equals(code)); check(app.text(1).equals(code));
                             String policy = "https://bibimer.app/" + (code.equals("en") ? "" : code + "/") + "privacy/";
@@ -121,7 +121,7 @@ class AppLanguageTests(unittest.TestCase):
                         check(new AppLanguage(device).preference().equals("system"));
                         device.locales("id-ID"); check(app.get().equals("id"));
                         check(new AppLanguage(device).get().equals("id"));
-                        for (String code : new String[]{null, "fr", "pt", "zh", "zh-CN", "zh-Hant", "../../", "https://example.org", "__proto__", ""}) {
+                        for (String code : new String[]{null, "ar", "pt", "zh", "zh-CN", "zh-TW", "../../", "https://example.org", "__proto__", ""}) {
                             check(!app.set(code)); check(app.preference().equals("system"));
                         }
                         device.store().fail = true; check(!app.set("es"));
@@ -139,7 +139,7 @@ class AppLanguageTests(unittest.TestCase):
                         AppLanguage demo = new AppLanguage(device); check(demo.preference().equals("system"));
                         check(demo.set("ko")); check(demo.get().equals("ko"));
                         DemoMode.enabled = false; check(new AppLanguage(device).get().equals("es"));
-                        System.out.println("AppLanguage: system locale priority, six overrides, dynamic changes, privacy URL, demo isolation, invalid input and failed save passed");
+                        System.out.println("AppLanguage: system locale priority, ten overrides, dynamic changes, privacy URL, demo isolation, invalid input and failed save passed");
                     }
                 }''',
         }

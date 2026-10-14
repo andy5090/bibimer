@@ -4,15 +4,17 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const source = fs.readFileSync(path.join(__dirname, "../../release/website/public/assets/language.js"), "utf8");
-const locales = ["en", "ko", "es", "zh-Hans", "pt-BR", "id"];
-const names = ["English", "한국어", "Español", "简体中文", "Português (Brasil)", "Bahasa Indonesia"];
+const locales = ["en", "ko", "es", "zh-Hans", "pt-BR", "id", "ja", "zh-Hant", "fr", "de"];
+const names = ["English", "한국어", "Español", "简体中文", "Português (Brasil)", "Bahasa Indonesia", "日本語", "繁體中文", "Français", "Deutsch"];
 const matcher = source.slice(source.indexOf("  function matchLanguage("), source.indexOf("\n  const nav ="));
 const match = vm.runInNewContext(`${matcher}; matchLanguage`);
 for (const [preferred, expected] of [
   [["ko-KR"], "ko"], [["es-MX"], "es"], [["pt-PT"], "pt-BR"],
   [["in-ID"], "id"], [["zh-CN"], "zh-Hans"], [["zh-SG"], "zh-Hans"],
-  [["zh-Hans-CN"], "zh-Hans"], [["zh-TW", "es"], "es"],
-  [["zh-Hant"], "en"], [["de-DE", "ko"], "ko"], [["fr"], "en"],
+  [["zh-Hans-CN"], "zh-Hans"], [["zh-TW", "es"], "zh-Hant"],
+  [["zh-Hant"], "zh-Hant"], [["de-DE", "ko"], "de"], [["fr-CA"], "fr"],
+  [["ja-JP"], "ja"], [["zh-HK"], "zh-Hant"], [["zh-MO"], "zh-Hant"],
+  [["zh-Hans-HK"], "zh-Hans"], [["zh-Hant-CN"], "zh-Hant"], [["ar", "fr"], "fr"],
   [[null, "es"], "es"], [["PT_br"], "pt-BR"], [[], "en"],
 ]) assert.equal(match(preferred, locales), expected, JSON.stringify(preferred));
 assert.equal(match(["zh-TW"], [...locales, "zh-Hant"]), "zh-Hant");

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="同じ Android スマートフォンに Bibimer と Termux を準備し、プロジェクトを開いて最初のターミナルコマンドを実行しましょう。">
+  <title>Bibimer · Bibimer の使い方</title>
+  <link rel="icon" href="/favicon.ico?v=20261014" sizes="16x16 32x32" type="image/x-icon">
+  <link rel="icon" href="/assets/favicon.svg?v=20261014" sizes="any" type="image/svg+xml">
+  <link rel="canonical" href="https://bibimer.app/ja/guide/">
+  <link rel="alternate" hreflang="en" href="https://bibimer.app/guide/">
+  <link rel="alternate" hreflang="ko" href="https://bibimer.app/ko/guide/">
+  <link rel="alternate" hreflang="es" href="https://bibimer.app/es/guide/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://bibimer.app/zh-Hans/guide/">
+  <link rel="alternate" hreflang="pt-BR" href="https://bibimer.app/pt-BR/guide/">
+  <link rel="alternate" hreflang="id" href="https://bibimer.app/id/guide/">
+  <link rel="alternate" hreflang="ja" href="https://bibimer.app/ja/guide/">
+  <link rel="alternate" hreflang="zh-Hant" href="https://bibimer.app/zh-Hant/guide/">
+  <link rel="alternate" hreflang="fr" href="https://bibimer.app/fr/guide/">
+  <link rel="alternate" hreflang="de" href="https://bibimer.app/de/guide/">
+  <link rel="alternate" hreflang="x-default" href="https://bibimer.app/guide/">
+  <link rel="stylesheet" href="/assets/guide.css">
+  <link rel="stylesheet" href="/assets/language.css">
+  <script src="/assets/language.js" defer></script>
+</head>
+<body>
+<div class="guide-shell">
+  <header>
+    <a class="brand" href="/ja/"><img src="/assets/icon.png" alt="" width="28" height="28">BIBIMER</a>
+    <div class="header-actions"><nav aria-label="ガイドのナビゲーション"><a href="/ja/">ホーム</a><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">お問い合わせ</a></nav><nav class="language-nav" aria-label="ウェブサイトの言語"><a href="/guide/" lang="en" hreflang="en">English</a><a href="/ko/guide/" lang="ko" hreflang="ko">한국어</a><a href="/es/guide/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/guide/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/guide/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/guide/" lang="id" hreflang="id">Bahasa Indonesia</a><a href="/ja/guide/" lang="ja" hreflang="ja" aria-current="page">日本語</a><a href="/zh-Hant/guide/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a><a href="/fr/guide/" lang="fr" hreflang="fr">Français</a><a href="/de/guide/" lang="de" hreflang="de">Deutsch</a></nav></div>
+  </header>
+  <main>
+    <section class="guide-intro" aria-labelledby="guide-title">
+      <p class="eyebrow">スマートフォンで、最初のプロジェクトを</p>
+      <h1 id="guide-title">Bibimer の使い方</h1>
+      <p class="lead"><strong>同じ Android スマートフォン</strong>に Bibimer と Termux をインストールしてください。Termux が開発ツールを実行してプロジェクトファイルを保存し、Bibimer がプロジェクト、エージェントのセッション、会話、ターミナルをモバイル画面にまとめます。</p>
+      <a class="install-link" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=ja"><img src="/assets/google-play.svg" width="24" height="24" alt="">Google Play で Bibimer を入手</a>
+      <p class="availability">現在の Google Play アプリは英語と韓国語に対応しています。日本語を含む追加言語は、次回の公開リリースに向けて準備中です。このガイドでは、配信中のアプリで見つけやすいようにボタン名を英語で表記しています。</p>
+    </section>
+    <section class="step" aria-labelledby="step-1"><h2 id="step-1"><span class="step-number" aria-hidden="true">01</span>Termux をインストールして開く</h2><p>Termux の<a href="https://github.com/termux/termux-app#installation">公式インストールガイド</a>に記載された配布元からインストールしてください。一度開き、初期設定が完了するまで待ちます。</p><p>Termux とアドオンは同じ配布元からインストールしてください。このガイドを進めるために、別の開発用パソコンを用意する必要はありません。</p></section>
+    <section class="step" aria-labelledby="step-2"><h2 id="step-2"><span class="step-number" aria-hidden="true">02</span>Bibimer と Termux を接続する</h2><p>Bibimer で <strong>Setup → Manual setup and pairing → Save setup file</strong> を開きます。Android の Download フォルダーに <code>bibimer-setup.sh</code> という名前で保存してください。</p><p>Termux で以下のコマンドを実行し、ファイルへのアクセスを許可してください。すでに Download フォルダーにアクセスできる場合は、この手順を省略できます。</p><pre><code>termux-setup-storage</code></pre><p>続けて、以下を実行します。</p><pre><code>bash ~/storage/downloads/bibimer-setup.sh</code></pre><p>スクリプトが必要に応じて Python を準備し、Bibimer のローカルブリッジをインストールして起動します。Termux に表示された<strong>8 桁のワンタイムコード</strong>を Bibimer の <strong>Connect this app</strong> に入力してください。コードは 5 分間有効です。</p><p>別の名前やフォルダーに保存した場合は、コマンド内のパスを変更してください。</p></section>
+    <section class="step" aria-labelledby="step-3"><h2 id="step-3"><span class="step-number" aria-hidden="true">03</span>プロジェクトを開いてターミナルを試す</h2><p>サイドバーを開き、<strong>Project Add</strong> を選びます。Termux 内のフォルダーを参照するか、<code>~/projects/my-project</code> のようなパスを入力してください。必要ならフォルダーを作成するオプションを選び、プロジェクトを保存します。</p><p><strong>Terminal</strong> を選んでセッションを開始し、以下のコマンドを入力して送信してください。</p><pre><code>pwd</code></pre><p>スマートフォン内の現在のプロジェクトフォルダーが表示されます。ここまでの確認には AI プロバイダーのアカウントは不要です。</p></section>
+    <section class="step" aria-labelledby="step-4"><h2 id="step-4"><span class="step-number" aria-hidden="true">04</span>必要に応じてコーディングエージェントを追加</h2><p>Termux で動作する <strong>Codex、Claude Code、OpenCode</strong> を準備し、必要なプロバイダーへのログインや API の設定を完了してください。その後、Bibimer でエージェントを選び、セッションを開始します。</p><p>利用可能なモデルとオプションは、インストールしたエージェントによって異なります。一般的な Linux のインストール手順が Android/Termux でも動作するとは限りません。プロバイダーの料金とデータポリシーは別途適用されます。</p></section>
+    <section class="step" aria-labelledby="step-5"><h2 id="step-5"><span class="step-number" aria-hidden="true">05</span>プロジェクトと作業を管理する</h2><p>サイドバーで、プロジェクト、既存の Git ワークツリー、セッションを切り替えられます。Chat では対応エージェントの構造化された応答と承認リクエストを表示し、Terminal ではコマンドライン画面を利用できます。ファイルブラウザーを開くと、プロジェクトファイル、Git の状態、変更内容を確認できます。</p><p>画面を切り替えたり Bibimer を閉じたりしても、セッションの停止は要求しません。ただし Android がバックグラウンドプロセスを停止することがあります。ブリッジを再起動しても、失われたプロセスやターミナル出力は復元されません。アーカイブしたセッションの作業は継続します。Git ワークツリーの作成や削除は Termux で行ってください。</p><p><strong>Settings → Language</strong> でアプリの表示言語を選べます。入力内容、プロジェクト名、ターミナル出力は翻訳されません。</p></section>
+    <section class="support-card" aria-labelledby="support-title">
+      <h2 id="support-title">お困りですか？</h2>
+      <p>接続できない場合は、Termux とブリッジが動作中か確認してください。お問い合わせの際は、進めた手順とエラーメッセージをお知らせください。パスワード、API キー、非公開のプロジェクトファイルは送らないでください。</p>
+      <div class="support-links"><a href="https://github.com/andy5090/bibimer/issues">GitHub で問題を報告</a><a href="mailto:andy@andineering.com">andy@andineering.com</a></div>
+    </section>
+  </main>
+  <footer><span>Bibimer · 手のひらのエージェント開発環境。</span><a href="/ja/privacy/">プライバシー</a></footer>
+</div>
+</body>
+</html>

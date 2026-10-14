@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_demo_monitor_title">BIBIMER · Demo-Benachrichtigungen</string>
+    <string name="notification_demo_monitor_body">Fiktive Beispiele werden wiedergegeben. Keine Verbindung zu Agenten oder Termux.</string>
+    <string name="notification_demo_complete">Demo-Beispielwiedergabe abgeschlossen</string>
+    <string name="error_connection_failed">Die Termux-Bridge ist nicht erreichbar. Prüfe, ob sie in Termux läuft.</string>
+    <string name="error_input_busy">Eingaben warten in der Warteschlange. Versuche es gleich erneut.</string>
+    <string name="install_termux_first">Installiere zuerst Termux.</string>
+    <string name="browser_required">Zum Öffnen der Installationsanleitung wird ein Browser benötigt.</string>
+    <string name="clipboard_label">Bibimer-Einrichtungsbefehl</string>
+    <string name="command_copied">Befehl kopiert. Füge ihn in Termux ein und führe ihn aus.</string>
+    <string name="file_picker_failed">Die Dateiauswahl konnte nicht geöffnet werden.</string>
+    <string name="installer_saved">Einrichtungsdatei gespeichert. Fahre mit dem nächsten Schritt unter Einrichtung fort.</string>
+    <string name="installer_save_failed">Die Einrichtungsdatei konnte nicht gespeichert werden.</string>
+    <string name="notification_channel_responses">Agentenantworten</string>
+    <string name="notification_channel_description">Benachrichtigungen, wenn eine Chat-Antwort abgeschlossen ist.</string>
+    <string name="notification_channel_monitor">Antwortüberwachung</string>
+    <string name="notification_monitor_title">BIBIMER · Antwortbenachrichtigungen</string>
+    <string name="notification_monitor_body">Wartet auf abgeschlossene Antworten in Termux.</string>
+    <string name="notification_stop_alerts">Benachrichtigungen ausschalten</string>
+    <string name="notification_response_complete">Antwort abgeschlossen</string>
+    <string name="error_file_open">Die Datei konnte nicht geöffnet werden. Prüfe die Verbindung und den verfügbaren Speicher.</string>
+    <string name="error_file_app">Keine Android-App kann diesen Dateityp öffnen. Installiere eine kompatible Anzeige-App.</string>
+</resources>

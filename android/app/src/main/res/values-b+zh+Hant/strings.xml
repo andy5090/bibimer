@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_demo_monitor_title">BIBIMER · 示範提醒</string>
+    <string name="notification_demo_monitor_body">正在監控虛構範例的重播。未連線 AI 代理或 Termux。</string>
+    <string name="notification_demo_complete">示範範例重播已完成</string>
+    <string name="error_connection_failed">無法連線 Termux 橋接程式。請確認它正在 Termux 中執行。</string>
+    <string name="error_input_busy">輸入正在排隊處理中。請稍後重試。</string>
+    <string name="install_termux_first">請先安裝 Termux。</string>
+    <string name="browser_required">需要使用瀏覽器開啟安裝指南。</string>
+    <string name="clipboard_label">Bibimer 安裝指令</string>
+    <string name="command_copied">指令已複製。請在 Termux 中貼上並執行。</string>
+    <string name="file_picker_failed">無法開啟檔案選擇器。</string>
+    <string name="installer_saved">安裝檔案已儲存。請繼續環境準備頁面中的下一步。</string>
+    <string name="installer_save_failed">無法儲存安裝檔案。</string>
+    <string name="notification_channel_responses">AI 代理回覆</string>
+    <string name="notification_channel_description">聊天回覆完成時傳送提醒。</string>
+    <string name="notification_channel_monitor">回覆監控</string>
+    <string name="notification_monitor_title">BIBIMER · 回覆完成通知</string>
+    <string name="notification_monitor_body">正在監控 Termux 中的回覆是否完成。</string>
+    <string name="notification_stop_alerts">關閉提醒</string>
+    <string name="notification_response_complete">回覆已完成</string>
+    <string name="error_file_open">無法開啟檔案。請檢查連線和可用儲存空間。</string>
+    <string name="error_file_app">沒有可開啟此檔案類型的 Android 應用程式。請安裝相容的檢視器。</string>
+</resources>

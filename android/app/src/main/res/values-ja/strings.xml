@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_demo_monitor_title">BIBIMER · デモ通知</string>
+    <string name="notification_demo_monitor_body">架空のサンプル再生を監視中です。エージェントや Termux には接続していません。</string>
+    <string name="notification_demo_complete">デモのサンプル再生が完了しました</string>
+    <string name="error_connection_failed">Termux ブリッジに接続できませんでした。Termux で実行中か確認してください。</string>
+    <string name="error_input_busy">入力が処理待ちです。しばらくしてから再試行してください。</string>
+    <string name="install_termux_first">先に Termux をインストールしてください。</string>
+    <string name="browser_required">インストールガイドを開くにはブラウザーが必要です。</string>
+    <string name="clipboard_label">Bibimer 設定コマンド</string>
+    <string name="command_copied">コマンドをコピーしました。Termux に貼り付けて実行してください。</string>
+    <string name="file_picker_failed">ファイル選択画面を開けませんでした。</string>
+    <string name="installer_saved">設定ファイルを保存しました。準備画面の次の手順に進んでください。</string>
+    <string name="installer_save_failed">設定ファイルを保存できませんでした。</string>
+    <string name="notification_channel_responses">エージェントの応答</string>
+    <string name="notification_channel_description">チャットの応答が完了すると通知します。</string>
+    <string name="notification_channel_monitor">応答の監視</string>
+    <string name="notification_monitor_title">BIBIMER · 応答完了の通知</string>
+    <string name="notification_monitor_body">Termux で応答の完了を監視しています。</string>
+    <string name="notification_stop_alerts">通知をオフにする</string>
+    <string name="notification_response_complete">応答が完了しました</string>
+    <string name="error_file_open">ファイルを開けませんでした。接続と空き容量を確認してください。</string>
+    <string name="error_file_app">この形式を開ける Android アプリがありません。対応するビューアーをインストールしてください。</string>
+</resources>

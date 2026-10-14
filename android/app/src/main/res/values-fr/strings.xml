@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_demo_monitor_title">BIBIMER · Alertes de démo</string>
+    <string name="notification_demo_monitor_body">Lecture d’exemples fictifs en cours. Aucune connexion à un agent ni à Termux.</string>
+    <string name="notification_demo_complete">Lecture de l’exemple de démo terminée</string>
+    <string name="error_connection_failed">Impossible de joindre le pont Termux. Vérifiez qu’il est en cours d’exécution dans Termux.</string>
+    <string name="error_input_busy">Des saisies sont en attente. Réessayez dans un instant.</string>
+    <string name="install_termux_first">Installez d’abord Termux.</string>
+    <string name="browser_required">Un navigateur est nécessaire pour ouvrir le guide d’installation.</string>
+    <string name="clipboard_label">Commande de configuration de Bibimer</string>
+    <string name="command_copied">Commande copiée. Collez-la et exécutez-la dans Termux.</string>
+    <string name="file_picker_failed">Impossible d’ouvrir le sélecteur de fichiers.</string>
+    <string name="installer_saved">Fichier d’installation enregistré. Passez à l’étape suivante dans Configuration.</string>
+    <string name="installer_save_failed">Impossible d’enregistrer le fichier d’installation.</string>
+    <string name="notification_channel_responses">Réponses des agents</string>
+    <string name="notification_channel_description">Alertes à la fin d’une réponse Chat.</string>
+    <string name="notification_channel_monitor">Surveillance des réponses</string>
+    <string name="notification_monitor_title">BIBIMER · Notifications de réponses</string>
+    <string name="notification_monitor_body">En attente de réponses terminées dans Termux.</string>
+    <string name="notification_stop_alerts">Désactiver les alertes</string>
+    <string name="notification_response_complete">Réponse terminée</string>
+    <string name="error_file_open">Impossible d’ouvrir le fichier. Vérifiez la connexion et l’espace disponible.</string>
+    <string name="error_file_app">Aucune application Android ne peut ouvrir ce type de fichier. Installez un lecteur compatible.</string>
+</resources>

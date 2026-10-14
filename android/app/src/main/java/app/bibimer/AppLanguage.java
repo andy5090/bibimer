@@ -52,18 +52,21 @@ final class AppLanguage {
 
     private static String match(Locale locale) {
         String code = locale.getLanguage();
-        if ("en".equals(code) || "ko".equals(code) || "es".equals(code)) return code;
+        if ("en".equals(code) || "ko".equals(code) || "es".equals(code) || "ja".equals(code) || "fr".equals(code) || "de".equals(code)) return code;
         if ("pt".equals(code)) return "pt-BR";
         if ("id".equals(code) || "in".equals(code)) return "id";
         if (!"zh".equals(code)) return null;
         String script = locale.getScript(), region = locale.getCountry();
         if ("Hans".equals(script)) return "zh-Hans";
-        if (!script.isEmpty() || "TW".equals(region) || "HK".equals(region) || "MO".equals(region)) return null;
+        if ("Hant".equals(script)) return "zh-Hant";
+        if (!script.isEmpty()) return null;
+        if ("TW".equals(region) || "HK".equals(region) || "MO".equals(region)) return "zh-Hant";
         return "zh-Hans";
     }
 
     private static boolean supported(String value) {
         return "system".equals(value) || "en".equals(value) || "ko".equals(value) || "pt-BR".equals(value)
-            || "es".equals(value) || "id".equals(value) || "zh-Hans".equals(value);
+            || "es".equals(value) || "id".equals(value) || "zh-Hans".equals(value) || "zh-Hant".equals(value)
+            || "ja".equals(value) || "fr".equals(value) || "de".equals(value);
     }
 }
