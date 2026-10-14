@@ -187,11 +187,11 @@
     "builtOn": "2026-10-14",
     "signatureVerified": true,
     "universalApkEmulatorInstallVerified": false,
-    "consoleUploadStatus": "published_internal_test",
+    "consoleUploadStatus": "published_internal_test_and_production",
     "consoleAcceptedVersionCode": 33,
     "released": true,
-    "releasedTrack": "internal_testing",
-    "productionReleased": false,
+    "releasedTrack": "production",
+    "productionReleased": true,
     "sourceBridgeVersion": "0.15.0",
     "internalTestParticipationUrl": "https://play.google.com/apps/internaltest/4701718894791581363",
     "signingMaterial": "Existing owner-only Mac files outside repository; no new keys or automatic Doppler downloads.",
@@ -204,8 +204,9 @@
       "mappingFileRequiredForCurrentBuild": false,
       "rolloutStarted": true,
       "releaseName": "0.17.1 (33) - File explorer navigation",
-      "note": "Internal track active; version 33 available to existing invited testers. Device Play update/install remains unverified."
-    }
+      "note": "Internal track active; user reported installing the internal test version and successful operation on 2026-10-14. This is a user report, not agent physical-device verification."
+    },
+    "productionSubmitted": true
   },
   "consoleScreenshotsUpdatedOn": "2026-10-12",
   "playAppSigning": {
@@ -229,12 +230,15 @@
   },
   "consoleScreenshotsStatus": "submitted_for_review",
   "productionRelease": {
-    "versionName": "0.17.0",
-    "versionCode": 32,
-    "releaseName": "0.17.0 (32) - Full-screen file viewer",
+    "versionName": "0.17.1",
+    "versionCode": 33,
+    "releaseName": "0.17.1 (33) - File explorer navigation",
     "consoleStatus": "available_on_google_play",
-    "submittedOn": "2026-10-12",
+    "submittedOn": "2026-10-14",
+    "verifiedAtLocal": "2026-10-14 23:09 Asia/Seoul",
     "changeCount": 1,
+    "rolloutPercent": 100,
+    "allExistingTargetCountries": true,
     "managedPublishing": false,
     "publishAfterApproval": true,
     "publicAvailabilityConfirmed": true,
@@ -242,10 +246,16 @@
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
-    "note": "Fresh Console latest releases on 2026-10-14 confirm production remains version 32. Version 33 was released only to internal testing by user request.",
+    "errors": [],
     "preReviewChecksCompleted": true,
-    "approvedOn": "2026-10-12",
-    "publishedAtLocal": "2026-10-12 17:22 Asia/Seoul"
+    "releaseNotesFile": "release/google-play/release-notes/0.17.1.txt",
+    "reusedValidatedInternalTestBundle": true,
+    "userReportedInternalInstallAndWorkingOn": "2026-10-14",
+    "note": "Fresh production release details confirm version 33 available on Google Play, 100% rollout, 178 of 178 countries/regions, published at 16:17 Asia/Seoul. The same bundle was tested internally and reported working by the user.",
+    "approvedOn": "2026-10-14",
+    "publishedAtLocal": "2026-10-14 16:17 Asia/Seoul",
+    "availableCountryRows": 178,
+    "totalCountryRows": 178
   },
   "internalTesterParticipation": {
     "consoleRegistration": "saved_one_tester",
@@ -253,13 +263,16 @@
     "invitationAccepted": true,
     "acceptanceStatus": "accepted_after_user_confirmation_of_invite_email_and_usage_information_consent",
     "participationPageStatus": "You’re a tester for Bibimer (app.bibimer)",
-    "googlePlayInstallVerified": false,
+    "googlePlayInstallVerified": true,
     "optInRecheckedOn": "2026-10-12",
     "selectedListRechecked": true,
-    "storeOfferedVersionName": "0.17.0"
+    "storeOfferedVersionName": "0.17.0",
+    "installationVerificationMethod": "user_report",
+    "userReportedSuccessfulInstallOn": "2026-10-14",
+    "reportedAfterInternalVersionCode": 33
   },
   "reviewAccessRestrictionUpdate": {
-    "status": "approved_in_version_31_retained_in_version_32",
+    "status": "approved_in_version_31_retained_in_version_33",
     "versionName": "0.16.1",
     "versionCode": 31,
     "bundleFile": "bibimer-0.16.1-31-release.aab",
@@ -277,7 +290,8 @@
     "consoleAccessInstructions": "saved_private_password_and_461_character_english_guide",
     "instructions": "review-instructions.txt",
     "previousProductionReviewVersionCode": 30,
-    "retainedInLatestInternalVersionCode": 33
+    "retainedInLatestInternalVersionCode": 33,
+    "retainedInLatestSubmittedVersionCode": 33
   },
   "pendingUpdate": {
     "package": "app.bibimer",
@@ -298,30 +312,31 @@
     "privatePasswordIncluded": false,
     "manifestLaunchable": true,
     "preparedOn": "2026-10-14",
-    "status": "published_internal_only",
+    "status": "published_production",
     "sourceBridgeVersion": "0.15.0",
     "releaseNotesFile": "release/google-play/release-notes/0.17.1.txt",
     "consoleUploaded": true,
     "released": true,
-    "releasedTrack": "internal_testing",
-    "productionReleased": false,
-    "productionSubmitted": false,
+    "releasedTrack": "production",
+    "productionReleased": true,
+    "productionSubmitted": true,
     "consoleVersionCodeAvailabilityVerified": true,
     "consoleInternalTestStatus": "active_available_to_existing_testers",
-    "consoleProductionStatus": "version_32_available_on_google_play",
+    "consoleProductionStatus": "available_on_google_play",
     "signatureVerified": true,
     "existingUploadKeyAvailableInCurrentEnvironment": true,
     "authenticatedConsoleAvailableInCurrentEnvironment": true,
     "developmentApkBuilt": false,
-    "deviceInstallVerified": false
+    "deviceInstallVerified": true,
+    "deviceInstallVerificationMethod": "user_report"
   },
   "previousProductionRelease": {
-    "versionName": "0.16.1",
-    "versionCode": 31,
-    "releaseName": "0.16.1 (31) - Restricted review access",
+    "versionName": "0.17.0",
+    "versionCode": 32,
+    "releaseName": "0.17.0 (32) - Full-screen file viewer",
     "consoleStatus": "available_on_google_play",
     "submittedOn": "2026-10-12",
-    "changeCount": 12,
+    "changeCount": 1,
     "managedPublishing": false,
     "publishAfterApproval": true,
     "publicAvailabilityConfirmed": true,
@@ -329,19 +344,19 @@
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
-    "note": "Console latest releases show version 31 available in production; public store page with Install and three normal-mode screenshots verified.",
+    "note": "Production version 32 confirmed available on Google Play on 2026-10-14, before submitting version 33.",
     "preReviewChecksCompleted": true,
     "approvedOn": "2026-10-12",
-    "publishedAtLocal": "2026-10-12 15:59 Asia/Seoul",
-    "publicStoreUrl": "https://play.google.com/store/apps/details?id=app.bibimer"
+    "publishedAtLocal": "2026-10-12 17:22 Asia/Seoul"
   },
   "publicStoreUrl": "https://play.google.com/store/apps/details?id=app.bibimer",
   "currentPublicVersion": {
-    "versionName": "0.17.0",
-    "versionCode": 32,
+    "versionName": "0.17.1",
+    "versionCode": 33,
     "verifiedOn": "2026-10-14",
-    "publicStorePageVerified": true,
-    "verificationEvidence": "Fresh Console latest releases show production version 32 available on Google Play and internal-test version 33 available to testers. Public-store and physical device update checks remain separate."
+    "consoleProductionAvailabilityVerified": true,
+    "devicePublicUpdateVerified": false,
+    "verificationEvidence": "Fresh Console production release details show 0.17.1 (33) available on Google Play, 100% rollout, 178/178 countries, published 2026-10-14 16:17 Asia/Seoul. User reported the same internal test bundle installed and working; public-track device update availability was not independently checked."
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
@@ -432,6 +447,29 @@
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
-    "productionSubmitted": false
-  }
+    "productionSubmitted": true,
+    "userReportedInstallAndWorkingOn": "2026-10-14"
+  },
+  "productionReleaseHistory": [
+    {
+      "versionName": "0.16.1",
+      "versionCode": 31,
+      "releaseName": "0.16.1 (31) - Restricted review access",
+      "consoleStatus": "available_on_google_play",
+      "submittedOn": "2026-10-12",
+      "changeCount": 12,
+      "managedPublishing": false,
+      "publishAfterApproval": true,
+      "publicAvailabilityConfirmed": true,
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "note": "Console latest releases show version 31 available in production; public store page with Install and three normal-mode screenshots verified.",
+      "preReviewChecksCompleted": true,
+      "approvedOn": "2026-10-12",
+      "publishedAtLocal": "2026-10-12 15:59 Asia/Seoul",
+      "publicStoreUrl": "https://play.google.com/store/apps/details?id=app.bibimer"
+    }
+  ]
 }

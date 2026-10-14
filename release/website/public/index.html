@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Bibimer is a mobile agent development environment (ADE). Manage projects, coding-agent sessions, chats, and terminals in Termux on your Android phone.">
+  <meta name="description" content="Develop on your Android phone with Bibimer and Termux. Manage projects, agent sessions, chat, terminals, and file previews. Free on Google Play.">
   <title>Bibimer · Your mobile agent development environment</title>
   <link rel="icon" href="/favicon.ico?v=20261014" sizes="16x16 32x32" type="image/x-icon">
   <link rel="icon" href="/assets/favicon.svg?v=20261014" sizes="any" type="image/svg+xml">
@@ -32,7 +32,7 @@
     .links { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 28px; }
     .contact { padding: 13px 22px; border-radius: 8px; background: #19372c; color: white; text-decoration: none; }
     .status { color: #546b5b; font-size: 14px; }
-    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; border-top: 1px solid #d3ded4; padding: 36px 0 48px; }
+    .features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; border-top: 1px solid #d3ded4; padding: 36px 0 48px; }
     h2 { font-size: 28px; line-height: 1.4; margin: 0 0 20px; }
     h3 { font-size: 18px; margin: 0 0 12px; }
     .features p { margin: 0; font-size: 15px; color: #486052; }
@@ -55,7 +55,8 @@
         <div class="eyebrow">Android + Termux</div>
         <h1 id="headline">Your phone.<br>Your dev environment.</h1>
         <p class="lead">Turn your Android phone into a development environment. Bibimer is a mobile ADE that brings projects, coding-agent sessions, chats, and terminals together with Termux on the same phone.</p>
-        <div class="links"><a class="contact" href="mailto:andy@andineering.com">Contact support</a><a href="https://github.com/andy5090/bibimer">GitHub repository</a><span class="status">Google Play release in preparation</span></div>
+        <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=en">Get Bibimer on Google Play</a><a href="https://github.com/andy5090/bibimer">GitHub repository</a></div>
+        <p class="status">Free · Android 8.0 or later · Termux on the same phone</p>
       </div>
       <img class="icon" src="/assets/icon.png" alt="Bibimer app icon" width="512" height="512">
     </section>
@@ -63,6 +64,7 @@
       <div><h3>Your projects, on your phone</h3><p>Your project files, Git, and compatible development tools run in Termux on your phone. Manage projects and existing worktrees without a separate development computer or remote host.</p></div>
       <div><h3>Chat and terminal</h3><p>Follow structured conversations and tool activity. Send instructions, respond to approvals, and queue follow-up messages.</p></div>
       <div><h3>Your choice of agent</h3><p>Connect compatible installations of Codex, Claude, and OpenCode. Choose from the models and options your installed agent supports.</p></div>
+      <div><h3>Read files and Git changes</h3><p>Read code with syntax highlighting and inspect Git diffs. Preview Markdown, static HTML, and Mermaid diagrams. Open Office documents, images, and PDFs with compatible Android apps.</p></div>
     </section>
     <section class="setup" aria-labelledby="setup-title">
       <h2 id="setup-title">Start with Termux</h2>

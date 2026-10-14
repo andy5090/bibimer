@@ -14,6 +14,12 @@ Bibimer는 **모바일 ADE(Agent Development Environment, 에이전트 개발 �
 
 언어별 URL을 사용하는 정적 i18n 구성이다. 각 페이지는 선택한 언어의 본문만 제공하고, 언어 전환은 같은 종류의 페이지로 이동한다. 한국어 홈의 정책 링크·정책의 홈 링크는 한국어 경로를 유지한다. 각 문서에 `lang`, 자기 URL의 `canonical`, 상호 연결된 `hreflang`을 지정했다. 브라우저 언어에 따른 자동 이동 없이 기본 URL은 영어로 열리며 Play Console에 등록한 `/privacy/` 주소를 유지한다.
 
+## Google Play 출시 안내 (2026-10-14)
+
+사용자 요청으로 두 홈의 출시 준비 문구와 문의용 첫 버튼을 **Google Play 설치 링크**로 바꿨다. 무료·Android 8.0 이상·같은 휴대폰의 Termux 사용을 안내한다. 문의는 기존 메뉴에서, 공개 GitHub 저장소는 설치 버튼 옆에서 연다. 공개 0.17.0에 포함된 코드 구문 강조·Git diff·Markdown/정적 HTML/Mermaid 미리보기·호환 Android 앱으로 Office/이미지/PDF 열기를 네 번째 기능으로 추가했다. 데스크톱은 2열, 모바일은 1열이며 기존 디자인·별도 언어 URL·개인정보처리방침을 유지한다. 내부 테스트만 제공 중인 탐색기 동작 개선을 공개 설치본에 포함된 것으로 소개하지 않는다.
+
+Cloudflare Pages **https://301d54d0.bibimer.pages.dev**에 배포했다. 공개 EN/KO 홈·정책·두 파비콘의 HTTPS 200·원본 일치·보안 헤더/no-transform, 두 홈의 Play/GitHub 링크·정적 HTML·고유 ID·언어 전환, 데스크톱 및 393px 모바일 가로 넘침 없음을 확인했다. 한국어 새 문구는 humanizer의 의미 보존 기준으로 점검했으며 시각 판정은 97점 pass다. 기록 `.omx/state/website-release/ralph-progress.json`, 화면 `dist/website-release/`. 새 의존성·클라이언트 스크립트를 추가하지 않았다.
+
 ## 파비콘 (2026-10-14)
 
 앱의 `android/app/src/main/assets/brand.svg`를 그대로 복사한 `public/assets/favicon.svg`와 16·32px 항목을 담은 `public/favicon.ico`를 모든 HTML(영어·한국어 홈·정책·심사 안내·404)에 지정했다. 기존 홈 소개용 512px 아이콘은 유지한다. ICO는 SVG를 Inkscape로 16·32px PNG로 렌더링한 뒤 하나의 ICO 컨테이너에 담았다. 렌더러가 지원하지 않는 SVG 그림자만 작은 래스터에서 생략했다. 새 패키지 의존성이나 클라이언트 스크립트는 없다.
