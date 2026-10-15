@@ -169,15 +169,15 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.18.0",
-    "versionCode": 34,
+    "versionName": "0.19.0",
+    "versionCode": 35,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "155409cd26bd421498f2c0568cbce8840ebf85e78316c1a84eacb3246f4f4647",
-    "file": "bibimer-0.18.0-34-release.aab",
+    "sha256": "6807df2d3497709229329cfa43607ee623d4ed626242532d1726ec51d651f94b",
+    "file": "bibimer-0.19.0-35-release.aab",
     "bundleValidated": true,
     "uploadCertificateMatchesPlay": true,
     "packagedAssetsMatchSource": true,
@@ -190,10 +190,11 @@
     "signatureVerified": true,
     "universalApkEmulatorInstallVerified": true,
     "consoleUploadStatus": "published_internal_test",
-    "consoleAcceptedVersionCode": 34,
+    "consoleAcceptedVersionCode": 35,
     "released": true,
     "releasedTrack": "internal_testing",
-    "productionReleased": false
+    "productionReleased": false,
+    "sourceBridgeVersion": "0.16.0"
   },
   "consoleScreenshotsUpdatedOn": "2026-10-15",
   "playAppSigning": {
@@ -282,15 +283,15 @@
   },
   "pendingUpdate": {
     "package": "app.bibimer",
-    "versionName": "0.18.0",
-    "versionCode": 34,
+    "versionName": "0.19.0",
+    "versionCode": 35,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "155409cd26bd421498f2c0568cbce8840ebf85e78316c1a84eacb3246f4f4647",
-    "file": "bibimer-0.18.0-34-release.aab",
+    "sha256": "6807df2d3497709229329cfa43607ee623d4ed626242532d1726ec51d651f94b",
+    "file": "bibimer-0.19.0-35-release.aab",
     "bundleValidated": true,
     "uploadCertificateMatchesPlay": true,
     "packagedAssetsMatchSource": true,
@@ -300,8 +301,8 @@
     "manifestLaunchable": true,
     "preparedOn": "2026-10-15",
     "status": "published_internal_test",
-    "sourceBridgeVersion": "0.15.0",
-    "releaseNotesFile": "release/google-play/release-notes/0.18.0.txt",
+    "sourceBridgeVersion": "0.16.0",
+    "releaseNotesFile": "release/google-play/release-notes/0.19.0.txt",
     "consoleUploaded": true,
     "released": true,
     "releasedTrack": "internal_testing",
@@ -420,21 +421,23 @@
     "consoleProductionStatus": "available_on_google_play"
   },
   "internalTestRelease": {
-    "versionName": "0.18.0",
-    "versionCode": 34,
-    "releaseName": "0.18.0 (34) - Ten languages",
+    "versionName": "0.19.0",
+    "versionCode": 35,
+    "releaseName": "0.19.0 (35) - Project navigation",
     "consoleStatus": "active_available_to_existing_testers",
     "publishedOn": "2026-10-15",
-    "publishedAtLocal": "2026-10-15 02:39 Asia/Seoul",
-    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/5/details",
-    "releaseNotesFile": "release/google-play/release-notes/0.18.0.txt",
+    "publishedAtLocal": "2026-10-15 18:15 Asia/Seoul",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/6/details",
+    "releaseNotesFile": "release/google-play/release-notes/0.19.0.txt",
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
     "errors": [],
     "productionSubmitted": false,
     "emulatorInstallVerified": true,
-    "physicalDeviceVerified": false
+    "physicalDeviceVerified": false,
+    "sourceBridgeVersion": "0.16.0",
+    "bridgeUpdateRequiredForProjectOrdering": true
   },
   "productionReleaseHistory": [
     {
@@ -465,19 +468,21 @@
     "submission": "English and Korean phone screenshots only; existing app version unchanged"
   },
   "previousInternalTestRelease": {
-    "versionName": "0.17.1",
-    "versionCode": 33,
-    "releaseName": "0.17.1 (33) - File explorer navigation",
+    "versionName": "0.18.0",
+    "versionCode": 34,
+    "releaseName": "0.18.0 (34) - Ten languages",
     "consoleStatus": "active_available_to_existing_testers",
-    "publishedOn": "2026-10-14",
-    "publishedAtLocal": "2026-10-14 12:37 Asia/Seoul",
-    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/4/details",
-    "releaseNotesFile": "release/google-play/release-notes/0.17.1.txt",
+    "publishedOn": "2026-10-15",
+    "publishedAtLocal": "2026-10-15 02:39 Asia/Seoul",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/5/details",
+    "releaseNotesFile": "release/google-play/release-notes/0.18.0.txt",
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
-    "productionSubmitted": true,
-    "userReportedInstallAndWorkingOn": "2026-10-14"
+    "errors": [],
+    "productionSubmitted": false,
+    "emulatorInstallVerified": true,
+    "physicalDeviceVerified": false
   },
   "consoleScreenshotsVerifiedOn": "2026-10-15",
   "sourceLanguages": [
