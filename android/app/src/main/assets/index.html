@@ -216,7 +216,7 @@
     <div class="sidebar-heading"><h2 id="sidebar-title" data-i18n="sidebar_title">Projects and sessions</h2><button id="sidebar-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close sidebar">×</button></div>
     <div class="sidebar-tools"><button id="sidebar-archived" class="quiet" type="button" aria-pressed="false" data-i18n="session_archived">Archived</button><button id="sidebar-refresh" class="icon-button" type="button" data-i18n-aria-label="sidebar_refresh" aria-label="Refresh projects">↻</button></div>
     <form id="project-form" class="card" hidden>
-      <button id="github-launch" class="secondary full" type="button" data-i18n="github_title">Import from GitHub</button>
+      <button id="github-launch" class="secondary full action-with-icon" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="github-mark"><path d="M12 .75a11.25 11.25 0 0 0-3.56 21.92c.56.1.77-.24.77-.54v-2.1c-3.13.68-3.79-1.33-3.79-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.73 1.16 1.73 1.16 1 1.73 2.64 1.23 3.28.94.1-.73.39-1.23.71-1.51-2.5-.29-5.13-1.25-5.13-5.56 0-1.23.44-2.23 1.16-3.02-.12-.29-.5-1.43.11-2.98 0 0 .95-.3 3.09 1.15a10.76 10.76 0 0 1 5.62 0c2.14-1.45 3.08-1.15 3.08-1.15.61 1.55.23 2.69.11 2.98.73.79 1.16 1.79 1.16 3.02 0 4.32-2.64 5.27-5.15 5.55.4.35.76 1.03.76 2.08v3.11c0 .3.2.65.77.54A11.25 11.25 0 0 0 12 .75Z"/></svg><span data-i18n="github_title">Import from GitHub</span></button>
       <label for="path" data-i18n="project_folder">Project folder</label>
       <div class="folder-input"><input id="path" placeholder="~/projects/my-project" autocomplete="off" spellcheck="false"><button id="browse-project" class="secondary" type="button" data-i18n="browse">Browse</button></div>
       <label class="check"><input type="checkbox" id="create-folder"><span data-i18n="create_folder">Create the folder if it does not exist</span></label>
@@ -224,7 +224,7 @@
     </form>
     <div id="sidebar-projects"></div>
     <p id="sidebar-status" class="hint" role="status"></p>
-    <div class="sidebar-footer"><button class="secondary" id="edit-project" data-i18n="add_project">Project Add</button><button id="reconnect" class="quiet" data-i18n="reconnect">Reconnect</button></div>
+    <div class="sidebar-footer"><button class="secondary action-with-icon" id="edit-project"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 11V7a2 2 0 0 0-2-2h-7L9 3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8M18 15v6m-3-3h6"/></svg><span id="edit-project-label" data-i18n="add_project">Project Add</span></button><button id="reconnect" class="quiet action-with-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.55-1.65L20 8M4 16l2.35 2.65A7 7 0 0 0 17.9 17"/></svg><span data-i18n="reconnect">Reconnect</span></button></div>
   </dialog>
   <dialog id="workspace-details-dialog" class="settings-dialog" aria-labelledby="workspace-details-title">
     <div class="sidebar-heading"><h2 id="workspace-details-title" data-i18n="workspace_details">Working folder details</h2><button id="workspace-details-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>

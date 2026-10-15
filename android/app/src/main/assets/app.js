@@ -422,7 +422,7 @@
     const picker = $("project-switch");
     picker.hidden = true;
     $("project-name").hidden = false;
-    $("edit-project").textContent = t(multipleProjects ? "add_project" : "edit_project");
+    $("edit-project-label").textContent = t(multipleProjects ? "add_project" : "edit_project");
     $("cancel-project").hidden = !project;
     const entries = knownProjects.map(item => {
       const state = item.session?.state;
