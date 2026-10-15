@@ -14,6 +14,8 @@ import tarfile
 import urllib.request
 import zipfile
 
+import play_sdk
+
 ROOT = Path(__file__).resolve().parents[1]
 TOOLS = ROOT / ".tools"
 BUILD = ROOT / "android" / "app" / "build"
@@ -164,6 +166,14 @@ def review_access_digest():
     return hashlib.sha256(code).hexdigest()
 
 
+def bundled_bridge_version():
+    source = (ROOT / "bridge" / "bibimer_bridge.py").read_text(encoding="utf-8")
+    versions = re.findall(r'^VERSION = "([0-9]+\.[0-9]+\.[0-9]+)"$', source, re.MULTILINE)
+    if len(versions) != 1:
+        raise ValueError("내장 브리지 버전 형식을 확인하세요.")
+    return versions[0]
+
+
 def write_review_access_config(build, digest):
     if digest and not re.fullmatch(r"[0-9a-f]{64}", digest):
         raise ValueError("심사 코드 digest 형식을 확인하세요.")
@@ -172,13 +182,17 @@ def write_review_access_config(build, digest):
     target.write_text(
         'package app.bibimer;\nfinal class ReviewAccessConfig {\n'
         f'    static final String DIGEST = "{digest}";\n'
+        f'    static final String BRIDGE_VERSION = "{bundled_bridge_version()}";\n'
         '    private ReviewAccessConfig() {}\n}\n', encoding="utf-8")
     return target
 
 
-def compile_android(android_jar, build, proto=False, review_digest=None):
+def compile_android(android_jar, build, proto=False, review_digest=None, libraries=None):
     if review_digest is None:
         review_digest = review_access_digest()
+    if libraries is None:
+        libraries = play_sdk.prepare(fetch, TOOLS / "play-sdk", SRC / "assets", SRC / "AndroidManifest.xml")
+    jars, resource_dirs, packages = libraries
     build.mkdir(parents=True, exist_ok=True)
     for directory in ("classes", "generated", "dex"):
         target = build / directory
@@ -187,16 +201,23 @@ def compile_android(android_jar, build, proto=False, review_digest=None):
         target.mkdir()
     print("Android 리소스 및 Java 컴파일", flush=True)
     run("aapt2", "compile", "--dir", SRC / "res", "-o", build / "resources.zip")
+    library_resources = []
+    for index, resource_dir in enumerate(resource_dirs):
+        compiled = build / ("library-resources-" + str(index) + ".zip")
+        run("aapt2", "compile", "--dir", resource_dir, "-o", compiled)
+        library_resources.extend(("-R", compiled))
     run("aapt2", "link", *(["--proto-format"] if proto else []),
+        "--auto-add-overlay", *(["--extra-packages", ":".join(packages)] if packages else []),
         "-o", build / "unsigned.apk", "--manifest", SRC / "AndroidManifest.xml",
         "-I", android_jar, "--java", build / "generated", "-A", SRC / "assets",
-        "--min-sdk-version", "26", "--target-sdk-version", "36", build / "resources.zip")
+        "--min-sdk-version", "26", "--target-sdk-version", "36",
+        *library_resources, "-R", build / "resources.zip")
     write_review_access_config(build, review_digest)
     sources = sorted((SRC / "java").rglob("*.java")) + sorted((build / "generated").rglob("*.java"))
-    run("javac", "-encoding", "UTF-8", "--release", "8", "-classpath", android_jar,
+    run("javac", "-encoding", "UTF-8", "--release", "8", "-classpath", os.pathsep.join(str(path) for path in [android_jar, *jars]),
         "-d", build / "classes", *sources)
     run("jar", "cf", build / "classes.jar", "-C", build / "classes", ".")
-    run("d8", "--lib", android_jar, "--min-api", "26", "--output", build / "dex", build / "classes.jar")
+    run("d8", "--lib", android_jar, "--min-api", "26", "--output", build / "dex", build / "classes.jar", *jars)
 
 
 def main():

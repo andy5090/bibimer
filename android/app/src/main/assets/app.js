@@ -7,6 +7,7 @@
   const pending = new Map();
   let serial = 0, online = false, paused = false, session = null, cursor = 0;
   let instance = null, activePoll = false, retryTimer = null, generation = 0, busy = false;
+  let bridgeVersion = "";
   let project = null, inputQueue = Promise.resolve(), currentTab = "work";
   let quickTimer = null, quickHandled = environment().quickSetup?.phase === "connected" ? environment().quickSetup.id : null, quickSubmitting = false;
   let projectInitialized = false, connectionError = null;
@@ -328,6 +329,7 @@
   }
   function updateEnvironment() {
     renderNotificationSettings();
+    renderAppUpdates(); renderBridgeUpdate();
     const env = environment();
     $("demo-banner").hidden = !demo;
     $("demo-settings-card").hidden = !demo;
@@ -834,6 +836,7 @@
     else updateEnvironment();
   }
   function renderSession() {
+    renderBridgeUpdate();
     const live = session && ["running", "stopping"].includes(session.state);
     $("workspace").classList.toggle("launch-mode", !live);
     let label = t("process_idle");
@@ -983,6 +986,7 @@
         notice(lostQueue ? "queue_lost" : "bridge_restarted");
       }
       instance = health.instance;
+      bridgeVersion = typeof health.version === "string" ? health.version : "";
       multipleProjects = health.features?.includes("multiple_projects") === true;
       canBrowse = health.features?.includes("browse_folders") === true;
       canGitHub = health.features?.includes("github_import") === true;
@@ -1753,6 +1757,36 @@
   });
   $("notification-permission").addEventListener("click", () => native.openNotificationSettings?.());
   window.BibimerNotificationStatus = renderNotificationSettings;
+  function renderAppUpdates() {
+    const env = environment(), status = env.appUpdate || {}, supported = !demo && !!native.checkAppUpdate;
+    $("app-update-card").hidden = !supported;
+    $("app-update-banner").hidden = !supported || status.state !== "available" || status.showNotice !== true;
+    $("app-update-version").textContent = t("app_update_version", {version:env.version || "—"});
+    const key = {checking:"app_update_checking", available:"app_update_available", current:"app_update_current",
+      failed:"app_update_failed", store_failed:"app_update_store_failed", unavailable:"app_update_unavailable"}[status.state];
+    $("app-update-status").textContent = key ? t(key) : "";
+    $("app-update-check").disabled = !supported || status.state === "checking";
+  }
+  function compareBridgeVersions(current, bundled) {
+    const parse = value => typeof value === "string" && /^\d{1,6}\.\d{1,6}\.\d{1,6}$/.test(value) ? value.split(".").map(Number) : null;
+    const a = parse(current), b = parse(bundled);
+    if (!a || !b) return null;
+    for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
+    return 0;
+  }
+  function renderBridgeUpdate() {
+    const bundled = environment().bundledBridgeVersion;
+    $("bridge-update-card").hidden = demo || !bundled;
+    const comparison = online ? compareBridgeVersions(bridgeVersion, bundled) : null;
+    $("bridge-update-version").textContent = bundled ? t("bridge_update_version", {current:online && bridgeVersion || "—", bundled}) : "";
+    $("bridge-update-status").textContent = t(comparison === null ? "bridge_update_unknown" : comparison < 0 ? "bridge_update_available" : "bridge_update_current");
+    $("bridge-update-guide").hidden = comparison === null || comparison >= 0;
+  }
+  $("app-update-check").addEventListener("click", () => { if (!demo) { native.checkAppUpdate?.(); renderAppUpdates(); } });
+  $("app-update-later").addEventListener("click", () => { if (!demo) { native.dismissAppUpdate?.(); renderAppUpdates(); } });
+  for (const id of ["app-update-open", "app-update-store"]) $(id).addEventListener("click", () => { if (!demo) native.openAppStore?.(); });
+  $("bridge-update-guide").addEventListener("click", () => { if (!demo) tab("setup"); });
+  window.BibimerAppUpdateStatus = renderAppUpdates;
   setInterval(() => { if (!paused && currentTab === "settings") renderNotificationSettings(); }, 2000);
   function notificationSession(entry, id) {
     const original = entry?.sessions?.find(row => row.id === id);

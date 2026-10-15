@@ -94,7 +94,7 @@ class ReleaseBuildTests(unittest.TestCase):
             for proto in (False, True):
                 with self.subTest(proto=proto), patch.object(build_apk, "run") as run:
                     output = Path(folder) / str(proto)
-                    build_apk.compile_android(Path("android.jar"), output, proto=proto)
+                    build_apk.compile_android(Path("android.jar"), output, proto=proto, libraries=([], [], []))
                     link = next(call.args for call in run.call_args_list if call.args[:2] == ("aapt2", "link"))
                     self.assertEqual("--proto-format" in link, proto)
                     self.assertIn(output / "unsigned.apk", link)

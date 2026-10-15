@@ -1,6 +1,23 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "app_update_title": "Pembaruan aplikasi",
+  "app_update_version": "Versi terpasang: {version}",
+  "app_update_check": "Periksa pembaruan",
+  "app_update_checking": "Memeriksa Google Play…",
+  "app_update_available": "Versi baru tersedia.",
+  "app_update_current": "Tidak ada pembaruan yang tersedia untuk akun Google Play ini.",
+  "app_update_failed": "Tidak dapat memeriksa pembaruan. Coba lagi atau periksa di Google Play.",
+  "app_update_unavailable": "Periksa pembaruan di Google Play. Pemeriksaan otomatis memerlukan aplikasi yang dipasang dari Google Play.",
+  "app_update_open": "Buka Google Play",
+  "app_update_later": "Nanti",
+  "app_update_store_failed": "Tidak dapat membuka Google Play.",
+  "bridge_update_title": "Bridge Termux",
+  "bridge_update_available": "Perbarui bridge Termux menggunakan berkas instalasi yang disertakan dalam aplikasi ini.",
+  "bridge_update_current": "Bridge yang terhubung memenuhi persyaratan versi aplikasi ini.",
+  "bridge_update_unknown": "Hubungkan ke Termux untuk memeriksa versi bridge.",
+  "bridge_update_setup": "Buka panduan instalasi",
+  "bridge_update_version": "Terhubung: {current} · Disertakan: {bundled}",
   "project_order": "Urutan proyek",
   "project_move_up": "Pindah ke atas",
   "project_move_down": "Pindah ke bawah",

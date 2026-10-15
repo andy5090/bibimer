@@ -3,6 +3,23 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    app_update_title: ["App updates", "앱 업데이트"],
+    app_update_version: ["Installed version: {version}", "현재 버전: {version}"],
+    app_update_check: ["Check for updates", "업데이트 확인"],
+    app_update_checking: ["Checking Google Play…", "Google Play에서 확인 중…"],
+    app_update_available: ["A new version is available.", "새 버전을 사용할 수 있습니다."],
+    app_update_current: ["No update is available for this Google Play account.", "현재 Google Play 계정에 제공되는 새 버전이 없습니다."],
+    app_update_failed: ["Could not check for updates. Try again or check Google Play.", "업데이트를 확인하지 못했습니다. 다시 시도하거나 Google Play에서 확인하세요."],
+    app_update_unavailable: ["Check Google Play for updates. Automatic checks require an app installed from Google Play.", "Google Play에서 업데이트를 확인하세요. 자동 확인은 Google Play로 설치한 앱에서 사용할 수 있습니다."],
+    app_update_open: ["Open Google Play", "Google Play에서 보기"],
+    app_update_later: ["Later", "나중에"],
+    app_update_store_failed: ["Could not open Google Play.", "Google Play 페이지를 열지 못했습니다."],
+    bridge_update_title: ["Termux bridge", "Termux 브리지"],
+    bridge_update_available: ["Update the Termux bridge using the setup file included in this app.", "앱에 포함된 설치 파일로 Termux 브리지를 업데이트하세요."],
+    bridge_update_current: ["The connected bridge meets this app’s version requirement.", "연결된 브리지가 이 앱의 버전 요구사항을 충족합니다."],
+    bridge_update_unknown: ["Connect to Termux to check the bridge version.", "Termux에 연결하면 브리지 버전을 확인할 수 있습니다."],
+    bridge_update_setup: ["Open setup guide", "설치 안내 보기"],
+    bridge_update_version: ["Connected: {current} · Included: {bundled}", "연결된 버전: {current} · 포함된 버전: {bundled}"],
     project_order: ["Project order", "프로젝트 순서"],
     project_move_up: ["Move up", "위로 이동"],
     project_move_down: ["Move down", "아래로 이동"],

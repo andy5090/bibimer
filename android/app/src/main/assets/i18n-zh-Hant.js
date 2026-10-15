@@ -1,6 +1,23 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "app_update_title": "應用程式更新",
+  "app_update_version": "已安裝版本：{version}",
+  "app_update_check": "檢查更新",
+  "app_update_checking": "正在查詢 Google Play…",
+  "app_update_available": "有新版本可用。",
+  "app_update_current": "目前的 Google Play 帳戶沒有可用的更新。",
+  "app_update_failed": "無法檢查更新。請重試或前往 Google Play 查看。",
+  "app_update_unavailable": "請前往 Google Play 查看更新。自動檢查僅適用於透過 Google Play 安裝的應用程式。",
+  "app_update_open": "開啟 Google Play",
+  "app_update_later": "稍後",
+  "app_update_store_failed": "無法開啟 Google Play。",
+  "bridge_update_title": "Termux 橋接服務",
+  "bridge_update_available": "請使用此應用程式內附的安裝檔案更新 Termux 橋接服務。",
+  "bridge_update_current": "已連接的橋接服務符合此應用程式的版本要求。",
+  "bridge_update_unknown": "連接至 Termux 後即可查看橋接服務版本。",
+  "bridge_update_setup": "查看安裝指南",
+  "bridge_update_version": "已連接：{current} · 內附：{bundled}",
   "project_order": "專案順序",
   "project_move_up": "上移",
   "project_move_down": "下移",

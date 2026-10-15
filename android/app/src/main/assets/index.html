@@ -40,7 +40,13 @@
     <button id="inspector-open" class="icon-button" type="button" data-i18n-aria-label="inspect_files" aria-label="Files" aria-haspopup="dialog" aria-controls="inspector" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5h6l2 2h10v13H3Z"/></svg></button>
   </header>
   <aside id="demo-banner" class="demo-banner" hidden aria-label="Demo mode" data-i18n-aria-label="demo_title"><strong data-i18n="demo_title">Demo · sample replay</strong><p data-i18n="demo_banner">Fictional session logs. Prerecorded responses are unrelated to your input. No AI or shell commands run.</p><button id="demo-exit-banner" class="quiet" type="button" data-i18n="demo_exit">Exit demo</button></aside>
-  <div id="notice" class="notice" role="status" hidden></div>
+  <div id="announcements">
+    <aside id="app-update-banner" class="app-update-banner" hidden aria-label="App updates" data-i18n-aria-label="app_update_title">
+      <p data-i18n="app_update_available" role="status">A new version is available.</p>
+      <div><button type="button" class="quiet" id="app-update-later" data-i18n="app_update_later">Later</button><button type="button" class="secondary" id="app-update-open" data-i18n="app_update_open">Open Google Play</button></div>
+    </aside>
+    <div id="notice" class="notice" role="status" hidden></div>
+  </div>
   <main id="work" class="page">
     <div id="welcome" class="welcome">
       <span class="eyebrow" data-i18n="welcome_eyebrow">DEVELOP ON ANDROID</span>
@@ -160,6 +166,14 @@
   <main id="settings" class="page scroll" hidden>
     <div class="section-heading"><h1 data-i18n="tab_settings">Settings</h1><p data-i18n="app_settings_intro">Choose your input behavior, language and notifications.</p></div>
     <section id="demo-settings-card" class="card preference-card" hidden><h2 data-i18n="demo_title">Demo · sample replay</h2><p data-i18n="demo_banner">Fictional session logs. Prerecorded responses are unrelated to your input. No AI or shell commands run.</p><p id="demo-preferences-hint" class="hint" data-i18n="demo_preferences">Demo settings are separate. Real response alerts pause during demo; your Termux sessions keep running. Exiting restores normal settings and monitoring.</p><button id="demo-settings-exit" class="secondary" type="button" data-i18n="demo_exit">Exit demo</button></section>
+    <section id="app-update-card" class="card preference-card" hidden>
+      <h2 data-i18n="app_update_title">App updates</h2><p id="app-update-version" class="hint"></p><p id="app-update-status" class="hint" role="status"></p>
+      <div class="button-row"><button id="app-update-check" type="button" class="secondary" data-i18n="app_update_check">Check for updates</button><button id="app-update-store" type="button" class="quiet" data-i18n="app_update_open">Open Google Play</button></div>
+    </section>
+    <section id="bridge-update-card" class="card preference-card" hidden>
+      <h2 data-i18n="bridge_update_title">Termux bridge</h2><p id="bridge-update-version" class="hint"></p><p id="bridge-update-status" class="hint" role="status"></p>
+      <button id="bridge-update-guide" type="button" class="secondary" data-i18n="bridge_update_setup" hidden>Open setup guide</button>
+    </section>
     <section class="card preference-card">
       <div class="preference-row"><label for="enter-behavior" data-i18n="enter_behavior_label">Enter key</label>
         <select id="enter-behavior" aria-describedby="enter-behavior-hint enter-modifiers-hint"><option value="newline" data-i18n="enter_newline">New line</option><option value="send" data-i18n="enter_send">Send</option></select>

@@ -1,5 +1,15 @@
 # Bibimer 다음 세션 시작점
 
+## 최신: 앱 업데이트 감지·Google Play 페이지 안내 (2026-10-15, 미배포)
+
+- 사용자 구현 승인 후 **사용자가 원하면 Google Play 페이지로 안내**라는 후속 요청에 맞춰 조회/링크 방식으로 구현했다. 앱 내부 다운로드·설치·재시작 API를 호출하지 않는다. 새버전 안내는 **Google Play에서 보기 / 나중에**, Settings에 설치 버전·수동 확인·확인 상태·스토어 이동을 제공한다. Play 앱이 없으면 고정 공식HTTPS페이지로 이동한다. 확인실패를 최신버전으로 표시하지 않는다.
+- `AppUpdates.java`는 Play 설치 출처에서 공식 SDK의 계정별 제공 버전을 조회한다. 자동 확인은 Activity복귀에서 성공24시간/실패15분 간격, 수동은 간격 우회·중복 차단. 나중에는 같은버전24시간 숨김. 설치코드 변경 시캐시무효화, Activity종료·Demo전환 이전 늦은콜백무시. 예제모드는 실제Play요청/스토어이동/일반설정수정을 차단한다. 저장은 공개버전코드/시간/상태뿐이며 계정ID·인증·프로젝트·대화는 포함하지 않는다.
+- 별도 Termux브리지 카드에서 연결버전과 포함설치파일버전을 수치비교한다. 낮으면Setup으로안내, 오프라인/미확인버전은확인불가. `bridge/bibimer_bridge.py`의VERSION을 빌드가 ReviewAccessConfig.BRIDGE_VERSION으로 생성해 하드코딩중복을 피했다. 운영브리지/실행세션 자동설치·종료·재시작 없음. 페이지이동에서RAM초안유지를 확인했지만 실제Play설치후초안복원을 새로보장하지 않는다.
+- 공식GooglePlay `app-update:2.1.0` 및 POM전이의존성31개의 버전·SHA256을 고정하고 기존 AAPT2/javac/D8 빌더에연결했다. `scripts/play_sdk.py`, `play_sdk_dependencies.json`, `README-play-sdk.md`. manifest항목·라이브러리리소스/R·클래스패스·패키징라이선스/출처를 처리하고 예기치않은manifest변경은 거절한다. SDK는GoogleMaven에서만 가져오며 JAR/AAR/생성라이선스캐시는Git제외다. 새런타임권한/자격증명/키/Doppler설정 없음.
+- 검증: Python scripts **25개**(업데이트JVM **122단언**, SDK잠금/manifest/resource/classpath/변조검사 포함), Node업데이트UI·608키×10언어·기존언어/초안/프로젝트순서/위치/자동열기/현재위치·Demo/Review회귀 통과. Android리소스·전체Java·DEX컴파일 성공 `.tools/app-updates-compile.log`(기존Java8/deprecated경고, 전이AndroidX디버그정보2곳제거안내). 조회에사용하지않는ActivityResult오버로드의타입을 추가하지 않았으며 실제고정JAR들에서factory/interface/query구현의JVM로딩·조회경로를 확인했다(ART/기기검증은아님).
+- CUA실제앱UI+격리Native대역으로320px10개언어·393px한국어·1400px영어 배치,가로넘침없음,나중에/초안유지/수동확인/사용자명시선택시스토어콜백/브리지안내이동 확인. 브라우저콘솔오류없음. 증빙 `dist/app-updates/{banner-ko,settings-ko}.png`, `locale-layouts.json`; 시각판정95pass `.omx/state/app-updates/ralph-progress.json`. Native대역은외부스토어를실제로열지않는다.
+- **APK/AAB 패키징·서명·설치·Play배포·버전변경 없음.** 현재내부0.19.1(36)에는미포함. 다음명시적빌드로37이상에기능을넣어Play로설치하고 이후더높은버전을같은테스터에게제공해실제Play응답/스토어업데이트표시를검증해야한다. 자세한동작·남은검증은 `docs/app-updates.md`를따른다. 컴파일의 unsigned.apk는DEX/서명없는리소스중간파일이며배포용APK가아니다.
+
 ## 최신: 0.19.1(36) 내부 테스트 게시 완료 (2026-10-15)
 
 - 사용자 **내부 테스트 배포 다시** 요청으로 main `61c22bc`의 프로젝트 추가·다시 연결·GitHub 가져오기 아이콘을 앱 **0.19.1/code36**으로 빌드했다. 브리지는 **0.16.0 유지**. 아래 아이콘 기능의 미배포 기록은 이제36에 포함됐다.

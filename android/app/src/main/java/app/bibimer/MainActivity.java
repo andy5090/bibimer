@@ -56,6 +56,7 @@ public final class MainActivity extends Activity {
     private AgentPreferences agentPreferences;
     private InputPreferences inputPreferences;
     private ProjectLocations projectLocations;
+    private AppUpdates appUpdates;
     private LocalBridge bridge;
     private String setupLoaded = "";
     private volatile boolean destroyed;
@@ -90,6 +91,7 @@ public final class MainActivity extends Activity {
     private synchronized boolean changeDemoMode(boolean enabled, String code) {
         if (enabled == DemoMode.enabled(this)) return true;
         if (enabled && (!normalDrafts.ready() || !ReviewAccess.verify(ReviewAccessConfig.DIGEST, code))) return false;
+        if (appUpdates != null) appUpdates.invalidate();
         if (bridge != null) bridge.cancelPoll();
         fileEpoch.incrementAndGet(); ResponseNotifications.stop(this, false);
         if (!DemoMode.set(this, enabled, code)) { if (web != null) web.loadUrl(PAGE); return false; }
@@ -101,6 +103,7 @@ public final class MainActivity extends Activity {
         language = new AppLanguage(this); agentPreferences = new AgentPreferences(this); inputPreferences = new InputPreferences(this);
         notificationTarget = "{}"; notificationsSupported = false;
         if (web != null) web.loadUrl(PAGE);
+        if (!enabled && appUpdates != null) appUpdates.check(false);
         return true;
     }
 
@@ -124,6 +127,7 @@ public final class MainActivity extends Activity {
         agentPreferences = new AgentPreferences(this);
         inputPreferences = new InputPreferences(this);
         projectLocations = new ProjectLocations(this);
+        appUpdates = new AppUpdates(this, () -> script("window.BibimerAppUpdateStatus && window.BibimerAppUpdateStatus();"));
         bridge = new LocalBridge(tokens);
         if (!DemoMode.enabled(this)) LinkedFileProvider.prune(this, 0, false);
         FrameLayout root = new FrameLayout(this);
@@ -253,6 +257,8 @@ public final class MainActivity extends Activity {
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
                     .put("lastProjectParent", projectLocations.parent())
                     .put("lastProjectFolder", projectLocations.folder())
+                    .put("appUpdate", appUpdates.status())
+                    .put("bundledBridgeVersion", ReviewAccessConfig.BRIDGE_VERSION)
                     .put("notifications", ResponseNotifications.status(MainActivity.this))
                     .put("quickSetup", setup)
                     .put("version", appVersion()).toString();
@@ -261,6 +267,32 @@ public final class MainActivity extends Activity {
 
         @JavascriptInterface public String takeNotificationTarget() {
             synchronized (MainActivity.this) { String target = notificationTarget; notificationTarget = "{}"; return target; }
+        }
+
+        @JavascriptInterface public void checkAppUpdate() {
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> { if (requestCurrent(false, epoch)) appUpdates.check(true); });
+        }
+
+        @JavascriptInterface public void dismissAppUpdate() {
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> { if (requestCurrent(false, epoch)) appUpdates.dismiss(); });
+        }
+
+        @JavascriptInterface public void openAppStore() {
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> {
+                if (!requestCurrent(false, epoch)) return;
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=app.bibimer"))
+                        .setPackage("com.android.vending"));
+                } catch (RuntimeException missingPlay) {
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=app.bibimer"))
+                            .addCategory(Intent.CATEGORY_BROWSABLE));
+                    } catch (RuntimeException missingBrowser) { appUpdates.storeFailed(); }
+                }
+            });
         }
 
         @JavascriptInterface public void notificationsConnected(boolean supported) {
@@ -586,6 +618,7 @@ public final class MainActivity extends Activity {
         super.onResume();
         resumed = true;
         refreshLanguage();
+        appUpdates.check(false);
         if (notificationsSupported) {
             ensureNotifications(!ResponseNotifications.preferences(this).getBoolean("asked", false));
         }
@@ -606,6 +639,7 @@ public final class MainActivity extends Activity {
     @Override protected void onDestroy() {
         backHandling(false);
         destroyed = true;
+        appUpdates.close();
         bridge.cancelPoll();
         actions.shutdownNow();
         events.shutdownNow();

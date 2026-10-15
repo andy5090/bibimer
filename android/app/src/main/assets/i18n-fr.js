@@ -1,6 +1,23 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "app_update_title": "Mises à jour de l’application",
+  "app_update_version": "Version installée : {version}",
+  "app_update_check": "Rechercher des mises à jour",
+  "app_update_checking": "Vérification sur Google Play…",
+  "app_update_available": "Une nouvelle version est disponible.",
+  "app_update_current": "Aucune mise à jour n’est disponible pour ce compte Google Play.",
+  "app_update_failed": "Impossible de rechercher des mises à jour. Réessayez ou consultez Google Play.",
+  "app_update_unavailable": "Consultez Google Play pour les mises à jour. La vérification automatique nécessite une application installée depuis Google Play.",
+  "app_update_open": "Ouvrir Google Play",
+  "app_update_later": "Plus tard",
+  "app_update_store_failed": "Impossible d’ouvrir Google Play.",
+  "bridge_update_title": "Pont Termux",
+  "bridge_update_available": "Mettez à jour le pont Termux avec le fichier d’installation inclus dans cette application.",
+  "bridge_update_current": "Le pont connecté respecte la version requise par cette application.",
+  "bridge_update_unknown": "Connectez-vous à Termux pour vérifier la version du pont.",
+  "bridge_update_setup": "Ouvrir le guide d’installation",
+  "bridge_update_version": "Connectée : {current} · Incluse : {bundled}",
   "project_order": "Ordre des projets",
   "project_move_up": "Monter",
   "project_move_down": "Descendre",

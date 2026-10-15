@@ -1,6 +1,23 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "app_update_title": "アプリの更新",
+  "app_update_version": "インストール済みバージョン：{version}",
+  "app_update_check": "更新を確認",
+  "app_update_checking": "Google Play に確認中…",
+  "app_update_available": "新しいバージョンを利用できます。",
+  "app_update_current": "この Google Play アカウントで利用できる更新はありません。",
+  "app_update_failed": "更新を確認できませんでした。再試行するか、Google Play で確認してください。",
+  "app_update_unavailable": "Google Play で更新を確認してください。自動確認は Google Play からインストールしたアプリで利用できます。",
+  "app_update_open": "Google Play を開く",
+  "app_update_later": "後で",
+  "app_update_store_failed": "Google Play を開けませんでした。",
+  "bridge_update_title": "Termux ブリッジ",
+  "bridge_update_available": "このアプリに付属のセットアップファイルで Termux ブリッジを更新してください。",
+  "bridge_update_current": "接続中のブリッジは、このアプリのバージョン要件を満たしています。",
+  "bridge_update_unknown": "Termux に接続すると、ブリッジのバージョンを確認できます。",
+  "bridge_update_setup": "セットアップガイドを開く",
+  "bridge_update_version": "接続中：{current} · 付属：{bundled}",
   "project_order": "プロジェクトの順序",
   "project_move_up": "上へ移動",
   "project_move_down": "下へ移動",
