@@ -1,0 +1,8 @@
+<en-US>
+Bibimer can now check Google Play for a newer version and show an optional update notice. Choose Open Google Play when you want to update, or Later to dismiss the notice.
+Settings now includes a manual update check, your installed version, and a separate Termux bridge version guide. The app does not install updates or restart your sessions automatically.
+</en-US>
+<ko-KR>
+Google Play의 새 버전을 확인하고 업데이트 안내를 표시합니다. 원할 때 Google Play에서 보기로 이동하거나 나중에를 선택할 수 있습니다.
+설정에서 수동으로 업데이트를 확인하고 현재 앱 버전과 Termux 브리지 버전을 볼 수 있습니다. 앱이 업데이트를 설치하거나 세션을 자동으로 재시작하지 않습니다.
+</ko-KR>

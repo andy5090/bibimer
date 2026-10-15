@@ -1,5 +1,15 @@
 # Bibimer 다음 세션 시작점
 
+## 최신: 0.20.0(37) 업데이트 감지 내부 테스트 게시 완료 (2026-10-15)
+
+- 사용자 **내부 테스트 배포** 요청으로 main `35a2eb4`의 업데이트 감지 기능을 앱 **0.20.0/code37**, 브리지 **0.16.0 유지**로 빌드·게시했다. 자동/수동 확인, 선택 시 Google Play 페이지 이동, 나중에, 앱/브리지 버전 안내,608키×10언어와 기존 누적 기능을 포함한다. 아래 미배포 기록의 기능은37에 포함됐다.
+- **활성 / 내부 테스터에게 제공됨 / 2026-10-15 20:03 Asia/Seoul**, 출시명 `0.20.0 (37) - Update availability`. 새37만 포함/36제외, EN/KO출시노트, 기존테스터유지. 오류0·기존 가독화 파일 경고1, 지원 기기 변화0. Console `/tracks/4701718894791581363/releases/8/details`; 증빙 `dist/play-0.20.0/internal37-live.png`. 프로덕션승급/제출·웹배포·운영Termux/세션 변경 없음.
+- AAB `dist/play/bibimer-0.20.0-37-release.aab`, SHA-256 **926e8adb9eccc45744821c1cc1147d5c03002bf699c94dc1337c2881a38da776**. 기존 로컬 키·비공개 심사코드 사용, 새키/Doppler다운로드 없음. bundletool/jarsigner/AAPT2·전체Java/D8·기존 업로드 인증서·49assets 원본 일치·업데이트/PlaySDK/tasks DEX·고정SDK의존성/라이선스 원본·브리지0.16.0 원본·심사digest 포함/비밀원문 미포함 검증. `.tools/aab-0.20.0-37-mac.log`, `.tools/aab-0.20.0-37-verification.json`. 기존Java8/deprecated경고와 transitiveAndroidX디버그정보2곳제거안내만 있다.
+- Python scripts25개(업데이트 상태JVM122단언·SDK패키징 검사 포함), Node608키×10언어·업데이트UI/언어/초안/프로젝트순서/위치/자동열기/현재위치·Demo/Review회귀 통과. 기능의 소스UI320px10언어·393/1400px 검증은 아래 구현기록을 따른다.
+- AAB 파생 검증용 universal APK를 기존 에뮬레이터에 업데이트 설치했다. 기존한국어유지·Settings0.20.0/브리지0.16.0·사이드로드 상태/수동확인·버튼선택시실제GooglePlay앱열기·force-stop후한국어재실행을 확인했다. `dist/play-0.20.0/{settings,manual-check,restarted}.xml`, `android-settings.png`, `store-navigation.json`. Play는미로그인상태이며 계정별 실제업데이트응답/상세스토어목록/실제휴대폰Play설치는미검증이다. UIAutomator가처음빈WebView트리를주면준비된트리를다시조회했다. wm size override의물리입력좌표차이를피해검증중임시reset했고기존1080×1920으로복원후에뮬레이터종료했다.
+- **이번37부터감지기능이있으므로이전36이37을앱내에서감지할수는없다.** 먼저기존내부테스트링크에서37을Play로설치해야한다. 이후더높은새버전이같은테스터에게제공될때실제감지/페이지이동/스토어업데이트표시를검증한다. 앱은사용자선택없이업데이트설치나Termux세션재시작을하지않는다. 자세한사항 `docs/app-updates.md`.
+- README EN/KO·출시/개발문서·listing.json을 내부37/공개33 기록으로갱신했다. 새AndroidSDK전이의존성포함빌드는Console수락·설치실행까지검증했고원본프로젝트파일/키/기존휴대폰데이터는변경하지않았다.
+
 ## 최신: 앱 업데이트 감지·Google Play 페이지 안내 (2026-10-15, 미배포)
 
 - 사용자 구현 승인 후 **사용자가 원하면 Google Play 페이지로 안내**라는 후속 요청에 맞춰 조회/링크 방식으로 구현했다. 앱 내부 다운로드·설치·재시작 API를 호출하지 않는다. 새버전 안내는 **Google Play에서 보기 / 나중에**, Settings에 설치 버전·수동 확인·확인 상태·스토어 이동을 제공한다. Play 앱이 없으면 고정 공식HTTPS페이지로 이동한다. 확인실패를 최신버전으로 표시하지 않는다.
