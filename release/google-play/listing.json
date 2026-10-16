@@ -38,7 +38,7 @@
       ],
       "title": "Bibimer",
       "shortDescription": "Start developing on your phone. Manage projects and coding agents with Termux.",
-      "fullDescription": "Start developing on your phone.\n\nTurn your Android phone into a development environment. Project files, Git, development commands, and compatible coding agents run in Termux on the same phone. Develop directly on your smartphone without a separate development computer or remote host.\n\nBIBIMER is a mobile agent development environment (ADE) that connects to Termux on the same phone. Manage projects, agent sessions, conversations, and terminals in one place. The coding work is performed by connected agents such as Codex, Claude, and OpenCode.\n\nYOUR PROJECTS AND SESSIONS\nBrowse projects, existing Git worktrees, and agent sessions from a mobile sidebar. Rename or archive sessions and return to ongoing work. Switching screens does not end your agent processes.\n\nCHAT AND TERMINAL\nRead structured conversations, code blocks, and tool activity, or use the terminal interface. Send instructions, respond to approval requests, and queue follow-up messages during a response. Available controls depend on the agent and interface.\n\nAGENT CHOICES\nConnect compatible installations of Codex, Claude, and OpenCode. Choose models and reasoning options reported by your installed agent. To continue with another agent, review the recent conversation context before sending it.\n\nLIVE DEVELOPMENT SETUP\nTermux must be installed and initialized on this phone. BIBIMER provides bridge setup instructions and a connection flow. Command access requires your permission. A working agent installation and any required provider login or API configuration are separate requirements. Provider availability and charges depend on your account.\n\nThe Android interface connects to a local bridge. Agents may send prompts, code, and files to their configured AI providers and tools; this is not a promise of offline AI processing.\n\nBIBIMER starts in English and also supports Korean. Completion notifications require Android notification permission; background delivery depends on Android and the running bridge.\n\nBIBIMER is an independent application and is not affiliated with the makers of Termux or the supported agents."
+      "fullDescription": "Start developing on your phone.\n\nTurn your Android phone into a development environment. Project files, Git, development commands, and compatible coding agents run in Termux on the same phone. Develop directly on your smartphone without a separate development computer or remote host.\n\nBIBIMER is a mobile agent development environment (ADE) that connects to Termux on the same phone. Manage projects, agent sessions, conversations, and terminals in one place. The coding work is performed by connected agents such as Codex, Claude, and OpenCode.\n\nYOUR PROJECTS AND SESSIONS\nBrowse projects, existing Git worktrees, and agent sessions from a mobile sidebar. Rename or archive sessions and return to ongoing work. Switching screens does not end your agent processes.\n\nCHAT AND TERMINAL\nRead structured conversations, code blocks, and tool activity, or use the terminal interface. Send instructions, respond to approval requests, and queue follow-up messages during a response. Available controls depend on the agent and interface.\n\nAGENT CHOICES\nConnect compatible installations of Codex, Claude, and OpenCode. Choose models and reasoning options reported by your installed agent. To continue with another agent, review the recent conversation context before sending it.\n\nLIVE DEVELOPMENT SETUP\nTermux must be installed and initialized on this phone. BIBIMER provides bridge setup instructions and a connection flow. Command access requires your permission. A working agent installation and any required provider login or API configuration are separate requirements. Provider availability and charges depend on your account.\n\nThe Android interface connects to a local bridge. Agents may send prompts, code, and files to their configured AI providers and tools; this is not a promise of offline AI processing.\n\nBIBIMER supports English, Korean, Brazilian Portuguese, Spanish, Indonesian, Simplified Chinese, Japanese, Traditional Chinese, French, and German. It follows your device language by default and uses English when no supported language matches. You can choose a language in Settings. Completion notifications require Android notification permission; background delivery depends on Android and the running bridge.\n\nBIBIMER is an independent application and is not affiliated with the makers of Termux or the supported agents."
     },
     "ko-KR": {
       "featureGraphic": "graphics/feature-ko-KR.png",
@@ -50,7 +50,7 @@
       ],
       "title": "Bibimer 비비머",
       "shortDescription": "휴대폰 하나로 개발을 시작하세요. Termux와 연결해 프로젝트와 코딩 에이전트 작업을 관리하세요.",
-      "fullDescription": "휴대폰 하나로 개발을 시작하세요.\n\n내 손안의 에이전트 개발 환경.\n\n스마트폰 자체가 개발 환경이 됩니다. 프로젝트 파일과 Git, 개발 명령, 호환되는 코딩 에이전트를 같은 휴대폰의 Termux에서 실행하세요. 별도의 개발 PC나 원격 호스트 없이 스마트폰에서 직접 개발을 진행합니다.\n\nBIBIMER는 같은 휴대폰의 Termux와 연결하는 모바일 ADE(Agent Development Environment, 에이전트 개발 환경)입니다. 프로젝트·에이전트 세션·대화·터미널을 한곳에서 관리하며 실제 코딩 작업은 연결한 Codex·Claude·OpenCode 등의 에이전트가 수행합니다.\n\n프로젝트와 세션 관리\n모바일 사이드바에서 프로젝트, 기존 Git 워크트리, 에이전트 세션을 탐색합니다. 세션 이름을 바꾸거나 보관하고 진행 중인 작업으로 돌아갈 수 있습니다. 화면을 전환해도 기존 에이전트 프로세스를 종료하지 않습니다.\n\n대화와 터미널\n구조화된 대화, 코드 블록, 도구 활동을 확인하거나 터미널 인터페이스를 사용하세요. 지시 전송, 승인 요청 응답, 응답 중 후속 입력 대기열을 제공합니다. 세부 기능은 에이전트와 인터페이스에 따라 다릅니다.\n\n에이전트 선택\n호환되는 Codex·Claude·OpenCode 설치본과 연결합니다. 설치된 에이전트가 제공하는 모델과 추론 수준을 선택할 수 있습니다. 다른 에이전트로 이어갈 때는 최근 대화 맥락을 확인한 뒤 전송합니다.\n\n실제 개발을 위한 준비\n같은 휴대폰에 Termux를 설치하고 최초 실행을 마쳐야 합니다. 앱은 브리지 설정 안내와 연결 과정을 제공하며 명령 실행에는 사용자의 권한 허용이 필요합니다. 실행 가능한 에이전트 설치와 제공자 로그인 또는 API 설정은 별도로 필요합니다. 제공 기능과 비용은 사용자의 제공자 계정에 따라 달라집니다.\n\nAndroid 화면은 로컬 브리지와 연결합니다. 에이전트는 설정된 AI 제공자와 도구에 입력·코드·파일을 전송할 수 있으므로 모든 AI 처리가 오프라인에서 이루어진다는 뜻은 아닙니다.\n\n처음에는 영어로 표시되며 앱 설정에서 한국어를 선택할 수 있습니다. 응답 완료 알림에는 Android 알림 권한이 필요하며 백그라운드 전달은 Android와 브리지 실행 상태의 영향을 받습니다.\n\nBIBIMER는 독립 앱으로, Termux 및 지원 에이전트의 제작사와 제휴된 제품이 아닙니다."
+      "fullDescription": "휴대폰 하나로 개발을 시작하세요.\n\n내 손안의 에이전트 개발 환경.\n\n스마트폰 자체가 개발 환경이 됩니다. 프로젝트 파일과 Git, 개발 명령, 호환되는 코딩 에이전트를 같은 휴대폰의 Termux에서 실행하세요. 별도의 개발 PC나 원격 호스트 없이 스마트폰에서 직접 개발을 진행합니다.\n\nBIBIMER는 같은 휴대폰의 Termux와 연결하는 모바일 ADE(Agent Development Environment, 에이전트 개발 환경)입니다. 프로젝트·에이전트 세션·대화·터미널을 한곳에서 관리하며 실제 코딩 작업은 연결한 Codex·Claude·OpenCode 등의 에이전트가 수행합니다.\n\n프로젝트와 세션 관리\n모바일 사이드바에서 프로젝트, 기존 Git 워크트리, 에이전트 세션을 탐색합니다. 세션 이름을 바꾸거나 보관하고 진행 중인 작업으로 돌아갈 수 있습니다. 화면을 전환해도 기존 에이전트 프로세스를 종료하지 않습니다.\n\n대화와 터미널\n구조화된 대화, 코드 블록, 도구 활동을 확인하거나 터미널 인터페이스를 사용하세요. 지시 전송, 승인 요청 응답, 응답 중 후속 입력 대기열을 제공합니다. 세부 기능은 에이전트와 인터페이스에 따라 다릅니다.\n\n에이전트 선택\n호환되는 Codex·Claude·OpenCode 설치본과 연결합니다. 설치된 에이전트가 제공하는 모델과 추론 수준을 선택할 수 있습니다. 다른 에이전트로 이어갈 때는 최근 대화 맥락을 확인한 뒤 전송합니다.\n\n실제 개발을 위한 준비\n같은 휴대폰에 Termux를 설치하고 최초 실행을 마쳐야 합니다. 앱은 브리지 설정 안내와 연결 과정을 제공하며 명령 실행에는 사용자의 권한 허용이 필요합니다. 실행 가능한 에이전트 설치와 제공자 로그인 또는 API 설정은 별도로 필요합니다. 제공 기능과 비용은 사용자의 제공자 계정에 따라 달라집니다.\n\nAndroid 화면은 로컬 브리지와 연결합니다. 에이전트는 설정된 AI 제공자와 도구에 입력·코드·파일을 전송할 수 있으므로 모든 AI 처리가 오프라인에서 이루어진다는 뜻은 아닙니다.\n\n영어, 한국어, 브라질 포르투갈어, 스페인어, 인도네시아어, 중국어 간체, 일본어, 중국어 번체, 프랑스어, 독일어를 지원합니다. 기본으로 기기 언어를 따르며 지원하는 언어가 없으면 영어로 표시합니다. 설정에서 원하는 언어를 선택할 수 있습니다. 응답 완료 알림에는 Android 알림 권한이 필요하며 백그라운드 전달은 Android와 브리지 실행 상태의 영향을 받습니다.\n\nBIBIMER는 독립 앱으로, Termux 및 지원 에이전트의 제작사와 제휴된 제품이 아닙니다."
     }
   },
   "website": "https://bibimer.app/",
@@ -204,7 +204,8 @@
     "released": true,
     "releasedTrack": "internal_testing",
     "productionReleased": false,
-    "sourceBridgeVersion": "0.16.0"
+    "sourceBridgeVersion": "0.16.0",
+    "productionSubmitted": true
   },
   "consoleScreenshotsUpdatedOn": "2026-10-15",
   "playAppSigning": {
@@ -228,32 +229,33 @@
   },
   "consoleScreenshotsStatus": "published",
   "productionRelease": {
-    "versionName": "0.17.1",
-    "versionCode": 33,
-    "releaseName": "0.17.1 (33) - File explorer navigation",
-    "consoleStatus": "available_on_google_play",
-    "submittedOn": "2026-10-14",
-    "verifiedAtLocal": "2026-10-14 23:09 Asia/Seoul",
-    "changeCount": 1,
+    "versionName": "0.20.0",
+    "versionCode": 37,
+    "releaseName": "0.20.0 (37) - Update availability",
+    "consoleStatus": "submitted_pre_review_checks_running",
+    "submittedOn": "2026-10-16",
+    "submittedAtLocal": "2026-10-16 12:02 Asia/Seoul",
+    "changeCount": 3,
     "rolloutPercent": 100,
     "allExistingTargetCountries": true,
+    "targetCountryCount": 178,
     "managedPublishing": false,
     "publishAfterApproval": true,
-    "publicAvailabilityConfirmed": true,
+    "publicAvailabilityConfirmed": false,
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
     "errors": [],
-    "preReviewChecksCompleted": true,
-    "releaseNotesFile": "release/google-play/release-notes/0.17.1.txt",
+    "supportedDeviceChanges": 0,
+    "preReviewChecksCompleted": false,
+    "releaseNotesFile": "release/google-play/release-notes/0.20.0-production.txt",
     "reusedValidatedInternalTestBundle": true,
-    "userReportedInternalInstallAndWorkingOn": "2026-10-14",
-    "note": "Fresh production release details confirm version 33 available on Google Play, 100% rollout, 178 of 178 countries/regions, published at 16:17 Asia/Seoul. The same bundle was tested internally and reported working by the user.",
-    "approvedOn": "2026-10-14",
-    "publishedAtLocal": "2026-10-14 16:17 Asia/Seoul",
-    "availableCountryRows": 178,
-    "totalCountryRows": 178
+    "userReportedInternalTestConfirmedOn": "2026-10-16",
+    "previousPublicVersionName": "0.17.1",
+    "previousPublicVersionCode": 33,
+    "note": "Console shows changes in review with fast pre-review checks running. Submitted version 37 plus English and Korean full-description updates for ten languages and device-language defaults. Existing public version 33 remains the last confirmed production release until approval. No rebuild or new upload.",
+    "evidence": "dist/production-0.20.0/submitted.png"
   },
   "internalTesterParticipation": {
     "consoleRegistration": "saved_one_tester",
@@ -317,7 +319,7 @@
     "released": true,
     "releasedTrack": "internal_testing",
     "productionReleased": false,
-    "productionSubmitted": false,
+    "productionSubmitted": true,
     "consoleInternalTestStatus": "active_available_to_existing_testers",
     "signatureVerified": true,
     "developmentApkBuilt": false,
@@ -335,7 +337,9 @@
     "savedKoreanLanguagePreserved": true,
     "sideloadStateAndManualCheckVerified": true,
     "explicitActionOpensPlayVerified": true,
-    "realPlayAvailabilityResponseVerified": false
+    "realPlayAvailabilityResponseVerified": false,
+    "consoleProductionStatus": "submitted_pre_review_checks_running",
+    "productionReleaseNotesFile": "release/google-play/release-notes/0.20.0-production.txt"
   },
   "previousProductionRelease": {
     "versionName": "0.17.0",
@@ -455,12 +459,13 @@
       "no_deobfuscation_mapping_file"
     ],
     "errors": [],
-    "productionSubmitted": false,
+    "productionSubmitted": true,
     "emulatorInstallVerified": true,
     "physicalDeviceVerified": false,
     "sourceBridgeVersion": "0.16.0",
     "bridgeUpdateRequiredForProjectOrdering": true,
-    "realPlayAvailabilityResponseVerified": false
+    "realPlayAvailabilityResponseVerified": false,
+    "userReportedInternalTestConfirmedOn": "2026-10-16"
   },
   "productionReleaseHistory": [
     {
@@ -482,6 +487,34 @@
       "approvedOn": "2026-10-12",
       "publishedAtLocal": "2026-10-12 15:59 Asia/Seoul",
       "publicStoreUrl": "https://play.google.com/store/apps/details?id=app.bibimer"
+    },
+    {
+      "versionName": "0.17.1",
+      "versionCode": 33,
+      "releaseName": "0.17.1 (33) - File explorer navigation",
+      "consoleStatus": "available_on_google_play",
+      "submittedOn": "2026-10-14",
+      "verifiedAtLocal": "2026-10-14 23:09 Asia/Seoul",
+      "changeCount": 1,
+      "rolloutPercent": 100,
+      "allExistingTargetCountries": true,
+      "managedPublishing": false,
+      "publishAfterApproval": true,
+      "publicAvailabilityConfirmed": true,
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "errors": [],
+      "preReviewChecksCompleted": true,
+      "releaseNotesFile": "release/google-play/release-notes/0.17.1.txt",
+      "reusedValidatedInternalTestBundle": true,
+      "userReportedInternalInstallAndWorkingOn": "2026-10-14",
+      "note": "Fresh production release details confirm version 33 available on Google Play, 100% rollout, 178 of 178 countries/regions, published at 16:17 Asia/Seoul. The same bundle was tested internally and reported working by the user.",
+      "approvedOn": "2026-10-14",
+      "publishedAtLocal": "2026-10-14 16:17 Asia/Seoul",
+      "availableCountryRows": 178,
+      "totalCountryRows": 178
     }
   ],
   "screenshotsExampleData": {
@@ -537,5 +570,17 @@
   "productionLanguages": [
     "en",
     "ko"
+  ],
+  "submittedProductionLanguages": [
+    "en",
+    "ko",
+    "pt-BR",
+    "es",
+    "id",
+    "zh-Hans",
+    "ja",
+    "zh-Hant",
+    "fr",
+    "de"
   ]
 }

@@ -1,0 +1,11 @@
+<en-US>
+Added eight languages and system-language selection, with English as the fallback.
+See branch and worktree details, reorder projects, and return to your last folders. Update the Termux bridge with the included setup file to enable project ordering.
+Check for updates and choose when to open Google Play. Settings shows app and bridge versions and offers a manual check. Updates and session restarts are never automatic.
+Improved sidebar buttons and project navigation.
+</en-US>
+<ko-KR>
+8개 언어를 추가했습니다. 기본으로 기기 언어를 따르며 지원하지 않는 언어는 영어로 표시합니다.
+브랜치·워크트리 정보를 확인하고 프로젝트 순서를 바꿀 수 있습니다. 마지막으로 사용한 폴더를 기억하고 프로젝트 탐색을 개선했습니다. 순서 변경을 사용하려면 포함된 설치 파일로 Termux 브리지를 업데이트하세요.
+새 버전을 확인하고 원할 때 Google Play로 이동할 수 있습니다. 설정에서 앱·브리지 버전을 확인하고 수동으로 업데이트를 조회합니다. 업데이트 설치나 세션 재시작은 자동으로 실행하지 않습니다.
+</ko-KR>
