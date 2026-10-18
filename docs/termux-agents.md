@@ -9,7 +9,7 @@ Bibimer와 **같은 휴대폰의 Termux**에서 진행한다. 별도 PC나 원�
 | 에이전트 | 확인한 실행 구성 | 확인 결과 |
 | --- | --- | --- |
 | Codex | `@mmmbuto/codex-cli-termux@0.160.0-termux.3` | `codex --version` → `codex-cli 0.160.0` |
-| Claude Code | Bibimer 전용 런타임 2.1.283 + Agent SDK 0.3.283 | 전용 런처 `--version` 성공. 전역 npm 설치본 2.1.263의 `claude`는 실행 실패 |
+| Claude Code | Bibimer 전용 런타임 2.1.283 + Agent SDK 0.3.283 | 전용 런처와 현재 폰의 일반 `claude` 명령 모두 `--version` 성공. 원래 npm2.1.263 진입점은 백업 |
 | OpenCode | 1.17.13, OpenClaw Android의 glibc·proot·Bun 바이너리 래퍼 | `opencode --version` → `1.17.13` |
 | Gemini CLI | 공식 npm `@google/gemini-cli@0.58.0`, Node.js로 진입 파일 직접 실행 | `--version` → `0.58.0`. Bibimer 에이전트 목록·Chat 연동은 미구현 |
 
@@ -37,7 +37,7 @@ Termux에 안내된 주소를 같은 폰의 브라우저에서 열어 로그인�
 
 ## Claude Code
 
-현재 폰은 전역 `claude` 명령이 고장 나 있어 **Bibimer 전용 런타임**을 사용한다. 일반 `npm install -g @anthropic-ai/claude-code`만으로 이 구성이 재현된다고 안내하지 않는다.
+현재 폰은 기존 npm 진입점의 `claude native binary not installed` 오류 때문에 **Bibimer 전용 런타임**을 사용한다. 2026-10-19 일반 `claude` 명령도 이 런타임으로 연결해 버전 출력과 SDK 초기화를 확인했다. 원래 npm 연결은 `$PREFIX/bin/claude.npm-before-bibimer`에 백업했다. 이는 현재 폰에 직접 적용한 연결 수정이며 일반 복구 설치기는 기존 전역 CLI를 교체하지 않는다. 일반 `npm install -g @anthropic-ai/claude-code`만으로 이 구성이 재현된다고 안내하지 않는다.
 
 1. **arm64 Termux**, `$PREFIX/glibc/lib/ld-linux-aarch64.so.1`에 있는 glibc 로더, `ripgrep`을 먼저 준비한다. glibc가 없다면 [glibc 패키지 프로젝트](https://github.com/termux-pacman/glibc-packages)의 요구사항을 확인한다. Bibimer 설정 파일은 glibc를 설치하지 않는다. 이 선행 환경을 처음 설치하는 과정은 별도 검증 대상이다.
 2. Bibimer의 **Setup → Claude Code · Termux → Claude 복구 명령 복사**를 누른다. 앱에 내장된 독립 설치 내용 전체를 복사하므로 설정 파일 저장·다운로드 폴더 접근이 필요하지 않다. 이번 소스 변경은 다음 APK 빌드/설치 후 적용되며 구형 배포 앱의 버튼은 여전히 저장 파일을 참조한다.

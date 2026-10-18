@@ -9,7 +9,7 @@ These are configurations checked on an **Android 16 arm64 phone on 2026-10-19**.
 | Agent | Checked configuration | Result |
 | --- | --- | --- |
 | Codex | `@mmmbuto/codex-cli-termux@0.160.0-termux.3` | `codex-cli 0.160.0` |
-| Claude Code | Bibimer runtime 2.1.283; Agent SDK 0.3.283 | Dedicated launcher works; the global npm CLI 2.1.263 fails |
+| Claude Code | Bibimer runtime 2.1.283; Agent SDK 0.3.283 | Dedicated launcher and the phone's normal `claude` command pass version checks; original npm2.1.263 entry backed up |
 | OpenCode | 1.17.13; community OpenClaw Android glibc/proot/Bun wrapper | `opencode --version` succeeds |
 | Gemini CLI | Official npm `@google/gemini-cli@0.58.0`; entry file run directly with Node.js | `--version` prints `0.58.0`; Bibimer agent selection and Chat are not integrated |
 
@@ -37,7 +37,7 @@ Open the printed URL in the same phone's browser. If the browser callback fails,
 
 ## Claude Code
 
-The global `claude` command on the checked phone fails, so it uses Bibimer's separate runtime. An ordinary global npm installation does not reproduce this configuration.
+The phone uses Bibimer's separate runtime because its original npm entry failed with `claude native binary not installed`. On 2026-10-19 we also connected the normal `claude` command to that runtime and verified its version output and SDK initialization. The original npm link is backed up at `$PREFIX/bin/claude.npm-before-bibimer`. This was a direct repair on this phone; the general repair installer still preserves the global CLI. An ordinary global npm installation does not reproduce this configuration.
 
 Prerequisites: **arm64 Termux**, an existing glibc loader at `$PREFIX/glibc/lib/ld-linux-aarch64.so.1`, and ripgrep. See the [glibc packages project](https://github.com/termux-pacman/glibc-packages) if needed. Bibimer does not install glibc; preparing that environment from scratch remains unverified.
 

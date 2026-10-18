@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## 현재 폰의 일반 claude 명령 연결 복구 (2026-10-19)
+
+- 사용자가 Termux의 `claude` 실행 시 `claude native binary not installed`를 확인했다. `$PREFIX/bin/claude`가 기존 npm2.1.263의 `../lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe`를 가리키는 상태였다. 전용2.1.283 런처는 이미 실행되므로 일반 명령의 실행 경로 문제를 별도로 복구했다. 사용자 오류는 인증 단계 이전의 npm 런처 실패다.
+- 실제 폰의 기존 심볼릭 링크를 같은 bin 폴더의 **`claude.npm-before-bibimer`**로 보존하고, `claude` 입구만 검증된 `~/.local/share/bibimer/claude-runtime/claude`에 모든 인수를 전달하는0700 셸 런처로 원자적으로 교체했다. npm 패키지 내용·전용 바이너리·SDK·로그인 정보를 다시 설치하거나 브리지/실행 세션을 재시작하지 않았다. 전용 런처를 직접 호출하므로 브리지의 CLI 탐색과 재귀하지 않는다.
+- `claude --version`과 새 `bash --noprofile --norc` 셸 모두 **2.1.283 (Claude Code)**를 반환하고, `claude --help`와 실제 SDK의 새 일반 경로 제어 초기화/모델 목록5개 조회가 성공했다. `claude auth status`는 여전히 `loggedIn: false`/`authMethod: none`이다. 다음은 사용자가 Termux에서 **`claude auth login`**으로 브라우저 로그인을 완료한 뒤 실제 요청을 확인하는 것이다. 네이티브 바이너리 누락 오류 해결과 인증/모델 사용 성공은 구분한다.
+- 이 연결 변경은 **현재 폰에 직접 적용한 복구**이며 배포 앱이나 일반 복구 설치기가 자동으로 전역 CLI를 교체하도록 변경한 것은 아니다. 향후 전역 npm 재설치가 `claude` 입구를 덮어쓸 수 있으므로 필요 시 전용 런처를 직접 사용한다. 되돌릴 때는 현재 래퍼를 제거하고 같은 폴더의 백업 링크를 원래 이름으로 복원한다(백업은 원래 고장 난 npm 진입점이다). APK/AAB 빌드·버전 변경·배포 없음.
+
 ## Claude 어댑터·복구 명령의 Downloads 의존성 제거 (2026-10-19, 미배포)
 
 - 사용자가 복사 버튼의 `~/storage/downloads/bibimer-setup.sh: No such file or directory`를 보고했다. 이는 Claude 실행/인증 전의 설치 파일 부재 문제이며 앞서 재현한 OAuth 만료와 별개다. 파일 저장을 요구하던 명령 생성과 안내를 수정했다.
