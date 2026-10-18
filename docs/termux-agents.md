@@ -15,6 +15,21 @@ Bibimer와 **같은 휴대폰의 Termux**에서 진행한다. 별도 PC나 원�
 
 Bibimer 앱의 최소 Android 버전과 각 에이전트의 요구사항은 다르다. 이 폰의 Termux Node.js는 26.4.0, npm은 11.19.0, glibc는 2.42-0, glibc-runner는 2.0-3이다. 모두 같은 버전으로 바꿔야 한다는 뜻은 아니다.
 
+## 앱에서 로그인 시작하기
+
+개발 소스의 **Setup → 에이전트 준비**에서 Codex·Claude Code·OpenCode·Gemini CLI 각각의 **Termux에서 로그인** 버튼을 제공한다. 누르면 같은 폰의 새 Termux 터미널에서 아래 작업을 시작한다. 기존 브리지·프로젝트·실행 세션은 유지하며, 키·인증 코드·CLI 출력은 Bibimer로 가져오지 않는다. 계정/제공자 선택과 브라우저 인증은 사용자가 직접 완료한다.
+
+| 에이전트 | 로그인 버튼의 작업 | 추가 확인 버튼 |
+| --- | --- | --- |
+| Codex | 설치된 `codex login` | `codex login status`, `codex --version` |
+| Claude Code | 전용 런처 우선으로 `auth login` | `auth status`, `--version`, 기존 복구/어댑터 준비 |
+| OpenCode | 설치된 래퍼의 `opencode auth login`으로 제공자 선택 | `opencode auth list`(설정 목록이며 접속 성공 검증은 아님), `opencode --version` |
+| Gemini CLI | Termux Node.js로 설치된 Gemini CLI를 대화형 실행 | 같은 경로의 `--version`; 독립 로그인 상태 명령은 제공하지 않음 |
+
+Gemini는 별도 `gemini auth login` 명령을 사용하지 않는다. 실행 후 **Google 로그인**을 선택하고, 이미 인증되어 있으면 CLI에서 **`/auth`**로 로그인 방식을 선택한다. 앱이 `/auth`를 프롬프트로 전송하거나 로그아웃·계정 선택을 대신하지 않는다. 설치된0.58.0의 도움말·내장 명령 소스와 [공식 인증 안내](https://geminicli.com/docs/get-started/authentication/)를 확인했다. Gemini의 Bibimer 구조화 Chat 연동은 여전히 미구현이다.
+
+Termux 0.118 이상, BIBIMER의 Android 명령 실행 권한과 Termux `allow-external-apps=true` 설정이 필요하다. 권한 허용 후에는 선택한 에이전트의 작업만 실행하며 브리지 설치로 바뀌지 않는다. 화면 열기가 차단되면 Termux 알림에서 터미널을 연다. 명령 복사 경로도 유지한다. **실행 요청 표시는 인증 완료가 아니다. 새 APK 빌드·설치 후 적용되며 실제 권한 창·화면 전환·브라우저 복귀는 아직 검증하지 않았다.**
+
 ## Codex
 
 현재 폰은 OpenAI의 일반 Linux 바이너리가 아닌 **커뮤니티 Termux 전용 배포본**을 사용한다. 확인한 패키지는 **Android 10 이상·arm64**가 필요하다. [배포본 소스와 요구사항](https://github.com/DioNanos/codex-termux)을 확인한다. OpenAI 공식 Termux 배포본으로 표현하지 않는다.

@@ -1,13 +1,15 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "agent_action_providers": "設定済みプロバイダー",
+  "agent_gemini_login_hint": "Gemini CLI を開きます。Google でログインを選択してください。すでにログイン済みの場合は /auth で認証方法を選べます。ブラウザーでの認証はご自身で完了してください。Bibimer Chat への Gemini 連携を追加する機能ではありません。",
   "claude_action_repair": "Termux で修復",
   "claude_action_adapter": "Termux でアダプターを準備",
-  "claude_action_login": "Termux でログイン",
-  "claude_action_status": "ログイン状態を確認",
-  "claude_action_version": "バージョンを確認",
-  "claude_action_hint": "各操作は新しい Termux ターミナルで実行します。先にコマンド実行を許可してください。Termux が開かない場合は通知から開いてください。ブラウザーでのログインはご自身で完了し、結果は Termux で確認してください。下のコマンドをコピーすることもできます。",
-  "claude_action_sent": "Termux に実行をリクエストしました。進行状況と結果は Termux で確認してください。インストールやログインの完了を示すものではありません。",
+  "agent_action_login": "Termux でログイン",
+  "agent_action_status": "ログイン状態を確認",
+  "agent_action_version": "バージョンを確認",
+  "agent_action_hint": "各操作は新しい Termux ターミナルで実行します。先にコマンド実行を許可してください。Termux が開かない場合は通知から開いてください。ブラウザーでのログインはご自身で完了し、結果は Termux で確認してください。下のコマンドをコピーすることもできます。",
+  "agent_action_sent": "Termux に実行をリクエストしました。進行状況と結果は Termux で確認してください。インストールやログインの完了を示すものではありません。",
   "app_update_title": "アプリの更新",
   "app_update_version": "インストール済みバージョン：{version}",
   "app_update_check": "更新を確認",

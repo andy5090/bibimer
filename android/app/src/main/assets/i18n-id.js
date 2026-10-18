@@ -1,13 +1,15 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "agent_action_providers": "Penyedia yang dikonfigurasi",
+  "agent_gemini_login_hint": "Membuka Gemini CLI. Pilih Masuk dengan Google, atau ketik /auth jika sudah masuk. Selesaikan autentikasi di browser. Ini tidak mengintegrasikan Gemini dengan Chat Bibimer.",
   "claude_action_repair": "Perbaiki di Termux",
   "claude_action_adapter": "Siapkan adaptor di Termux",
-  "claude_action_login": "Masuk melalui Termux",
-  "claude_action_status": "Periksa status masuk",
-  "claude_action_version": "Periksa versi",
-  "claude_action_hint": "Setiap tindakan membuka terminal Termux baru. Izinkan eksekusi perintah terlebih dahulu; jika Termux tidak terbuka, buka dari notifikasinya. Selesaikan login di browser dan periksa hasilnya di Termux. Anda juga dapat menyalin perintah di bawah.",
-  "claude_action_sent": "Permintaan dikirim ke Termux. Periksa kemajuan dan hasilnya di sana; ini tidak mengonfirmasi pemasangan atau login.",
+  "agent_action_login": "Masuk melalui Termux",
+  "agent_action_status": "Periksa status masuk",
+  "agent_action_version": "Periksa versi",
+  "agent_action_hint": "Setiap tindakan membuka terminal Termux baru. Izinkan eksekusi perintah terlebih dahulu; jika Termux tidak terbuka, buka dari notifikasinya. Selesaikan login di browser dan periksa hasilnya di Termux. Anda juga dapat menyalin perintah di bawah.",
+  "agent_action_sent": "Permintaan dikirim ke Termux. Periksa kemajuan dan hasilnya di sana; ini tidak mengonfirmasi pemasangan atau login.",
   "app_update_title": "Pembaruan aplikasi",
   "app_update_version": "Versi terpasang: {version}",
   "app_update_check": "Periksa pembaruan",

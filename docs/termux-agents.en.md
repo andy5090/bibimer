@@ -15,6 +15,21 @@ These are configurations checked on an **Android 16 arm64 phone on 2026-10-19**.
 
 Agent requirements differ from Bibimer's minimum Android version. The phone uses Termux Node.js 26.4.0, npm 11.19.0, glibc 2.42-0 and glibc-runner 2.0-3; these are reference versions, not a requirement to replace working tools.
 
+## Start sign-in from the app
+
+The development source provides **Sign in with Termux** buttons for Codex, Claude Code, OpenCode, and Gemini CLI in **Setup → Prepare an agent**. Each opens a new terminal on the same phone. Existing bridge, project, and running sessions are preserved. Credentials, codes, and CLI output are not returned to Bibimer. Complete account/provider selection and browser authentication yourself.
+
+| Agent | Sign-in action | Additional checks |
+| --- | --- | --- |
+| Codex | Installed `codex login` | `codex login status`, `codex --version` |
+| Claude Code | Dedicated launcher preferred, with `auth login` | `auth status`, `--version`, existing repair/adapter setup |
+| OpenCode | Installed wrapper's `opencode auth login` provider selector | `opencode auth list` (configuration list, not an access test), `opencode --version` |
+| Gemini CLI | Run the installed CLI interactively through Termux Node.js | Same entry with `--version`; no standalone sign-in status action |
+
+Gemini does not use an invented `gemini auth login` command. Choose **Sign in with Google** after opening the CLI, or use **`/auth`** in the CLI when already authenticated. Bibimer does not send `/auth` as a prompt, log you out, or select an account. This matches the installed 0.58.0 help, built-in command source, and [official authentication guide](https://geminicli.com/docs/get-started/authentication/). Gemini's structured Bibimer Chat integration remains unimplemented.
+
+Termux 0.118+, BIBIMER's Android command permission, and Termux's `allow-external-apps=true` setting are required. Granting permission runs only the selected agent action, without switching to bridge installation. If activity launching is blocked, open the terminal from Termux's notification. Manual command copying remains available. **A request-sent message does not confirm authentication. A new APK build and installation are required; real permission dialogs, terminal switching, and browser return are not yet verified.**
+
 ## Codex
 
 Use the [community Termux distribution](https://github.com/DioNanos/codex-termux), which requires **Android 10+ arm64** for this version. This is not an official OpenAI Termux distribution or the standard Linux binary.

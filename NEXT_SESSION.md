@@ -1,5 +1,14 @@
 # Bibimer 다음 세션 시작점
 
+## Codex·Gemini·OpenCode 로그인 실행 버튼 확대 (2026-10-19, 미배포)
+
+- 사용자 요청으로 Setup → 에이전트 준비의 Codex·OpenCode·Gemini CLI에도 **Termux에서 로그인** 버튼을 추가했다. Codex는 설치된 `codex login`, OpenCode는 설치된 래퍼의 `opencode auth login`으로 실행한다. 두 CLI에는 버전 확인과 각각 `codex login status`/`opencode auth list` 버튼도 제공한다. OpenCode 목록은 **설정된 제공자 확인**으로 표시하며 인증/접속 성공 판정으로 쓰지 않는다. 기존 Claude5개와 신규8개, 총13개 작업이다.
+- Gemini0.58.0에는 독립 `auth login`/상태 하위 명령이 없으므로 설치된 npm의 `bundle/gemini.js`를 Termux Node.js로 인수 없이 대화형 실행한다. 현재 폰의 `/usr/bin/env node` 진입 문제를 우회하고, 사용자에게 Google 로그인 선택·이미 인증된 경우 `/auth` 안내를 제공한다. CLI 도움말과 설치된 내장 `authCommand` 소스에서 `/auth`가 인증 선택 대화상자를 여는 것을 확인했다. `/auth`를 초기 프롬프트로 전송하거나 인증 정보·환경·로그아웃/계정을 임의 변경하지 않는다. 별도 Gemini 상태 버튼·Bibimer 구조화 Chat 연동은 추가하지 않았다.
+- `TermuxClaudeActions`를 공통 `TermuxAgentActions`로 확장하고 `AgentSetup`이 에이전트/작업 조합13개만 허용한다. RUN_COMMAND 요청코드25·포그라운드 새 터미널·사용자 권한 허용·결과 콜백/로그 미수집을 유지한다. 대기 권한 요청은 에이전트·작업·언어·데모 epoch로 구분하고 다른 버튼이 교체하지 못하며, 재승인은 기존 브리지 설치 요청24를 실행하지 않는다. 같은 작업의 연속 탭은 막되 다른 확인/로그인 작업을 임의로 차단하지 않는다. 상태 문구도 에이전트별 영역에만 표시한다. 기존 브리지·세션·CLI 설치·인증은 변경하지 않았다.
+- 공통 로그인/상태/버전/안내/전송 문구5키를 Claude 전용에서 공통 이름으로 옮기고 제공자 목록·Gemini 인증 안내2키를 추가해 **627키×10언어**다. 기존 수동 복사12개와 Claude 독립 복구/어댑터 경로를 유지하고 한국어·영어 Termux 문서/설정 안내를 갱신했다. 공식 출처: [Codex 인증](https://learn.chatgpt.com/docs/auth), [Gemini 인증](https://geminicli.com/docs/get-started/authentication/), [OpenCode CLI](https://opencode.ai/docs/cli/). 현재 폰에서 Codex 로그인·OpenCode 인증·Gemini 도움말만 실행했으며 로그인 시작/모델 요청·자격 증명 파일 조회는 하지 않았다.
+- 검증: 공통 JVM/셸5개 검사 통과(`scripts/tests/test_agent_actions.py`, 기존 Claude3개를 확장). 13개 작업의 포그라운드 Intent·고정 인수·권한 대기 중 에이전트 교체 차단·데모/Activity·중복·미지원 조합 차단, Codex/OpenCode 모의 CLI의 stdin/HOME/실패 코드, Gemini 공백 경로 npm root/Node 직접 실행·인수 없는 로그인·의존성/파일 누락·npm 실패 격리를 확인했다. 기존 Claude 내장 설치5개,627키×10언어/초안·언어, Demo/Review UI 회귀도 통과했다. Setup 브라우저 검사에서 명시적13작업·상태 영역 분리·권한 메시지·알 수 없는 메시지 차단·pause·12개 복사·자동 실행 없음·320px10언어·언어 변경 후 상태/명령/펼침 보존을 확인했다. `dist/screenshots/{agent-setup,claude-actions,opencode-actions,gemini-actions}-320-{en,ko}.png` 중 KO Codex/Gemini 버튼 줄바꿈을 시각 확인했다. 전체 Android Java는 API36으로 컴파일했다(Play SDK·생성 상수는 검사 대역, 기존 Java8/deprecated 경고). JS구문/diff 검사 통과.
+- **APK/AAB 빌드·버전 변경·앱 설치·배포·운영 CLI 인증 실행 없음.** 다음 빌드/설치 후 적용한다. 네 CLI의 실제 권한 창·Termux 새 터미널 전환·사용자 브라우저 인증 완료/복귀는 아직 검증하지 않았다. 소스 검사 성공을 실제 로그인 성공으로 표시하지 않는다.
+
 ## Claude 설치·복구·인증을 앱에서 Termux로 실행 요청 (2026-10-19, 미배포)
 
 - 사용자 요청으로 Setup → Claude Code · Termux에 **Termux에서 복구 / Termux에서 어댑터 준비 / Termux에서 로그인 / 로그인 상태 확인 / 버전 확인** 버튼을 추가했다. 같은 폰의 Termux `RUN_COMMAND`로 각각 새 포그라운드 터미널을 열며 임의 명령·기존 세션 입력을 받지 않는다. 복구/어댑터는 기존 내장 독립 asset을 전달해 Downloads/이미 설치된 브리지 스크립트에 의존하지 않는다. 로그인/상태/버전은 전용 런처 우선, 없으면 설치된 `claude`로 실행한다. 명령 종료 코드와 출력을 확인할 수 있도록 새 터미널은 Bash로 유지한다.

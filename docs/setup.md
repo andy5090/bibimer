@@ -170,7 +170,9 @@ Chat에서 변경한 값은 다음 메시지부터 적용한다. PTY에서는 �
 
 ## Claude 대화 준비
 
-Codex·Claude Code·OpenCode의 설치 경로는 [현재 폰에서 확인한 Termux 에이전트 설치 안내](termux-agents.md)를 먼저 참고한다. 각 제품의 일반 Linux 설치 명령과 Termux에서 실제 사용하는 패키지·런타임·래퍼를 구분한다.
+Codex·Claude Code·OpenCode·Gemini CLI의 설치 경로는 [현재 폰에서 확인한 Termux 에이전트 설치 안내](termux-agents.md)를 먼저 참고한다. 각 제품의 일반 Linux 설치 명령과 Termux에서 실제 사용하는 패키지·런타임·래퍼를 구분한다.
+
+개발 소스에는 네 CLI 각각의 **Termux에서 로그인** 버튼이 있다. Android 명령 실행 권한과 Termux 외부 앱 연동을 사용자가 허용한 뒤 새 Termux 터미널에서 인증을 시작한다. Codex는 `codex login`, OpenCode는 `opencode auth login`, Claude는 전용 런처의 `auth login`이다. Gemini는 설치된 CLI를 Node.js로 열고 Google 로그인을 선택한다. 이미 인증되어 있으면 Gemini 안에서 `/auth`를 입력해 방식을 선택한다. Gemini를 Bibimer의 구조화 Chat에 추가한 것은 아니다. 인증 코드·키·출력은 앱으로 가져오지 않으며 브라우저 인증은 사용자가 직접 완료한다. 기존 브리지·세션은 재시작하지 않고 명령 복사도 유지한다. **다음 APK 빌드·설치 후 적용되며 실제 기기 화면 전환과 로그인 복귀는 아직 검증하지 않았다.**
 
 Termux에서 실행 가능한 Claude Code CLI와 로그인을 먼저 준비한다. 앱의 **Setup → Claude Code · Termux → Copy Claude adapter setup command(Claude 어댑터 설정 명령 복사)**를 누르고 Termux에 붙여 넣어 실행한다. 앱에 내장된 독립 설치 내용 전체를 복사하므로 `bibimer-setup.sh` 내보내기·Downloads 접근·저장소 권한이 필요하지 않다. 붙여 넣은 명령을 직접 실행할 때만 설치가 시작된다.
 

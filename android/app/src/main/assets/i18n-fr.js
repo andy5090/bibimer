@@ -1,13 +1,15 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "agent_action_providers": "Fournisseurs configurés",
+  "agent_gemini_login_hint": "Ouvre Gemini CLI. Choisissez Se connecter avec Google, ou saisissez /auth si vous êtes déjà connecté. Terminez l’authentification dans le navigateur. Cela n’intègre pas Gemini au Chat de Bibimer.",
   "claude_action_repair": "Réparer dans Termux",
   "claude_action_adapter": "Préparer l’adaptateur dans Termux",
-  "claude_action_login": "Se connecter avec Termux",
-  "claude_action_status": "Vérifier la connexion",
-  "claude_action_version": "Vérifier la version",
-  "claude_action_hint": "Chaque action ouvre un nouveau terminal Termux. Autorisez d’abord l’exécution des commandes ; si Termux ne s’ouvre pas, ouvrez-le depuis sa notification. Terminez la connexion dans le navigateur et consultez le résultat dans Termux. Vous pouvez aussi copier les commandes ci-dessous.",
-  "claude_action_sent": "Demande envoyée à Termux. Consultez-y la progression et les résultats ; cela ne confirme ni l’installation ni la connexion.",
+  "agent_action_login": "Se connecter avec Termux",
+  "agent_action_status": "Vérifier la connexion",
+  "agent_action_version": "Vérifier la version",
+  "agent_action_hint": "Chaque action ouvre un nouveau terminal Termux. Autorisez d’abord l’exécution des commandes ; si Termux ne s’ouvre pas, ouvrez-le depuis sa notification. Terminez la connexion dans le navigateur et consultez le résultat dans Termux. Vous pouvez aussi copier les commandes ci-dessous.",
+  "agent_action_sent": "Demande envoyée à Termux. Consultez-y la progression et les résultats ; cela ne confirme ni l’installation ni la connexion.",
   "app_update_title": "Mises à jour de l’application",
   "app_update_version": "Version installée : {version}",
   "app_update_check": "Rechercher des mises à jour",

@@ -36,6 +36,11 @@ final class ClaudeSetup {
                 "  exit 127\nfi\n\"$bibimer_claude\" " +
                 ("login".equals(action) ? "auth login" : "status".equals(action) ? "auth status" : "--version") + "\n";
         }
+        return terminal(body, language);
+    }
+
+    static String terminal(String body, String language) {
+        boolean korean = "ko".equals(language);
         // A separate subshell contains installer set -eu/exit. Leave the new terminal
         // open for inspection, without recording the script in interactive history.
         return "(\ncd \"$HOME\" || exit\n" + body + ")\nbibimer_status=$?\n" +

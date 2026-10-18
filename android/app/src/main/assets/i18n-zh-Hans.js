@@ -1,13 +1,15 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "agent_action_providers": "查看已配置的提供商",
+  "agent_gemini_login_hint": "打开 Gemini CLI。请选择使用 Google 登录；若已登录，请输入 /auth 选择登录方式。请自行完成浏览器认证。此功能不会将 Gemini 接入 Bibimer Chat。",
   "claude_action_repair": "在 Termux 中修复",
   "claude_action_adapter": "在 Termux 中准备适配器",
-  "claude_action_login": "通过 Termux 登录",
-  "claude_action_status": "检查登录状态",
-  "claude_action_version": "检查版本",
-  "claude_action_hint": "每项操作都会打开新的 Termux 终端。请先允许执行命令；若 Termux 未打开，请从通知中打开。请自行完成浏览器登录，并在 Termux 中查看结果。也可以复制下方命令。",
-  "claude_action_sent": "已向 Termux 发送执行请求。请在那里查看进度和结果；这不代表安装或登录已完成。",
+  "agent_action_login": "通过 Termux 登录",
+  "agent_action_status": "检查登录状态",
+  "agent_action_version": "检查版本",
+  "agent_action_hint": "每项操作都会打开新的 Termux 终端。请先允许执行命令；若 Termux 未打开，请从通知中打开。请自行完成浏览器登录，并在 Termux 中查看结果。也可以复制下方命令。",
+  "agent_action_sent": "已向 Termux 发送执行请求。请在那里查看进度和结果；这不代表安装或登录已完成。",
   "app_update_title": "应用更新",
   "app_update_version": "已安装版本：{version}",
   "app_update_check": "检查更新",

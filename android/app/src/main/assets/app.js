@@ -338,7 +338,7 @@
     $("termux-status").textContent = t(env.termuxInstalled ? "installed" : "install_needed");
     $("termux-status").className = "badge" + (env.termuxInstalled ? " connected" : "");
     $("reconnect-welcome").hidden = !env.paired;
-    for (const button of document.querySelectorAll("[data-claude-action]")) button.disabled = demo;
+    for (const button of document.querySelectorAll("[data-agent-action]")) button.disabled = demo;
     renderQuickSetup(env);
   }
   function renderQuickSetup(env = environment()) {
@@ -1729,17 +1729,17 @@
   for (const button of document.querySelectorAll("[data-guide]")) button.addEventListener("click", () => native.openGuide(button.dataset.guide));
   for (const button of document.querySelectorAll("[data-command]")) button.addEventListener("click", () => native.copyCommand(button.dataset.command));
   for (const button of document.querySelectorAll("[data-agent-copy]")) button.addEventListener("click", () => native.copyText($(button.dataset.agentCopy).textContent));
-  window.BibimerClaudeActionStatus = code => {
-    if (demo || !["claude_action_sent", "quick_permission", "quick_termux_missing", "quick_termux_old", "quick_start_failed"].includes(code)) return;
-    const status = $("claude-action-status");
+  window.BibimerAgentActionStatus = (agent, code) => {
+    if (demo || !["codex", "claude", "opencode", "gemini"].includes(agent) || !["agent_action_sent", "quick_permission", "quick_termux_missing", "quick_termux_old", "quick_start_failed"].includes(code)) return;
+    const status = $("agent-action-status-" + agent);
     status.dataset.i18n = code; status.textContent = t(code); status.hidden = false;
   };
-  for (const button of document.querySelectorAll("[data-claude-action]")) button.addEventListener("click", () => {
+  for (const button of document.querySelectorAll("[data-agent-action]")) button.addEventListener("click", () => {
     if (demo || paused || button.disabled) return;
     try {
-      if (!native.startClaudeAction) throw new Error();
-      native.startClaudeAction(button.dataset.claudeAction);
-    } catch (_) { window.BibimerClaudeActionStatus("quick_start_failed"); }
+      if (!native.startAgentAction) throw new Error();
+      native.startAgentAction(button.dataset.agent, button.dataset.agentAction);
+    } catch (_) { window.BibimerAgentActionStatus(button.dataset.agent, "quick_start_failed"); }
   });
   const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", interrupt:"\x03", enter:"\r"};
   for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.addEventListener("click", () => sendRaw(keys[button.dataset.key]));

@@ -1,13 +1,15 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.es = {
+  "agent_action_providers": "Proveedores configurados",
+  "agent_gemini_login_hint": "Abre Gemini CLI. Elige Iniciar sesión con Google o escribe /auth si ya has iniciado sesión. Completa la autenticación en el navegador. Esto no integra Gemini en el Chat de Bibimer.",
   "claude_action_repair": "Reparar en Termux",
   "claude_action_adapter": "Preparar adaptador en Termux",
-  "claude_action_login": "Iniciar sesión con Termux",
-  "claude_action_status": "Comprobar sesión",
-  "claude_action_version": "Comprobar versión",
-  "claude_action_hint": "Cada acción abre un nuevo terminal de Termux. Permite primero la ejecución de comandos; si Termux no se abre, ábrelo desde su notificación. Completa el inicio de sesión en el navegador y consulta el resultado en Termux. También puedes copiar los comandos de abajo.",
-  "claude_action_sent": "Solicitud enviada a Termux. Consulta allí el progreso y los resultados; esto no confirma la instalación ni el inicio de sesión.",
+  "agent_action_login": "Iniciar sesión con Termux",
+  "agent_action_status": "Comprobar sesión",
+  "agent_action_version": "Comprobar versión",
+  "agent_action_hint": "Cada acción abre un nuevo terminal de Termux. Permite primero la ejecución de comandos; si Termux no se abre, ábrelo desde su notificación. Completa el inicio de sesión en el navegador y consulta el resultado en Termux. También puedes copiar los comandos de abajo.",
+  "agent_action_sent": "Solicitud enviada a Termux. Consulta allí el progreso y los resultados; esto no confirma la instalación ni el inicio de sesión.",
   "app_update_title": "Actualizaciones de la app",
   "app_update_version": "Versión instalada: {version}",
   "app_update_check": "Buscar actualizaciones",
