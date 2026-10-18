@@ -18,7 +18,7 @@ Android 앱, Termux, 코딩 에이전트를 하나로 비볐습니다. 세 가�
 
 ## 설치와 배포
 
-[Google Play](https://play.google.com/store/apps/details?id=app.bibimer)에서 Bibimer를 설치할 수 있습니다. **정식 버전은 0.20.0이며, 초대받은 내부 테스터에게는 0.22.0을 제공합니다.** GitHub 공개 APK 배포본은 없으며 개발 버전 빌드는 [빌드 안내](docs/development.md)를 참고하세요.
+[Google Play](https://play.google.com/store/apps/details?id=app.bibimer)에서 Bibimer를 설치할 수 있습니다. **정식 버전은 0.20.0이며, 초대받은 내부 테스터에게는 0.23.0을 제공합니다.** GitHub 공개 APK 배포본은 없으며 개발 버전 빌드는 [빌드 안내](docs/development.md)를 참고하세요.
 
 앱의 최소 Android 버전은 8.0(API 26)입니다. 모든 Android 버전과 기기, 에이전트 설치 환경에서 동작을 확인한 것은 아닙니다.
 

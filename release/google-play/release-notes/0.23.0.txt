@@ -1,0 +1,6 @@
+<en-US>
+Fixed a conflict when importing saved Codex sessions. Setup now shows when Termux is connected. GitHub cloning shows progress and nearby results, with duplicate actions blocked. Long-press and drag projects to reorder them. Simplified command failure labels. Includes bridge 0.17.0; update the bridge in Settings for the new bridge features.
+</en-US>
+<ko-KR>
+Codex 저장 세션 가져오기의 조회 충돌을 수정했습니다. 준비 화면에 Termux 연결 완료 상태를 표시합니다. GitHub 클론 진행률과 실행 결과를 버튼 근처에 표시하고 중복 실행을 막습니다. 프로젝트를 길게 눌러 드래그로 정렬할 수 있으며 명령 실패 문구를 간결하게 했습니다. 브리지 0.17.0을 포함하며 새 브리지 기능은 설정에서 브리지를 업데이트해야 적용됩니다.
+</ko-KR>
