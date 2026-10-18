@@ -11,6 +11,7 @@ These are configurations checked on an **Android 16 arm64 phone on 2026-10-19**.
 | Codex | `@mmmbuto/codex-cli-termux@0.160.0-termux.3` | `codex-cli 0.160.0` |
 | Claude Code | Bibimer runtime 2.1.283; Agent SDK 0.3.283 | Dedicated launcher works; the global npm CLI 2.1.263 fails |
 | OpenCode | 1.17.13; community OpenClaw Android glibc/proot/Bun wrapper | `opencode --version` succeeds |
+| Gemini CLI | Official npm `@google/gemini-cli@0.58.0`; entry file run directly with Node.js | `--version` prints `0.58.0`; Bibimer agent selection and Chat are not integrated |
 
 Agent requirements differ from Bibimer's minimum Android version. The phone uses Termux Node.js 26.4.0, npm 11.19.0, glibc 2.42-0 and glibc-runner 2.0-3; these are reference versions, not a requirement to replace working tools.
 
@@ -83,8 +84,30 @@ opencode auth login
 
 On this phone `$PREFIX/bin/opencode` wraps `~/.openclaw-android/proot-root`, `~/.openclaw-android/bin/ld.so.opencode` and the OpenCode binary in Bun's cache. Replacing the wrapper with a global npm update or clearing that cache can break this configuration. See [OpenCode documentation](https://opencode.ai/docs/) for provider and model configuration.
 
+## Gemini CLI
+
+The phone also has **`@google/gemini-cli@0.58.0`** installed globally. The package and [official installation guide](https://geminicli.com/docs/get-started/installation/) require **Node.js 20+**. If it is missing, prepare Termux Node.js and npm, then install the reference version. Keep an existing working installation.
+
+```sh
+npm install -g @google/gemini-cli@0.58.0
+```
+
+In the checked execution environment, the `gemini` entry file's `#!/usr/bin/env node` launcher fails. Running the same entry file directly with Termux Node.js succeeds, without modifying the installed file or replacing the global launcher:
+
+```sh
+node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js" --version
+```
+
+Check for output `0.58.0`. To start the CLI and sign in, run the following in Termux or a Bibimer **Terminal** session, then follow the browser prompts on the same phone. See [official authentication instructions](https://geminicli.com/docs/get-started/authentication/).
+
+```sh
+node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js"
+```
+
+**Installation and version checks do not establish Bibimer integration.** Gemini is not connected to Bibimer's agent picker, structured Chat, saved-session import, model/permission controls or completion notifications. This is a direct CLI path in a general Terminal session. Only the Node.js version command was verified here; interactive authentication, model responses, tools and installation from scratch remain unverified. Dedicated Gemini session management and Chat require separate implementation.
+
 ## Return to Bibimer
 
-After installation and sign-in, reconnect in Bibimer and check agent readiness before starting a session. A successful version check does not establish authentication or model access. Do not put API keys or login codes in Bibimer project settings or conversations.
+For Codex, Claude Code and OpenCode, reconnect in Bibimer after installation and sign-in and check agent readiness before starting a session. A successful version check does not establish authentication or model access. Do not put API keys or login codes in Bibimer project settings or conversations.
 
 Update the bridge only when needed. Finish active sessions before restarting it, following the [bridge setup guide (Korean)](setup.md). Viewing these instructions does not restart the bridge or agents.

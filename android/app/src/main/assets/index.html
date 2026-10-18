@@ -176,6 +176,14 @@
         <div class="command"><code id="opencode-login-command">opencode auth login</code><button data-agent-copy="opencode-login-command" data-i18n="copy">Copy</button></div>
         <button data-guide="opencode" class="quiet" data-i18n="opencode_guide">OpenCode guide ↗</button>
       </details>
+      <details class="agent-install" id="gemini-install">
+        <summary>Gemini CLI · Termux</summary>
+        <p data-i18n="agent_gemini_termux">Gemini CLI 0.58.0 is also installed on the checked phone and requires Node.js 20+. Skip installation if it is already present. The Node commands below avoid a launcher path issue in the checked environment. Use Terminal to run it directly; Bibimer agent selection and structured Chat are not integrated. Sign-in and model responses still need verification.</p>
+        <div class="command"><code id="gemini-install-command">npm install -g @google/gemini-cli@0.58.0</code><button data-agent-copy="gemini-install-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="gemini-check-command">node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js" --version</code><button data-agent-copy="gemini-check-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="gemini-start-command">node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js"</code><button data-agent-copy="gemini-start-command" data-i18n="copy">Copy</button></div>
+        <div class="button-row"><button data-guide="gemini-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="gemini" class="quiet" data-i18n="gemini_guide">Gemini CLI guide ↗</button></div>
+      </details>
       <p class="hint" data-i18n="agent_termux_return">After signing in from Termux, return to Bibimer and reconnect. If a bridge update requires a restart, finish active sessions first. Setup does not install all agents automatically.</p>
       <p class="hint" data-i18n="agent_hint">Finding a program does not confirm Android compatibility or account access. Check each agent's Termux installation and runtime requirements.</p>
     </section>

@@ -11,6 +11,7 @@ Bibimer와 **같은 휴대폰의 Termux**에서 진행한다. 별도 PC나 원�
 | Codex | `@mmmbuto/codex-cli-termux@0.160.0-termux.3` | `codex --version` → `codex-cli 0.160.0` |
 | Claude Code | Bibimer 전용 런타임 2.1.283 + Agent SDK 0.3.283 | 전용 런처 `--version` 성공. 전역 npm 설치본 2.1.263의 `claude`는 실행 실패 |
 | OpenCode | 1.17.13, OpenClaw Android의 glibc·proot·Bun 바이너리 래퍼 | `opencode --version` → `1.17.13` |
+| Gemini CLI | 공식 npm `@google/gemini-cli@0.58.0`, Node.js로 진입 파일 직접 실행 | `--version` → `0.58.0`. Bibimer 에이전트 목록·Chat 연동은 미구현 |
 
 Bibimer 앱의 최소 Android 버전과 각 에이전트의 요구사항은 다르다. 이 폰의 Termux Node.js는 26.4.0, npm은 11.19.0, glibc는 2.42-0, glibc-runner는 2.0-3이다. 모두 같은 버전으로 바꿔야 한다는 뜻은 아니다.
 
@@ -82,8 +83,30 @@ opencode auth login
 
 이 폰의 `opencode`는 `$PREFIX/bin/opencode`의 래퍼다. 래퍼는 `~/.openclaw-android/proot-root`와 `~/.openclaw-android/bin/ld.so.opencode`, Bun 캐시의 OpenCode 바이너리를 사용한다. 일반 npm 업데이트로 이 래퍼를 덮어쓰거나 연결된 캐시를 지우면 동작하지 않을 수 있다. 제공자·모델 설정은 [OpenCode 공식 문서](https://opencode.ai/docs/)를 참고한다.
 
+## Gemini CLI
+
+이 폰에는 **`@google/gemini-cli@0.58.0`**도 전역 설치되어 있다. 패키지와 [공식 설치 문서](https://geminicli.com/docs/get-started/installation/)의 Node.js 요구사항은 **20 이상**이다. 아직 설치하지 않은 경우 Termux의 Node.js와 npm을 준비하고 다음을 실행한다. 기존 정상 설치본이 있으면 재설치하지 않는다.
+
+```sh
+npm install -g @google/gemini-cli@0.58.0
+```
+
+현재 검사 환경에서는 `gemini`의 진입 파일이 `#!/usr/bin/env node`를 사용해 직접 실행에 실패했다. 같은 설치본을 **Termux의 Node.js로 직접 실행**하면 버전 확인이 성공한다. 사용자 설치 파일을 수정하거나 전역 명령을 교체하지 않고 다음 경로를 안내한다.
+
+```sh
+node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js" --version
+```
+
+출력이 `0.58.0`인지 확인한다. 직접 실행·로그인은 Termux 또는 Bibimer의 **Terminal** 세션에서 아래 명령으로 시작하고 같은 폰의 브라우저에서 안내를 따른다. [공식 인증 안내](https://geminicli.com/docs/get-started/authentication/)를 참고한다.
+
+```sh
+node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js"
+```
+
+**설치·버전 확인과 Bibimer 통합 지원은 별개다.** Gemini는 현재 Bibimer의 에이전트 선택 목록, 구조화된 Chat, 저장된 세션 가져오기, 모델/권한 선택 및 완료 알림에 연결되어 있지 않다. 위 명령은 일반 Terminal에서 직접 실행하는 경로다. 이번에는 Node.js를 통한 버전 출력만 검증했으며 실제 대화형 로그인·모델 응답·도구 사용·새 환경 설치는 검증하지 않았다. Gemini 전용 세션 관리와 Chat 지원은 별도의 구현이 필요하다.
+
 ## Bibimer로 돌아오기
 
-설치·로그인을 마치면 Bibimer의 **Reconnect(다시 연결)** 후 에이전트 준비 상태를 확인하고 프로젝트에서 세션을 시작한다. CLI 버전 확인 성공과 실제 로그인·모델 응답 성공은 별개다. API 키나 로그인 코드를 Bibimer 프로젝트 설정이나 대화 입력창에 넣지 않는다.
+Codex·Claude Code·OpenCode의 설치·로그인을 마치면 Bibimer의 **Reconnect(다시 연결)** 후 에이전트 준비 상태를 확인하고 프로젝트에서 세션을 시작한다. CLI 버전 확인 성공과 실제 로그인·모델 응답 성공은 별개다. API 키나 로그인 코드를 Bibimer 프로젝트 설정이나 대화 입력창에 넣지 않는다.
 
 최신 브리지 설치가 필요한 경우에만 설정 파일로 업데이트한다. 실행 중인 세션이 있으면 먼저 작업을 마친 뒤 [브리지 업데이트 절차](setup.md)에 따라 재시작한다. 설치 안내를 보거나 앱 화면을 이동하는 것만으로 브리지나 에이전트를 재시작하지 않는다.

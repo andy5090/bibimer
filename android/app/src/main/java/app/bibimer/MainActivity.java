@@ -496,6 +496,8 @@ public final class MainActivity extends Activity {
             else if (guide.equals("codex-termux")) url = termuxGuide + "#codex";
             else if (guide.equals("claude-termux")) url = termuxGuide + "#claude-code";
             else if (guide.equals("opencode-termux")) url = termuxGuide + "#opencode";
+            else if (guide.equals("gemini-termux")) url = termuxGuide + "#gemini-cli";
+            else if (guide.equals("gemini")) url = "https://geminicli.com/docs/get-started/installation/";
             else if (guide.equals("opencode-source")) url = "https://github.com/AidanPark/openclaw-android/blob/a2ac938e4f746c0bd052adc2c7e40e8d18359032/scripts/install-opencode.sh";
             else if (guide.equals("privacy")) url = language.privacyUrl();
             else return;
