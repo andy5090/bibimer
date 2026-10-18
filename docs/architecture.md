@@ -180,6 +180,8 @@ health의 `persistent_codex_sessions`는 새 Codex 대화의 영구 저장을 �
 
 Claude 실행 경로는 정상 사용자 CLI → Bibimer 전용 복구 런처 순서로 찾는다. 명시적인 `BIBIMER_CLAUDE_EXECUTABLE`은 이 선택보다 우선하며 HTTP 클라이언트에서 지정할 수 없다. 확인 캐시는 에이전트와 실행 경로별로 분리한다. `repair_claude_termux.py`는 공식 고정 패키지의 무결성·예상 일반 파일·실행 성공을 확인한 뒤 런처를 원자적으로 교체하고 이전 런처를 실패 시 유지한다. glibc 선행 설치나 사용자 로그인은 자동으로 처리하지 않는다.
 
+Claude 준비 명령은 `bridge/claude_setup.sh`와 기존 복구 소스로 빌드 시 생성한 `claude-adapter-setup.sh`/`claude-repair-setup.sh`를 앱에 내장한다. Native `ClaudeSetup`은 크기·구분자·언어 값을 제한하고 인용된 here-document로 감싼 내용을 클립보드에 복사한다. 사용자가 Termux에 붙여 넣어 실행하며, WebView에서 설치기 소스나 임의 명령을 지정할 수 없다. 두 파일은 WebView asset 허용 목록에 노출하지 않는다. 복구 명령은 압축한 복구 소스와 SHA-256을 포함하므로 Downloads·브리지 설치·기존 복구 파일 없이 실행할 수 있다. 명령 실행은 SDK/전용 런타임 준비만 하며 브리지 시작·재시작·페어링을 하지 않는다. 수동 전체 설정 파일의 선택적 Claude 경로도 같은 생성 함수를 재사용한다.
+
 ## 모델·추론 수준 (앱·브리지 0.10.0)
 
 `model_options` 기능 표시와 `/v1/models`는 선택한 프로젝트에서 에이전트의 모델 목록을 조회한다. Codex `model/list`, Claude SDK의 입력을 보내지 않는 `query().supportedModels()`, OpenCode `/provider`의 연결된 제공자·모델·variant를 읽는다. 모델 작업을 시작하지 않으며 자격 증명/제공자 설정은 전달하지 않는다. 최대 1,000개 모델·모델별 64개 수준, 120초 메모리 캐시와 명시적 새로고침을 사용한다. 조회 과정은 브리지·세션 잠금 밖에서 실행한다.

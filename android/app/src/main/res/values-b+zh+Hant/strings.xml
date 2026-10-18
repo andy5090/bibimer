@@ -21,4 +21,5 @@
     <string name="notification_response_complete">回覆已完成</string>
     <string name="error_file_open">無法開啟檔案。請檢查連線和可用儲存空間。</string>
     <string name="error_file_app">沒有可開啟此檔案類型的 Android 應用程式。請安裝相容的檢視器。</string>
+    <string name="setup_command_failed">無法準備安裝指令。請重試。</string>
 </resources>

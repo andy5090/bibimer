@@ -124,6 +124,11 @@ class SetupTests(ChatFixture):
         build.SRC=self.root/'generated-assets'
         (build.SRC/'assets').mkdir(parents=True)
         installer=build.installer()
+        for repair, name in [(False, 'claude-adapter-setup.sh'), (True, 'claude-repair-setup.sh')]:
+            standalone = (build.SRC/'assets'/name).read_text()
+            self.assertEqual(build.claude_setup(repair=repair), standalone)
+            self.assertIn(standalone, installer)
+            self.assertNotIn('downloads', standalone)
         full=template.replace('__BIBIMER_INSTALLER__',installer).replace('__BIBIMER_CONNECT_HELPER__',(ROOT/'bridge/setup_connect.py').read_text())
         self.assertLess(len(full.encode('utf-16-le')),440000)
         subprocess.run([shutil.which('bash'),'-n'],input=full,text=True,check=True,capture_output=True)

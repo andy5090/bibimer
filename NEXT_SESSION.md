@@ -1,5 +1,15 @@
 # Bibimer 다음 세션 시작점
 
+## Claude 어댑터·복구 명령의 Downloads 의존성 제거 (2026-10-19, 미배포)
+
+- 사용자가 복사 버튼의 `~/storage/downloads/bibimer-setup.sh: No such file or directory`를 보고했다. 이는 Claude 실행/인증 전의 설치 파일 부재 문제이며 앞서 재현한 OAuth 만료와 별개다. 파일 저장을 요구하던 명령 생성과 안내를 수정했다.
+- `bridge/claude_setup.sh`를 공통 원본으로 SDK 전용 `claude-adapter-setup.sh`와 SDK+런타임 `claude-repair-setup.sh`를 생성해 APK asset에 넣는다. Native `ClaudeSetup`은 해당 asset을 크기 제한·구분자 검사·en/ko 언어 제한 후 인용된 here-document 명령으로 복사한다. 다운로드 파일·저장소 권한·설치된 브리지/복구 스크립트에 의존하지 않으며 사용자가 Termux에 붙여 넣어 실행한다. RUN_COMMAND 권한을 추가로 요구하거나 버튼 선택만으로 설치하지 않는다. 두 asset은 WebView 허용 목록에 포함하지 않는다.
+- SDK0.3.283 준비는 Node.js/npm이 없으면 설치한 뒤 Bibimer 전용 폴더에 진행한다. 복구는 필요한 Python과 무결성 정보를 포함한 복구 소스를 사용해 기존2.1.283 검증/원자적 런처 교체 절차를 실행한다. glibc·ripgrep 선행 조건과 사용자 로그인은 그대로 필요하다. 독립 명령은 브리지 파일·인증·프로젝트 메타데이터를 쓰거나 시작/재시작하지 않는다. 수동 전체 설치 파일의 선택적 Claude 작업도 같은 생성 함수를 사용해 중복 구현을 없앴다.
+- 현재 폰에 독립 설치 파일 두 개를 `~/.local/share/bibimer/{claude-adapter-setup.sh,claude-repair-setup.sh}`로 준비했다(각0700,1000/4890바이트, 생성 asset과 원본 일치·bash 문법 확인). **설치 파일만 준비했으며 SDK/런타임 재설치·브리지/세션 재시작을 실행하지 않았다.** 지금은 `BIBIMER_LANGUAGE=ko bash ~/.local/share/bibimer/claude-repair-setup.sh`로 SDK+런타임을, 어댑터만 필요하면 같은 폴더의 `claude-adapter-setup.sh`를 선택할 수 있다. 일반 설치본에 이미 배포된 파일이라고 안내하지 않는다.
+- 앱의 관련3개 안내를10언어에서 파일 내보내기 없는 흐름으로 바꿨다(618키 유지). 명령 준비 실패 Native 문구를10언어에 추가하고 한국어/영어 Termux 안내·설정/구조/개발 문서를 갱신했다. 기존 배포 앱의 버튼은 아직 이전 Downloads 명령이므로 새 앱 반영은 다음 명시적 APK 빌드/설치에 남아 있다.
+- 검증: 실제 `ClaudeSetup` Java를 JVM에서 실행해 복사 명령을 만들고, Downloads·브리지가 없는 임시HOME/공백 경로에서 영어/한국어 SDK 준비, 내장 복구 코드 실행, 누락 의존성 준비, SDK 실패·손상 payload의 복구 차단을 확인했다. 실제 네트워크 설치는 대역이며 정상 토큰/로그인/모델을 사용하지 않았다. 새5개·언어2개·배포패키징10개·Play SDK6개·브리지Setup4개·복구3개, 합계30검사 통과. 618키×10언어·언어/초안, Setup UI의 두 Claude 복사 버튼/12개 명령/320px10언어 회귀, AAPT2 리소스 컴파일, bash/JS/diff 검사도 통과했다. 전체 Android 앱/실제 클립보드 붙여 넣기는 다음 빌드의 실기기 검증 대상이다.
+- **APK/AAB 빌드·버전 변경·앱 설치·배포 없음.** 설치 asset 생성과 독립 파일 준비만 수행했다. 기존 초기 연결의 수동 파일 내보내기 경로는 유지한다.
+
 ## Claude 오류 재현·Termux 전용 대안 비교 (2026-10-19, 미배포)
 
 - 사용자의 반복 오류 보고를 받아 현재 전역 CLI, Bibimer 전용 런타임과 실제 SDK를 확인했다. 전역 npm CLI2.1.263의 실행 실패와 별개로, 전용 glibc2.1.283은 버전 출력·SDK0.3.283 제어 초기화·모델 목록5개 조회가 성공한다. `auth status`는 `loggedIn: false`/`authMethod: none`이며, 도구·설정 소스·기록 저장을 끈 임시 작업 폴더의 제한 요청은 **`Failed to authenticate: OAuth session expired and could not be refreshed`**로 실패했다. SDK 초기화 성공이 실제 인증/응답 성공을 뜻하지 않는다.

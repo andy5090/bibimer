@@ -40,15 +40,14 @@ Termux에 안내된 주소를 같은 폰의 브라우저에서 열어 로그인�
 현재 폰은 전역 `claude` 명령이 고장 나 있어 **Bibimer 전용 런타임**을 사용한다. 일반 `npm install -g @anthropic-ai/claude-code`만으로 이 구성이 재현된다고 안내하지 않는다.
 
 1. **arm64 Termux**, `$PREFIX/glibc/lib/ld-linux-aarch64.so.1`에 있는 glibc 로더, `ripgrep`을 먼저 준비한다. glibc가 없다면 [glibc 패키지 프로젝트](https://github.com/termux-pacman/glibc-packages)의 요구사항을 확인한다. Bibimer 설정 파일은 glibc를 설치하지 않는다. 이 선행 환경을 처음 설치하는 과정은 별도 검증 대상이다.
-2. Bibimer의 **Setup → Save setup file**에서 최신 파일을 Download 폴더에 `bibimer-setup.sh`로 저장한다. 다운로드 접근이 없으면 먼저 `termux-setup-storage`를 실행하고 권한 허용을 마친다.
-3. Termux에서 ripgrep과 전용 런타임을 준비한다. 런타임 설치 명령이 Chat SDK 준비도 포함한다.
+2. Bibimer의 **Setup → Claude Code · Termux → Claude 복구 명령 복사**를 누른다. 앱에 내장된 독립 설치 내용 전체를 복사하므로 설정 파일 저장·다운로드 폴더 접근이 필요하지 않다. 이번 소스 변경은 다음 APK 빌드/설치 후 적용되며 구형 배포 앱의 버튼은 여전히 저장 파일을 참조한다.
+3. Termux에서 ripgrep을 준비한 뒤 복사한 명령을 붙여 넣어 실행한다. 런타임 복구에 Chat SDK 준비도 포함된다.
 
 ```sh
 pkg install ripgrep
-BIBIMER_CLAUDE_TERMUX=1 bash ~/storage/downloads/bibimer-setup.sh
 ```
 
-런타임 설치기는 고정된 공식 Claude 2.1.283 패키지의 SHA-512와 실행 결과를 확인하며, 기존 전역 CLI나 로그인 정보를 바꾸지 않는다. 같은 명령이 필요한 Node.js와 공식 Agent SDK 0.3.283도 Bibimer 전용 폴더에 설치한다. 기존 CLI가 정상이고 Chat 어댑터만 필요하면 대신 `BIBIMER_CLAUDE=1 bash ~/storage/downloads/bibimer-setup.sh`를 사용한다.
+런타임 설치기는 고정된 공식 Claude 2.1.283 패키지의 SHA-512와 실행 결과를 확인하며, 기존 전역 CLI나 로그인 정보를 바꾸지 않는다. 같은 명령이 필요한 Node.js/npm과 공식 Agent SDK 0.3.283도 Bibimer 전용 폴더에 설치한다. 기존 CLI가 정상이고 Chat 어댑터만 필요하면 **Claude 어댑터 설정 명령 복사**를 사용한다. 두 명령 모두 브리지를 설치하거나 재시작하지 않는다. 현재 개발 폰용 독립 파일 명령은 [설정 문서](setup.md#이-폰의-claude-실행-파일-복구)에 있다.
 
 설치 후 **전용 실행 파일**로 버전을 확인하고 로그인한다. 고장 난 전역 `claude` 명령을 대신 실행하지 않는다.
 

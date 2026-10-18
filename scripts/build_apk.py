@@ -61,7 +61,37 @@ def fetch(url, expected, algorithm):
     return data
 
 
+CLAUDE_SDK_VERSION = "0.3.283"
+
+
+def claude_setup(repair=False):
+    """Self-contained Termux command, shared by clipboard and the manual installer."""
+    script = (ROOT / "bridge/claude_setup.sh").read_text()
+    runtime = ""
+    if repair:
+        source = (ROOT / "bridge/repair_claude_termux.py").read_bytes()
+        encoded = base64.b64encode(zlib.compress(source, 9)).decode()
+        digest = hashlib.sha256(source).hexdigest()
+        runtime = '''if ! command -v python >/dev/null 2>&1; then
+    pkg install -y python
+fi
+python - <<'BIBIMER_CLAUDE_REPAIR_PYTHON'
+import base64, hashlib, os, zlib
+source = zlib.decompress(base64.b64decode("PAYLOAD"))
+if hashlib.sha256(source).hexdigest() != "DIGEST":
+    raise SystemExit("Claude 복구 내용이 손상되었습니다." if os.environ.get("BIBIMER_LANGUAGE") == "ko" else "Claude repair content is damaged.")
+namespace = {"__name__": "bibimer_claude_repair"}
+exec(compile(source, "<bibimer-claude-repair>", "exec"), namespace)
+namespace["main"]()
+BIBIMER_CLAUDE_REPAIR_PYTHON
+'''.replace("PAYLOAD", encoded).replace("DIGEST", digest)
+    return script.replace("__BIBIMER_CLAUDE_SDK_VERSION__", CLAUDE_SDK_VERSION).replace("__BIBIMER_CLAUDE_REPAIR__", runtime)
+
+
 def installer():
+    adapter_setup, repair_setup = claude_setup(), claude_setup(repair=True)
+    (SRC / "assets/claude-adapter-setup.sh").write_text(adapter_setup)
+    (SRC / "assets/claude-repair-setup.sh").write_text(repair_setup)
     source = (ROOT / "bridge" / "bibimer_bridge.py").read_bytes()
     encoded = base64.b64encode(zlib.compress(source, 9)).decode()
     digest = hashlib.sha256(source).hexdigest()
@@ -113,20 +143,20 @@ launcher.write_text('#!/data/data/com.termux/files/usr/bin/sh\\nexec python "$HO
 launcher.chmod(0o700)
 print("브리지 설치 완료" if is_korean else "Bridge installed")
 BIBIMER_PYTHON
-if [ "${BIBIMER_CLAUDE:-0}" = 1 ] || [ "${BIBIMER_CLAUDE_TERMUX:-0}" = 1 ]; then
-    if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
-        pkg install -y nodejs-lts
-    fi
-    say 'Preparing the official Claude Agent SDK. A working Claude CLI is required separately.' '공식 Claude Agent SDK를 준비합니다. 실행 가능한 Claude CLI는 별도로 필요합니다.'
-    npm install --prefix "$HOME/.local/share/bibimer/claude" --ignore-scripts --omit=optional --no-audit --no-fund @anthropic-ai/claude-agent-sdk@0.3.283
-fi
 if [ "${BIBIMER_CLAUDE_TERMUX:-0}" = 1 ]; then
-    python "$HOME/.local/share/bibimer/repair_claude_termux.py"
+    bash <<'BIBIMER_STANDALONE_CLAUDE_REPAIR'
+CLAUDE_REPAIR_SETUP
+BIBIMER_STANDALONE_CLAUDE_REPAIR
+elif [ "${BIBIMER_CLAUDE:-0}" = 1 ]; then
+    bash <<'BIBIMER_STANDALONE_CLAUDE_ADAPTER'
+CLAUDE_ADAPTER_SETUP
+BIBIMER_STANDALONE_CLAUDE_ADAPTER
 fi
 if [ "${BIBIMER_SKIP_START:-0}" != 1 ]; then
     "$HOME/.local/bin/bibimer-bridge" start
 fi
 '''.replace("ADAPTER_PAYLOAD", repr(adapters)).replace("PAYLOAD", encoded).replace("DIGEST", digest)
+    script = script.replace("CLAUDE_REPAIR_SETUP", repair_setup).replace("CLAUDE_ADAPTER_SETUP", adapter_setup)
     (SRC / "assets" / "bibimer-setup.sh").write_text(script)
     (SRC / "assets" / "setup-connect.py").write_bytes((ROOT / "bridge" / "setup_connect.py").read_bytes())
     return script

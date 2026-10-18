@@ -41,14 +41,13 @@ The global `claude` command on the checked phone fails, so it uses Bibimer's sep
 
 Prerequisites: **arm64 Termux**, an existing glibc loader at `$PREFIX/glibc/lib/ld-linux-aarch64.so.1`, and ripgrep. See the [glibc packages project](https://github.com/termux-pacman/glibc-packages) if needed. Bibimer does not install glibc; preparing that environment from scratch remains unverified.
 
-Save the latest `bibimer-setup.sh` to Download from Bibimer Setup. Run `termux-setup-storage` and finish granting access first if needed. Then prepare ripgrep and the runtime; runtime installation also prepares the Chat SDK:
+In **Setup → Claude Code · Termux**, choose **Copy Claude repair command**, then paste and run it in Termux. The command contains the complete bundled installer, so no exported file or Downloads access is required. This source change reaches the app after the next APK build/install; older distributed versions still copy a command that references an exported file. Prepare ripgrep first if needed:
 
 ```sh
 pkg install ripgrep
-BIBIMER_CLAUDE_TERMUX=1 bash ~/storage/downloads/bibimer-setup.sh
 ```
 
-The runtime installer verifies the fixed official Claude 2.1.283 package's SHA-512 and executable before activating its dedicated launcher. It preserves the global CLI and credentials. This command also installs Node.js if needed and official Agent SDK 0.3.283 in Bibimer's private tool directory. If your existing CLI works and only the Chat adapter is missing, use `BIBIMER_CLAUDE=1 bash ~/storage/downloads/bibimer-setup.sh` instead.
+The runtime installer verifies the fixed official Claude 2.1.283 package's SHA-512 and executable before activating its dedicated launcher. It preserves the global CLI and credentials. This command also installs Node.js/npm if needed and official Agent SDK 0.3.283 in Bibimer's private tool directory. If your existing CLI works and only the Chat adapter is missing, use **Copy Claude adapter setup command** instead. Neither command installs or restarts the bridge. Separate installer files were also prepared in the current development phone's private Bibimer folder; see the [setup guide (Korean)](setup.md) for those phone-specific commands.
 
 Check the **dedicated launcher**, then open it to complete sign-in on this phone:
 

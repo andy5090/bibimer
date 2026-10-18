@@ -172,23 +172,24 @@ Chat에서 변경한 값은 다음 메시지부터 적용한다. PTY에서는 �
 
 Codex·Claude Code·OpenCode의 설치 경로는 [현재 폰에서 확인한 Termux 에이전트 설치 안내](termux-agents.md)를 먼저 참고한다. 각 제품의 일반 Linux 설치 명령과 Termux에서 실제 사용하는 패키지·런타임·래퍼를 구분한다.
 
-Termux에서 실행 가능한 Claude Code CLI와 로그인을 먼저 준비한다. 앱의 **Setup**에서 최신 설정 파일을 `bibimer-setup.sh`로 저장하고 Claude 어댑터 설치 명령을 복사하거나 다음을 실행한다.
+Termux에서 실행 가능한 Claude Code CLI와 로그인을 먼저 준비한다. 앱의 **Setup → Claude Code · Termux → Copy Claude adapter setup command(Claude 어댑터 설정 명령 복사)**를 누르고 Termux에 붙여 넣어 실행한다. 앱에 내장된 독립 설치 내용 전체를 복사하므로 `bibimer-setup.sh` 내보내기·Downloads 접근·저장소 권한이 필요하지 않다. 붙여 넣은 명령을 직접 실행할 때만 설치가 시작된다.
 
-```sh
-BIBIMER_CLAUDE=1 bash ~/storage/downloads/bibimer-setup.sh
-```
-
-설정 파일은 필요한 Node.js와 `@anthropic-ai/claude-agent-sdk` 0.3.283을 Bibimer 전용 폴더에 설치한다. Claude CLI를 대신 설치하거나 기존 CLI를 바꾸지는 않는다. 실행 중인 브리지가 있으면 세션을 마친 뒤 위 업데이트 절차에 따라 재시작하고 **Reconnect**를 누른다.
+이 명령은 필요한 Node.js/npm과 `@anthropic-ai/claude-agent-sdk` 0.3.283을 Bibimer 전용 폴더에 설치한다. 브리지 설치·시작·재시작과 전역 CLI/인증 변경을 하지 않는다. 완료 후 앱에서 다시 연결해 준비 상태를 확인한다. 브리지 자체의 업데이트가 필요한 경우에만 별도의 업데이트 절차를 따른다.
 
 준비 화면은 CLI 없음, SDK 없음, CLI 실행 실패를 구분한다. **Needs repair**라면 Termux에서 `claude --version`부터 확인한다. 현재 테스트 폰의 고장 난 전역 CLI는 아래의 별도 실행 환경으로 대체해 시작할 수 있다. 실제 모델 대화·도구 실행 검증은 남아 있다. 에이전트의 일반 Linux 설치 방법이 Termux에서도 동작한다고 가정하지 않는다.
 
 ### 이 폰의 Claude 실행 파일 복구
 
-앱에서 최신 설정 파일을 저장한 뒤 **Copy Claude repair command(Claude 복구 명령 복사)**를 사용한다.
+**Copy Claude repair command(Claude 복구 명령 복사)**를 누르고 Termux에 붙여 넣어 실행한다. 런타임 복구 코드도 앱 명령에 무결성 정보와 함께 포함되어 있어 다운로드 파일이나 이미 설치된 복구 스크립트에 의존하지 않는다. 이 명령은 어댑터 준비도 포함한다.
+
+0.20.0 등 기존 배포 앱의 두 복사 버튼은 여전히 Download 파일을 가리킨다. 이번 소스의 새 동작은 다음 APK 빌드/설치 뒤 반영된다. 현재 개발 폰에는 검증한 독립 설치 파일 두 개를 Termux 비공개 `~/.local/share/bibimer/`에 별도로 준비했다. 해당 파일이 있는 폰에서는 다음을 사용할 수 있다(일반 배포 설치본에 자동으로 생기는 파일은 아니다).
 
 ```sh
-BIBIMER_CLAUDE_TERMUX=1 bash ~/storage/downloads/bibimer-setup.sh
+BIBIMER_LANGUAGE=ko bash ~/.local/share/bibimer/claude-adapter-setup.sh
+BIBIMER_LANGUAGE=ko bash ~/.local/share/bibimer/claude-repair-setup.sh
 ```
+
+어댑터만 필요하면 첫 명령, 전용 런타임 복구가 필요하면 두 번째 명령을 선택한다. 복구 명령은 SDK도 준비하므로 두 명령을 연속 실행할 필요는 없다.
 
 이 경로는 **arm64 Termux에 glibc 로더와 ripgrep이 이미 준비된 경우**를 대상으로 한다. glibc가 없는 환경의 설치까지 자동 처리하지 않으며 선행 조건이 맞지 않으면 안내하고 중단한다. 공식 패키지 2.1.283의 SHA-512를 확인한 뒤 예상 실행 파일만 추출하고 `--version`이 성공한 경우에만 전용 런처를 바꾼다. 경로는 `~/.local/share/bibimer/claude-runtime/claude`이며 기존 전역 CLI·자격 증명은 유지한다. 로그인은 이 런처를 Termux에서 직접 실행해 진행한다.
 

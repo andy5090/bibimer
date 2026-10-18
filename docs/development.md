@@ -176,6 +176,8 @@ python scripts/build_apk.py
 
 설정 스크립트는 브리지와 두 어댑터 소스를 체크섬과 함께 내장하고 설치 시 각각 검증한다. `BIBIMER_CLAUDE=1`로 실행하면 필요한 Node.js와 SDK 0.3.283을 별도 설치한다. SDK와 Claude CLI는 APK에 포함하지 않으며 설정 스크립트가 기존 CLI를 교체하지 않는다.
 
+Claude 어댑터/복구 복사 버튼은 별도 내장 `claude-adapter-setup.sh`/`claude-repair-setup.sh`를 인용된 here-document 명령으로 복사한다. `installer()`가 두 asset을 생성하며 수동 전체 설치기의 선택적 Claude 작업도 같은 `claude_setup()` 내용을 재사용한다. 두 독립 명령은 Downloads 파일·기존 설치 스크립트·브리지 설치 상태 없이 SDK/런타임만 준비하고 브리지를 시작·재시작하지 않는다. 생성 asset만 갱신하는 작업은 APK 빌드가 아니다. 검증은 `python3 -m unittest discover -s scripts/tests -p test_claude_setup.py -v`와 기존 Setup 회귀를 사용한다.
+
 자바 8 바이트코드와 API 26 이상을 대상으로 빌드하고 target SDK는 36이다. 이는 빌드 설정이며, Android 8~15에서의 실제 실행 검증을 뜻하지 않는다. Gradle이나 Android Studio 빌드는 아직 구성하지 않았다.
 
 ## 브리지 개발 실행

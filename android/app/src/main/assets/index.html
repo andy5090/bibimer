@@ -160,13 +160,13 @@
       </details>
       <details class="agent-install" id="claude-install">
         <summary>Claude Code · Termux</summary>
-        <p data-i18n="agent_claude_termux">Claude 2.1.283 uses a separate Bibimer runtime. It requires arm64 Termux with glibc and ripgrep already installed. Save the latest setup file and install the runtime; this also prepares the Chat SDK. Sign in using the dedicated launcher. If your CLI already works, prepare only the adapter.</p>
+        <p data-i18n="agent_claude_termux">Claude 2.1.283 uses a separate Bibimer runtime. It requires arm64 Termux with glibc and ripgrep. Copy the repair command below and run it in Termux; it includes the Chat SDK. No setup file needs to be saved. If your CLI already works, prepare only the adapter.</p>
         <button data-command="claude-repair" class="secondary full" data-i18n="claude_repair_setup">Copy Claude repair command</button>
         <div class="command"><code id="claude-check-command">~/.local/share/bibimer/claude-runtime/claude --version</code><button data-agent-copy="claude-check-command" data-i18n="copy">Copy</button></div>
         <p class="hint" data-i18n="agent_claude_auth_hint">A successful version check does not confirm authentication. If your login has expired or you are signed out, run auth login below in Termux and finish signing in with the browser.</p>
         <div class="command"><code id="claude-auth-command">~/.local/share/bibimer/claude-runtime/claude auth status</code><button data-agent-copy="claude-auth-command" data-i18n="copy">Copy</button></div>
         <div class="command"><code id="claude-login-command">~/.local/share/bibimer/claude-runtime/claude auth login</code><button data-agent-copy="claude-login-command" data-i18n="copy">Copy</button></div>
-        <p class="hint" data-i18n="claude_adapter_hint">For Claude chat and import, export the latest setup file, then run the adapter setup command in Termux. Node.js and the official Agent SDK will be installed. A working Claude CLI is required separately.</p>
+        <p class="hint" data-i18n="claude_adapter_hint">Copy the bundled command and run it in Termux. No saved setup file or Downloads access is needed. This installs Node.js and the official Agent SDK; a working Claude CLI is required separately.</p>
         <button data-command="claude-adapter" class="secondary full" data-i18n="claude_adapter_setup">Copy Claude adapter setup command</button>
         <div class="button-row"><button data-guide="claude-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="claude" class="quiet" data-i18n="claude_guide">Claude Code guide ↗</button></div>
       </details>

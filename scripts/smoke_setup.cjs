@@ -21,6 +21,7 @@ async function main(){
     window.setupCalls=[];
     window.agentCopies=[];
     window.agentGuides=[];
+    window.claudeCopies=[];
     window.setupHealthStatus=200;
     window.setupHealthDelay=0;
     window.setupResult=(phase,paired=false)=>{set({...get(),phase});if(paired)localStorage.setItem('paired','yes');window.BibimerResume();};
@@ -31,7 +32,7 @@ async function main(){
       startQuickSetup:()=>{window.setupCalls.push('start');set({phase:'running',id:'controlled-job',permitted:true});},
       openAppPermissions:()=>window.setupCalls.push('permissions'),openTermux:()=>window.setupCalls.push('termux'),
       openGuide:name=>window.agentGuides.push(name),copyText:text=>window.agentCopies.push(text),
-      exportInstaller:()=>{},copyCommand:name=>window.setupCalls.push(name),cancelPoll:()=>{},
+      exportInstaller:()=>{},copyCommand:name=>name.startsWith('claude-')?window.claudeCopies.push(name):window.setupCalls.push(name),cancelPoll:()=>{},
       forget:()=>{localStorage.removeItem('paired');set({phase:'idle',id:''});},
       request:(id,method,route)=>{
         if(route==='/v1/health') {
@@ -126,6 +127,8 @@ async function main(){
     await page.locator(`#${id} > summary`).click();
   }
   const commands=await page.locator('[data-agent-copy]').count();
+  for(const name of ['claude-repair','claude-adapter']) await page.locator(`[data-command="${name}"]`).click();
+  assert.deepEqual(await page.evaluate(()=>window.claudeCopies),['claude-repair','claude-adapter']);
   assert.equal(commands,12);
   for(let index=0;index<commands;index++) {
     const button=page.locator('[data-agent-copy]').nth(index);

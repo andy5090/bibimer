@@ -21,3 +21,5 @@ dist/
 android/app/src/main/assets/vendor/
 android/app/src/main/assets/bibimer-setup.sh
 android/app/src/main/assets/setup-connect.py
+android/app/src/main/assets/claude-adapter-setup.sh
+android/app/src/main/assets/claude-repair-setup.sh

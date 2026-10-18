@@ -528,8 +528,12 @@ public final class MainActivity extends Activity {
                 "sed -i '/^[[:space:]]*allow-external-apps[[:space:]]*=/d' ~/.termux/termux.properties && " +
                 "printf '\\nallow-external-apps=true\\n' >> ~/.termux/termux.properties && termux-reload-settings";
             else if (name.equals("install")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
-            else if (name.equals("claude-adapter")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "BIBIMER_CLAUDE=1 bash ~/storage/downloads/bibimer-setup.sh";
-            else if (name.equals("claude-repair")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "BIBIMER_CLAUDE_TERMUX=1 bash ~/storage/downloads/bibimer-setup.sh";
+            else if (name.equals("claude-adapter") || name.equals("claude-repair")) {
+                String asset = name.equals("claude-repair") ? "claude-repair-setup.sh" : "claude-adapter-setup.sh";
+                try (InputStream input = getAssets().open(asset)) {
+                    command = ClaudeSetup.command(input, language.get());
+                } catch (Exception unavailable) { toast(R.string.setup_command_failed); return; }
+            }
             else if (name.equals("start")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge start";
             else if (name.equals("restart")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge restart";
             else if (name.equals("pair")) command = ("ko".equals(language.get()) ? "BIBIMER_LANGUAGE=ko " : "") + "~/.local/bin/bibimer-bridge pair";

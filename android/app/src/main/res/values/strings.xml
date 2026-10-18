@@ -21,4 +21,5 @@
     <string name="notification_response_complete">Response complete</string>
     <string name="error_file_open">Could not open the file. Check the connection and available storage.</string>
     <string name="error_file_app">No Android app can open this file type. Install a compatible viewer.</string>
+    <string name="setup_command_failed">Could not prepare the setup command. Please try again.</string>
 </resources>
