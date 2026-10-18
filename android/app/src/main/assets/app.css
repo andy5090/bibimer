@@ -405,3 +405,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 #app-update-card .button-row { display:flex; flex-wrap:wrap; gap:6px; }
 #app-update-card .button-row button { min-width:0; white-space:normal; overflow-wrap:anywhere; flex:1 1 130px; }
 #bridge-update-version { overflow-wrap:anywhere; }
+
+.message .item-status.succeeded { color:var(--green); }
+.message .item-status.failed { color:var(--red); }
+.message .exit-code.unavailable { max-width:140px; white-space:normal; overflow-wrap:anywhere; }

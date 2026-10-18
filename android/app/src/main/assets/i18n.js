@@ -3,6 +3,10 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    command_failure_code: ["Failure code {code}", "실패 코드 {code}"],
+    command_failure_code_unavailable: ["Failure code unavailable", "실패 코드 미제공"],
+
+    command_succeeded: ["Success", "성공"],
     agent_action_connect_provider: ["Connect provider", "제공자 연결"],
     agent_opencode_provider_hint: ["Choose a provider in Termux, then configure its API key or supported sign-in method. This sets up OpenCode’s connection to that provider.", "Termux에서 사용할 제공자를 고른 뒤 API 키 또는 해당 제공자가 지원하는 인증 방식을 설정하세요. OpenCode가 해당 제공자를 사용하도록 연결하는 과정입니다."],
     agent_opencode_action_sent: ["Request sent to Termux. Check provider setup and command results there.", "Termux에 실행을 요청했습니다. 제공자 설정·명령 결과는 Termux에서 확인하세요."],
@@ -332,7 +336,7 @@
     chat_latest: ["Jump to latest ↓", "최신 응답으로 ↓"],
     chat_summary: ["Agent summary", "에이전트 요약"],
     tool_no_output: ["No output reported.", "전달된 출력이 없습니다."],
-    exit_code: ["Exit {code}", "종료 {code}"],
+    exit_code: ["Result code {code}", "결과 코드 {code}"],
     plan_completed: ["Completed", "완료"],
     plan_in_progress: ["In progress", "진행 중"],
     plan_pending: ["Pending", "예정"],

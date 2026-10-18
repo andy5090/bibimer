@@ -1,6 +1,9 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "command_failure_code": "Fehlercode {code}",
+  "command_failure_code_unavailable": "Fehlercode nicht verfügbar",
+  "command_succeeded": "Erfolgreich",
   "agent_action_connect_provider": "Anbieter verbinden",
   "agent_opencode_provider_hint": "Wähle einen Anbieter in Termux und richte dessen API-Schlüssel oder eine unterstützte Anmeldemethode ein. Dadurch wird die Verbindung von OpenCode zu diesem Anbieter eingerichtet.",
   "agent_opencode_action_sent": "Anfrage an Termux gesendet. Prüfe dort die Anbietereinrichtung und die Befehlsergebnisse.",
@@ -330,7 +333,7 @@ window.BibimerTranslations.de = {
   "chat_latest": "Zum neuesten Beitrag ↓",
   "chat_summary": "Agentenzusammenfassung",
   "tool_no_output": "Keine Ausgabe gemeldet.",
-  "exit_code": "Exit {code}",
+  "exit_code": "Code {code}",
   "plan_completed": "Abgeschlossen",
   "plan_in_progress": "In Bearbeitung",
   "plan_pending": "Ausstehend",

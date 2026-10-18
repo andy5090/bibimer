@@ -1,6 +1,9 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["pt-BR"] = {
+  "command_failure_code": "Código de falha {code}",
+  "command_failure_code_unavailable": "Código de falha indisponível",
+  "command_succeeded": "Sucesso",
   "agent_action_connect_provider": "Conectar provedor",
   "agent_opencode_provider_hint": "Escolha um provedor no Termux e configure a chave de API ou um método de autenticação aceito. Isso configura a conexão do OpenCode com esse provedor.",
   "agent_opencode_action_sent": "Solicitação enviada ao Termux. Confira lá a configuração do provedor e os resultados dos comandos.",
@@ -330,7 +333,7 @@ window.BibimerTranslations["pt-BR"] = {
   chat_latest: "Ir para o final ↓",
   chat_summary: "Resumo do agente",
   tool_no_output: "Nenhuma saída informada.",
-  exit_code: "Saída {code}",
+  exit_code: "Código {code}",
   plan_completed: "Concluído",
   plan_in_progress: "Em andamento",
   plan_pending: "Pendente",

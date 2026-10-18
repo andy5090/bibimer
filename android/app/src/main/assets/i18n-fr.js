@@ -1,6 +1,9 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "command_failure_code": "Code d’échec {code}",
+  "command_failure_code_unavailable": "Code d’échec indisponible",
+  "command_succeeded": "Réussi",
   "agent_action_connect_provider": "Connecter un fournisseur",
   "agent_opencode_provider_hint": "Choisissez un fournisseur dans Termux, puis configurez sa clé API ou une méthode d’authentification prise en charge. Cela configure la connexion d’OpenCode à ce fournisseur.",
   "agent_opencode_action_sent": "Demande envoyée à Termux. Consultez-y la configuration du fournisseur et les résultats des commandes.",
@@ -330,7 +333,7 @@ window.BibimerTranslations.fr = {
   "chat_latest": "Aller au plus récent ↓",
   "chat_summary": "Résumé de l’agent",
   "tool_no_output": "Aucune sortie signalée.",
-  "exit_code": "Sortie {code}",
+  "exit_code": "Code {code}",
   "plan_completed": "Terminé",
   "plan_in_progress": "En cours",
   "plan_pending": "En attente",

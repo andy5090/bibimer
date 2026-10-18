@@ -1,6 +1,9 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "command_failure_code": "Kode kegagalan {code}",
+  "command_failure_code_unavailable": "Kode kegagalan tidak tersedia",
+  "command_succeeded": "Berhasil",
   "agent_action_connect_provider": "Hubungkan penyedia",
   "agent_opencode_provider_hint": "Pilih penyedia di Termux, lalu atur kunci API atau metode autentikasi yang didukung. Ini menyiapkan koneksi OpenCode ke penyedia tersebut.",
   "agent_opencode_action_sent": "Permintaan dikirim ke Termux. Periksa pengaturan penyedia dan hasil perintah di sana.",
@@ -330,7 +333,7 @@ window.BibimerTranslations.id = {
   chat_latest: "Ke respons terbaru ↓",
   chat_summary: "Ringkasan agen",
   tool_no_output: "Tidak ada keluaran yang dilaporkan.",
-  exit_code: "Keluar {code}",
+  exit_code: "Kode {code}",
   plan_completed: "Selesai",
   plan_in_progress: "Sedang berlangsung",
   plan_pending: "Menunggu",

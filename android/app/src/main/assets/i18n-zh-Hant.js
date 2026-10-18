@@ -1,6 +1,9 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "command_failure_code": "失敗代碼 {code}",
+  "command_failure_code_unavailable": "未提供失敗代碼",
+  "command_succeeded": "成功",
   "agent_action_connect_provider": "連接提供者",
   "agent_opencode_provider_hint": "在 Termux 中選擇提供者，再設定 API 金鑰或該提供者支援的驗證方式。這會設定 OpenCode 與該提供者的連線。",
   "agent_opencode_action_sent": "已向 Termux 傳送執行請求。請在該處查看提供者設定和指令結果。",
@@ -330,7 +333,7 @@ window.BibimerTranslations["zh-Hant"] = {
   chat_latest: "跳至最新回覆 ↓",
   chat_summary: "AI 代理摘要",
   tool_no_output: "未返回輸出。",
-  exit_code: "結束代碼 {code}",
+  exit_code: "結果代碼 {code}",
   plan_completed: "已完成",
   plan_in_progress: "進行中",
   plan_pending: "待處理",

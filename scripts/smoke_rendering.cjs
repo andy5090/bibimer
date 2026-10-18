@@ -236,6 +236,49 @@ async function main() {
   assert.equal(await page.locator('#input').inputValue(),longDraft);
   console.log('PASS: tablet/desktop/short-window/phone layouts; aligned chat/composer, draft and focus preservation; modal-to-docked transitions, collapse and Escape');
   assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
+  // Command outcomes are distinct from session/process lifecycle. Failed events
+  // take precedence over a zero code; missing codes must never imply success.
+  const processBefore=await page.locator('#process').innerText();
+  const commandCases=[
+    {id:'success',kind:'command',status:'completed',exit_code:0,label:'command_succeeded',badge:null,success:true},
+    {id:'nonzero',kind:'command',status:'completed',exit_code:1,label:'chat_status_failed',badge:'command_failure_code',failed:true},
+    {id:'failed',kind:'command',status:'failed',exit_code:127,label:'chat_status_failed',badge:'command_failure_code',failed:true},
+    {id:'no-code',kind:'command',status:'failed',exit_code:null,label:'chat_status_failed',badge:'command_failure_code_unavailable',failed:true},
+    {id:'failed-zero',kind:'command',status:'failed',exit_code:0,label:'chat_status_failed',badge:'command_failure_code',failed:true},
+    {id:'running',kind:'command',status:'inProgress',exit_code:0,label:'chat_status_inProgress',badge:'exit_code'},
+    {id:'interrupted',kind:'command',status:'interrupted',exit_code:130,label:'chat_status_interrupted',badge:'exit_code'},
+    {id:'unknown',kind:'command',status:'completed',label:'chat_status_completed',badge:null},
+    {id:'tool',kind:'tool',status:'completed',exit_code:0,label:'chat_status_completed',badge:'exit_code'}
+  ];
+  await page.setViewportSize({width:320,height:640});
+  for(const locale of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
+    await page.evaluate(({locale,cases})=>{
+      renderer.clear(); BibimerI18n.setLanguage(locale);
+      renderer.update({items:cases.map(({label,badge,failed,success,...item})=>({...item,title:'command --long-option /path/with/spaces',text:'controlled output'})),requests:[]});
+    },{locale,cases:commandCases});
+    for(const item of commandCases) {
+      const card=page.locator('.message').nth(commandCases.indexOf(item));
+      const result=card.locator('summary .item-status');
+      assert.equal(await result.textContent(),await page.evaluate(key=>BibimerI18n.t(key),item.label));
+      assert.equal(await result.evaluate(node=>node.classList.contains('succeeded')),Boolean(item.success));
+      assert.equal(await result.evaluate(node=>node.classList.contains('failed')),Boolean(item.failed));
+      assert.equal(await card.getAttribute('data-status'),item.status);
+      const code=card.locator('summary .exit-code');
+      assert.equal(await code.count(),item.badge?1:0);
+      if(item.badge)assert.equal(await code.textContent(),await page.evaluate(({key,code})=>BibimerI18n.t(key,{code}),{key:item.badge,code:item.exit_code}));
+      assert.ok(await card.locator('summary').evaluate(node=>node.scrollWidth<=node.clientWidth),locale+' '+item.id);
+    }
+    if(['en','ko'].includes(locale)) {
+      await page.locator('#conversation').evaluate(node=>{node.scrollTop=0;});
+      await page.screenshot({path:path.join(root,`dist/screenshots/command-results-320-${locale}.png`)});
+    }
+    await page.locator('.message details').first().evaluate(node=>{node.open=true;});
+    await page.evaluate(()=>renderer.localize());
+    assert.equal(await page.locator('.message details').first().evaluate(node=>node.open),true);
+  }
+  assert.equal(await page.locator('#process').innerText(),processBefore);
+  assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
+  console.log('PASS: command success/failure with explicit failure codes, absent/conflicting codes, unchanged lifecycle and tool states, ten locales at 320px');
   // Controlled icon preview, separate from actual launcher verification.
   await page.setViewportSize({width:560,height:240});
   await page.evaluate(()=>{

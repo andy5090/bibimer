@@ -64,9 +64,23 @@
         const details = detail("activity", item.title || this.t("chat_" + item.kind));
         const summary = details.querySelector("summary");
         summary.prepend(make("span", item.kind === "command" ? "›_" : "◇", "activity-icon"));
-        summary.append(status());
-        if (item.exit_code !== undefined && item.exit_code !== null) {
-          summary.append(make("span", this.t("exit_code", {code:item.exit_code}), "exit-code" + (item.exit_code ? " failed" : "")));
+        const succeeded = item.kind === "command" && item.status === "completed" && item.exit_code === 0;
+        const failed = item.kind === "command" && (item.status === "failed" ||
+          (item.status === "completed" && Number.isInteger(item.exit_code) && item.exit_code !== 0));
+        const result = status();
+        if (succeeded) {
+          result.textContent = this.t("command_succeeded");
+          result.classList.add("succeeded");
+          result.title = this.t("exit_code", {code:0});
+        } else if (failed) {
+          result.textContent = this.t("chat_status_failed");
+          result.classList.add("failed");
+        }
+        summary.append(result);
+        if (!succeeded && item.exit_code !== undefined && item.exit_code !== null) {
+          summary.append(make("span", this.t(failed ? "command_failure_code" : "exit_code", {code:item.exit_code}), "exit-code" + (failed || item.exit_code ? " failed" : "")));
+        } else if (failed) {
+          summary.append(make("span", this.t("command_failure_code_unavailable"), "exit-code failed unavailable"));
         }
         if (item.kind === "command" && item.title) details.append(codeBlock(item.title, "bash", this.t));
         if (item.text) details.append(codeBlock(item.text, item.kind === "tool" && /^[{[]/.test(item.text.trim()) ? "json" : "", this.t));

@@ -1,6 +1,9 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "command_failure_code": "失败代码 {code}",
+  "command_failure_code_unavailable": "未提供失败代码",
+  "command_succeeded": "成功",
   "agent_action_connect_provider": "连接提供商",
   "agent_opencode_provider_hint": "在 Termux 中选择提供商，然后配置 API 密钥或该提供商支持的认证方式。这会设置 OpenCode 与该提供商的连接。",
   "agent_opencode_action_sent": "已向 Termux 发送执行请求。请在那里查看提供商配置和命令结果。",
@@ -330,7 +333,7 @@ window.BibimerTranslations["zh-Hans"] = {
   chat_latest: "跳至最新回复 ↓",
   chat_summary: "智能体摘要",
   tool_no_output: "未返回输出。",
-  exit_code: "退出码 {code}",
+  exit_code: "结果代码 {code}",
   plan_completed: "已完成",
   plan_in_progress: "进行中",
   plan_pending: "待处理",

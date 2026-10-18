@@ -1,6 +1,9 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "command_failure_code": "失敗コード {code}",
+  "command_failure_code_unavailable": "失敗コード未提供",
+  "command_succeeded": "成功",
   "agent_action_connect_provider": "プロバイダーを接続",
   "agent_opencode_provider_hint": "Termux でプロバイダーを選び、API キーまたは対応する認証方法を設定してください。OpenCode がそのプロバイダーを使うための接続設定です。",
   "agent_opencode_action_sent": "Termux に実行をリクエストしました。プロバイダー設定とコマンドの結果は Termux で確認してください。",
@@ -330,7 +333,7 @@ window.BibimerTranslations.ja = {
   chat_latest: "最新の応答へ ↓",
   chat_summary: "エージェントの要約",
   tool_no_output: "出力は報告されていません。",
-  exit_code: "終了コード {code}",
+  exit_code: "結果コード {code}",
   plan_completed: "完了",
   plan_in_progress: "進行中",
   plan_pending: "未着手",
