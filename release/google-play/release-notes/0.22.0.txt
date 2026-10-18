@@ -1,0 +1,6 @@
+<en-US>
+Added Termux bridge update and restart buttons in Settings. Maintenance checks all projects and archived sessions and refuses to stop running sessions. Project and session lists, names, archive status and pairing are preserved. Ended chats can be continued through session management; terminal output is not restored. Updated guidance in all 10 supported languages.
+</en-US>
+<ko-KR>
+설정에 Termux 브리지 업데이트·재시작 버튼을 추가했습니다. 모든 프로젝트와 보관된 세션의 실행 상태를 확인하며 실행 중인 세션은 종료하지 않습니다. 프로젝트·세션 목록, 이름, 보관 상태와 연결 정보를 유지합니다. 종료된 대화는 세션 관리에서 이어갈 수 있으며 터미널 출력은 복원하지 않습니다. 10개 언어의 안내를 갱신했습니다.
+</ko-KR>

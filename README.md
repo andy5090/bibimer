@@ -18,7 +18,7 @@ Bibimer takes its name from **비빔 (bibim)**, Korean for mixing things togethe
 
 ## Availability
 
-Bibimer is available on [Google Play](https://play.google.com/store/apps/details?id=app.bibimer). **Version 0.20.0 is the public release; invited internal testers can update to 0.21.0.** There is no public GitHub APK release. To build the current development version, follow the [build guide](docs/development.md) (currently in Korean).
+Bibimer is available on [Google Play](https://play.google.com/store/apps/details?id=app.bibimer). **Version 0.20.0 is the public release; invited internal testers can update to 0.22.0.** There is no public GitHub APK release. To build the current development version, follow the [build guide](docs/development.md) (currently in Korean).
 
 The app targets Android 8.0 or later (API 26+). Compatibility with every Android version, device, or agent installation has not been verified.
 
