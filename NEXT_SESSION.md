@@ -1,5 +1,14 @@
 # Bibimer 다음 세션 시작점
 
+## 푸터 회사 링크·다국어 SEO 보완 (2026-10-18)
+
+- 10개 언어 홈과 기존 EN/KO 심사 안내 푸터의 회사명을 `https://andineering.com` 링크로 바꿨다. 기존 색·밑줄·키보드 포커스 스타일을 재사용했으며 새 의존성이나 화면 구성은 추가하지 않았다.
+- 기존30개 공개 페이지(10언어×홈/사용법/정책)의 번역된 title/description, 자기 canonical, 상호11개 hreflang(10언어+x-default), lang/H1을 확인했다. 빠져 있던30-URL sitemap.xml과 robots.txt의 Sitemap 선언, 언어별 Open Graph/Twitter 제목·설명·정규URL·locale·공유 이미지 메타를 추가했다. 공유 이미지는 기존 EN/KO 소개 그래픽을 그대로 사용한다. 검색용 대체언어 선언은 기존 HTML hreflang을 유지하고 사이트맵에는 URL만 넣었다.
+- 심사 안내의 기존 noindex/nofollow를 유지해 사이트맵에서 제외했고404에도noindex를 추가했다. robots.txt로 해당 경로의 크롤링을 막지는 않아 메타 지시를 읽을 수 있다.
+- `python3 scripts/tests/test_website_locales.py` 2개 검사(30페이지 경로/SEO/사이트맵/제외 경로 포함), `node scripts/tests/test_website_language.cjs`, git diff --check 통과. CUA에서320px10언어 푸터의 링크·언어·가로넘침 없음과KO데스크톱/모바일 키보드 이동을 확인했다. 시각판정98pass `.omx/state/footer-seo/ralph-progress.json`.
+- Cloudflare Pages **https://d56a894e.bibimer.pages.dev** 배포 완료. 공개30HTML+sitemap/robots/공유이미지2개, 총34리소스 HTTP200·원본바이트일치·보안헤더 유지, 없는 경로404/noindex, 회사 링크 목적지HTTP200 확인. 증빙 `dist/footer-seo/public-verification.json`, `published-footer.png`.
+- Google Search Console 등록·사이트맵 직접 제출·실제 색인/검색 순위는 이번 검증 범위가 아니다. robots.txt에서 사이트맵을 찾을 수 있도록 제공했으며 검색 반영 시점은 검색 엔진에 달려 있다. 앱/Play/Termux프로세스 변경이나빌드는 없다.
+
 ## 최신: 0.20.0(37) 정식 출시 심사 제출 (2026-10-16)
 
 사용자가 내부 테스트 확인 후 정식 배포를 요청해, 검증된 **0.20.0(37)** 내부 테스트 번들을 그대로 프로덕션에 승급했다. 새 빌드·재업로드 없이37만 포함하고 기존33은 제외했다. 기존 전체178개 국가·지역,100% 출시이며 관리형 게시가 꺼져 있어 승인 후 자동 공개된다.
