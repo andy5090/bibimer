@@ -153,7 +153,7 @@ async function main(){
       await page.locator(`#${agent}-install [data-agent-action="${action}"]`).click();
       expectedActions.push([agent,action]);
       assert.deepEqual(await page.evaluate(()=>window.agentActions.at(-1)),[agent,action]);
-      assert.match(await page.locator(`#agent-action-status-${agent}`).innerText(),/설치·로그인 완료를 뜻하지/);
+      assert.match(await page.locator(`#agent-action-status-${agent}`).innerText(),agent==='opencode'?/제공자 설정·명령 결과/:/설치·로그인 완료를 뜻하지/);
     }
   }
   assert.equal(await page.locator('#agent-action-status-claude').innerText(),claudeStatus);
@@ -175,11 +175,11 @@ async function main(){
     await page.evaluate(value=>{localStorage.setItem('language',value);window.BibimerRefreshLanguage();},locale);
     await page.setViewportSize({width:320,height:640});
     assert.equal(await page.locator('html').getAttribute('lang'),locale);
-    for(const key of ['agent_termux_basis','agent_codex_termux','agent_claude_termux','agent_claude_auth_hint','agent_opencode_termux','agent_gemini_termux','agent_action_hint','agent_action_login','claude_action_repair','claude_action_adapter','agent_action_status','agent_action_version','agent_action_providers','agent_gemini_login_hint']) {
+    for(const key of ['agent_termux_basis','agent_codex_termux','agent_claude_termux','agent_claude_auth_hint','agent_opencode_termux','agent_gemini_termux','agent_action_hint','agent_action_login','claude_action_repair','claude_action_adapter','agent_action_status','agent_action_version','agent_action_providers','agent_gemini_login_hint','agent_action_connect_provider','agent_opencode_provider_hint']) {
       assert.equal(await page.locator(`[data-i18n="${key}"]`).first().textContent(),await page.evaluate(k=>window.BibimerI18n.t(k),key));
     }
     for(const agent of ['codex','claude','opencode','gemini']) {
-      const key=agent==='claude'?'quick_permission':'agent_action_sent';
+      const key=agent==='claude'?'quick_permission':agent==='opencode'?'agent_opencode_action_sent':'agent_action_sent';
       assert.equal(await page.locator(`#agent-action-status-${agent}`).textContent(),await page.evaluate(value=>window.BibimerI18n.t(value),key));
     }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

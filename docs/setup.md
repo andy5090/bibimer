@@ -172,7 +172,7 @@ Chat에서 변경한 값은 다음 메시지부터 적용한다. PTY에서는 �
 
 Codex·Claude Code·OpenCode·Gemini CLI의 설치 경로는 [현재 폰에서 확인한 Termux 에이전트 설치 안내](termux-agents.md)를 먼저 참고한다. 각 제품의 일반 Linux 설치 명령과 Termux에서 실제 사용하는 패키지·런타임·래퍼를 구분한다.
 
-개발 소스에는 네 CLI 각각의 **Termux에서 로그인** 버튼이 있다. Android 명령 실행 권한과 Termux 외부 앱 연동을 사용자가 허용한 뒤 새 Termux 터미널에서 인증을 시작한다. Codex는 `codex login`, OpenCode는 `opencode auth login`, Claude는 전용 런처의 `auth login`이다. Gemini는 설치된 CLI를 Node.js로 열고 Google 로그인을 선택한다. 이미 인증되어 있으면 Gemini 안에서 `/auth`를 입력해 방식을 선택한다. Gemini를 Bibimer의 구조화 Chat에 추가한 것은 아니다. 인증 코드·키·출력은 앱으로 가져오지 않으며 브라우저 인증은 사용자가 직접 완료한다. 기존 브리지·세션은 재시작하지 않고 명령 복사도 유지한다. **다음 APK 빌드·설치 후 적용되며 실제 기기 화면 전환과 로그인 복귀는 아직 검증하지 않았다.**
+개발 소스에는 Codex·Claude·Gemini의 **Termux에서 로그인**, OpenCode의 **제공자 연결** 버튼이 있다. Android 명령 실행 권한과 Termux 외부 앱 연동을 사용자가 허용한 뒤 새 Termux 터미널에서 인증을 시작한다. Codex는 `codex login`, Claude는 전용 런처의 `auth login`으로 로그인한다. OpenCode는 `opencode auth login`으로 제공자 선택과 API 키/지원 인증 방식을 설정한다. Gemini는 설치된 CLI를 Node.js로 열고 Google 로그인을 선택한다. 이미 인증되어 있으면 Gemini 안에서 `/auth`를 입력해 방식을 선택한다. Gemini를 Bibimer의 구조화 Chat에 추가한 것은 아니다. 인증 코드·키·출력은 앱으로 가져오지 않으며 브라우저 인증은 사용자가 직접 완료한다. 기존 브리지·세션은 재시작하지 않고 명령 복사도 유지한다. **다음 APK 빌드·설치 후 적용되며 실제 기기 화면 전환과 로그인 복귀는 아직 검증하지 않았다.**
 
 Termux에서 실행 가능한 Claude Code CLI와 로그인을 먼저 준비한다. 앱의 **Setup → Claude Code · Termux → Copy Claude adapter setup command(Claude 어댑터 설정 명령 복사)**를 누르고 Termux에 붙여 넣어 실행한다. 앱에 내장된 독립 설치 내용 전체를 복사하므로 `bibimer-setup.sh` 내보내기·Downloads 접근·저장소 권한이 필요하지 않다. 붙여 넣은 명령을 직접 실행할 때만 설치가 시작된다.
 
@@ -243,7 +243,7 @@ BIBIMER_LANGUAGE=ko bash ~/.local/share/bibimer/claude-repair-setup.sh
 
 PTY는 ANSI 색상(16색·256색·트루컬러), 굵은 글씨와 ASCII 도형을 표시한다. 프로그램이 출력한 터미널 제어 시퀀스는 xterm.js가 처리한다.
 
-Codex·OpenCode·Claude Code는 Termux에서 실행 가능하게 설치하고 로그인·모델 설정을 마친 뒤 선택한다. 준비 화면의 에이전트별 Termux 안내에서 설치·버전 확인·로그인 명령과 [상세 절차](termux-agents.md)를 제공하고 제품 공식 문서 링크도 유지한다. OpenCode의 새 Chat과 PTY는 별도 Bibimer SDK 없이 설치된 `opencode` 명령을 사용한다. 해당 문서의 일반 Linux 설치 절차가 Android/Termux에서도 동작한다고 가정하지 않는다.
+Codex·OpenCode·Claude Code는 Termux에서 실행 가능하게 설치하고 필요한 계정 인증·제공자 연결·모델 설정을 마친 뒤 선택한다. 준비 화면의 에이전트별 Termux 안내에서 설치·버전 확인·로그인 명령과 [상세 절차](termux-agents.md)를 제공하고 제품 공식 문서 링크도 유지한다. OpenCode의 새 Chat과 PTY는 별도 Bibimer SDK 없이 설치된 `opencode` 명령을 사용한다. 해당 문서의 일반 Linux 설치 절차가 Android/Termux에서도 동작한다고 가정하지 않는다.
 
 현재 기기에서는 이미 설치된 Termux용 Codex 배포본의 대화형 PTY 시작 화면과 App Server 대화 초기화를 확인했다. 새 사용자를 위한 에이전트 설치 경로와 실제 모델 작업은 별도 검증 대상이다. 계정 키나 토큰은 Bibimer의 프로젝트 설정에 입력하지 않는다.
 

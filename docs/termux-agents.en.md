@@ -15,16 +15,18 @@ These are configurations checked on an **Android 16 arm64 phone on 2026-10-19**.
 
 Agent requirements differ from Bibimer's minimum Android version. The phone uses Termux Node.js 26.4.0, npm 11.19.0, glibc 2.42-0 and glibc-runner 2.0-3; these are reference versions, not a requirement to replace working tools.
 
-## Start sign-in from the app
+## Start authentication and provider setup from the app
 
-The development source provides **Sign in with Termux** buttons for Codex, Claude Code, OpenCode, and Gemini CLI in **Setup → Prepare an agent**. Each opens a new terminal on the same phone. Existing bridge, project, and running sessions are preserved. Credentials, codes, and CLI output are not returned to Bibimer. Complete account/provider selection and browser authentication yourself.
+The development source provides **Sign in with Termux** for Codex, Claude Code, and Gemini CLI, and **Connect provider** for OpenCode in **Setup → Prepare an agent**. Each opens a new terminal on the same phone. Existing bridge, project, and running sessions are preserved. Credentials, codes, and CLI output are not returned to Bibimer. Complete account/provider selection and browser authentication yourself.
 
-| Agent | Sign-in action | Additional checks |
+| Agent | Button action | Additional checks |
 | --- | --- | --- |
 | Codex | Installed `codex login` | `codex login status`, `codex --version` |
 | Claude Code | Dedicated launcher preferred, with `auth login` | `auth status`, `--version`, existing repair/adapter setup |
-| OpenCode | Installed wrapper's `opencode auth login` provider selector | `opencode auth list` (configuration list, not an access test), `opencode --version` |
+| OpenCode | **Connect provider** → installed wrapper's `opencode auth login` provider selector and authentication setup | `opencode auth list` (configuration list, not an access test), `opencode --version` |
 | Gemini CLI | Run the installed CLI interactively through Termux Node.js | Same entry with `--version`; no standalone sign-in status action |
+
+OpenCode’s **Connect provider** action selects a provider and configures its API key or supported authentication method. The underlying command remains `auth login`, as documented in the [official OpenCode CLI guide](https://opencode.ai/docs/cli/#auth). **Configured providers** lists saved configuration; it does not establish model access.
 
 Gemini does not use an invented `gemini auth login` command. Choose **Sign in with Google** after opening the CLI, or use **`/auth`** in the CLI when already authenticated. Bibimer does not send `/auth` as a prompt, log you out, or select an account. This matches the installed 0.58.0 help, built-in command source, and [official authentication guide](https://geminicli.com/docs/get-started/authentication/). Gemini's structured Bibimer Chat integration remains unimplemented.
 
@@ -112,7 +114,7 @@ less ~/bibimer-install-opencode.sh
 bash ~/bibimer-install-opencode.sh
 ```
 
-**Pinning the script does not pin its Bun/OpenCode downloads.** A new installation may differ from the checked OpenCode 1.17.13. Do not rerun it over a working installation. Verify the executable instead of relying on installer success text, then sign in to your provider:
+**Pinning the script does not pin its Bun/OpenCode downloads.** A new installation may differ from the checked OpenCode 1.17.13. Do not rerun it over a working installation. Verify the executable instead of relying on installer success text, then configure your provider connection:
 
 ```sh
 opencode --version
@@ -145,6 +147,6 @@ node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js"
 
 ## Return to Bibimer
 
-For Codex, Claude Code and OpenCode, reconnect in Bibimer after installation and sign-in and check agent readiness before starting a session. A successful version check does not establish authentication or model access. Do not put API keys or login codes in Bibimer project settings or conversations.
+For Codex, Claude Code and OpenCode, reconnect in Bibimer after installation and the required account authentication or provider setup and check agent readiness before starting a session. A successful version check does not establish authentication or model access. Do not put API keys or login codes in Bibimer project settings or conversations.
 
 Update the bridge only when needed. Finish active sessions before restarting it, following the [bridge setup guide (Korean)](setup.md). Viewing these instructions does not restart the bridge or agents.

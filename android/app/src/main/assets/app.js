@@ -1731,6 +1731,7 @@
   for (const button of document.querySelectorAll("[data-agent-copy]")) button.addEventListener("click", () => native.copyText($(button.dataset.agentCopy).textContent));
   window.BibimerAgentActionStatus = (agent, code) => {
     if (demo || !["codex", "claude", "opencode", "gemini"].includes(agent) || !["agent_action_sent", "quick_permission", "quick_termux_missing", "quick_termux_old", "quick_start_failed"].includes(code)) return;
+    if (agent === "opencode" && code === "agent_action_sent") code = "agent_opencode_action_sent";
     const status = $("agent-action-status-" + agent);
     status.dataset.i18n = code; status.textContent = t(code); status.hidden = false;
   };

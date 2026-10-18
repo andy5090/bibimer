@@ -146,7 +146,7 @@
     </details>
     <section class="card setup-step">
       <div class="step-heading"><span class="step-number">3</span><h2 data-i18n="agent_setup">Prepare an agent</h2></div>
-      <p data-i18n="agent_body">Start with Terminal to check input and output. Install Codex, Claude Code or OpenCode in Termux and complete its sign-in and model setup.</p>
+      <p data-i18n="agent_body">Start with Terminal to check input and output. Install Codex, Claude Code or OpenCode in Termux and complete the required account authentication, provider connections and model setup.</p>
       <p class="hint" data-i18n="agent_termux_basis">These configurations were checked on an Android 16 arm64 phone. Versions are reference versions, not automatic updates. A fresh installation on another phone still needs verification.</p>
       <p class="hint" data-i18n="agent_action_hint">Run each action in a new Termux terminal. Allow command access first; if Termux does not open, open it from its notification. Complete browser login yourself. Check the result in Termux. Command copying is also available below.</p>
       <div id="agent-diagnostics" aria-live="polite"></div>
@@ -178,8 +178,9 @@
       </details>
       <details class="agent-install" id="opencode-install">
         <summary>OpenCode · Termux</summary>
-        <p data-i18n="agent_opencode_termux">The checked OpenCode 1.17.13 uses the community OpenClaw Android setup: glibc, proot and a Bun binary wrapper. Installing the ordinary npm package alone does not reproduce it. Follow the Termux details for prerequisites and installation, then check the version and sign in to your provider.</p>
-        <div class="button-row"><button data-agent="opencode" data-agent-action="login" data-i18n="agent_action_login">Sign in with Termux</button><button data-agent="opencode" data-agent-action="status" class="secondary" data-i18n="agent_action_providers">Configured providers</button><button data-agent="opencode" data-agent-action="version" class="secondary" data-i18n="agent_action_version">Check version</button></div>
+        <p data-i18n="agent_opencode_termux">The checked OpenCode 1.17.13 uses the community OpenClaw Android setup: glibc, proot and a Bun binary wrapper. Installing the ordinary npm package alone does not reproduce it. Follow the Termux details for prerequisites and installation, then check the version and configure your provider connection.</p>
+        <div class="button-row"><button data-agent="opencode" data-agent-action="login" data-i18n="agent_action_connect_provider">Connect provider</button><button data-agent="opencode" data-agent-action="status" class="secondary" data-i18n="agent_action_providers">Configured providers</button><button data-agent="opencode" data-agent-action="version" class="secondary" data-i18n="agent_action_version">Check version</button></div>
+        <p class="hint" data-i18n="agent_opencode_provider_hint">Choose a provider in Termux, then configure its API key or supported sign-in method. This sets up OpenCode’s connection to that provider.</p>
         <p id="agent-action-status-opencode" class="hint" role="status" hidden></p>
         <div class="button-row"><button data-guide="opencode-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="opencode-source" class="quiet" data-i18n="agent_termux_source">Community installation source ↗</button></div>
         <div class="command"><code id="opencode-check-command">opencode --version</code><button data-agent-copy="opencode-check-command" data-i18n="copy">Copy</button></div>
@@ -197,7 +198,7 @@
         <div class="command"><code id="gemini-start-command">node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js"</code><button data-agent-copy="gemini-start-command" data-i18n="copy">Copy</button></div>
         <div class="button-row"><button data-guide="gemini-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="gemini" class="quiet" data-i18n="gemini_guide">Gemini CLI guide ↗</button></div>
       </details>
-      <p class="hint" data-i18n="agent_termux_return">After signing in from Termux, return to Bibimer and reconnect. If a bridge update requires a restart, finish active sessions first. Setup does not install all agents automatically.</p>
+      <p class="hint" data-i18n="agent_termux_return">After setup in Termux, return to Bibimer and reconnect. If a bridge update requires a restart, finish active sessions first. Setup does not install all agents automatically.</p>
       <p class="hint" data-i18n="agent_hint">Finding a program does not confirm Android compatibility or account access. Check each agent's Termux installation and runtime requirements.</p>
     </section>
     <section class="card setup-step">

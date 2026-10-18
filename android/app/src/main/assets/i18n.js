@@ -3,6 +3,10 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    agent_action_connect_provider: ["Connect provider", "제공자 연결"],
+    agent_opencode_provider_hint: ["Choose a provider in Termux, then configure its API key or supported sign-in method. This sets up OpenCode’s connection to that provider.", "Termux에서 사용할 제공자를 고른 뒤 API 키 또는 해당 제공자가 지원하는 인증 방식을 설정하세요. OpenCode가 해당 제공자를 사용하도록 연결하는 과정입니다."],
+    agent_opencode_action_sent: ["Request sent to Termux. Check provider setup and command results there.", "Termux에 실행을 요청했습니다. 제공자 설정·명령 결과는 Termux에서 확인하세요."],
+
     agent_action_providers: ["Configured providers", "설정된 제공자 확인"],
     agent_gemini_login_hint: ["This opens Gemini CLI. Choose Sign in with Google, or type /auth if it is already signed in. Finish authentication in the browser. This does not add Gemini to Bibimer Chat.", "Gemini CLI를 엽니다. Google 로그인을 선택하고, 이미 로그인되어 있으면 /auth로 로그인 방식을 선택하세요. 브라우저 인증은 직접 완료하세요. Bibimer Chat 연동을 추가하는 기능은 아닙니다."],
 
@@ -523,17 +527,17 @@
     copy_start: ["Copy start command", "브리지 시작 명령 복사"],
     copy_pair: ["Copy new-code command", "새 코드 발급 명령 복사"],
     agent_setup: ["Prepare an agent", "에이전트 준비"],
-    agent_body: ["Start with Terminal to check input and output. Install Codex, Claude Code or OpenCode in Termux and complete its sign-in and model setup.", "먼저 터미널로 실행과 입력을 확인하세요. Termux에서 Codex·Claude Code·OpenCode를 설치하고 로그인과 모델 설정을 마치세요."],
+    agent_body: ["Start with Terminal to check input and output. Install Codex, Claude Code or OpenCode in Termux, then complete account authentication, provider connections and model setup as needed.", "먼저 터미널로 실행과 입력을 확인하세요. Termux에서 Codex·Claude Code·OpenCode를 설치한 뒤 필요한 계정 인증·제공자 연결·모델 설정을 마치세요."],
     agent_termux_basis: ["Configurations checked on an Android 16 arm64 phone. Versions are references, not automatic updates. Installation from scratch on another phone still needs verification.", "Android 16·arm64 휴대폰에서 확인한 구성입니다. 표시한 버전은 확인 기준이며 자동 업데이트하지 않습니다. 다른 폰의 새 환경에서 처음부터 설치하는 흐름은 추가 검증이 필요합니다."],
     agent_codex_termux: ["Use this community Termux package on Android 10+ arm64. If Node.js and npm already work, skip the first command. Check the version, then sign in.", "Android 10 이상·arm64에서 커뮤니티 Termux 전용 패키지를 사용합니다. Node.js와 npm이 이미 동작하면 첫 명령은 건너뛰세요. 버전을 확인한 뒤 로그인합니다."],
     agent_claude_termux: ["Claude 2.1.283 uses a separate Bibimer runtime. It requires arm64 Termux with glibc and ripgrep. Copy the repair command below and run it in Termux; it includes the Chat SDK. No setup file needs to be saved. If your CLI already works, prepare only the adapter.", "Claude 2.1.283은 Bibimer 전용 런타임을 사용합니다. arm64 Termux에 glibc와 ripgrep이 필요합니다. 아래 복구 명령을 복사해 Termux에서 실행하면 Chat SDK도 함께 준비됩니다. 설정 파일은 저장하지 않아도 됩니다. 정상 CLI가 이미 있으면 어댑터만 준비하세요."],
-    agent_opencode_termux: ["OpenCode 1.17.13 was checked with the community OpenClaw Android setup: glibc, proot and a Bun binary wrapper. The ordinary npm package alone does not reproduce it. Follow the Termux details for prerequisites and installation, then check the version and sign in to your provider.", "OpenCode 1.17.13은 커뮤니티 OpenClaw Android의 glibc·proot·Bun 바이너리 래퍼 구성에서 확인했습니다. 일반 npm 패키지만 설치하면 같은 환경이 되지 않습니다. Termux 상세 안내에서 선행 조건과 설치 절차를 확인한 뒤 버전 확인과 제공자 로그인을 진행하세요."],
+    agent_opencode_termux: ["OpenCode 1.17.13 was checked with the community OpenClaw Android setup: glibc, proot and a Bun binary wrapper. The ordinary npm package alone does not reproduce it. Follow the Termux details for prerequisites and installation, then check the version and configure your provider connection.", "OpenCode 1.17.13은 커뮤니티 OpenClaw Android의 glibc·proot·Bun 바이너리 래퍼 구성에서 확인했습니다. 일반 npm 패키지만 설치하면 같은 환경이 되지 않습니다. Termux 상세 안내에서 선행 조건과 설치 절차를 확인한 뒤 버전 확인과 제공자 연결을 설정하세요."],
     agent_claude_auth_hint: ["A successful version check does not confirm authentication. If your login has expired or you are signed out, run auth login below in Termux and finish signing in with the browser.", "버전 확인 성공과 로그인 상태는 별개입니다. 인증이 만료됐거나 로그인되지 않았다면 Termux에서 아래 auth login을 실행하고 브라우저 로그인을 완료하세요."],
     agent_gemini_termux: ["Gemini CLI 0.58.0 is also installed on the checked phone and requires Node.js 20+. Skip installation if it is already present. The Node commands below avoid a launcher path issue in the checked environment. Use Terminal to run it directly; Bibimer agent selection and structured Chat are not integrated. Sign-in and model responses still need verification.", "확인한 폰에는 Node.js 20 이상이 필요한 Gemini CLI 0.58.0도 설치되어 있습니다. 이미 설치되어 있으면 설치 명령은 건너뛰세요. 아래 Node 명령은 확인 환경의 실행 경로 문제를 우회합니다. Terminal에서 직접 실행하며 Bibimer 에이전트 선택·구조화된 Chat 연동은 아직 없습니다. 로그인과 모델 응답은 추가 검증이 필요합니다."],
     gemini_guide: ["Gemini CLI guide ↗", "Gemini CLI 안내 ↗"],
     agent_termux_steps: ["Termux installation details ↗", "Termux 설치 상세 안내 ↗"],
     agent_termux_source: ["Community installation source ↗", "커뮤니티 설치 소스 ↗"],
-    agent_termux_return: ["After signing in from Termux, return to Bibimer and reconnect. Finish active sessions before any required bridge restart. Setup does not install all agents automatically.", "Termux에서 로그인한 뒤 Bibimer로 돌아와 다시 연결하세요. 브리지 재시작이 필요하면 실행 중인 세션을 먼저 마치세요. 준비 화면이 모든 에이전트를 자동 설치하지는 않습니다."],
+    agent_termux_return: ["After setup in Termux, return to Bibimer and reconnect. Finish active sessions before any required bridge restart. Setup does not install all agents automatically.", "Termux에서 준비를 마친 뒤 Bibimer로 돌아와 다시 연결하세요. 브리지 재시작이 필요하면 실행 중인 세션을 먼저 마치세요. 준비 화면이 모든 에이전트를 자동 설치하지는 않습니다."],
     codex_guide: ["Codex guide ↗", "Codex 안내 ↗"],
     claude_guide: ["Claude Code guide ↗", "Claude Code 안내 ↗"],
     agent_hint: ["Finding a program does not confirm Android compatibility or account access. Check each agent's Termux installation and runtime requirements.", "프로그램이 발견되어도 Android 실행 지원과 로그인 완료를 뜻하지는 않습니다. 에이전트마다 Termux 설치 방법과 실행 가능 여부를 확인해야 합니다."],
