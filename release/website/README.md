@@ -1,5 +1,13 @@
 # Bibimer 정적 웹사이트
 
+## 언어별 단어·어절 줄바꿈 적용 (2026-10-18)
+
+- 사용자 요청에 따라 공통 `assets/typography.css`를33개HTML에 연결했다. 띄어쓰기 언어(한국어·영어·스페인어·브라질 포르투갈어·인도네시아어·프랑스어·독일어)는 단어/어절 중간 임의 분리와 자동 하이픈을 없애고, 중국어 간체/번체·일본어는 정상 글자 단위 줄바꿈과 엄격한 문장부호 금칙을 적용한다. 명령어/경로/code/pre·메일·지원URL만 긴 문자열 줄바꿈 예외를 둔다.
+- 홈/정책/심사안내의 inline overflow-wrap:anywhere와 자동hyphens, guide/hero/language CSS의 일반 본문 강제 분리를 제거했다. 긴 PT/ID/FR/DE 제목은 기존2열 구성에서 글이 놓인 열의 너비에 비례하는 cqw 크기로 표시한다.320px독일어 정책 제목·갤러리 캡션과스페인어3번탭 공간을 보완했다. 문구나이미지·SEO·앱은 변경하지 않았다.
+- Chromium에서 실제 DOM Range의 단어별 줄 경계를 읽어320/393px×30페이지(60),768/1400px×10개홈(20)의 최종80상태에 단어 중간 분리·텍스트/페이지 넘침이 없음을 확인했다.320px의10언어슬라이더2개추가화면20개도 통과했다. 기존Python웹사이트2검사·Node언어선택회귀·git diff --check 통과. 자동 측정에서 초기문제를 찾아 글자크기/탭배치를 수정한 뒤 최종검증했다. 브라우저가 구버전CSS를캐시한 첫결과는 폐기하고 테스트탭에서 일시적으로캐시를끄고재측정했으며 종료전 복구했다.
+- 시각판정96pass, 증빙 `dist/word-wrap/{final-report.json,slider-desktop-report.json,ko-gallery-mobile.png,de-desktop.png,en-mobile.png}`, `.omx/state/word-wrap/ralph-progress.json`. final-report80개는최종CSS검사이고slider-desktop-report의20개panel항목이추가슬라이더검사다.
+- Cloudflare Pages **https://7c975360.bibimer.pages.dev** 배포 완료.33HTML+4CSS 총37개 공개리소스HTTP200·원본일치·no-transform 유지 및공개한국어의keep-all/normal/none을확인했다. `dist/word-wrap/{public-verification.json,published-ko.png}`. 새의존성/JavaScript/앱빌드 없음. 다른브라우저엔진의 실제렌더링은 이번에검증하지 않았다.
+
 ## 갤러리 제작 안내 문구 삭제 (2026-10-18)
 
 사용자 요청으로10개 언어 홈의 스크린샷 갤러리에서 예시 프로젝트·대화와 개인 세션 기록 미사용을 설명하던 문단을 삭제했다. 제목과4개 이미지·캡션, SEO메타/푸터 링크는 유지했다. 새코드·의존성·스타일 추가 없이 문단만 제거했다.

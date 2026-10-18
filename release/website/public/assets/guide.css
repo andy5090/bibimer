@@ -18,21 +18,20 @@ nav a { padding: 8px 0; }
 main { max-width: 800px; margin: auto; }
 .guide-intro { padding: 56px 0 36px; }
 .eyebrow { font-size: 12px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; }
-h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.15; margin: 16px 0 24px; letter-spacing: -.03em; overflow-wrap: anywhere; }
-h2 { font-size: clamp(21px, 3vw, 26px); line-height: 1.4; margin: 0 0 20px; overflow-wrap: anywhere; }
-p { line-height: 1.8; overflow-wrap: anywhere; }
+h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.15; margin: 16px 0 24px; letter-spacing: -.03em; }
+h2 { font-size: clamp(21px, 3vw, 26px); line-height: 1.4; margin: 0 0 20px; }
+p { line-height: 1.8; }
 .lead { font-size: 18px; color: #486052; }
-.install-link { display: inline-block; padding: 13px 22px; margin: 12px 0; background: #19372c; color: white; border-radius: 8px; text-decoration: none; overflow-wrap: anywhere; }
+.install-link { display: inline-block; padding: 13px 22px; margin: 12px 0; background: #19372c; color: white; border-radius: 8px; text-decoration: none; }
 .availability { font-size: 14px; color: #53685a; }
 .step { border-top: 1px solid #d3ded4; padding: 32px 0; }
 .step h2 { display: flex; align-items: baseline; gap: 16px; }
 .step-number { color: #61796b; font: 700 16px "Space Grotesk", sans-serif; flex: 0 0 auto; }
-code { font: .9em/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
+code { font: .9em/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; }
 p code { background: #e7efe5; border-radius: 4px; padding: 2px 5px; }
-pre { margin: 20px 0; padding: 18px 20px; border-radius: 8px; background: #19372c; color: #f3f8ef; white-space: pre-wrap; overflow-wrap: anywhere; }
+pre { margin: 20px 0; padding: 18px 20px; border-radius: 8px; background: #19372c; color: #f3f8ef; white-space: pre-wrap; }
 .support-card { margin: 16px 0 40px; padding: 28px 32px; background: #e7efe5; border-radius: 12px; }
 .support-links { display: flex; flex-wrap: wrap; gap: 12px 24px; }
-.support-links a { overflow-wrap: anywhere; }
 footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 28px 0; border-top: 1px solid #d3ded4; font-size: 13px; color: #486052; }
 @media (max-width: 700px) { .guide-shell { width: min(100% - 36px, 1060px); } header { padding: 20px 0; align-items: flex-start; } .brand { font-size: 20px; } .header-actions { gap: 12px; } nav { gap: 16px; } .guide-intro { padding-top: 36px; } .step { padding: 28px 0; } .support-card { padding: 24px; } }
 @media print { body { background: white; } .guide-shell { width: 100%; } header nav, .install-link { display: none; } pre { border: 1px solid #cddad3; color: #19372c; background: white; } }

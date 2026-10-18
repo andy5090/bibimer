@@ -1,0 +1,15 @@
+/* Prose wraps at spaces; never insert automatic hyphens or arbitrary breaks. */
+html { word-break: keep-all; overflow-wrap: normal; hyphens: none; }
+:lang(ko) { word-break: keep-all; }
+/* CJK text uses normal character breaks with strict punctuation rules. */
+:lang(ja), :lang(zh) { word-break: normal; line-break: strict; }
+/* Literal commands, paths, email addresses and support URLs must still fit. */
+code, pre, a[href^="mailto:"], .support-links a {
+  word-break: normal;
+  overflow-wrap: anywhere;
+  hyphens: none;
+}
+
+@media (max-width: 380px) {
+  html:lang(de) main > header > h1 { font-size: 25px; }
+}
