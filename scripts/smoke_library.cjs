@@ -32,12 +32,13 @@ async function main(){
   browser=await chromium.launch({executablePath:path.join(process.env.PREFIX,'bin/headless_shell'),headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
   const page=await browser.newPage({viewport:{width:393,height:780},isMobile:true,hasTouch:true});page.setDefaultTimeout(12000);
   const errors=[];page.on('pageerror',error=>{errors.push(error.message);console.error('Page error:',error.message);});
-  const agentMutations=[];
+  const agentMutations=[],projectMutations=[];
   await page.exposeFunction('nativeRequest',async(id,method,endpoint,body)=>{
     if(method==='POST'&&endpoint.startsWith('/v1/sessions'))agentMutations.push(endpoint);
+    if(method==='POST'&&endpoint==='/v1/project/manage')projectMutations.push(JSON.parse(body));
     const result=rejectManagement&&endpoint==='/v1/project/manage'?{ok:false,status:409,data:{code:'error_project_delete_active'}}:await call(method,endpoint.replace('wait=20','wait=1'),JSON.parse(body));
     if(hideNotifications&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='response_notifications');
-    if(hideOrdering&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='project_ordering');
+    if(hideOrdering&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>!['project_ordering','project_drag_ordering'].includes(value));
     if(hideManagement&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='project_management');
     try{await page.evaluate(({id,result})=>window.BibimerNativeReply(id,result),{id,result});}catch{}
   });
@@ -253,6 +254,31 @@ async function main(){
   await page.locator('#project-settings-close').click();
   await page.locator('#sidebar-refresh').click();assert.deepEqual(await projectIds(),[other.id,project.id]);
   await page.screenshot({path:path.join(root,'dist/screenshots/project-order-320-en.png')});
+  // Real touch long press + release saves one atomic destination without affecting the active conversation.
+  const touchSession=await page.context().newCDPSession(page);
+  const touch=async(type,x,y)=>touchSession.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y,id:0}]});
+  const dragProject=async(id,target)=>{
+    await sidebar();await page.locator('.sidebar-project').evaluateAll(nodes=>nodes.forEach(node=>node.open=false));await delay(50);
+    const source=page.locator('[data-project='+JSON.stringify(id)+'] > summary');await source.scrollIntoViewIfNeeded();
+    const box=await source.boundingBox(),x=box.x+35,y=box.y+box.height/2;
+    await touch('touchStart',x,y);await page.waitForFunction(()=>!!document.querySelector('.project-drag-ghost'));
+    const destination=await page.locator('[data-project='+JSON.stringify(target)+'] > summary').boundingBox();
+    const current=await projectIds(),down=current.indexOf(id)<current.indexOf(target);
+    await touch('touchMove',x,destination.y+(down?destination.height-1:1));
+    await touch('touchEnd');await delay(550);
+  };
+  const beforeDragRequests=projectMutations.length,beforeDragAgents=agentMutations.length;
+  await dragProject(other.id,project.id);
+  await page.waitForFunction(id=>document.querySelector('.sidebar-project')?.dataset.project===id,project.id);
+  assert.equal(projectMutations.length,beforeDragRequests+1);assert.equal(projectMutations.at(-1).action,'move_to');assert.equal(projectMutations.at(-1).position,1);
+  assert.equal(await page.locator('#input').inputValue(),'Keep current project draft');
+  assert.equal((await call('GET','/v1/health')).data.session.id,activeBeforeOrder.session.id);
+  assert.equal((await call('GET','/v1/health')).data.active_sessions,3);assert.equal(agentMutations.length,beforeDragAgents);
+  rejectManagement=true;await dragProject(other.id,project.id);assert.deepEqual(await projectIds(),[project.id,other.id],'failed drag save restores prior order');
+  rejectManagement=false;await dragProject(other.id,project.id);
+  await page.waitForFunction(id=>document.querySelector('.sidebar-project')?.dataset.project===id,other.id);
+  assert.equal((await call('GET','/v1/health')).data.projects[0].id,other.id);
+  console.log('PASS: native long press/drag/release saves once, failure rollback/retry, active conversation/draft/processes untouched');
   await sidebar();const folded=page.locator('[data-project='+JSON.stringify(project.id)+']');if(await folded.evaluate(node=>node.open))await folded.locator(':scope > summary').click();
   await projectSettings(project.id);assert.equal(await folded.evaluate(node=>node.open),false);
   assert.equal(await page.locator('#project-remove').isDisabled(),true);

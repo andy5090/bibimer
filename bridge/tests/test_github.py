@@ -124,6 +124,52 @@ else:
             self.assertEqual(0o600, (self.state / "github-imports.json").stat().st_mode & 0o777)
         finally: restored.github.close()
 
+    def test_live_git_progress_is_bounded_private_and_not_completion(self):
+        key = str(uuid.uuid4())
+        hundred, finish = self.root / "hundred", self.root / "finish"
+        script = """
+import os, sys, time
+from pathlib import Path
+os.write(2, b'PRIVATE_PROGRESS_OUTPUT' * 2000 + b'\\r')
+os.write(2, b'Receiving ob')
+os.write(2, b'jects: 42% (42/100), PRIVATE_PROGRESS_OUTPUT\\r')
+os.write(2, b'Receiving objects: 999% (999/100), invalid\\r')
+while not Path(sys.argv[1]).exists(): time.sleep(.01)
+os.write(2, b'Receiving objects: 100% (100/100), done.\\r')
+while not Path(sys.argv[2]).exists(): time.sleep(.01)
+os.execvp('git', ['git', 'clone', '--', sys.argv[3], sys.argv[4]])
+"""
+        def command(job):
+            return [sys.executable, "-c", script, str(hundred), str(finish), str(self.repo), job["path"]]
+        def until_progress(percent):
+            deadline = time.monotonic() + 4
+            while time.monotonic() < deadline:
+                data = self.github("poll")[1]
+                job = next(row for row in data["jobs"] if row["id"] == key)
+                self.assertNotIn("PRIVATE_PROGRESS_OUTPUT", json.dumps(data))
+                if job.get("progress", {}).get("percent") == percent:
+                    return job
+                time.sleep(.02)
+            self.fail("Native Git progress was not reported")
+        with mock.patch.object(self.bridge.github, "clone_command", side_effect=command):
+            try:
+                self.assertEqual(200, self.clone(request_id=key)[0])
+                job = until_progress(42)
+                self.assertEqual({"phase": "receiving", "percent": 42}, job["progress"])
+                self.assertEqual(job, self.clone(request_id=key)[1]["job"])
+                self.assertNotIn("progress", (self.state / "github-imports.json").read_text())
+                hundred.touch()
+                self.assertEqual("cloning", until_progress(100)["state"])
+                self.assertFalse(self.bridge.projects, "a Git stage at 100% does not register the project")
+                finish.touch()
+                completed = self.wait_job(key)
+                self.assertEqual("complete", completed["state"])
+                self.assertNotIn("progress", completed)
+                self.assertIn(completed["project_id"], self.bridge.projects)
+                self.assertNotIn("PRIVATE_PROGRESS_OUTPUT", (self.state / "github-imports.json").read_text())
+            finally:
+                hundred.touch(); finish.touch()
+
     def test_invalid_paths_and_existing_directories_files_links_never_overwritten(self):
         for key, values in {"repository":[None, "-x/a", "a/..", "https://github.com/a/b", "a/b;touch X"],
                             "parent":[None, "relative", "bad\0", str(self.root / "missing")],
@@ -170,6 +216,7 @@ else:
         self.assertEqual(["--", "https://github.com/fixture/repo.git", str(self.root / "quote's 한글")], command[-3:])
         self.assertIn("credential.helper=", command)
         self.assertIn("--template=", command)
+        self.assertIn("--progress", command)
         self.assertIn("http.followRedirects=false", command)
         with mock.patch.dict(os.environ, {"GIT_TRACE":"1","GIT_ASKPASS":"evil", "GIT_CONFIG_COUNT":"4", "GH_DEBUG":"api"}):
             env = self.bridge.github.environment()

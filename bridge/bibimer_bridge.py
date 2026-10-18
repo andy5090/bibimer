@@ -1729,12 +1729,15 @@ class GitHubImport:
     """gh owns credentials; only allowlisted metadata crosses the bridge."""
     RUNNING = {"cloning", "registering"}
     REPO = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9_.-]{1,100}")
+    PROGRESS_PHASES = {b"Counting objects": "counting", b"Compressing objects": "compressing",
+                       b"Receiving objects": "receiving", b"Resolving deltas": "resolving", b"Updating files": "checkout"}
 
     def __init__(self, bridge):
         self.bridge, self.lock = bridge, threading.RLock()
         self.file = bridge.state / "github-imports.json"
         self.jobs = read_json(self.file, [])[-32:]
         self.processes, self.closed = {}, False
+        self.progress = {}
         self.login, self.login_process = {"state": "idle"}, None
         for job in self.jobs:
             if job["state"] in self.RUNNING:
@@ -1789,7 +1792,43 @@ class GitHubImport:
 
     def snapshot(self):
         with self.lock:
-            return {"login": dict(self.login), "jobs": [dict(job) for job in reversed(self.jobs)]}
+            return {"login": dict(self.login), "jobs": [self.public_job(job) for job in reversed(self.jobs)]}
+
+    def public_job(self, job):
+        result = dict(job)
+        if job["state"] == "cloning" and job["id"] in self.progress:
+            result["progress"] = dict(self.progress[job["id"]])
+        return result
+
+    def read_clone_progress(self, process, job):
+        # Consume bounded stderr in memory. Only numeric, allowlisted Git progress
+        # crosses the bridge; URLs, credentials and arbitrary output are discarded.
+        deadline, buffer, discard = time.monotonic() + 1800, b"", False
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired("git clone", 1800)
+            if not select.select([process.stderr], [], [], min(.2, remaining))[0]:
+                if process.poll() is not None:
+                    break
+                continue
+            chunk = os.read(process.stderr.fileno(), 16384)
+            if not chunk:
+                break
+            lines = re.split(rb"[\r\n]", buffer + chunk)
+            buffer = lines.pop()
+            for line in lines:
+                if discard:
+                    discard = False
+                    continue
+                match = re.fullmatch(rb"(?:remote: )?(Counting objects|Compressing objects|Receiving objects|Resolving deltas|Updating files):\s+(\d{1,3})%\s+\(\d+/\d+\)[^\r\n]*", line)
+                if match and int(match[2]) <= 100:
+                    with self.lock:
+                        if not self.closed and job["state"] == "cloning":
+                            self.progress[job["id"]] = {"phase": self.PROGRESS_PHASES[match[1]], "percent": int(match[2])}
+            if len(buffer) > 4096:
+                buffer, discard = b"", True
+        return process.wait(timeout=max(.1, deadline - time.monotonic()))
 
     @staticmethod
     def terminate(process):
@@ -1890,7 +1929,7 @@ class GitHubImport:
                 if job["id"] == key:
                     if job["digest"] != digest:
                         raise Problem(409, "error_input_conflict")
-                    return {"job": dict(job)}
+                    return {"job": self.public_job(job)}
             if self.closed or self.bridge.closing:
                 raise Problem(409, "error_bridge_stopping")
             if any(job["state"] in self.RUNNING for job in self.jobs):
@@ -1922,14 +1961,14 @@ class GitHubImport:
                 with contextlib.suppress(OSError):
                     save_json(self.file, self.jobs)
                 raise Problem(400, "error_github_clone") from None
-            return {"job": dict(job)}
+            return {"job": self.public_job(job)}
 
     def clone_command(self, job):
         import shlex
         helper = "!" + shlex.quote(self.executable("gh")) + " auth git-credential"
         return [self.executable("git"), "-c", "credential.helper=", "-c", "credential.https://github.com.helper=" + helper,
                 "-c", "core.hooksPath=" + os.devnull, "-c", "protocol.file.allow=never", "-c", "http.followRedirects=false",
-                "clone", "--template=", "--", "https://github.com/" + job["repository"] + ".git", job["path"]]
+                "clone", "--progress", "--template=", "--", "https://github.com/" + job["repository"] + ".git", job["path"]]
 
     def clone_worker(self, job, identity):
         process = None
@@ -1938,9 +1977,9 @@ class GitHubImport:
                 if self.closed or job["state"] != "cloning":
                     return
                 process = subprocess.Popen(self.clone_command(job), env=self.environment(), cwd=str(Path.home()),
-                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True)
                 self.processes[job["id"]] = process
-            if process.wait(timeout=1800) != 0:
+            if self.read_clone_progress(process, job) != 0:
                 raise Problem(400, "error_github_clone")
             with self.lock:
                 if self.closed or job["state"] != "cloning":
@@ -1962,8 +2001,11 @@ class GitHubImport:
                         save_json(self.file, self.jobs)
         finally:
             self.terminate(process)
+            if process and process.stderr:
+                process.stderr.close()
             with self.lock:
                 self.processes.pop(job["id"], None)
+                self.progress.pop(job["id"], None)
 
     def cancel_clone(self, data):
         key = request_id(data.get("id"))
@@ -2172,12 +2214,14 @@ class Bridge:
             key, action = data.get("project_id"), data.get("action")
             if not isinstance(key, str) or key not in self.projects:
                 raise Problem(404, "error_project_missing")
-            if action in ("move_up", "move_down"):
+            if action in ("move_up", "move_down", "move_to"):
                 keys = list(self.projects)
                 index = keys.index(key)
-                destination = index + (-1 if action == "move_up" else 1)
-                if 0 <= destination < len(keys):
-                    keys[index], keys[destination] = keys[destination], keys[index]
+                destination = data.get("position") if action == "move_to" else index + (-1 if action == "move_up" else 1)
+                if action == "move_to" and (type(destination) is not int or not 0 <= destination < len(keys)):
+                    raise Problem(400, "error_project_action")
+                if 0 <= destination < len(keys) and destination != index:
+                    keys.insert(destination, keys.pop(index))
                     previous = self.projects
                     self.projects = {item: previous[item] for item in keys}
                     try:
@@ -2356,7 +2400,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "project_management", "project_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -2450,8 +2494,11 @@ class Bridge:
         executable = self.agent_executable(agent)
         if not executable:
             raise Problem(400, "error_program_missing")
-        # A catalog request must not hold up session input, events or health.
-        if not self.history_lock.acquire(blocking=False):
+        # Sidebar title reads share this client slot with catalog/import checks.
+        # Allow a short wait for an in-flight lookup instead of failing a user
+        # action immediately. Never hold the bridge lock while waiting, so input,
+        # events and health remain available. Keep the wait bounded for clients.
+        if not self.history_lock.acquire(timeout=5):
             raise Problem(409, "error_history")
         try:
             with HistoryClient(executable, project["path"], agent) as client:

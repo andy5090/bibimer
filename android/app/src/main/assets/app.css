@@ -1,6 +1,8 @@
 @font-face{font-family:"Space Grotesk";src:url("fonts/SpaceGrotesk-Bold.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap}
 :root{color-scheme:dark;--bg:#111417;--card:#191e22;--raised:#22292e;--line:#2b343b;--text:#e6edf0;--muted:#8e9da7;--green:#8bdbbd;--accent:#8bdbbd;--red:#f29393;--blue:#90bafa;font-family:system-ui,-apple-system,sans-serif;font-size:14px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}button,input,select,textarea{font:inherit}button{min-height:44px;border:0;border-radius:8px;padding:8px 12px;font-weight:600;color:var(--text);background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}button:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible,pre:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--green);outline-offset:2px}button:active:not(:disabled){filter:brightness(.85)}[hidden]{display:none!important}#app{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+#setup-connection-steps{border:0;margin:0;padding:0;min-inline-size:0}
+#setup-connection-complete .button-row{align-items:stretch}#setup-connection-complete .button-row>button{flex-basis:140px}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid var(--line);flex-shrink:0}.brand{display:flex;align-items:center;gap:8px;min-width:0}.brand-mark{display:block;width:30px;height:30px;flex-shrink:0}.brand-wordmark{display:block;font-family:"Space Grotesk",system-ui,sans-serif;font-size:18px;font-weight:700;line-height:1.15;letter-spacing:.065em;white-space:nowrap;font-synthesis:none}.brand small{display:none}.badge{font-size:10px;line-height:1.4;padding:4px 7px;border:1px solid var(--line);border-radius:6px;white-space:nowrap;color:var(--muted)}.badge.connected,.badge.running{color:var(--green);background:#192b27;border-color:#2d4840}.badge.lost,.badge.failed{color:var(--red)}.page{flex:1;min-height:0;padding:0 12px}.scroll{overflow-y:auto;padding-bottom:18px;overscroll-behavior:contain}
 .demo-banner{position:relative;flex-shrink:0;padding:6px 105px 6px 12px;background:#192b27;border-bottom:1px solid #2d4840;color:var(--green);font-size:11px;line-height:1.4}.demo-banner strong{display:block}.demo-banner p{margin:2px 0;color:var(--muted)}.demo-banner button{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:11px}
 .review-access-link{font-size:12px;color:var(--muted)}#review-access-form label{display:block;margin-top:10px;font-size:12px;color:var(--muted)}#review-access-code{width:100%;margin-top:6px}#review-access-status{min-height:18px}
@@ -352,6 +354,8 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .github-job p { margin:6px 0; }
 
 #github-filter,#github-form > input { width:100%; }
+#github-clone-progress{display:block;width:100%;height:8px;margin-top:10px;accent-color:var(--accent)}
+#github-clone-feedback.busy{min-height:90px}
 
 .github-dialog .sidebar-heading { position:sticky; top:-18px; background:var(--card); z-index:1; padding:8px 0; }
 
@@ -421,3 +425,11 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 #delivery-help svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; }
 #delivery-help-dialog { max-height:calc(100dvh - 24px); overflow:auto; }
 #delivery-hint { white-space:pre-line; }
+
+/* A hold activates ordering; ordinary touch scrolling remains native. */
+.sidebar-project > summary { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+.project-reordering .sidebar-project > :not(summary) { display:none; }
+.project-reordering .sidebar-project { padding:4px 0 8px; }
+.project-reordering .sidebar-project > summary { cursor:grabbing; }
+.project-drag-source { opacity:.4; outline:1px dashed var(--green); outline-offset:-2px; }
+.project-drag-ghost { position:fixed; z-index:2; pointer-events:none; box-sizing:border-box; display:flex; align-items:center; padding:8px 12px; background:var(--bg); color:var(--green); border:1px solid var(--green); border-radius:8px; box-shadow:0 6px 18px #0006; font-size:13px; font-weight:600; overflow-wrap:anywhere; }

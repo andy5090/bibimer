@@ -19,6 +19,7 @@ async function main(){
     const get=()=>JSON.parse(localStorage.getItem('setup-state')||'{"phase":"idle","id":"","permitted":false}');
     const set=value=>localStorage.setItem('setup-state',JSON.stringify(value));
     window.setupCalls=[];
+    window.setupRequests=[];
     window.agentCopies=[];
     window.agentGuides=[];
     window.claudeCopies=[];
@@ -34,9 +35,10 @@ async function main(){
       startQuickSetup:()=>{window.setupCalls.push('start');set({phase:'running',id:'controlled-job',permitted:true});},
       openAppPermissions:()=>window.setupCalls.push('permissions'),openTermux:()=>window.setupCalls.push('termux'),
       openGuide:name=>window.agentGuides.push(name),copyText:text=>window.agentCopies.push(text),
-      exportInstaller:()=>{},copyCommand:name=>name.startsWith('claude-')?window.claudeCopies.push(name):window.setupCalls.push(name),cancelPoll:()=>{},
+      exportInstaller:()=>window.setupCalls.push('export'),copyCommand:name=>name.startsWith('claude-')?window.claudeCopies.push(name):window.setupCalls.push(name),cancelPoll:()=>{},
       forget:()=>{localStorage.removeItem('paired');set({phase:'idle',id:''});},
       request:(id,method,route)=>{
+        window.setupRequests.push([method,route]);
         if(route==='/v1/health') {
           const status=window.setupHealthStatus;
           setTimeout(()=>window.BibimerNativeReply(id,{ok:status===200,status,data:status===200?{protocol:1,instance:'controlled-instance',
@@ -94,28 +96,59 @@ async function main(){
   await page.reload();await page.waitForFunction(()=>!document.querySelector('#workspace').hidden);
   if(await page.locator('#sidebar').evaluate(node=>node.open))await page.locator('#sidebar-close').click();
   await page.locator('#tab-setup').click();
-  assert.match(await page.locator('#quick-status').innerText(),/연결 정보를 저장/);
+  assert.equal(await page.locator('#setup-connection-complete').isVisible(),true);
+  assert.equal(await page.locator('#setup-connection-steps').isVisible(),false);
+  assert.match(await page.locator('#setup-connected-heading').innerText(),/Termux 연결 완료/);
+  for(const selector of ['#quick-connect','#export-installer','#pair','#pair-code','[data-command="install"]','[data-command="external-apps"]']) {
+    assert.equal(await page.locator(selector).isDisabled(),true);
+  }
   assert.equal(await page.locator('#setup').isVisible(),true);
-  // Reconnecting a paired app must bypass RUN_COMMAND even after an earlier
-  // Termux integration error. A stopped bridge / rejected token still needs setup.
+  // A saved setup error cannot reactivate initial setup while health is good.
   await page.evaluate(()=>window.setupResult('quick_external'));
   await page.locator('#tab-setup').click();
-  await page.locator('#quick-connect').click();
+  assert.equal(await page.locator('#setup-connection-complete').isVisible(),true);
+  assert.equal(await page.locator('#quick-permissions').evaluate(node=>node.open),false);
+  await page.evaluate(()=>{
+    document.querySelector('#quick-connect').click();
+    document.querySelector('#export-installer').click();
+    document.querySelector('[data-command="install"]').click();
+    document.querySelector('#pair-code').value='12345678';
+    document.querySelector('#pair-form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  });
+  assert.equal(await page.evaluate(()=>window.setupCalls.filter(item=>item==='start').length),0);
+  assert.equal(await page.evaluate(()=>window.setupCalls.some(item=>['export','install'].includes(item))),false);
+  assert.equal(await page.evaluate(()=>window.setupRequests.some(([method,route])=>method==='POST'&&route==='/v1/pair')),false);
+  assert.equal(await page.locator('#pair-code').inputValue(),'12345678');
+  await page.locator('#setup-open-work').click();
+  assert.equal(await page.locator('#work').isVisible(),true);
+  await page.locator('#tab-setup').click();
+  await page.locator('#setup-open-termux').click();
+  assert.equal(await page.evaluate(()=>window.setupCalls.at(-1)),'termux');
+  // A cached offline status can recover using the saved token, without setup.
+  await page.evaluate(()=>{window.setupHealthStatus=0;window.BibimerResume();});
+  await page.waitForFunction(()=>!document.querySelector('#setup-connection-steps').hidden && !document.querySelector('#quick-connect').disabled);
+  await page.evaluate(()=>{window.setupHealthStatus=200;document.querySelector('#quick-connect').click();});
   await page.waitForFunction(()=>!document.querySelector('#workspace').hidden && document.querySelector('#setup').hidden);
   assert.equal(await page.evaluate(()=>window.setupCalls.filter(item=>item==='start').length),0);
-  await page.waitForFunction(()=>!document.querySelector('#quick-connect').disabled);
+  await page.waitForFunction(()=>!document.querySelector('#quick-connect').getAttribute('aria-busy')||document.querySelector('#quick-connect').getAttribute('aria-busy')==='false');
+  // A stopped bridge / rejected token restores the manual and automatic paths.
   for(const status of [0,401]) {
-    await page.evaluate(value=>{window.setupHealthStatus=value;},status);
+    await page.evaluate(value=>{window.setupHealthStatus=value;window.BibimerResume();},status);
+    await page.waitForFunction(()=>!document.querySelector('#setup-connection-steps').hidden && !document.querySelector('#quick-connect').disabled);
     await page.locator('#tab-setup').click();
+    assert.equal(await page.locator('#setup-connection-complete').isVisible(),false);
+    assert.equal(await page.locator('#pair-code').isDisabled(),false);
     const before=await page.evaluate(()=>window.setupCalls.filter(item=>item==='start').length);
     await page.locator('#quick-connect').click();
     await page.waitForFunction(count=>window.setupCalls.filter(item=>item==='start').length===count+1,before);
     assert.equal(await page.locator('#quick-connect').isDisabled(),true);
     await page.evaluate(()=>{window.setupHealthStatus=200;window.setupResult('connected',true);});
-    await page.waitForFunction(()=>!document.querySelector('#quick-connect').disabled);
+    await page.waitForFunction(()=>!document.querySelector('#setup-connection-complete').hidden);
+    assert.equal(await page.locator('#quick-connect').isDisabled(),true);
   }
   await page.locator('#tab-setup').click();
-  await page.evaluate(()=>{window.setupHealthStatus=0;window.setupHealthDelay=300;window.setupCalls=[];});
+  await page.evaluate(()=>{window.setupHealthStatus=0;window.setupHealthDelay=300;window.setupCalls=[];window.BibimerResume();});
+  await page.waitForFunction(()=>!document.querySelector('#setup-connection-steps').hidden && !document.querySelector('#quick-connect').disabled);
   await page.locator('#quick-connect').click();
   await page.evaluate(()=>{document.querySelector('#quick-connect').click();window.BibimerPause();});
   await page.waitForTimeout(900);
@@ -175,6 +208,10 @@ async function main(){
     await page.evaluate(value=>{localStorage.setItem('language',value);window.BibimerRefreshLanguage();},locale);
     await page.setViewportSize({width:320,height:640});
     assert.equal(await page.locator('html').getAttribute('lang'),locale);
+    assert.equal(await page.locator('#setup-connection-complete').isVisible(),true);
+    assert.equal(await page.locator('#setup-connected-heading').textContent(),await page.evaluate(()=>window.BibimerI18n.t('setup_connected')));
+    assert.equal(await page.locator('[data-i18n="setup_connected_body"]').textContent(),await page.evaluate(()=>window.BibimerI18n.t('setup_connected_body')));
+    assert.equal(await page.locator('#setup-connection-steps').isVisible(),false);
     for(const key of ['agent_termux_basis','agent_codex_termux','agent_claude_termux','agent_claude_auth_hint','agent_opencode_termux','agent_gemini_termux','agent_action_hint','agent_action_login','claude_action_repair','claude_action_adapter','agent_action_status','agent_action_version','agent_action_providers','agent_gemini_login_hint','agent_action_connect_provider','agent_opencode_provider_hint']) {
       assert.equal(await page.locator(`[data-i18n="${key}"]`).first().textContent(),await page.evaluate(k=>window.BibimerI18n.t(k),key));
     }
@@ -185,6 +222,8 @@ async function main(){
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('[data-agent-copy]')].map(node=>document.getElementById(node.dataset.agentCopy).textContent)),await page.evaluate(()=>window.agentCopies));
     if(['en','ko'].includes(locale)) {
+      await page.locator('#setup-connection-complete').scrollIntoViewIfNeeded();
+      await page.screenshot({path:path.join(root,`dist/screenshots/setup-connected-320-${locale}.png`)});
       await page.locator('#codex-install').scrollIntoViewIfNeeded();
       await page.screenshot({path:path.join(root,`dist/screenshots/agent-setup-320-${locale}.png`)});
       await page.locator('#claude-install').scrollIntoViewIfNeeded();
@@ -201,7 +240,21 @@ async function main(){
   await page.locator('#forget').click();
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).paired),false);
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).quickSetup.phase),'idle');
+  await page.locator('#tab-setup').click();
+  assert.equal(await page.locator('#setup-connection-complete').isVisible(),false);
+  assert.equal(await page.locator('#setup-connection-steps').isVisible(),true);
+  assert.equal(await page.locator('#quick-connect').isDisabled(),false);
+  // Older native clients keep manual recovery, but also reflect a live bridge.
+  await page.evaluate(()=>{localStorage.setItem('paired','yes');delete window.Bibimer.startQuickSetup;window.setupHealthStatus=200;window.BibimerResume();});
+  await page.waitForFunction(()=>!document.querySelector('#setup-connection-complete').hidden);
+  assert.equal(await page.locator('#setup-connection-steps').isVisible(),false);
+  assert.equal(await page.locator('#quick-setup').isVisible(),false);
+  await page.evaluate(()=>{window.setupHealthStatus=0;window.BibimerResume();});
+  await page.waitForFunction(()=>!document.querySelector('#setup-connection-steps').hidden);
+  assert.equal(await page.locator('#manual-setup').evaluate(node=>node.open),true);
+  assert.equal(await page.locator('#pair-code').isVisible(),true);
+  assert.equal(await page.locator('#pair-code').isDisabled(),false);
   assert.deepEqual(errors,[]);
-  console.log('PASS: quick setup regression; Termux agent guides, thirteen explicit agent actions and per-agent status isolation, permission status and pause guards, twelve exact command copies, guide routing, no implicit setup, ten locales at 320px with unchanged commands/open panels; native APIs mocked');
+  console.log('PASS: connected Termux setup completion, disabled install/pairing paths, offline/401/forget recovery, quick setup regression; Termux agent guides, thirteen explicit agent actions and per-agent status isolation, permission status and pause guards, twelve exact command copies, guide routing, no implicit setup, ten locales at 320px with unchanged commands/open panels; native APIs mocked');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();if(server)await new Promise(resolve=>server.close(resolve));});

@@ -110,7 +110,13 @@
     </section>
   </main>
   <main id="setup" class="page scroll" hidden>
-    <div class="section-heading"><span class="eyebrow" data-i18n="setup_eyebrow">GET YOUR PHONE READY</span><h1 data-i18n="setup_title">A workspace on your phone.</h1><p data-i18n="setup_intro">Follow these steps to install Termux and connect the app.</p></div>
+    <div class="section-heading"><span class="eyebrow" data-i18n="setup_eyebrow">GET YOUR PHONE READY</span><h1 data-i18n="setup_title">A workspace on your phone.</h1><p id="setup-intro" data-i18n="setup_intro">Follow these steps to install Termux and connect the app.</p></div>
+    <section id="setup-connection-complete" class="card setup-step" aria-labelledby="setup-connected-heading" hidden>
+      <div class="step-heading"><span class="step-number" aria-hidden="true">✓</span><h2 id="setup-connected-heading" data-i18n="setup_connected">Termux connected</h2></div>
+      <p data-i18n="setup_connected_body">Termux and the bridge are connected. Prepare an agent below or open your workspace.</p>
+      <div class="button-row"><button id="setup-open-work" class="primary" data-i18n="tab_work">Work</button><button id="setup-open-termux" class="secondary" data-i18n="termux_open">Open Termux ↗</button></div>
+    </section>
+    <fieldset id="setup-connection-steps" aria-label="Termux">
     <section class="card setup-step">
       <div class="step-heading"><span class="step-number">1</span><h2 data-i18n="termux_install">Install Termux</h2><span id="termux-status" class="badge">Checking</span></div>
       <p data-i18n="termux_body">Termux stores your projects and runs development commands on this phone. Open it once after installation to finish its initial setup.</p>
@@ -144,6 +150,7 @@
       <div class="button-row"><button data-command="start" class="quiet" data-i18n="copy_start">Copy start command</button><button data-command="pair" class="quiet" data-i18n="copy_pair">Copy new-code command</button></div>
     </section>
     </details>
+    </fieldset>
     <section class="card setup-step">
       <div class="step-heading"><span class="step-number">3</span><h2 data-i18n="agent_setup">Prepare an agent</h2></div>
       <p data-i18n="agent_body">Start with Terminal to check input and output. Install Codex, Claude Code or OpenCode in Termux and complete the required account authentication, provider connections and model setup.</p>
@@ -365,7 +372,12 @@
         <label for="github-repository" data-i18n="github_repo">Selected repository (owner/repository)</label><input id="github-repository" placeholder="owner/repository" autocomplete="off" spellcheck="false" maxlength="140" required>
         <label for="github-parent" data-i18n="github_parent">Clone into this parent folder</label><div class="folder-input"><input id="github-parent" autocomplete="off" spellcheck="false" required><button id="github-browse" class="secondary" type="button" data-i18n="browse">Browse</button></div>
         <label for="github-name" data-i18n="github_folder">New folder name</label><input id="github-name" autocomplete="off" spellcheck="false" maxlength="120" required>
-        <p id="github-destination" class="github-path"></p><button id="github-submit" class="primary full" type="submit" data-i18n="github_clone">Clone &amp; add project</button>
+        <p id="github-destination" class="github-path"></p><button id="github-submit" class="primary full" type="submit" aria-describedby="github-clone-status" data-i18n="github_clone">Clone &amp; add project</button>
+        <div id="github-clone-feedback">
+          <p id="github-clone-status" class="hint" role="status" aria-live="polite" hidden></p>
+          <progress id="github-clone-progress" max="100" aria-labelledby="github-clone-status" aria-describedby="github-clone-progress-note" hidden></progress>
+          <p id="github-clone-progress-note" class="hint" data-i18n="github_progress_hint" hidden>Progress is for the current Git stage.</p>
+        </div>
       </form>
     </section>
     <p class="hint" data-i18n="github_keep_working">You can close this screen while cloning. Return here to check progress. Files from failed or cancelled imports are kept.</p>

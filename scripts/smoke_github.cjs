@@ -37,6 +37,9 @@ if 'clone' in args:
     dest=Path(args[-1])
     if '/slow.git' in args[-2]:
         (dest/'partial').write_text('keep')
+        os.write(2,b'SECRET_PROGRESS_OUTPUT\\rReceiving objects: 42% (42/100), controlled\\r')
+        while not (Path(${JSON.stringify(tmp)})/'progress100').exists(): time.sleep(.05)
+        os.write(2,b'Receiving objects: 100% (100/100), done.\\r')
         time.sleep(30)
     if '/fail.git' in args[-2]:
         (dest/'partial').write_text('keep')
@@ -59,7 +62,7 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   const project=(await call('POST','/v1/project',{path:repo,add:true})).data.project;
   const session=(await call('POST','/v1/sessions',{project_id:project.id,agent:'shell',request_id:crypto.randomUUID()})).data.session;
   browser=await chromium.launch({executablePath:path.join(process.env.PREFIX,'bin/headless_shell'),headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
-  const page=await browser.newPage({viewport:{width:393,height:851}});page.setDefaultTimeout(12000);
+  const page=await browser.newPage({viewport:{width:393,height:851},isMobile:true,hasTouch:true});page.setDefaultTimeout(12000);
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.exposeFunction('nativeRequest',async(id,method,url,body)=>{
     const data=JSON.parse(body);let result=await call(method,url.replace('wait=20','wait=1'),data);
@@ -67,7 +70,7 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
     if(missing&&url==='/v1/github'&&data.action==='status')result.data={installed:false,account:null,login:{state:'idle'},jobs:[]};
     if(url==='/v1/github'&&data.action==='clone'){
       cloneRequests.push(data);
-      if(lose){lose=false;holdPoll=true;result={ok:false,status:0,data:{code:'error_timeout'}};}
+      if(lose){lose=false;holdPoll=true;await delay(600);result={ok:false,status:0,data:{code:'error_timeout'}};}
       else holdPoll=false;
     }
     if(holdPoll&&url==='/v1/github'&&data.action==='poll')result.data.jobs=[];
@@ -90,10 +93,20 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   await page.locator('#github-copy-code').click();assert.equal(await page.evaluate(()=>window.copied),'ABCD-1234');
   await page.locator('#github-browser').click();assert.equal(await page.evaluate(()=>window.opened),'https://github.com/login/device');
   await page.waitForFunction(()=>document.querySelectorAll('.github-repository').length===50);
+  assert.equal(await page.locator('#github-submit').isDisabled(),true);
+  assert.equal(await page.locator('#github-clone-status').textContent(),'Choose a repository or enter owner/repository.');
   assert.equal(await page.locator('#github-entries script').count(),0);
   await page.locator('#github-more').click();await page.waitForFunction(()=>document.querySelectorAll('.github-repository').length===51);
   await page.locator('#github-filter').fill('repo-2-0');assert.equal(await page.locator('.github-repository').count(),1);
   await page.locator('.github-repository').click();assert.equal(await page.locator('#github-name').inputValue(),'repo-2-0');
+  await page.locator('#github-name').fill('');
+  assert.equal(await page.locator('#github-submit').isDisabled(),true);
+  assert.equal(await page.locator('#github-clone-status').textContent(),'Enter a new folder name.');
+  await page.locator('#github-name').fill('repo-2-0');
+  await page.locator('#github-parent').fill('');
+  assert.equal(await page.locator('#github-submit').isDisabled(),true);
+  assert.equal(await page.locator('#github-clone-status').textContent(),'Choose the parent folder to clone into.');
+  assert.equal(cloneRequests.length,0,'incomplete forms never issue a clone');
   await page.locator('#github-parent').fill('/');await page.locator('#github-browse').click();
   await page.waitForFunction(()=>document.querySelector('#folder-path').textContent==='/'&&document.querySelector('#folder-entries').getAttribute('aria-busy')==='false');
   assert.equal(await page.locator('#folder-up').isVisible(),false,'root has no parent row');
@@ -110,7 +123,14 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   await page.locator('#github-name').fill('가져온 프로젝트');
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
   await page.screenshot({path:path.join(root,'dist/screenshots/github-import-en.png')});
-  lose=true;await page.locator('#github-submit').click();await page.getByText('The request may have been accepted. Check again to recover the same import.').waitFor();
+  lose=true;await page.locator('#github-submit').tap();
+  assert.equal(await page.locator('#github-clone-status').textContent(),'Checking the import request…');
+  assert.equal(await page.locator('#github-submit').getAttribute('aria-busy'),'true');
+  assert.equal(await page.locator('#github-clone-progress').isVisible(),true);
+  assert.equal(await page.locator('#github-clone-progress').getAttribute('value'),null);
+  await page.evaluate(()=>document.querySelector('#github-submit').click());
+  await page.getByText('The request may have been accepted. Check again to recover the same import.').waitFor();
+  assert.equal(cloneRequests.length,1,'repeated taps while sending do not duplicate the clone');
   await page.locator('#github-submit').click();
   await page.waitForFunction(()=>document.querySelector('#project-name').textContent==='가져온 프로젝트'&&!document.querySelector('#github-dialog').open);
   assert.equal(await page.locator('#sidebar').isVisible(),false,'clone completion closes sidebar');
@@ -124,11 +144,58 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   assert.equal(await page.locator('#input').inputValue(),'Keep my existing draft');
   await open();await page.getByText('Project registered',{exact:true}).waitFor();
   assert.equal((await call('GET','/v1/health')).data.project.id,project.id,'history does not auto-open completed imports');
-  await page.locator('#github-submit').click();await page.getByText('That path already exists. Choose a new folder name; existing files are never overwritten.').waitFor();
+  await page.locator('#github-filter').fill('');
+  await page.locator('#github-submit').tap();await page.getByText('That path already exists. Choose a new folder name; existing files are never overwritten.').waitFor();
+  assert.ok(await page.evaluate(()=>{
+    const status=document.querySelector('#github-clone-status')||document.querySelector('#github-status');
+    const bounds=status.getBoundingClientRect();
+    return bounds.top>=0&&bounds.bottom<=innerHeight;
+  }),'Clone errors must be visible beside the submit button, even below a long repository list');
+  for(const locale of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
+    await page.evaluate(value=>{localStorage.language=value;window.BibimerRefreshLanguage();},locale);
+    await page.setViewportSize({width:320,height:568});
+    await page.locator('#github-clone-status').scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('#github-clone-status').textContent(),await page.evaluate(()=>window.BibimerI18n.t('error_github_exists')));
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    if(['en','ko'].includes(locale))await page.screenshot({path:path.join(root,`dist/screenshots/github-clone-feedback-320-${locale}.png`)});
+  }
+  await page.evaluate(()=>{localStorage.language='en';window.BibimerRefreshLanguage();});
+  await page.setViewportSize({width:393,height:851});
   await page.locator('#github-repository').fill('fixture/fail');await page.locator('#github-name').fill('failed-copy');await page.locator('#github-submit').click();await page.getByText('Import failed',{exact:true}).waitFor();
+  assert.equal(await page.locator('#github-clone-status').textContent(),await page.evaluate(()=>window.BibimerI18n.t('error_github_clone')));
   assert.equal(fs.readFileSync(path.join(parent,'failed-copy','partial'),'utf8'),'keep');
   await page.locator('#github-repository').fill('fixture/slow');await page.locator('#github-name').fill('cancel-copy');await page.locator('#github-submit').click();
+  assert.equal(await page.locator('#github-submit').textContent(),'Cloning…');
+  assert.equal(await page.locator('#github-submit').isDisabled(),true);
+  assert.equal(await page.locator('#github-submit').getAttribute('aria-busy'),'true');
+  const slowRequests=cloneRequests.length;
+  await page.evaluate(()=>document.querySelector('#github-submit').click());
+  assert.equal(cloneRequests.length,slowRequests);
+  await page.waitForFunction(()=>document.querySelector('#github-clone-progress').getAttribute('value')==='42');
+  assert.equal(await page.locator('#github-clone-status').textContent(),'Receiving objects · 42%');
+  assert.equal((await page.locator('#github-dialog').innerText()).includes('SECRET_PROGRESS_OUTPUT'),false);
+  for(const locale of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
+    await page.evaluate(value=>{localStorage.language=value;window.BibimerRefreshLanguage();},locale);
+    await page.setViewportSize({width:320,height:568});
+    await page.locator('#github-clone-feedback').scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('#github-clone-status').textContent(),await page.evaluate(()=>window.BibimerI18n.t('github_progress_receiving',{percent:42})));
+    assert.equal(await page.locator('#github-submit').isDisabled(),true);
+    assert.equal(await page.locator('#github-clone-progress').getAttribute('value'),'42');
+    assert.ok(await page.locator('#github-clone-progress').evaluate(node=>{const r=node.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;}));
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    if(['en','ko'].includes(locale))await page.screenshot({path:path.join(root,`dist/screenshots/github-progress-320-${locale}.png`)});
+  }
+  await page.evaluate(()=>{localStorage.language='en';window.BibimerRefreshLanguage();});
+  await page.setViewportSize({width:393,height:851});
+  await page.locator('#github-close').click();await page.locator('#sidebar-close').click();await open();
+  await page.waitForFunction(()=>document.querySelector('#github-clone-progress').getAttribute('value')==='42');
+  assert.equal(await page.locator('#github-submit').isDisabled(),true,'closing and reopening keeps the active clone locked');
+  fs.writeFileSync(path.join(tmp,'progress100'),'yes');
+  await page.waitForFunction(()=>document.querySelector('#github-clone-progress').getAttribute('value')==='100');
+  assert.equal(await page.locator('#github-submit').isDisabled(),true,'100% of a Git stage is not project registration');
   await page.getByText('Cancel clone',{exact:true}).click();await page.getByText('Import cancelled',{exact:true}).waitFor();
+  assert.equal(await page.locator('#github-clone-progress').isVisible(),false);
+  assert.equal(await page.locator('#github-submit').getAttribute('aria-busy'),'false');
   assert.equal((await call('GET','/v1/health')).data.projects.length,2);
   await page.locator('#github-close').click();await page.locator('#sidebar-close').click();
   await page.evaluate(()=>{localStorage.language='ko';});await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
@@ -171,13 +238,13 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   await open();assert.equal(await page.locator('#github-parent').inputValue(),otherParent);await page.locator('#github-close').click();await page.locator('#sidebar-close').click();
   // Feature gating and missing tooling guidance, with no login/clone side effect.
   legacy=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');await open();
-  await page.getByText('GitHub에서 프로젝트를 가져오려면 Termux 브리지를 업데이트하세요.').waitFor();assert.ok(await page.locator('#github-connect').isDisabled());
+  await page.locator('#github-account').filter({hasText:'GitHub에서 프로젝트를 가져오려면 Termux 브리지를 업데이트하세요.'}).waitFor();assert.ok(await page.locator('#github-connect').isDisabled());
   legacy=false;missing=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');await open();await page.locator('#github-install').click();
   assert.equal(await page.evaluate(()=>window.copied),'pkg install git gh');
   assert.equal((await call('GET','/v1/health')).data.active_sessions,1);
   assert.deepEqual(errors,[]);
-  for(const name of fs.readdirSync(state).filter(name=>name.endsWith('.json'))){const data=fs.readFileSync(path.join(state,name),'utf8');assert.ok(!data.includes('SECRET_OUTPUT')&&!data.includes('ABCD-1234'));}
-  console.log('PASS: GitHub login/list/filter, shared remembered parent/browse folders after reload, confirmed selection vs cancel, existing project open and typed sibling creation, parent-first list/root, real clone/registration/lost-reply retry with automatic opening and sidebar dismissal, session/draft preservation, failures, EN/KO 320px, old bridge and missing CLI.');
+  for(const name of fs.readdirSync(state).filter(name=>name.endsWith('.json'))){const data=fs.readFileSync(path.join(state,name),'utf8');assert.ok(!data.includes('SECRET_OUTPUT')&&!data.includes('SECRET_PROGRESS_OUTPUT')&&!data.includes('ABCD-1234'));}
+  console.log('PASS: GitHub inline missing-field/request/progress/error feedback, visible errors below long repository lists, ten locales at 320px, login/list/filter, shared folder defaults, real clone/registration/lost-reply retry with automatic opening and duplicate-tap prevention, session/draft preservation, failures/cancel, old bridge and missing CLI.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{
   if(browser)await browser.close();if(bridge){bridge.kill('SIGTERM');await Promise.race([new Promise(resolve=>bridge.once('exit',resolve)),delay(3000)]);}

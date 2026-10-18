@@ -47,5 +47,12 @@ function fixture() {
   const opening=github.openCompletedClone();await github.openCompletedClone();
   github.reset();dialog.open=true;release(true);await opening;
   assert.equal(dialog.open,true,"stale opening cannot close another dialog after reset");
+  ({github}=fixture());
+  let requests=0;github.request=async()=>{requests++;return {};};
+  const crypto=context.crypto;
+  context.crypto={randomUUID(){throw new Error("Controlled client failure");}};
+  await github.clone();context.crypto=crypto;
+  assert.equal(github.error,"error_request_failed","client failures become visible feedback instead of an unhandled rejection");
+  assert.equal(github.pending,null);assert.equal(requests,0);
   console.log("GitHub auto-open: direct/polled completion, lost reply, once-only, history, failure/cancel, dismissal, failed open and stale reset passed");
 })().catch(error=>{console.error(error);process.exitCode=1;});

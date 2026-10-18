@@ -188,7 +188,7 @@ final class DemoWorkspace {
             "projects", rows, "agents", agents, "session", selected == null ? null : selected.snapshot(), "features", Arrays.asList(
             "multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "agent_options", "live_agent_options",
             "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands",
-            "git_worktrees", "project_management", "project_ordering", "response_notifications", "workspace_inspector", "github_import", "agent_handoff", "file_links"));
+            "git_worktrees", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "agent_handoff", "file_links"));
     }
     private String samplePath(String path) {
         if (path.equals("~") || path.isEmpty()) return HOME;
@@ -289,11 +289,18 @@ final class DemoWorkspace {
         }
         if (path.equals("/v1/project/manage")) {
             Map<String, Object> project = project(data);
-            if (text(data, "action").equals("move_up") || text(data, "action").equals("move_down")) {
+            if (text(data, "action").equals("move_up") || text(data, "action").equals("move_down") || text(data, "action").equals("move_to")) {
                 List<String> keys = new ArrayList<>(projects.keySet()); String key = text(project, "id");
                 int index = keys.indexOf(key), destination = index + (text(data, "action").equals("move_up") ? -1 : 1);
+                if (text(data, "action").equals("move_to")) {
+                    Object position = data.get("position");
+                    require(position instanceof Integer || position instanceof Long, "error_demo_request");
+                    long requested = ((Number) position).longValue();
+                    require(requested >= 0 && requested < keys.size(), "error_demo_request");
+                    destination = (int) requested;
+                }
                 if (destination >= 0 && destination < keys.size()) {
-                    keys.set(index, keys.get(destination)); keys.set(destination, key);
+                    keys.remove(index); keys.add(destination, key);
                     Map<String, Map<String, Object>> ordered = new LinkedHashMap<>();
                     for (String id : keys) ordered.put(id, projects.get(id));
                     projects.clear(); projects.putAll(ordered);

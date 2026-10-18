@@ -5,7 +5,7 @@ const source=fs.readFileSync(path.join(__dirname,"../../android/app/src/main/ass
 const controller=source.match(/  async function manageProject\([^]*?\n  \}/)[0];
 function fixture() {
   const requests=[],nodes=new Map();
-  const ctx=vm.createContext({canOrderProjects:true,canManageProjects:true,online:true,libraryBusy:false,busy:false,switchingProject:false,
+  const ctx=vm.createContext({canDragProjects:true,canOrderProjects:true,canManageProjects:true,online:true,libraryBusy:false,busy:false,switchingProject:false,
     generation:1,retryTimer:null,knownProjects:[{id:"a",name:"Same"},{id:"b",name:"Same"},{id:"c",name:"Third"}],
     projectActionError:null,clearTimeout(){},native:{cancelPoll(){}},renderSession(){},renderProjects(){},startPoll(){},
     $:id=>{if(!nodes.has(id))nodes.set(id,{open:true});return nodes.get(id);},
@@ -20,6 +20,9 @@ function fixture() {
   assert.equal(ctx.knownProjects.map(row=>row.id).join(","),"c,a,b");
   assert.equal(requests.length,1);assert.equal(requests[0].url,"/v1/project/manage");
   assert.equal(ctx.libraryBusy,false);
+  ({ctx,requests}=fixture());await ctx.manageProject("c","move_to",0);
+  assert.equal(requests[0].data.position,0);assert.equal(requests[0].data.action,"move_to");assert.equal(requests[0].data.name,undefined);
+  ({ctx,requests}=fixture());ctx.canDragProjects=false;await ctx.manageProject("c","move_to",0);assert.equal(requests.length,0);
   for(const guard of ["online","canOrderProjects"]){
     ({ctx,requests}=fixture());ctx[guard]=false;await ctx.manageProject("b","move_up");assert.equal(requests.length,0);
   }

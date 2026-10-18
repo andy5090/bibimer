@@ -193,6 +193,10 @@ public final class DemoWorkspaceTest {
         check(text(list(f.health().get("projects")).get(0), "id").equals(secondId), "Top boundary is a no-op");
         f.post("/v1/project/manage", "project_id", secondId, "action", "move_down");
         check(text(list(f.health().get("projects")).get(0), "id").equals(firstId), "Move down restores original order");
+        check(list(f.health().get("features")).contains("project_drag_ordering"), "Demo supports drag ordering");
+        f.post("/v1/project/manage", "project_id", secondId, "action", "move_to", "position", 0);
+        check(text(list(f.health().get("projects")).get(0), "id").equals(secondId), "Drag moves to requested position");
+        f.post("/v1/project/manage", "project_id", secondId, "action", "move_to", "position", 1);
         Map<String, Object> renamed = f.post("/v1/project/manage", "project_id", firstId, "action", "rename", "name", "Renamed sample");
         check(text(map(renamed.get("project")), "id").equals(firstId), "Rename response returns its requested target");
         check(text(map(f.health().get("project")), "id").equals(text(second, "id")), "Rename does not change active project");

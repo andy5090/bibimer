@@ -26,7 +26,7 @@ window.BibimerDrawerSwipe = function(dialog, direction, close) {
   };
   dialog.addEventListener("touchstart", event => {
     reset();
-    if (!enabled() || event.touches.length !== 1 || selected()) return;
+    if (!enabled() || dialog.classList.contains("project-reordering") || event.touches.length !== 1 || selected()) return;
     const target = event.target instanceof Element ? event.target : event.target.parentElement;
     if (target.closest("input,textarea,select,[contenteditable]:not([contenteditable=false]),pre,code,.table-scroll")) return;
     for (let node = target; node && node !== dialog; node = node.parentElement) {
@@ -38,7 +38,7 @@ window.BibimerDrawerSwipe = function(dialog, direction, close) {
   }, {passive:true});
   dialog.addEventListener("touchmove", event => {
     if (!gesture) return;
-    if (!enabled() || event.touches.length !== 1 || selected()) { reset(true); return; }
+    if (!enabled() || dialog.classList.contains("project-reordering") || event.touches.length !== 1 || selected()) { reset(true); return; }
     const touch = [...event.touches].find(point => point.identifier === gesture.id);
     if (!touch) { reset(true); return; }
     const dx = (touch.clientX - gesture.x) * direction, dy = Math.abs(touch.clientY - gesture.y);
@@ -81,6 +81,7 @@ window.BibimerSidebar = class BibimerSidebar {
     this.list = document.getElementById("sidebar-projects");
     this.opener = document.getElementById("sidebar-open");
     this.wide = matchMedia("(min-width: 1000px)"); this.collapsed = false;
+    this.installProjectDrag();
     this.opener.addEventListener("click", () => {
       if (this.wide.matches && this.dialog.open) this.close(true);
       else { this.open(); actions.refresh(); }
@@ -147,6 +148,115 @@ window.BibimerSidebar = class BibimerSidebar {
     button.textContent = text; button.dataset.key = key; button.disabled = this.state.disabled;
     button.addEventListener("click", action); return button;
   }
+  installProjectDrag() {
+    let gesture = null, timer, frame, suppressUntil = 0;
+    const allowed = () => this.dialog.open && this.state?.online && this.state.dragOrdering && !this.state.disabled &&
+      this.state.projects.length > 1 && ![...document.querySelectorAll("dialog:modal")].some(node => node !== this.dialog);
+    const position = () => {
+      if (!gesture?.active) return;
+      const {node, y, ghost, offset} = gesture;
+      ghost.style.top = `${y - offset}px`;
+      const others = [...this.list.children].filter(row => row !== node);
+      const next = others.find(row => { const rect = row.getBoundingClientRect(); return y < rect.top + rect.height / 2; });
+      if (node.nextElementSibling !== (next || null)) this.list.insertBefore(node, next || null);
+      document.getElementById("sidebar-status").textContent = this.t("project_order_position", {
+        position:[...this.list.children].indexOf(node) + 1, count:this.list.children.length
+      });
+    };
+    const scroll = () => {
+      if (!gesture?.active) return;
+      if (!allowed()) { finish(false); return; }
+      const rect = this.list.getBoundingClientRect(), y = gesture.y;
+      const speed = y < rect.top + 48 ? -Math.min(12, (rect.top + 48 - y) / 4) :
+        y > rect.bottom - 48 ? Math.min(12, (y - rect.bottom + 48) / 4) : 0;
+      if (speed && gesture.moved) { this.list.scrollTop += speed; position(); }
+      frame = requestAnimationFrame(scroll);
+    };
+    const finish = commit => {
+      clearTimeout(timer); cancelAnimationFrame(frame);
+      if (!gesture) return;
+      const previous = gesture; gesture = null; this.projectDrag = null;
+      if (!previous.active) return;
+      suppressUntil = performance.now() + 500;
+      const destination = [...this.list.children].indexOf(previous.node);
+      previous.ghost.remove(); previous.node.classList.remove("project-drag-source");
+      this.dialog.classList.remove("project-reordering");
+      document.getElementById("sidebar-status").style.removeProperty("min-height");
+      // Only the bridge's successful reply changes the saved order.
+      this.list.append(...previous.order);
+      this.signature = ""; this.render(this.state);
+      this.list.scrollTop = previous.scroll;
+      if (commit && allowed() && destination !== previous.order.indexOf(previous.node)) {
+        this.actions.moveProject(previous.node.dataset.project, destination);
+      }
+    };
+    this.cancelProjectDrag = () => finish(false);
+    const start = (event, id, x, y, touch) => {
+      finish(false);
+      const summary = event.target.closest(".sidebar-project > summary");
+      if (!allowed() || !summary || event.target.closest("button") || (event.button !== undefined && event.button !== 0)) return;
+      gesture = {id, x, y, startX:x, startY:y, touch, node:summary.parentElement, active:false};
+      this.projectDrag = gesture;
+      timer = setTimeout(() => {
+        if (!gesture || !allowed()) { finish(false); return; }
+        const rect = summary.getBoundingClientRect();
+        Object.assign(gesture, {active:true, order:[...this.list.children], scroll:this.list.scrollTop, offset:y - rect.top});
+        const ghost = document.createElement("div"); ghost.className = "project-drag-ghost";
+        ghost.textContent = summary.querySelector(".sidebar-project-label").textContent;
+        ghost.setAttribute("aria-hidden", "true");
+        Object.assign(ghost.style, {left:`${rect.left}px`, width:`${rect.width}px`, minHeight:`${rect.height}px`});
+        gesture.ghost = ghost; this.dialog.append(ghost);
+        const status = document.getElementById("sidebar-status");
+        status.style.minHeight = `${status.getBoundingClientRect().height}px`;
+        this.dialog.classList.add("project-reordering"); gesture.node.classList.add("project-drag-source");
+        // Keep the held header beneath the finger as expanded project bodies fold.
+        this.list.scrollTop += summary.getBoundingClientRect().top - rect.top;
+        ghost.style.top = `${y - gesture.offset}px`;
+        document.getElementById("sidebar-status").textContent = this.t("project_order_position", {position:gesture.order.indexOf(gesture.node) + 1, count:gesture.order.length});
+        frame = requestAnimationFrame(scroll);
+      }, 450);
+    };
+    const move = (event, id, x, y) => {
+      if (!gesture || gesture.id !== id) return;
+      if (!gesture.active) {
+        if (Math.hypot(x - gesture.startX, y - gesture.startY) > 8) finish(false);
+        return;
+      }
+      if (!event.cancelable || !allowed()) { finish(false); return; }
+      event.preventDefault(); gesture.moved = true; gesture.x = x; gesture.y = y; position();
+    };
+    this.list.addEventListener("touchstart", event => {
+      if (event.touches.length !== 1) { finish(false); return; }
+      const point = event.touches[0]; start(event, point.identifier, point.clientX, point.clientY, true);
+    }, {passive:true});
+    this.list.addEventListener("touchmove", event => {
+      if (!gesture?.touch) return;
+      const point = [...event.touches].find(row => row.identifier === gesture.id);
+      if (event.touches.length !== 1 || !point) { finish(false); return; }
+      move(event, point.identifier, point.clientX, point.clientY);
+    }, {passive:false});
+    this.list.addEventListener("touchend", event => {
+      if (!gesture?.touch) return;
+      if (gesture.active && event.cancelable) event.preventDefault();
+      finish(!event.touches.length && [...event.changedTouches].some(row => row.identifier === gesture.id));
+    }, {passive:false});
+    this.list.addEventListener("touchcancel", () => finish(false));
+    this.list.addEventListener("pointerdown", event => {
+      if (event.pointerType === "mouse") start(event, event.pointerId, event.clientX, event.clientY, false);
+    });
+    window.addEventListener("pointermove", event => { if (gesture && !gesture.touch) move(event, event.pointerId, event.clientX, event.clientY); });
+    window.addEventListener("pointerup", event => { if (gesture && !gesture.touch && gesture.id === event.pointerId) finish(true); });
+    window.addEventListener("pointercancel", () => { if (gesture && !gesture.touch) finish(false); });
+    this.list.addEventListener("contextmenu", event => { if (gesture) event.preventDefault(); });
+    document.addEventListener("click", event => {
+      if (event.detail > 0 && performance.now() < suppressUntil) { event.preventDefault(); event.stopImmediatePropagation(); }
+    }, true);
+    this.dialog.addEventListener("close", () => finish(false));
+    this.dialog.addEventListener("keydown", event => { if (event.key === "Escape") finish(false); });
+    window.addEventListener("resize", () => finish(false));
+    window.addEventListener("blur", () => finish(false));
+    document.addEventListener("visibilitychange", () => { if (document.hidden) finish(false); });
+  }
   details(key, name, className, open) {
     const detail = document.createElement("details"), summary = document.createElement("summary");
     detail.className = className; detail.open = this.expanded.get(key) ?? open;
@@ -156,10 +266,15 @@ window.BibimerSidebar = class BibimerSidebar {
   render(state) {
     if (!state) return;
     this.state = state;
+    if (this.projectDrag) {
+      const ids = this.projectDrag.active ? this.projectDrag.order.map(node => node.dataset.project) : [...this.list.children].map(node => node.dataset.project);
+      if (state.disabled || !state.online || !state.dragOrdering || JSON.stringify(ids) !== JSON.stringify(state.projects.map(row => row.id))) this.cancelProjectDrag();
+      else return;
+    }
     const t = this.t;
     document.getElementById("sidebar-archived").setAttribute("aria-pressed", String(this.archived));
     document.getElementById("sidebar-refresh").disabled = state.disabled;
-    document.getElementById("sidebar-status").textContent = !state.online ? t("sidebar_offline") : !state.library ? t("sidebar_update") : state.loading ? t("sidebar_loading") : state.error ? t(state.error) : "";
+    document.getElementById("sidebar-status").textContent = !state.online ? t("sidebar_offline") : !state.library ? t("sidebar_update") : state.loading ? t("sidebar_loading") : state.error ? t(state.error) : state.dragOrdering && state.projects.length > 1 ? t("project_drag_hint") : "";
     // Exclude output cursors so streaming text cannot rebuild the list or steal focus.
     const rows = state.projects.map(project => ({...project, session:undefined, sessions:(project.sessions || (project.session ? [project.session] : [])).map(row => ({
       id:row.id, agent:row.agent, path:row.project.path, title:state.title(row), status:state.status(row),

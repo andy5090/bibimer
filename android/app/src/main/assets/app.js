@@ -27,7 +27,7 @@
   let canLibrary = false, canWorktrees = false, activeViewKey = null, draftPath = null, importPath = null;
   let actionTarget = null, deleteTarget = null, libraryBusy = false, worktreeLoading = false, worktreeError = null;
   let canResponseNotifications = false, notificationNavigating = false, notificationRetry, pendingNotification;
-  let canOrderProjects = false, canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
+  let canDragProjects = false, canOrderProjects = false, canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   let canInspect = false, canOpenFiles = false, openingFile = false;
   const worktrees = {};
   const worktreeChecks = new Map();
@@ -76,6 +76,7 @@
   term.open($("terminal"));
   const sidebar = new BibimerSidebar(t, {
     refresh:refreshSidebar, manage:openSessionActions, manageProject:openProjectSettings,
+    moveProject:(id, position) => manageProject(id, "move_to", position),
     import:async (id, path) => { await newSession(id, path); if (projectKey() === id) $("import-session").click(); },
     project:async id => { await changeProject({project_id:id}); sidebar.close(); tab("work"); },
     session:selectSession, create:newSession
@@ -326,6 +327,7 @@
     $("connection").textContent = t(demo ? "demo_connection" : value ? "connection_on" : "connection_off");
     $("connection").className = "badge" + (value ? " connected" : "");
     renderSession();
+    renderQuickSetup();
   }
   function updateEnvironment() {
     renderNotificationSettings();
@@ -334,23 +336,39 @@
     $("demo-banner").hidden = !demo;
     $("demo-settings-card").hidden = !demo;
     $("review-access-open").hidden = demo;
-    for (const id of ["forget", "open-termux", "quick-open-termux", "quick-app-permissions", "export-installer", "pair"]) $(id).disabled = demo;
+    for (const id of ["forget", "open-termux", "setup-open-termux", "quick-open-termux", "quick-app-permissions", "export-installer", "pair"]) $(id).disabled = demo;
     $("termux-status").textContent = t(env.termuxInstalled ? "installed" : "install_needed");
     $("termux-status").className = "badge" + (env.termuxInstalled ? " connected" : "");
     $("reconnect-welcome").hidden = !env.paired;
     for (const button of document.querySelectorAll("[data-agent-action]")) button.disabled = demo;
     renderQuickSetup(env);
   }
+  function renderSetupConnection() {
+    const complete = online && !demo, steps = $("setup-connection-steps");
+    const moveFocus = complete && currentTab === "setup" && steps.contains(document.activeElement);
+    steps.hidden = complete;
+    steps.disabled = complete;
+    $("setup-connection-complete").hidden = !complete;
+    $("setup-intro").hidden = complete;
+    if (complete) {
+      $("manual-setup").open = false;
+      $("quick-permissions").open = false;
+      if (moveFocus) $("setup-open-work").focus({preventScroll:true});
+    }
+    return complete;
+  }
   function renderQuickSetup(env = environment()) {
+    const complete = renderSetupConnection();
     const supported = typeof native.startQuickSetup === "function";
     $("quick-setup").hidden = !supported;
-    if (!supported) { $("manual-setup").open = true; return; }
+    if (!supported) { if (!complete) $("manual-setup").open = true; return; }
     const setup = env.quickSetup || {phase:"idle"}, waiting = ["running", "connecting"].includes(setup.phase);
-    const phase = !env.termuxInstalled ? "quick_termux_missing" : setup.phase.startsWith("quick_") ? setup.phase : "quick_" + setup.phase;
+    const phase = complete ? "connection_on" : !env.termuxInstalled ? "quick_termux_missing" :
+      env.paired && setup.phase === "connected" ? "connection_off" : setup.phase.startsWith("quick_") ? setup.phase : "quick_" + setup.phase;
     $("quick-status").textContent = t(i18n.has(phase) ? phase : "quick_start_failed");
-    $("quick-connect").disabled = demo || !env.termuxInstalled || waiting || quickSubmitting;
+    $("quick-connect").disabled = demo || complete || !env.termuxInstalled || waiting || quickSubmitting;
     $("quick-connect").setAttribute("aria-busy", String(waiting || quickSubmitting));
-    if (["quick_external", "quick_permission"].includes(setup.phase)) $("quick-permissions").open = true;
+    if (!complete && ["quick_external", "quick_permission"].includes(setup.phase)) $("quick-permissions").open = true;
     if (setup.phase === "connected" && setup.id && quickHandled !== setup.id && env.paired) {
       quickHandled = setup.id;
       $("pair-code").value = "";
@@ -476,7 +494,7 @@
   }
   function renderSidebar() {
     sidebar.render({projects:knownProjects, projectId:projectKey(), sessionId:session?.id,
-      worktrees, online, library:canLibrary, disabled:!online || busy || switchingProject || settingsBusy || libraryBusy,
+      worktrees, online, dragOrdering:canDragProjects, library:canLibrary, disabled:!online || busy || switchingProject || settingsBusy || libraryBusy,
       loading:worktreeLoading, error:worktreeError || (noticeData?.key?.startsWith("error_") ? noticeData.key : null), title:sessionTitle, status:sessionStatus, responding:isResponding});
   }
   async function refreshSidebar() {
@@ -642,12 +660,13 @@
     }
   }
   async function manageProject(id, action, name) {
-    const reordering = action === "move_up" || action === "move_down";
+    const reordering = action === "move_up" || action === "move_down" || action === "move_to";
+    if (action === "move_to" && !canDragProjects) return;
     if (!(reordering ? canOrderProjects : canManageProjects) || !online || libraryBusy || busy || switchingProject) return;
     libraryBusy = true; projectActionError = null;
     const ticket = ++generation; clearTimeout(retryTimer); native.cancelPoll?.(); renderSession();
     try {
-      const result = await api("POST", "/v1/project/manage", {project_id:id, action, ...(name !== undefined ? {name} : {})});
+      const result = await api("POST", "/v1/project/manage", {project_id:id, action, ...(name !== undefined ? action === "move_to" ? {position:name} : {name} : {})});
       if (ticket !== generation) return;
       if (reordering) {
         const ranks = new Map(result.project_order.map((key, index) => [key, index]));
@@ -1009,6 +1028,7 @@
       canWorktrees = health.features?.includes("git_worktrees") === true;
       canManageProjects = health.features?.includes("project_management") === true;
       canOrderProjects = health.features?.includes("project_ordering") === true;
+      canDragProjects = health.features?.includes("project_drag_ordering") === true;
       canInspect = health.features?.includes("workspace_inspector") === true;
       canOpenFiles = health.features?.includes("file_links") === true;
       canResponseNotifications = health.features?.includes("response_notifications") === true;
@@ -1638,6 +1658,7 @@
   });
   $("pair-form").addEventListener("submit", async event => {
     event.preventDefault();
+    if (demo || paused || online || $("pair").disabled) return;
     const code = $("pair-code").value.trim();
     if (!/^[0-9]{8}$/.test(code)) { notice("pairing_digits"); return; }
     $("pair").disabled = true;
@@ -1645,7 +1666,7 @@
       await api("POST", "/v1/pair", {code});
       $("pair-code").value = ""; notice(""); tab("work"); await connect();
     } catch (error) { notice(error.key || "error_request_failed"); }
-    finally { $("pair").disabled = false; }
+    finally { updateEnvironment(); }
   });
   $("stop").addEventListener("click", () => { stopTarget = actionTarget; $("stop-dialog").showModal(); });
   $("cancel-stop").addEventListener("click", () => $("stop-dialog").close());
@@ -1710,10 +1731,12 @@
   $("project-update").addEventListener("click", () => tab("setup"));
   for (const id of ["reconnect", "reconnect-welcome"]) $(id).addEventListener("click", () => { notice(""); connect(); });
   $("open-termux").addEventListener("click", () => native.openTermux());
+  $("setup-open-termux").addEventListener("click", () => native.openTermux());
+  $("setup-open-work").addEventListener("click", () => tab("work"));
   $("quick-open-termux").addEventListener("click", () => native.openTermux());
   $("quick-app-permissions").addEventListener("click", () => native.openAppPermissions?.());
   $("quick-connect").addEventListener("click", async () => {
-    if (quickSubmitting || $("quick-connect").disabled) return;
+    if (paused || online || quickSubmitting || $("quick-connect").disabled) return;
     quickSubmitting = true; renderQuickSetup();
     try {
       // An existing connection needs no RUN_COMMAND permission or new pairing.

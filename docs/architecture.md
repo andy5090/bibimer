@@ -36,7 +36,7 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 | `POST /v1/pair` | 일회용 연결 코드 교환 | `code` |
 | `GET /v1/health` | 인스턴스, 전체 프로젝트·세션 상태, 선택 프로젝트, 프로그램 탐지 | 없음 |
 | `POST /v1/project` | 폴더 추가·선택 | 추가: `path`, `create`, `add: true`; 전환: `project_id` |
-| `POST /v1/project/manage` | 프로젝트 이름 변경·등록 해제·순서 변경 | `project_id`, `action`: `rename`(+ `name`) 또는 `delete`; 실행 세션이 있으면 삭제 거절. 파일·워크트리·원본 기록 유지. `project_management` 기능 표시 필요. `project_ordering`이 있으면 `move_up`/`move_down`으로 인접 프로젝트와 위치 교환하며 `project_order` ID 배열 반환. 기존 프로젝트 배열 순서로 저장/복원하고 현재 프로젝트·세션은 유지 |
+| `POST /v1/project/manage` | 프로젝트 이름 변경·등록 해제·순서 변경 | `project_id`, `action`: `rename`(+ `name`) 또는 `delete`; 실행 세션이 있으면 삭제 거절. 파일·워크트리·원본 기록 유지. `project_management` 기능 표시 필요. `project_ordering`이 있으면 `move_up`/`move_down`으로 인접 프로젝트와 위치 교환하며 `project_order` ID 배열 반환. `project_drag_ordering`이 있으면 `move_to`(+ 0부터 시작하는 정수 `position`)로 한 번에 삽입 이동하고 같은 `project_order`를 반환. 범위/타입 오류는 400, 저장 실패 시 메모리 순서도 롤백. 기존 프로젝트 배열 순서로 저장/복원하고 현재 프로젝트·세션은 유지 |
 | `POST /v1/project-agent` | 프로젝트의 선택 에이전트 변경·기존 세션 복원 (0.10.0) | `project_id`, `agent`; 프로세스를 시작/종료하지 않음 |
 | `POST /v1/project-session` | 목록의 세션 선택·새 시작 화면 (0.10.0) | `project_id`, `session_id`; null이면 `agent`의 새 시작 화면. 프로세스 변경 없음 |
 | `POST /v1/worktrees` | 실제 Git 워크트리 조회 (0.10.0) | `project_id`; 프로젝트 폴더·연결 경로·branch·available 반환 |
@@ -164,7 +164,7 @@ Claude의 명령 존재와 실제 실행 가능 여부를 구분한다. `claude 
 
 ## 저장된 에이전트 세션 (0.5.0 / 0.6.0 확장)
 
-`import_agent_session` 기능을 health에 광고하며 이전 앱용 `import_codex_session`도 유지한다. `HistoryClient`는 프로젝트 cwd에서 해당 에이전트의 별도 App Server 또는 어댑터를 열고 초기화한 뒤 `thread/list` 또는 `thread/read`만 호출하며 끝나면 소유한 프로세스 그룹을 정리한다. 전역 세션 잠금을 보유하지 않아 목록 조회가 다른 프로젝트의 입력·상태 폴링을 막지 않는다. 조회는 동시에 하나만 허용하고 RPC당 8초·응답 2MiB로 제한한다.
+`import_agent_session` 기능을 health에 광고하며 이전 앱용 `import_codex_session`도 유지한다. `HistoryClient`는 프로젝트 cwd에서 해당 에이전트의 별도 App Server 또는 어댑터를 열고 초기화한 뒤 `thread/list` 또는 `thread/read`만 호출하며 끝나면 소유한 프로세스 그룹을 정리한다. 전역 세션 잠금을 보유하지 않아 목록 조회가 다른 프로젝트의 입력·상태 폴링을 막지 않는다. 조회는 동시에 하나만 허용하고 RPC당 8초·응답 2MiB로 제한한다. 사이드바 제목 조회와 목록·가져오기 검증이 겹치면 즉시 실패하지 않고 최대 5초간 조회 슬롯을 기다린다. 대기 중에도 입력·승인·상태 조회는 처리하며, 시간이 지나도 슬롯을 얻지 못하면 기존 조회 오류를 반환한다.
 
 목록은 cwd 일치·비보관·비임시 세션을 최근 수정 순 25개와 다음 커서로 반환한다. Codex는 CLI·VS Code·App Server 출처와 모든 모델 제공자를 포함한다. OpenCode는 `directory` 필터와 정규화한 실제 경로를 확인한다(`path` 필드는 작업 폴더와 다름). Claude는 공식 SDK `listSessions`·`getSessionInfo`·`getSessionMessages`를 사용하며 worktree·숨김 기록을 제외한다. OpenCode·Claude 목록은 최대 10,000건으로 제한하며 Claude의 64MiB 초과 기록은 CLI 사용 안내로 거절한다. 제목은 240자로 제한하고 내용은 저장하지 않는다. 시작 시 목록의 경로나 제목을 신뢰하지 않고 `thread/read(includeTurns: false)`로 ID·cwd·저장 여부를 재검증한다. 조회 전후에 해당 프로젝트의 실행 상태·요청 중복을 확인하므로 동시에 시작한 세션을 덮어쓰지 않는다. 가져오는 동안 프로젝트가 변경되어도 원래 프로젝트로 실행한다.
 
@@ -219,7 +219,7 @@ Android `AgentPreferences`는 에이전트별 마지막 선택만 `SharedPrefere
 
 `login`은 독립 `gh auth login --hostname github.com --git-protocol https --web` 프로세스를 만든다. 비대화형 stderr에서 정해진 코드 형식만 추출하고 URL은 `https://github.com/login/device`로 고정한다. 토큰을 읽거나 출력 원문을 API·파일·로그에 저장하지 않는다. `poll`로 코드·상태를 확인하고 `cancel_login`으로 해당 로그인 프로세스 그룹만 종료한다. 완료·실패·취소 뒤 코드를 지우며 브리지 재시작에 로그인 프로세스를 복원하지 않는다.
 
-`clone`은 `request_id`, `repository`(owner/repository), `parent`(기존 절대/홈 경로), `name`(새 폴더명)을 검증한다. mkdir로 경로를 독점 예약하고 한 번에 하나의 클론만 실행한다. 셸 문자열 대신 Git 인수 배열, 고정 HTTPS URL, 호출 범위의 gh credential helper를 사용한다. 전역/시스템 Git 설정·주입된 Git 환경 설정·추적·askpass, 파일 프로토콜·리다이렉트·템플릿/후크를 배제해 이 클론을 수행한다. CLI 자격 증명 환경은 유지하고 기존 설정 파일은 수정하지 않는다. stdout/stderr를 폐기하며 작업 단계만 앱에 전달한다. 성공 후 예약한 폴더의 동일성을 확인하고 기존 등록 로직으로 추가하되 현재 프로젝트·세션 선택은 유지한다.
+`clone`은 `request_id`, `repository`(owner/repository), `parent`(기존 절대/홈 경로), `name`(새 폴더명)을 검증한다. mkdir로 경로를 독점 예약하고 한 번에 하나의 클론만 실행한다. 셸 문자열 대신 Git 인수 배열, 고정 HTTPS URL, 호출 범위의 gh credential helper를 사용한다. 전역/시스템 Git 설정·주입된 Git 환경 설정·추적·askpass, 파일 프로토콜·리다이렉트·템플릿/후크를 배제해 이 클론을 수행한다. CLI 자격 증명 환경은 유지하고 기존 설정 파일은 수정하지 않는다. stdout는 폐기하고 `git clone --progress`의 stderr는 제한된 메모리에서 소비한다. CR/LF로 구분한 고정 Git 진행 형식에서 허용한 단계와 0~100의 정수만 추출해 실행 중 작업에 `progress: {phase, percent}`를 제공한다. 한 번에 16KiB를 읽고 미완성 행은 4KiB까지만 유지하며 원문은 API·로그·메타데이터에 전달하지 않는다. 진행률은 메모리 전용으로 종료/취소/재시작 뒤 복원하지 않고, 단계 100%를 전체 완료로 사용하지 않는다. 성공 후 예약한 폴더의 동일성을 확인하고 기존 등록 로직으로 추가하되 현재 프로젝트·세션 선택은 유지한다.
 
 `github-imports.json`(0600, 상태 폴더 0700)은 최근 32개의 요청 ID·입력 digest·저장소·경로·단계·등록 ID·오류 코드만 보관한다. 같은 ID/본문 재요청은 같은 작업을 반환하고 다른 본문은 거절한다. HTTP 응답 유실·앱 재실행 후 `poll`로 결과를 회수한다. 취소는 클론 그룹만 종료하고 브리지에서 대상 파일을 삭제하지 않는다. 재시작 때 실행 중 기록을 `interrupted`로 바꾸며 자동 재실행·등록하지 않는다. 완료 직전 장애 시 남은 Git 폴더와 프로젝트 목록을 확인해 기존 폴더 등록으로 복구한다.
 

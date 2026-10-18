@@ -68,6 +68,33 @@ class ProjectManagementTests(BridgeTestCase):
         self.assertEqual(200, self.manage(first, "delete")[0])
         self.assertEqual([second["id"]], self.manage(second, "move_up")[1]["project_order"])
 
+    def test_drag_move_to_is_atomic_and_validates_destination(self):
+        projects = [self.add("drag-" + str(i)) for i in range(4)]
+        self.assertIn("project_drag_ordering", self.bridge.health()["features"])
+        session = self.launch(projects[1])
+        process = self.bridge.get_session(session["id"]).process
+        selected = self.bridge.active_project_id
+        expected = [row["id"] for row in projects]
+        before = (self.state / "metadata.json").read_bytes()
+        for invalid in (None, True, False, "0", 0.5, -1, 4):
+            self.assertEqual(400, self.manage(projects[3], "move_to", position=invalid)[0])
+        self.assertEqual(before, (self.state / "metadata.json").read_bytes())
+        with patch.object(self.bridge, "persist", side_effect=OSError("fixture disk full")):
+            self.assertEqual(500, self.manage(projects[3], "move_to", position=0)[0])
+        self.assertEqual(expected, list(self.bridge.projects))
+        self.assertEqual(before, (self.state / "metadata.json").read_bytes())
+        with patch.object(self.bridge, "persist", wraps=self.bridge.persist) as persist:
+            status, result = self.manage(projects[3], "move_to", position=0)
+            self.assertEqual(200, status)
+            expected.insert(0, expected.pop(3))
+            self.assertEqual(expected, result["project_order"])
+            self.assertEqual(1, persist.call_count)
+        self.assertEqual(selected, self.bridge.active_project_id)
+        self.assertIsNone(process.poll())
+        self.assertEqual(expected, list(module.Bridge(self.state).projects))
+        self.assertEqual(200, self.manage(projects[3], "move_to", position=3)[0])
+        self.assertEqual([row["id"] for row in projects], list(self.bridge.projects))
+
     def test_project_order_save_failure_rolls_back_memory_and_disk(self):
         first, second = self.add("first"), self.add("second")
         before = (self.state / "metadata.json").read_bytes()
