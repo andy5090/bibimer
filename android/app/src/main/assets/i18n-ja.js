@@ -1,6 +1,7 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "delivery_help_title": "メッセージ送信の案内",
   "command_failure_code": "失敗コード {code}",
   "command_failure_code_unavailable": "失敗コード未提供",
   "command_succeeded": "成功",
@@ -463,8 +464,8 @@ window.BibimerTranslations.ja = {
   queue_steer_wait: "Codex の応答中に利用可能",
   queue_failed: "未送信 · キュー停止中",
   queue_uncertain: "配信状況が不明 · 会話を確認してください",
-  delivery_queue: "キュー内のメッセージは現在の応答後に送信します。引き続き入力できます。",
-  delivery_steer: "キュー: 次の応答 · 方向を修正: 現在の応答に反映",
+  delivery_queue: "キュー：現在の応答が終わったら送信",
+  delivery_steer: "キュー：現在の応答が終わったら送信\n方向修正：進行中の作業に追加指示",
   delivery_update: "応答中にメッセージをキューに追加するには、ブリッジを更新してください。",
   error_queue_full: "キューがいっぱいです。待機中のメッセージを削除してから追加してください。",
   error_queue_entry: "このメッセージはすでにキューで待機していません。",

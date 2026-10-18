@@ -1,6 +1,7 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "delivery_help_title": "Hilfe zum Nachrichtenversand",
   "command_failure_code": "Fehlercode {code}",
   "command_failure_code_unavailable": "Fehlercode nicht verfügbar",
   "command_succeeded": "Erfolgreich",
@@ -463,8 +464,8 @@ window.BibimerTranslations.de = {
   "queue_steer_wait": "Während einer Codex-Antwort verfügbar",
   "queue_failed": "Nicht gesendet · Warteschlange pausiert",
   "queue_uncertain": "Zustellung unklar · Gespräch prüfen",
-  "delivery_queue": "Die Warteschlange wird nach dieser Antwort gesendet. Du kannst weiter schreiben.",
-  "delivery_steer": "Einreihen: nächste Antwort · Lenken: diese Antwort anpassen",
+  "delivery_queue": "Warteschlange: nach Ende der aktuellen Antwort senden",
+  "delivery_steer": "Warteschlange: nach Ende der aktuellen Antwort senden\nUmsteuern: Anweisungen zur laufenden Arbeit hinzufügen",
   "delivery_update": "Aktualisiere die Bridge, um während einer Antwort Nachrichten einzureihen.",
   "error_queue_full": "Die Warteschlange ist voll. Entferne eine ausstehende Nachricht, bevor du eine weitere hinzufügst.",
   "error_queue_entry": "Diese Nachricht wartet nicht mehr in der Warteschlange.",

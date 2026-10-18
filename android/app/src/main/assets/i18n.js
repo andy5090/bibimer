@@ -3,6 +3,7 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    delivery_help_title: ["Message delivery help", "메시지 전송 안내"],
     command_failure_code: ["Failure code {code}", "실패 코드 {code}"],
     command_failure_code_unavailable: ["Failure code unavailable", "실패 코드 미제공"],
 
@@ -467,8 +468,8 @@
     queue_steer_wait: ["Available during a Codex response", "Codex 응답 진행 중 사용 가능"],
     queue_failed: ["Not sent · queue paused", "전송 실패 · 대기열 일시정지"],
     queue_uncertain: ["Delivery uncertain · check the conversation", "전달 여부 불명 · 대화 확인 필요"],
-    delivery_queue: ["Queue sends after this response. You can keep typing.", "대기열은 현재 응답이 끝난 뒤 전송합니다. 계속 입력할 수 있습니다."],
-    delivery_steer: ["Queue: next response · Steer: update this response", "대기열: 다음 응답 · 방향 수정: 현재 응답에 반영"],
+    delivery_queue: ["Queue: send after the current response ends", "대기열: 현재 응답이 끝나면 전송"],
+    delivery_steer: ["Queue: send after the current response ends\nSteer: add instructions to the work in progress", "대기열: 현재 응답이 끝나면 전송\n방향 수정: 진행 중인 작업에 추가 지시"],
     delivery_update: ["Update the bridge to queue messages during a response.", "응답 중 메시지를 대기열에 넣으려면 브리지를 업데이트하세요."],
     error_queue_full: ["The queue is full. Remove a pending message before adding another.", "대기열이 가득 찼습니다. 대기 메시지를 취소한 뒤 추가하세요."],
     error_queue_entry: ["This message is no longer waiting in the queue.", "이 메시지는 더 이상 대기 중이 아닙니다."],

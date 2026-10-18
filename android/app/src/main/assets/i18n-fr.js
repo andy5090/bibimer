@@ -1,6 +1,7 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "delivery_help_title": "Aide à l’envoi des messages",
   "command_failure_code": "Code d’échec {code}",
   "command_failure_code_unavailable": "Code d’échec indisponible",
   "command_succeeded": "Réussi",
@@ -463,8 +464,8 @@ window.BibimerTranslations.fr = {
   "queue_steer_wait": "Disponible pendant une réponse Codex",
   "queue_failed": "Non envoyé · file en pause",
   "queue_uncertain": "Envoi incertain · vérifiez la conversation",
-  "delivery_queue": "La file sera envoyée après cette réponse. Vous pouvez continuer à écrire.",
-  "delivery_steer": "En attente : prochaine réponse · Réorienter : réponse actuelle",
+  "delivery_queue": "File : envoyer après la fin de la réponse en cours",
+  "delivery_steer": "File : envoyer après la fin de la réponse en cours\nRéorienter : ajouter des instructions au travail en cours",
   "delivery_update": "Mettez à jour le pont pour mettre des messages en attente pendant une réponse.",
   "error_queue_full": "La file est pleine. Retirez un message en attente avant d’en ajouter un autre.",
   "error_queue_entry": "Ce message n’est plus dans la file d’attente.",

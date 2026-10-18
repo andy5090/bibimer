@@ -835,6 +835,10 @@ async function main() {
     await page.waitForFunction(()=>document.querySelector('#send').disabled);
     assert.equal(await page.locator('#input').isDisabled(),false);
     assert.equal(await page.locator('#steer').isVisible(),false);
+    assert.equal(await page.locator('#delivery-warning').isVisible(),true);
+    await page.locator('#delivery-help').click();
+    assert.equal(await page.locator('#delivery-hint').innerText(),await page.evaluate(()=>BibimerI18n.t('delivery_update')));
+    await page.locator('#delivery-help-close').click();
     legacyQueue = false;
     await reconnect();
     await page.waitForFunction(()=>!document.querySelector('#send').disabled && !document.querySelector('#steer').hidden);

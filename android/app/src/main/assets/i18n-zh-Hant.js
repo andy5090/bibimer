@@ -1,6 +1,7 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "delivery_help_title": "訊息傳送說明",
   "command_failure_code": "失敗代碼 {code}",
   "command_failure_code_unavailable": "未提供失敗代碼",
   "command_succeeded": "成功",
@@ -463,8 +464,8 @@ window.BibimerTranslations["zh-Hant"] = {
   queue_steer_wait: "Codex 回覆期間可用",
   queue_failed: "未傳送 · 佇列已暫停",
   queue_uncertain: "送達狀態不明 · 請檢查對話",
-  delivery_queue: "佇列中的訊息將在目前回覆結束後傳送。你可以繼續輸入。",
-  delivery_steer: "佇列：下一次回覆 · 調整方向：更新目前回覆",
+  delivery_queue: "佇列：目前回覆結束後傳送",
+  delivery_steer: "佇列：目前回覆結束後傳送\n調整方向：為進行中的工作追加指示",
   delivery_update: "請更新橋接程式，以便在回覆期間將訊息加入佇列。",
   error_queue_full: "佇列已滿。請移除一條待傳送的訊息後再新增。",
   error_queue_entry: "此訊息已不在等待佇列中。",

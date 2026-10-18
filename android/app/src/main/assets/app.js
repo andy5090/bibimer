@@ -893,8 +893,8 @@
     $("send").disabled = $("input").disabled || settingsBusy || sending.has(session?.id) || (responding && !canQueue);
     $("steer").hidden = !steerable;
     $("steer").disabled = $("input").disabled || settingsBusy || sending.has(session?.id);
-    $("delivery-hint").hidden = !isChat() || !responding;
-    $("delivery-hint").textContent = t(!canQueue ? "delivery_update" : steerable ? "delivery_steer" : "delivery_queue");
+    $("delivery-warning").hidden = !isChat() || !responding || canQueue;
+    $("delivery-hint").textContent = t(!canQueue ? "delivery_update" : canSteer && session?.can_steer ? "delivery_steer" : "delivery_queue");
     renderQueue(); commands.render(); renderHandoff();
     $("new-session").disabled = !online || !project || busy || switchingProject || settingsBusy || (!canLibrary && !!live);
     $("session-more").hidden = !session;
@@ -1263,6 +1263,14 @@
       $("input-form").requestSubmit();
     }
   });
+  $("delivery-help").addEventListener("click", () => {
+    if (!isChat() || $("delivery-help-dialog").open) return;
+    $("delivery-help-dialog").showModal();
+    $("delivery-help").setAttribute("aria-expanded", "true");
+    $("delivery-help-close").focus();
+  });
+  $("delivery-help-close").addEventListener("click", () => $("delivery-help-dialog").close());
+  $("delivery-help-dialog").addEventListener("close", () => $("delivery-help").setAttribute("aria-expanded", "false"));
   $("interrupt-turn").addEventListener("click", async () => {
     if (!isChat() || !online) return;
     try { await api("POST", `/v1/sessions/${session.id}/interrupt`); }

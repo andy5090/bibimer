@@ -1,6 +1,7 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "delivery_help_title": "Bantuan pengiriman pesan",
   "command_failure_code": "Kode kegagalan {code}",
   "command_failure_code_unavailable": "Kode kegagalan tidak tersedia",
   "command_succeeded": "Berhasil",
@@ -463,8 +464,8 @@ window.BibimerTranslations.id = {
   queue_steer_wait: "Tersedia saat Codex sedang merespons",
   queue_failed: "Tidak terkirim · antrean dijeda",
   queue_uncertain: "Pengiriman belum pasti · periksa percakapan",
-  delivery_queue: "Antrean dikirim setelah respons ini selesai. Anda dapat terus mengetik.",
-  delivery_steer: "Antrekan: respons berikutnya · Arahkan: perbarui respons ini",
+  delivery_queue: "Antrean: kirim setelah respons saat ini selesai",
+  delivery_steer: "Antrean: kirim setelah respons saat ini selesai\nArahkan: tambahkan instruksi ke pekerjaan yang sedang berlangsung",
   delivery_update: "Perbarui bridge untuk mengantrekan pesan saat respons berlangsung.",
   error_queue_full: "Antrean penuh. Hapus pesan yang menunggu sebelum menambahkan pesan lain.",
   error_queue_entry: "Pesan ini tidak lagi menunggu dalam antrean.",

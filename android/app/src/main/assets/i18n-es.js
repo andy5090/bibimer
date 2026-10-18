@@ -1,6 +1,7 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.es = {
+  "delivery_help_title": "Ayuda sobre el envío de mensajes",
   "command_failure_code": "Código de fallo {code}",
   "command_failure_code_unavailable": "Código de fallo no disponible",
   "command_succeeded": "Éxito",
@@ -463,8 +464,8 @@ window.BibimerTranslations.es = {
   queue_steer_wait: "Disponible durante una respuesta de Codex",
   queue_failed: "Sin enviar · cola pausada",
   queue_uncertain: "Entrega incierta · revisa la conversación",
-  delivery_queue: "La cola se envía después de esta respuesta. Puedes seguir escribiendo.",
-  delivery_steer: "Cola: próxima respuesta · Redirigir: actualizar esta respuesta",
+  delivery_queue: "Cola: enviar cuando termine la respuesta actual",
+  delivery_steer: "Cola: enviar cuando termine la respuesta actual\nRedirigir: añadir instrucciones al trabajo en curso",
   delivery_update: "Actualiza el puente para añadir mensajes a la cola durante una respuesta.",
   error_queue_full: "La cola está llena. Quita un mensaje pendiente antes de añadir otro.",
   error_queue_entry: "Este mensaje ya no está esperando en la cola.",

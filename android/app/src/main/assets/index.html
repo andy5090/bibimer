@@ -74,7 +74,7 @@
       <p id="import-update" class="mode-hint" data-i18n="import_update" hidden>Update the bridge to import saved Codex sessions.</p>
       <p id="mode-hint" class="mode-hint"></p>
       <div id="chat-panel" hidden><div id="chat-empty" data-i18n="chat_empty">Send a message to start working with Codex.</div><div id="conversation" role="log" aria-label="Conversation" data-i18n-aria-label="chat_conversation"></div><button id="chat-latest" class="secondary" data-i18n="chat_latest" hidden>Jump to latest ↓</button><div id="chat-requests"></div></div>
-      <div id="chat-state" hidden><span id="turn-status" role="status"></span><button id="interrupt-turn" class="quiet" data-i18n="chat_interrupt">Interrupt response</button></div>
+      <div id="chat-state" hidden><span id="turn-status" role="status"></span><div class="response-actions"><button id="delivery-help" class="quiet" type="button" aria-label="Message delivery help" data-i18n-aria-label="delivery_help_title" aria-haspopup="dialog" aria-controls="delivery-help-dialog" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg></button><button id="interrupt-turn" class="quiet" data-i18n="chat_interrupt">Interrupt response</button></div></div>
       <div id="terminal-area">
         <div id="terminal" aria-label="Agent terminal output" data-i18n-aria-label="terminal_label"></div>
         <div id="terminal-empty"><span aria-hidden="true">›_</span><strong data-i18n="terminal_ready">Ready when you are</strong><p data-i18n="terminal_intro">Add a project and choose a program to run.</p></div>
@@ -93,7 +93,7 @@
         <textarea id="input" rows="1" placeholder="Type an instruction or reply" data-i18n-placeholder="input_placeholder" autocomplete="off" spellcheck="false" enterkeyhint="enter"></textarea>
         <div class="composer-actions"><button id="steer" class="quiet" type="button" data-i18n="steer" aria-describedby="delivery-hint" hidden>Steer</button><button id="send" class="primary" type="submit" data-i18n="send">Send</button></div>
       </form>
-      <p id="delivery-hint" class="delivery-hint" hidden></p>
+      <p id="delivery-warning" class="delivery-warning" data-i18n="delivery_update" hidden></p>
       <div id="model-controls" class="model-controls">
         <label for="quick-agent" class="sr-only" data-i18n="agent_label">Agent</label><select id="quick-agent"></select>
         <label for="quick-model" class="sr-only" data-i18n="model_label">Model</label><select id="quick-model"></select>
@@ -402,6 +402,11 @@
       <label for="import-effort" data-i18n="effort_label">Reasoning</label><select id="import-effort"></select>
       <p id="import-models-hint" class="hint"></p><button id="import-models-refresh" class="quiet" type="button" data-i18n="models_refresh">Refresh models</button>
       <p id="import-settings-hint" class="hint"></p><button id="import-settings-done" type="button" class="primary" data-i18n="settings_done">Done</button></dialog>
+  <dialog id="delivery-help-dialog" class="settings-dialog" aria-labelledby="delivery-help-title" aria-describedby="delivery-hint">
+    <h2 id="delivery-help-title" data-i18n="delivery_help_title">Message delivery help</h2>
+    <p id="delivery-hint" class="hint"></p>
+    <button id="delivery-help-close" class="secondary" type="button" data-i18n="settings_done">Done</button>
+  </dialog>
   <dialog id="stop-dialog"><h2 data-i18n="stop_title">Stop this session?</h2><p data-i18n="stop_body">This stops the agent and commands running in this session.</p><div class="button-row"><button id="cancel-stop" class="secondary" data-i18n="stop_cancel">Keep working</button><button id="confirm-stop" class="danger" data-i18n="stop_confirm">Stop session</button></div></dialog>
   <dialog id="file-viewer" aria-labelledby="file-title" aria-describedby="file-path">
     <div class="file-heading"><div><h2 id="file-title"></h2><small id="file-path"></small></div><button id="file-close" type="button" aria-label="Close file"><span aria-hidden="true">×</span></button></div>

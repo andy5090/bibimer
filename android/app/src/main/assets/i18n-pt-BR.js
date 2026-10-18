@@ -1,6 +1,7 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["pt-BR"] = {
+  "delivery_help_title": "Ajuda sobre envio de mensagens",
   "command_failure_code": "Código de falha {code}",
   "command_failure_code_unavailable": "Código de falha indisponível",
   "command_succeeded": "Sucesso",
@@ -463,8 +464,8 @@ window.BibimerTranslations["pt-BR"] = {
   queue_steer_wait: "Disponível durante uma resposta do Codex",
   queue_failed: "Não enviada · fila pausada",
   queue_uncertain: "Entrega incerta · confira a conversa",
-  delivery_queue: "A fila envia após esta resposta. Você pode continuar digitando.",
-  delivery_steer: "Fila: próxima resposta · Redirecionar: atualizar esta resposta",
+  delivery_queue: "Fila: enviar após o término da resposta atual",
+  delivery_steer: "Fila: enviar após o término da resposta atual\nDirecionar: adicionar instruções ao trabalho em andamento",
   delivery_update: "Atualize a ponte para adicionar mensagens à fila durante uma resposta.",
   error_queue_full: "A fila está cheia. Remova uma mensagem pendente antes de adicionar outra.",
   error_queue_entry: "Esta mensagem não está mais aguardando na fila.",

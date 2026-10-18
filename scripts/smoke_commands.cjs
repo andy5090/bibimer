@@ -6,7 +6,7 @@ const {chromium}=require('../.tools/ui/node_modules/playwright-core');
 const root=path.resolve(__dirname,'..'),tmp=fs.mkdtempSync(path.join(os.tmpdir(),'bibimer-commands-'));
 const state=path.join(tmp,'state'),projectPath=path.join(tmp,'Mobile studio'),worktreePath=path.join(tmp,'feature 한글');
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-let assets,bridge,browser,hideManagement=false,rejectManagement=false,hideNotifications=false;
+let assets,bridge,browser,hideManagement=false,rejectManagement=false,hideNotifications=false,hideSteer=false;
 async function main(){
   fs.mkdirSync(projectPath);fs.mkdirSync(path.join(tmp,'bin'));
   const python=execFileSync('which',['python'],{encoding:'utf8'}).trim();
@@ -36,6 +36,7 @@ async function main(){
   await page.exposeFunction('nativeRequest',async(id,method,endpoint,body)=>{
     if(method==='POST'&&endpoint.startsWith('/v1/sessions'))agentMutations.push(endpoint);
     const result=rejectManagement&&endpoint==='/v1/project/manage'?{ok:false,status:409,data:{code:'error_project_delete_active'}}:await call(method,endpoint.replace('wait=20','wait=1'),JSON.parse(body));
+    if(hideSteer&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='codex_steer');
     if(hideNotifications&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='response_notifications');
     if(hideManagement&&endpoint==='/v1/health')result.data.features=result.data.features.filter(value=>value!=='project_management');
     try{await page.evaluate(({id,result})=>window.BibimerNativeReply(id,result),{id,result});}catch{}
@@ -86,6 +87,57 @@ async function main(){
   // Queued command selection keeps its native skill input when steered.
   await input.fill('wait'); await page.locator('#send').click();
   await page.waitForFunction(()=>!document.querySelector('#steer').hidden);
+  const helpTurn=(await call('GET','/v1/health')).data.session.active_turn_id;
+  const helpMutations=agentMutations.length;
+  await input.fill('Keep this draft while reading help');
+  assert.equal(await page.locator('#delivery-hint').isVisible(),false);
+  assert.equal(await page.locator('#delivery-warning').isVisible(),false);
+  assert.equal(await page.locator('#delivery-help-dialog').evaluate(node=>node.open),false);
+  await page.locator('#delivery-help').click();
+  assert.equal(await page.locator('#delivery-help').getAttribute('aria-expanded'),'true');
+  assert.match(await page.locator('#delivery-hint').innerText(),/Queue: send after the current response ends/);
+  assert.match(await page.locator('#delivery-hint').innerText(),/Steer: add instructions to the work in progress/);
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'delivery-help-close');
+  await page.locator('#delivery-help-close').click();
+  assert.equal(await page.locator('#delivery-help').getAttribute('aria-expanded'),'false');
+  assert.equal(await input.inputValue(),'Keep this draft while reading help');
+  assert.equal((await call('GET','/v1/health')).data.session.active_turn_id,helpTurn);
+  assert.equal(agentMutations.length,helpMutations);
+  await page.locator('#delivery-help').click();await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>!document.querySelector('#delivery-help-dialog').open);
+  assert.equal(await page.locator('#delivery-help').getAttribute('aria-expanded'),'false');
+  await page.locator('#delivery-help').click();
+  assert.equal(await page.evaluate(()=>window.BibimerBack()),true);
+  await page.waitForFunction(()=>!document.querySelector('#delivery-help-dialog').open);
+  for(const locale of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
+    await page.evaluate(locale=>{localStorage.language=locale;window.BibimerRefreshLanguage();},locale);
+    await page.setViewportSize({width:320,height:460});
+    await page.locator('#delivery-help').click();
+    assert.equal(await page.locator('#delivery-help-title').innerText(),await page.evaluate(()=>BibimerI18n.t('delivery_help_title')));
+    assert.equal(await page.locator('#delivery-hint').innerText(),await page.evaluate(()=>BibimerI18n.t('delivery_steer')));
+    const bounds=await page.locator('#delivery-help-dialog').boundingBox();
+    assert.ok(bounds.x>=0 && bounds.y>=0 && bounds.x+bounds.width<=320 && bounds.y+bounds.height<=460);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    if(['en','ko'].includes(locale))await page.screenshot({path:path.join(root,`dist/screenshots/delivery-help-320-${locale}.png`)});
+    await page.locator('#delivery-help-close').click();
+    assert.equal(await input.inputValue(),'Keep this draft while reading help');
+    assert.equal(await page.locator('#delivery-hint').isVisible(),false);
+  }
+  assert.equal(agentMutations.length,helpMutations);
+  await page.evaluate(()=>{localStorage.language='en';window.BibimerRefreshLanguage();});
+  hideSteer=true;await page.evaluate(()=>window.BibimerResume());
+  await page.waitForFunction(()=>document.querySelector('#steer').hidden);
+  await page.locator('#delivery-help').click();
+  assert.equal(await page.locator('#delivery-hint').innerText(),await page.evaluate(()=>BibimerI18n.t('delivery_queue')));
+  await page.locator('#delivery-help-close').click();
+  hideSteer=false;await page.evaluate(()=>window.BibimerResume());
+  await page.waitForFunction(()=>!document.querySelector('#steer').hidden);
+  assert.equal(await input.inputValue(),'Keep this draft while reading help');
+  assert.equal((await call('GET','/v1/health')).data.session.active_turn_id,helpTurn);
+  assert.equal(agentMutations.length,helpMutations);
+
+
+
   await input.fill('/review queued'); await page.locator('#send').click();
   await page.locator('.queue-entry').waitFor();
   assert.equal((await call('GET','/v1/sessions/'+first+'/events?cursor=0&wait=0')).data.queue[0].text,'/review queued');
@@ -131,6 +183,6 @@ async function main(){
     input.remove();host.remove();
   });
   assert.deepEqual(errors,[]);
-  console.log('PASS: native catalog/filter/literal text; choose without send; keyboard/IME/newlines; typed command; duplicate selection; structured skill execution; queue; 320/393px English/Korean; stale catalog isolation; empty/error/retry/old bridge; PTY syntax; Android Back');
+  console.log('PASS: delivery help open/close/Escape/Android Back, unchanged draft/turn/mutations, ten locales at 320px; native catalog/filter/literal text; choose without send; keyboard/IME/newlines; typed command; duplicate selection; structured skill execution; queue; 320/393px English/Korean; stale catalog isolation; empty/error/retry/old bridge; PTY syntax; Android Back');
 }
 main().catch(async error=>{console.error(error.stack);if(browser){try{await browser.contexts()[0].pages()[0].screenshot({path:path.join(root,'dist/screenshots/sidebar-failure.png')});}catch{}}process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();if(bridge&&bridge.exitCode===null){const done=new Promise(resolve=>bridge.once('exit',resolve));bridge.kill('SIGTERM');await done;}if(assets)await new Promise(resolve=>assets.close(resolve));fs.rmSync(tmp,{recursive:true,force:true});});

@@ -1,6 +1,7 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "delivery_help_title": "消息发送说明",
   "command_failure_code": "失败代码 {code}",
   "command_failure_code_unavailable": "未提供失败代码",
   "command_succeeded": "成功",
@@ -463,8 +464,8 @@ window.BibimerTranslations["zh-Hans"] = {
   queue_steer_wait: "Codex 回复期间可用",
   queue_failed: "未发送 · 队列已暂停",
   queue_uncertain: "送达状态不明 · 请检查对话",
-  delivery_queue: "队列中的消息将在当前回复结束后发送。你可以继续输入。",
-  delivery_steer: "队列：下一次回复 · 调整方向：更新当前回复",
+  delivery_queue: "队列：当前回复结束后发送",
+  delivery_steer: "队列：当前回复结束后发送\n调整方向：为进行中的工作追加指令",
   delivery_update: "请更新桥接程序，以便在回复期间将消息加入队列。",
   error_queue_full: "队列已满。请移除一条待发送的消息后再添加。",
   error_queue_entry: "此消息已不在等待队列中。",
