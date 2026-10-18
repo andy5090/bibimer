@@ -517,6 +517,7 @@ window.BibimerTranslations["zh-Hans"] = {
   "agent_codex_termux": "请在 Android 10 及以上的 arm64 设备上使用此社区 Termux 专用包。如果 Node.js 和 npm 已可用，请跳过第一条命令。确认版本后登录。",
   "agent_claude_termux": "Claude 2.1.283 使用 Bibimer 独立运行环境。需要 arm64 Termux，并预先安装 glibc 和 ripgrep。保存最新设置文件并安装运行环境，同时也会准备 Chat SDK。使用专用启动程序登录。如果 CLI 已可用，只需安装适配器。",
   "agent_opencode_termux": "OpenCode 1.17.13 已在社区 OpenClaw Android 的 glibc、proot 和 Bun 二进制包装程序配置下检查。仅安装普通 npm 包无法得到相同环境。请查看 Termux 详情中的前提条件和安装步骤，再检查版本并登录提供商。",
+  "agent_claude_auth_hint": "版本检查成功不代表已通过身份验证。如果登录已过期或尚未登录，请在 Termux 中运行下方的 auth login，并在浏览器中完成登录。",
   "agent_gemini_termux": "已检查的手机还安装了 Gemini CLI 0.58.0，需要 Node.js 20 及以上。若已安装，请跳过安装命令。以下 Node 命令可绕过检查环境中的启动路径问题。请在 Terminal 中直接运行；尚未集成 Bibimer 智能体选择和结构化 Chat。登录和模型响应仍需验证。",
   "gemini_guide": "Gemini CLI 指南 ↗",
   "agent_termux_steps": "Termux 安装详情 ↗",

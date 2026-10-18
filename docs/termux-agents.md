@@ -54,10 +54,27 @@ BIBIMER_CLAUDE_TERMUX=1 bash ~/storage/downloads/bibimer-setup.sh
 
 ```sh
 ~/.local/share/bibimer/claude-runtime/claude --version
-~/.local/share/bibimer/claude-runtime/claude
+~/.local/share/bibimer/claude-runtime/claude auth status
+~/.local/share/bibimer/claude-runtime/claude auth login
 ```
 
 화면의 로그인 안내를 같은 폰에서 완료한다. 정상 전역 CLI가 없거나 실행에 실패하면 브리지가 이 전용 런처를 사용한다. 이미 정상인 CLI 또는 `BIBIMER_CLAUDE_EXECUTABLE`을 명시한 환경은 기존 선택 규칙을 따른다. [Claude 공식 설치 안내](https://code.claude.com/docs/en/setup)는 계정·일반 사용법 참고이며, Android/Termux 전용 설치 절차를 대신하지 않는다.
+
+### 인증 만료 오류가 반복될 때
+
+2026-10-19 이 폰의 전용 glibc 런타임은 버전 출력과 실제 Agent SDK의 제어 초기화·모델 목록5개 조회에 성공했다. 하지만 `auth status`는 `loggedIn: false`를 반환했고, 격리된 작업 폴더에서 도구·프로젝트 설정·기록 저장을 끈 단일 요청은 **`Failed to authenticate: OAuth session expired and could not be refreshed`**로 실패했다. 버전 확인만으로 대화 가능 상태라고 판단하면 안 된다.
+
+이 오류에서는 Termux에서 위 **`auth login`**을 실행해 같은 폰의 브라우저로 재로그인을 완료한 뒤 `auth status`를 다시 확인한다. 이어 Bibimer에서 다시 연결하고 입력을 재시도한다. 설치기 재실행이나 브리지 재시작으로 만료된 인증이 갱신되지는 않는다. Bibimer가 대신 계정을 고르거나 인증 코드를 처리하지 않는다.
+
+### Termux 전용 대안 조사
+
+[Aarstad/claude-code-termux-musl](https://github.com/Aarstad/claude-code-termux-musl)은 공식 `linux-arm64-musl` 빌드에 Termux용 실행 경로와 DNS 프록시를 제공하는 커뮤니티 프로젝트다. Anthropic의 공식 Android 지원은 아니다. 소스 확인 기준 커밋은 `efd767cacdfdfccbfc94bc5b5628149f0d44a4d3`다.
+
+이 폰에서 기존 설치와 분리한 `.tools/claude-diagnosis/musl-probe/`에 공식 `@anthropic-ai/claude-code-linux-arm64-musl@2.1.283`의 npm SHA-512를 검증하고, SHA-256이 고정된 Alpine musl 로더를 준비해 ELF 실행 경로만 수정했다. 버전2.1.283 출력, 기존 Agent SDK0.3.283의 제어 초기화와모델목록5개조회가성공했다. **이것은 대안 실행 방식의 초기화 검증이며, 커뮤니티 설치기 전체·DNS 프록시·도구 실행·인증된 모델 응답을 검증한 것은 아니다.** 사용자 로그인·전역CLI·운영브리지·실행중세션은교체하지않았다.
+
+glibc 방식도 [Termux 전용 런처 프로젝트](https://github.com/gtbuchanan/claude-code-termux)에서 로더·내장 도구 재실행·DNS를 보완한다. 이 설치기는 이번 폰에 적용하지 않았다. 현재 재현한 인증 만료 오류를 먼저 해결하고, 실제 Bash·검색 도구·네트워크 호환성까지 비교한 뒤 기본 설치 경로를 선택한다.
+
+분리한 musl 실행본으로 같은 제한된 요청을 보내도 동일한 인증 만료 오류가 재현됐다(모델 입력/출력 토큰0). 이 비교에서는 런타임 교체가 인증 문제를 해결하지 못했다. 새 실행본을 기본값으로 전환하기 전에 사용자 재로그인과 실제 동작 검증이 필요하다.
 
 ## OpenCode
 

@@ -517,6 +517,7 @@ window.BibimerTranslations.id = {
   "agent_codex_termux": "Gunakan paket komunitas Termux ini pada Android 10+ arm64. Jika Node.js dan npm sudah berfungsi, lewati perintah pertama. Periksa versi, lalu masuk.",
   "agent_claude_termux": "Claude 2.1.283 memakai runtime terpisah milik Bibimer. Memerlukan Termux arm64 dengan glibc dan ripgrep yang sudah terpasang. Simpan berkas penyiapan terbaru dan pasang runtime; SDK Chat juga disiapkan. Masuk dengan peluncur khusus. Jika CLI sudah berfungsi, cukup siapkan adaptor.",
   "agent_opencode_termux": "OpenCode 1.17.13 diperiksa dengan OpenClaw Android komunitas: glibc, proot, dan pembungkus biner Bun. Paket npm biasa saja tidak menghasilkan lingkungan yang sama. Lihat prasyarat dan instalasi pada detail Termux, periksa versi, lalu masuk ke penyedia.",
+  "agent_claude_auth_hint": "Pemeriksaan versi yang berhasil tidak memastikan autentikasi. Jika sesi masuk kedaluwarsa atau Anda belum masuk, jalankan auth login di bawah dalam Termux dan selesaikan proses masuk di browser.",
   "agent_gemini_termux": "Ponsel yang diperiksa juga memiliki Gemini CLI 0.58.0 yang memerlukan Node.js 20+. Lewati instalasi jika sudah terpasang. Perintah Node di bawah menghindari masalah jalur peluncur pada lingkungan yang diperiksa. Jalankan langsung di Terminal; pemilihan agen dan Chat terstruktur Bibimer belum terintegrasi. Proses masuk dan respons model masih perlu diverifikasi.",
   "gemini_guide": "Panduan Gemini CLI ↗",
   "agent_termux_steps": "Detail instalasi Termux ↗",

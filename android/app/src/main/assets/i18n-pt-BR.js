@@ -517,6 +517,7 @@ window.BibimerTranslations["pt-BR"] = {
   "agent_codex_termux": "Use este pacote comunitário para Termux no Android 10+ arm64. Se Node.js e npm já funcionam, pule o primeiro comando. Confira a versão e entre na conta.",
   "agent_claude_termux": "O Claude 2.1.283 usa um runtime separado do Bibimer. Exige Termux arm64 com glibc e ripgrep já instalados. Salve o arquivo de configuração mais recente e instale o runtime; o SDK de Chat também será preparado. Entre pelo executável dedicado. Se o CLI já funciona, prepare apenas o adaptador.",
   "agent_opencode_termux": "O OpenCode 1.17.13 foi verificado com o OpenClaw Android comunitário: glibc, proot e um wrapper para o binário Bun. Só o pacote npm comum não reproduz esse ambiente. Consulte os pré-requisitos e a instalação nos detalhes do Termux, confira a versão e entre no provedor.",
+  "agent_claude_auth_hint": "A versão correta não confirma a autenticação. Se a sessão expirou ou você não está conectado, execute auth login abaixo no Termux e conclua o login no navegador.",
   "agent_gemini_termux": "O celular verificado também tem Gemini CLI 0.58.0, que exige Node.js 20+. Se já estiver instalado, pule a instalação. Os comandos Node abaixo contornam um problema no caminho do lançador no ambiente verificado. Execute diretamente no Terminal; a seleção de agente e o Chat estruturado do Bibimer ainda não estão integrados. O login e as respostas do modelo precisam de verificação.",
   "gemini_guide": "Guia do Gemini CLI ↗",
   "agent_termux_steps": "Detalhes da instalação no Termux ↗",

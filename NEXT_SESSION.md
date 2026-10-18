@@ -1,5 +1,14 @@
 # Bibimer 다음 세션 시작점
 
+## Claude 오류 재현·Termux 전용 대안 비교 (2026-10-19, 미배포)
+
+- 사용자의 반복 오류 보고를 받아 현재 전역 CLI, Bibimer 전용 런타임과 실제 SDK를 확인했다. 전역 npm CLI2.1.263의 실행 실패와 별개로, 전용 glibc2.1.283은 버전 출력·SDK0.3.283 제어 초기화·모델 목록5개 조회가 성공한다. `auth status`는 `loggedIn: false`/`authMethod: none`이며, 도구·설정 소스·기록 저장을 끈 임시 작업 폴더의 제한 요청은 **`Failed to authenticate: OAuth session expired and could not be refreshed`**로 실패했다. SDK 초기화 성공이 실제 인증/응답 성공을 뜻하지 않는다.
+- Termux 커뮤니티 대안으로 Aarstad/claude-code-termux-musl과 gtbuchanan/claude-code-termux를 조사했다. 전자는 공식 musl 빌드+실행 경로+DNS 프록시, 후자는 glibc 인터프리터·내장 도구 재실행·DNS 보완 런처다. Anthropic 공식 Android 지원으로 표현하지 않는다. Aarstad 소스 확인 커밋 `efd767cacdfdfccbfc94bc5b5628149f0d44a4d3`.
+- 기존 설치와 분리한 `.tools/claude-diagnosis/musl-probe/`에서 공식 `@anthropic-ai/claude-code-linux-arm64-musl@2.1.283`의 npm SHA-512와 Alpine3.21 musl1.2.5-r11 APK의 고정 SHA-256 `721010e6bff908878d9c527428598661be59dde0d9f013f8431d01fd4dd16652`를 검증했다. 로더와 Claude의 예상 일반 파일만 추출하고, 기존 glibc patchelf0.18.0으로 ELF 인터프리터를 시험 폴더의 musl 로더로 지정했다. 버전2.1.283·SDK 초기화/모델 목록5개가 성공했지만 동일한 제한 요청은 같은 인증 만료로 실패(모델 입력/출력0토큰)했다. 비교 스크립트·출처·검증 JSON은 `.tools/claude-diagnosis/`에 있으며 저장소에 포함하지 않는다.
+- **재현된 요청 실패에는 사용자 브라우저 재로그인이 필요하다.** 현재 전용 런처의 `auth login` 도움말을 확인하고, Setup의 단순 실행 복사를 명시적 `auth login`으로 바꾸며 `auth status` 복사를 추가했다. 로그인 안내1키를10언어에 추가해618키다. 한국어/영어 상세 문서에 실제 오류·재로그인·대안/검증 범위를 기록했다. 설치 재실행/브리지 재시작으로 인증이 갱신된다고 안내하지 않는다.
+- 검증:618키×10언어/언어·초안 회귀, Setup UI 기존 회귀+12개 명령 원문 복사/9개 가이드/320px10언어·열림 유지, JS구문/diff 통과. Native는 브라우저 대역이다. 사용자에게 오류 위치/문구를 질문했으며 아직 응답을 받지 못했으므로, 앱에서 보았던 오류와 이번 인증 오류가 같은지는 확정하지 않는다.
+- **기존 CLI·로그인·운영 브리지·실행 중 세션을 교체/종료하지 않았고 APK/AAB 빌드·설치·배포도 없다.** 커뮤니티 설치기 전체·DNS 프록시·실제 Bash/검색/모델 동작은 미검증이다. 사용자 재로그인 뒤 실제 실패 지점을 확인하고 대안을 기본으로 채택할지 결정한다. musl의 초기화 검증만으로 정상 대화 지원 완료라고 표시하지 않는다.
+
 ## Gemini CLI 설치 현황·Terminal 직접 실행 안내 추가 (2026-10-19, 미배포)
 
 - 사용자 지적에 따라 이 폰의 공식 npm `@google/gemini-cli@0.58.0`도 확인했다. `gemini`는 전역 패키지의 `bundle/gemini.js`로 연결되고 Node.js20이상을 요구한다. 현재 검사 환경의 직접 실행은 `#!/usr/bin/env node` 경로로 실패했지만, `node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js" --version`과 절대경로 Node 실행은 모두0.58.0을 반환했다. 패키지 레지스트리에서같은버전/진입파일/Node요구사항과공식설치·인증문서를대조했다. 설치파일수정/재설치·로그인·모델요청은하지않았다.

@@ -54,10 +54,27 @@ Check the **dedicated launcher**, then open it to complete sign-in on this phone
 
 ```sh
 ~/.local/share/bibimer/claude-runtime/claude --version
-~/.local/share/bibimer/claude-runtime/claude
+~/.local/share/bibimer/claude-runtime/claude auth status
+~/.local/share/bibimer/claude-runtime/claude auth login
 ```
 
 The bridge uses this launcher when the normal CLI is missing or fails. An existing working CLI or explicit `BIBIMER_CLAUDE_EXECUTABLE` follows the existing selection rules. [Claude's official setup guide](https://code.claude.com/docs/en/setup) provides general account and usage information, rather than a Termux-specific installation procedure.
+
+### Repeated authentication errors
+
+On 2026-10-19, the phone's dedicated glibc runtime passed its version check and the real Agent SDK control handshake, returning five models. However, `auth status` reported `loggedIn: false`. A single request in a temporary working directory with tools, project settings and session persistence disabled failed with **`Failed to authenticate: OAuth session expired and could not be refreshed`**. A version check does not establish authenticated access.
+
+For this error, run **`auth login`** above in Termux, finish browser sign-in on the same phone, then check `auth status` again. Reconnect in Bibimer and retry your input. Reinstalling the runtime or restarting the bridge does not renew expired authentication. Bibimer does not choose your account or handle login codes for you.
+
+### Termux-specific alternatives investigated
+
+[Aarstad/claude-code-termux-musl](https://github.com/Aarstad/claude-code-termux-musl) is a community launcher and DNS proxy for the official `linux-arm64-musl` build, rather than official Anthropic Android support. Source reviewed at commit `efd767cacdfdfccbfc94bc5b5628149f0d44a4d3`.
+
+In the separate `.tools/claude-diagnosis/musl-probe/` folder, we verified npm SHA-512 for official `@anthropic-ai/claude-code-linux-arm64-musl@2.1.283`, prepared an Alpine musl loader with a pinned SHA-256, and changed only the ELF interpreter path. Version output and the existing Agent SDK0.3.283 control handshake with five models succeeded. **This establishes startup compatibility only; the complete community installer, DNS proxy, tools and authenticated model responses remain unverified.** The user's credentials, global CLI, running bridge and sessions were not replaced.
+
+The [Termux glibc launcher project](https://github.com/gtbuchanan/claude-code-termux) also addresses loader, embedded-tool re-execution and DNS issues. That installer was not applied here. Resolve the reproduced authentication error first, then compare actual shell/search tools and networking before selecting a new default installation path.
+
+The same restricted request through the separate musl executable returned the identical authentication-expired error, with zero model input/output tokens. Replacing the runtime did not resolve authentication in this comparison. User sign-in and functional verification are needed before promoting an alternative to the default.
 
 ## OpenCode
 

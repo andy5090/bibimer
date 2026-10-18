@@ -517,6 +517,7 @@ window.BibimerTranslations.ja = {
   "agent_codex_termux": "Android 10以降・arm64で、このコミュニティ提供のTermux専用パッケージを使用します。Node.jsとnpmが動作していれば最初のコマンドは省略し、バージョン確認後にログインしてください。",
   "agent_claude_termux": "Claude 2.1.283はBibimer専用ランタイムを使用します。arm64 Termuxにglibcとripgrepが必要です。最新のセットアップファイルを保存してランタイムをインストールすると、Chat SDKも準備されます。専用ランチャーでログインしてください。CLIが動作している場合はアダプターのみ準備してください。",
   "agent_opencode_termux": "OpenCode 1.17.13はコミュニティのOpenClaw Androidによるglibc・proot・Bunバイナリのラッパー構成で確認しました。通常のnpmパッケージだけでは同じ環境になりません。Termuxの詳細案内で前提条件と手順を確認し、バージョン確認とプロバイダーへのログインを行ってください。",
+  "agent_claude_auth_hint": "バージョン確認の成功は認証済みを意味しません。認証が期限切れ、または未ログインの場合は、Termuxで以下のauth loginを実行し、ブラウザーでログインを完了してください。",
   "agent_gemini_termux": "確認した端末にはNode.js 20以降が必要なGemini CLI 0.58.0もインストールされています。既にある場合はインストールを省略してください。以下のNodeコマンドは確認環境の起動パスの問題を回避します。Terminalで直接実行し、Bibimerのエージェント選択・構造化Chatには未対応です。ログインとモデル応答は追加検証が必要です。",
   "gemini_guide": "Gemini CLIガイド ↗",
   "agent_termux_steps": "Termuxのインストール詳細 ↗",

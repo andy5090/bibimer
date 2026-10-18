@@ -126,7 +126,7 @@ async function main(){
     await page.locator(`#${id} > summary`).click();
   }
   const commands=await page.locator('[data-agent-copy]').count();
-  assert.equal(commands,11);
+  assert.equal(commands,12);
   for(let index=0;index<commands;index++) {
     const button=page.locator('[data-agent-copy]').nth(index);
     const command=await button.evaluate(node=>document.getElementById(node.dataset.agentCopy).textContent);
@@ -142,7 +142,7 @@ async function main(){
     await page.evaluate(value=>{localStorage.setItem('language',value);window.BibimerRefreshLanguage();},locale);
     await page.setViewportSize({width:320,height:640});
     assert.equal(await page.locator('html').getAttribute('lang'),locale);
-    for(const key of ['agent_termux_basis','agent_codex_termux','agent_claude_termux','agent_opencode_termux','agent_gemini_termux']) {
+    for(const key of ['agent_termux_basis','agent_codex_termux','agent_claude_termux','agent_claude_auth_hint','agent_opencode_termux','agent_gemini_termux']) {
       assert.equal(await page.locator(`[data-i18n="${key}"]`).textContent(),await page.evaluate(k=>window.BibimerI18n.t(k),key));
     }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -158,6 +158,6 @@ async function main(){
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).paired),false);
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).quickSetup.phase),'idle');
   assert.deepEqual(errors,[]);
-  console.log('PASS: quick setup regression; Termux agent guides, eleven exact command copies, guide routing, no implicit setup, ten locales at 320px with unchanged commands/open panels; native APIs mocked');
+  console.log('PASS: quick setup regression; Termux agent guides, twelve exact command copies, guide routing, no implicit setup, ten locales at 320px with unchanged commands/open panels; native APIs mocked');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();if(server)await new Promise(resolve=>server.close(resolve));});
