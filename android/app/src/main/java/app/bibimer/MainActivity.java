@@ -58,6 +58,7 @@ public final class MainActivity extends Activity {
     private ProjectLocations projectLocations;
     private AppUpdates appUpdates;
     private LocalBridge bridge;
+    private final BridgeMaintenance bridgeMaintenance = new BridgeMaintenance();
     private final TermuxAgentActions agentActions = new TermuxAgentActions(this,
         (agent, code) -> script("window.BibimerAgentActionStatus && window.BibimerAgentActionStatus(" + JSONObject.quote(agent) + "," + JSONObject.quote(code) + ");"));
     private String setupLoaded = "";
@@ -459,6 +460,18 @@ public final class MainActivity extends Activity {
             runOnUiThread(() -> { if (requestCurrent(false, epoch)) TermuxSetup.start(MainActivity.this); });
         }
 
+        @JavascriptInterface public String bridgeMaintenanceStatus() {
+            return DemoMode.enabled(MainActivity.this) ? "" : BridgeMaintenance.status(MainActivity.this);
+        }
+
+        @JavascriptInterface public void maintainBridge(String action) {
+            if (DemoMode.enabled(MainActivity.this) || !BridgeMaintenance.supports(action)) return;
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> {
+                if (requestCurrent(false, epoch)) bridgeMaintenance.request(MainActivity.this, action);
+            });
+        }
+
         @JavascriptInterface public void startAgentAction(String agent, String action) {
             if (DemoMode.enabled(MainActivity.this) || !AgentSetup.supports(agent, action)) return;
             final long epoch = DemoMode.epoch();
@@ -583,6 +596,7 @@ public final class MainActivity extends Activity {
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
         super.onRequestPermissionsResult(request, permissions, grants);
         if (request == ResponseNotifications.PERMISSION_REQUEST) ensureNotifications(false);
+        if (request == BridgeMaintenance.REQUEST_PERMISSION) bridgeMaintenance.permissionResult(this);
         if (request == TermuxAgentActions.REQUEST_PERMISSION) agentActions.permissionResult();
         if (request == TermuxSetup.REQUEST_PERMISSION) {
             if (DemoMode.enabled(this)) return;

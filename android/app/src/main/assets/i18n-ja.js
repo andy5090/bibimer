@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "bridge_maintenance_update": "ブリッジを更新",
+  "bridge_maintenance_restart": "ブリッジを再起動",
+  "bridge_maintenance_hint": "実行中のセッションがないとき、ここで更新・再起動できます。セッション一覧とエージェントの履歴は保持されます。保存済みの会話は「続ける」で再読み込みできます。ターミナル出力は復元されません。",
+  "bridge_maintenance_running": "ブリッジを更新・再起動しています…",
+  "bridge_maintenance_done": "ブリッジのメンテナンスが完了しました。",
+  "bridge_maintenance_busy": "実行中のセッションがあります。停止や更新は行っていません。",
+  "bridge_maintenance_failed": "メンテナンスを完了できませんでした。再接続してブリッジの状態を確認し、再試行してください。",
+  "bridge_maintenance_active": "実行中のセッション：{count}。終了後にメンテナンスできます。",
   "delivery_help_title": "メッセージ送信の案内",
   "command_failure_code": "失敗コード {code}",
   "command_failure_code_unavailable": "失敗コード未提供",
@@ -340,7 +348,7 @@ window.BibimerTranslations.ja = {
   plan_pending: "未着手",
   diff_truncated: "プレビューには変更の一部のみが含まれています。",
   error_bridge_stopping: "ブリッジを再起動しています。しばらくしてから再接続してください。",
-  bridge_update_hint: "更新した設定ファイルをインストールしたら、すべての実行中セッションを終了し、Termux で再起動コマンドを実行してください。セッションが実行中の場合、再起動は拒否されます。",
+  bridge_update_hint: "実行中のセッションがないとき、ここで更新・再起動できます。セッション一覧とエージェントの履歴は保持されます。保存済みの会話は「続ける」で再読み込みできます。ターミナル出力は復元されません。",
   copy_restart: "ブリッジの再起動コマンドをコピー",
   chat_folder: "作業フォルダー",
   chat_request_details: "リクエストの追加情報",

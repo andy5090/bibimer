@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "bridge_maintenance_update": "Bridge aktualisieren",
+  "bridge_maintenance_restart": "Bridge neu starten",
+  "bridge_maintenance_hint": "Hier aktualisieren oder neu starten, wenn keine Sitzungen laufen. Sitzungsliste und Agentenverlauf bleiben erhalten. Mit Fortsetzen lässt sich ein gespeicherter Chat erneut laden; Terminalausgaben werden nicht wiederhergestellt.",
+  "bridge_maintenance_running": "Bridge wird aktualisiert oder neu gestartet…",
+  "bridge_maintenance_done": "Bridge-Wartung abgeschlossen.",
+  "bridge_maintenance_busy": "Eine Sitzung läuft noch. Es wurde nichts beendet oder aktualisiert.",
+  "bridge_maintenance_failed": "Wartung konnte nicht abgeschlossen werden. Verbinde dich erneut, prüfe die Bridge und versuche es noch einmal.",
+  "bridge_maintenance_active": "Laufende Sitzungen: {count}. Die Wartung ist nach ihrem Ende verfügbar.",
   "delivery_help_title": "Hilfe zum Nachrichtenversand",
   "command_failure_code": "Fehlercode {code}",
   "command_failure_code_unavailable": "Fehlercode nicht verfügbar",
@@ -340,7 +348,7 @@ window.BibimerTranslations.de = {
   "plan_pending": "Ausstehend",
   "diff_truncated": "In der Vorschau ist nur ein Teil dieser Änderung verfügbar.",
   "error_bridge_stopping": "Die Bridge wird neu gestartet. Verbinde dich in Kürze erneut.",
-  "bridge_update_hint": "Beende nach der Installation einer aktualisierten Einrichtungsdatei alle aktiven Sitzungen und führe den Neustartbefehl in Termux aus. Der Neustart wird abgelehnt, solange eine Sitzung läuft.",
+  "bridge_update_hint": "Hier aktualisieren oder neu starten, wenn keine Sitzungen laufen. Sitzungsliste und Agentenverlauf bleiben erhalten. Mit Fortsetzen lässt sich ein gespeicherter Chat erneut laden; Terminalausgaben werden nicht wiederhergestellt.",
   "copy_restart": "Bridge-Neustartbefehl kopieren",
   "chat_folder": "Arbeitsordner",
   "chat_request_details": "Weitere Anfragedetails",

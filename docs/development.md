@@ -390,3 +390,9 @@ node scripts/smoke_rendering.cjs
 ```
 
 파일 링크 UI 테스트는 격리된 실제 브리지와 임시 Git 워크트리를 사용하며 Android 전송·뷰어 부분은 대역이다. APK 빌드 없이 AAPT2 리소스와 Java 컴파일을 확인할 수 있다. 실제 ContentProvider 읽기 권한·갤러리/PDF/텍스트 앱 실행·기본 앱 선택·복귀·백그라운드 취소는 다음 APK 설치 후 별도 확인한다.
+
+## 앱에서 브리지 유지보수 검증 (미배포)
+
+`installer()`는 `bridge/maintain_bridge.py`와 현재 브리지/어댑터 payload를 `bridge-maintenance.py` asset으로 생성한다. 생성 파일은 저장소에서 제외하고 WebView 허용 목록에도 넣지 않는다. APK 빌드 없이 `PYTHONPATH=scripts python3 -c 'import build_apk; build_apk.installer()'`로 갱신할 수 있다. 앱/브리지 버전 변경은 이번 구현에 포함하지 않았다.
+
+검증 명령은 `PYTHONPATH=bridge/tests python3 -m unittest test_maintenance -v`, `python3 -m unittest discover -s scripts/tests -p test_bridge_maintenance.py -v`, `node scripts/smoke_bridge_maintenance.cjs`다. 실제 격리 서버·모의 Codex의 저장/재개, 이전 파일 복구, 실행 중 차단과 Android JVM 대역의 권한/고정 명령/결과 코드, 10언어320px UI를 확인한다. 운영 브리지·사용자 인증·모델은 사용하지 않는다. 실제 Android RUN_COMMAND·권한·결과 콜백과 앱 복귀는 다음 요청 빌드/설치 후 확인한다. 공식 연동 계약은 [Termux RUN_COMMAND](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent)를 따른다.

@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "bridge_maintenance_update": "更新桥接程序",
+  "bridge_maintenance_restart": "重启桥接程序",
+  "bridge_maintenance_hint": "没有运行中的会话时，可在此更新或重启。会话列表和智能体历史记录会保留。使用“继续”重新加载已保存的对话；终端输出不会恢复。",
+  "bridge_maintenance_running": "正在更新或重启桥接程序…",
+  "bridge_maintenance_done": "桥接程序维护已完成。",
+  "bridge_maintenance_busy": "仍有会话正在运行。未停止或更新任何内容。",
+  "bridge_maintenance_failed": "无法完成维护。请重新连接以检查桥接程序，然后重试。",
+  "bridge_maintenance_active": "运行中的会话：{count}。会话结束后可进行维护。",
   "delivery_help_title": "消息发送说明",
   "command_failure_code": "失败代码 {code}",
   "command_failure_code_unavailable": "未提供失败代码",
@@ -340,7 +348,7 @@ window.BibimerTranslations["zh-Hans"] = {
   plan_pending: "待处理",
   diff_truncated: "预览中仅包含此次更改的部分内容。",
   error_bridge_stopping: "桥接程序正在重启。请稍后重新连接。",
-  bridge_update_hint: "安装更新后的安装文件后，请结束所有运行中的会话，并在 Termux 中执行重启命令。如果仍有会话运行，桥接程序会拒绝重启。",
+  bridge_update_hint: "没有运行中的会话时，可在此更新或重启。会话列表和智能体历史记录会保留。使用“继续”重新加载已保存的对话；终端输出不会恢复。",
   copy_restart: "复制桥接程序重启命令",
   chat_folder: "工作文件夹",
   chat_request_details: "请求补充信息",

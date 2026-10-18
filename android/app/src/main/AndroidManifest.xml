@@ -19,6 +19,7 @@
             android:exported="false" android:stateNotNeeded="true" android:theme="@style/Theme.PlayCore.Transparent" />
         <provider android:name=".LinkedFileProvider" android:authorities="app.bibimer.files"
             android:exported="false" android:grantUriPermissions="true" />
+        <receiver android:name=".BridgeMaintenanceReceiver" android:exported="false" />
         <receiver android:name=".TermuxSetupReceiver" android:exported="false" />
         <service android:name=".ResponseNotificationService" android:exported="false" android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled monitoring of coding agents in Termux on this same phone. Maintains a loopback connection to notify each response completion while the development UI is in the background. No remote host, file sync or model work is performed by this service." />

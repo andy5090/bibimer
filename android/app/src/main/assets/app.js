@@ -1797,20 +1797,43 @@
     for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
     return 0;
   }
+  let maintenancePhase = "", maintenanceRefresh = "";
   function renderBridgeUpdate() {
     const bundled = environment().bundledBridgeVersion;
     $("bridge-update-card").hidden = demo || !bundled;
     const comparison = online ? compareBridgeVersions(bridgeVersion, bundled) : null;
     $("bridge-update-version").textContent = bundled ? t("bridge_update_version", {current:online && bridgeVersion || "—", bundled}) : "";
     $("bridge-update-status").textContent = t(comparison === null ? "bridge_update_unknown" : comparison < 0 ? "bridge_update_available" : "bridge_update_current");
-    $("bridge-update-guide").hidden = comparison === null || comparison >= 0;
+    const supported = !demo && !!native.maintainBridge;
+    const phase = !demo && native.bridgeMaintenanceStatus ? native.bridgeMaintenanceStatus() : "";
+    const allowed = ["bridge_maintenance_running", "bridge_maintenance_done", "bridge_maintenance_busy", "bridge_maintenance_failed", "quick_permission", "quick_termux_missing", "quick_termux_old", "quick_start_failed", "quick_external"];
+    maintenancePhase = allowed.includes(phase) ? phase : "";
+    const active = online ? (knownProjects.reduce((count, item) => count + (item.sessions || []).filter(row => ["running", "stopping"].includes(row.state)).length, 0) ||
+      (session && ["running", "stopping"].includes(session.state) ? 1 : 0)) : 0;
+    $("bridge-maintenance-status").textContent = maintenancePhase === "bridge_maintenance_running" ? t(maintenancePhase) : active ? t("bridge_maintenance_active", {count:active}) : maintenancePhase ? t(maintenancePhase) : "";
+    $("bridge-update-install").hidden = $("bridge-restart").hidden = !supported;
+    $("bridge-update-install").disabled = !supported || !environment().paired || !!active || (comparison !== null && comparison >= 0) || maintenancePhase === "bridge_maintenance_running";
+    $("bridge-restart").disabled = !supported || !environment().paired || !!active || maintenancePhase === "bridge_maintenance_running";
+    $("bridge-update-guide").hidden = supported || comparison === null || comparison >= 0;
+    if (maintenancePhase === "bridge_maintenance_done" && maintenanceRefresh !== maintenancePhase) {
+      maintenanceRefresh = maintenancePhase;
+      if (!paused && environment().paired) setTimeout(connect, 0);
+    } else if (maintenancePhase !== "bridge_maintenance_done") maintenanceRefresh = "";
   }
   $("app-update-check").addEventListener("click", () => { if (!demo) { native.checkAppUpdate?.(); renderAppUpdates(); } });
   $("app-update-later").addEventListener("click", () => { if (!demo) { native.dismissAppUpdate?.(); renderAppUpdates(); } });
   for (const id of ["app-update-open", "app-update-store"]) $(id).addEventListener("click", () => { if (!demo) native.openAppStore?.(); });
+  for (const [id, action] of [["bridge-update-install", "update"], ["bridge-restart", "restart"]]) {
+    $(id).addEventListener("click", () => {
+      if (demo || paused || $(id).disabled || !native.maintainBridge) return;
+      native.maintainBridge(action);
+      $("bridge-update-install").disabled = $("bridge-restart").disabled = true;
+      setTimeout(renderBridgeUpdate, 100);
+    });
+  }
   $("bridge-update-guide").addEventListener("click", () => { if (!demo) tab("setup"); });
   window.BibimerAppUpdateStatus = renderAppUpdates;
-  setInterval(() => { if (!paused && currentTab === "settings") renderNotificationSettings(); }, 2000);
+  setInterval(() => { if (!paused && currentTab === "settings") { renderNotificationSettings(); renderBridgeUpdate(); } }, 2000);
   function notificationSession(entry, id) {
     const original = entry?.sessions?.find(row => row.id === id);
     if (!original || ["running", "stopping"].includes(original.state) || original.mode !== "chat" || !original.external_thread_id || !original.project?.path) return original;

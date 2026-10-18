@@ -3,6 +3,14 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    bridge_maintenance_update: ["Update bridge", "브리지 업데이트"],
+    bridge_maintenance_restart: ["Restart bridge", "브리지 재시작"],
+    bridge_maintenance_hint: ["When no sessions are running, update or restart here. Session lists and agent history stay available. Use Continue to reload a saved chat; terminal output is not restored.", "실행 중인 세션이 없을 때 여기서 업데이트·재시작할 수 있습니다. 세션 목록과 에이전트 기록은 유지됩니다. 저장된 대화는 이어가기로 다시 불러오며 터미널 출력은 복원되지 않습니다."],
+    bridge_maintenance_running: ["Updating or restarting the bridge…", "브리지를 업데이트·재시작하고 있습니다…"],
+    bridge_maintenance_done: ["Bridge maintenance complete.", "브리지 작업을 완료했습니다."],
+    bridge_maintenance_busy: ["A session is still running. Nothing was stopped or updated.", "아직 실행 중인 세션이 있습니다. 종료하거나 업데이트하지 않았습니다."],
+    bridge_maintenance_failed: ["Could not complete maintenance. Reconnect to check the bridge, then try again.", "작업을 완료하지 못했습니다. 다시 연결해 브리지 상태를 확인한 뒤 재시도하세요."],
+    bridge_maintenance_active: ["Running sessions: {count}. Maintenance is available after they end.", "실행 중인 세션 {count}개. 실행이 종료되면 사용할 수 있습니다."],
     delivery_help_title: ["Message delivery help", "메시지 전송 안내"],
     command_failure_code: ["Failure code {code}", "실패 코드 {code}"],
     command_failure_code_unavailable: ["Failure code unavailable", "실패 코드 미제공"],
@@ -343,7 +351,7 @@
     plan_pending: ["Pending", "예정"],
     diff_truncated: ["Only part of this change is available in the preview.", "미리보기에는 변경 내용의 일부만 포함되어 있습니다."],
     error_bridge_stopping: ["The bridge is restarting. Reconnect shortly.", "브리지를 재시작하고 있습니다. 잠시 후 다시 연결하세요."],
-    bridge_update_hint: ["After installing an updated setup file, stop all active sessions and run the restart command in Termux. Restart is refused while any session is running.", "새 설정 파일로 브리지를 업데이트한 뒤 모든 실행 세션을 종료하고 Termux에서 재시작 명령을 실행하세요. 실행 중인 세션이 하나라도 있으면 재시작을 거부합니다."],
+    bridge_update_hint: ["When no sessions are running, update or restart here. Session lists and agent history stay available. Use Continue to reload a saved chat; terminal output is not restored.", "실행 중인 세션이 없을 때 여기서 업데이트·재시작할 수 있습니다. 세션 목록과 에이전트 기록은 유지됩니다. 저장된 대화는 이어가기로 다시 불러오며 터미널 출력은 복원되지 않습니다."],
     copy_restart: ["Copy bridge restart command", "브리지 재시작 명령 복사"],
     chat_folder: ["Working folder", "작업 폴더"],
     chat_request_details: ["Additional request details", "추가 요청 내용"],

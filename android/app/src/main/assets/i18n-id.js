@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "bridge_maintenance_update": "Perbarui bridge",
+  "bridge_maintenance_restart": "Mulai ulang bridge",
+  "bridge_maintenance_hint": "Perbarui atau mulai ulang di sini saat tidak ada sesi berjalan. Daftar sesi dan riwayat agen tetap tersedia. Gunakan Lanjutkan untuk memuat ulang percakapan tersimpan; keluaran terminal tidak dipulihkan.",
+  "bridge_maintenance_running": "Memperbarui atau memulai ulang bridge…",
+  "bridge_maintenance_done": "Pemeliharaan bridge selesai.",
+  "bridge_maintenance_busy": "Masih ada sesi berjalan. Tidak ada yang dihentikan atau diperbarui.",
+  "bridge_maintenance_failed": "Pemeliharaan gagal diselesaikan. Hubungkan kembali untuk memeriksa bridge, lalu coba lagi.",
+  "bridge_maintenance_active": "Sesi berjalan: {count}. Pemeliharaan tersedia setelah semuanya berakhir.",
   "delivery_help_title": "Bantuan pengiriman pesan",
   "command_failure_code": "Kode kegagalan {code}",
   "command_failure_code_unavailable": "Kode kegagalan tidak tersedia",
@@ -340,7 +348,7 @@ window.BibimerTranslations.id = {
   plan_pending: "Menunggu",
   diff_truncated: "Hanya sebagian perubahan ini yang tersedia dalam pratinjau.",
   error_bridge_stopping: "Bridge sedang dimulai ulang. Hubungkan kembali sebentar lagi.",
-  bridge_update_hint: "Setelah memasang berkas pengaturan yang diperbarui, hentikan semua sesi aktif dan jalankan perintah mulai ulang di Termux. Mulai ulang ditolak selama masih ada sesi yang berjalan.",
+  bridge_update_hint: "Perbarui atau mulai ulang di sini saat tidak ada sesi berjalan. Daftar sesi dan riwayat agen tetap tersedia. Gunakan Lanjutkan untuk memuat ulang percakapan tersimpan; keluaran terminal tidak dipulihkan.",
   copy_restart: "Salin perintah mulai ulang bridge",
   chat_folder: "Folder kerja",
   chat_request_details: "Detail permintaan tambahan",

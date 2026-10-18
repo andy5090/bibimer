@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["pt-BR"] = {
+  "bridge_maintenance_update": "Atualizar ponte",
+  "bridge_maintenance_restart": "Reiniciar ponte",
+  "bridge_maintenance_hint": "Atualize ou reinicie aqui quando não houver sessões em execução. A lista de sessões e o histórico dos agentes são mantidos. Use Continuar para recarregar uma conversa salva; a saída do terminal não é restaurada.",
+  "bridge_maintenance_running": "Atualizando ou reiniciando a ponte…",
+  "bridge_maintenance_done": "Manutenção da ponte concluída.",
+  "bridge_maintenance_busy": "Uma sessão ainda está em execução. Nada foi encerrado ou atualizado.",
+  "bridge_maintenance_failed": "Não foi possível concluir a manutenção. Reconecte para verificar a ponte e tente novamente.",
+  "bridge_maintenance_active": "Sessões em execução: {count}. A manutenção estará disponível quando terminarem.",
   "delivery_help_title": "Ajuda sobre envio de mensagens",
   "command_failure_code": "Código de falha {code}",
   "command_failure_code_unavailable": "Código de falha indisponível",
@@ -340,7 +348,7 @@ window.BibimerTranslations["pt-BR"] = {
   plan_pending: "Pendente",
   diff_truncated: "Apenas parte desta alteração está disponível na prévia.",
   error_bridge_stopping: "A ponte está reiniciando. Reconecte-se em instantes.",
-  bridge_update_hint: "Depois de instalar um arquivo de instalação atualizado, pare todas as sessões ativas e execute o comando de reinicialização no Termux. A reinicialização é recusada enquanto houver alguma sessão em execução.",
+  bridge_update_hint: "Atualize ou reinicie aqui quando não houver sessões em execução. A lista de sessões e o histórico dos agentes são mantidos. Use Continuar para recarregar uma conversa salva; a saída do terminal não é restaurada.",
   copy_restart: "Copiar comando de reinicialização da ponte",
   chat_folder: "Pasta de trabalho",
   chat_request_details: "Detalhes adicionais da solicitação",

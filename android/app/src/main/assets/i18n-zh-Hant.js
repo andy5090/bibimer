@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "bridge_maintenance_update": "更新橋接程式",
+  "bridge_maintenance_restart": "重新啟動橋接程式",
+  "bridge_maintenance_hint": "沒有執行中的工作階段時，可在此更新或重新啟動。工作階段清單和代理程式記錄會保留。使用「繼續」重新載入已儲存的對話；終端機輸出不會還原。",
+  "bridge_maintenance_running": "正在更新或重新啟動橋接程式…",
+  "bridge_maintenance_done": "橋接程式維護已完成。",
+  "bridge_maintenance_busy": "仍有工作階段正在執行。未停止或更新任何內容。",
+  "bridge_maintenance_failed": "無法完成維護。請重新連線以檢查橋接程式，然後再試。",
+  "bridge_maintenance_active": "執行中的工作階段：{count}。結束後即可進行維護。",
   "delivery_help_title": "訊息傳送說明",
   "command_failure_code": "失敗代碼 {code}",
   "command_failure_code_unavailable": "未提供失敗代碼",
@@ -340,7 +348,7 @@ window.BibimerTranslations["zh-Hant"] = {
   plan_pending: "待處理",
   diff_truncated: "預覽中僅包含此次更改的部分內容。",
   error_bridge_stopping: "橋接程式正在重啟。請稍後重新連線。",
-  bridge_update_hint: "儲存並執行新版安裝檔案後，請結束所有執行中的工作階段，再於 Termux 執行重新啟動指令。如果仍有工作階段在執行，橋接程式會拒絕重新啟動。",
+  bridge_update_hint: "沒有執行中的工作階段時，可在此更新或重新啟動。工作階段清單和代理程式記錄會保留。使用「繼續」重新載入已儲存的對話；終端機輸出不會還原。",
   copy_restart: "複製橋接程式重啟指令",
   chat_folder: "工作資料夾",
   chat_request_details: "請求補充資訊",

@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "bridge_maintenance_update": "Mettre à jour le pont",
+  "bridge_maintenance_restart": "Redémarrer le pont",
+  "bridge_maintenance_hint": "Mettez à jour ou redémarrez ici lorsqu’aucune session n’est en cours. La liste des sessions et l’historique des agents sont conservés. Utilisez Continuer pour recharger une conversation enregistrée ; la sortie du terminal n’est pas restaurée.",
+  "bridge_maintenance_running": "Mise à jour ou redémarrage du pont…",
+  "bridge_maintenance_done": "Maintenance du pont terminée.",
+  "bridge_maintenance_busy": "Une session est encore en cours. Rien n’a été arrêté ni mis à jour.",
+  "bridge_maintenance_failed": "Impossible de terminer la maintenance. Reconnectez-vous pour vérifier le pont, puis réessayez.",
+  "bridge_maintenance_active": "Sessions en cours : {count}. La maintenance sera disponible après leur fin.",
   "delivery_help_title": "Aide à l’envoi des messages",
   "command_failure_code": "Code d’échec {code}",
   "command_failure_code_unavailable": "Code d’échec indisponible",
@@ -340,7 +348,7 @@ window.BibimerTranslations.fr = {
   "plan_pending": "En attente",
   "diff_truncated": "Seule une partie de cette modification est disponible dans l’aperçu.",
   "error_bridge_stopping": "Le pont redémarre. Reconnectez-vous dans un instant.",
-  "bridge_update_hint": "Après avoir installé un fichier d’installation mis à jour, arrêtez toutes les sessions actives et exécutez la commande de redémarrage dans Termux. Le redémarrage est refusé tant qu’une session est en cours.",
+  "bridge_update_hint": "Mettez à jour ou redémarrez ici lorsqu’aucune session n’est en cours. La liste des sessions et l’historique des agents sont conservés. Utilisez Continuer pour recharger une conversation enregistrée ; la sortie du terminal n’est pas restaurée.",
   "copy_restart": "Copier la commande de redémarrage du pont",
   "chat_folder": "Dossier de travail",
   "chat_request_details": "Détails supplémentaires de la demande",

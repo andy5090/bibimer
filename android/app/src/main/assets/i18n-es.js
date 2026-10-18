@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.es = {
+  "bridge_maintenance_update": "Actualizar puente",
+  "bridge_maintenance_restart": "Reiniciar puente",
+  "bridge_maintenance_hint": "Actualiza o reinicia aquí cuando no haya sesiones en ejecución. Se conservan la lista de sesiones y el historial de los agentes. Usa Continuar para recargar una conversación guardada; la salida del terminal no se restaura.",
+  "bridge_maintenance_running": "Actualizando o reiniciando el puente…",
+  "bridge_maintenance_done": "Mantenimiento del puente completado.",
+  "bridge_maintenance_busy": "Todavía hay una sesión en ejecución. No se ha detenido ni actualizado nada.",
+  "bridge_maintenance_failed": "No se pudo completar el mantenimiento. Vuelve a conectar para comprobar el puente e inténtalo de nuevo.",
+  "bridge_maintenance_active": "Sesiones en ejecución: {count}. El mantenimiento estará disponible cuando terminen.",
   "delivery_help_title": "Ayuda sobre el envío de mensajes",
   "command_failure_code": "Código de fallo {code}",
   "command_failure_code_unavailable": "Código de fallo no disponible",
@@ -340,7 +348,7 @@ window.BibimerTranslations.es = {
   plan_pending: "Pendiente",
   diff_truncated: "Solo parte de este cambio está disponible en la vista previa.",
   error_bridge_stopping: "El puente se está reiniciando. Vuelve a conectarte en un momento.",
-  bridge_update_hint: "Tras instalar un archivo de configuración actualizado, detén todas las sesiones activas y ejecuta el comando de reinicio en Termux. No se permite reiniciar mientras haya sesiones en ejecución.",
+  bridge_update_hint: "Actualiza o reinicia aquí cuando no haya sesiones en ejecución. Se conservan la lista de sesiones y el historial de los agentes. Usa Continuar para recargar una conversación guardada; la salida del terminal no se restaura.",
   copy_restart: "Copiar comando de reinicio del puente",
   chat_folder: "Carpeta de trabajo",
   chat_request_details: "Detalles adicionales de la solicitud",
