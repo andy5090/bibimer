@@ -1,0 +1,6 @@
+<en-US>
+Added Termux setup and sign-in actions for compatible coding agents, with clearer provider connection guidance for OpenCode. Improved command success/failure labels and response controls. Queue and steering explanations are now available in an on-demand help dialog. Updated all 10 supported languages.
+</en-US>
+<ko-KR>
+호환 코딩 에이전트의 Termux 설치·로그인 실행 버튼과 안내를 추가하고 OpenCode의 제공자 연결 설정을 명확히 했습니다. 명령의 성공·실패 표시와 응답 제어 버튼을 개선했습니다. 대기열·방향 수정 설명은 필요할 때 여는 도움말로 옮겼으며 10개 언어에 반영했습니다.
+</ko-KR>

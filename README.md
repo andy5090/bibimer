@@ -18,11 +18,11 @@ Bibimer takes its name from **비빔 (bibim)**, Korean for mixing things togethe
 
 ## Availability
 
-Bibimer is available on [Google Play](https://play.google.com/store/apps/details?id=app.bibimer). **Version 0.17.1 is the public release; invited internal testers can update to 0.20.0.** Version 0.20.0 was submitted for production review on October 16, 2026; public availability is pending approval. There is no public GitHub APK release. To build the current development version, follow the [build guide](docs/development.md) (currently in Korean).
+Bibimer is available on [Google Play](https://play.google.com/store/apps/details?id=app.bibimer). **Version 0.20.0 is the public release; invited internal testers can update to 0.21.0.** There is no public GitHub APK release. To build the current development version, follow the [build guide](docs/development.md) (currently in Korean).
 
 The app targets Android 8.0 or later (API 26+). Compatibility with every Android version, device, or agent installation has not been verified.
 
-Internal test version 0.20.0 supports English, Korean, Brazilian Portuguese, Spanish, Indonesian, Simplified Chinese, Japanese, Traditional Chinese (Taiwan and Hong Kong), French, and German. It follows your device language list by default, falls back to English when none are supported, and preserves a saved manual choice. The public release still supports English and Korean; see the [localization roadmap](docs/localization.md) (Korean).
+Versions 0.20.0 and later support English, Korean, Brazilian Portuguese, Spanish, Indonesian, Simplified Chinese, Japanese, Traditional Chinese (Taiwan and Hong Kong), French, and German. It follows your device language list by default, falls back to English when none are supported, and preserves a saved manual choice. See the [localization roadmap](docs/localization.md) (Korean).
 
 ## What you can do
 
@@ -31,7 +31,7 @@ Internal test version 0.20.0 supports English, Korean, Brazilian Portuguese, Spa
 - **Use chat and a terminal.** Read structured agent responses and tool activity, respond to approval requests, or work directly in an interactive shell.
 - **Manage ongoing work.** Queue follow-up instructions, choose supported models and options, and review the conversation context before passing it to another agent.
 - **Inspect project files and Git changes.** Browse files, view diffs, and import GitHub repositories into a folder you choose in Termux.
-- **Make the app yours.** Choose English or Korean, configure the Enter key, and enable response notifications. Delivery depends on Android permissions and background restrictions.
+- **Make the app yours.** Choose from ten supported languages, configure the Enter key, and enable response notifications. Delivery depends on Android permissions and background restrictions.
 
 ## Screenshots
 
@@ -80,7 +80,7 @@ Try a shell command such as `pwd` from the input field. Your command runs in tha
 
 Follow the [Termux agent installation guide](docs/termux-agents.en.md) for the packages, dedicated runtime, wrappers and prerequisites checked on our phone, including provider sign-in or API configuration. Choose the agent in Bibimer and start a session. Supported models and options depend on the installed agent. General Linux installation instructions do not guarantee Android/Termux compatibility.
 
-The current Google Play version starts in English, regardless of the device language. Choose **Settings → Language → 한국어** to switch to Korean; your choice is saved. Your input, project names, and terminal output are not translated.
+The app follows your device language list by default and uses English when none are supported. Choose **Settings → Language** to save a manual choice or return to the system default. Your input, project names, and terminal output are not translated.
 
 ## Sessions and local data
 
