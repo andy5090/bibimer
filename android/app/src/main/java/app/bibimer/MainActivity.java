@@ -58,6 +58,8 @@ public final class MainActivity extends Activity {
     private ProjectLocations projectLocations;
     private AppUpdates appUpdates;
     private LocalBridge bridge;
+    private final TermuxClaudeActions claudeActions = new TermuxClaudeActions(this,
+        code -> script("window.BibimerClaudeActionStatus && window.BibimerClaudeActionStatus(" + JSONObject.quote(code) + ");"));
     private String setupLoaded = "";
     private volatile boolean destroyed;
     private boolean resumed, notificationsSupported, stopped;
@@ -457,6 +459,14 @@ public final class MainActivity extends Activity {
             runOnUiThread(() -> { if (requestCurrent(false, epoch)) TermuxSetup.start(MainActivity.this); });
         }
 
+        @JavascriptInterface public void startClaudeAction(String action) {
+            if (DemoMode.enabled(MainActivity.this) || !ClaudeSetup.supports(action)) return;
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> {
+                if (requestCurrent(false, epoch)) claudeActions.request(action, language.get());
+            });
+        }
+
         @JavascriptInterface public void openAppPermissions() {
             if (DemoMode.enabled(MainActivity.this)) return;
             final long epoch = DemoMode.epoch();
@@ -573,6 +583,7 @@ public final class MainActivity extends Activity {
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
         super.onRequestPermissionsResult(request, permissions, grants);
         if (request == ResponseNotifications.PERMISSION_REQUEST) ensureNotifications(false);
+        if (request == TermuxClaudeActions.REQUEST_PERMISSION) claudeActions.permissionResult();
         if (request == TermuxSetup.REQUEST_PERMISSION) {
             if (DemoMode.enabled(this)) return;
             if (TermuxSetup.permitted(this)) TermuxSetup.start(this);

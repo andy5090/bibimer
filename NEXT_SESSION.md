@@ -1,5 +1,13 @@
 # Bibimer 다음 세션 시작점
 
+## Claude 설치·복구·인증을 앱에서 Termux로 실행 요청 (2026-10-19, 미배포)
+
+- 사용자 요청으로 Setup → Claude Code · Termux에 **Termux에서 복구 / Termux에서 어댑터 준비 / Termux에서 로그인 / 로그인 상태 확인 / 버전 확인** 버튼을 추가했다. 같은 폰의 Termux `RUN_COMMAND`로 각각 새 포그라운드 터미널을 열며 임의 명령·기존 세션 입력을 받지 않는다. 복구/어댑터는 기존 내장 독립 asset을 전달해 Downloads/이미 설치된 브리지 스크립트에 의존하지 않는다. 로그인/상태/버전은 전용 런처 우선, 없으면 설치된 `claude`로 실행한다. 명령 종료 코드와 출력을 확인할 수 있도록 새 터미널은 Bash로 유지한다.
+- Android 명령 실행 권한은 사용자가 허용한다. Claude 전용 요청 코드25와 메모리의 단일 대기 작업을 사용해 허용 뒤 **선택한 작업만** 실행한다. 기존 자동 연결/브리지 설치의 요청 코드24·상태·페어링·프로세스는 건드리지 않는다. 거절·Activity 소멸·데모 전환은 재실행을 취소하고, 데모 실행·잘못된 action·중복 탭을 차단한다. Termux 0.118 이상과 `allow-external-apps=true`가 필요하며 Android 화면 열기 제한 시 Termux 알림을 직접 열도록 안내한다. 공식 문서: https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent . 설정을 임의로 켜지 않는다.
+- 결과 콜백·출력 파일·로그인 표준 입력 스크립트를 사용하지 않는다. 인증 출력은 Termux에만 두고 WebView에는 정해진 상태 코드만 전달한다. **요청 전송은 설치/로그인 성공을 뜻하지 않는다.** 브라우저 인증은 사용자가 직접 마무리하고 결과는 Termux에서 확인한다. 수동 명령 복사는 유지했다. 한국어/영어 상세 문서와7개 UI키×10언어(총625키)를 추가하고320px 버튼 줄바꿈을 조정했다.
+- 검증: 새 JVM/셸3개 검사(실제 ClaudeSetup/TermuxClaudeActions + Android 대역)에서 허용 목록, 권한 허용/거절 뒤 단일 재실행, 데모 epoch·Activity 소멸·중복 클릭·누락/구형 Termux·asset/시작 실패·포그라운드 Intent의 결과 캡처 없음, 공백 포함 HOME·전용/일반 CLI 선택·대화형 stdin·실패 코드·설치기 exit 격리를 확인했다. 기존 독립 설치5개 검사와625키×10언어·언어/초안 회귀도 통과했다. Setup UI의 기존 연결 회귀와 명시적5작업·권한 메시지/알 수 없는 메시지 차단·일시정지 가드·자동 실행 없음·12개 원문 복사·320px10언어 검사를 통과했다. EN/KO 화면 `dist/screenshots/claude-actions-320-{en,ko}.png`. 전체 Android Java 소스를 API36으로 컴파일했다(Play SDK/생성 리소스 상수는 검사 대역, 기존 Java8/deprecated 경고). JS구문·diff 검사 통과.
+- **APK/AAB 빌드·버전 변경·앱 설치·배포·운영 Termux 명령/인증 실행 없음.** 새 버튼은 다음 빌드/설치 후 적용된다. 실제 기기의 권한 요청·외부 앱 연동 거절·Termux 새 화면·브라우저 로그인/앱 복귀는 아직 검증하지 않았다. 자동 연결 완료 UI 정리는 앞선 논의대로 별도 미구현 상태다.
+
 ## 현재 폰의 일반 claude 명령 연결 복구 (2026-10-19)
 
 - 사용자가 Termux의 `claude` 실행 시 `claude native binary not installed`를 확인했다. `$PREFIX/bin/claude`가 기존 npm2.1.263의 `../lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe`를 가리키는 상태였다. 전용2.1.283 런처는 이미 실행되므로 일반 명령의 실행 경로 문제를 별도로 복구했다. 사용자 오류는 인증 단계 이전의 npm 런처 실패다.

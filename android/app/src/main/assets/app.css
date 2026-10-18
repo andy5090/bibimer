@@ -65,6 +65,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .agent-install { min-width:0; border-top:1px solid var(--line); }
 .agent-install > summary { min-height:44px; padding:12px 0; color:var(--green); cursor:pointer; font-size:13px; }
 .agent-install .button-row { flex-wrap:wrap; }
+.agent-install [data-claude-action] { flex:1 1 120px; font-size:13px; word-break:keep-all; overflow-wrap:break-word; }
 .agent-install .command code { overflow-wrap:anywhere; }
 .agent-install .full { margin-bottom:8px; }
 

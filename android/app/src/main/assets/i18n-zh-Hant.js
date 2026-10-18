@@ -1,6 +1,13 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "claude_action_repair": "在 Termux 中修復",
+  "claude_action_adapter": "在 Termux 中準備配接器",
+  "claude_action_login": "透過 Termux 登入",
+  "claude_action_status": "檢查登入狀態",
+  "claude_action_version": "檢查版本",
+  "claude_action_hint": "每項操作都會開啟新的 Termux 終端機。請先允許執行指令；若 Termux 未開啟，請從通知中開啟。請自行完成瀏覽器登入，並在 Termux 中查看結果。也可以複製下方指令。",
+  "claude_action_sent": "已向 Termux 傳送執行請求。請在該處查看進度與結果；這不代表安裝或登入已完成。",
   "app_update_title": "應用程式更新",
   "app_update_version": "已安裝版本：{version}",
   "app_update_check": "檢查更新",

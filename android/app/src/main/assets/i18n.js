@@ -3,6 +3,14 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    claude_action_repair: ["Repair in Termux", "Termux에서 복구"],
+    claude_action_adapter: ["Set up adapter in Termux", "Termux에서 어댑터 준비"],
+    claude_action_login: ["Sign in with Termux", "Termux에서 로그인"],
+    claude_action_status: ["Check sign-in", "로그인 상태 확인"],
+    claude_action_version: ["Check version", "버전 확인"],
+    claude_action_hint: ["Run each action in a new Termux terminal. Allow command access first; if Termux does not open, open it from its notification. Complete browser login yourself. Check the result in Termux. Command copying is also available below.", "각 작업을 새 Termux 터미널에서 실행합니다. 먼저 명령 실행 연동을 허용하세요. Termux가 열리지 않으면 알림에서 여세요. 브라우저 로그인은 직접 완료하고 결과는 Termux에서 확인하세요. 아래 명령 복사도 사용할 수 있습니다."],
+    claude_action_sent: ["Request sent to Termux. Check progress and results there; this does not confirm installation or sign-in.", "Termux에 실행을 요청했습니다. 진행과 결과는 Termux에서 확인하세요. 설치·로그인 완료를 뜻하지 않습니다."],
+
     app_update_title: ["App updates", "앱 업데이트"],
     app_update_version: ["Installed version: {version}", "현재 버전: {version}"],
     app_update_check: ["Check for updates", "업데이트 확인"],

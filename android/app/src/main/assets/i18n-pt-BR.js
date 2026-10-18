@@ -1,6 +1,13 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["pt-BR"] = {
+  "claude_action_repair": "Reparar no Termux",
+  "claude_action_adapter": "Preparar adaptador no Termux",
+  "claude_action_login": "Entrar pelo Termux",
+  "claude_action_status": "Verificar login",
+  "claude_action_version": "Verificar versão",
+  "claude_action_hint": "Cada ação abre um novo terminal do Termux. Permita a execução de comandos primeiro; se o Termux não abrir, abra-o pela notificação. Conclua o login no navegador e confira o resultado no Termux. Você também pode copiar os comandos abaixo.",
+  "claude_action_sent": "Solicitação enviada ao Termux. Confira o progresso e os resultados lá; isso não confirma a instalação nem o login.",
   "app_update_title": "Atualizações do app",
   "app_update_version": "Versão instalada: {version}",
   "app_update_check": "Verificar atualizações",

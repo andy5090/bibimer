@@ -39,6 +39,12 @@ Termux에 안내된 주소를 같은 폰의 브라우저에서 열어 로그인�
 
 현재 폰은 기존 npm 진입점의 `claude native binary not installed` 오류 때문에 **Bibimer 전용 런타임**을 사용한다. 2026-10-19 일반 `claude` 명령도 이 런타임으로 연결해 버전 출력과 SDK 초기화를 확인했다. 원래 npm 연결은 `$PREFIX/bin/claude.npm-before-bibimer`에 백업했다. 이는 현재 폰에 직접 적용한 연결 수정이며 일반 복구 설치기는 기존 전역 CLI를 교체하지 않는다. 일반 `npm install -g @anthropic-ai/claude-code`만으로 이 구성이 재현된다고 안내하지 않는다.
 
+개발 소스의 **Setup → Claude Code · Termux**에는 **Termux에서 복구 / Termux에서 어댑터 준비 / Termux에서 로그인 / 로그인 상태 확인 / 버전 확인** 버튼이 있다. 각 버튼은 같은 폰의 새 Termux 터미널에 해당 고정 작업만 요청한다. 로그인·상태·버전은 Bibimer 전용 런처가 있으면 우선 사용하고, 없으면 설치된 `claude`를 사용한다. 복구·어댑터는 앱에 포함된 독립 스크립트를 전달하므로 다운로드 폴더의 파일에 의존하지 않는다. 기존 브리지·에이전트 세션은 재시작하지 않는다.
+
+이 실행 버튼에는 Termux 0.118 이상과 Android의 **BIBIMER → Termux 환경에서 명령 실행** 권한, Termux의 `allow-external-apps=true` 설정이 필요하다. 권한 요청을 허용하면 선택했던 작업만 실행하며 초기 브리지 설치로 바뀌지 않는다. 권한과 설정은 사용자가 허용한다. [Termux 공식 RUN_COMMAND 안내](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent)에 따르면 Android의 백그라운드 화면 열기 제한 때문에 Termux 알림을 직접 눌러야 할 수 있다. 실행 요청 표시는 설치·로그인 성공 확인이 아니며 진행·오류·결과는 Termux에서 확인한다. 로그인은 사용자가 브라우저에서 완료하고, 인증 출력은 Bibimer로 가져오지 않는다. 버튼이 동작하지 않으면 아래 명령 복사를 사용한다.
+
+**다음 APK 빌드·설치 후 적용된다.** 현재 배포 앱에는 실행 버튼이 없으며 새 버튼의 실제 기기 권한 요청·Termux 화면 전환·브라우저 복귀는 아직 검증하지 않았다.
+
 1. **arm64 Termux**, `$PREFIX/glibc/lib/ld-linux-aarch64.so.1`에 있는 glibc 로더, `ripgrep`을 먼저 준비한다. glibc가 없다면 [glibc 패키지 프로젝트](https://github.com/termux-pacman/glibc-packages)의 요구사항을 확인한다. Bibimer 설정 파일은 glibc를 설치하지 않는다. 이 선행 환경을 처음 설치하는 과정은 별도 검증 대상이다.
 2. Bibimer의 **Setup → Claude Code · Termux → Claude 복구 명령 복사**를 누른다. 앱에 내장된 독립 설치 내용 전체를 복사하므로 설정 파일 저장·다운로드 폴더 접근이 필요하지 않다. 이번 소스 변경은 다음 APK 빌드/설치 후 적용되며 구형 배포 앱의 버튼은 여전히 저장 파일을 참조한다.
 3. Termux에서 ripgrep을 준비한 뒤 복사한 명령을 붙여 넣어 실행한다. 런타임 복구에 Chat SDK 준비도 포함된다.

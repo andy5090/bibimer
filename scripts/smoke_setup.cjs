@@ -22,6 +22,7 @@ async function main(){
     window.agentCopies=[];
     window.agentGuides=[];
     window.claudeCopies=[];
+    window.claudeActions=[];
     window.setupHealthStatus=200;
     window.setupHealthDelay=0;
     window.setupResult=(phase,paired=false)=>{set({...get(),phase});if(paired)localStorage.setItem('paired','yes');window.BibimerResume();};
@@ -29,6 +30,7 @@ async function main(){
       environment:()=>JSON.stringify({language:localStorage.getItem('language')||'en',paired:localStorage.getItem('paired')==='yes',
         termuxInstalled:localStorage.getItem('termux')==='yes',quickSetup:get(),version:'0.9.0'}),
       setLanguage:value=>{localStorage.setItem('language',value);return true;},setEnterBehavior:()=>true,setAgentOptions:()=>true,
+      startClaudeAction:action=>{window.claudeActions.push(action);window.BibimerClaudeActionStatus("claude_action_sent");},
       startQuickSetup:()=>{window.setupCalls.push('start');set({phase:'running',id:'controlled-job',permitted:true});},
       openAppPermissions:()=>window.setupCalls.push('permissions'),openTermux:()=>window.setupCalls.push('termux'),
       openGuide:name=>window.agentGuides.push(name),copyText:text=>window.agentCopies.push(text),
@@ -130,6 +132,20 @@ async function main(){
   for(const name of ['claude-repair','claude-adapter']) await page.locator(`[data-command="${name}"]`).click();
   assert.deepEqual(await page.evaluate(()=>window.claudeCopies),['claude-repair','claude-adapter']);
   assert.equal(commands,12);
+  assert.deepEqual(await page.evaluate(()=>window.claudeActions),[]);
+  for(const action of ['repair','adapter','login','status','version']) {
+    await page.locator(`[data-claude-action="${action}"]`).click();
+    assert.equal(await page.evaluate(()=>window.claudeActions.at(-1)),action);
+    assert.match(await page.locator('#claude-action-status').innerText(),/설치·로그인 완료를 뜻하지/);
+  }
+  await page.evaluate(()=>window.BibimerClaudeActionStatus('quick_permission'));
+  assert.match(await page.locator('#claude-action-status').innerText(),/Termux 환경에서 명령 실행/);
+  const actionStatus=await page.locator('#claude-action-status').innerText();
+  await page.evaluate(()=>window.BibimerClaudeActionStatus('unsafe arbitrary output'));
+  assert.equal(await page.locator('#claude-action-status').innerText(),actionStatus);
+  await page.evaluate(()=>{window.BibimerPause();document.querySelector('[data-claude-action="login"]').click();});
+  assert.equal(await page.evaluate(()=>window.claudeActions.length),5);
+  await page.evaluate(()=>window.BibimerResume());
   for(let index=0;index<commands;index++) {
     const button=page.locator('[data-agent-copy]').nth(index);
     const command=await button.evaluate(node=>document.getElementById(node.dataset.agentCopy).textContent);
@@ -145,7 +161,7 @@ async function main(){
     await page.evaluate(value=>{localStorage.setItem('language',value);window.BibimerRefreshLanguage();},locale);
     await page.setViewportSize({width:320,height:640});
     assert.equal(await page.locator('html').getAttribute('lang'),locale);
-    for(const key of ['agent_termux_basis','agent_codex_termux','agent_claude_termux','agent_claude_auth_hint','agent_opencode_termux','agent_gemini_termux']) {
+    for(const key of ['agent_termux_basis','agent_codex_termux','agent_claude_termux','agent_claude_auth_hint','agent_opencode_termux','agent_gemini_termux','claude_action_hint','claude_action_login','claude_action_repair','claude_action_adapter','claude_action_status','claude_action_version']) {
       assert.equal(await page.locator(`[data-i18n="${key}"]`).textContent(),await page.evaluate(k=>window.BibimerI18n.t(k),key));
     }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -153,14 +169,17 @@ async function main(){
     if(['en','ko'].includes(locale)) {
       await page.locator('#codex-install').scrollIntoViewIfNeeded();
       await page.screenshot({path:path.join(root,`dist/screenshots/agent-setup-320-${locale}.png`)});
+      await page.locator('#claude-install').scrollIntoViewIfNeeded();
+      await page.screenshot({path:path.join(root,`dist/screenshots/claude-actions-320-${locale}.png`)});
     }
   }
+  assert.deepEqual(await page.evaluate(()=>window.claudeActions),['repair','adapter','login','status','version']);
   for(const id of ['codex-install','claude-install','opencode-install','gemini-install']) assert.equal(await page.locator(`#${id}`).evaluate(node=>node.open),true);
   assert.deepEqual(await page.evaluate(()=>window.setupCalls),setupBeforeGuides);
   await page.locator('#forget').click();
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).paired),false);
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).quickSetup.phase),'idle');
   assert.deepEqual(errors,[]);
-  console.log('PASS: quick setup regression; Termux agent guides, twelve exact command copies, guide routing, no implicit setup, ten locales at 320px with unchanged commands/open panels; native APIs mocked');
+  console.log('PASS: quick setup regression; Termux agent guides, five explicit Claude actions, permission status and pause guards, twelve exact command copies, guide routing, no implicit setup, ten locales at 320px with unchanged commands/open panels; native APIs mocked');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();if(server)await new Promise(resolve=>server.close(resolve));});

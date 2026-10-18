@@ -161,6 +161,10 @@
       <details class="agent-install" id="claude-install">
         <summary>Claude Code · Termux</summary>
         <p data-i18n="agent_claude_termux">Claude 2.1.283 uses a separate Bibimer runtime. It requires arm64 Termux with glibc and ripgrep. Copy the repair command below and run it in Termux; it includes the Chat SDK. No setup file needs to be saved. If your CLI already works, prepare only the adapter.</p>
+        <p class="hint" data-i18n="claude_action_hint">Run each action in a new Termux terminal. Allow command access first; if Termux does not open, open it from its notification. Complete browser login yourself. Check the result in Termux. Command copying is also available below.</p>
+        <div class="button-row"><button data-claude-action="repair" data-i18n="claude_action_repair">Repair in Termux</button><button data-claude-action="adapter" class="secondary" data-i18n="claude_action_adapter">Set up adapter in Termux</button></div>
+        <div class="button-row"><button data-claude-action="login" data-i18n="claude_action_login">Sign in with Termux</button><button data-claude-action="status" class="secondary" data-i18n="claude_action_status">Check sign-in</button><button data-claude-action="version" class="secondary" data-i18n="claude_action_version">Check version</button></div>
+        <p id="claude-action-status" class="hint" role="status" hidden></p>
         <button data-command="claude-repair" class="secondary full" data-i18n="claude_repair_setup">Copy Claude repair command</button>
         <div class="command"><code id="claude-check-command">~/.local/share/bibimer/claude-runtime/claude --version</code><button data-agent-copy="claude-check-command" data-i18n="copy">Copy</button></div>
         <p class="hint" data-i18n="agent_claude_auth_hint">A successful version check does not confirm authentication. If your login has expired or you are signed out, run auth login below in Termux and finish signing in with the browser.</p>

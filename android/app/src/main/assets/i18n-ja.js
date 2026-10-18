@@ -1,6 +1,13 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "claude_action_repair": "Termux で修復",
+  "claude_action_adapter": "Termux でアダプターを準備",
+  "claude_action_login": "Termux でログイン",
+  "claude_action_status": "ログイン状態を確認",
+  "claude_action_version": "バージョンを確認",
+  "claude_action_hint": "各操作は新しい Termux ターミナルで実行します。先にコマンド実行を許可してください。Termux が開かない場合は通知から開いてください。ブラウザーでのログインはご自身で完了し、結果は Termux で確認してください。下のコマンドをコピーすることもできます。",
+  "claude_action_sent": "Termux に実行をリクエストしました。進行状況と結果は Termux で確認してください。インストールやログインの完了を示すものではありません。",
   "app_update_title": "アプリの更新",
   "app_update_version": "インストール済みバージョン：{version}",
   "app_update_check": "更新を確認",
