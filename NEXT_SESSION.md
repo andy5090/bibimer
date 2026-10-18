@@ -1,5 +1,11 @@
 # Bibimer 다음 세션 시작점
 
+## 갤러리 제작 안내 문구 삭제 (2026-10-18)
+
+사용자 요청으로10개 언어 홈의 스크린샷 갤러리에서 예시 프로젝트·대화와 개인 세션 기록 미사용을 설명하던 문단을 삭제했다. 제목과4개 이미지·캡션, SEO메타/푸터 링크는 유지했다. 새코드·의존성·스타일 추가 없이 문단만 제거했다.
+
+기존Python웹사이트2검사,Node언어선택회귀,git diff --check 통과. CUA데스크톱/320px한국어에서 간격과4개 이미지·가로넘침 없음을 확인했고 시각판정98pass다. Cloudflare Pages **https://8e3cb015.bibimer.pages.dev** 배포 후10개 공개홈HTTP200·원본일치·설명문단없음·4개스크린샷유지를 검증했다. 증빙 `dist/gallery-copy/{published.png,public-verification.json}`, `.omx/state/gallery-copy/ralph-progress.json`. 앱/Play변경·빌드 없음.
+
 ## 푸터 회사 링크·다국어 SEO 보완 (2026-10-18)
 
 - 10개 언어 홈과 기존 EN/KO 심사 안내 푸터의 회사명을 `https://andineering.com` 링크로 바꿨다. 기존 색·밑줄·키보드 포커스 스타일을 재사용했으며 새 의존성이나 화면 구성은 추가하지 않았다.
