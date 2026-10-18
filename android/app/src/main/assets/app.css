@@ -409,3 +409,9 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .message .item-status.succeeded { color:var(--green); }
 .message .item-status.failed { color:var(--red); }
 .message .exit-code.unavailable { max-width:140px; white-space:normal; overflow-wrap:anywhere; }
+
+#interrupt-turn, #steer, .queue-entry [data-queue-action="steer"] {
+  border:1px solid #3a454e;
+  border-radius:8px;
+  background:transparent;
+}
