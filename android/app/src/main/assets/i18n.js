@@ -12,8 +12,8 @@
     bridge_maintenance_failed: ["Could not complete maintenance. Reconnect to check the bridge, then try again.", "작업을 완료하지 못했습니다. 다시 연결해 브리지 상태를 확인한 뒤 재시도하세요."],
     bridge_maintenance_active: ["Running sessions: {count}. Maintenance is available after they end.", "실행 중인 세션 {count}개. 실행이 종료되면 사용할 수 있습니다."],
     delivery_help_title: ["Message delivery help", "메시지 전송 안내"],
-    command_failure_code: ["Failure code {code}", "실패 코드 {code}"],
-    command_failure_code_unavailable: ["Failure code unavailable", "실패 코드 미제공"],
+    command_failure_code: ["Code {code}", "코드 {code}"],
+    command_failure_code_unavailable: ["Code unavailable", "코드 미제공"],
 
     command_succeeded: ["Success", "성공"],
     agent_action_connect_provider: ["Connect provider", "제공자 연결"],
