@@ -170,6 +170,8 @@ Chat에서 변경한 값은 다음 메시지부터 적용한다. PTY에서는 �
 
 ## Claude 대화 준비
 
+Codex·Claude Code·OpenCode의 설치 경로는 [현재 폰에서 확인한 Termux 에이전트 설치 안내](termux-agents.md)를 먼저 참고한다. 각 제품의 일반 Linux 설치 명령과 Termux에서 실제 사용하는 패키지·런타임·래퍼를 구분한다.
+
 Termux에서 실행 가능한 Claude Code CLI와 로그인을 먼저 준비한다. 앱의 **Setup**에서 최신 설정 파일을 `bibimer-setup.sh`로 저장하고 Claude 어댑터 설치 명령을 복사하거나 다음을 실행한다.
 
 ```sh
@@ -238,7 +240,7 @@ BIBIMER_CLAUDE_TERMUX=1 bash ~/storage/downloads/bibimer-setup.sh
 
 PTY는 ANSI 색상(16색·256색·트루컬러), 굵은 글씨와 ASCII 도형을 표시한다. 프로그램이 출력한 터미널 제어 시퀀스는 xterm.js가 처리한다.
 
-Codex·OpenCode·Claude Code는 Termux에서 실행 가능하게 설치하고 로그인·모델 설정을 마친 뒤 선택한다. 준비 화면에 각 제품의 설치 문서 링크가 있다. OpenCode의 새 Chat과 PTY는 별도 Bibimer SDK 없이 설치된 `opencode` 명령을 사용한다. 해당 문서의 일반 Linux 설치 절차가 Android/Termux에서도 동작한다고 가정하지 않는다.
+Codex·OpenCode·Claude Code는 Termux에서 실행 가능하게 설치하고 로그인·모델 설정을 마친 뒤 선택한다. 준비 화면의 에이전트별 Termux 안내에서 설치·버전 확인·로그인 명령과 [상세 절차](termux-agents.md)를 제공하고 제품 공식 문서 링크도 유지한다. OpenCode의 새 Chat과 PTY는 별도 Bibimer SDK 없이 설치된 `opencode` 명령을 사용한다. 해당 문서의 일반 Linux 설치 절차가 Android/Termux에서도 동작한다고 가정하지 않는다.
 
 현재 기기에서는 이미 설치된 Termux용 Codex 배포본의 대화형 PTY 시작 화면과 App Server 대화 초기화를 확인했다. 새 사용자를 위한 에이전트 설치 경로와 실제 모델 작업은 별도 검증 대상이다. 계정 키나 토큰은 Bibimer의 프로젝트 설정에 입력하지 않는다.
 

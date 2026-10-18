@@ -78,7 +78,7 @@ Try a shell command such as `pwd` from the input field. Your command runs in tha
 
 ### 4. Add a coding agent
 
-Prepare a compatible Codex, Claude Code, or OpenCode installation in Termux, including its provider login or API configuration. Choose the agent in Bibimer and start a session. Supported models and options depend on the installed agent. General Linux installation instructions do not guarantee Android/Termux compatibility.
+Follow the [Termux agent installation guide](docs/termux-agents.en.md) for the packages, dedicated runtime, wrappers and prerequisites checked on our phone, including provider sign-in or API configuration. Choose the agent in Bibimer and start a session. Supported models and options depend on the installed agent. General Linux installation instructions do not guarantee Android/Termux compatibility.
 
 The current Google Play version starts in English, regardless of the device language. Choose **Settings → Language → 한국어** to switch to Korean; your choice is saved. Your input, project names, and terminal output are not translated.
 

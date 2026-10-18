@@ -19,6 +19,8 @@ async function main(){
     const get=()=>JSON.parse(localStorage.getItem('setup-state')||'{"phase":"idle","id":"","permitted":false}');
     const set=value=>localStorage.setItem('setup-state',JSON.stringify(value));
     window.setupCalls=[];
+    window.agentCopies=[];
+    window.agentGuides=[];
     window.setupHealthStatus=200;
     window.setupHealthDelay=0;
     window.setupResult=(phase,paired=false)=>{set({...get(),phase});if(paired)localStorage.setItem('paired','yes');window.BibimerResume();};
@@ -28,7 +30,8 @@ async function main(){
       setLanguage:value=>{localStorage.setItem('language',value);return true;},setEnterBehavior:()=>true,setAgentOptions:()=>true,
       startQuickSetup:()=>{window.setupCalls.push('start');set({phase:'running',id:'controlled-job',permitted:true});},
       openAppPermissions:()=>window.setupCalls.push('permissions'),openTermux:()=>window.setupCalls.push('termux'),
-      openGuide:()=>{},exportInstaller:()=>{},copyCommand:name=>window.setupCalls.push(name),cancelPoll:()=>{},
+      openGuide:name=>window.agentGuides.push(name),copyText:text=>window.agentCopies.push(text),
+      exportInstaller:()=>{},copyCommand:name=>window.setupCalls.push(name),cancelPoll:()=>{},
       forget:()=>{localStorage.removeItem('paired');set({phase:'idle',id:''});},
       request:(id,method,route)=>{
         if(route==='/v1/health') {
@@ -116,10 +119,45 @@ async function main(){
   assert.deepEqual(await page.evaluate(()=>window.setupCalls),[]);
   await page.evaluate(()=>{window.setupHealthStatus=200;window.setupHealthDelay=0;window.BibimerResume();});
   await page.locator('#tab-setup').click();
+  // Viewing/copying installation guidance must never start a setup job or agent.
+  const setupBeforeGuides=await page.evaluate(()=>window.setupCalls.slice());
+  for(const id of ['codex-install','claude-install','opencode-install']) {
+    assert.equal(await page.locator(`#${id}`).evaluate(node=>node.open),false);
+    await page.locator(`#${id} > summary`).click();
+  }
+  const commands=await page.locator('[data-agent-copy]').count();
+  assert.equal(commands,8);
+  for(let index=0;index<commands;index++) {
+    const button=page.locator('[data-agent-copy]').nth(index);
+    const command=await button.evaluate(node=>document.getElementById(node.dataset.agentCopy).textContent);
+    await button.click();
+    assert.equal(await page.evaluate(()=>window.agentCopies.at(-1)),command);
+  }
+  for(const guide of ['codex-termux','claude-termux','opencode-termux','opencode-source','codex','claude','opencode']) {
+    await page.locator(`[data-guide="${guide}"]`).click();
+    assert.equal(await page.evaluate(()=>window.agentGuides.at(-1)),guide);
+  }
+  assert.deepEqual(await page.evaluate(()=>window.setupCalls),setupBeforeGuides);
+  for(const locale of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
+    await page.evaluate(value=>{localStorage.setItem('language',value);window.BibimerRefreshLanguage();},locale);
+    await page.setViewportSize({width:320,height:640});
+    assert.equal(await page.locator('html').getAttribute('lang'),locale);
+    for(const key of ['agent_termux_basis','agent_codex_termux','agent_claude_termux','agent_opencode_termux']) {
+      assert.equal(await page.locator(`[data-i18n="${key}"]`).textContent(),await page.evaluate(k=>window.BibimerI18n.t(k),key));
+    }
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('[data-agent-copy]')].map(node=>document.getElementById(node.dataset.agentCopy).textContent)),await page.evaluate(()=>window.agentCopies));
+    if(['en','ko'].includes(locale)) {
+      await page.locator('#codex-install').scrollIntoViewIfNeeded();
+      await page.screenshot({path:path.join(root,`dist/screenshots/agent-setup-320-${locale}.png`)});
+    }
+  }
+  for(const id of ['codex-install','claude-install','opencode-install']) assert.equal(await page.locator(`#${id}`).evaluate(node=>node.open),true);
+  assert.deepEqual(await page.evaluate(()=>window.setupCalls),setupBeforeGuides);
   await page.locator('#forget').click();
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).paired),false);
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).quickSetup.phase),'idle');
   assert.deepEqual(errors,[]);
-  console.log('PASS: quick setup missing Termux, first-time permissions, progress/duplicate prevention, reload, failures/retry, manual fallback, saved-connection reuse without RUN_COMMAND, unreachable/401 fallback, hidden-app cancellation, forgetting, English/Korean and 320/360px layout; native APIs mocked');
+  console.log('PASS: quick setup regression; Termux agent guides, eight exact command copies, guide routing, no implicit setup, ten locales at 320px with unchanged commands/open panels; native APIs mocked');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();if(server)await new Promise(resolve=>server.close(resolve));});

@@ -1727,6 +1727,7 @@
   $("export-installer").addEventListener("click", () => native.exportInstaller());
   for (const button of document.querySelectorAll("[data-guide]")) button.addEventListener("click", () => native.openGuide(button.dataset.guide));
   for (const button of document.querySelectorAll("[data-command]")) button.addEventListener("click", () => native.copyCommand(button.dataset.command));
+  for (const button of document.querySelectorAll("[data-agent-copy]")) button.addEventListener("click", () => native.copyText($(button.dataset.agentCopy).textContent));
   const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", interrupt:"\x03", enter:"\r"};
   for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.addEventListener("click", () => sendRaw(keys[button.dataset.key]));
   window.BibimerPause = () => { pickers.close(); paused = true; ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };

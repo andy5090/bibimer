@@ -80,7 +80,7 @@ Bibimer와 Termux를 **같은 Android 휴대폰**에 설치하세요. 터미널�
 
 ### 4. 코딩 에이전트 연결
 
-Termux에서 실행 가능한 Codex, Claude Code, OpenCode 설치본을 준비하고 필요한 제공자 로그인이나 API 설정을 마칩니다. Bibimer에서 에이전트를 고르고 세션을 시작하세요. 모델과 옵션은 설치한 에이전트가 지원하는 항목에 따라 달라집니다. 일반 Linux 설치 안내가 Android·Termux에서도 그대로 동작하는 것은 아닙니다.
+[Termux 에이전트 설치 안내](docs/termux-agents.md)를 참고해 Codex, Claude Code, OpenCode 설치본을 준비하고 필요한 제공자 로그인이나 API 설정을 마칩니다. 현재 폰에서 확인한 패키지·전용 런타임·래퍼와 필요한 선행 환경을 안내합니다. Bibimer에서 에이전트를 고르고 세션을 시작하세요. 모델과 옵션은 설치한 에이전트가 지원하는 항목에 따라 달라집니다. 일반 Linux 설치 안내가 Android·Termux에서도 그대로 동작하는 것은 아닙니다.
 
 현재 Google Play 버전은 기기 언어와 관계없이 영어로 시작합니다. **Settings → Language → 한국어**를 선택하면 한국어로 바뀌고 다음 실행에도 유지됩니다. 사용자 입력과 프로젝트 이름, 터미널 출력은 번역하지 않습니다.
 

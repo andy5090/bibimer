@@ -486,11 +486,17 @@ public final class MainActivity extends Activity {
         @JavascriptInterface public void openGuide(String guide) {
             if (DemoMode.enabled(MainActivity.this) && !guide.equals("privacy")) return;
             String url;
+            String termuxGuide = "https://github.com/andy5090/bibimer/blob/main/docs/termux-agents" +
+                ("ko".equals(language.get()) ? "" : ".en") + ".md";
             if (guide.equals("termux")) url = "https://f-droid.org/packages/com.termux/";
             else if (guide.equals("termux-help")) url = "https://github.com/termux/termux-app#installation";
             else if (guide.equals("codex")) url = "https://github.com/openai/codex";
             else if (guide.equals("claude")) url = "https://code.claude.com/docs/en/setup";
             else if (guide.equals("opencode")) url = "https://opencode.ai/docs/";
+            else if (guide.equals("codex-termux")) url = termuxGuide + "#codex";
+            else if (guide.equals("claude-termux")) url = termuxGuide + "#claude-code";
+            else if (guide.equals("opencode-termux")) url = termuxGuide + "#opencode";
+            else if (guide.equals("opencode-source")) url = "https://github.com/AidanPark/openclaw-android/blob/a2ac938e4f746c0bd052adc2c7e40e8d18359032/scripts/install-opencode.sh";
             else if (guide.equals("privacy")) url = language.privacyUrl();
             else return;
             runOnUiThread(() -> {

@@ -146,13 +146,37 @@
     </details>
     <section class="card setup-step">
       <div class="step-heading"><span class="step-number">3</span><h2 data-i18n="agent_setup">Prepare an agent</h2></div>
-      <p data-i18n="agent_body">Start with Terminal to check input and output. To use Codex or Claude Code, install a version that runs in Termux and complete any required sign-in.</p>
-      <div class="button-row"><button data-guide="codex" class="quiet" data-i18n="codex_guide">Codex guide ↗</button><button data-guide="claude" class="quiet" data-i18n="claude_guide">Claude Code guide ↗</button><button data-guide="opencode" class="quiet" data-i18n="opencode_guide">OpenCode guide ↗</button></div>
+      <p data-i18n="agent_body">Start with Terminal to check input and output. Install Codex, Claude Code or OpenCode in Termux and complete its sign-in and model setup.</p>
+      <p class="hint" data-i18n="agent_termux_basis">These configurations were checked on an Android 16 arm64 phone. Versions are reference versions, not automatic updates. A fresh installation on another phone still needs verification.</p>
       <div id="agent-diagnostics" aria-live="polite"></div>
-      <p class="hint" data-i18n="claude_adapter_hint">For Claude chat and import, export the latest setup file, then run the adapter setup command in Termux. Node.js and the official Agent SDK will be installed. A working Claude CLI is required separately.</p>
-      <button data-command="claude-adapter" class="secondary full" data-i18n="claude_adapter_setup">Copy Claude adapter setup command</button>
-      <p class="hint" data-i18n="claude_repair_hint">If Claude shows Needs repair, install a separate runtime. Requires arm64 Termux with glibc and ripgrep. Save the latest setup file first.</p>
-      <button data-command="claude-repair" class="secondary full" data-i18n="claude_repair_setup">Copy Claude repair command</button>
+      <details class="agent-install" id="codex-install">
+        <summary>Codex · Termux</summary>
+        <p data-i18n="agent_codex_termux">Use the community Termux package, not the standard Linux binary. This version requires Android 10+ and arm64. If Node.js and npm already work, skip the first command. Check the version, then sign in.</p>
+        <div class="command"><code id="codex-dependencies-command">pkg install nodejs-lts npm</code><button data-agent-copy="codex-dependencies-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="codex-install-command">npm install -g @mmmbuto/codex-cli-termux@0.160.0-termux.3</code><button data-agent-copy="codex-install-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="codex-check-command">codex --version</code><button data-agent-copy="codex-check-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="codex-login-command">codex login</code><button data-agent-copy="codex-login-command" data-i18n="copy">Copy</button></div>
+        <div class="button-row"><button data-guide="codex-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="codex" class="quiet" data-i18n="codex_guide">Codex guide ↗</button></div>
+      </details>
+      <details class="agent-install" id="claude-install">
+        <summary>Claude Code · Termux</summary>
+        <p data-i18n="agent_claude_termux">Claude 2.1.283 uses a separate Bibimer runtime. It requires arm64 Termux with glibc and ripgrep already installed. Save the latest setup file and install the runtime; this also prepares the Chat SDK. Sign in using the dedicated launcher. If your CLI already works, prepare only the adapter.</p>
+        <button data-command="claude-repair" class="secondary full" data-i18n="claude_repair_setup">Copy Claude repair command</button>
+        <div class="command"><code id="claude-check-command">~/.local/share/bibimer/claude-runtime/claude --version</code><button data-agent-copy="claude-check-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="claude-login-command">~/.local/share/bibimer/claude-runtime/claude</code><button data-agent-copy="claude-login-command" data-i18n="copy">Copy</button></div>
+        <p class="hint" data-i18n="claude_adapter_hint">For Claude chat and import, export the latest setup file, then run the adapter setup command in Termux. Node.js and the official Agent SDK will be installed. A working Claude CLI is required separately.</p>
+        <button data-command="claude-adapter" class="secondary full" data-i18n="claude_adapter_setup">Copy Claude adapter setup command</button>
+        <div class="button-row"><button data-guide="claude-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="claude" class="quiet" data-i18n="claude_guide">Claude Code guide ↗</button></div>
+      </details>
+      <details class="agent-install" id="opencode-install">
+        <summary>OpenCode · Termux</summary>
+        <p data-i18n="agent_opencode_termux">The checked OpenCode 1.17.13 uses the community OpenClaw Android setup: glibc, proot and a Bun binary wrapper. Installing the ordinary npm package alone does not reproduce it. Follow the Termux details for prerequisites and installation, then check the version and sign in to your provider.</p>
+        <div class="button-row"><button data-guide="opencode-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="opencode-source" class="quiet" data-i18n="agent_termux_source">Community installation source ↗</button></div>
+        <div class="command"><code id="opencode-check-command">opencode --version</code><button data-agent-copy="opencode-check-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="opencode-login-command">opencode auth login</code><button data-agent-copy="opencode-login-command" data-i18n="copy">Copy</button></div>
+        <button data-guide="opencode" class="quiet" data-i18n="opencode_guide">OpenCode guide ↗</button>
+      </details>
+      <p class="hint" data-i18n="agent_termux_return">After signing in from Termux, return to Bibimer and reconnect. If a bridge update requires a restart, finish active sessions first. Setup does not install all agents automatically.</p>
       <p class="hint" data-i18n="agent_hint">Finding a program does not confirm Android compatibility or account access. Check each agent's Termux installation and runtime requirements.</p>
     </section>
     <section class="card setup-step">
