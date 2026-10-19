@@ -1,7 +1,9 @@
 """Release packaging checks without downloading tools or building/installing an APK."""
 import os
 import hashlib
+from html.parser import HTMLParser
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -15,6 +17,26 @@ import build_apk
 
 
 class ReleaseBuildTests(unittest.TestCase):
+    def test_webview_allows_every_resource_required_by_the_page(self):
+        required = set()
+
+        class PageAssets(HTMLParser):
+            def handle_starttag(self, tag, attrs):
+                attributes = dict(attrs)
+                value = attributes.get("href") if tag == "link" else attributes.get("src") if tag in {"script", "img"} else None
+                if value:
+                    required.add(value)
+
+        PageAssets().feed((build_apk.SRC / "assets/index.html").read_text())
+        activity = (build_apk.SRC / "java/app/bibimer/MainActivity.java").read_text()
+        declaration = re.search(r'Set<String> ASSETS = new HashSet<>\(Arrays\.asList\((.*?)\)\);', activity, re.S)
+        self.assertIsNotNone(declaration)
+        allowed = set(re.findall(r'"([^"\\]+)"', declaration.group(1)))
+        self.assertTrue(required)
+        self.assertFalse(required - allowed, "Page resources blocked by native WebView: " + ", ".join(sorted(required - allowed)))
+        for resource in required:
+            self.assertTrue((build_apk.SRC / "assets" / resource).is_file(), resource)
+
     def test_review_access_is_disabled_when_not_configured(self):
         with patch.dict(os.environ, {}, clear=True), tempfile.TemporaryDirectory() as folder:
             self.assertEqual(build_apk.review_access_digest(), "")

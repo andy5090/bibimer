@@ -14,6 +14,10 @@ if (process.platform === 'android') Object.defineProperty(process, 'platform', {
 const {chromium} = require('../.tools/ui/node_modules/playwright-core');
 const root = path.resolve(__dirname, '..');
 const source = path.join(root, 'android/app/src/main/assets');
+const nativeActivity = fs.readFileSync(path.join(root,'android/app/src/main/java/app/bibimer/MainActivity.java'),'utf8');
+const nativeAssetList = nativeActivity.match(/Set<String> ASSETS = new HashSet<>\(Arrays\.asList\(([\s\S]*?)\)\);/);
+assert.ok(nativeAssetList, 'Read the Android WebView asset policy');
+const nativeAssets = new Set([...nativeAssetList[1].matchAll(/"([^"\\]+)"/g)].map(match=>match[1]));
 const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'bibimer-ui-'));
 const state = path.join(temporary, 'state');
 const errors = [];
@@ -26,6 +30,7 @@ async function main() {
   assets = http.createServer((request, response) => {
     const file = request.url === '/' ? 'index.html' : request.url.slice(1);
     if (!/^[a-zA-Z0-9_./-]+$/.test(file) || file.includes('..')) { response.writeHead(404).end(); return; }
+    if (!nativeAssets.has(file)) { response.writeHead(200, {'Content-Type':'text/plain'}).end(); return; }
     try {
       const type = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.svg') ? 'image/svg+xml' : file.endsWith('.woff2') ? 'font/woff2' : 'text/html';
       response.writeHead(200, {'Content-Type':type}); response.end(fs.readFileSync(path.join(source, file)));
@@ -1118,7 +1123,7 @@ async function main() {
       await page.screenshot({path:path.join(root,`dist/screenshots/${agent}-question-ko.png`)});
       await page.locator('[data-request-action="chat_answer"]').click();
       await page.locator('.request-card').waitFor({state:'hidden'});
-      await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+      await page.waitForFunction(()=>document.querySelector('#turn-status').textContent===window.BibimerI18n.t('chat_state_ready'));
       assert.equal(fs.readFileSync(path.join(temporary,`project/${agent}-answers`),'utf8'),'both');
       await page.setViewportSize({width:393,height:780});
       await sessionAction('stop'); await page.locator('#confirm-stop').click();

@@ -99,12 +99,14 @@ async function main(){
   assert.match(await page.locator('#delivery-hint').innerText(),/Steer: add instructions to the work in progress/);
   assert.equal(await page.evaluate(()=>document.activeElement.id),'delivery-help-close');
   await page.locator('#delivery-help-close').click();
+  await page.waitForFunction(()=>document.querySelector('#delivery-help').getAttribute('aria-expanded')==='false');
   assert.equal(await page.locator('#delivery-help').getAttribute('aria-expanded'),'false');
   assert.equal(await input.inputValue(),'Keep this draft while reading help');
   assert.equal((await call('GET','/v1/health')).data.session.active_turn_id,helpTurn);
   assert.equal(agentMutations.length,helpMutations);
   await page.locator('#delivery-help').click();await page.keyboard.press('Escape');
   await page.waitForFunction(()=>!document.querySelector('#delivery-help-dialog').open);
+  await page.waitForFunction(()=>document.querySelector('#delivery-help').getAttribute('aria-expanded')==='false');
   assert.equal(await page.locator('#delivery-help').getAttribute('aria-expanded'),'false');
   await page.locator('#delivery-help').click();
   assert.equal(await page.evaluate(()=>window.BibimerBack()),true);
