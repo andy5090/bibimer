@@ -1,5 +1,14 @@
 # Bibimer 다음 세션 시작점
 
+## 0.24.1(42) 첫 화면 초기화 수정·내부 테스트 게시 (2026-10-19)
+
+- 사용자가 0.24.0의 **첫 화면 먹통**을 보고했다. `index.html`과 `app.js`가 요구하는 `worktree-create.js`가 Android `MainActivity.ASSETS`에 빠져 WebView에서 빈 응답으로 차단되고, 초기화가 중단되는 원인을 확인했다. 해당 파일 하나를 기존 허용 목록에 추가했다. 파일 접근 범위를 전면 개방하지 않았다.
+- 이전 검사는 파일의 AAB 포함 여부와 모든 파일을 제공하는 브라우저 서버만 확인해 **실제 네이티브 허용 정책을 놓쳤다**. `scripts/tests/test_build_release.py`에 HTML의 필수 리소스와 네이티브 허용 목록·원본 파일을 대조하는 회귀 검사를 추가했다. 수정 전 `worktree-create.js` 누락으로 실패하고 수정 후 통과했다. `scripts/smoke_ui.cjs`도 실제 Java 허용 목록으로 파일을 제공하도록 바꿨다.
+- Python scripts **38개**, Node **682키×10언어**·언어/초안·Demo·Review, 네이티브 파일 정책을 적용한 전체 격리 Chromium UI 검사를 통과했다. Setup/버튼·Chat/PTY·대기열/Steer·Ctrl+Enter/IME·가져오기/승인/질문/재접속을 포함한다. 로그 `.tools/webview-assets-before.log`, `.tools/release-0.24.1-{python,native-policy-ui}.log`. 실제41/42 AAB의 JS는 같고 **41의 DEX에는 허용 문자열이 없으며 42에는 포함**됨을 확인했다.
+- 앱 **0.24.1 / versionCode 42**, 내장 브리지 **0.18.0 유지**. AAB `dist/play/bibimer-0.24.1-42-release.aab`, SHA-256 `2e32fbed4d52e9ae17cdebca1f8e050debeb63e77f62ea1baea6d1a2b179b830`. AAPT2/전체 Java/D8·bundletool/jarsigner·기존 업로드 인증서, 53assets/브리지/4payload 원본·비공개 Receiver/DEX·PlaySDK·셸문법·비밀 원문 미포함 검증 통과. 새 의존성·키 없음. `.tools/aab-0.24.1-42-{mac.log,verification.json}`.
+- Console **활성 / 내부 테스터에게 제공됨 / 2026-10-19 17:31 Asia/Seoul**. 출시명 `0.24.1 (42) - Fix first-screen startup`, 새42만 포함·문제 있는41제외, EN/KO노트·기존 테스터 유지. 오류0·기존 가독화파일 경고1·지원기기 변화0. `/tracks/4701718894791581363/releases/13/details`, 증빙 `dist/play-0.24.1/{internal42-live.png,internal42-live-dom.txt}`. README/배포 메타데이터를42로 갱신하고41 결함·대체 이력을 남겼다. 아래41은 당시 배포·검사 기록이며 정상 동작 보장을 뜻하지 않는다.
+- **실제폰/에뮬레이터 설치·Android WebView 실동작·Play 업데이트 수신은 미검증**이다. 연결된 adb 기기가 없어 소스/실제 번들/브라우저 정책 검사까지 확인했다. 실제 모델 작업·백그라운드도 후속이다. 사용자 Termux 세션·프로젝트·운영 브리지·인증은 변경/재시작하지 않았다. 정식0.23.0(40)·웹사이트 배포는 유지한다. 이 시작 오류 수정 자체에는 브리지 업데이트가 필요하지 않으며,41에 포함됐던 새 브리지 기능은0.18.0 적용이 필요하다.
+
 ## 0.24.0(41) 워크트리·Claude Steer 내부 테스트 게시 (2026-10-19)
 
 - 사용자 요청으로 `a9b1177`의 누적 기능을 앱 **0.24.0 / versionCode 41**, 내장 브리지 **0.18.0**으로 빌드·게시했다. 사이드바 워크트리 생성/브랜치 선택/세션 시작, Claude 입력창·대기 항목 Steer, 일반 대기 메시지 묶음 전송, Enter 줄바꿈 설정의 Ctrl+Enter 전송, **682키×10언어**를 포함한다. 아래 미배포 기능은41에 포함됐다. 새 브리지 기능은 앱 업데이트 후 설정에서 브리지를 업데이트해야 적용된다.

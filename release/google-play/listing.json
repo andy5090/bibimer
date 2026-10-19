@@ -169,15 +169,15 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.24.0",
-    "versionCode": 41,
+    "versionName": "0.24.1",
+    "versionCode": 42,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "ce923fe5c5d1bcd560dba0abeb138178c2b9d506bd934f3f78af5ab179492839",
-    "file": "bibimer-0.24.0-41-release.aab",
+    "sha256": "2e32fbed4d52e9ae17cdebca1f8e050debeb63e77f62ea1baea6d1a2b179b830",
+    "file": "bibimer-0.24.1-42-release.aab",
     "bundleValidated": true,
     "uploadCertificateMatchesPlay": true,
     "packagedAssetsMatchSource": true,
@@ -193,13 +193,13 @@
     "playUpdateSdkClassesIncluded": true,
     "playSdkDependencyLockPackaged": true,
     "installerShellSyntaxValid": true,
-    "worktreeCreateUiPackaged": true,
-    "nativeWorktreeRoutePackaged": true,
+    "nativeWorktreeAssetAccessFixed": true,
+    "oldVersion41MissingNativeAssetConfirmed": true,
     "status": "published_internal_test",
     "builtOn": "2026-10-19",
     "signatureVerified": true,
     "consoleUploadStatus": "published_internal_test",
-    "consoleAcceptedVersionCode": 41,
+    "consoleAcceptedVersionCode": 42,
     "released": true,
     "releasedTrack": "internal_testing",
     "productionReleased": false,
@@ -301,15 +301,15 @@
   },
   "pendingUpdate": {
     "package": "app.bibimer",
-    "versionName": "0.24.0",
-    "versionCode": 41,
+    "versionName": "0.24.1",
+    "versionCode": 42,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "ce923fe5c5d1bcd560dba0abeb138178c2b9d506bd934f3f78af5ab179492839",
-    "file": "bibimer-0.24.0-41-release.aab",
+    "sha256": "2e32fbed4d52e9ae17cdebca1f8e050debeb63e77f62ea1baea6d1a2b179b830",
+    "file": "bibimer-0.24.1-42-release.aab",
     "bundleValidated": true,
     "uploadCertificateMatchesPlay": true,
     "packagedAssetsMatchSource": true,
@@ -325,13 +325,13 @@
     "playUpdateSdkClassesIncluded": true,
     "playSdkDependencyLockPackaged": true,
     "installerShellSyntaxValid": true,
-    "worktreeCreateUiPackaged": true,
-    "nativeWorktreeRoutePackaged": true,
+    "nativeWorktreeAssetAccessFixed": true,
+    "oldVersion41MissingNativeAssetConfirmed": true,
     "status": "published_internal_test",
     "builtOn": "2026-10-19",
     "signatureVerified": true,
     "consoleUploadStatus": "published_internal_test",
-    "consoleAcceptedVersionCode": 41,
+    "consoleAcceptedVersionCode": 42,
     "released": true,
     "releasedTrack": "internal_testing",
     "productionReleased": false,
@@ -340,7 +340,7 @@
     "emulatorInstallVerified": false,
     "physicalDeviceVerified": false,
     "preparedOn": "2026-10-19",
-    "releaseNotesFile": "release/google-play/release-notes/0.24.0.txt",
+    "releaseNotesFile": "release/google-play/release-notes/0.24.1.txt",
     "consoleUploaded": true,
     "consoleInternalTestStatus": "active_available_to_existing_testers",
     "developmentApkBuilt": false,
@@ -466,14 +466,14 @@
     "consoleProductionStatus": "available_on_google_play"
   },
   "internalTestRelease": {
-    "versionName": "0.24.0",
-    "versionCode": 41,
-    "releaseName": "0.24.0 (41) - Worktrees and Claude steering",
+    "versionName": "0.24.1",
+    "versionCode": 42,
+    "releaseName": "0.24.1 (42) - Fix first-screen startup",
     "consoleStatus": "active_available_to_existing_testers",
     "publishedOn": "2026-10-19",
-    "publishedAtLocal": "2026-10-19 17:05 Asia/Seoul",
-    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/12/details",
-    "releaseNotesFile": "release/google-play/release-notes/0.24.0.txt",
+    "publishedAtLocal": "2026-10-19 17:31 Asia/Seoul",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/13/details",
+    "releaseNotesFile": "release/google-play/release-notes/0.24.1.txt",
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
@@ -486,14 +486,12 @@
     "sourceBridgeVersion": "0.18.0",
     "bridgeUpdateRequiredForNewFeatures": true,
     "realPlayAvailabilityResponseVerified": false,
-    "evidence": "dist/play-0.24.0/internal41-live.png",
-    "scriptTestsPassed": 37,
-    "focusedBridgeTestsPassed": 60,
+    "evidence": "dist/play-0.24.1/internal42-live.png",
+    "scriptTestsPassed": 38,
     "isolatedBrowserTestsPassed": [
-      "worktrees",
-      "commands",
-      "ui"
-    ]
+      "ui_with_native_asset_policy"
+    ],
+    "nativeAssetAccessFix": true
   },
   "productionReleaseHistory": [
     {
@@ -743,6 +741,39 @@
         "library",
         "sidebar_drag"
       ]
+    },
+    {
+      "versionName": "0.24.0",
+      "versionCode": 41,
+      "releaseName": "0.24.0 (41) - Worktrees and Claude steering",
+      "consoleStatus": "superseded",
+      "publishedOn": "2026-10-19",
+      "publishedAtLocal": "2026-10-19 17:05 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/12/details",
+      "releaseNotesFile": "release/google-play/release-notes/0.24.0.txt",
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "errors": [],
+      "supportedDeviceChanges": 0,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "emulatorInstallVerified": false,
+      "physicalDeviceVerified": false,
+      "sourceBridgeVersion": "0.18.0",
+      "bridgeUpdateRequiredForNewFeatures": true,
+      "realPlayAvailabilityResponseVerified": false,
+      "evidence": "dist/play-0.24.0/internal41-live.png",
+      "scriptTestsPassed": 37,
+      "focusedBridgeTestsPassed": 60,
+      "isolatedBrowserTestsPassed": [
+        "worktrees",
+        "commands",
+        "ui"
+      ],
+      "knownIssue": "native_webview_missing_worktree_script",
+      "supersededByVersionCode": 42,
+      "userReportedFirstScreenFrozen": true
     }
   ]
 }

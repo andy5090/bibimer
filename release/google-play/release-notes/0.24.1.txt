@@ -1,0 +1,6 @@
+<en-US>
+Fixed the app freezing on the first screen in version 0.24.0. A required local script is now allowed to load in Android WebView, restoring app initialization and button actions. Includes the same bridge 0.18.0.
+</en-US>
+<ko-KR>
+0.24.0에서 첫 화면이 먹통이 되는 문제를 수정했습니다. Android WebView가 필요한 로컬 스크립트를 불러오도록 수정해 앱 초기화와 버튼 동작을 복구했습니다. 내장 브리지는 0.18.0으로 유지합니다.
+</ko-KR>
