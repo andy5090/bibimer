@@ -440,3 +440,8 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 #worktree-create-form .hint { margin:0; }
 #worktree-create-path { overflow-wrap:anywhere; }
 #worktree-create-dialog > .secondary { width:100%; margin-top:10px; }
+#bridge-maintenance-sessions { list-style:none; margin:0; padding:0; max-height:30vh; overflow:auto; }
+#bridge-maintenance-sessions li { padding:10px 0; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
+#bridge-maintenance-sessions strong, #bridge-maintenance-sessions small { display:block; }
+#bridge-maintenance-sessions small { margin-top:4px; color:var(--muted); }
+#bridge-maintenance-dialog > button { width:100%; margin-top:10px; }

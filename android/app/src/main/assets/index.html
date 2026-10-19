@@ -30,6 +30,7 @@
   <script src="commands.js" defer></script>
   <script src="github.js" defer></script>
   <script src="worktree-create.js" defer></script>
+  <script src="bridge-maintenance.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -418,6 +419,14 @@
       <label for="import-effort" data-i18n="effort_label">Reasoning</label><select id="import-effort"></select>
       <p id="import-models-hint" class="hint"></p><button id="import-models-refresh" class="quiet" type="button" data-i18n="models_refresh">Refresh models</button>
       <p id="import-settings-hint" class="hint"></p><button id="import-settings-done" type="button" class="primary" data-i18n="settings_done">Done</button></dialog>
+  <dialog id="bridge-maintenance-dialog" class="settings-dialog" aria-labelledby="bridge-maintenance-title" aria-describedby="bridge-maintenance-confirm-hint">
+    <h2 id="bridge-maintenance-title" data-i18n="bridge_maintenance_confirm_title">End sessions to continue?</h2>
+    <p id="bridge-maintenance-confirm-hint" class="hint" data-i18n="bridge_maintenance_confirm_hint"></p>
+    <ul id="bridge-maintenance-sessions"></ul>
+    <p id="bridge-maintenance-progress" class="hint" role="status" aria-live="polite"></p>
+    <button id="bridge-maintenance-confirm" type="button" class="danger"></button>
+    <button id="bridge-maintenance-cancel" type="button" class="secondary" data-i18n="stop_cancel">Keep working</button>
+  </dialog>
   <dialog id="worktree-create-dialog" class="settings-dialog" aria-labelledby="worktree-create-title">
     <h2 id="worktree-create-title" data-i18n="worktree_create_title">Create a worktree</h2>
     <p id="worktree-create-project" class="hint" dir="auto"></p>

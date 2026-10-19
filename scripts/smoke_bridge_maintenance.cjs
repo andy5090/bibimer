@@ -5,17 +5,32 @@ const {chromium}=require('../.tools/ui/node_modules/playwright-core');
 const assets=path.resolve(__dirname,'../android/app/src/main/assets');
 let server,browser;
 (async()=>{
- server=http.createServer((req,res)=>{try{const file=req.url==='/'?'index.html':req.url.slice(1);if(!/^[\w./-]+$/.test(file)||file.includes('..'))throw Error();res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(path.join(assets,file)));}catch(_){res.writeHead(404).end();}});
+ server=http.createServer((req,res)=>{try{const file=req.url==='/'?'index.html':req.url.slice(1);if(!/^[\w./-]+$/.test(file)||file.includes('..'))throw Error();res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.svg')?'image/svg+xml':file.endsWith('.woff2')?'font/woff2':'text/html');res.end(fs.readFileSync(path.join(assets,file)));}catch(_){res.writeHead(404).end();}});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  browser=await chromium.launch({executablePath:process.env.BIBIMER_CHROMIUM||path.join(process.env.PREFIX,'bin/headless_shell'),headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  const page=await browser.newPage({viewport:{width:320,height:640}}),errors=[];
  page.setDefaultTimeout(15000);
  page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{
-  window.calls=[];window.phase='';window.active=false;window.version='0.15.0';window.instance='old';window.healthReads=0;window.demo=false;window.lang='en';window.failHealth=false;
+  window.calls=[];window.stops=[];window.sessions=[];window.phase='';window.version='0.15.0';window.instance='old';window.healthReads=0;window.demo=false;window.lang='en';window.failHealth=false;
+  window.project={id:'archived-project',name:'Background project',path:'/mock/project',agent:'shell'};
+  window.row=(id,mode='chat',turn_state='ready')=>({id:id.repeat(8)+'-aaaa-aaaa-aaaa-'+id.repeat(12),project:window.project,state:'running',archived:true,agent:mode==='chat'?'codex':'shell',mode,turn_state,title:'Session <b>'+id+'</b>',queued_count:turn_state==='waiting'?2:0});
   window.Bibimer={environment:()=>JSON.stringify({paired:true,demo:window.demo,language:window.lang,bundledBridgeVersion:'0.16.0',version:'0.21.0'}),
    bridgeMaintenanceStatus:()=>window.phase,maintainBridge:action=>{window.calls.push(action);window.phase='bridge_maintenance_running';},cancelPoll:()=>{},setEnterBehavior:()=>true,setAgentOptions:()=>true,
-   request:(id,method,route)=>{if(route!=='/v1/health')throw Error('Unexpected mutation/request '+route);window.healthReads++;if(window.failHealth){setTimeout(()=>window.BibimerNativeReply(id,{ok:false,status:0,data:{code:'error_connection_failed'}}),0);return;}setTimeout(()=>window.BibimerNativeReply(id,{ok:true,status:200,data:{protocol:1,instance:window.instance,version:window.version,features:['multiple_projects','session_library'],agents:[{id:'shell',installed:true}],project:{id:'archived-project',name:'Background project',path:'/mock/project',agent:'shell'},session:null,projects:[{id:'archived-project',name:'Background project',path:'/mock/project',agent:'shell',session:null,sessions:window.active?[{id:'background-session',project:{id:'archived-project',name:'Background project',path:'/mock/project'},state:'running',archived:true,agent:'shell',mode:'terminal'}]:[]}]}}),0);}
+   request:(id,method,route)=>{
+    const reply=(ok,data)=>setTimeout(()=>window.BibimerNativeReply(id,{ok,status:ok?200:503,data}),0);
+    if(method==='POST'&&route.endsWith('/stop')){
+      const sessionId=route.split('/')[3];window.stops.push(sessionId);
+      if(window.failStop){reply(false,{code:'error_request_failed'});return;}
+      const finish=()=>{if(window.ackWithoutExit)window.sessions.find(row=>row.id===sessionId).state='stopping';else window.sessions=window.sessions.filter(row=>row.id!==sessionId);if(window.injectOnStop){window.sessions.push(window.row('f'));window.injectOnStop=false;}reply(true,{ok:true});};
+      if(window.holdStop){window.holdStop=false;window.releaseStop=finish;}else finish();return;
+    }
+    if(route!=='/v1/health')throw Error('Unexpected mutation/request '+route);window.healthReads++;
+    if(window.failHealth){reply(false,{code:'error_connection_failed'});return;}
+    const finish=()=>reply(true,{protocol:1,instance:window.instance,version:window.version,features:['multiple_projects','session_library'],agents:[{id:'shell',installed:true}],
+      project:window.project,session:null,active_sessions:window.sessions.length,projects:[{...window.project,session:null,sessions:window.sessions}]});
+    if(window.holdNextHealth){window.holdNextHealth=false;window.releaseHealth=finish;}else finish();
+   }
   };
  });
  await page.goto(`http://127.0.0.1:${server.address().port}`);
@@ -32,18 +47,59 @@ let server,browser;
  assert.equal(await page.locator('#bridge-update-install').isDisabled(),true);
  await page.waitForFunction(()=>!document.querySelector('#bridge-restart').disabled);
  await page.locator('#bridge-restart').click();
- assert.deepEqual(await page.evaluate(()=>window.calls),['update','restart']);
+ await page.waitForFunction(()=>window.calls.length===2);assert.deepEqual(await page.evaluate(()=>window.calls),['update','restart']);
  await page.evaluate(()=>{window.phase='bridge_maintenance_busy';});
  await page.waitForFunction(()=>document.querySelector('#bridge-maintenance-status').textContent.includes('still running'));
- await page.evaluate(()=>{window.phase='';window.active=true;window.BibimerResume();});
- await page.waitForFunction(()=>document.querySelector('#bridge-maintenance-status').textContent.includes('Running sessions: 1'));
- assert.equal(await page.locator('#bridge-restart').isDisabled(),true);
- assert.equal(await page.locator('#bridge-update-install').isDisabled(),true);
+ await page.evaluate(()=>{window.phase='';window.version='0.15.0';window.sessions=[window.row('a'),window.row('b','chat','running'),window.row('c','chat','waiting'),window.row('d','terminal')];window.BibimerResume();});
+ await page.waitForFunction(()=>document.querySelector('#bridge-maintenance-status').textContent.includes('Connected sessions: 4'));
+ await page.waitForFunction(()=>!document.querySelector('#bridge-update-install').disabled);
+ assert.equal(await page.locator('#bridge-restart').isDisabled(),false);
+ const open=async()=>{await page.waitForFunction(()=>!document.querySelector('#bridge-update-install').disabled);await page.locator('#bridge-update-install').click();await page.waitForFunction(()=>!document.querySelector('#bridge-maintenance-confirm').disabled);};
+ const cancel=async()=>{await page.locator('#bridge-maintenance-cancel').click();await page.locator('#bridge-maintenance-dialog').waitFor({state:'hidden'});};
+ await page.evaluate(()=>{window.holdNextHealth=true;document.querySelector('#bridge-update-install').click();});
+ await page.waitForFunction(()=>!!window.releaseHealth);assert.equal(await page.evaluate(()=>window.BibimerBack()),true);
+ await page.locator('#bridge-maintenance-dialog').waitFor({state:'hidden'});await page.evaluate(()=>window.releaseHealth());await page.waitForTimeout(50);
+ assert.deepEqual(await page.evaluate(()=>window.stops),[]);assert.equal(await page.evaluate(()=>window.calls.length),2);
+ await open();assert.equal(await page.locator('#bridge-maintenance-sessions li').count(),4);assert.equal(await page.locator('#bridge-maintenance-sessions b').count(),0);
+ assert.match(await page.locator('#bridge-maintenance-sessions').textContent(),/Ready for your message/);
+ assert.match(await page.locator('#bridge-maintenance-sessions').textContent(),/Responding/);
+ assert.match(await page.locator('#bridge-maintenance-sessions').textContent(),/Queued/);
+ await cancel();assert.deepEqual(await page.evaluate(()=>window.stops),[]);
+ assert.deepEqual(await page.evaluate(()=>window.calls),['update','restart']);
+ await open();await page.evaluate(()=>window.sessions.push(window.row('e')));await page.locator('#bridge-maintenance-confirm').click();
+ await page.waitForFunction(()=>document.querySelector('#bridge-maintenance-progress').textContent.includes('changed'));
+ assert.equal(await page.locator('#bridge-maintenance-sessions li').count(),5);assert.deepEqual(await page.evaluate(()=>window.stops),[]);
+ await page.evaluate(()=>window.failStop=true);await page.locator('#bridge-maintenance-confirm').click();
+ await page.waitForFunction(()=>!document.querySelector('#bridge-maintenance-confirm').disabled);
+ assert.match(await page.locator('#bridge-maintenance-progress').textContent(),/maintenance was not started/);
+ assert.equal(await page.locator('#bridge-maintenance-dialog').isVisible(),true);assert.equal(await page.evaluate(()=>window.calls.length),2);
+ await page.evaluate(()=>{window.failStop=false;window.holdStop=true;});await page.locator('#bridge-maintenance-confirm').click();
+ await page.waitForFunction(()=>!!window.releaseStop);assert.equal(await page.locator('#bridge-maintenance-confirm').isDisabled(),true);
+ const duringStop=await page.evaluate(()=>window.stops.length);await page.locator('#bridge-maintenance-confirm').evaluate(node=>node.dispatchEvent(new Event('click')));assert.equal(await page.evaluate(()=>window.stops.length),duringStop);
+ await page.keyboard.press('Escape');assert.equal(await page.locator('#bridge-maintenance-dialog').isVisible(),true);
+ assert.equal(await page.evaluate(()=>window.BibimerBack()),true);assert.equal(await page.locator('#bridge-maintenance-dialog').isVisible(),true);
+ assert.equal(await page.evaluate(()=>window.calls.length),2);await page.evaluate(()=>window.releaseStop());
+ await page.waitForFunction(()=>window.calls.length===3);assert.equal(await page.evaluate(()=>window.sessions.length),0);
+ assert.equal(await page.locator('#bridge-maintenance-dialog').isVisible(),false);
+ assert.deepEqual(await page.evaluate(()=>window.calls),['update','restart','update']);
+ console.log('PASS: idle/responding/waiting/archived/terminal review; cancel and literal titles; changed targets re-confirmed; stop failure keeps maintenance idle; duplicate/Back blocked while stopping');
+ await page.evaluate(()=>{window.phase='';window.sessions=[window.row('a')];window.BibimerResume();});
+ await open();await page.evaluate(()=>window.injectOnStop=true);await page.locator('#bridge-maintenance-confirm').click();
+ await page.waitForFunction(()=>document.querySelector('#bridge-maintenance-progress').textContent.includes('changed'));
+ assert.equal(await page.evaluate(()=>window.sessions.length),1);assert.equal(await page.evaluate(()=>window.calls.length),3);await cancel();
+ await page.evaluate(()=>window.ackWithoutExit=true);await open();await page.locator('#bridge-maintenance-confirm').click();
+ await page.waitForFunction(()=>window.sessions[0].state==='stopping');await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>window.calls.length),3);
+ await page.evaluate(()=>{window.realNow=Date.now;Date.now=()=>window.realNow()+21000;});
+ await page.waitForFunction(()=>document.querySelector('#bridge-maintenance-progress').textContent.includes('maintenance was not started'));
+ assert.equal(await page.evaluate(()=>window.calls.length),3);await page.evaluate(()=>{Date.now=window.realNow;window.ackWithoutExit=false;});await cancel();
+ await open();const beforeStale=await page.evaluate(()=>window.stops.length);await page.evaluate(()=>window.instance='changed');await page.locator('#bridge-maintenance-confirm').click();
+ await page.waitForFunction(()=>!document.querySelector('#bridge-maintenance-confirm').disabled);
+ assert.equal(await page.evaluate(()=>window.stops.length),beforeStale);assert.equal(await page.evaluate(()=>window.calls.length),3);await cancel();
  // A dead bridge may leave stale active rows. Only Termux can establish whether the state lock is still held.
  await page.evaluate(()=>{window.failHealth=true;window.BibimerResume();});
  await page.waitForFunction(()=>!document.querySelector('#bridge-restart').disabled);
  assert.equal(await page.locator('#bridge-update-install').isDisabled(),false);
- await page.evaluate(()=>{window.failHealth=false;window.active=false;window.BibimerResume();});
+ await page.evaluate(()=>{window.failHealth=false;window.sessions=[];window.BibimerResume();});
  await page.waitForFunction(()=>!document.querySelector('#bridge-restart').disabled);
  for(const lang of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']){
   await page.evaluate(lang=>{window.lang=lang;window.BibimerResume();},lang);
@@ -51,7 +107,12 @@ let server,browser;
   const layout=await page.locator('#bridge-update-card').evaluate(el=>({w:el.getBoundingClientRect().width,scroll:el.scrollWidth,client:el.clientWidth,text:el.textContent}));
   assert.ok(layout.w<=320&&layout.scroll<=layout.client+1,lang+' overflow');
   assert.ok(!layout.text.includes('bridge_maintenance_'),lang+' untranslated');
+  await page.evaluate(()=>{window.sessions=[window.row('a'),window.row('b','chat','running'),window.row('c','terminal')];});
+  await open();const modal=await page.locator('#bridge-maintenance-dialog').evaluate(el=>({scroll:el.scrollWidth,client:el.clientWidth,text:el.textContent}));
+  assert.ok(modal.scroll<=modal.client+1,lang+' modal overflow');assert.ok(!modal.text.includes('bridge_maintenance_'),lang+' modal untranslated');
+  fs.mkdirSync(path.resolve(__dirname,'../dist/screenshots'),{recursive:true});if(['en','ko'].includes(lang))await page.screenshot({path:path.resolve(__dirname,'../dist/screenshots/bridge-maintenance-end-320-'+lang+'.png')});
+  await cancel();await page.evaluate(()=>window.sessions=[]);
  }
  assert.deepEqual(errors,[]);
- console.log('Bridge maintenance UI: explicit update/restart, completion reconnect/version, duplicate prevention, archived active session blocking and 10 locales at 320px passed');
+ console.log('PASS: new session during stop and stale bridge never terminated; update/restart completion reconnect; offline recovery; 10 locales and confirmation at 320px');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();if(server)await new Promise(r=>server.close(r));});

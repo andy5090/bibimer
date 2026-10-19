@@ -104,6 +104,10 @@
     refresh:refreshSidebar,open:async(id,sessionId)=>{await refreshCatalog();await selectSession(id,sessionId);}
   });
 
+  const bridgeMaintenance = new BibimerMaintenance(t, () => ({instance,online,paused,allowed:canMaintainBridge}), api, {
+    changed:renderBridgeUpdate,title:sessionTitle,status:sessionStatus,start:runBridgeMaintenance
+  });
+
   const commands = new BibimerCommands($("input"), $("commands"), t, () => {
     const agent = session?.agent, path = session?.project?.path;
     return {agent, path, project:projectKey(), view:viewKey(), key:[instance, projectKey(), agent, path].join("/"),
@@ -1836,7 +1840,18 @@
     for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
     return 0;
   }
-  let maintenancePhase = "", maintenanceRefresh = "";
+  let maintenancePhase = "", maintenanceRefresh = "", maintenanceRequestedUntil = 0;
+  function canMaintainBridge(action) {
+    const env=environment(), phase=native.bridgeMaintenanceStatus?.();
+    return !demo && !!native.maintainBridge && env.paired && ["update","restart"].includes(action) &&
+      phase!=="bridge_maintenance_running" && Date.now()>=maintenanceRequestedUntil &&
+      (action!=="update" || !online || compareBridgeVersions(bridgeVersion,env.bundledBridgeVersion)===null || compareBridgeVersions(bridgeVersion,env.bundledBridgeVersion)<0);
+  }
+  function runBridgeMaintenance(action) {
+    if(paused || !canMaintainBridge(action))return;
+    maintenanceRequestedUntil=Date.now()+1000;
+    native.maintainBridge(action);renderBridgeUpdate();setTimeout(renderBridgeUpdate,1100);
+  }
   function renderBridgeUpdate() {
     const bundled = environment().bundledBridgeVersion;
     $("bridge-update-card").hidden = demo || !bundled;
@@ -1851,8 +1866,11 @@
       (session && ["running", "stopping"].includes(session.state) ? 1 : 0)) : 0;
     $("bridge-maintenance-status").textContent = maintenancePhase === "bridge_maintenance_running" ? t(maintenancePhase) : active ? t("bridge_maintenance_active", {count:active}) : maintenancePhase ? t(maintenancePhase) : "";
     $("bridge-update-install").hidden = $("bridge-restart").hidden = !supported;
-    $("bridge-update-install").disabled = !supported || !environment().paired || !!active || (comparison !== null && comparison >= 0) || maintenancePhase === "bridge_maintenance_running";
-    $("bridge-restart").disabled = !supported || !environment().paired || !!active || maintenancePhase === "bridge_maintenance_running";
+    $("bridge-update-install").textContent=t(active?"bridge_maintenance_end_update":"bridge_maintenance_update");
+    $("bridge-restart").textContent=t(active?"bridge_maintenance_end_restart":"bridge_maintenance_restart");
+    $("bridge-update-install").disabled = bridgeMaintenance.busy || !canMaintainBridge("update");
+    $("bridge-restart").disabled = bridgeMaintenance.busy || !canMaintainBridge("restart");
+    bridgeMaintenance.render();
     $("bridge-update-guide").hidden = supported || comparison === null || comparison >= 0;
     if (maintenancePhase === "bridge_maintenance_done" && maintenanceRefresh !== maintenancePhase) {
       maintenanceRefresh = maintenancePhase;
@@ -1865,9 +1883,7 @@
   for (const [id, action] of [["bridge-update-install", "update"], ["bridge-restart", "restart"]]) {
     $(id).addEventListener("click", () => {
       if (demo || paused || $(id).disabled || !native.maintainBridge) return;
-      native.maintainBridge(action);
-      $("bridge-update-install").disabled = $("bridge-restart").disabled = true;
-      setTimeout(renderBridgeUpdate, 100);
+      void bridgeMaintenance.open(action);
     });
   }
   $("bridge-update-guide").addEventListener("click", () => { if (!demo) tab("setup"); });
@@ -1932,7 +1948,8 @@
   window.BibimerBack = () => {
     const dialogs = [...document.querySelectorAll("dialog[open]:not(.docked)")];
     if (dialogs.length) {
-      if (dialogs[dialogs.length - 1].id === "handoff-dialog" && handoff?.busy) return true;
+      if ((dialogs[dialogs.length - 1].id === "handoff-dialog" && handoff?.busy) ||
+          (dialogs[dialogs.length - 1].id === "bridge-maintenance-dialog" && bridgeMaintenance.stopping)) return true;
       dialogs[dialogs.length - 1].close(); return true;
     }
     if (!$("commands").hidden && currentTab === "work") { commands.dismiss(); return true; }
