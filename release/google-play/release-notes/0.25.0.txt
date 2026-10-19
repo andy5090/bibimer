@@ -1,0 +1,6 @@
+<en-US>
+Bridge updates and restarts can now guide you through ending connected sessions. Review affected sessions and queued work, then confirm to end them before maintenance. Cancellation keeps sessions running, and maintenance starts only after their exit is verified. Includes the first-screen startup fix and bridge 0.18.0.
+</en-US>
+<ko-KR>
+설정에서 연결된 세션을 확인하고 종료한 뒤 브리지를 업데이트하거나 재시작할 수 있습니다. 종료 대상과 대기 작업을 확인하고 진행하며, 취소하면 세션을 유지합니다. 실제 종료가 확인된 뒤에만 유지보수를 시작합니다. 첫 화면 초기화 수정과 브리지 0.18.0을 포함합니다.
+</ko-KR>
