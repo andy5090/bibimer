@@ -71,7 +71,9 @@ let browser;
   b=await header('p2').boundingBox();await page.mouse.move(p.x,b.y+b.height-1);await page.mouse.up();
   assert.deepEqual(await page.evaluate(()=>moves.at(-1)),{id:'p0',position:2});assert.equal(await page.locator('#sidebar').evaluate(node=>node.open),true);
   // A drag owns horizontal motion too; a normal outward swipe still closes the drawer.
-  await page.setViewportSize({width:320,height:600});await page.evaluate(()=>sidebar.open());
+  await page.setViewportSize({width:320,height:600});
+  await page.waitForFunction(()=>!sidebar.wide.matches&&!document.querySelector('#sidebar').classList.contains('docked'));
+  await page.evaluate(()=>sidebar.open());
   p=await hold('p0');await touch('touchMove',p.x-80,p.y);await touch('touchEnd');
   assert.equal(await page.locator('#sidebar').evaluate(node=>node.open),true);
   await pause(520);p=await point('p0');await touch('touchStart',p.x+140,p.y);await touch('touchMove',p.x+40,p.y);await touch('touchEnd');

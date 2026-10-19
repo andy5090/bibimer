@@ -26,7 +26,7 @@ class MaintenanceTests(test_restart.RestartTests):
         self.folder = self.root / 'installed'
         self.folder.mkdir()
         self.source = Path(module.__file__).read_bytes()
-        self.old = self.source.replace(b'VERSION = "0.16.0"', b'VERSION = "0.15.0"')
+        self.old = self.source.replace(f'VERSION = "{module.VERSION}"'.encode(), b'VERSION = "0.15.0"')
         (self.folder / 'bibimer_bridge.py').write_bytes(self.old)
         self.payload = self.bundle({'bibimer_bridge.py': self.source, 'provider_opencode.py': b'# adapter\n'})
 

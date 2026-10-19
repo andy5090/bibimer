@@ -60,7 +60,7 @@ async function main(){
   await page.waitForFunction(id=>document.querySelector('[data-session="'+id+'"] strong')?.textContent==='Earlier fix <b>literal</b>',first);
   assert.equal(await page.locator('.sidebar-session-open strong b').count(),0);
   await closeSidebar();
-  await page.locator('#new-session').click();assert.equal(await page.locator('#launch').isVisible(),true);const second=await launch();
+  await page.locator('#new-session').click();await page.locator('#launch').waitFor({state:'visible'});const second=await launch();
   assert.notEqual(first,second);assert.equal((await call('GET','/v1/health')).data.active_sessions,2);
   await page.locator('#input').fill('Second draft');await select(first);await page.locator('.request-card').waitFor();assert.equal(await page.locator('.request-card').count(),1);
   await select(second);assert.equal(await page.locator('#input').inputValue(),'Second draft');

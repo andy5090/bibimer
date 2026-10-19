@@ -116,6 +116,7 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   await page.waitForFunction(()=>document.querySelector('#folder-entries').firstElementChild.id==='folder-up'&&!document.querySelector('#folder-up').disabled);
   assert.equal(await page.locator('#folder-up').getAttribute('title'),path.dirname(tmp));
   await page.locator('.folder-row').filter({hasText:'Projects 한글'}).locator('.folder-pick').click();
+  await page.waitForFunction(expected=>document.querySelector('#github-parent').value===expected,parent);
   assert.equal(await page.locator('#github-parent').inputValue(),parent);
   assert.equal(await page.evaluate(()=>localStorage.projectParent),parent);
   assert.equal(await page.evaluate(()=>localStorage.projectFolder),parent);
@@ -165,6 +166,7 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   assert.equal(await page.locator('#github-clone-status').textContent(),await page.evaluate(()=>window.BibimerI18n.t('error_github_clone')));
   assert.equal(fs.readFileSync(path.join(parent,'failed-copy','partial'),'utf8'),'keep');
   await page.locator('#github-repository').fill('fixture/slow');await page.locator('#github-name').fill('cancel-copy');await page.locator('#github-submit').click();
+  await page.waitForFunction(()=>document.querySelector('#github-submit').textContent==='Cloning…');
   assert.equal(await page.locator('#github-submit').textContent(),'Cloning…');
   assert.equal(await page.locator('#github-submit').isDisabled(),true);
   assert.equal(await page.locator('#github-submit').getAttribute('aria-busy'),'true');
