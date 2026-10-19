@@ -81,7 +81,7 @@
 <div class="shell">
   <header>
     <a class="brand" href="/zh-Hant/"><img src="/assets/icon.png" alt="" width="28" height="28">BIBIMER</a>
-    <div class="header-actions"><nav aria-label="主導覽"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">支援</a></nav><nav class="language-nav" aria-label="網站語言"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a><a href="/ja/" lang="ja" hreflang="ja">日本語</a><a href="/zh-Hant/" lang="zh-Hant" hreflang="zh-Hant" aria-current="page">繁體中文</a><a href="/fr/" lang="fr" hreflang="fr">Français</a><a href="/de/" lang="de" hreflang="de">Deutsch</a></nav></div>
+    <div class="header-actions"><nav aria-label="主導覽"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="/zh-Hant/contact/">支援</a></nav><nav class="language-nav" aria-label="網站語言"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a><a href="/ja/" lang="ja" hreflang="ja">日本語</a><a href="/zh-Hant/" lang="zh-Hant" hreflang="zh-Hant" aria-current="page">繁體中文</a><a href="/fr/" lang="fr" hreflang="fr">Français</a><a href="/de/" lang="de" hreflang="de">Deutsch</a></nav></div>
   </header>
   <main>
     <section class="hero" aria-labelledby="headline">
@@ -91,7 +91,7 @@
         <p class="lead">讓 Android 手機成為你的開發環境。Bibimer 是一款行動代理開發環境（ADE），透過同一部手機上的 Termux，將專案、程式開發代理工作階段、對話和終端機整合在一起。</p>
         <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=zh_TW"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">在 Google Play 下載 Bibimer</a><a class="guide-link" href="/zh-Hant/guide/">查看使用指南<span aria-hidden="true"> →</span></a></div>
         <p class="status">免費 · Android 8.0 及以上 · 與 Termux 安裝在同一部手機上</p>
-        <p class="status">本網站提供 10 種語言，包括繁體中文。目前 Google Play 正式版支援英文和韓文；其他應用程式語言將隨後續正式版本推出。</p>
+        <p class="status">應用程式和網站均支援十種語言。應用程式預設依照裝置語言，也可在設定中手動選擇。</p>
       </div>
       <!-- hero-visual:start -->
       <div class="hero-demo">
@@ -150,6 +150,12 @@
       <div><h3>對話與終端機</h3><p>查看結構化對話和工具活動。傳送指令、處理核准請求，並將後續訊息加入佇列。</p></div>
       <div><h3>自由選擇 AI 代理</h3><p>連線相容的 Codex、Claude 和 OpenCode 安裝版本。選擇已安裝 AI 代理所支援的模型和選項。</p></div>
       <div><h3>查看檔案與 Git 更改</h3><p>透過語法醒目提示閱讀程式碼，查看 Git 差異。預覽 Markdown、靜態 HTML 和 Mermaid 圖表。使用相容的 Android 應用程式開啟 Office 文件、圖片和 PDF。</p></div>
+    </section>
+    <section class="name-story" id="latest-update" aria-labelledby="latest-title">
+      <h2 id="latest-title">0.25.0 更新</h2>
+      <p>目前公開版本為 0.23.0。0.25.0 已提供給受邀的內部測試者，並已提交正式版審查。</p>
+      <p>從側邊欄建立 Git 工作樹並啟動工作階段。Codex 或 Claude 回應時可使用 Steer 追加指示，將排隊訊息合併傳送；Enter 為換行時，可用 Ctrl+Enter 傳送。此版本也修正了起始畫面無回應的問題。</p>
+      <p>0.25.0 的 Settings 會在更新或重新啟動橋接程式前，顯示所有專案、工作樹、封存和終端機中的執行中工作階段。確認後結束列出的工作階段，驗證程序確實結束後才開始維護。進行中的回應及排隊輸入可能遺失，PTY 輸出不會復原；取消可保留工作階段。建立工作樹和 Claude Steer 需要橋接版本 0.18.0，請在 Settings 更新。刪除工作樹仍使用 Termux 中的 Git。Shift+Enter 一律換行；Enter 設為傳送時，Ctrl+Enter 換行。</p>
     </section>
     <section class="setup" aria-labelledby="setup-title">
       <h2 id="setup-title">從 Termux 開始</h2>

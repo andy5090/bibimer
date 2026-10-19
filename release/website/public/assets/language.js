@@ -45,7 +45,7 @@
   const locales = links.map((link) => link.hreflang);
   let saved;
   try { saved = localStorage.getItem(storageKey); } catch (_) { /* Private storage can be unavailable. */ }
-  if (["/", "/index.html", "/privacy/", "/privacy/index.html", "/guide/", "/guide/index.html"].includes(location.pathname)) {
+  if (["/", "/index.html", "/privacy/", "/privacy/index.html", "/guide/", "/guide/index.html", "/contact/", "/contact/index.html"].includes(location.pathname)) {
     const requested = new URL(location.href).searchParams.get("lang");
     const preferred = locales.includes(requested) ? requested : locales.includes(saved) ? saved
       : matchLanguage(navigator.languages || [navigator.language], locales);

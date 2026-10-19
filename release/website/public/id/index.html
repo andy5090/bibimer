@@ -81,7 +81,7 @@
 <div class="shell">
   <header>
     <a class="brand" href="/id/"><img src="/assets/icon.png" alt="" width="28" height="28">BIBIMER</a>
-    <div class="header-actions"><nav aria-label="Navigasi utama"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">Bantuan</a></nav><nav class="language-nav" aria-label="Bahasa situs web"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id" aria-current="page">Bahasa Indonesia</a><a href="/ja/" lang="ja" hreflang="ja">日本語</a><a href="/zh-Hant/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a><a href="/fr/" lang="fr" hreflang="fr">Français</a><a href="/de/" lang="de" hreflang="de">Deutsch</a></nav></div>
+    <div class="header-actions"><nav aria-label="Navigasi utama"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="/id/contact/">Bantuan</a></nav><nav class="language-nav" aria-label="Bahasa situs web"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id" aria-current="page">Bahasa Indonesia</a><a href="/ja/" lang="ja" hreflang="ja">日本語</a><a href="/zh-Hant/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a><a href="/fr/" lang="fr" hreflang="fr">Français</a><a href="/de/" lang="de" hreflang="de">Deutsch</a></nav></div>
   </header>
   <main>
     <section class="hero" aria-labelledby="headline">
@@ -91,7 +91,7 @@
         <p class="lead">Jadikan ponsel Android Anda sebagai lingkungan pengembangan. Bibimer adalah ADE seluler yang menyatukan proyek, sesi agen pemrograman, percakapan, dan terminal dengan Termux di ponsel yang sama.</p>
         <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=id"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Dapatkan Bibimer di Google Play</a><a class="guide-link" href="/id/guide/">Panduan penggunaan<span aria-hidden="true"> →</span></a></div>
         <p class="status">Gratis · Android 8.0 atau lebih baru · Termux di ponsel yang sama</p>
-        <p class="status">Situs ini tersedia dalam bahasa Indonesia. Aplikasi yang saat ini tersedia di Google Play mendukung bahasa Inggris dan Korea; bahasa tambahan untuk aplikasi sedang disiapkan.</p>
+        <p class="status">Aplikasi dan situs mendukung sepuluh bahasa. Aplikasi mengikuti bahasa perangkat secara default; pilih bahasa lain di Pengaturan.</p>
       </div>
       <!-- hero-visual:start -->
       <div class="hero-demo">
@@ -150,6 +150,12 @@
       <div><h3>Percakapan dan terminal</h3><p>Ikuti percakapan terstruktur dan aktivitas alat. Kirim instruksi, tanggapi permintaan persetujuan, dan antrekan pesan lanjutan.</p></div>
       <div><h3>Pilih agen Anda</h3><p>Hubungkan instalasi Codex, Claude, dan OpenCode yang kompatibel. Pilih model dan opsi yang didukung oleh agen yang Anda instal.</p></div>
       <div><h3>Baca berkas dan perubahan Git</h3><p>Baca kode dengan penyorotan sintaks dan periksa perbedaan di Git. Lihat pratinjau Markdown, HTML statis, dan diagram Mermaid. Buka dokumen Office, gambar, dan PDF dengan aplikasi Android yang kompatibel.</p></div>
+    </section>
+    <section class="name-story" id="latest-update" aria-labelledby="latest-title">
+      <h2 id="latest-title">Pembaruan 0.25.0</h2>
+      <p>Rilis publik: 0.23.0. Versi 0.25.0 tersedia bagi penguji internal yang diundang dan telah diajukan untuk peninjauan produksi.</p>
+      <p>Buat worktree Git dan mulai sesi dari bilah samping. Gunakan Steer saat Codex atau Claude merespons, kirim pesan antrean secara berkelompok, dan gunakan Ctrl+Enter untuk mengirim jika Enter membuat baris baru. Perbaikan layar awal yang macet juga disertakan.</p>
+      <p>Pada 0.25.0, Settings menampilkan sesi aktif dari semua proyek, worktree, arsip, dan terminal sebelum pembaruan atau mulai ulang bridge. Konfirmasi untuk mengakhiri sesi yang tercantum; pemeliharaan dimulai setelah penghentian terverifikasi. Respons berjalan dan antrean dapat hilang; keluaran PTY tidak dipulihkan. Batalkan untuk mempertahankan sesi. Pembuatan worktree dan Claude Steer memerlukan bridge 0.18.0; perbarui di Settings. Hapus worktree melalui Git di Termux. Shift+Enter selalu membuat baris baru; Ctrl+Enter membuat baris baru jika Enter diatur untuk mengirim.</p>
     </section>
     <section class="setup" aria-labelledby="setup-title">
       <h2 id="setup-title">Mulai dengan Termux</h2>

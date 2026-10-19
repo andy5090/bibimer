@@ -4,7 +4,7 @@
 
 [English](README.md) · 한국어
 
-[웹사이트](https://bibimer.app/ko/) · [개인정보처리방침](https://bibimer.app/ko/privacy/) · [지원 문의](mailto:andy@andineering.com)
+[웹사이트](https://bibimer.app/ko/) · [개인정보처리방침](https://bibimer.app/ko/privacy/) · [지원 문의](https://bibimer.app/ko/contact/)
 
 Bibimer는 프로젝트, Git 워크트리, 코딩 에이전트 세션, 대화, 터미널을 한곳에서 관리하는 Android 앱입니다. 프로젝트 파일과 개발 도구는 **같은 휴대폰의 Termux**에 있습니다. 별도의 개발 컴퓨터나 원격 호스트 없이 스마트폰에서 직접 개발을 진행하세요.
 
@@ -97,6 +97,6 @@ Bibimer와 Termux를 **같은 Android 휴대폰**에 설치하세요. 터미널�
 - [자세한 설치·사용 안내와 문제 해결](docs/setup.md)
 - [빌드와 개발 안내](docs/development.md)
 - [버그 제보·기능 제안](https://github.com/andy5090/bibimer/issues)
-- 지원 문의: [andy@andineering.com](mailto:andy@andineering.com)
+- 지원 문의: [문의 양식](https://bibimer.app/ko/contact/)
 
 **앤디니어링(Andineering)**이 개발합니다. Bibimer는 Termux 및 지원 에이전트 제작사와 독립적으로 운영됩니다.

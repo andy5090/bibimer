@@ -81,7 +81,7 @@
 <div class="shell">
   <header>
     <a class="brand" href="/"><img src="/assets/icon.png" width="28" height="28" alt="">BIBIMER</a>
-    <div class="header-actions"><nav aria-label="Main navigation"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">Support</a></nav><nav class="language-nav" aria-label="Website language"><a href="/" lang="en" hreflang="en" aria-current="page">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a><a href="/ja/" lang="ja" hreflang="ja">日本語</a><a href="/zh-Hant/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a><a href="/fr/" lang="fr" hreflang="fr">Français</a><a href="/de/" lang="de" hreflang="de">Deutsch</a></nav></div>
+    <div class="header-actions"><nav aria-label="Main navigation"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="/contact/">Support</a></nav><nav class="language-nav" aria-label="Website language"><a href="/" lang="en" hreflang="en" aria-current="page">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a><a href="/ja/" lang="ja" hreflang="ja">日本語</a><a href="/zh-Hant/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a><a href="/fr/" lang="fr" hreflang="fr">Français</a><a href="/de/" lang="de" hreflang="de">Deutsch</a></nav></div>
   </header>
   <main>
     <section class="hero" aria-labelledby="headline">
@@ -91,7 +91,7 @@
         <p class="lead">Turn your Android phone into a development environment. Bibimer is a mobile ADE that brings projects, coding-agent sessions, chats, and terminals together with Termux on the same phone.</p>
         <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=en"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Get Bibimer on Google Play</a><a class="guide-link" href="/guide/">Read the guide<span aria-hidden="true"> →</span></a></div>
         <p class="status">Free · Android 8.0 or later · Termux on the same phone</p>
-        <p class="status">The website is available in ten languages. The current Google Play app supports English and Korean; additional app languages are in preparation.</p>
+        <p class="status">The app and website support ten languages. The app follows your device language by default; you can choose another in Settings.</p>
       </div>
       <!-- hero-visual:start -->
       <div class="hero-demo">
@@ -150,6 +150,12 @@
       <div><h3>Chat and terminal</h3><p>Follow structured conversations and tool activity. Send instructions, respond to approvals, and queue follow-up messages.</p></div>
       <div><h3>Your choice of agent</h3><p>Connect compatible installations of Codex, Claude, and OpenCode. Choose from the models and options your installed agent supports.</p></div>
       <div><h3>Read files and Git changes</h3><p>Read code with syntax highlighting and inspect Git diffs. Preview Markdown, static HTML, and Mermaid diagrams. Open Office documents, images, and PDFs with compatible Android apps.</p></div>
+    </section>
+    <section class="name-story" id="latest-update" aria-labelledby="latest-title">
+      <h2 id="latest-title">New in 0.25.0</h2>
+      <p>Public release: 0.23.0. Version 0.25.0 is available to invited internal testers and has been submitted for production review.</p>
+      <p>Create a Git worktree and start a session from the sidebar. Steer an active Codex or Claude response, send queued follow-ups together, and use Ctrl+Enter to send when Enter inserts a newline. Version 0.25.0 also includes the first-screen startup fix.</p>
+      <p>With 0.25.0, Settings shows running sessions across projects, worktrees, the archive, and terminals before a bridge update or restart. Confirm to end the listed sessions; maintenance starts only after their termination is verified. Ongoing responses and queued input can be lost, and PTY output is not restored. Cancel to keep sessions running. New worktree and Claude Steer features require bridge 0.18.0; update it in Settings. Worktree deletion stays in Git in Termux. Shift+Enter always inserts a newline; Ctrl+Enter inserts a newline when Enter is set to send.</p>
     </section>
     <section class="setup" aria-labelledby="setup-title">
       <h2 id="setup-title">Start with Termux</h2>

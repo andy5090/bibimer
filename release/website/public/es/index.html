@@ -81,7 +81,7 @@
 <div class="shell">
   <header>
     <a class="brand" href="/es/"><img src="/assets/icon.png" alt="" width="28" height="28">BIBIMER</a>
-    <div class="header-actions"><nav aria-label="Navegación principal"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">Ayuda</a></nav><nav class="language-nav" aria-label="Idioma del sitio web"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es" aria-current="page">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a><a href="/ja/" lang="ja" hreflang="ja">日本語</a><a href="/zh-Hant/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a><a href="/fr/" lang="fr" hreflang="fr">Français</a><a href="/de/" lang="de" hreflang="de">Deutsch</a></nav></div>
+    <div class="header-actions"><nav aria-label="Navegación principal"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="/es/contact/">Ayuda</a></nav><nav class="language-nav" aria-label="Idioma del sitio web"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko">한국어</a><a href="/es/" lang="es" hreflang="es" aria-current="page">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a><a href="/ja/" lang="ja" hreflang="ja">日本語</a><a href="/zh-Hant/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a><a href="/fr/" lang="fr" hreflang="fr">Français</a><a href="/de/" lang="de" hreflang="de">Deutsch</a></nav></div>
   </header>
   <main>
     <section class="hero" aria-labelledby="headline">
@@ -91,7 +91,7 @@
         <p class="lead">Convierte tu teléfono Android en un entorno de desarrollo. Bibimer es un entorno de desarrollo con agentes (ADE) para móviles que reúne proyectos, sesiones de agentes de programación, chats y terminales con Termux en el mismo teléfono.</p>
         <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=es"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Descarga Bibimer en Google Play</a><a class="guide-link" href="/es/guide/">Cómo empezar<span aria-hidden="true"> →</span></a></div>
         <p class="status">Gratis · Android 8.0 o posterior · Termux en el mismo teléfono</p>
-        <p class="status">Este sitio web está disponible en español. La aplicación actual de Google Play admite inglés y coreano; estamos preparando más idiomas para la aplicación.</p>
+        <p class="status">La app y el sitio web admiten diez idiomas. La app sigue el idioma del dispositivo y permite elegir otro en Ajustes.</p>
       </div>
       <!-- hero-visual:start -->
       <div class="hero-demo">
@@ -150,6 +150,12 @@
       <div><h3>Chat y terminal</h3><p>Sigue conversaciones estructuradas y la actividad de las herramientas. Envía instrucciones, responde a solicitudes de aprobación y añade mensajes de seguimiento a la cola.</p></div>
       <div><h3>Elige tu agente</h3><p>Conecta instalaciones compatibles de Codex, Claude y OpenCode. Elige entre los modelos y las opciones que admite el agente instalado.</p></div>
       <div><h3>Consulta archivos y cambios de Git</h3><p>Lee código con resaltado de sintaxis y examina diferencias de Git. Previsualiza Markdown, HTML estático y diagramas Mermaid. Abre documentos de Office, imágenes y PDF con aplicaciones Android compatibles.</p></div>
+    </section>
+    <section class="name-story" id="latest-update" aria-labelledby="latest-title">
+      <h2 id="latest-title">Novedades de 0.25.0</h2>
+      <p>Versión pública: 0.23.0. La 0.25.0 está disponible para los probadores internos invitados y se ha enviado a revisión de producción.</p>
+      <p>Crea un worktree de Git e inicia una sesión desde la barra lateral. Usa Steer durante una respuesta de Codex o Claude, envía juntos los mensajes en cola y usa Ctrl+Enter para enviar cuando Enter inserta una línea. Incluye la corrección del bloqueo de la pantalla inicial.</p>
+      <p>En 0.25.0, Settings muestra las sesiones activas de todos los proyectos, worktrees, archivo y terminales antes de actualizar o reiniciar el puente. Confirma para terminar las sesiones indicadas; el mantenimiento solo empieza tras verificar su cierre. Se pueden perder las respuestas en curso y la cola; la salida PTY no se restaura. Cancelar mantiene las sesiones. La creación de worktrees y Claude Steer requieren el puente 0.18.0: actualízalo en Settings. Elimina worktrees con Git en Termux. Shift+Enter siempre inserta una línea; Ctrl+Enter la inserta si Enter está configurado para enviar.</p>
     </section>
     <section class="setup" aria-labelledby="setup-title">
       <h2 id="setup-title">Empieza con Termux</h2>

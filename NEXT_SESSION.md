@@ -1,5 +1,17 @@
 # Bibimer 다음 세션 시작점
 
+## 웹사이트 최신 안내·자체 문의 양식·D1·Discord 배포 (2026-10-19)
+
+- 사용자 요청으로10언어 홈·사용법의 오래된 ‘앱은 EN/KO, 추가 언어 준비’ 문구를 수정하고 현재10언어 지원과0.25.0 누적 변경(워크트리 생성/세션 시작·Claude Steer·대기 메시지 묶음·Ctrl+Enter·세션 종료 후 유지보수·첫 화면 수정)을 반영했다. Console에서43은 여전히 검토 중임을 확인해 공개0.23.0/내부0.25.0·정식심사중을 구분한다. 이번 작업으로 Play에 새 제출/빌드/설치는 하지 않았다.
+- 이메일로 열리던 일반 문의를 각 언어의 `/contact/`로 변경했다. **오류/설치·연결/기능 제안/개인정보/기타 직접 입력**, 제목·10~5000자 본문·선택 회신 이메일·저장/Discord전달 동의를 제공한다. 계정·첨부파일 없음. 기존 크림/녹색·서체를 재사용한 자체 선택 목록으로 키보드·포커스·Esc/외부클릭/모바일을 지원한다. 문의 내용은 브라우저 저장소에 저장하지 않는다. 개인정보 요청은 `?category=privacy`로 진입하며 이메일은 정책의 대체 경로로 유지한다.
+- **Cloudflare Pages Functions → D1 `bibimer-contact` → 비공개 Discord 웹훅**을 연결했다. DB `4927a1d7-9250-4863-92b1-2cae96c34426`, binding `CONTACT_DB`, migration `0001_contact_inquiries.sql` 원격 적용. 제공된 웹훅과 무작위 남용방지 키는 Pages production의 암호화된 `DISCORD_WEBHOOK_URL`/`CONTACT_RATE_KEY`에만 설정했다. 저장소/클라이언트/일반 로그에 비밀값이 없음을 검사했다. 로컬 원본은 저장소 밖 `~/.local/share/bibimer-contact/`의 owner-only 파일이다. 다른 앱 비밀·기존 DB는 변경하지 않았다.
+- API는 POST JSON/동일 출처·16KB 실제 스트림·필드/동의를 검증하고 바인딩 SQL로 저장한다. UUID+정규화 내용 해시로 재시도 중복을 막고 키 기반 IP해시당 시간당5건을 원자적으로 제한한다. IP원문/UA는 저장하지 않는다. **DB 커밋 후202접수**, Discord는 최대2회 제한된 재시도 및 sent/failed/pending·횟수를 기록한다. 멘션 전파는 끄고 긴 알림은 줄여도 DB본문은 유지한다. 조회용 공개API 없음.
+- 보관: 접수 시 정리와 별도 **`bibimer-contact-retention` 일일 cron `17 3 * * *`(UTC)**가90일 지난 D1행을 삭제한다. cron Worker는 공개 URL이 없다. 버전 `0df6fce6-dd5e-487b-bb2c-5ff79f1c8a21` 배포·스케줄 설정을 확인했고 실제 일일 트리거 실행 대기는 남아 있다. Discord 알림은 별도 운영자 처리/삭제·삭제요청 대상이며90일 자동 삭제를 약속하지 않는다.10언어 개인정보 방침·양식 동의에 이를 반영했다.
+- 검증: 실제 SQLite의 SQL/20동시 quota·입력/출처/메서드/크기/UUID·DB실패·Discord제한/Unicode/타임아웃/재시도 API검사, 일일 보관 콜백,40개페이지 SEO/링크·언어기본값/개인정보경로·JS구문·diff 통과. Chromium에서40개페이지320px가로넘침없음과자체목록 키보드/포커스·기타/이메일·실패입력보존·15초중단/동일UUID재시도/수정시새UUID·중복클릭/완료가드·10언어320px/no-JS 안내가 통과했다. Pages Functions 빌드도 통과했다. 의존성 추가 없음.
+- 초기 공개 검증에서 D1접수는 성공했지만 Discord가 network실패였다. 공식 Workers 문서로 **`redirect:error` 미지원 TypeError**를 확인해 `manual`로 수정하고302비추적/비재시도와 Workers모드제약 회귀 검사를 추가했다. 최종 전체 API 검사 후 재배포했으며 **공개 CUA 문의 → D1 한 행 → Discord sent/1회 → 같은 UUID 재POST202·행/알림 증가 없음**을 확인했다. 검증용 문의2건 중 초기1건은 실패 기록으로, 최종1건은전송완료로 남겼다. 일반 사용자 문의는 사용하지 않았다.
+- 최종 **https://0824d178.bibimer.pages.dev**, 공개 **https://bibimer.app/ko/contact/**.44공개리소스(40HTML+공통3파일+sitemap)의200/원본/CSP/no-transform, API GET405·다른출처403·잘못된입력400·없는페이지404를 확인했다. Python기본UA가Cloudflare1010으로차단돼 사이트검증기임을밝힌UA로검사했다. UI시각94/pass, 증빙 `dist/website-contact/{public-verification.json,live-inquiry-verification.json,published-form.png,published-receipt.png,ko-320.png,ko-desktop.png}`와 `.omx/state/website-contact/ralph-progress.json`.
+- 한계: Discord는 네트워크 응답 유실 시 제한된 재시도 중 중복 알림이 가능하며 전송 후DB상태저장 실패는pending으로 남겨 자동 재전송하지 않는다. 실패/불명 문의는 DB에서 운영자가 확인해야 한다. DB저장 성공을 Discord수신 보장으로 표현하지 않는다. 실제 외부 고객 문의·원어민 번역 검수·추가 브라우저 엔진은 미검증이다. 사용자 작업 중인 `ios/`는 변경/추가하지 않았다.
+
 ## 0.25.0(43) 정식 배포 심사 제출 (2026-10-19)
 
 - 사용자 **정식 배포** 요청으로 검증된 내부 테스트 **0.25.0(43)** 번들을 그대로 프로덕션에 승급했다. 기존 대상 국가 **100% 전체 출시**, 새43만 포함·40제외다. 새 빌드·버전 변경·AAB 재업로드·키/인증 변경 없음. SHA-256 `1385627d648344205be5d17c2711e2f86c7802cbabcd1e825c4aff1291a46cab`을 배포 전 다시 확인했다.

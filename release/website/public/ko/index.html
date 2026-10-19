@@ -81,7 +81,7 @@
 <div class="shell">
   <header>
     <a class="brand" href="/ko/"><img src="/assets/icon.png" alt="" width="28" height="28">BIBIMER</a>
-    <div class="header-actions"><nav aria-label="주요 메뉴"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="mailto:andy@andineering.com">문의</a></nav><nav class="language-nav" aria-label="웹사이트 언어"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko" aria-current="page">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a><a href="/ja/" lang="ja" hreflang="ja">日本語</a><a href="/zh-Hant/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a><a href="/fr/" lang="fr" hreflang="fr">Français</a><a href="/de/" lang="de" hreflang="de">Deutsch</a></nav></div>
+    <div class="header-actions"><nav aria-label="주요 메뉴"><a href="https://github.com/andy5090/bibimer">GitHub</a><a href="/ko/contact/">문의</a></nav><nav class="language-nav" aria-label="웹사이트 언어"><a href="/" lang="en" hreflang="en">English</a><a href="/ko/" lang="ko" hreflang="ko" aria-current="page">한국어</a><a href="/es/" lang="es" hreflang="es">Español</a><a href="/zh-Hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a><a href="/pt-BR/" lang="pt-BR" hreflang="pt-BR">Português (Brasil)</a><a href="/id/" lang="id" hreflang="id">Bahasa Indonesia</a><a href="/ja/" lang="ja" hreflang="ja">日本語</a><a href="/zh-Hant/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a><a href="/fr/" lang="fr" hreflang="fr">Français</a><a href="/de/" lang="de" hreflang="de">Deutsch</a></nav></div>
   </header>
   <main>
     <section class="hero" aria-labelledby="headline">
@@ -91,7 +91,7 @@
         <p class="lead">스마트폰 자체가 개발 환경이 됩니다. Bibimer는 같은 휴대폰의 Termux와 연결해 프로젝트·코딩 에이전트 세션·대화·터미널을 관리하는 모바일 에이전트 개발 환경(ADE)입니다.</p>
         <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=ko"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Google Play에서 설치</a><a class="guide-link" href="/ko/guide/">사용법 보기<span aria-hidden="true"> →</span></a></div>
         <p class="status">무료 · Android 8.0 이상 · 같은 휴대폰의 Termux와 함께 사용</p>
-        <p class="status">웹사이트는 10개 언어로 볼 수 있습니다. 현재 Google Play 앱은 영어·한국어를 지원하며, 추가 언어는 준비 중입니다.</p>
+        <p class="status">앱과 웹사이트 모두 10개 언어를 지원합니다. 앱은 기기 언어를 기본으로 따르며 설정에서 직접 선택할 수 있습니다.</p>
       </div>
       <!-- hero-visual:start -->
       <div class="hero-demo">
@@ -150,6 +150,12 @@
       <div><h3>대화와 터미널</h3><p>구조화된 대화와 도구 실행을 확인하세요. 지시를 보내고, 승인 요청에 응답하고, 후속 입력을 대기열에 추가할 수 있습니다.</p></div>
       <div><h3>직접 선택하는 에이전트</h3><p>호환되는 Codex·Claude·OpenCode 설치본을 연결하세요. 설치한 에이전트가 지원하는 모델과 옵션을 선택할 수 있습니다.</p></div>
       <div><h3>파일과 Git 변경 사항 확인</h3><p>코드의 구문을 강조해 읽고 Git 변경 사항을 확인하세요. Markdown·정적 HTML·Mermaid 다이어그램을 미리 볼 수 있습니다. Office 문서·이미지·PDF는 호환되는 Android 앱으로 엽니다.</p></div>
+    </section>
+    <section class="name-story" id="latest-update" aria-labelledby="latest-title">
+      <h2 id="latest-title">0.25.0 업데이트</h2>
+      <p>현재 공개 버전은 0.23.0입니다. 0.25.0은 초대된 내부 테스터에게 제공되며 정식 배포 심사에 제출했습니다.</p>
+      <p>사이드바에서 Git 워크트리를 만들고 세션을 시작할 수 있습니다. Codex·Claude 응답 중 Steer로 추가 지시를 전달하고, 대기 메시지를 묶어서 보내며, Enter가 줄바꿈일 때 Ctrl+Enter로 전송합니다. 첫 화면 초기화 오류 수정도 포함했습니다.</p>
+      <p>0.25.0의 설정에서는 브리지 업데이트·재시작 전 모든 프로젝트·워크트리·보관함·터미널의 실행 세션을 보여줍니다. 확인한 세션의 실제 종료가 검증된 뒤 유지보수를 시작합니다. 진행 중 응답과 대기 입력이 사라질 수 있고 PTY 출력은 복원되지 않습니다. 취소하면 세션을 유지합니다. 워크트리 생성·Claude Steer에는 브리지 0.18.0이 필요하므로 설정에서 업데이트하세요. 워크트리 삭제는 Termux의 Git에서 진행합니다. Shift+Enter는 항상 줄바꿈이며, Enter가 보내기이면 Ctrl+Enter는 줄바꿈합니다.</p>
     </section>
     <section class="setup" aria-labelledby="setup-title">
       <h2 id="setup-title">Termux로 시작하세요</h2>

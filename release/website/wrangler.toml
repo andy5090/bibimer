@@ -1,0 +1,9 @@
+name = "bibimer"
+compatibility_date = "2026-10-11"
+pages_build_output_dir = "./public"
+
+[[d1_databases]]
+binding = "CONTACT_DB"
+database_name = "bibimer-contact"
+database_id = "4927a1d7-9250-4863-92b1-2cae96c34426"
+migrations_dir = "./migrations"

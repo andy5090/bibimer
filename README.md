@@ -4,7 +4,7 @@
 
 English · [한국어](README.ko.md)
 
-[Website](https://bibimer.app/) · [Privacy](https://bibimer.app/privacy/) · [Support](mailto:andy@andineering.com)
+[Website](https://bibimer.app/) · [Privacy](https://bibimer.app/privacy/) · [Support](https://bibimer.app/contact/)
 
 Bibimer brings your projects, Git worktrees, coding-agent sessions, conversations, and terminals together in an Android app. Your project files and development tools live in **Termux on the same phone**, so you can develop directly on your smartphone without a separate development computer or remote host.
 
@@ -95,6 +95,6 @@ The app connects to a bridge on the phone's loopback address. Bibimer has no adv
 - [Detailed setup and troubleshooting](docs/setup.md) (Korean)
 - [Build and development guide](docs/development.md) (Korean)
 - [Report a bug or request a feature](https://github.com/andy5090/bibimer/issues)
-- Support: [andy@andineering.com](mailto:andy@andineering.com)
+- Support: [Contact form](https://bibimer.app/contact/)
 
 Developed by **Andineering**. Bibimer is independent of Termux and the supported agent providers.

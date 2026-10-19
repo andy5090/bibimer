@@ -1,4 +1,47 @@
-# Bibimer 정적 웹사이트
+# Bibimer 웹사이트
+
+## 자체 문의·D1·Discord (2026-10-19)
+
+공개 [문의 양식](https://bibimer.app/ko/contact/)을10개언어로 제공한다. 오류·설치/연결·기능제안·개인정보·기타 직접입력, 제목/내용·선택이메일과명시적동의를 받는다. 일반 문의 버튼과README는 양식으로 연결하고 정책의 이메일 대체 경로는 유지한다. 홈·가이드에는현재10언어지원과0.25.0기능을반영했으며0.25.0정식심사중/현재공개0.23.0을구분한다.
+
+`contact-locales.json`과 `python3 scripts/build_website_contact.py`로10개정적문의페이지를 생성한다. 공통 `assets/contact.js`/`contact.css`와자체접근성선택기를 사용한다. 서버는 `functions/api/contact.js`, D1스키마는 `migrations/0001_contact_inquiries.sql`, Pages설정은 `wrangler.toml`이다. DB binding은 `CONTACT_DB`이고 DB는 `bibimer-contact`다. 웹훅/남용방지키는 암호화된 Pages비밀설정 `DISCORD_WEBHOOK_URL`/`CONTACT_RATE_KEY`로만 주입한다. 값은 소스에 넣지 않는다.
+
+DB를 먼저 커밋한 뒤 접수번호를 반환하고Discord알림을시도한다. UUID/내용 기반중복방지·동일출처/16KB제한·IP의키기반해시당5건/시간·바인딩SQL·멘션차단을 제공한다. 연락처와내용을일반로그에남기지않는다. `notification_status`/`notification_attempts`/`notification_error`로전달실패를확인한다. Discord는최대2회만재시도하며네트워크불명시중복알림가능성이있다. DB저장은알림전달보장을뜻하지않는다. 긴Discord본문은잘라도DB에는전체본문을저장한다.
+
+`maintenance-worker.js` / `wrangler.maintenance.toml`의일일cron이90일지난DB행을정리한다(UTC03:17). 공개API/URL을제공하지않는다. Discord알림보관은별도운영자처리/삭제요청대상이다. 기존고객데이터가없는새DB에마이그레이션을적용했으며임의의다른DB는수정하지않았다.
+
+검사:
+
+```sh
+python3 scripts/tests/test_website_locales.py
+node scripts/tests/test_website_language.cjs
+node scripts/tests/test_website_contact_api.cjs
+node scripts/tests/test_website_retention.cjs
+node scripts/smoke_website_contact.cjs
+```
+
+마지막브라우저검사는프로젝트의기존Playwright/Chromium환경을사용한다. 새런타임의존성은없다. 배포는 `release/website/`에서인증확인후수행한다:
+
+```sh
+wrangler whoami
+wrangler d1 migrations apply bibimer-contact --remote
+wrangler pages secret put DISCORD_WEBHOOK_URL --project-name bibimer
+wrangler pages secret put CONTACT_RATE_KEY --project-name bibimer
+wrangler pages deploy public --project-name bibimer --branch main
+wrangler deploy --config wrangler.maintenance.toml
+```
+
+운영자는Cloudflare D1에서전달상태를먼저확인한다(본문/이메일을일반로그로출력하지않는다):
+
+```sql
+SELECT request_id, category, created_at, notification_status,
+       notification_attempts, notification_error
+FROM contact_inquiries ORDER BY created_at DESC LIMIT 20;
+```
+
+개인정보삭제요청은접수번호로대상과요청자를확인하고D1행과해당Discord알림을각각정리한다. 공개조회/관리API는없다. 웹훅을바꾸면Pages비밀을갱신하고다시배포한다. 자동재전송관리화면은제공하지않으므로실패/pending은운영자가확인한다.
+
+최종배포 **https://0824d178.bibimer.pages.dev**.44공개리소스원본·보안헤더/404·API거절조건,실제공개양식의D1저장/Discord전송·동일UUID재전송중복없음을확인했다. 초기Workers미지원redirect옵션은수정·회귀검사·재배포후실제전송으로확인했다. 증빙 `dist/website-contact/`, 상세검증/한계는NEXT_SESSION.md를따른다. 시각판정94/pass. 아래는이전시점의변경기록이며‘문의폼없음’등은이번구성으로대체됐다.
 
 ## 언어별 단어·어절 줄바꿈 적용 (2026-10-18)
 
@@ -36,10 +79,10 @@ Bibimer는 **모바일 ADE(Agent Development Environment, 에이전트 개발 �
 - 영어 개인정보처리방침: https://bibimer.app/privacy/
 - 한국어 개인정보처리방침: https://bibimer.app/ko/privacy/
 - 운영 주체: 앤디니어링 (Andineering)
-- 지원·개인정보 문의: andy@andineering.com
+- 지원·개인정보 문의: https://bibimer.app/ko/contact/ (정책의 이메일 대체 경로 유지)
 - 정책 시행일: 2026-10-15
 
-`public/`만 Cloudflare Pages에 직접 업로드한다. HTML·CSS·자체 호스팅 서체·이미지와 언어 선택용 자체 JavaScript로 구성한다. 계정, 문의 폼, 광고, 분석 스크립트는 없다. 서체 라이선스는 `public/assets/SpaceGrotesk-OFL.txt`에 있다. `_headers`에 정적 페이지용 보안 헤더와 `Cache-Control: public, max-age=0, must-revalidate, no-transform`을 지정하고 `404.html`로 없는 경로의 HTTP 404를 유지한다. 앱 소스·서명 키·세션 기록은 업로드하지 않는다.
+`public/`의 정적 HTML·CSS·서체·이미지와 `functions/`의 문의 API를 Cloudflare Pages에 함께 배포한다. 공개 계정·광고·분석 SDK는 없다. 문의 저장에는 D1, 알림에는 서버 비밀 설정의 Discord 웹훅을 사용한다. 서체 라이선스는 `public/assets/SpaceGrotesk-OFL.txt`다. `_headers`의 보안 헤더와 no-transform을 유지하며 API는 no-store 응답을 제공한다. 앱 소스·서명 키·사용자 세션 기록을 업로드하지 않는다.
 
 언어별 URL을 사용하는 정적 i18n 구성이다. 각 페이지는 선택한 언어의 본문만 제공하고, 언어 전환은 같은 종류의 페이지로 이동한다. 한국어 홈의 정책 링크·정책의 홈 링크는 한국어 경로를 유지한다. 각 문서에 `lang`, 자기 URL의 `canonical`, 상호 연결된 `hreflang`을 지정했다. 기본 홈·정책·사용법 URL은 저장된 명시적 선택 또는 브라우저 언어에 맞춰 이동한다. 지원 언어가 없으면 영어를 사용하고 직접 지정한 언어 경로는 유지한다. 선택은 `bibimer.website.language`로 기기 브라우저에 저장한다. Play Console의 `/privacy/` 주소는 유지한다.
 

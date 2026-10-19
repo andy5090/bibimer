@@ -33,8 +33,9 @@ function fixture({ pathname = "/", languages = ["en"], saved = null, blocked = f
   }
   const links = locales.map((locale, index) => {
     const link = new Element("a");
-    const privacy = pathname.includes("privacy") ? "privacy/" : "";
-    link.href = `https://bibimer.app/${locale === "en" ? "" : `${locale}/`}${privacy}`;
+    const privacy = ["privacy", "guide", "contact"].find((part) => pathname.includes(`/${part}/`));
+    const suffix = privacy ? `${privacy}/` : "";
+    link.href = `https://bibimer.app/${locale === "en" ? "" : `${locale}/`}${suffix}`;
     link.hreflang = locale;
     link.textContent = names[index];
     if (locale === pageLanguage) link.setAttribute("aria-current", "page");
@@ -69,6 +70,9 @@ assert.equal(fixture({ languages: ["ko"], saved: "unsupported" }).redirected, "h
 assert.equal(fixture({ pathname: "/es/", languages: ["ko"], saved: "id", pageLanguage: "es" }).redirected, undefined);
 assert.equal(fixture({ pathname: "/index.html", languages: ["en"] }).redirected, undefined);
 assert.equal(fixture({ languages: ["ko"], blocked: true }).redirected, "https://bibimer.app/ko/");
+assert.equal(fixture({ pathname: "/contact/", languages: ["ko-KR"], query: "?category=privacy" }).redirected, "https://bibimer.app/ko/contact/?category=privacy");
+assert.equal(fixture({ pathname: "/contact/index.html", languages: ["en"], saved: "de" }).redirected, "https://bibimer.app/de/contact/");
+assert.equal(fixture({ pathname: "/ko/contact/", languages: ["en"], pageLanguage: "ko" }).redirected, undefined);
 const f = fixture();
 const [trigger, panel] = f.nav.children;
 const [search, options, empty] = panel.children;

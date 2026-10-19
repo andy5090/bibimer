@@ -25,7 +25,7 @@ class WebsiteLocalesTests(unittest.TestCase):
         titles = set()
         for locale in LOCALES:
             base = '/' if locale == 'en' else f'/{locale}/'
-            for suffix in ('', 'privacy/', 'guide/'):
+            for suffix in ('', 'privacy/', 'guide/', 'contact/'):
                 file = ROOT / (base + suffix).lstrip('/') / 'index.html'
                 page = Page(file)
                 meta = {a.get('name') or a.get('property'): a.get('content')
@@ -61,7 +61,7 @@ class WebsiteLocalesTests(unittest.TestCase):
     def test_localized_routes_and_equivalent_page_navigation(self):
         for locale in LOCALES:
             base = '/' if locale == 'en' else f'/{locale}/'
-            for suffix in ('', 'privacy/', 'guide/'):
+            for suffix in ('', 'privacy/', 'guide/', 'contact/'):
                 with self.subTest(locale=locale, page=suffix):
                     page = Page(ROOT / (base + suffix).lstrip('/') / 'index.html')
                     self.assertEqual([a['lang'] for t, a in page.tags if t == 'html'], [locale])
@@ -76,7 +76,7 @@ class WebsiteLocalesTests(unittest.TestCase):
                     self.assertEqual(len(ids), len(set(ids)))
                     self.assertFalse(any(t == 'select' for t, _ in page.tags))
                     scripts = [a for t, a in page.tags if t == 'script']
-                    self.assertEqual([a.get('src') for a in scripts], ['/assets/language.js'])
+                    self.assertEqual([a.get('src') for a in scripts], ['/assets/language.js'] + (['/assets/contact.js'] if suffix == 'contact/' else []))
                     self.assertTrue(all('defer' in a for a in scripts))
                     for tag, attrs in page.tags:
                         for key in ('href', 'src'):
