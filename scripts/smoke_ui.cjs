@@ -1118,7 +1118,7 @@ async function main() {
       await page.screenshot({path:path.join(root,`dist/screenshots/${agent}-question-ko.png`)});
       await page.locator('[data-request-action="chat_answer"]').click();
       await page.locator('.request-card').waitFor({state:'hidden'});
-      await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+      await page.waitForFunction(()=>document.querySelector('#turn-status').textContent===window.BibimerI18n.t('chat_state_ready'));
       assert.equal(fs.readFileSync(path.join(temporary,`project/${agent}-answers`),'utf8'),'both');
       await page.setViewportSize({width:393,height:780});
       await sessionAction('stop'); await page.locator('#confirm-stop').click();
