@@ -103,7 +103,7 @@ ERROR_MESSAGES = {
     "error_queue_action": "Choose a valid queue action.",
     "error_queue_send": "The queued message was not accepted. Review it and resume the queue.",
     "error_queue_steer_rejected": "Steer was not accepted. The message is kept and the queue is paused.",
-    "error_steer_unavailable": "Steer is available only for an active Codex response. You can queue this message instead.",
+    "error_steer_unavailable": "Steer is unavailable for this response. You can queue this message instead.",
     "error_steer_rejected": "The agent did not accept this steer. Your draft is kept; you can queue it instead.",
     "error_chat_transport": "The agent connection failed. Check the session before sending again.",
     "error_chat_request": "This request is no longer pending. Refresh the session.",
@@ -138,6 +138,15 @@ ERROR_MESSAGES = {
     "error_session_missing": "This session is no longer accessible. Refresh its current state.",
     "error_session_action": "Choose a valid session action.",
     "error_session_delete_active": "End this session before removing it from BIBIMER.",
+    "error_worktree_git": "A Git repository with a commit is required. Check Git in Termux.",
+    "error_worktree_branch": "Enter a valid Git branch name.",
+    "error_worktree_base": "The starting commit is unavailable. Refresh the branch list.",
+    "error_worktree_branch_used": "This branch is already used by a worktree. Start a session in that worktree or choose a different branch.",
+    "error_worktree_path": "The worktree folder already exists or is unavailable. Existing files were kept.",
+    "error_worktree_busy": "Another worktree is being created. Wait for it to finish.",
+    "error_worktree_limit": "The worktree or creation history limit has been reached.",
+    "error_worktree_create": "Could not create the worktree. Check the branch and available storage in Termux.",
+    "error_worktree_interrupted": "Creation was interrupted. Refresh to check whether the Git worktree exists before trying again.",
     "error_worktree": "This working folder is no longer available in the project's Git worktrees.",
     "error_inspect_request": "Choose a valid file, commit or workspace view.",
     "error_inspect_access": "This path is unavailable or cannot be previewed inside this workspace.",
@@ -695,6 +704,7 @@ class ChatSession(Session):
         self.queue = collections.OrderedDict()
         self.queue_paused, self.queue_inflight = False, None
         self.steer_errors = collections.OrderedDict()
+        self.can_steer = agent == "codex"
         self.process = subprocess.Popen(provider_command(argv[0], agent),
             cwd=project["path"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
@@ -712,7 +722,7 @@ class ChatSession(Session):
                     "external_thread_id": self.thread_id, "history_persisted": self.history_persisted, **(self.imported or {}),
                     "turn_state": self.turn_state, "active_turn_id": self.turn_id,
                     "queued_count": len(self.queue), "queue_paused": self.queue_paused,
-                    "can_steer": self.agent == "codex", "exit_code": self.exit_code,
+                    "can_steer": self.can_steer, "exit_code": self.exit_code,
                     "started_at": self.started_at, "output_start": self.floor,
                     "output_end": self.revision}
 
@@ -840,8 +850,12 @@ class ChatSession(Session):
             if isinstance(kind, tuple):
                 if kind[0] == "steer":
                     _, key, digest, expected, entry_id = kind
-                    error = "error_steer_rejected" if "error" in message else (
-                        "error_input_uncertain" if (message.get("result") or {}).get("turnId") != expected else None)
+                    error = None
+                    if "error" in message:
+                        error = ("error_input_uncertain" if message["error"].get("message") == "error_input_uncertain"
+                                 else "error_steer_rejected")
+                    elif (message.get("result") or {}).get("turnId") != expected:
+                        error = "error_input_uncertain"
                     if entry_id:
                         if error == "error_steer_rejected":
                             error = "error_queue_steer_rejected"
@@ -852,16 +866,18 @@ class ChatSession(Session):
                             self.steer_errors.popitem(last=False)
                     self._remember(key, digest, True)
                 elif kind[0] == "queue":
-                    entry = self.queue.get(kind[1])
                     self.queue_inflight = None
-                    if entry:
+                    for entry_id in kind[1]:
+                        entry = self.queue.get(entry_id)
+                        if not entry:
+                            continue
                         if "error" in message:
                             entry.update(state="failed", code="error_queue_send")
                             self.queue_paused = True
                             if not self.turn_id:
                                 self.turn_state = "failed"
                         else:
-                            self.queue.pop(kind[1])
+                            self.queue.pop(entry_id)
                             if self.turn_state == "sending":
                                 self.turn_id = message["result"]["turn"]["id"]
                                 self.turn_state = "running"
@@ -886,6 +902,8 @@ class ChatSession(Session):
                 return
             result = message.get("result") or {}
             if kind == "initialize":
+                if self.agent == "claude":
+                    self.can_steer = result.get("capabilities", {}).get("steer") is True
                 self._send({"method": "initialized", "params": {}})
                 # Capture the native permission defaults before the first turn.
                 # Explicit choices are applied at every turn, including restores
@@ -1158,16 +1176,32 @@ class ChatSession(Session):
                 self.turn_state not in {"ready", "failed"} or
                 "turn" in self.rpc_pending.values()):
             return
-        entry = next(iter(self.queue.values()))
-        entry["state"] = "sending"
-        self.queue_inflight = entry["id"]
+        # Freeze this batch. Messages added while the RPC is in flight belong
+        # to the next response. Native slash commands keep their own dispatch.
+        entries = []
+        for entry in self.queue.values():
+            command = self.agent != "codex" and entry.get("_invocation") is not None
+            if entries and (command or (self.agent != "codex" and entries[0].get("_invocation") is not None)):
+                break
+            entries.append(entry)
+        entry_ids = tuple(entry["id"] for entry in entries)
+        texts, attachments = [], []
+        for entry in entries:
+            invocation = entry.get("_invocation") or {"input": [{"type": "text", "text": entry["text"]}]}
+            texts.append("\n".join(part["text"] for part in invocation["input"] if part["type"] == "text"))
+            attachments.extend(part for part in invocation["input"] if part["type"] != "text")
+            entry["state"] = "sending"
+        invocation = {**(entries[0].get("_invocation") or {}),
+                      "input": [{"type": "text", "text": "\n\n".join(texts)}, *attachments]}
+        self.queue_inflight = entry_ids
         self.turn_state = "sending"
         self._bump()
         try:
             self._rpc("turn/start", {"threadId": self.thread_id,
-                **(entry.get("_invocation") or {"input": [{"type": "text", "text": entry["text"]}]}), **self.turn_options(self.options)}, ("queue", entry["id"]))
+                **invocation, **self.turn_options(self.options)}, ("queue", entry_ids))
         except Problem:
-            entry.update(state="uncertain", code="error_input_uncertain")
+            for entry in entries:
+                entry.update(state="uncertain", code="error_input_uncertain")
             self.queue_paused = True
             self._fault("error_chat_transport")
 
@@ -1240,7 +1274,7 @@ class ChatSession(Session):
                        **({"entry_id": entry_id} if from_queue else {"text": text, "command_id": data.get("command_id")})}
             digest, duplicate = self._duplicate(key, payload)
             if not duplicate:
-                if (self.agent != "codex" or self.state != "running" or self.turn_id != expected or
+                if (not self.can_steer or self.state != "running" or self.turn_id != expected or
                         self.turn_state not in {"running", "waiting"}):
                     raise Problem(409, "error_steer_unavailable")
                 if from_queue:
@@ -2046,6 +2080,213 @@ class GitHubImport:
         raise Problem(400, "error_github_request")
 
 
+class WorktreeCreation:
+    """Durable creation receipts, real Git worktrees, no project hooks or shell."""
+    def __init__(self, bridge):
+        self.bridge, self.lock, self.closed = bridge, threading.RLock(), False
+        self.file = bridge.state / 'worktree-jobs.json'
+        self.jobs, self.processes, self.launching = [], {}, set()
+        saved = read_json(self.file, [])
+        for row in saved if isinstance(saved, list) else []:
+            if (not isinstance(row, dict) or row.get('project_id') not in bridge.projects or
+                    not all(isinstance(row.get(key), str) for key in ('id','launch_id','branch','base','path','digest','agent','mode','state')) or
+                    not isinstance(row.get('options'), dict)):
+                continue
+            if row.get('state') == 'creating':
+                row.update(state='interrupted', error='error_worktree_interrupted')
+            self.jobs.append(row)
+        self.jobs = self.jobs[-128:]
+
+    @staticmethod
+    def git(root, *args, check=True):
+        try:
+            result = subprocess.run(['git', '-c', 'core.hooksPath=/dev/null', '-c', 'core.fsmonitor=false', '-C', root, *args],
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=5,
+                env={**os.environ, 'GIT_TERMINAL_PROMPT':'0'})
+        except (OSError, subprocess.TimeoutExpired):
+            raise Problem(400, 'error_worktree_git') from None
+        if len(result.stdout) > BUFFER_LIMIT or (check and result.returncode):
+            raise Problem(400, 'error_worktree_git')
+        return result
+
+    def project(self, key):
+        with self.bridge.lock:
+            if not isinstance(key, str) or key not in self.bridge.projects:
+                raise Problem(404, 'error_project_missing')
+            return dict(self.bridge.projects[key])
+
+    def options(self, key):
+        project = self.project(key)
+        head = self.git(project['path'], 'rev-parse', '--verify', 'HEAD^{commit}').stdout.decode().strip()
+        result = self.git(project['path'], 'for-each-ref', '--count=256', '--format=%(refname)%00%(refname:short)%00%(objectname)%00%(symref)', 'refs/heads', 'refs/remotes')
+        refs = [{'ref':'HEAD', 'label':'HEAD', 'commit':head}]
+        for line in result.stdout.decode('utf-8', 'replace').splitlines():
+            fields = line.split('\0')
+            if len(fields) == 4 and not fields[3]:
+                refs.append({'ref':fields[0], 'label':fields[1], 'commit':fields[2]})
+        worktrees = self.bridge.worktrees({'project_id':key})['worktrees']
+        return {'project_id':key, 'refs':refs, 'worktrees':worktrees,
+                'directory':str((self.bridge.state / 'worktrees' / key).resolve())}
+
+    def save(self):
+        save_json(self.file, self.jobs)
+
+    def active(self, key=None):
+        with self.lock:
+            return any((row['state'] == 'creating' or row['id'] in self.launching) and
+                       (key is None or row['project_id'] == key) for row in self.jobs)
+
+    def verified(self, job):
+        try:
+            rows = self.bridge.worktrees({'project_id':job['project_id']})['worktrees']
+            return next((row for row in rows if row['path'] == job['path'] and row.get('branch') == job['branch'] and (row['available'] or row.get('creating')) and not row.get('locked')), None)
+        except Problem:
+            return None
+
+    def status(self, key):
+        self.project(key)
+        with self.lock:
+            jobs = [dict(row) for row in self.jobs if row['project_id'] == key]
+        # Recover a completed checkout after interruption or a lost final write.
+        # Git, rather than a saved success flag, proves it is an actual worktree.
+        for index, job in enumerate(jobs):
+            if job['state'] == 'interrupted' and self.verified(job):
+                with self.lock:
+                    original = next(row for row in self.jobs if row['id'] == job['id'])
+                    original.update(state='complete'); original.pop('error', None)
+                    job = dict(original)
+                    with contextlib.suppress(OSError): self.save()
+            with self.bridge.lock:
+                session = next((row for row in self.bridge.snapshots(key) if row.get('launch_id') == job['launch_id']), None)
+            if session:
+                job['session_id'] = session['id']
+            jobs[index] = job
+        return {'jobs':jobs}
+
+    def create(self, data):
+        key, identity = data.get('project_id'), request_id(data.get('request_id'))
+        branch, base = data.get('branch'), data.get('base')
+        if (not isinstance(branch, str) or not branch or len(branch.encode()) > 200 or branch.startswith('-') or
+                branch == 'HEAD' or any(ord(char) < 32 or ord(char) == 127 for char in branch)):
+            raise Problem(400, 'error_worktree_branch')
+        if not isinstance(base, str) or not re.fullmatch(r'[0-9a-f]{40}|[0-9a-f]{64}', base):
+            raise Problem(400, 'error_worktree_base')
+        agent, mode = data.get('agent'), data.get('mode')
+        if agent not in {'shell','codex','claude','opencode'} or mode not in {'terminal','chat'} or (agent == 'shell' and mode != 'terminal'):
+            raise Problem(400, 'error_chat_mode')
+        options = agent_options(agent, data.get('options'))
+        payload = {'project_id':key, 'branch':branch, 'base':base, 'agent':agent, 'mode':mode, 'options':options}
+        digest = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+        project = self.project(key)
+        with self.lock:
+            previous = next((row for row in self.jobs if row['id'] == identity), None)
+            if previous:
+                if previous['digest'] != digest: raise Problem(409, 'error_input_conflict')
+                return {'job':dict(previous)}
+        if self.git(project['path'], 'check-ref-format', 'refs/heads/' + branch, check=False).returncode:
+            raise Problem(400, 'error_worktree_branch')
+        info = self.options(key)
+        if len(info['worktrees']) >= 120:
+            raise Problem(409, 'error_worktree_limit')
+        if any(row.get('branch') == branch for row in info['worktrees']):
+            raise Problem(409, 'error_worktree_branch_used')
+        ref = 'refs/heads/' + branch
+        existing = self.git(project['path'], 'show-ref', '--verify', '--quiet', ref, check=False).returncode == 0
+        if existing:
+            base = self.git(project['path'], 'rev-parse', '--verify', ref + '^{commit}').stdout.decode().strip()
+        elif self.git(project['path'], 'cat-file', '-e', base + '^{commit}', check=False).returncode:
+            raise Problem(400, 'error_worktree_base')
+        slug = re.sub(r'[^\w.-]+', '-', branch, flags=re.UNICODE).strip('.-')[:48] or 'worktree'
+        suffix = hashlib.sha256(branch.encode()).hexdigest()[:8]
+        destination = (self.bridge.state / 'worktrees' / key / (slug + '-' + suffix)).absolute()
+        # Never accept a client path or overwrite an existing folder/symlink.
+        if destination.resolve() != destination or os.path.lexists(destination):
+            raise Problem(409, 'error_worktree_path')
+        job = {'id':identity, **payload, 'base':base, 'digest':digest, 'path':str(destination),
+               'new_branch':not existing, 'state':'creating', 'created_at':time.time(), 'launch_id':str(uuid.uuid4())}
+        with self.bridge.lock, self.lock:
+            if self.closed or self.bridge.closing: raise Problem(409, 'error_bridge_stopping')
+            if key not in self.bridge.projects: raise Problem(404, 'error_project_missing')
+            previous = next((row for row in self.jobs if row['id'] == identity), None)
+            if previous:
+                if previous['digest'] != digest: raise Problem(409, 'error_input_conflict')
+                return {'job':dict(previous)}
+            if any(row['state'] == 'creating' for row in self.jobs):
+                raise Problem(409, 'error_worktree_busy')
+            if len(self.jobs) >= 128:
+                raise Problem(409, 'error_worktree_limit')
+            self.jobs.append(job)
+            try: self.save()
+            except OSError:
+                self.jobs.remove(job)
+                raise Problem(500, 'error_request_failed') from None
+            threading.Thread(target=self.worker, args=(job, project), daemon=True).start()
+            return {'job':dict(job)}
+
+    def worker(self, job, project):
+        process = None
+        try:
+            destination = Path(job['path'])
+            if destination.resolve() != destination or os.path.lexists(destination):
+                raise Problem(409, 'error_worktree_path')
+            private_dir(destination.parent)
+            args = ['git','-c','core.hooksPath=/dev/null','-c','core.fsmonitor=false','-C',project['path'],
+                    'worktree','add','--no-guess-remote']
+            args += ['-b',job['branch'],'--',str(destination),job['base']] if job['new_branch'] else ['--',str(destination),job['branch']]
+            with self.lock:
+                if self.closed: return
+                process = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    env={**os.environ,'GIT_TERMINAL_PROMPT':'0'}, start_new_session=True)
+                self.processes[job['id']] = process
+            if process.wait(timeout=300) or not self.verified(job):
+                raise Problem(409, 'error_worktree_create')
+            with self.lock:
+                if not self.closed:
+                    job['state'] = 'complete'
+        except (Problem, OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+            GitHubImport.terminate(process)
+            with self.lock:
+                if not self.closed: job.update(state='failed', error=error.code if isinstance(error, Problem) else 'error_worktree_create')
+        finally:
+            with self.lock:
+                self.processes.pop(job['id'], None)
+                # The initial durable receipt survives even if this write fails;
+                # startup verifies the real Git worktree before recovering it.
+                with contextlib.suppress(OSError): self.save()
+
+    def launch(self, data):
+        key, identity = data.get('project_id'), request_id(data.get('request_id'))
+        self.project(key)
+        with self.bridge.lock, self.lock:
+            job = next((row for row in self.jobs if row['project_id'] == key and row['id'] == identity), None)
+            if not job or job['state'] != 'complete': raise Problem(409, 'error_worktree_create')
+            self.launching.add(identity)
+            body = {name:job[name] for name in ('project_id','agent','mode','options')}
+            body.update(worktree_path=job['path'], new_session=True, request_id=job['launch_id'])
+        try:
+            session = self.bridge.launch(body, select=False)
+            return {'job':dict(job), 'session':session}
+        finally:
+            with self.lock: self.launching.discard(identity)
+
+    def close(self):
+        with self.lock:
+            self.closed = True
+            processes = list(self.processes.values())
+            for job in self.jobs:
+                if job['state'] == 'creating': job.update(state='interrupted', error='error_worktree_interrupted')
+            with contextlib.suppress(OSError): self.save()
+        for process in processes: GitHubImport.terminate(process)
+
+    def handle(self, data):
+        action, key = data.get('action'), data.get('project_id')
+        if action == 'options': return self.options(key)
+        if action == 'status': return self.status(key)
+        if action == 'create': return self.create(data)
+        if action == 'launch': return self.launch(data)
+        raise Problem(400, 'error_worktree_create')
+
+
 class Bridge:
     def __init__(self, state):
         self.state = private_dir(state)
@@ -2098,6 +2339,7 @@ class Bridge:
             self.selected_agents.setdefault(project_id, agent)
         self.closing = False
         self.github = GitHubImport(self)
+        self.worktree_creation = WorktreeCreation(self)
         self.linked_files = LinkedFiles(self)
         self.persist()
 
@@ -2237,6 +2479,8 @@ class Bridge:
                 self.projects[key] = dict(self.projects[key], name=name.strip())
             elif action == "delete":
                 records = self.snapshots(key)
+                if self.worktree_creation.active(key):
+                    raise Problem(409, "error_worktree_busy")
                 if any(row["state"] in ACTIVE for row in records):
                     raise Problem(409, "error_project_delete_active")
                 # Unregister only: never touch project folders or native history.
@@ -2280,7 +2524,7 @@ class Bridge:
                     path = str(Path(path).resolve())
                     branch = str(fields.get("branch", "")).removeprefix("refs/heads/")
                     metadata = {"branch": branch, "head": str(fields.get("HEAD", "")),
-                                "detached": fields.get("detached") is True}
+                                "detached": fields.get("detached") is True, "locked": bool(fields.get("locked"))}
                     # A registered subfolder uses its containing Git worktree's ref.
                     # Keep the registered root and allowed worktree paths unchanged.
                     if Path(root).is_relative_to(path):
@@ -2292,6 +2536,11 @@ class Bridge:
                                         "primary": False, "available": Path(path).is_dir() and not fields.get("prunable")})
         except (OSError, subprocess.TimeoutExpired):
             pass
+        with self.worktree_creation.lock:
+            pending = {row['path'] for row in self.worktree_creation.jobs if row['state'] == 'creating'}
+        for entry in entries:
+            if entry['path'] in pending:
+                entry.update(available=False, creating=True)
         return {"project_id": key, "worktrees": entries}
 
     def working_project(self, data):
@@ -2400,7 +2649,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -2755,7 +3004,7 @@ class Bridge:
                               "mode": "chat", "new_session": True, "options": options, "request_id": key}, continuation)
         return {"session": result}
 
-    def launch(self, data, continuation=None):
+    def launch(self, data, continuation=None, select=True):
         key = request_id(data.get("request_id"))
         cols = integer(data.get("cols", 80), 20, 300)
         rows = integer(data.get("rows", 24), 4, 200)
@@ -2852,8 +3101,9 @@ class Bridge:
                 session.handoff = next((row.get("handoff") for row in self.snapshots(project_id)
                     if row["agent"] == agent and row.get("external_thread_id") == imported["source_thread_id"] and row.get("handoff")), None)
             self.sessions[session.id] = session
-            self.selected_sessions.setdefault(project_id, {})[agent] = session.id
-            self.selected_agents[project_id] = agent
+            if select:
+                self.selected_sessions.setdefault(project_id, {})[agent] = session.id
+                self.selected_agents[project_id] = agent
             self.persist()
             session.start_reading()
             return session.snapshot()
@@ -2889,6 +3139,8 @@ class Bridge:
 
     def begin_shutdown(self):
         with self.lock:
+            if self.worktree_creation.active():
+                raise Problem(409, "error_worktree_busy")
             if self.active_count():
                 raise Problem(409, "error_session_exists")
             self.closing = True
@@ -3031,6 +3283,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = bridge.select_agent(data)
         elif method == "POST" and parsed.path == "/v1/project-session":
             result = bridge.select_session(data)
+        elif method == "POST" and parsed.path == "/v1/worktrees/manage":
+            result = bridge.worktree_creation.handle(data)
         elif method == "POST" and parsed.path == "/v1/worktrees":
             result = bridge.worktrees(data)
         elif method == "POST" and parsed.path == "/v1/sessions":
@@ -3292,6 +3546,7 @@ def main():
         finally:
             bridge.linked_files.close()
             bridge.github.close()
+            bridge.worktree_creation.close()
             for session in list(bridge.sessions.values()):
                 session.stop()
             for session in list(bridge.sessions.values()):

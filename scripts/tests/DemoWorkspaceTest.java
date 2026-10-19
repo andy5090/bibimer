@@ -169,13 +169,11 @@ public final class DemoWorkspaceTest {
         f.action(id, "queue", "action", "add", "text", "PRIVATE-UI-SECOND-SEND", "request_id", "second-ui-request");
         List<Map<String, Object>> queued = list(f.action(id, "queue", "action", "add", "text", "PRIVATE-UI-THIRD-SEND", "request_id", "third-ui-request").get("queue"));
         check(queued.size() == 2 && !queued.toString().contains("PRIVATE"), "Active sends queue only fictional placeholders");
-        String secondId = text(queued.get(0), "id"), thirdId = text(queued.get(1), "id");
         f.finish(id); Map<String, Object> event = f.events(id);
         check(lastAnswer(event).contains("Python"), "First real UI send advances the prerecorded format");
-        check(list(event.get("queue")).size() == 1 && text(list(event.get("queue")).get(0), "id").equals(thirdId), "FIFO consumes second entry first");
-        check(!text(list(event.get("queue")).get(0), "id").equals(secondId), "Consumed entry is absent");
+        check(list(event.get("queue")).isEmpty(), "The next replay consumes all waiting messages as one batch");
         f.finish(id); event = f.events(id);
-        check(lastAnswer(event).contains("```json") && list(event.get("queue")).isEmpty(), "Next queued replay rotates format and consumes final entry");
+        check(lastAnswer(event).contains("```json") && list(event.get("queue")).isEmpty(), "One queued batch produces one next replay");
         check(!event.toString().contains("PRIVATE-UI"), "Actual UI request contents are never retained");
         fails("error_session_not_running", () -> f.action(f.session("shell"), "queue", "action", "add", "text", "ignored"));
         f.action(id, "stop"); fails("error_session_not_running", () -> f.action(id, "queue", "action", "add", "text", "ignored"));

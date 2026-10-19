@@ -64,7 +64,7 @@ async function main(){
   assert.equal(await input.inputValue(),'/review '); assert.equal(await menu.isVisible(),false);
   assert.equal(fs.existsSync(path.join(projectPath,'turn-count')),false);
   await input.press('Shift+Enter'); assert.equal(await input.inputValue(),'/review \n');
-  await input.fill('/review src/main.py'); await page.locator('#send').click();
+  await input.fill('/review src/main.py'); await input.press('Control+Enter');
   await page.waitForFunction(()=>document.querySelector('#input').value==='');
   for(let i=0;i<100&&!fs.existsSync(path.join(projectPath,'codex-inputs.jsonl'));i++)await delay(30);
   let captured=JSON.parse(fs.readFileSync(path.join(projectPath,'codex-inputs.jsonl'),'utf8').trim().split('\n').at(-1));
@@ -83,7 +83,7 @@ async function main(){
   await input.dispatchEvent('input'); await input.press('Enter'); assert.equal(await input.inputValue(),'/review ');
   await input.fill('/rev'); await input.dispatchEvent('keydown',{key:'Enter',isComposing:true});
   assert.equal(await input.inputValue(),'/rev'); assert.equal(fs.readFileSync(path.join(projectPath,'turn-count'),'utf8'),count);
-  await input.press('Control+Enter'); assert.equal(await input.inputValue(),'/rev\n');
+  await input.press('Control+Shift+Enter'); assert.equal(await input.inputValue(),'/rev\n');
   // Queued command selection keeps its native skill input when steered.
   await input.fill('wait'); await page.locator('#send').click();
   await page.waitForFunction(()=>!document.querySelector('#steer').hidden);
@@ -95,7 +95,7 @@ async function main(){
   assert.equal(await page.locator('#delivery-help-dialog').evaluate(node=>node.open),false);
   await page.locator('#delivery-help').click();
   assert.equal(await page.locator('#delivery-help').getAttribute('aria-expanded'),'true');
-  assert.match(await page.locator('#delivery-hint').innerText(),/Queue: send after the current response ends/);
+  assert.match(await page.locator('#delivery-hint').innerText(),/Queue: send waiting messages together after the current response ends/);
   assert.match(await page.locator('#delivery-hint').innerText(),/Steer: add instructions to the work in progress/);
   assert.equal(await page.evaluate(()=>document.activeElement.id),'delivery-help-close');
   await page.locator('#delivery-help-close').click();
@@ -114,7 +114,7 @@ async function main(){
     await page.setViewportSize({width:320,height:460});
     await page.locator('#delivery-help').click();
     assert.equal(await page.locator('#delivery-help-title').innerText(),await page.evaluate(()=>BibimerI18n.t('delivery_help_title')));
-    assert.equal(await page.locator('#delivery-hint').innerText(),await page.evaluate(()=>BibimerI18n.t('delivery_steer')));
+    assert.equal(await page.locator('#delivery-hint').innerText(),await page.evaluate(()=>BibimerI18n.t('delivery_steer_batch')));
     const bounds=await page.locator('#delivery-help-dialog').boundingBox();
     assert.ok(bounds.x>=0 && bounds.y>=0 && bounds.x+bounds.width<=320 && bounds.y+bounds.height<=460);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -128,7 +128,7 @@ async function main(){
   hideSteer=true;await page.evaluate(()=>window.BibimerResume());
   await page.waitForFunction(()=>document.querySelector('#steer').hidden);
   await page.locator('#delivery-help').click();
-  assert.equal(await page.locator('#delivery-hint').innerText(),await page.evaluate(()=>BibimerI18n.t('delivery_queue')));
+  assert.equal(await page.locator('#delivery-hint').innerText(),await page.evaluate(()=>BibimerI18n.t('delivery_queue_batch')));
   await page.locator('#delivery-help-close').click();
   hideSteer=false;await page.evaluate(()=>window.BibimerResume());
   await page.waitForFunction(()=>!document.querySelector('#steer').hidden);

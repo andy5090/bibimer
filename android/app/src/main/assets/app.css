@@ -433,3 +433,10 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .project-reordering .sidebar-project > summary { cursor:grabbing; }
 .project-drag-source { opacity:.4; outline:1px dashed var(--green); outline-offset:-2px; }
 .project-drag-ghost { position:fixed; z-index:2; pointer-events:none; box-sizing:border-box; display:flex; align-items:center; padding:8px 12px; background:var(--bg); color:var(--green); border:1px solid var(--green); border-radius:8px; box-shadow:0 6px 18px #0006; font-size:13px; font-weight:600; overflow-wrap:anywhere; }
+
+.sidebar-worktree-create { margin:2px 8px 8px; text-align:left; max-width:calc(100% - 16px); white-space:normal; }
+#worktree-create-form { display:grid; gap:8px; min-width:0; }
+#worktree-create-form label { margin-top:4px; }
+#worktree-create-form .hint { margin:0; }
+#worktree-create-path { overflow-wrap:anywhere; }
+#worktree-create-dialog > .secondary { width:100%; margin-top:10px; }

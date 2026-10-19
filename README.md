@@ -86,7 +86,7 @@ The app follows your device language list by default and uses English when none 
 
 Switching screens or closing Bibimer does not request that your sessions stop. Reconnect to continue while Termux and the bridge are still running. Android may stop background processes; restarting the bridge does not restore lost processes or their terminal output.
 
-Archiving a session keeps its work running. Removing an ended session from Bibimer removes its listing, while project files and the agent's own history stay in Termux. Worktree creation and deletion are handled with Git in Termux.
+Archiving a session keeps its work running. Removing an ended session from Bibimer removes its listing, while project files and the agent's own history stay in Termux. In released versions, worktree creation and deletion are handled with Git in Termux. Current development sources add sidebar worktree creation and session startup, creating a local branch when needed or reusing an existing one; this requires an updated app and bridge. Worktree deletion stays in Git.
 
 The app connects to a bridge on the phone's loopback address. Bibimer has no advertising or analytics SDK and does not upload your conversations to a Bibimer service. **A connected agent may send instructions, code, or files to its configured provider and tools.** Provider fees and policies apply separately. See the [privacy policy](https://bibimer.app/privacy/) for details.
 

@@ -21,7 +21,8 @@
   let canImport = false, multiImport = false, persistentCodex = false, importProject = null, importEntries = [], importSelection = null;
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
   let canOptions = false, canLiveOptions = false, settingsBusy = false, pendingOptions = null;
-  let canQueue = false, canSteer = false, canQueueSteer = false, queued = [], queueRevision = -1, queueSignature = "";
+  let canCreateWorktrees = false;
+  let canQueue = false, canBatchQueue = false, canSteer = false, canClaudeSteer = false, canQueueSteer = false, queued = [], queueRevision = -1, queueSignature = "";
   let canCommands = false, canHandoff = false, handoff = null;
   let canModels = false, canSwitchAgents = false, selectedAgent = "shell";
   let canLibrary = false, canWorktrees = false, activeViewKey = null, draftPath = null, importPath = null;
@@ -58,6 +59,7 @@
       select.id === "enter-behavior" ? t("enter_" + option.value + "_hint") : option.dataset.description || "",
     context: select => ["language", "enter-behavior"].includes(select.id) ? "app" :
       select.id === "project-switch" ? "projects/" + projectKey() :
+      select.id.startsWith("worktree-") ? [instance, select.dataset.context].join("/") :
       select.id.startsWith("import-") ? [projectKey(), importProject, $("import-agent").value].join("/") :
       [projectKey(), session?.id, session?.state, select.dataset.agent].join("/")
   });
@@ -79,7 +81,7 @@
     moveProject:(id, position) => manageProject(id, "move_to", position),
     import:async (id, path) => { await newSession(id, path); if (projectKey() === id) $("import-session").click(); },
     project:async id => { await changeProject({project_id:id}); sidebar.close(); tab("work"); },
-    session:selectSession, create:newSession
+    session:selectSession, create:newSession, worktree:id=>worktreeCreator.open(id)
   });
   const fileContext = () => ({instance, project:projectKey(),
     path:session?.project?.path || draftPath || project?.path, online:online && !paused && !switchingProject,
@@ -95,6 +97,12 @@
       rememberClone:path => rememberProjectLocation(parentFolder(path), true),
       open:async id => { const changed = await changeProject({project_id:id}, true); if (changed) { projectForm(false); sidebar.close(); tab("work"); await refreshSidebar(); } return changed; }
     });
+
+  const worktreeCreator = new BibimerWorktreeCreate(t, () => ({instance,view:viewKey(),projects:knownProjects,agents:knownAgents,
+    online:online && !paused,supported:canCreateWorktrees}), data=>api("POST","/v1/worktrees/manage",data), {
+    id:uuid,options:(agent,mode)=>({...savedOptions(agent),...(agent==="opencode" && mode==="terminal"?{effort:""}:{})}),
+    refresh:refreshSidebar,open:async(id,sessionId)=>{await refreshCatalog();await selectSession(id,sessionId);}
+  });
 
   const commands = new BibimerCommands($("input"), $("commands"), t, () => {
     const agent = session?.agent, path = session?.project?.path;
@@ -494,7 +502,7 @@
   }
   function renderSidebar() {
     sidebar.render({projects:knownProjects, projectId:projectKey(), sessionId:session?.id,
-      worktrees, online, dragOrdering:canDragProjects, library:canLibrary, disabled:!online || busy || switchingProject || settingsBusy || libraryBusy,
+      worktrees, online, creation:canCreateWorktrees, dragOrdering:canDragProjects, library:canLibrary, disabled:!online || busy || switchingProject || settingsBusy || libraryBusy,
       loading:worktreeLoading, error:worktreeError || (noticeData?.key?.startsWith("error_") ? noticeData.key : null), title:sessionTitle, status:sessionStatus, responding:isResponding});
   }
   async function refreshSidebar() {
@@ -856,6 +864,7 @@
     else updateEnvironment();
   }
   function renderSession() {
+    worktreeCreator.render();
     renderBridgeUpdate();
     const live = session && ["running", "stopping"].includes(session.state);
     $("workspace").classList.toggle("launch-mode", !live);
@@ -907,13 +916,13 @@
     $("input").disabled = !online || !session || session.state !== "running" || (isChat() && !session.ready);
     const responding = isChat() && !["ready", "failed"].includes(session.turn_state);
     const enqueue = isChat() && canQueue && (responding || session.queued_count > 0);
-    const steerable = isChat() && canSteer && session.can_steer && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state);
+    const steerable = isChat() && supportsSteer() && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state);
     $("send").textContent = t(enqueue ? "queue_send" : "send");
     $("send").disabled = $("input").disabled || settingsBusy || sending.has(session?.id) || (responding && !canQueue);
     $("steer").hidden = !steerable;
     $("steer").disabled = $("input").disabled || settingsBusy || sending.has(session?.id);
     $("delivery-warning").hidden = !isChat() || !responding || canQueue;
-    $("delivery-hint").textContent = t(!canQueue ? "delivery_update" : canSteer && session?.can_steer ? "delivery_steer" : "delivery_queue");
+    $("delivery-hint").textContent = t(!canQueue ? "delivery_update" : (supportsSteer() ? "delivery_steer" : "delivery_queue") + (canBatchQueue ? "_batch" : ""));
     renderQueue(); commands.render(); renderHandoff();
     $("new-session").disabled = !online || !project || busy || switchingProject || settingsBusy || (!canLibrary && !!live);
     $("session-more").hidden = !session;
@@ -1019,13 +1028,16 @@
       canHandoff = health.features?.includes("agent_handoff") === true;
       canCommands = health.features?.includes("slash_commands") === true;
       canQueue = health.features?.includes("chat_queue") === true;
+      canBatchQueue = health.features?.includes("queue_batch") === true;
       canSteer = health.features?.includes("codex_steer") === true;
+      canClaudeSteer = health.features?.includes("claude_steer") === true;
       canQueueSteer = health.features?.includes("queue_steer") === true;
       canModels = health.features?.includes("model_options") === true;
       canSwitchAgents = health.features?.includes("agent_sessions") === true;
       canLibrary = health.features?.includes("session_library") === true;
       canSessionTitles = health.features?.includes("session_titles") === true;
       canWorktrees = health.features?.includes("git_worktrees") === true;
+      canCreateWorktrees = health.features?.includes("worktree_creation") === true;
       canManageProjects = health.features?.includes("project_management") === true;
       canOrderProjects = health.features?.includes("project_ordering") === true;
       canDragProjects = health.features?.includes("project_drag_ordering") === true;
@@ -1173,14 +1185,17 @@
     queueRevision = event.session.output_end;
     renderQueue();
   }
+  function supportsSteer() {
+    return session?.can_steer && (session.agent === "claude" ? canClaudeSteer : session.agent === "codex" && canSteer);
+  }
   function renderQueue() {
     $("chat-queue").hidden = !isChat() || !queued.length;
     $("queue-count").textContent = t(session?.queue_paused ? "queue_paused" : "queue_count", {count:queued.length});
     $("queue-resume").hidden = !session?.queue_paused;
     $("queue-resume").disabled = !online || session?.state !== "running" || sending.has(session?.id) ||
       queued.some(entry => ["steering", "uncertain"].includes(entry.state));
-    const steerable = isChat() && canSteer && session.can_steer && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state);
-    const signature = JSON.stringify([session?.id, queued, online, session?.state, session?.active_turn_id, steerable, canQueueSteer, canSteer, session?.can_steer,
+    const steerable = isChat() && supportsSteer() && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state);
+    const signature = JSON.stringify([session?.id, queued, online, session?.state, session?.active_turn_id, steerable, canQueueSteer, canSteer, canClaudeSteer, session?.can_steer,
       settingsBusy, switchingProject, sending.has(session?.id), i18n.language()]);
     if (signature === queueSignature) return;
     queueSignature = signature;
@@ -1194,7 +1209,7 @@
         state.textContent = t("queue_" + entry.state); body.append(state);
       }
       row.append(body);
-      if (canQueueSteer && canSteer && session?.can_steer) {
+      if (canQueueSteer && supportsSteer()) {
         const steer = document.createElement("button");
         steer.type = "button"; steer.className = "quiet"; steer.dataset.queueAction = "steer";
         steer.textContent = t("steer"); steer.title = t(steerable ? "queue_steer_hint" : "queue_steer_wait");
@@ -1275,7 +1290,8 @@
     if (event.isComposing || composing || event.keyCode === 229) return;
     if (commands.keydown(event) || event.key !== "Enter") return;
     event.preventDefault();
-    if (enterBehavior === "newline" || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
+    const send = enterBehavior === "newline" ? event.ctrlKey : !event.ctrlKey;
+    if (!send || event.shiftKey || event.metaKey || event.altKey) {
       const input = $("input");
       input.setRangeText("\n", input.selectionStart, input.selectionEnd, "end");
       input.dispatchEvent(new Event("input", {bubbles:true}));

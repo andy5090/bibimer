@@ -66,9 +66,9 @@ class ResponseNotificationTests(ChatFixture):
                 {'action':'add', 'text':text, 'request_id':str(uuid.uuid4())})[0])
         self.api('POST', f'/v1/sessions/{session.id}/respond',
             {'prompt_id':prompt, 'decision':'decline', 'request_id':str(uuid.uuid4())})
-        self.until(lambda e: not e['queue'] and sum(row['kind'] == 'turn' for row in e['items']) == 3)
+        self.until(lambda e: not e['queue'] and sum(row['kind'] == 'turn' for row in e['items']) == 2)
         result = self.feed()
-        self.assertEqual([1, 2, 3], [row['id'] for row in result['events']])
+        self.assertEqual([1, 2], [row['id'] for row in result['events']])
         self.assertEqual({session.id}, {row['session_id'] for row in result['events']})
         self.assertNotIn('PRIVATE', json.dumps(result))
         self.assertTrue(all(row['preview'].startswith('Result Formatted reply') for row in result['events']))

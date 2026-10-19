@@ -370,7 +370,7 @@ def main():
         adapter = Adapter(sys.argv[1])
         signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
         for line in sys.stdin:
-            if len(line) > 131072:
+            if len(line) > 2097152:
                 break
             value = json.loads(line)
             if 'method' not in value:

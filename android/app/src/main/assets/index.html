@@ -29,6 +29,7 @@
   <script src="inspector.js" defer></script>
   <script src="commands.js" defer></script>
   <script src="github.js" defer></script>
+  <script src="worktree-create.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -235,7 +236,7 @@
         <select id="enter-behavior" aria-describedby="enter-behavior-hint enter-modifiers-hint"><option value="newline" data-i18n="enter_newline">New line</option><option value="send" data-i18n="enter_send">Send</option></select>
       </div>
       <p id="enter-behavior-hint" class="hint"></p>
-      <p id="enter-modifiers-hint" class="hint" data-i18n="enter_modifiers_hint">Shift+Enter and Ctrl+Enter always insert a new line. Applies to the message box in Chat and Terminal.</p>
+      <p id="enter-modifiers-hint" class="hint" data-i18n="enter_modifiers_hint">With Enter set to New line, Ctrl+Enter sends or queues your message; with Enter set to Send, it inserts a new line. Shift+Enter always inserts a new line. Applies to the message box in Chat and Terminal.</p>
     </section>
     <section class="card preference-card">
       <div class="preference-row language-preference"><label for="language" data-i18n="language_label">Language</label>
@@ -417,6 +418,25 @@
       <label for="import-effort" data-i18n="effort_label">Reasoning</label><select id="import-effort"></select>
       <p id="import-models-hint" class="hint"></p><button id="import-models-refresh" class="quiet" type="button" data-i18n="models_refresh">Refresh models</button>
       <p id="import-settings-hint" class="hint"></p><button id="import-settings-done" type="button" class="primary" data-i18n="settings_done">Done</button></dialog>
+  <dialog id="worktree-create-dialog" class="settings-dialog" aria-labelledby="worktree-create-title">
+    <h2 id="worktree-create-title" data-i18n="worktree_create_title">Create a worktree</h2>
+    <p id="worktree-create-project" class="hint" dir="auto"></p>
+    <form id="worktree-create-form">
+      <label for="worktree-branch-choice" data-i18n="worktree_branch_label">Branch</label>
+      <select id="worktree-branch-choice" aria-label="Branch" data-i18n-aria-label="worktree_branch_label"></select>
+      <input id="worktree-branch" type="text" aria-label="New branch" data-i18n-aria-label="worktree_new_branch" maxlength="200" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="feature/my-task" aria-describedby="worktree-branch-hint">
+      <p id="worktree-branch-hint" class="hint"></p>
+      <label for="worktree-base" data-i18n="worktree_base_label">Start from</label><select id="worktree-base"></select>
+      <label for="worktree-agent" data-i18n="agent_label">Agent</label><select id="worktree-agent"></select>
+      <label for="worktree-mode" data-i18n="mode_label">Session interface</label><select id="worktree-mode"></select>
+      <p class="hint" data-i18n="worktree_folder_hint">Worktrees are stored in a separate folder in Termux.</p>
+      <p id="worktree-create-path" class="hint" dir="auto"></p>
+      <p id="worktree-create-status" class="hint" role="status" aria-live="polite"></p>
+      <button id="worktree-create-submit" type="submit" class="primary" data-i18n="worktree_create_start">Create and start session</button>
+      <button id="worktree-create-reset" type="button" class="quiet" data-i18n="worktree_create_another" hidden>Create another worktree</button>
+    </form>
+    <button id="worktree-create-close" type="button" class="secondary" data-i18n="worktree_close">Close</button>
+  </dialog>
   <dialog id="delivery-help-dialog" class="settings-dialog" aria-labelledby="delivery-help-title" aria-describedby="delivery-hint">
     <h2 id="delivery-help-title" data-i18n="delivery_help_title">Message delivery help</h2>
     <p id="delivery-hint" class="hint"></p>

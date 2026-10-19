@@ -12,6 +12,7 @@ const cwd = realpathSync(process.cwd()), executable = process.argv[2];
 const emit = value => process.stdout.write(JSON.stringify(value)+'\n');
 const text = value => typeof value === 'string' ? value.slice(0,32768) : '';
 let thread = null, turn = null, active = null, persisted = false, interrupted = false;
+let liveInput = null;
 const approvals = new Map(), tools = new Map(), streams = new Map();
 const notify = (method, params) => emit({method,params:{threadId:thread,turnId:turn,...params}});
 const metadata = row => ({id:row.sessionId,cwd:row.cwd,name:row.customTitle || row.summary || '',updatedAt:row.lastModified/1000,ephemeral:false,source:'appServer',status:{type:'notLoaded'}});
@@ -95,14 +96,21 @@ function respond(value) {
 let permissionMode = 'inherit', modelOptions = {};
 async function runTurn(prompt, identity) {
   let finishInput, failed=false, resultSeen=false, answerSeen=false;
-  const done = new Promise(resolve=>{finishInput=resolve;});
+  const state = {identity,accepting:true,messages:[],pending:new Map(),wake:null};
+  liveInput=state;
+  finishInput=()=>{state.accepting=false;state.wake?.();};
   async function* input() {
     yield {type:'user',uuid:identity,session_id:thread,parent_tool_use_id:null,message:{role:'user',content:[{type:'text',text:prompt}]}};
-    await done;
+    while (state.accepting) {
+      if (!state.messages.length) await new Promise(resolve=>{state.wake=resolve;});
+      state.wake=null;
+      while (state.accepting && state.messages.length) yield state.messages.shift();
+    }
   }
   try {
     const options={cwd,pathToClaudeCodeExecutable:executable,settingSources:['user','project','local'],
       systemPrompt:{type:'preset',preset:'claude_code'},includePartialMessages:true,canUseTool:permission,
+      extraArgs:{'replay-user-messages':null},
       ...(permissionMode==='inherit'?{}:{permissionMode}),
       ...(permissionMode==='bypassPermissions'?{allowDangerouslySkipPermissions:true}:{}),
       ...(Object.hasOwn(modelOptions,'model')?{model:modelOptions.model || 'default'}:{}),
@@ -114,6 +122,31 @@ async function runTurn(prompt, identity) {
       if (message.session_id && message.session_id!==thread) throw Error('error_agent_transport');
       if (message.type==='system' && message.subtype==='init') persisted=true;
       if (message.parent_tool_use_id) continue;
+      if (message.type==='command_lifecycle') {
+        const pending=state.pending.get(message.command_uuid);
+        if (pending && ['queued','started'].includes(message.state) && !pending.accepted) {
+          pending.accepted=true;
+          notify('item/completed',{item:{id:message.command_uuid,type:'userMessage',content:[{type:'text',text:pending.text}]}});
+          pending.resolve({turnId:identity});
+        } else if (pending && ['cancelled','discarded'].includes(message.state)) {
+          state.pending.delete(message.command_uuid);
+          if (pending.accepted) notify('item/completed',{item:{id:message.command_uuid,type:'userMessage',status:'interrupted',content:[{type:'text',text:pending.text}]}});
+          pending.reject(Error('error_steer_rejected'));
+          if (resultSeen && !state.pending.size) finishInput();
+        }
+        continue;
+      }
+      if (message.type==='user' && message.isReplay) {
+        const pending=state.pending.get(message.uuid);
+        if (pending) {
+          state.pending.delete(message.uuid);
+          // Older CLIs can acknowledge via replay. On current CLIs the queued
+          // lifecycle arrives first, without waiting for running tools to end.
+          notify('item/completed',{item:{id:message.uuid,type:'userMessage',content:[{type:'text',text:pending.text}]}});
+          pending.resolve({turnId:identity});
+        }
+        continue;
+      }
       if (message.type==='stream_event') {
         const event=message.event;
         if (event.type==='message_start') streams.set('current',{id:event.message.id,text:''});
@@ -130,12 +163,17 @@ async function runTurn(prompt, identity) {
           if (block.type==='tool_use' && block.name==='TodoWrite') notify('turn/plan/updated',{plan:(block.input?.todos || []).map(todo=>({step:todo.content,status:todo.status}))});
         }
       } else if (message.type==='result') {
-        resultSeen=true; persisted=true; failed=message.is_error || message.subtype!=='success'; finishInput();
+        resultSeen=true; persisted=true; failed=failed || message.is_error || message.subtype!=='success';
+        // Claude can fold input into this turn or continue with another native
+        // turn. Keep the same Bibimer operation open until the native backlog
+        // is empty; never drop queued input at the first result.
+        if (failed || interrupted || (!state.pending.size && !(message.queued_turn_count>0))) finishInput();
         // Local SDK commands can return a result without an assistant message.
         if (!failed && prompt.startsWith('/') && !answerSeen && typeof message.result==='string' && message.result.trim()) {
           notify('item/completed',{item:{id:identity+'-result',type:'agentMessage',text:text(message.result),status:'completed'}});
         }
         if (failed && !interrupted) notify('bibimer/notice',{code:'error_agent_turn'});
+        if (failed || interrupted) { active?.close(); break; }
       }
     }
   } catch {
@@ -143,6 +181,12 @@ async function runTurn(prompt, identity) {
     if (!interrupted) notify('bibimer/notice',{code:'error_agent_turn'});
   } finally {
     finishInput();
+    for (const [uuid,pending] of state.pending) {
+      if (pending.accepted) notify('item/completed',{item:{id:uuid,type:'userMessage',status:'interrupted',content:[{type:'text',text:pending.text}]}});
+      pending.reject(Error('error_input_uncertain'));
+    }
+    state.pending.clear();
+    if (liveInput===state) liveInput=null;
     for (const request of [...approvals.values()]) request.finish({behavior:'deny',message:'Turn ended'});
     active?.close(); active=null;
     notify('turn/completed',{turn:{id:identity,status:interrupted?'interrupted':failed || !resultSeen?'failed':'completed'}});
@@ -150,7 +194,7 @@ async function runTurn(prompt, identity) {
   }
 }
 async function call(method,params) {
-  if (method==='initialize') return {userAgent:'bibimer-claude'};
+  if (method==='initialize') return {userAgent:'bibimer-claude',capabilities:{steer:true}};
   if (method==='model/list' || method==='commands/list') {
     // Initialize the CLI control protocol without yielding any user prompt.
     let release;
@@ -212,15 +256,34 @@ async function call(method,params) {
     void runTurn(params.input[0].text,identity);
     return {turn:{id:identity}};
   }
+  if (method==='turn/steer') {
+    const state=liveInput, value=params.input;
+    if (!turn || params.expectedTurnId!==turn || !active || !state?.accepting || interrupted) throw Error('error_steer_unavailable');
+    if (!Array.isArray(value) || value.length!==1 || value[0].type!=='text' || typeof value[0].text!=='string' ||
+        !value[0].text.trim() || Buffer.byteLength(value[0].text)>16384) throw Error('error_input_size');
+    if (value[0].text.trimStart().startsWith('/')) throw Error('error_steer_unavailable');
+    if (state.pending.size>=16) throw Error('error_steer_rejected');
+    const uuid=randomUUID(), text=value[0].text;
+    return new Promise((resolve,reject)=>{
+      state.pending.set(uuid,{text,resolve,reject});
+      state.messages.push({type:'user',uuid,session_id:thread,parent_tool_use_id:null,message:{role:'user',content:[{type:'text',text}]}});
+      state.wake?.();
+    });
+  }
   if (method==='turn/interrupt') {
-    if (active && params.turnId===turn) { interrupted=true; await active.interrupt(); }
+    if (active && params.turnId===turn) {
+      interrupted=true;
+      const query=active;
+      try { await query.interrupt(); }
+      finally { query.close(); }
+    }
     return {};
   }
   throw Error('error_history_unsupported');
 }
 const input = createInterface({input:process.stdin,crlfDelay:Infinity});
 input.on('line',line=>{
-  if (line.length>131072) { process.exit(1); return; }
+  if (line.length>2097152) { process.exit(1); return; }
   let value; try { value=JSON.parse(line); } catch { process.exit(1); return; }
   if (!value.method) { respond(value); return; }
   if (value.id===undefined) return;

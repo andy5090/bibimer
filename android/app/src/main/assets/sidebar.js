@@ -280,7 +280,7 @@ window.BibimerSidebar = class BibimerSidebar {
       id:row.id, agent:row.agent, path:row.project.path, title:state.title(row), status:state.status(row),
       archived:!!row.archived, state:row.state, responding:state.responding(row)
     }))}));
-    const signature = JSON.stringify([rows, state.worktrees, state.projectId, state.sessionId, state.disabled, state.library, this.archived, t("session_new")]);
+    const signature = JSON.stringify([rows, state.worktrees, state.projectId, state.sessionId, state.disabled, state.library, state.creation, this.archived, t("session_new")]);
     if (signature === this.signature) return;
     this.signature = signature;
     const focused = this.list.contains(document.activeElement) ? document.activeElement.dataset.key : null;
@@ -301,6 +301,12 @@ window.BibimerSidebar = class BibimerSidebar {
       projectNode.firstChild.append(settings);
       const path = document.createElement("p"); path.className = "sidebar-path"; path.textContent = project.path; path.title = project.path; path.dir = "auto"; projectNode.append(path);
       const groups = [...(state.worktrees[project.id] || [{path:project.path, name:project.name, primary:true, available:true}])];
+      if (!this.archived && state.creation) {
+        const createTree = this.button("+ " + t("worktree_create_title"), () => this.actions.worktree(project.id), "quiet sidebar-worktree-create", "worktree-create/"+project.id);
+        createTree.disabled ||= !state.library || !groups.some(group=>group.head && group.available !== false);
+        createTree.title = createTree.disabled ? t("error_worktree_git") : t("worktree_create_hint");
+        createTree.dataset.createWorktree=project.id; projectNode.append(createTree);
+      }
       for (const session of project.sessions) if (!groups.some(group => group.path === session.path)) groups.push({path:session.path, name:session.path.split("/").pop(), available:false});
       for (const group of groups) {
         const matching = project.sessions.filter(row => row.path === group.path && row.archived === this.archived);

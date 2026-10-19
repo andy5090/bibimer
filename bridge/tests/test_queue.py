@@ -7,6 +7,81 @@ from test_bridge import module
 
 
 class QueueTests(ChatFixture):
+    def test_batch_freezes_members_and_new_messages_wait_for_next_response(self):
+        session = self.chat()
+        self.message('approval')
+        prompt = self.until(lambda e: bool(e['requests']))['requests'][0]['id']
+        for text in ['one', 'two', 'three']:
+            self.queue(text=text)
+        original = session._rpc
+        batches = []
+        def hold(method, params, kind):
+            if isinstance(kind, tuple) and kind[0] == 'queue':
+                batches.append((params, kind))
+                return 'held-batch'
+            return original(method, params, kind)
+        session._rpc = hold
+        self.api('POST', f'/v1/sessions/{self.session_id}/respond', {'prompt_id':prompt,'decision':'decline','request_id':str(uuid.uuid4())})
+        event = self.until(lambda e: len(e['queue']) == 3 and all(row['state'] == 'sending' for row in e['queue']))
+        self.assertEqual('one\n\ntwo\n\nthree', batches[0][0]['input'][0]['text'])
+        self.assertEqual(409, self.queue('remove', entry_id=event['queue'][1]['id'])[0])
+        self.queue(text='arrived later')
+        with session.condition:
+            session.rpc_pending['held-batch'] = batches[0][1]
+            session._handle({'id':'held-batch','result':{'turn':{'id':'batch-turn'}}})
+        self.assertEqual(['arrived later'], [row['text'] for row in session.events(0,0)['queue']])
+        self.assertEqual(1, len(batches))
+        session._rpc = original
+        with session.condition:
+            session._handle({'method':'turn/completed','params':{'turn':{'id':'batch-turn','status':'completed'}}})
+            session._drain_queue()
+        event = self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')
+        self.assertIn('arrived later', [row.get('text') for row in event['items']])
+
+    def test_rejected_batch_retains_all_members_and_resumes_together(self):
+        session = self.chat()
+        self.message('wait')
+        self.until(lambda e: e['session']['turn_state'] == 'running')
+        first = str(uuid.uuid4())
+        self.queue(text='start-error', key=first)
+        self.queue(text='second message')
+        self.api('POST', f'/v1/sessions/{self.session_id}/interrupt', {})
+        self.until(lambda e: e['session']['turn_state'] == 'ready')
+        # The fixture rejects by the exact first text; inject a native refusal
+        # to test atomic retention of the complete submitted batch.
+        original = session._rpc
+        def reject(method, params, kind):
+            if isinstance(kind, tuple) and kind[0] == 'queue':
+                session.rpc_pending['reject-batch'] = kind
+                session._handle({'id':'reject-batch','error':{'message':'controlled refusal'}})
+                return 'reject-batch'
+            return original(method, params, kind)
+        session._rpc = reject
+        self.queue('resume')
+        event = self.until(lambda e: e['session']['queue_paused'] and all(row['state'] == 'failed' for row in e['queue']))
+        self.assertEqual(2, len(event['queue']))
+        self.assertEqual('1', (self.root/'project/turn-count').read_text())
+        session._rpc = original
+        self.queue('remove', entry_id=first)
+        self.queue('resume')
+        self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')
+        self.assertEqual('2', (self.root/'project/turn-count').read_text())
+
+    def test_full_capacity_batch_preserves_all_text_in_one_native_input(self):
+        self.chat()
+        self.message('wait')
+        self.until(lambda e: e['session']['turn_state'] == 'running')
+        texts = [str(index) + 'x' * 16382 for index in range(16)]
+        for text in texts:
+            self.assertEqual(200, self.queue(text=text)[0])
+        self.api('POST', f'/v1/sessions/{self.session_id}/interrupt', {})
+        self.until(lambda e: e['session']['turn_state'] == 'ready')
+        self.queue('resume')
+        self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')
+        captured = json.loads((self.root/'project/codex-inputs.jsonl').read_text().splitlines()[-1])
+        self.assertEqual('\n\n'.join(texts), captured['input'][0]['text'])
+        self.assertEqual('2', (self.root/'project/turn-count').read_text())
+
     def queue(self, action='add', key=None, **values):
         return self.api('POST', f'/v1/sessions/{self.session_id}/queue',
                         {'action': action, 'request_id': key or str(uuid.uuid4()), **values})
@@ -42,16 +117,16 @@ class QueueTests(ChatFixture):
         self.assertEqual([], restored.session_events(session.id, 0, 0)['queue'])
         self.assertEqual(200, self.api('POST', f'/v1/sessions/{self.session_id}/respond',
             {'prompt_id': prompt, 'decision': 'decline', 'request_id': str(uuid.uuid4())})[0])
-        event = self.until(lambda e: not e['queue'] and sum(i['kind'] == 'turn' for i in e['items']) == 3)
-        self.assertEqual(['approval', 'PRIVATE queued first', 'PRIVATE queued second'],
+        event = self.until(lambda e: not e['queue'] and sum(i['kind'] == 'turn' for i in e['items']) == 2)
+        self.assertEqual(['approval', 'PRIVATE queued first\n\nPRIVATE queued second'],
                          [i['text'] for i in event['items'] if i['kind'] == 'user'])
         self.assertFalse((self.root/'project/approved').exists())
         self.assertEqual(200, self.queue(text='PRIVATE queued first', key=first)[0])
-        self.assertEqual('3', (self.root/'project/turn-count').read_text())
+        self.assertEqual('2', (self.root/'project/turn-count').read_text())
         turns = [json.loads(line) for line in (self.root/'project/codex-options.jsonl').read_text().splitlines()
                  if json.loads(line)['method'] == 'turn/start']
-        self.assertEqual(['readOnly', 'readOnly'], [entry['sandboxPolicy']['type'] for entry in turns[1:]])
-        self.assertEqual(['fast', 'fast'], [entry['serviceTier'] for entry in turns[1:]])
+        self.assertEqual(['readOnly'], [entry['sandboxPolicy']['type'] for entry in turns[1:]])
+        self.assertEqual(['fast'], [entry['serviceTier'] for entry in turns[1:]])
 
     def test_interrupt_pauses_queue_until_explicit_resume(self):
         self.chat()

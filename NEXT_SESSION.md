@@ -1,5 +1,34 @@
 # Bibimer 다음 세션 시작점
 
+## 사이드바 워크트리 생성·브랜치·세션 시작 (2026-10-19, 미배포)
+
+- 사용자 요청에 따라 프로젝트를 펼치면 **+ 워크트리 만들기**를 제공한다. 새 브랜치 이름 또는 기존 로컬 브랜치·기준 커밋·에이전트·Chat/Terminal을 선택하고 **만들고 세션 시작**으로 진행한다. 없는 브랜치는 새로 만들고 기존 브랜치는 원래 tip을 재사용한다. 사용 중인 브랜치는 비활성화하고 Git에서도 강제 체크아웃/reset을 하지 않는다. 커밋이 없는 저장소·일반 폴더는 생성할 수 없다. 기존 워크트리 그룹의 새 세션/가져오기는 유지한다. Orca·Paseo의 공식 워크트리 안내를 참고했다(링크는 `docs/interface.md`).
+- 새 `worktree_creation` 기능과 인증된 `/v1/worktrees/manage`의 options/status/create/launch를 추가했다. Termux 브리지 상태 폴더의 `worktrees/<project-id>/<branch-slug>-<hash>`에 실제 Git 워크트리를 만든다. 원래 폴더·미커밋 파일·세션·대기 승인/초안은 유지하고 미커밋 파일을 복사하지 않는다. 후크·force/reset·fetch·자동 삭제를 사용하지 않으며 기존 폴더/심볼릭 링크를 덮어쓰지 않는다. 생성 중에는 해당 경로로 세션을 시작할 수 없다.
+- 생성 영수증을 Git 실행 전에 저장하고 생성/실행 ID를 각각 고정해 재시도 중복을 막는다. 창을 닫으면 생성은 유지하고 세션을 자동 시작하지 않으며, 다시 열거나 화면 재로드 후 완료 작업의 **세션 시작**을 제공한다. 시작 중 창을 닫거나 다른 세션으로 이동해도 선택을 빼앗지 않는다. 실행 실패 시 워크트리/브랜치를 보존한다. 브리지 재시작 후 실제 Git 경로·브랜치·잠금을 확인해 완료 작업을 복구하고 프로세스를 복원했다고 표시하지 않는다. 진행 중 프로젝트 등록 해제/정상 브리지 종료를 거절한다. 동시 Git 생성 1개·누적 영수증 128개·프로젝트 실제 워크트리 120개·Git 생성 5분 제한이다.
+- 앱 자체 하단 선택 시트·Back·사용 불가 항목 설명을 사용하고, 구형 브리지에서는 버튼을 숨긴다. 신규 25키×10언어로 **682키×10언어**다. 언어 변경 시 동적으로 만든 브랜치/에이전트/인터페이스 항목도 갱신한다. 작업 재개 시 고정된 실제 기준 커밋을 표시한다. README 영문/한국어는 배포판과 미배포 소스를 구분했고 AGENTS.md·설정/인터페이스/구조 문서를 갱신했다.
+- 검증: `PYTHONPATH=bridge/tests:scripts python -m unittest discover -s bridge/tests -v` **175검사 전체 통과**(Codex/Claude/OpenCode·대기열/Steer·알림·가져오기·재시작·Setup 회귀 포함). 워크트리 전용 **8검사**를 기준 커밋 변경 시나리오까지 보완해 다시 통과했다. 실제 Git의 새/기존 브랜치·고정 커밋·후크 미실행·원본 미커밋 파일 보존·경로 경쟁 비덮어쓰기·생성 중 실행 금지·영수증 저장 실패·실행 실패 후 재시도·선택/프로세스 보존·중복/재시작 복구를 확인했다. 로그 `.tools/worktree-create-{all-bridge,bridge-final}.log`.
+- `node scripts/smoke_worktrees.cjs`는 실제 격리 브리지·Git·Chromium·모의 Codex로 새/기존 브랜치와 세션 시작, 기존 응답/초안 보존, 중복 submit 방지, 닫은 뒤 생성 완료, 재로드 복구, 실행 응답 유실 후 동일 ID 재시도, 실행 중 닫기/다른 세션 이동, 비 Git/구형 기능 숨김, 10언어·320/393px·자체 선택 시트·Back을 검증했다. `smoke_library.cjs`의 기존 사이드바/드래그 정렬/프로젝트 관리/알림 이동/다중 세션 회귀도 전체 통과했다. 로그 `.tools/worktree-create-{ui-final,library}.log`, 화면 `dist/screenshots/worktree-create-{320,393}-{en,ko}.png`. 영어/한국어 320px 화면을 시각 확인했다. 초기 UI 검사의 완료 작업 필드 비활성/메모리 초안의 재로드 소실 기대값을 바로잡았고 언어 변경 시 이전 선택 문구가 남는 실제 문제를 수정했다.
+- i18n·언어/초안(682키×10언어), JS/Python 구문·diff 통과. 변경한 Android `LocalBridge`·`TokenStore`를 Android 36 API 대상으로 Java 8 소스 컴파일해 통과했다(`.tools/worktree-create-java-native.log`). 전체 앱 Java 컴파일 시도는 검증용 생성 설정과 로컬 Play SDK 의존 파일 준비 부족으로 완료하지 않았으며 APK 빌드 검증으로 간주하지 않는다.
+- **소스 구현·검증이며 APK/AAB 빌드·버전 변경·설치/배포·운영 브리지 교체/재시작 없음.** 실제 사용에는 새 앱과 브리지 적용이 필요하다. 사용자 프로젝트·운영 세션을 변경하지 않고 임시 저장소/브리지만 사용했다. 실제 Android WebView의 키보드·터치·백그라운드 동작은 후속 APK 적용 후 검증해야 한다. 워크트리/브랜치 삭제는 Git에서 처리한다.
+
+## Claude Steer·대기열 묶음 전송 (2026-10-19, 미배포)
+
+- 사용자 요청에 따라 Claude도 Codex와 같은 **입력창/대기 메시지의 Steer(방향 수정)** UI로 제공한다. 일반 전송은 기존 대기열로 유지한다. `claude_steer`와 어댑터 initialize의 `capabilities.steer`를 확인하며 OpenCode·구형 브리지에는 활성화하지 않는다. Claude는 현재 SDK query의 열린 입력 스트림으로 UUID를 붙여 전달한다. 동일 UUID의 네이티브 `command_lifecycle` queued/started 또는 user replay 확인 후에만 수락 응답하며 SDK 쓰기만으로 성공 처리하지 않는다. 실제 반영 시점은 Claude가 결정한다. 새 query/강제 interrupt/자동 승인으로 Steer를 흉내 내지 않는다.
+- 원본 입력/대기 항목·현재 실행 ID·요청 ID를 고정해 중복을 막는다. 대기 항목은 접수 확인 후에만 제거하며 거절/전달 불명에는 보존하고 대기열을 일시정지한다. 승인·작성 초안은 유지한다. Claude 네이티브 후속 입력이 남으면 첫 result에서 닫지 않고 `queued_turn_count`와 미확인 입력을 확인해 같은 Bibimer 실행을 유지한다. 명시적 중단은 SDK interrupt 뒤 해당 query를 닫는다. Claude 슬래시 명령은 Steer로 전달하지 않고 일반 대기열에서 실행한다.
+- **Codex·Claude·OpenCode의 일반 대기 메시지는 전송 차례에 쌓인 항목을 순서대로 줄바꿈 두 개로 연결해 한 번에 전달**한다. 요청할 ID 묶음을 고정해 수락 시 해당 항목만 함께 제거하고 나중에 추가한 항목은 다음 묶음으로 남긴다. 묶음 거절/전달 불명은 전체를 보존한다. Codex 스킬 첨부를 유지하고 Claude·OpenCode 네이티브 슬래시 명령은 단독 실행해 명령 의미를 보존한다. 기존 16건·건당 16KiB 한도를 유지하며 어댑터 JSON 행 상한을 2MiB로 늘려 최대 묶음을 수용한다. 화면의 기존 항목별 표시 길이 제한은 유지한다.
+- 새 기능 `queue_batch`에 맞춘 도움말 2키와 Steer 안내/오류를 10언어에 반영해 **657키×10언어**다. 구형 브리지는 기존 개별 전송 안내를 사용한다. 예제 Java도 Claude Steer와 한 묶음당 한 번의 예제 재생을 제공하며 실제 입력을 저장/실행하지 않는다. AGENTS.md·설정/인터페이스/구조 문서를 갱신했다.
+- 검증: 전체 브리지 **165검사 중 164통과**, Setup 1검사는 빌드 도우미의 `play_sdk`를 찾는 `PYTHONPATH` 누락으로 import 실패했다. `PYTHONPATH=bridge/tests:scripts`로 해당 검사만 재실행해 통과했다(격리 설치이며 운영 브리지 변경 없음). 최종 Claude/명령 **19검사**와 추가 **2검사** 통과: 원래 query 유지·접수/중복/오래된 턴·승인 보존·대기 항목 Steer·거절/시간 초과 보존·네이티브 후속 완료·Codex 스킬/명령 경계·16개 최대 크기 묶음의 Codex/Claude 본문 비절단을 확인했다. 묶음 전체 실패/고정 ID/늦게 추가된 항목의 다음 차례 처리와 완료 알림 회귀도 포함한다.
+- `node scripts/smoke_ui.cjs` 최종 전체 통과: Claude 입력창/대기 항목 Steer·동일 실행/초안·구형 기능 숨김·남은 2메시지의 한 번 전송, 기존 Codex Steer·대기열/승인/가져오기/Enter·다중 프로젝트 회귀를 확인했다. 초기 검사는 승인창이 공통 입력창을 숨기는 기존 CSS 규칙 때문에 Steer 가시성에서 실패했으며, 일반 응답 중 시나리오로 수정한 뒤 통과했다. `smoke_commands.cjs`도 새 묶음 도움말 기대값 보완 후 전체 통과. 10언어 320px, i18n/언어/초안·JS/Python 구문·diff 통과. 예제 Java **2검사/102개 동작 단언** 및 예제 UI/초안 계약 통과. 화면 `dist/screenshots/claude-steer-320-en.png`를 시각 확인했다. 로그 `.tools/claude-steer-{ui-verified,commands-final,all-bridge,setup,provider-final,bounds,demo}.log`.
+- 실제 폰의 **공식 SDK 0.3.283·Claude 런타임 2.1.283**과 새 어댑터를 별도 임시 작업/설정 폴더·로컬 HTTP 응답 대역으로 검증했다. 6초짜리 `sleep` 도구 실행 중 추가 입력의 네이티브 접수를 약 **59ms**에 확인했고, 같은 실행의 다음 API 요청에 본문이 포함되며 완료가 1회 발생했다. 실제 모델/사용자 인증/프로젝트/운영 브리지는 사용·변경하지 않았다. 재현용 `.tools/claude-steer-native-adapter.mjs`, 결과 `.tools/claude-steer-native-adapter.log`.
+- **소스 구현·검증이며 APK/AAB 빌드·버전 변경·설치/배포·운영 브리지 교체/재시작 없음.** 실제 사용에는 새 앱과 브리지/어댑터 적용이 필요하다. 실행 중인 기존 사용자 세션은 유지했다. 실제 모델 작업과 Android WebView의 터치/IME·알림 연동 검증은 후속 적용 후 남아 있다.
+
+## Enter 줄바꿈 설정의 Ctrl+Enter 전송 (2026-10-19, 미배포)
+
+- 공통 입력창에서 Enter가 **줄바꿈**이면 **Ctrl+Enter로 전송**하고 Chat 응답 중에는 해당 세션의 대기열에 추가한다. Enter가 **보내기**이면 Ctrl+Enter는 줄바꿈한다. Shift/Meta/Alt+Enter와 Ctrl+Shift+Enter는 줄바꿈하며 IME 조합/키 코드 229·반복 키 전송 방지, 기존 전송 가능 여부 검사를 유지한다. Chat·PTY 아래 공통 입력창에 적용하고 PTY 직접 입력·특수 Enter 키는 유지한다.
+- 설정 안내 1키×10언어와 HTML 기본 문구, AGENTS.md·설정/인터페이스/구조 문서를 갱신했다. 키 개수는 655키×10언어로 유지한다.
+- 검증: `node scripts/smoke_ui.cjs` 전체 통과. 실제 격리 브리지·Chromium과 모의 에이전트에서 Ctrl+Enter의 Chat 전송/정확한 본문 1회 전달·응답 중 대기열 추가/현재 턴 유지·PTY 공통 입력창 전송, 두 Enter 설정·선택 영역 줄바꿈·IME/키 반복 보호·프로젝트/세션 초안·기존 승인/대기열/Steer/가져오기 회귀를 확인했다. 추가 전송으로 복사 버튼이 둘이 되어 초기 검사의 선택자가 실패했으며 최신 답변의 버튼을 검사하도록 보완한 뒤 전체 통과했다. `node scripts/smoke_commands.cjs`도 Ctrl+Enter의 구조화된 스킬 전송·명령 선택/IME 회귀를 포함해 통과했다. i18n 655키×10언어·언어/초안, JS 구문·diff 검사 통과. 로그 `.tools/ctrl-enter-ui-final.log`, `.tools/ctrl-enter-commands.log`.
+- **소스 구현·검증이며 APK/AAB 빌드·설치/배포·운영 브리지 재시작 없음.** 설치 앱에는 후속 빌드/업데이트 후 반영된다. 실제 Android WebView·하드웨어 키보드·한글 IME 검증은 남아 있다.
+
 ## 커맨드 실패 표시의 중복 문구 정리 (2026-10-19, 미배포)
 
 - 커맨드 실행 박스의 실패 상태 옆 `실패 코드 {code}`를 `코드 {code}`로 줄였다(예: **실패 · 코드 127**). 코드가 없으면 `코드 미제공`으로 표시한다. 동일한 두 문구를 10언어에서 정리하고 상태 판정·실제 종료 코드·성공 표시는 유지했다.

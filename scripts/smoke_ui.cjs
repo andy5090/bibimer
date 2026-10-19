@@ -18,7 +18,7 @@ const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'bibimer-ui-'));
 const state = path.join(temporary, 'state');
 const errors = [];
 const fixtureMode = !process.argv.includes('--probe-codex');
-let bridge, browser, assets, legacyProjectError = false, legacyFolders = false, legacyPersistence = false, legacyOptions = false, legacyLiveOptions = false, legacyQueue = false, legacyQueueSteer = false, failedEventRequests = 0;
+let bridge, browser, assets, legacyProjectError = false, legacyFolders = false, legacyPersistence = false, legacyOptions = false, legacyLiveOptions = false, legacyQueue = false, legacyQueueSteer = false, legacyClaudeSteer = false, failedEventRequests = 0;
 let heldReply = null;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -112,6 +112,7 @@ async function main() {
       if (legacyLiveOptions && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>feature!=='live_agent_options');
       if (legacyQueue && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>!['chat_queue','codex_steer'].includes(feature));
       if (legacyQueueSteer && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>feature!=='queue_steer');
+      if (legacyClaudeSteer && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>feature!=='claude_steer');
       if (endpoint.includes('/events?') && !result.ok) failedEventRequests++;
       if (heldReply?.endpoint === endpoint) {
         const held = heldReply; heldReply = null; held.entered(); await held.promise;
@@ -334,12 +335,16 @@ async function main() {
   await page.locator('#input').press('Enter');
   assert.equal(await page.locator('#input').inputValue(),'\n\nsecond');
   await page.locator('#input').press('Shift+Enter');
-  await page.locator('#input').press('Control+Enter');
+  await page.locator('#input').press('Control+Shift+Enter');
   assert.equal(await page.locator('#input').inputValue(),'\n\n\n\nsecond');
   assert.equal(await page.evaluate(()=>window.messageRequests),ptyRequests);
   // The terminal's dedicated Enter key still sends a raw carriage return.
   await page.locator('[data-key="enter"]').click();
   await page.waitForFunction(before=>window.messageRequests===before+1,ptyRequests);
+  await page.locator('#input').fill("printf 'CTRL_ENTER_PTY_CHECK\\n'");
+  await page.locator('#input').press('Control+Enter');
+  await page.waitForFunction(before=>window.messageRequests===before+2 && document.querySelector('#input').value==='',ptyRequests);
+  await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('CTRL_ENTER_PTY_CHECK'));
   await page.locator('#input').fill('Draft A · 한글');
   await openSidebar(); await page.locator('#edit-project').click();
   // Browse existing folders while project A continues running.
@@ -751,6 +756,21 @@ async function main() {
     });
     assert.equal(await page.locator('#input').inputValue(),'Chat draft\n');
     assert.equal(await page.evaluate(()=>window.messageRequests),chatRequests);
+    await page.locator('#input').fill('Ctrl+Enter chat');
+    await page.locator('#input').evaluate(node=>{
+      for (const modifiers of [{isComposing:true},{keyCode:229},{repeat:true}]) {
+        node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',ctrlKey:true,bubbles:true,cancelable:true,...modifiers}));
+      }
+      node.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));
+      node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',ctrlKey:true,bubbles:true,cancelable:true}));
+      node.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true}));
+    });
+    assert.equal(await page.locator('#input').inputValue(),'Ctrl+Enter chat');
+    assert.equal(await page.evaluate(()=>window.messageRequests),chatRequests);
+    await page.locator('#input').press('Control+Enter');
+    await page.waitForFunction(before=>window.messageRequests===before+1 && document.querySelector('#input').value==='' && document.querySelector('#turn-status').textContent==='Ready for your message',chatRequests);
+    assert.deepEqual((await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.items.filter(item=>item.kind==='user').map(item=>item.text),['Ctrl+Enter chat']);
+    await page.locator('#input').fill('Chat draft\n');
     await closeSidebar(); await page.locator('#tab-settings').click();
     await choose('enter-behavior','send');
     await page.locator('#tab-work').click();
@@ -776,17 +796,17 @@ async function main() {
       node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',repeat:true,bubbles:true,cancelable:true}));
     });
     assert.equal(await page.locator('#input').inputValue(),'한글 · first\nsecond');
-    assert.equal((await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.items.filter(item=>item.kind==='user').length,0);
+    assert.equal((await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.items.filter(item=>item.kind==='user').length,1);
     await page.locator('#input').press('Enter');
-    await page.locator('.markdown h2').waitFor();
-    assert.equal(await page.locator('.markdown h2').innerText(),'Result');
+    await page.locator('.markdown h2').last().waitFor();
+    assert.equal(await page.locator('.markdown h2').last().innerText(),'Result');
     assert.equal(await page.locator('.markdown table td').first().innerText(),'Task');
     const sent = (await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.items.filter(item=>item.kind==='user');
-    assert.equal(sent.length,1); assert.equal(sent[0].text,'한글 · first\nsecond');
+    assert.equal(sent.length,2); assert.equal(sent[1].text,'한글 · first\nsecond');
     assert.equal((await call('GET','/v1/health')).data.session.options.fast,false);
     assert.equal(await page.locator('.markdown script').count(),0);
     assert.equal(await page.evaluate(()=>window.untrusted),undefined);
-    await page.locator('.markdown .code-heading .copy-button').click();
+    await page.locator('.markdown .code-heading .copy-button').last().click();
     assert.ok((await page.evaluate(()=>window.testClipboard)).includes("print('hello')"));
     await page.screenshot({path:path.join(root,'dist/screenshots/chat-en.png')});
     await page.locator('#input').fill('approval'); await page.locator('#send').click();
@@ -853,8 +873,10 @@ async function main() {
     assert.equal(await page.evaluate(()=>window.messageRequests),queueRequests);
     assert.equal((await call('GET','/v1/health')).data.session.active_turn_id,activeTurn);
     await page.locator('#input').fill('Queued follow-up · 다음 작업');
-    await page.locator('#send').click();
+    await page.locator('#input').press('Control+Enter');
     await page.locator('.queue-entry').waitFor();
+    assert.equal(await page.locator('.queue-entry p').innerText(),'Queued follow-up · 다음 작업');
+    assert.equal((await call('GET','/v1/health')).data.session.active_turn_id,activeTurn);
     await page.locator('.queue-entry [data-queue-action=remove]').click();
     await page.waitForFunction(()=>document.querySelectorAll('.queue-entry').length===0);
     await closeSidebar(); await page.locator('#tab-settings').click();
@@ -1035,13 +1057,53 @@ async function main() {
       await page.locator('#launch').click();
       await page.waitForFunction(()=>!document.querySelector('#input').disabled);
       assert.equal((await call('GET','/v1/health')).data.session.agent,agent);
+      if (agent==='claude') {
+        await page.locator('#input').fill('wait'); await page.locator('#send').click();
+        await page.locator('#interrupt-turn').waitFor({state:'visible'});
+        const before=(await call('GET','/v1/health')).data.session;
+        assert.equal(before.can_steer,true,JSON.stringify(before));
+        assert.ok((await call('GET','/v1/health')).data.features.includes('claude_steer'));
+        await page.locator('#steer').waitFor({state:'visible'});
+        await page.locator('#input').fill('Claude live correction');
+        await page.locator('#steer').click();
+        await page.waitForFunction(()=>document.querySelector('#input').value==='');
+        assert.equal((await call('GET','/v1/health')).data.session.active_turn_id,before.active_turn_id);
+        for (const text of ['Batch first','Selected live correction','Batch last']) {
+          await page.locator('#input').fill(text); await page.locator('#send').click();
+          await page.waitForFunction(()=>document.querySelector('#input').value==='');
+        }
+        assert.equal(await page.locator('.queue-entry').count(),3);
+        await page.locator('#input').fill('Preserve Claude draft');
+        await page.locator('.queue-entry').filter({hasText:'Selected live correction'}).locator('[data-queue-action=steer]').click();
+        await page.waitForFunction(()=>document.querySelectorAll('.queue-entry').length===2);
+        assert.equal(await page.locator('#input').inputValue(),'Preserve Claude draft');
+        assert.equal(fs.readFileSync(path.join(temporary,'project/claude-turn-count'),'utf8'),'1');
+        legacyClaudeSteer=true; await reconnect();
+        await page.locator('#steer').waitFor({state:'hidden'});
+        assert.equal(await page.locator('[data-queue-action=steer]').count(),0);
+        legacyClaudeSteer=false; await reconnect();
+        await page.locator('#steer').waitFor({state:'visible'});
+        await page.setViewportSize({width:320,height:460});
+        await page.locator('#delivery-help').click();
+        assert.equal(await page.locator('#delivery-hint').innerText(),await page.evaluate(()=>BibimerI18n.t('delivery_steer_batch')));
+        assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+        await page.screenshot({path:path.join(root,'dist/screenshots/claude-steer-320-en.png')});
+        await page.locator('#delivery-help-close').click();
+        await page.setViewportSize({width:393,height:780});
+        assert.equal(200,(await call('POST',`/v1/sessions/${before.id}/steer`,{text:'finish live turn',turn_id:before.active_turn_id,request_id:require('node:crypto').randomUUID()})).status);
+        await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message' && document.querySelectorAll('.queue-entry').length===0);
+        assert.equal(fs.readFileSync(path.join(temporary,'project/claude-turn-count'),'utf8'),'2');
+        assert.equal(JSON.parse(fs.readFileSync(path.join(temporary,'project/claude-input.json'),'utf8')).text,'Batch first\n\nBatch last');
+        assert.equal(await page.locator('#input').inputValue(),'Preserve Claude draft');
+        assert.equal(fs.readFileSync(path.join(temporary,'project/claude-live-inputs.jsonl'),'utf8').trim().split('\n').length,3);
+      }
       await page.locator('#input').fill('approval'); await page.locator('#send').click();
       await page.locator('.request-card').waitFor();
       assert.equal(fs.existsSync(path.join(temporary,`project/${agent}-approved`)),false);
       await page.reload(); await page.locator('.request-card').waitFor();
       await page.locator('[data-request-action="chat_decline"]').click();
       await page.locator('.request-card').waitFor({state:'hidden'});
-      await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+      await page.waitForFunction(()=>!document.querySelector('#send').disabled && document.querySelector('#turn-status').textContent==='Ready for your message');
       await page.locator('#input').fill('question'); await page.locator('#send').click();
       await page.locator('.question-options button').first().click();
       await page.locator('.question-options button').last().click();

@@ -109,7 +109,7 @@ final class DemoWorkspace {
             return object("id", id, "project", project, "agent", agent, "mode", mode, "state", state,
                 "display_title", title, "title", title, "archived", archived, "options", options, "launch_options", options,
                 "ready", true, "turn_state", turn, "active_turn_id", turnId, "queued_count", queue.size(),
-                "queue_paused", paused, "can_steer", agent.equals("codex"), "started_at", started / 1000.0,
+                "queue_paused", paused, "can_steer", agent.equals("codex") || agent.equals("claude"), "started_at", started / 1000.0,
                 "output_start", 0, "output_end", revision, "exit_code", state.equals("exited") ? 0 : null,
                 "external_thread_id", "demo-" + id, "history_persisted", false);
         }
@@ -169,7 +169,7 @@ final class DemoWorkspace {
                     "project_name", copy("Demo · Pocket Garden", "데모 · Pocket Garden"), "session_title", session.title,
                     "agent", session.agent, "preview", copy("Demo: fictional sample replay completed. No AI request was made.", "데모: 가상의 예제 재생을 마쳤습니다. AI 요청은 보내지 않았습니다."), "completed_at", now / 1000.0));
                 if (completions.size() > 40) completions.remove(0);
-                if (!session.paused && !session.queue.isEmpty()) { session.queue.remove(0); begin(session); }
+                if (!session.paused && !session.queue.isEmpty()) { session.queue.clear(); begin(session); }
             }
         }
     }
@@ -187,7 +187,7 @@ final class DemoWorkspace {
         return object("version", "demo", "protocol", 1, "demo", true, "instance", instance, "home", HOME, "project", project,
             "projects", rows, "agents", agents, "session", selected == null ? null : selected.snapshot(), "features", Arrays.asList(
             "multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "agent_options", "live_agent_options",
-            "chat_queue", "codex_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands",
+            "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands",
             "git_worktrees", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "agent_handoff", "file_links"));
     }
     private String samplePath(String path) {
@@ -237,16 +237,16 @@ final class DemoWorkspace {
                 require(session.mode.equals("chat") && session.state.equals("running"), "error_session_not_running");
                 String operation = text(data, "action");
                 if (operation.equals("add")) addInput(session, data);
-                else if (operation.equals("resume")) { session.paused = false; if (session.turn.equals("ready") && !session.queue.isEmpty()) { session.queue.remove(0); begin(session); } }
+                else if (operation.equals("resume")) { session.paused = false; if (session.turn.equals("ready") && !session.queue.isEmpty()) { session.queue.clear(); begin(session); } }
                 else {
                     Map<String, Object> entry = session.queue.stream().filter(row -> text(row, "id").equals(text(data, "entry_id"))).findFirst().orElse(null);
                     require(entry != null, "error_queue_entry");
                     require(operation.equals("remove") || operation.equals("steer"), "error_demo_request");
-                    if (operation.equals("steer")) require(session.agent.equals("codex") && session.turnId.equals(text(data, "turn_id")) && !session.turnId.isEmpty(), "error_steer_unavailable");
+                    if (operation.equals("steer")) require((session.agent.equals("codex") || session.agent.equals("claude")) && session.turnId.equals(text(data, "turn_id")) && !session.turnId.isEmpty(), "error_steer_unavailable");
                     session.queue.remove(entry); if (operation.equals("steer")) session.item("notice", copy("Demo steer accepted. The prerecorded example is unchanged.", "데모 Steer를 수락했습니다. 미리 준비한 예제는 그대로 재생합니다."));
                 } session.revision++;
             } else if (action.equals("steer")) {
-                checkInput(data); require(session.agent.equals("codex") && !session.turnId.isEmpty() && session.turnId.equals(text(data, "turn_id")), "error_steer_unavailable");
+                checkInput(data); require((session.agent.equals("codex") || session.agent.equals("claude")) && !session.turnId.isEmpty() && session.turnId.equals(text(data, "turn_id")), "error_steer_unavailable");
                 session.item("notice", copy("Demo steer accepted. Input is ignored; replay is unchanged.", "데모 Steer를 수락했습니다. 입력은 사용하지 않고 같은 예제를 재생합니다."));
             } else if (action.equals("interrupt")) {
                 session.turn = "ready"; session.turnId = ""; session.requests.clear(); session.paused = true; session.item("notice", copy("Sample replay interrupted. Queue paused.", "예제 재생을 중단했습니다. 대기열도 일시정지했습니다."));

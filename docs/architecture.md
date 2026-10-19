@@ -40,6 +40,7 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 | `POST /v1/project-agent` | 프로젝트의 선택 에이전트 변경·기존 세션 복원 (0.10.0) | `project_id`, `agent`; 프로세스를 시작/종료하지 않음 |
 | `POST /v1/project-session` | 목록의 세션 선택·새 시작 화면 (0.10.0) | `project_id`, `session_id`; null이면 `agent`의 새 시작 화면. 프로세스 변경 없음 |
 | `POST /v1/worktrees` | 실제 Git 워크트리 조회 (0.10.0) | `project_id`; 프로젝트 폴더·연결 경로·branch·available 반환 |
+| `POST /v1/worktrees/manage` | 워크트리 생성·진행 조회·세션 시작 (미배포 소스) | `worktree_creation` 기능 필요. `action`: `options` / `status` / `create` / `launch`, `project_id` 필수. `create`: UUID `request_id`, `branch`, 전체 커밋 해시 `base`, `agent`, `mode`, `options`. `launch`: 생성 작업의 `request_id`. 생성과 실행의 중복 방지 영수증을 각각 유지 |
 | `POST /v1/inspect` | 등록 프로젝트·워크트리의 읽기 전용 파일/Git 조회 (0.14.0) | `project_id` 필수, `worktree_path` 선택, `action`: `files` / `file` / `status` / `history` / `diff` / `commit`. `workspace_inspector` 기능 표시 필요 |
 | `POST /v1/sessions/{id}/manage` | 세션 이름·보관·목록 삭제 (0.10.0) | `action`: `rename`(+ `title`), `archive`, `restore`, `delete`. 삭제는 실행 중 거절 |
 | `POST /v1/models` | 프로젝트·에이전트별 네이티브 모델/추론 목록 (0.10.0) | `project_id`, `agent`, `refresh` (선택) |
@@ -68,7 +69,11 @@ Python이 없으면 패키지 설치를 요청하고, 준비 도우미는 전용
 
 보관·복원은 메타데이터만 변경하며 실행 중인 요청·대기열·프로세스를 유지한다. 같은 원본 세션을 중복 이어하기하면 기존 실행/초기화 중인 세션까지 확인해 거절한다. 종료·유실된 Chat의 이어하기는 기존 가져오기 API에 네이티브 ID와 실제 작업 경로를 전달한다.
 
-`worktree_path`는 실행·원본 기록 조회·모델 목록에서 선택 가능하다. 프로젝트의 등록 경로 또는 `git worktree list --porcelain -z`가 반환한 사용 가능한 경로만 받는다. 폴더명 공백·유니코드·줄바꿈을 보존하며 Git 조회는 별도 프로세스에서 3초 제한으로 수행한다. 워크트리를 만들거나 삭제하지 않는다. 모델 목록 캐시는 프로젝트·작업 경로·에이전트로 분리한다. 근거: [Git worktree 공식 문서](https://git-scm.com/docs/git-worktree).
+`worktree_path`는 실행·원본 기록 조회·모델 목록에서 선택 가능하다. 프로젝트의 등록 경로 또는 `git worktree list --porcelain -z`가 반환한 사용 가능한 경로만 받는다. 폴더명 공백·유니코드·줄바꿈을 보존하며 Git 조회는 별도 프로세스에서 3초 제한으로 수행한다. 모델 목록 캐시는 프로젝트·작업 경로·에이전트로 분리한다. 근거: [Git worktree 공식 문서](https://git-scm.com/docs/git-worktree).
+
+미배포 소스의 `WorktreeCreation`은 커밋이 있는 Git 프로젝트에 `git worktree add`를 실행한다. 로컬 브랜치가 없으면 선택한 고정 커밋에서 `-b`로 만들고, 있으면 해당 브랜치 tip을 그대로 사용한다. 이미 체크아웃된 브랜치·기존 폴더·심볼릭 링크를 거절하고 force/reset·fetch·파일 복사·후크 실행은 하지 않는다. 경로는 브리지 상태 폴더의 `worktrees/<project-id>/<branch-slug>-<hash>`로 정하며 외부 입력 경로를 받지 않는다. 생성 중 실제 Git 목록의 경로는 실행 불가로 표시한다.
+
+Git 생성은 최대 5분의 별도 프로세스에서 처리하고 `worktree-jobs.json`에 먼저 요청 영수증을 저장한다. 동시에 1개, 누적 작업 128개·프로젝트의 실제 워크트리 120개로 제한한다. 화면을 닫아도 생성은 유지하고 진행 중에는 프로젝트 등록 해제와 정상 브리지 종료를 거절한다. 강제 종료 후에는 Git의 실제 경로·브랜치·잠금 상태를 확인해 완성된 작업만 복구하며 프로세스나 세션을 자동 복원하지 않는다. 세션 시작은 고정된 별도 실행 ID를 재사용하고 선택 포인터를 바꾸지 않으며 앱의 명시적 세션 열기로 이동한다. 실행 실패 시 워크트리·브랜치를 보존한다. 워크트리·브랜치 삭제 기능은 제공하지 않는다.
 
 시작 요청은 프로젝트·프로그램·방식과 `request_id`가 같으면 같은 세션을 반환하며 다른 프로젝트의 실행 ID 재사용은 거절한다. 입력은 최근 512개 요청 ID를 기억하고 중복 전달을 막는다. 입력은 요청당 최대 16KiB다. 부분 전송이나 응답 유실 시 앱은 자동으로 재전송하지 않고 사용자가 출력을 확인하도록 안내한다.
 
@@ -102,7 +107,7 @@ Android `ResponseNotificationService`는 UI와 별개 `LocalBridge`/TokenStore�
 - 0.2.1부터 재시작 직후 남은 마지막 세션의 `events` 조회는 종료·유실 상태와 빈 출력을 반환한다. 커서는 0으로 초기화되며 이전 커서가 전달되면 `gap`을 알린다. 이 기록에는 입력·종료 등의 조작을 허용하지 않으며 새 세션을 시작하면 이전 ID는 더 이상 조회하지 않는다. 종료 기록 조회가 연결 오류로 처리되어 새 세션 시작을 막는 문제를 방지한다.
 - 화면 비활성·Activity 파괴는 출력 폴링을 중단한다. 세션 종료 API를 호출하지 않는다.
 - 프로젝트·에이전트 전환 시 현재 폴링을 취소하고 요청 세대를 바꾼다. 지연된 출력·전송 응답이 다른 세션의 화면이나 입력을 변경하지 않게 확인한다. 프로젝트·에이전트별 입력 초안·프로그램 선택·질문 답변 초안은 화면 메모리에만 보관하며 앱 프로세스 종료 후에는 복원하지 않는다. 최근 출력과 대기열은 해당 세션의 브리지 메모리에서 다시 읽는다.
-- 앱의 별도 Settings 페이지는 연결 전에도 사용할 수 있다. Enter 설정은 `InputPreferences`가 Android `input` 환경 설정의 `enter_behavior`에 `newline` 또는 `send`로 저장하고 성공한 저장만 화면에 반영한다. 기본·알 수 없는 값은 `newline`이다. 네이티브 `environment().enterBehavior`와 검증된 `setEnterBehavior`로 연결하며 Chat/PTY 공통 입력창에만 적용한다. 프로젝트·세션·인증 토큰과 독립적이고 `enterkeyhint`도 선택에 맞춰 바뀐다.
+- 앱의 별도 Settings 페이지는 연결 전에도 사용할 수 있다. Enter 설정은 `InputPreferences`가 Android `input` 환경 설정의 `enter_behavior`에 `newline` 또는 `send`로 저장하고 성공한 저장만 화면에 반영한다. 기본·알 수 없는 값은 `newline`이다. 네이티브 `environment().enterBehavior`와 검증된 `setEnterBehavior`로 연결하며 Chat/PTY 공통 입력창에만 적용한다. 줄바꿈 설정에서는 Ctrl+Enter로 전송/대기열 추가, 보내기 설정에서는 Ctrl+Enter로 줄바꿈하며 Shift/Meta/Alt+Enter는 항상 줄바꿈한다. IME 조합 중 전송과 키 반복 전송을 막는다. 프로젝트·세션·인증 토큰과 독립적이고 `enterkeyhint`도 선택에 맞춰 바뀐다.
 - 언어는 Settings에서 선택하며 Android의 별도 `appearance` 환경 설정에 저장한다. 기본은 영어이며 언어 전환은 화면 문구만 갱신한다. 인증 토큰 초기화와 언어 설정은 독립적이다.
 
 출력은 세션마다 최대 1MiB의 메모리 버퍼와 바이트 커서를 사용한다. 클라이언트가 마지막 커서부터 읽거나 0부터 다시 재생할 수 있다. 오래된 출력이 버퍼에서 제거되면 `gap`을 반환한다. 잘린 ANSI 상태나 과거 전체 터미널 화면의 완전한 복원은 보장하지 않는다. 출력은 브리지 재시작 후 유지하지 않는다.
@@ -114,11 +119,11 @@ Android `ResponseNotificationService`는 UI와 별개 `LocalBridge`/TokenStore�
 프로세스의 `state`와 응답의 `turn_state`(준비·전송·응답·사용자 대기·실패)를 분리한다. `turn/interrupt`는 응답만 중단한다. 명령·파일 승인은 한 번 승인 또는 거절만 지원하며, 질문에는 단일·복수 선택과 요청이 허용한 자유 입력을 제공한다. 미지원 서버 요청은 오류로 응답하고 승인하지 않는다. 종료·해결된 요청에 대한 늦은 응답을 거부하고 재전송 ID로 중복을 막는다. 프로젝트 전환·언어 변경 시 복수 선택 초안도 유지한다.
 
 
-응답 중 입력은 `chat_queue`·`codex_steer` 기능 플래그로 알린다(소스 반영, 배포 대기). 새 앱은 Chat 입력을 `queue`의 `action: add` 동작으로 전송하고, 비어 있는 준비 상태에서는 곧바로 실행한다. 대기열은 세션별 최대 16건·건당 UTF-8 16KiB이며 `events.queue`와 queue API 응답으로만 내용을 전달한다. snapshot에는 건수·일시정지 상태·현재 턴 ID만 넣는다. 정상 완료 후 FIFO로 보내며, 중단/실패/시작 거절 시 후속 입력을 일시정지한다. 시작이 거절된 항목은 실패 상태로 남겨 취소·명시적 재개를 지원한다. 실제 전송 시점의 세션 권한·Fast를 적용한다.
+응답 중 입력은 `chat_queue`·`queue_batch`·`codex_steer`·`claude_steer` 기능 플래그로 알린다(소스 반영, 배포 대기). 새 앱은 Chat 입력을 `queue`의 `action: add` 동작으로 전송하고, 비어 있는 준비 상태에서는 곧바로 실행한다. 대기열은 세션별 최대 16건·건당 UTF-8 16KiB이며 `events.queue`와 queue API 응답으로만 내용을 전달한다. snapshot에는 건수·일시정지 상태·현재 턴 ID만 넣는다. 정상 완료 후 현재 대기 중인 일반 메시지를 순서대로 줄바꿈 두 개로 연결해 하나의 입력으로 보낸다. 전송할 ID 묶음을 고정하고 네이티브 수락 후 해당 묶음만 함께 제거한다. 그 사이 추가된 메시지는 다음 묶음으로 남긴다. 시작 거절/전달 여부 불명은 묶음 전체를 보존하고 일시정지한다. Codex 스킬의 텍스트와 구조화된 첨부는 함께 유지하며 Claude·OpenCode의 네이티브 슬래시 명령은 단독 전송해 명령 실행을 보존한다. 중단/실패 시 후속 입력을 일시정지한다. 시작이 거절된 항목은 실패 상태로 남겨 취소·명시적 재개를 지원한다. 실제 전송 시점의 세션 권한·Fast를 적용한다.
 
 대기열은 브리지 메모리에 있으므로 앱 재실행·프로젝트 전환에는 유지되지만 에이전트 종료·브리지 종료에는 유지하지 않는다. 브리지 재시작 시 이전 건수·턴 ID도 초기화하고 앱은 미전송 대기열 유실을 알린다. 대기열 내용은 디스크 메타데이터·로그에 기록하지 않는다. 추가·취소·재개의 요청 ID도 기존 중복 처리 한도와 내용 충돌 검사를 사용하며, 변경 번호가 지난 응답은 현재 목록을 덮어쓰지 않는다.
 
-Codex [공식 `turn/steer`](https://learn.chatgpt.com/docs/app-server#steer-an-active-turn)에 `expectedTurnId`를 전달하고 네이티브 응답의 `turnId`가 일치한 뒤 성공 처리한다. 새 턴·interrupt·권한 변경 RPC로 대체하지 않는다. 거절 시 초안을 유지하며 응답 유실/시간 초과는 전달 여부 불명으로 처리해 자동 재전송하지 않는다. 확인이 끝나지 않은 Steer가 이후 대기열을 영구 차단하지 않도록 제한 시간 후 수신 대기를 해제한다. Claude·OpenCode에는 브리지 FIFO만 제공한다.
+Codex [공식 `turn/steer`](https://learn.chatgpt.com/docs/app-server#steer-an-active-turn)에 `expectedTurnId`를 전달하고 네이티브 응답의 `turnId`가 일치한 뒤 성공 처리한다. 새 턴·interrupt·권한 변경 RPC로 대체하지 않는다. 거절 시 초안을 유지하며 응답 유실/시간 초과는 전달 여부 불명으로 처리해 자동 재전송하지 않는다. 확인이 끝나지 않은 Steer가 이후 대기열을 영구 차단하지 않도록 제한 시간 후 수신 대기를 해제한다. Claude도 같은 Steer API/UI를 제공하되 어댑터의 `initialize.capabilities.steer` 확인과 `claude_steer` 기능 표시가 필요하다. 현재 실행의 열린 SDK 입력 스트림에 UUID를 붙인 사용자 메시지를 넣고, 같은 UUID의 네이티브 `command_lifecycle` queued/started 또는 `--replay-user-messages` 이벤트 뒤에만 현재 Bibimer 턴 ID로 수락 응답한다. SDK에 쓰기만 한 상태는 성공으로 보지 않는다. 실제 반영 시점은 Claude가 결정하며 이미 실행한 도구를 중단하거나 승인을 자동 처리하지 않는다. Claude의 슬래시 명령은 Steer로 받지 않고 일반 대기열에서 실행한다. 네이티브 `queued_turn_count` 또는 미확인 입력이 남으면 첫 result에서 스트림을 닫지 않고 후속 처리가 끝날 때까지 같은 Bibimer 실행을 유지한다. 정상적으로 비워진 뒤 최종 답변의 완료 이벤트를 보낸다. 명시적 중단은 SDK interrupt 뒤 해당 query를 닫아 후속 네이티브 처리를 정리한다. 입력 내용/UUID 상태는 메모리만 사용한다. OpenCode에는 대기열만 제공한다. 근거는 [Claude 중간 입력 처리](https://code.claude.com/docs/en/interactive-mode#when-claude-code-sends-what-you-queued), [CLI replay 확인](https://code.claude.com/docs/en/cli-reference), [SDK 0.3.206 네이티브 lifecycle](https://github.com/anthropics/claude-agent-sdk-typescript/blob/main/CHANGELOG.md#03206)이다.
 
 대기 항목의 Steer는 `queue_steer` 기능 표시와 `queue`의 `action: steer`로 제공한다(앱·브리지 0.10.0). 세션 ID·항목 ID·현재 턴 ID를 고정하고 텍스트는 브리지 대기열에서 읽는다. 조건 잠금 안에서 항목을 `steering`으로 바꿔 새 FIFO 턴·해당 항목 삭제·재전송을 막는다. 현재 턴이 먼저 끝나도 확인 전에는 후속 대기열을 실행하지 않는다. 수락 확인 시 해당 항목만 제거하며 다른 항목의 순서를 유지한다. 거절은 `failed`, 응답 유실·잘못된 턴 확인은 `uncertain`으로 보존하고 대기열을 일시정지한다. `uncertain` 항목은 재개·Steer 재전송을 금지하며 사용자가 대화를 확인하고 취소한 뒤 재개한다. 요청 ID 중복 확인은 제거된 항목에도 적용한다. 앱은 작성 중인 입력을 건드리지 않고, 늦게 도착한 결과로 다른 프로젝트·에이전트 화면을 바꾸지 않는다.
 

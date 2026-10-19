@@ -5,6 +5,40 @@ from test_providers import ProviderFixture
 
 
 class CommandTests(ProviderFixture):
+    def test_codex_batch_combines_text_and_keeps_native_skill_attachments(self):
+        row = next(row for row in self.catalog('codex') if row['name'] == 'review')
+        session = self.begin('codex')
+        self.message('approval')
+        prompt = self.until(lambda e: bool(e['requests']))['requests'][0]['id']
+        for data in [{'text':'ordinary first'}, {'text':'/review second','command_id':row['id']}, {'text':'ordinary last'}]:
+            self.assertEqual(200, self.api('POST', f'/v1/sessions/{session.id}/queue', {**data,'action':'add','request_id':str(uuid.uuid4())})[0])
+        self.api('POST', f'/v1/sessions/{session.id}/respond', {'prompt_id':prompt,'decision':'decline','request_id':str(uuid.uuid4())})
+        self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')
+        captured = json.loads((self.root/'project/codex-inputs.jsonl').read_text().splitlines()[-1])['input']
+        self.assertEqual('ordinary first\n\n$review second\n\nordinary last', captured[0]['text'])
+        self.assertEqual('skill', captured[1]['type'])
+        self.assertEqual('review', captured[1]['name'])
+        self.assertEqual('2', (self.root/'project/turn-count').read_text())
+
+    def test_provider_batch_keeps_native_command_dispatch_separate(self):
+        for agent in ['claude', 'opencode']:
+            with self.subTest(agent=agent):
+                row = next(row for row in self.catalog(agent) if row['name'] == 'review')
+                session = self.begin(agent)
+                self.message('approval')
+                prompt = self.until(lambda e: bool(e['requests']))['requests'][0]['id']
+                for data in [{'text':'before command'}, {'text':'/review file.py','command_id':row['id']}, {'text':'after first'}, {'text':'after last'}]:
+                    self.assertEqual(200, self.api('POST', f'/v1/sessions/{session.id}/queue', {**data,'action':'add','request_id':str(uuid.uuid4())})[0])
+                self.api('POST', f'/v1/sessions/{session.id}/respond', {'prompt_id':prompt,'decision':'decline','request_id':str(uuid.uuid4())})
+                self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')
+                self.assertEqual('4', (self.root/'project'/f'{agent}-turn-count').read_text())
+                if agent == 'claude':
+                    inputs = [json.loads(line)['text'] for line in (self.root/'project/claude-inputs.jsonl').read_text().splitlines()]
+                    self.assertEqual(['approval','before command','/review file.py','after first\n\nafter last'], inputs)
+                else:
+                    self.assertEqual('review', json.loads((self.root/'project/opencode-command.json').read_text())['command'])
+                self.end()
+
     def catalog(self, agent, **extra):
         status, result = self.api('POST', '/v1/commands', {'project_id': self.bridge.project['id'], 'agent': agent, **extra})
         self.assertEqual(200, status, result)

@@ -42,6 +42,126 @@ class ProviderFixture(ChatFixture):
 
 
 class ProviderTests(ProviderFixture):
+    def test_claude_full_queue_batch_crosses_old_transport_limit_without_truncation(self):
+        session = self.begin('claude')
+        self.message('wait')
+        self.until(lambda e: e['session']['turn_state'] == 'running')
+        texts = [str(index) + 'x' * 16382 for index in range(16)]
+        for text in texts:
+            self.assertEqual(200, self.api('POST', f'/v1/sessions/{session.id}/queue', {'action':'add','text':text,'request_id':str(uuid.uuid4())})[0])
+        self.api('POST', f'/v1/sessions/{session.id}/interrupt', {})
+        self.until(lambda e: e['session']['turn_state'] == 'ready')
+        self.api('POST', f'/v1/sessions/{session.id}/queue', {'action':'resume','request_id':str(uuid.uuid4())})
+        self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')
+        captured = json.loads((self.root/'project/claude-input.json').read_text())['text']
+        self.assertEqual('\n\n'.join(texts), captured)
+        self.assertEqual('2', (self.root/'project/claude-turn-count').read_text())
+
+    def test_claude_slash_command_steer_is_rejected_without_native_delivery(self):
+        session = self.begin('claude')
+        self.message('wait')
+        turn = self.until(lambda e: e['session']['turn_state'] == 'running')['session']['active_turn_id']
+        status, result = self.api('POST', f'/v1/sessions/{session.id}/steer', {'text':'/context','turn_id':turn,'request_id':str(uuid.uuid4())})
+        self.assertEqual((409, 'error_steer_rejected'), (status, result.get('code')))
+        self.assertFalse((self.root/'project/claude-live-inputs.jsonl').exists())
+        self.assertEqual(turn, session.turn_id)
+
+    def test_claude_native_queued_receipt_does_not_wait_for_tool_end_or_replay(self):
+        session = self.begin('claude')
+        self.message('wait')
+        turn = self.until(lambda e: e['session']['turn_state'] == 'running')['session']['active_turn_id']
+        started = time.monotonic()
+        status, result = self.api('POST', f'/v1/sessions/{session.id}/steer', {'text':'steer-queued-only','turn_id':turn,'request_id':str(uuid.uuid4())})
+        self.assertEqual(200, status, result)
+        self.assertLess(time.monotonic() - started, 3)
+        self.assertEqual(turn, session.turn_id)
+        self.assertEqual('running', session.turn_state)
+        self.assertEqual('1', (self.root/'project/claude-turn-count').read_text())
+        self.assertEqual(1, sum(i.get('text') == 'steer-queued-only' for i in session.events(0,0)['items']))
+        self.api('POST', f'/v1/sessions/{session.id}/interrupt', {})
+        self.until(lambda e: e['session']['turn_state'] == 'ready')
+
+    def test_claude_native_backlog_finishes_before_bibimer_queue_starts(self):
+        session = self.begin('claude')
+        cursor = self.bridge.completion_feed.cursor
+        self.message('backlog')
+        turn = self.until(lambda e: e['session']['turn_state'] == 'running')['session']['active_turn_id']
+        self.api('POST', f'/v1/sessions/{session.id}/queue', {'action':'add','text':'after native backlog','request_id':str(uuid.uuid4())})
+        self.assertEqual(200, self.api('POST', f'/v1/sessions/{session.id}/steer', {'text':'finish live turn','turn_id':turn,'request_id':str(uuid.uuid4())})[0])
+        event = self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')
+        self.assertTrue(any(i.get('text') == 'Claude continued response' for i in event['items']))
+        completions = self.bridge.completions(self.bridge.instance, cursor, 0)['events']
+        self.assertEqual(2, len(completions))
+        self.assertEqual('Claude continued response', completions[0]['preview'])
+        self.assertEqual('2', (self.root/'project/claude-turn-count').read_text())
+
+    def test_claude_native_rejection_keeps_selected_queue_entry(self):
+        session = self.begin('claude')
+        self.message('wait')
+        turn = self.until(lambda e: e['session']['turn_state'] == 'running')['session']['active_turn_id']
+        entry = str(uuid.uuid4())
+        self.api('POST', f'/v1/sessions/{session.id}/queue', {'action':'add','text':'steer-reject','request_id':entry})
+        status, result = self.api('POST', f'/v1/sessions/{session.id}/queue', {'action':'steer','entry_id':entry,'turn_id':turn,'request_id':str(uuid.uuid4())})
+        self.assertEqual((409, 'error_queue_steer_rejected'), (status, result.get('code')))
+        event = session.events(0,0)
+        self.assertEqual(entry, event['queue'][0]['id'])
+        self.assertEqual('failed', event['queue'][0]['state'])
+        self.assertTrue(event['session']['queue_paused'])
+        self.assertEqual(turn, session.turn_id)
+
+    def test_claude_steer_native_receipt_same_operation_and_queue_entry(self):
+        session = self.begin('claude')
+        self.assertTrue(session.snapshot()['can_steer'])
+        self.message('approval')
+        event = self.until(lambda e: bool(e['requests']))
+        turn, prompt = event['session']['active_turn_id'], event['requests'][0]['id']
+        key = str(uuid.uuid4())
+        data = {'text':'PRIVATE live correction', 'turn_id':turn, 'request_id':key}
+        for _ in range(2):
+            self.assertEqual(200, self.api('POST', f'/v1/sessions/{session.id}/steer', data)[0])
+        event = self.until(lambda e: any(i.get('text') == data['text'] for i in e['items']))
+        self.assertEqual(1, sum(i.get('text') == data['text'] for i in event['items']))
+        self.assertEqual(prompt, event['requests'][0]['id'])
+        self.assertEqual(turn, event['session']['active_turn_id'])
+        self.assertEqual('1', (self.root/'project/claude-turn-count').read_text())
+        self.assertEqual(409, self.api('POST', f'/v1/sessions/{session.id}/steer', {**data, 'text':'conflicting'})[0])
+        self.assertEqual(409, self.api('POST', f'/v1/sessions/{session.id}/steer', {**data, 'turn_id':'stale', 'request_id':str(uuid.uuid4())})[0])
+        first, selected = str(uuid.uuid4()), str(uuid.uuid4())
+        for identity, text in [(first, 'next response'), (selected, 'selected correction')]:
+            self.assertEqual(200, self.api('POST', f'/v1/sessions/{session.id}/queue', {'action':'add', 'text':text,'request_id':identity})[0])
+        request = {'action':'steer','entry_id':selected,'turn_id':turn,'request_id':str(uuid.uuid4())}
+        for _ in range(2):
+            status, result = self.api('POST', f'/v1/sessions/{session.id}/queue', request)
+            self.assertEqual(200, status, result)
+            self.assertEqual([first], [row['id'] for row in result['queue']])
+        self.bridge.persist()
+        self.assertNotIn('PRIVATE live correction', (self.state/'metadata.json').read_text())
+        self.assertFalse((self.root/'project/claude-approved').exists())
+        self.api('POST', f'/v1/sessions/{session.id}/respond', {'prompt_id':prompt,'decision':'decline','request_id':str(uuid.uuid4())})
+        self.until(lambda e: e['session']['turn_state'] == 'ready' and not e['queue'])
+        self.assertEqual('2', (self.root/'project/claude-turn-count').read_text())
+        self.assertEqual(409, self.api('POST', f'/v1/sessions/{session.id}/steer', {**data, 'request_id':str(uuid.uuid4())})[0])
+
+    def test_claude_unconfirmed_steer_keeps_entry_pauses_queue_and_never_replays(self):
+        session = self.begin('claude')
+        self.message('wait')
+        turn = self.until(lambda e: e['session']['turn_state'] == 'running')['session']['active_turn_id']
+        entry = str(uuid.uuid4())
+        self.api('POST', f'/v1/sessions/{session.id}/queue', {'action':'add','text':'steer-timeout','request_id':entry})
+        request = {'action':'steer','entry_id':entry,'turn_id':turn,'request_id':str(uuid.uuid4())}
+        for _ in range(2):
+            status, result = self.api('POST', f'/v1/sessions/{session.id}/queue', request)
+            self.assertEqual((409, 'error_input_uncertain'), (status, result.get('code')))
+        event = session.events(0,0)
+        self.assertEqual('uncertain', event['queue'][0]['state'])
+        self.assertTrue(event['session']['queue_paused'])
+        self.assertFalse(any(i.get('text') == 'steer-timeout' for i in event['items']))
+        self.assertEqual(1, len((self.root/'project/claude-live-inputs.jsonl').read_text().splitlines()))
+        self.assertEqual(409, self.api('POST', f'/v1/sessions/{session.id}/queue', {'action':'resume','request_id':str(uuid.uuid4())})[0])
+        self.api('POST', f'/v1/sessions/{session.id}/interrupt', {})
+        self.until(lambda e: e['session']['turn_state'] == 'ready')
+        self.assertEqual('1', (self.root/'project/claude-turn-count').read_text())
+
     def test_explicit_native_permissions_on_new_and_imported_sessions(self):
         for agent, modes in [('claude', ['inherit','default','acceptEdits','plan','bypassPermissions']), ('opencode', ['inherit','ask','allow'])]:
             for imported, import_mode in [(False,'fork'), (True,'fork'), (True,'resume')]:
@@ -136,7 +256,7 @@ class ProviderTests(ProviderFixture):
                 self.assertEqual('5',(self.root/'project'/f'{agent}-turn-count').read_text())
                 self.end()
 
-    def test_provider_queue_waits_for_approval_and_runs_fifo_without_steer(self):
+    def test_provider_queue_waits_for_approval_and_batches_pending_messages(self):
         for agent in ['opencode', 'claude']:
             with self.subTest(agent=agent):
                 session = self.begin(agent)
@@ -144,28 +264,29 @@ class ProviderTests(ProviderFixture):
                 self.message('approval')
                 event = self.until(lambda e: bool(e['requests']))
                 prompt = event['requests'][0]['id']
-                self.assertFalse(event['session']['can_steer'])
+                self.assertEqual(agent == 'claude', event['session']['can_steer'])
                 for text in ['first queued task', 'second queued task']:
                     self.assertEqual(200, self.api('POST', f'/v1/sessions/{session.id}/queue',
                         {'action':'add', 'text':text, 'request_id':str(uuid.uuid4())})[0])
                 self.assertEqual('1', (self.root/'project'/f'{agent}-turn-count').read_text())
-                self.assertEqual(409, self.api('POST', f'/v1/sessions/{session.id}/steer',
-                    {'text':'not supported', 'turn_id':session.turn_id, 'request_id':str(uuid.uuid4())})[0])
                 entry = session.events(0,0)['queue'][0]['id']
-                self.assertEqual(409, self.api('POST', f'/v1/sessions/{session.id}/queue',
-                    {'action':'steer', 'entry_id':entry, 'turn_id':session.turn_id, 'request_id':str(uuid.uuid4())})[0])
+                if agent == 'opencode':
+                    self.assertEqual(409, self.api('POST', f'/v1/sessions/{session.id}/steer',
+                        {'text':'not supported', 'turn_id':session.turn_id, 'request_id':str(uuid.uuid4())})[0])
+                    self.assertEqual(409, self.api('POST', f'/v1/sessions/{session.id}/queue',
+                        {'action':'steer', 'entry_id':entry, 'turn_id':session.turn_id, 'request_id':str(uuid.uuid4())})[0])
                 self.assertEqual(['queued','queued'], [row['state'] for row in session.events(0,0)['queue']])
                 self.assertEqual(200, self.api('POST', f'/v1/sessions/{session.id}/respond',
                     {'prompt_id':prompt, 'decision':'decline', 'request_id':str(uuid.uuid4())})[0])
                 event = self.until(lambda e: not e['queue'] and e['session']['turn_state'] == 'ready')
-                self.assertEqual(['approval', 'first queued task', 'second queued task'],
+                self.assertEqual(['approval', 'first queued task\n\nsecond queued task'],
                     [i['text'] for i in event['items'] if i['kind'] == 'user'])
-                self.assertEqual('3', (self.root/'project'/f'{agent}-turn-count').read_text())
+                self.assertEqual('2', (self.root/'project'/f'{agent}-turn-count').read_text())
                 completions = self.bridge.completions(self.bridge.instance, notification_cursor, 0)['events']
-                self.assertEqual([agent] * 3, [row['agent'] for row in completions])
-                self.assertEqual([session.id] * 3, [row['session_id'] for row in completions])
+                self.assertEqual([agent] * 2, [row['agent'] for row in completions])
+                self.assertEqual([session.id] * 2, [row['session_id'] for row in completions])
                 expected_preview = ('OpenCode' if agent == 'opencode' else 'Claude') + ' result Ready for follow-up'
-                self.assertEqual([expected_preview] * 3, [row['preview'] for row in completions])
+                self.assertEqual([expected_preview] * 2, [row['preview'] for row in completions])
                 self.assertFalse((self.root/'project'/f'{agent}-approved').exists())
                 self.end()
 

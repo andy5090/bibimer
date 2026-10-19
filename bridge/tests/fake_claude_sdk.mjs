@@ -1,5 +1,5 @@
 /** Controlled public Agent SDK contract fixture. Never invokes a model or CLI. */
-import {writeFileSync,readFileSync,existsSync} from 'node:fs';
+import {writeFileSync,readFileSync,existsSync,appendFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const saved='11111111-1111-4111-8111-111111111111', fork='22222222-2222-4222-8222-222222222222';
 const row=id=>({sessionId:id,cwd:id.startsWith('99999999')?process.cwd()+'/other':process.cwd(),summary:'Claude saved session',lastModified:1790564400000,fileSize:1024});
@@ -34,26 +34,56 @@ export function query({prompt,options}) {
   let unblock, interrupted=false;
   const waiting=new Promise(resolve=>{unblock=resolve;});
   const controller=new AbortController();
+  assert.deepEqual(options.extraArgs,{'replay-user-messages':null});
+  let wake, done=false;
+  const messages=[];
+  const emit=message=>{messages.push(message);wake?.();};
   const iterator=(async function*(){
+    while (!done || messages.length) {
+      if (!messages.length) await new Promise(resolve=>{wake=resolve;});
+      wake=null;
+      while(messages.length) yield messages.shift();
+    }
+  })();
+  void (async()=>{
     const first=await prompt.next(), input=first.value, text=input.message.content[0].text;
     writeFileSync('claude-input.json',JSON.stringify({text}));
+    appendFileSync('claude-inputs.jsonl',JSON.stringify({text})+'\n');
     const id=options.resume || options.sessionId;
     writeFileSync('claude-turn-count',String(existsSync('claude-turn-count')?Number(readFileSync('claude-turn-count','utf8'))+1:1));
-    yield {type:'system',subtype:'init',session_id:id};
-    if (text==='/context') { yield {type:'result',subtype:'success',session_id:id,is_error:false,result:'Context: controlled session'}; return; }
-    yield {type:'stream_event',session_id:id,event:{type:'message_start',message:{id:'msg-live'}}};
-    yield {type:'stream_event',session_id:id,event:{type:'content_block_delta',delta:{type:'text_delta',text:'Streaming **Claude**'}}};
+    emit({type:'system',subtype:'init',session_id:id});
+    void (async()=>{
+      for await (const message of prompt) {
+        const text=message.message.content[0].text;
+        appendFileSync('claude-live-inputs.jsonl',JSON.stringify({text,uuid:message.uuid})+'\n');
+        if(text==='steer-reject') {
+          emit({type:'command_lifecycle',command_uuid:message.uuid,state:'discarded',session_id:id});
+        } else if(text!=='steer-timeout') {
+          emit({type:'command_lifecycle',command_uuid:message.uuid,state:'queued',session_id:id});
+          if(text!=='steer-queued-only') emit({...message,isReplay:true,session_id:id});
+        }
+        if(text==='finish live turn') unblock();
+      }
+    })();
+    if (text==='/context') { emit({type:'result',subtype:'success',session_id:id,is_error:false,result:'Context: controlled session'}); return; }
+    emit({type:'stream_event',session_id:id,event:{type:'message_start',message:{id:'msg-live'}}});
+    emit({type:'stream_event',session_id:id,event:{type:'content_block_delta',delta:{type:'text_delta',text:'Streaming **Claude**'}}});
     if(text==='approval' || text==='question') {
       const name=text==='question'?'AskUserQuestion':'Bash';
       const data=text==='question'?{questions:[{question:'Which checks?',header:'Checks',multiSelect:true,options:[{label:'Unit',description:'Unit tests'},{label:'UI',description:'UI tests'}]}]}:{command:'controlled command'};
       const result=await options.canUseTool(name,data,{toolUseID:'live-tool',signal:controller.signal});
       if(text==='approval' && result.behavior==='allow') writeFileSync('claude-approved','once');
       if(text==='question' && result.behavior==='allow') { assert.equal(result.updatedInput.answers['Which checks?'],'Unit, UI');writeFileSync('claude-answers','both'); }
-    } else if(text==='wait') await waiting;
-    yield {type:'assistant',uuid:'live-response',session_id:id,message:{id:'msg-live',role:'assistant',content:[{type:'text',text:'## Claude result\n**Ready** for follow-up'},{type:'tool_use',id:'edit-tool',name:'Edit',input:{file_path:'example.py',old_string:'old',new_string:'new'}}]}};
-    yield {type:'user',uuid:'live-tool-result',session_id:id,message:{role:'user',content:[{type:'tool_result',tool_use_id:'edit-tool',content:'file edited'}]}};
-    yield {type:'result',subtype:'success',session_id:id,is_error:false};
-  })();
+    } else if(text==='wait' || text==='backlog') await waiting;
+    emit({type:'assistant',uuid:'live-response',session_id:id,message:{id:'msg-live',role:'assistant',content:[{type:'text',text:'## Claude result\n**Ready** for follow-up'},{type:'tool_use',id:'edit-tool',name:'Edit',input:{file_path:'example.py',old_string:'old',new_string:'new'}}]}});
+    emit({type:'user',uuid:'live-tool-result',session_id:id,message:{role:'user',content:[{type:'tool_result',tool_use_id:'edit-tool',content:'file edited'}]}});
+    emit({type:'result',subtype:'success',session_id:id,is_error:false,queued_turn_count:text==='backlog'?1:0});
+    if(text==='backlog') {
+      await new Promise(resolve=>setTimeout(resolve,100));
+      emit({type:'assistant',uuid:'continued-response',session_id:id,message:{id:'continued-response',role:'assistant',content:[{type:'text',text:'Claude continued response'}]}});
+      emit({type:'result',subtype:'success',session_id:id,is_error:false,queued_turn_count:0});
+    }
+  })().finally(()=>{done=true;wake?.();});
   iterator.interrupt=async()=>{interrupted=true;controller.abort();unblock();};
   iterator.close=()=>{controller.abort();unblock();};
   return iterator;
