@@ -18,7 +18,7 @@ Bibimer takes its name from **비빔 (bibim)**, Korean for mixing things togethe
 
 ## Availability
 
-Bibimer is available on [Google Play](https://play.google.com/store/apps/details?id=app.bibimer). **Version 0.20.0 is the public release; invited internal testers can update to 0.23.0.** Version 0.23.0 was submitted for production review on October 19, 2026; public availability is pending approval. There is no public GitHub APK release. To build the current development version, follow the [build guide](docs/development.md) (currently in Korean).
+Bibimer is available on [Google Play](https://play.google.com/store/apps/details?id=app.bibimer). **Version 0.23.0 is the public release; invited internal testers can update to 0.24.0.** There is no public GitHub APK release. To build the current development version, follow the [build guide](docs/development.md) (currently in Korean).
 
 The app targets Android 8.0 or later (API 26+). Compatibility with every Android version, device, or agent installation has not been verified.
 
@@ -86,7 +86,7 @@ The app follows your device language list by default and uses English when none 
 
 Switching screens or closing Bibimer does not request that your sessions stop. Reconnect to continue while Termux and the bridge are still running. Android may stop background processes; restarting the bridge does not restore lost processes or their terminal output.
 
-Archiving a session keeps its work running. Removing an ended session from Bibimer removes its listing, while project files and the agent's own history stay in Termux. In released versions, worktree creation and deletion are handled with Git in Termux. Current development sources add sidebar worktree creation and session startup, creating a local branch when needed or reusing an existing one; this requires an updated app and bridge. Worktree deletion stays in Git.
+Archiving a session keeps its work running. Removing an ended session from Bibimer removes its listing, while project files and the agent's own history stay in Termux. The public release handles worktree creation and deletion through Git in Termux. Internal test version 0.24.0 adds sidebar worktree creation and session startup, creating a local branch when needed or reusing an existing one; this requires bridge 0.18.0. Worktree deletion stays in Git.
 
 The app connects to a bridge on the phone's loopback address. Bibimer has no advertising or analytics SDK and does not upload your conversations to a Bibimer service. **A connected agent may send instructions, code, or files to its configured provider and tools.** Provider fees and policies apply separately. See the [privacy policy](https://bibimer.app/privacy/) for details.
 

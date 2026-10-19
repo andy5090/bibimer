@@ -1,5 +1,15 @@
 # Bibimer 다음 세션 시작점
 
+## 0.24.0(41) 워크트리·Claude Steer 내부 테스트 게시 (2026-10-19)
+
+- 사용자 요청으로 `a9b1177`의 누적 기능을 앱 **0.24.0 / versionCode 41**, 내장 브리지 **0.18.0**으로 빌드·게시했다. 사이드바 워크트리 생성/브랜치 선택/세션 시작, Claude 입력창·대기 항목 Steer, 일반 대기 메시지 묶음 전송, Enter 줄바꿈 설정의 Ctrl+Enter 전송, **682키×10언어**를 포함한다. 아래 미배포 기능은41에 포함됐다. 새 브리지 기능은 앱 업데이트 후 설정에서 브리지를 업데이트해야 적용된다.
+- Console **활성 / 내부 테스터에게 제공됨 / 2026-10-19 17:05 Asia/Seoul**. 출시명 `0.24.0 (41) - Worktrees and Claude steering`, 새41만 포함·40제외, 기존 테스터와 EN/KO 출시노트 유지. 오류0·기존 가독화파일 경고1·지원기기 변화0. Console `/tracks/4701718894791581363/releases/12/details`. 증빙 `dist/play-0.24.0/{internal41-live.png,internal41-live-dom.txt}`.
+- AAB `dist/play/bibimer-0.24.0-41-release.aab`, SHA-256 `ce923fe5c5d1bcd560dba0abeb138178c2b9d506bd934f3f78af5ab179492839`. 기존 로컬 업로드키·심사코드 사용. 전체 AAPT2/Java/D8·bundletool/jarsigner·기존 인증서, **53assets** 원본 일치, 유지보수 소스와 브리지/어댑터4payload 원본·해시, 비공개Receiver/DEX·PlaySDK/고정의존성·설치기셸문법·심사digest 포함/비밀원문 미포함 검증 통과. 새 `worktree-create.js`의 로딩과 컴파일된 네이티브 `/v1/worktrees/manage` 허용 경로도 확인했다. `.tools/aab-0.24.0-41-{mac.log,verification.json}`. 이전의 전체Java컴파일 준비 부족은 이번 정식빌드에서 해결됐으며 기존Java8/deprecated·AndroidX디버그정보 안내만 있다. 새 의존성/키·Doppler다운로드 없음.
+- Python scripts **37개**, 집중 브리지 **60개**(워크트리8·대기열13·제공자14·명령7·알림9·Setup4·유지보수5), Node682키×10언어·언어/초안·업데이트·프로젝트순서/위치/자동열기·Demo/Review·JS구문·diff 검사 통과. 전체175개를 이번Mac에서 재실행했다고 표현하지 않으며 전체회귀의 앞선Termux기록은 아래를 따른다. Mac 셸은 검사 전용 `/bin/bash --noprofile --norc`, TMPDIR은 실제 `/private/var` 경로를 사용했다. 로그 `.tools/release-0.24.0-{python,bridge}.log`.
+- 격리 Chromium의 **워크트리·명령·전체 UI** 검사가 모두 통과했다. 실제 임시Git의 새/기존브랜치·기준커밋/사용중브랜치·중복/응답유실·닫기/재로드/실행실패복구·선택/초안/응답 보존, 자체선택시트·10언어320/393px·Back, Ctrl+Enter·IME·Claude Steer/대기열묶음·기존세에이전트/가져오기/승인/질문/PTY를 확인했다. 초기검사는 도움말 닫기/Escape의 close 이벤트보다 aria-expanded를 먼저 검사한2곳과, OpenCode 답변처리 완료 전에 결과파일을 읽은1곳에서 실패했다. **검사만** 이벤트 완료/명시적 Ready 상태를 기다리도록 보완해 재실행한 명령·전체UI가 통과했다. 앱 동작은 바꾸지 않았다. 로그 `.tools/release-0.24.0-{worktrees-ui,commands-ui,commands-final,ui,ui-final}.log`. KO320px 워크트리 화면을 시각 확인했다. 브라우저Native·에이전트SDK/모델은 대역이며 실제모델을 호출하지 않았다.
+- 함께 확인한 기존 **정식0.23.0(40)은 Google Play에 제공됨 / 전체출시 / 178개 국가·지역 / 2026-10-19 06:54 게시** 상태다. `dist/play-0.24.0/production40-confirmed{.png,-dom.txt}`. README EN/KO·listing.json·언어문서의 공개버전을40으로 갱신했다. 이번41의 프로덕션 승급·웹사이트 배포는 없다.
+- **APK파생·에뮬레이터/실제폰 설치·Play 업데이트 감지는 이번에 하지 않았다.** 실제 Android WebView·키보드/IME·TalkBack·백그라운드·실제 모델 작업·운영브리지 적용은 후속이다. 사용자 세션·원본Git·운영브리지/인증을 변경하거나 재시작하지 않았다. 설정의 브리지 업데이트는 실행세션이 있으면 거절한다. 생성된 워크트리/브랜치 삭제는 Git에서 처리한다.
+
 ## 기능 변경·원격 배포 기록 동기화 (2026-10-19)
 
 - 사용자 요청으로 Ctrl+Enter 전송·Claude Steer·대기열 묶음 전송·워크트리 생성/브랜치/세션 시작을 `0c8fe89`에 커밋하고 원격 `b92ba58`까지의 3커밋(UI 검사 비동기 보완·0.23.0 내부 테스트·정식 심사 제출)을 함께 반영했다. NEXT_SESSION.md의 같은 위치 추가 충돌은 양쪽 기록을 보존해 해결했다. 원격의 앱 0.23.0(40)·브리지 0.17.0 버전과 배포 상태를 유지한다. 이번 신규 기능은 해당 배포에 포함되지 않은 미배포 소스이며 추가 빌드·게시·운영 브리지 교체/재시작은 하지 않았다.
