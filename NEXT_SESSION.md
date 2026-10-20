@@ -1453,3 +1453,10 @@ Android에서 Termux와 연동해 여러 프로젝트와 Codex·Claude 같은 �
 4. Termux가 없는 기기에서 설치 안내 → 설정 파일 저장 → Python·브리지 설치 → 앱 연결을 별도로 검증한다.
 
 빌드 및 테스트 명령은 `docs/development.md`를 따른다. 변경 내용은 `main`에서 커밋하고 `origin/main`과 동기화한다. 빌드 결과·도구 캐시·로컬 서명 키는 Git에서 제외되어 있다.
+
+## 웹사이트 버전 공지를 없애고 일반 안내로 정리 (2026-10-21)
+
+- 사용자 피드백에 따라10언어 홈의 별도 업데이트 공지와 공개/테스터/심사 버전 상태를 삭제했다. 가이드의 버전별 소식은 세션·입력·브리지 관리 사용법으로 바꿨다. 버전번호·특정 시작화면 수정 이력·브리지 최소버전 공지 대신 기능을 쓰는 방법과 앱의 브리지 업데이트 안내를 따르는 방법을 남겼다. 버전별 변경은 Play 출시 노트에서 안내하고 웹사이트는 실제 기능/사용 흐름이 달라질 때 해당 설명만 갱신한다는 기준을 release/website/README.md에 기록했다.
+- 소개·갤러리·기능·설치·이름 유래·문의/정책·SEO 경로를 유지하며 새 UI/의존성을 추가하지 않았다. 홈10개/가이드10개HTML과 웹사이트문서만 변경했고 문의 API/DB/Discord·앱코드는 변경하지 않았다.
+- 웹사이트2검사·언어선택·diff 검사를 통과했다. Chromium의10언어×홈/가이드×320/1100px 총40상태에서 공지/버전텍스트없음·가로넘침없음을 확인했다. 한국어화면을 기존사이트와 비교해96/pass. dist/website-evergreen/{layout-verification.json,ko-home-320.png,ko-home-1100.png,ko-guide-320.png,ko-guide-1100.png} 및 .omx/state/website-evergreen/ralph-progress.json.
+- Cloudflare Pages **https://140daff4.bibimer.pages.dev** 배포. 공개44리소스 원본/보안헤더/no-transform과404·기존API거절조건을 확인했다(dist/website-evergreen/public-verification.json). DB실제접수/Discord알림은 변경이 없어 재전송하지 않았다. 다른브라우저엔진의 실제렌더링은 미검증이다. 병행 중인 iOS/기존 NEXT_SESSION.md 변경은 보존하고 이 기록만 분리해 스테이징했다.
