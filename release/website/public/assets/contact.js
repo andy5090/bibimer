@@ -90,7 +90,6 @@
     const payload = {
       category: category.value,
       customCategory: category.value === "other" ? custom.value.trim() : "",
-      subject: form.elements.subject.value.trim(),
       message: form.elements.message.value.trim(),
       email: form.elements.email.value.trim(),
       locale: document.documentElement.lang,
@@ -101,7 +100,7 @@
     for (const field of fields) {
       if (field.willValidate) field.setAttribute("aria-invalid", String(!field.validity.valid));
     }
-    if (!form.checkValidity() || !payload.subject || payload.message.length < 10
+    if (!form.checkValidity() || payload.message.length < 10
       || (payload.category === "other" && !payload.customCategory)) {
       showError("invalid");
       return;

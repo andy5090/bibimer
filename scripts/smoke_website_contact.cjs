@@ -50,7 +50,6 @@ const server = http.createServer(async (req, res) => {
       await page.locator("#contact-form").waitFor({ state: "visible" });
     };
     const fill = async () => {
-      await page.locator('[name="subject"]').fill("A contact form test");
       await page.locator('[name="message"]').fill("A sufficiently detailed question for testing.");
       await page.locator('[name="consent"]').check();
     };
@@ -90,6 +89,7 @@ const server = http.createServer(async (req, res) => {
     const firstId = requests[0].requestId;
     assert.match(firstId, /^[\da-f-]{36}$/);
     assert.equal(requests[0].email, "");
+    assert.equal(Object.hasOwn(requests[0], "subject"), false);
     assert.equal(requests[0].consent, true);
     assert.equal(await page.locator('[name="message"]').inputValue(), "A sufficiently detailed question for testing.");
     behavior = "timeout";
@@ -98,7 +98,7 @@ const server = http.createServer(async (req, res) => {
     assert.equal(requests.length, 2);
     assert.equal(requests[1].requestId, firstId, "Retry after failure retains its UUID");
     assert.equal(await page.locator("#contact-status").isVisible(), true);
-    await page.locator('[name="subject"]').fill("An edited contact form test");
+    await page.locator('[name="message"]').fill("An edited detailed contact message for testing.");
     behavior = "delay";
     await page.locator("#contact-submit").evaluate((button) => { button.click(); button.click(); });
     await page.locator("#contact-success").waitFor({ state: "visible" });
@@ -122,6 +122,7 @@ const server = http.createServer(async (req, res) => {
       await goto(locale);
       await page.evaluate(() => document.fonts.ready);
       assert.equal(await page.locator("html").getAttribute("lang"), locale);
+      assert.equal(await page.locator('[name="subject"]').count(), 0);
       assert.equal(await page.locator('link[rel="alternate"][hreflang]').count(), 11);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${locale} 320px overflow`);
       await page.screenshot({ path: path.join(screenshots, `${locale}-320.png`), fullPage: true });

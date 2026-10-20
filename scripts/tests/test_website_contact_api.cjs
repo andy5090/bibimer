@@ -114,10 +114,23 @@ async function main() {
   assert.equal(answer.body.error, "id_conflict");
   assert.equal(webhookCalls.length, startCalls + 1);
 
+  // New forms do not collect a subject; cached old forms remain compatible.
+  for (const subject of [undefined, "", "   "]) {
+    const current = payload({subject, message: "  문의 내용으로\n  구분할 수 있습니다.  "});
+    const currentEnv = environment();
+    const receipt = await send(current, {env: currentEnv});
+    assert.equal(receipt.result.status, 202, "Subject must not be required");
+    assert.equal(rows(currentEnv.CONTACT_DB)[0].subject, "문의 내용으로 구분할 수 있습니다.");
+    assert.ok(!webhookCalls.at(-1).body.embeds[0].fields.some(field => field.name === "Subject"));
+    const calls = webhookCalls.length;
+    assert.equal((await send(current, {env: currentEnv})).result.status, 202);
+    assert.equal(webhookCalls.length, calls, "Subjectless retries must not notify twice");
+  }
+
   // Bad fields, bounds, unsupported locale, consent, honeypot, and null inputs.
   const invalid = [null, [], { category: "unsupported" }, { locale: "ko-KR" },
     { requestId: "not-a-uuid" }, { requestId: "a".repeat(36) }, { consent: false }, { consent: "true" },
-    { website: "https://spam.example" }, { website: undefined }, { subject: " " }, { subject: "a".repeat(121) },
+    { website: "https://spam.example" }, { website: undefined }, { subject: "a".repeat(121) },
     { message: "short" }, { message: "a".repeat(5001) }, { message: "a\0".repeat(10) },
     { email: "invalid" }, { email: "a@b.c\r\nHeader: x" }, { email: `${"a".repeat(250)}@x.com` },
     { customCategory: "Not other" }, { category: "other", customCategory: "" },

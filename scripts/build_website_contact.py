@@ -83,7 +83,6 @@ def render(locale, text):
         <input type="hidden" name="category" value="bug">
       </div>
       <div class="field" id="custom-category-field" hidden><label for="custom-category">{esc(text['custom'])} {required}</label><input id="custom-category" name="customCategory" maxlength="80" autocomplete="off"></div>
-      <div class="field"><label for="contact-subject">{esc(text['subject'])} {required}</label><input id="contact-subject" name="subject" required maxlength="120" aria-describedby="subject-hint"><span id="subject-hint" class="field-hint">{esc(text['subjectHint'])}</span></div>
       <div class="field"><label for="contact-message">{esc(text['message'])} {required}</label><textarea id="contact-message" name="message" required minlength="10" maxlength="5000" rows="7" aria-describedby="message-hint"></textarea><span id="message-hint" class="field-hint">{esc(text['messageHint'])}</span></div>
       <div class="field"><label for="contact-email">{esc(text['email'])}</label><input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" aria-describedby="email-hint"><span id="email-hint" class="field-hint">{esc(text['emailHint'])}</span></div>
       <div class="contact-honeypot" aria-hidden="true"><label for="contact-website">Website</label><input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>

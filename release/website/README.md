@@ -2,9 +2,9 @@
 
 ## 자체 문의·D1·Discord (2026-10-19)
 
-공개 [문의 양식](https://bibimer.app/ko/contact/)을10개언어로 제공한다. 오류·설치/연결·기능제안·개인정보·기타 직접입력, 제목/내용·선택이메일과명시적동의를 받는다. 일반 문의 버튼과README는 양식으로 연결하고 정책의 이메일 대체 경로는 유지한다. 홈·가이드에는현재10언어지원과0.25.0기능을반영했으며0.25.0정식심사중/현재공개0.23.0을구분한다.
+공개 [문의 양식](https://bibimer.app/ko/contact/)을10개언어로 제공한다. 오류·설치/연결·기능제안·개인정보·기타 직접입력, 내용·선택이메일과명시적동의를 받는다. 일반 문의 버튼과README는 양식으로 연결하고 정책의 이메일 대체 경로는 유지한다. 홈·가이드에는현재10언어지원과0.25.0기능을반영했으며0.25.0정식심사중/현재공개0.23.0을구분한다.
 
-`contact-locales.json`과 `python3 scripts/build_website_contact.py`로10개정적문의페이지를 생성한다. 공통 `assets/contact.js`/`contact.css`와자체접근성선택기를 사용한다. 서버는 `functions/api/contact.js`, D1스키마는 `migrations/0001_contact_inquiries.sql`, Pages설정은 `wrangler.toml`이다. DB binding은 `CONTACT_DB`이고 DB는 `bibimer-contact`다. 웹훅/남용방지키는 암호화된 Pages비밀설정 `DISCORD_WEBHOOK_URL`/`CONTACT_RATE_KEY`로만 주입한다. 값은 소스에 넣지 않는다.
+`contact-locales.json`과 `python3 scripts/build_website_contact.py`로10개정적문의페이지를 생성한다. 공통 `assets/contact.js`/`contact.css`와자체접근성선택기를 사용한다. 별도 제목 입력은 받지 않으며 기존 DB의 제목 칸은 본문 앞부분으로 자동 채운다. 이전 클라이언트가 보낸 제목도 받아 기존 재시도와 호환한다. 서버는 `functions/api/contact.js`, D1스키마는 `migrations/0001_contact_inquiries.sql`, Pages설정은 `wrangler.toml`이다. DB binding은 `CONTACT_DB`이고 DB는 `bibimer-contact`다. 웹훅/남용방지키는 암호화된 Pages비밀설정 `DISCORD_WEBHOOK_URL`/`CONTACT_RATE_KEY`로만 주입한다. 값은 소스에 넣지 않는다.
 
 DB를 먼저 커밋한 뒤 접수번호를 반환하고Discord알림을시도한다. UUID/내용 기반중복방지·동일출처/16KB제한·IP의키기반해시당5건/시간·바인딩SQL·멘션차단을 제공한다. 연락처와내용을일반로그에남기지않는다. `notification_status`/`notification_attempts`/`notification_error`로전달실패를확인한다. Discord는최대2회만재시도하며네트워크불명시중복알림가능성이있다. DB저장은알림전달보장을뜻하지않는다. 긴Discord본문은잘라도DB에는전체본문을저장한다.
 

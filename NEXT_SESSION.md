@@ -1,5 +1,13 @@
 # Bibimer 다음 세션 시작점
 
+## 웹사이트 문의 제목 입력 제거 (2026-10-21)
+
+- 사용자 피드백에 따라10언어 문의 양식의 별도 제목 필드·필수 검사·번역20항목을 삭제했다. 카테고리/기타 직접입력·본문·선택 이메일·동의만 받는다. 공통 생성기/클라이언트와10개 정책의 수집항목도 갱신했다.
+- API는 제목 생략/빈 문자열을 허용하고 기존 DB subject 칸에는 본문 앞부분(공백 정리·최대120UTF-16단위·불완전 surrogate제거)을 자동 기록한다. 이전 캐시 양식의 명시적 subject도 받아 기존 내용 해시/재시도와 호환한다. DB마이그레이션·기존 문의 변경·새 의존성은 없다. Discord의 중복 Subject필드도 제거했다.
+- 회귀 검사에서 수정 전 제목 없는 접수가400으로 실패함을 확인한 뒤, 제목 생략/공백/이전클라이언트·동일UUID재시도·DB/Discord검사 전체와 실제 Chromium 양식 검사(10언어320px·제목없음·본문수정UUID·실패/15초중단재시도·중복방지)를 통과했다. 웹사이트2검사·언어/JS구문·diff도 통과. 로그 `.tools/contact-no-subject-{before,api,ui}.log`.
+- Cloudflare Pages **https://b3458e5b.bibimer.pages.dev**, 공개 **https://bibimer.app/ko/contact/** 배포.44공개리소스 원본/보안헤더·API거절/404를 확인하고, 제목 없는 실제 검증용 문의를202접수·DB자동미리보기·Discord sent1회·중복POST202/한행유지로 확인했다. `dist/website-contact-no-subject/live-verification.json`. 이전 문의·DB·서버비밀은 유지한다.
+- 기존 가이드/문의 화면을 기준으로 제목 삭제 후 모바일 화면을 시각 확인했다(96/pass). `dist/website-contact/{ko-320.png,ko-desktop.png}`와 `.omx/state/website-contact-no-subject/ralph-progress.json`. 이번 CUA는 브라우저/네이티브연결이 없어 공개브라우저수동화면 대신 격리Chromium과공개HTTP원본대조로 검증했다. 실제 고객 문의는 사용하지 않았으며 Discord의 기존 네트워크 유실/상태불명 전달 제약은 유지한다. 앱 빌드·설치/Play변경 없음.
+
 ## iOS 앱 구현과 네 에이전트 검증 (2026-10-20, Simulator 검증 완료)
 
 - 사용자 요청은 **Bibimer iOS 앱 구현·Simulator 실행**, **Codex·Claude Code·OpenCode·Gemini 모두 포함**이다. `ios/app/`에 기존 UI를 재사용한 WKWebView 앱, `ios/bridge/`에 앱 내부 Linux 연결·설치/로그인 작업·Gemini ACP, `ios/runtime-lab/`에 실행 환경과 검사를 구현했다. Android 소스·APK·운영 Termux는 변경하지 않았다.

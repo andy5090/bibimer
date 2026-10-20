@@ -84,14 +84,14 @@ function validate(input) {
     value.trim().length >= min && value.trim().length <= max && !value.includes("\0");
   if (!text(input.requestId, 36, 36) || !UUID.test(input.requestId) ||
       !CATEGORIES.has(input.category) || !LOCALES.has(input.locale) || input.consent !== true ||
-      input.website !== "" || !text(input.subject, 1, 120) || !text(input.message, 10, 5000)) return null;
+      input.website !== "" || (input.subject !== undefined && !text(input.subject, 0, 120)) || !text(input.message, 10, 5000)) return null;
   const custom = input.customCategory ?? "";
   const email = input.email ?? "";
   if (!text(custom, input.category === "other" ? 1 : 0, 80) ||
       (input.category !== "other" && custom.trim() !== "") || !text(email, 0, 254) ||
       (email.trim() && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email.trim()))) return null;
   return { requestId: input.requestId.toLowerCase(), category: input.category,
-    customCategory: custom.trim(), subject: input.subject.trim(), message: input.message.trim(),
+    customCategory: custom.trim(), subject: input.subject?.trim() || input.message.trim().replace(/\s+/g, " ").slice(0, 120).replace(/[\uD800-\uDBFF]$/, ""), message: input.message.trim(),
     email: email.trim(), locale: input.locale, consent: true };
 }
 
@@ -133,7 +133,6 @@ function webhookBody(data) {
       { name: "Receipt", value: data.requestId },
       { name: "Category", value: data.category === "other" ? `other: ${data.customCategory}` : data.category, inline: true },
       { name: "Language", value: data.locale, inline: true },
-      { name: "Subject", value: data.subject },
       { name: "Reply email", value: data.email || "Not provided" },
     ], footer: { text: "Submitted through bibimer.app" } }] };
 }
