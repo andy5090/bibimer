@@ -1,0 +1,2537 @@
+diff --git a/app/RootfsPatch.bundle/files/lib/wasm-polyfill.js b/app/RootfsPatch.bundle/files/lib/wasm-polyfill.js
+index 78a33b3..c74d740 100644
+--- a/app/RootfsPatch.bundle/files/lib/wasm-polyfill.js
++++ b/app/RootfsPatch.bundle/files/lib/wasm-polyfill.js
+@@ -1,376 +1,291 @@
+ "use strict";
+-// WebAssembly polyfill for --jitless Node.js environments.
+-// Provides a pure JS implementation of the llhttp HTTP response parser
+-// that undici uses via WebAssembly. This allows undici-based libraries
+-// (MCP servers, node-fetch, etc.) to work without real WebAssembly support.
+-
++// llhttp-only compatibility adapter for --jitless Node. This is not a general
++// WebAssembly engine. Only the llhttp module ABI used by Undici is accepted.
+ if (typeof globalThis.WebAssembly === "undefined") {
+-
+-// llhttp state machine states
+-const S_START = 0, S_RES_H = 1, S_RES_LINE = 2, S_STATUS = 3,
+-      S_HEADER_FIELD = 4, S_HEADER_VALUE = 5, S_HEADERS_DONE = 6,
+-      S_BODY_IDENTITY = 7, S_BODY_CHUNKED_SIZE = 8, S_BODY_CHUNKED_DATA = 9,
+-      S_BODY_CHUNKED_END = 10, S_COMPLETE = 11, S_DEAD = 12, S_PAUSED = 13;
+-
+-const OK = 0, PAUSED = 21, PAUSED_UPGRADE = 22;
+-
+-// Simulated WebAssembly.Memory as a growable ArrayBuffer
+-const INITIAL_MEM = 1024 * 1024; // 1MB
+-let memBuf = new ArrayBuffer(INITIAL_MEM);
+-let memU8 = new Uint8Array(memBuf);
+-const memory = {
+-  buffer: memBuf,
+-  grow(pages) {
+-    const newSize = memBuf.byteLength + pages * 65536;
+-    const newBuf = new ArrayBuffer(newSize);
+-    new Uint8Array(newBuf).set(memU8);
+-    memBuf = newBuf;
+-    memU8 = new Uint8Array(memBuf);
+-    memory.buffer = memBuf;
++const OK = 0, INVALID = 17, PAUSED = 21, UPGRADE = 22;
++const REQUIRED = ["memory", "llhttp_alloc", "llhttp_free", "llhttp_execute",
++  "llhttp_resume", "llhttp_get_error_pos", "llhttp_get_error_reason", "malloc", "free"];
++const CALLBACKS = ["wasm_on_headers_complete", "wasm_on_message_begin", "wasm_on_url",
++  "wasm_on_status", "wasm_on_header_field", "wasm_on_header_value", "wasm_on_body",
++  "wasm_on_message_complete"];
++class CompileError extends Error {}
++class LinkError extends Error {}
++class RuntimeError extends Error {}
++function inspect(bytes) {
++  const b = ArrayBuffer.isView(bytes) ? new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)
++    : bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : null;
++  if (!b || b.length < 8 || b[0] !== 0 || b[1] !== 97 || b[2] !== 115 || b[3] !== 109 ||
++      b[4] !== 1 || b[5] || b[6] || b[7]) throw new CompileError("Only Undici llhttp WASM modules are supported");
++  let i = 8, limit = b.length;
++  function leb() {
++    let n = 0, shift = 0;
++    for (let j = 0; j < 5 && i < limit; j++, shift += 7) {
++      const c = b[i++]; n += (c & 127) * 2 ** shift;
++      if (!(c & 128)) return n;
++    }
++    throw new CompileError("Invalid llhttp module section");
+   }
+-};
+-
+-// Simple bump allocator for wasm memory simulation
+-let heapPtr = 4096; // start after null page
+-function walloc(size) {
+-  const aligned = (size + 7) & ~7;
+-  if (heapPtr + aligned > memBuf.byteLength) {
+-    memory.grow(Math.ceil(aligned / 65536) + 1);
++  function str() {
++    const n = leb(); if (i + n > limit) throw new CompileError("Truncated llhttp module name");
++    let s = ""; for (let end = i + n; i < end; i++) s += String.fromCharCode(b[i]); return s;
++  }
++  const imports = [], exports = [];
++  let code = false;
++  while (i < b.length) {
++    const section = b[i++], size = leb(), end = i + size;
++    if (end > b.length) throw new CompileError("Truncated llhttp module");
++    limit = end;
++    if (section === 2) {
++      const count = leb();
++      for (let j = 0; j < count; j++) {
++        const module = str(), name = str(), kind = b[i++];
++        if (module !== "env" || kind !== 0 || !CALLBACKS.includes(name))
++          throw new CompileError("Unknown llhttp import");
++        leb(); imports.push({module, name, kind: "function"});
++      }
++    } else if (section === 7) {
++      const count = leb();
++      for (let j = 0; j < count; j++) {
++        const name = str(), kind = b[i++]; leb();
++        if (!REQUIRED.includes(name) && name !== "_initialize" && name !== "__indirect_function_table" &&
++            !/^llhttp_[a-z_]+$/.test(name)) throw new CompileError("Unknown llhttp export");
++        exports.push({name, kind: ["function", "table", "memory", "global"][kind]});
++      }
++    } else if (section === 10) code = size > 0;
++    i = end; limit = b.length;
+   }
+-  const ptr = heapPtr;
+-  heapPtr += aligned;
+-  return ptr;
++  if (!code || !REQUIRED.every(n => exports.some(x => x.name === n && x.kind === (n === "memory" ? "memory" : "function"))) ||
++      !CALLBACKS.every(n => imports.some(x => x.name === n)))
++    throw new CompileError("Not a supported llhttp module");
++  return {imports, exports};
+ }
+-
+-// Parser instance storage (indexed by pointer)
+-const parsers = new Map();
+-let nextParserId = 8192;
+-
+-// Callbacks from the env object - will be set by undici when instantiating
+-let envCallbacks = {};
+-
+-function createParser(type) {
+-  const id = nextParserId;
+-  nextParserId += 256; // space between parsers
+-  parsers.set(id, {
+-    type, // 1=REQUEST, 2=RESPONSE
+-    state: S_START,
+-    statusCode: 0,
+-    upgrade: false,
+-    shouldKeepAlive: true,
+-    contentLength: -1,
+-    chunked: false,
+-    remaining: 0,
+-    chunkSize: 0,
+-    errorReason: 0,
+-    errorPos: 0,
+-    paused: false
+-  });
+-  return id;
++class Module {
++  constructor(bytes) { this.info = inspect(bytes); }
++  static imports(module) { return module.info.imports.map(x => ({...x})); }
++  static exports(module) { return module.info.exports.map(x => ({...x})); }
++  static customSections() { return []; }
+ }
+-
+-// Write a C string into wasm memory, return pointer
+-function writeStr(str) {
+-  const ptr = walloc(str.length + 1);
+-  for (let i = 0; i < str.length; i++) memU8[ptr + i] = str.charCodeAt(i);
+-  memU8[ptr + str.length] = 0;
+-  return ptr;
++class Memory {
++  constructor(desc) {
++    if (!desc || !Number.isInteger(desc.initial) || desc.initial < 0) throw new RangeError("Invalid memory size");
++    this.buffer = new ArrayBuffer(desc.initial * 65536); this.maximum = desc.maximum;
++  }
++  grow(pages) {
++    const old = this.buffer.byteLength / 65536;
++    if (!Number.isInteger(pages) || pages < 0 || (this.maximum !== undefined && old + pages > this.maximum))
++      throw new RangeError("Invalid memory growth");
++    const next = new ArrayBuffer((old + pages) * 65536);
++    new Uint8Array(next).set(new Uint8Array(this.buffer)); this.buffer = next; return old;
++  }
+ }
+-
+-// Parse HTTP response data
+-function llhttp_execute(ptr, bufPtr, bufLen) {
+-  const p = parsers.get(ptr);
+-  if (!p) return 1; // INTERNAL error
+-  if (p.paused) return PAUSED;
+-
+-  const data = new Uint8Array(memory.buffer, bufPtr, bufLen);
+-  let i = 0;
+-
+-  while (i < bufLen) {
+-    switch (p.state) {
+-      case S_START: {
+-        // Look for "HTTP/"
+-        if (data[i] === 0x48) { // 'H'
+-          p.state = S_RES_H;
+-        } else {
+-          i++;
+-        }
+-        break;
+-      }
+-
+-      case S_RES_H: {
+-        // Scan for end of status line (first \r\n)
+-        const lineEnd = findCRLF(data, i, bufLen);
+-        if (lineEnd === -1) { p.errorPos = bufPtr + i; return OK; } // need more data
+-
+-        // Parse "HTTP/x.x SSS Reason"
+-        const line = decodeAscii(data, i - 1, lineEnd); // -1 to include 'H'
+-        const match = line.match(/^HTTP\/\d\.\d\s+(\d{3})\s*(.*)/);
+-        if (match) {
+-          p.statusCode = parseInt(match[1], 10);
+-          // Notify status
+-          const statusStart = bufPtr + i - 1 + line.indexOf(match[2]);
+-          const statusLen = match[2].length;
+-          let rc = envCallbacks.wasm_on_message_begin(ptr);
+-          if (rc) { p.errorPos = bufPtr + i; return rc; }
+-          if (statusLen > 0) {
+-            rc = envCallbacks.wasm_on_status(ptr, bufPtr + i - 1 + line.indexOf(match[1]) + match[1].length + 1, statusLen);
+-            if (rc) { p.errorPos = bufPtr + i; return rc; }
+-          }
+-        }
+-        i = lineEnd + 2; // skip \r\n
+-        p.state = S_HEADER_FIELD;
+-        p.chunked = false;
+-        p.contentLength = -1;
+-        p.upgrade = false;
+-        p.shouldKeepAlive = true;
+-        break;
+-      }
+-
+-      case S_HEADER_FIELD: {
+-        // Check for end of headers (\r\n)
+-        if (i < bufLen && data[i] === 0x0d) {
+-          if (i + 1 < bufLen && data[i + 1] === 0x0a) {
+-            i += 2;
+-            p.state = S_HEADERS_DONE;
+-            break;
+-          }
+-        }
+-        // Find ':'
+-        const colonIdx = findByte(data, 0x3a, i, bufLen);
+-        if (colonIdx === -1) { p.errorPos = bufPtr + i; return OK; }
+-
+-        const fieldStart = bufPtr + i;
+-        const fieldLen = colonIdx - i;
+-        const rc = envCallbacks.wasm_on_header_field(ptr, fieldStart, fieldLen);
+-        if (rc) { p.errorPos = bufPtr + i; return rc; }
+-
+-        // Track transfer-encoding and content-length
+-        const fieldName = decodeAscii(data, i, colonIdx).toLowerCase();
+-        i = colonIdx + 1;
+-        // skip optional spaces
+-        while (i < bufLen && data[i] === 0x20) i++;
+-
+-        // Find end of header value
+-        const valEnd = findCRLF(data, i, bufLen);
+-        if (valEnd === -1) { p.errorPos = bufPtr + i; return OK; }
+-
+-        const valueStart = bufPtr + i;
+-        const valueLen = valEnd - i;
+-        const rc2 = envCallbacks.wasm_on_header_value(ptr, valueStart, valueLen);
+-        if (rc2) { p.errorPos = bufPtr + i; return rc2; }
+-
+-        const value = decodeAscii(data, i, valEnd).toLowerCase().trim();
+-        if (fieldName === "transfer-encoding" && value.includes("chunked")) p.chunked = true;
+-        if (fieldName === "content-length") p.contentLength = parseInt(value, 10);
+-        if (fieldName === "connection" && value === "close") p.shouldKeepAlive = false;
+-        if (fieldName === "upgrade") p.upgrade = true;
+-
+-        i = valEnd + 2;
+-        break;
+-      }
+-
+-      case S_HEADERS_DONE: {
+-        const rc = envCallbacks.wasm_on_headers_complete(ptr, p.statusCode,
+-          p.upgrade ? 1 : 0, p.shouldKeepAlive ? 1 : 0);
+-        if (rc === 1) {
+-          // skip body
+-          p.state = S_COMPLETE;
+-          break;
+-        }
+-        if (rc === 2) {
+-          p.upgrade = true;
+-          p.errorPos = bufPtr + i;
+-          return PAUSED_UPGRADE;
+-        }
+-        if (rc) { p.errorPos = bufPtr + i; return rc; }
+-
+-        if (p.upgrade) {
+-          p.errorPos = bufPtr + i;
+-          return PAUSED_UPGRADE;
+-        }
+-
+-        if (p.chunked) {
+-          p.state = S_BODY_CHUNKED_SIZE;
+-        } else if (p.contentLength > 0) {
+-          p.state = S_BODY_IDENTITY;
+-          p.remaining = p.contentLength;
+-        } else if (p.contentLength === 0) {
+-          p.state = S_COMPLETE;
+-        } else {
+-          // No content-length, no chunked: read until close (for responses)
+-          // or no body (for 1xx, 204, 304)
+-          if (p.statusCode === 204 || p.statusCode === 304 || (p.statusCode >= 100 && p.statusCode < 200)) {
+-            p.state = S_COMPLETE;
+-          } else {
+-            p.state = S_BODY_IDENTITY;
+-            p.remaining = Infinity;
+-          }
+-        }
+-        break;
+-      }
+-
+-      case S_BODY_IDENTITY: {
+-        const available = bufLen - i;
+-        const toConsume = p.remaining === Infinity ? available : Math.min(available, p.remaining);
+-        if (toConsume > 0) {
+-          const rc = envCallbacks.wasm_on_body(ptr, bufPtr + i, toConsume);
+-          if (rc) { p.errorPos = bufPtr + i; return rc; }
+-          i += toConsume;
+-          if (p.remaining !== Infinity) p.remaining -= toConsume;
+-        }
+-        if (p.remaining === 0) p.state = S_COMPLETE;
+-        if (i >= bufLen) { p.errorPos = bufPtr + i; return OK; }
+-        break;
++function createExports(env) {
++  const memory = new Memory({initial: 16});
++  const parsers = new Map(), allocations = new Map(), freeBlocks = [];
++  let heap = 4096, nextParser = 1;
++  function malloc(size) {
++    if (!Number.isSafeInteger(size) || size < 0) throw new RuntimeError("Invalid allocation");
++    size = Math.ceil(Math.max(1, size) / 8) * 8;
++    const index = freeBlocks.findIndex(b => b.size >= size);
++    let ptr;
++    if (index >= 0) { const block = freeBlocks.splice(index, 1)[0]; ptr = block.ptr; size = block.size; }
++    else { ptr = heap; heap += size; if (heap > memory.buffer.byteLength) memory.grow(Math.ceil((heap - memory.buffer.byteLength) / 65536)); }
++    allocations.set(ptr, size); return ptr;
++  }
++  function free(ptr) { const size = allocations.get(ptr); if (size) { freeBlocks.push({ptr, size}); allocations.delete(ptr); } }
++  function reset(p) {
++    Object.assign(p, {state: "status", line: "", status: 0, major: 1, minor: 1, field: "", value: "",
++      headerBytes: 0, headers: new Map(), remaining: 0, trailers: false, keepAlive: true, upgrade: false,
++      started: false, paused: false, error: "OK", errno: OK});
++  }
++  function alloc(type) {
++    if (type !== 2) throw new RuntimeError("Only HTTP response parsing is supported");
++    const id = nextParser++, p = {id, errorPos: 0, reason: malloc(256)}; reset(p); parsers.set(id, p); return id;
++  }
++  function fail(p, reason, pos, errno = INVALID) {
++    p.error = reason; p.errno = errno; p.errorPos = pos; p.state = "dead"; return errno;
++  }
++  function callback(p, name, ...args) { return env[name](p.id, ...args) || OK; }
++  function execute(ptr, bufPtr, length) {
++    const p = parsers.get(ptr);
++    if (!p) return INVALID;
++    if (p.paused) return PAUSED;
++    if (p.state === "dead") return p.errno;
++    const data = new Uint8Array(memory.buffer, bufPtr, length);
++    let i = 0;
++    function invoke(name, ...args) {
++      const rc = callback(p, name, ...args);
++      p.errorPos = bufPtr + i;
++      if (rc === PAUSED) p.paused = true;
++      else if (rc && rc !== 1 && rc !== 2) { p.errno = rc; p.error = "HTTP callback rejected response"; }
++      return rc;
++    }
++    function ascii(start, end) { let s = ""; while (start < end) s += String.fromCharCode(data[start++]); return s; }
++    function completeHeader() {
++      const name = p.field.toLowerCase(), value = p.value.replace(/^[ \t]+|[ \t]+$/g, "");
++      if (!p.trailers) {
++        if (name === "content-length" && p.headers.has(name)) return fail(p, "Duplicate Content-Length", bufPtr + i, 4);
++        p.headers.set(name, p.headers.has(name) ? p.headers.get(name) + "," + value : value);
+       }
+-
+-      case S_BODY_CHUNKED_SIZE: {
+-        const lineEnd = findCRLF(data, i, bufLen);
+-        if (lineEnd === -1) { p.errorPos = bufPtr + i; return OK; }
+-        const sizeStr = decodeAscii(data, i, lineEnd).replace(/;.*/, "").trim();
+-        p.chunkSize = parseInt(sizeStr, 16);
+-        i = lineEnd + 2;
+-        if (p.chunkSize === 0) {
+-          p.state = S_BODY_CHUNKED_END;
+-        } else {
+-          p.state = S_BODY_CHUNKED_DATA;
+-          p.remaining = p.chunkSize;
+-        }
+-        break;
++      p.field = p.value = ""; p.state = "header-start"; return OK;
++    }
++    function headersComplete() {
++      const cl = p.headers.get("content-length"), te = p.headers.get("transfer-encoding");
++      if (cl !== undefined && (!/^\d+$/.test(cl) || !Number.isSafeInteger(Number(cl))))
++        return fail(p, "Invalid Content-Length", bufPtr + i, 11);
++      if (cl !== undefined && te !== undefined) return fail(p, "Content-Length with Transfer-Encoding", bufPtr + i, 15);
++      const encodings = te === undefined ? [] : te.toLowerCase().split(",").map(s => s.replace(/^[ \t]+|[ \t]+$/g, ""));
++      if (te !== undefined && (encodings.some(s => !s) || encodings.filter(s => s === "chunked").length > 1 ||
++          (encodings.includes("chunked") && encodings.at(-1) !== "chunked")))
++        return fail(p, "Invalid Transfer-Encoding", bufPtr + i, 15);
++      const connection = (p.headers.get("connection") || "").toLowerCase().split(",").map(s => s.replace(/^[ \t]+|[ \t]+$/g, ""));
++      p.keepAlive = p.minor === 1 ? !connection.includes("close") : connection.includes("keep-alive");
++      p.upgrade = p.status === 101 && connection.includes("upgrade") && p.headers.has("upgrade");
++      if (p.status < 200 || p.status === 204 || p.status === 304) p.state = "complete";
++      else if (encodings.at(-1) === "chunked") { p.state = "chunk-size"; p.line = ""; }
++      else if (cl !== undefined) { p.remaining = Number(cl); p.state = p.remaining ? "body" : "complete"; }
++      else { p.state = "close-body"; p.keepAlive = false; }
++      const rc = invoke("wasm_on_headers_complete", p.status, +p.upgrade, +p.keepAlive);
++      if (rc === 1) { p.state = "complete"; return OK; }
++      if (rc === 2 || p.upgrade) { p.paused = true; return UPGRADE; }
++      return rc;
++    }
++    while (i < length || p.state === "complete") {
++      if (p.state === "complete") {
++        // Completion must happen even if the last body byte ended this chunk.
++        p.state = "new-message";
++        const rc = invoke("wasm_on_message_complete"); if (rc) return rc;
++        continue;
+       }
+-
+-      case S_BODY_CHUNKED_DATA: {
+-        const available = bufLen - i;
+-        const toConsume = Math.min(available, p.remaining);
+-        if (toConsume > 0) {
+-          const rc = envCallbacks.wasm_on_body(ptr, bufPtr + i, toConsume);
+-          if (rc) { p.errorPos = bufPtr + i; return rc; }
+-          i += toConsume;
+-          p.remaining -= toConsume;
+-        }
+-        if (p.remaining === 0) {
+-          // Expect \r\n after chunk data
+-          if (i + 1 < bufLen) {
+-            i += 2; // skip \r\n
+-            p.state = S_BODY_CHUNKED_SIZE;
+-          } else {
+-            p.errorPos = bufPtr + i;
+-            return OK; // need more data
+-          }
+-        } else {
+-          p.errorPos = bufPtr + i;
+-          return OK;
++      if (p.state === "new-message") reset(p);
++      if (p.state === "status") {
++        if (!p.started) { p.started = true; const rc = invoke("wasm_on_message_begin"); if (rc) return rc; }
++        const start = i, previous = p.line.length;
++        while (i < length && data[i] !== 13 && data[i] !== 10) i++;
++        p.line += ascii(start, i);
++        if (p.line.length > 8192) return fail(p, "Status line too long", bufPtr + i, 12);
++        // Undici callbacks translate these pointers into CURRENT input, so
++        // never send a pointer into a saved or synthesized header buffer.
++        const statusStart = start + Math.max(0, 13 - previous);
++        if (statusStart < i) { const rc = invoke("wasm_on_status", bufPtr + statusStart, i - statusStart); if (rc) return rc; }
++        if (i === length) break;
++        if (data[i++] !== 13) return fail(p, "Expected CRLF in status", bufPtr + i, 9);
++        p.state = "status-lf";
++      } else if (p.state === "status-lf") {
++        if (data[i++] !== 10) return fail(p, "Expected LF in status", bufPtr + i, 3);
++        const match = /^HTTP\/1\.([01]) ([1-5]\d\d)(?: [\x20-\x7e\x80-\xff]*)?$/.exec(p.line);
++        if (!match) return fail(p, "Invalid HTTP status line", bufPtr + i, 13);
++        p.minor = Number(match[1]); p.status = Number(match[2]); p.line = ""; p.state = "header-start";
++      } else if (p.state === "header-start") {
++        if (data[i] === 13) { i++; p.state = "headers-lf"; }
++        else { p.field = p.value = ""; p.state = "header-field"; }
++      } else if (p.state === "header-field") {
++        const start = i;
++        while (i < length && data[i] !== 58) {
++          if (!/[!#$%&'*+.^_`|~0-9A-Za-z-]/.test(String.fromCharCode(data[i])))
++            return fail(p, "Invalid header field", bufPtr + i, 10);
++          i++;
+         }
+-        break;
+-      }
+-
+-      case S_BODY_CHUNKED_END: {
+-        // Trailing headers or final \r\n
+-        if (data[i] === 0x0d && i + 1 < bufLen && data[i + 1] === 0x0a) {
+-          i += 2;
+-          p.state = S_COMPLETE;
+-        } else {
+-          // Skip trailing headers
+-          const lineEnd = findCRLF(data, i, bufLen);
+-          if (lineEnd === -1) { p.errorPos = bufPtr + i; return OK; }
+-          i = lineEnd + 2;
++        p.field += ascii(start, i); p.headerBytes += i - start;
++        if (p.headerBytes > 65536) return fail(p, "Headers exceed 64 KiB", bufPtr + i, 12);
++        if (i > start) { const rc = invoke("wasm_on_header_field", bufPtr + start, i - start); if (rc) return rc; }
++        if (i === length) break;
++        if (!p.field) return fail(p, "Empty header field", bufPtr + i, 10);
++        i++; p.state = "value-start";
++      } else if (p.state === "value-start") {
++        while (i < length && (data[i] === 32 || data[i] === 9)) i++;
++        if (i === length) break;
++        if (data[i] === 13) {
++          const rc = invoke("wasm_on_header_value", bufPtr + i, 0); if (rc) return rc;
++          i++; p.state = "header-lf";
++        } else p.state = "header-value";
++      } else if (p.state === "header-value") {
++        const start = i;
++        while (i < length && data[i] !== 13) {
++          if (data[i] < 32 && data[i] !== 9 || data[i] === 127) return fail(p, "Invalid header value", bufPtr + i, 10);
++          i++;
+         }
+-        break;
+-      }
+-
+-      case S_COMPLETE: {
+-        const rc = envCallbacks.wasm_on_message_complete(ptr);
+-        if (rc) { p.errorPos = bufPtr + i; return rc; }
+-        p.state = S_START; // ready for next message (keep-alive)
+-        p.errorPos = bufPtr + i;
+-        return OK;
+-      }
+-
+-      default:
+-        p.errorPos = bufPtr + i;
+-        return 1; // INTERNAL
++        p.value += ascii(start, i); p.headerBytes += i - start;
++        if (p.headerBytes > 65536) return fail(p, "Headers exceed 64 KiB", bufPtr + i, 12);
++        if (i > start) { const rc = invoke("wasm_on_header_value", bufPtr + start, i - start); if (rc) return rc; }
++        if (i === length) break;
++        i++; p.state = "header-lf";
++      } else if (p.state === "header-lf") {
++        if (data[i++] !== 10) return fail(p, "Expected LF in header", bufPtr + i, 3);
++        const rc = completeHeader(); if (rc) return rc;
++      } else if (p.state === "headers-lf") {
++        if (data[i++] !== 10) return fail(p, "Expected LF after headers", bufPtr + i, 3);
++        if (p.trailers) p.state = "complete";
++        else { const rc = headersComplete(); if (rc) return rc; }
++      } else if (p.state === "body" || p.state === "chunk-body" || p.state === "close-body") {
++        const start = i, close = p.state === "close-body", chunk = p.state === "chunk-body";
++        const count = close ? length - i : Math.min(length - i, p.remaining);
++        i += count;
++        if (!close) { p.remaining -= count; if (!p.remaining) p.state = chunk ? "chunk-cr" : "complete"; }
++        if (count) { const rc = invoke("wasm_on_body", bufPtr + start, count); if (rc) return rc; }
++      } else if (p.state === "chunk-size") {
++        while (i < length && data[i] !== 13 && data[i] !== 10) p.line += String.fromCharCode(data[i++]);
++        if (p.line.length > 1024) return fail(p, "Chunk size too long", bufPtr + i, 12);
++        if (i === length) break;
++        if (data[i++] !== 13) return fail(p, "Expected CR in chunk size", bufPtr + i, 9);
++        p.state = "chunk-size-lf";
++      } else if (p.state === "chunk-size-lf") {
++        if (data[i++] !== 10) return fail(p, "Expected LF in chunk size", bufPtr + i, 3);
++        if (!/^[0-9a-fA-F]+(?:;[\x20-\x7e]*)?$/.test(p.line)) return fail(p, "Invalid chunk size", bufPtr + i, 14);
++        p.remaining = Number.parseInt(p.line.split(";", 1)[0], 16); p.line = "";
++        if (!Number.isSafeInteger(p.remaining)) return fail(p, "Chunk size overflow", bufPtr + i, 14);
++        if (p.remaining) p.state = "chunk-body";
++        else { p.trailers = true; p.state = "header-start"; }
++      } else if (p.state === "chunk-cr") {
++        if (data[i++] !== 13) return fail(p, "Expected CR after chunk", bufPtr + i, 9);
++        p.state = "chunk-lf";
++      } else if (p.state === "chunk-lf") {
++        if (data[i++] !== 10) return fail(p, "Expected LF after chunk", bufPtr + i, 3);
++        p.state = "chunk-size";
++      } else return fail(p, "Invalid parser state", bufPtr + i);
++      if (p.headerBytes > 65536) return fail(p, "Headers exceed 64 KiB", bufPtr + i, 12);
+     }
++    p.errorPos = bufPtr + i; return OK;
+   }
+-
+-  p.errorPos = bufPtr + bufLen;
+-  return OK;
+-}
+-
+-function findCRLF(data, from, to) {
+-  for (let j = from; j < to - 1; j++) {
+-    if (data[j] === 0x0d && data[j + 1] === 0x0a) return j;
+-  }
+-  return -1;
++  return {memory, malloc, free, llhttp_alloc: alloc,
++    llhttp_free(ptr) { const p = parsers.get(ptr); if (p) free(p.reason); parsers.delete(ptr); },
++    llhttp_execute: execute,
++    llhttp_resume(ptr) { const p = parsers.get(ptr); if (p) p.paused = false; },
++    llhttp_resume_after_upgrade(ptr) { const p = parsers.get(ptr); if (p) p.paused = false; },
++    llhttp_pause(ptr) { const p = parsers.get(ptr); if (p) p.paused = true; },
++    llhttp_finish(ptr) {
++      const p = parsers.get(ptr); if (!p) return INVALID;
++      if (p.state === "close-body") { p.state = "new-message"; return callback(p, "wasm_on_message_complete"); }
++      return p.state === "new-message" || p.state === "status" && !p.started ? OK : fail(p, "Unexpected EOF", p.errorPos, 14);
++    },
++    llhttp_get_error_pos(ptr) { return parsers.get(ptr)?.errorPos || 0; },
++    llhttp_get_status_code(ptr) { return parsers.get(ptr)?.status || 0; },
++    llhttp_get_http_major(ptr) { return parsers.get(ptr)?.major || 0; },
++    llhttp_get_http_minor(ptr) { return parsers.get(ptr)?.minor || 0; },
++    llhttp_get_upgrade(ptr) { return +(parsers.get(ptr)?.upgrade || false); },
++    llhttp_get_errno(ptr) { return parsers.get(ptr)?.errno || 0; },
++    llhttp_should_keep_alive(ptr) { return +(parsers.get(ptr)?.keepAlive || false); },
++    llhttp_get_error_reason(ptr) {
++      const p = parsers.get(ptr); if (!p) return 0;
++      const bytes = new Uint8Array(memory.buffer, p.reason, 256), text = p.error.slice(0, 255);
++      bytes.fill(0); for (let i = 0; i < text.length; i++) bytes[i] = text.charCodeAt(i); return p.reason;
++    }};
+ }
+-
+-function findByte(data, byte, from, to) {
+-  for (let j = from; j < to; j++) {
+-    if (data[j] === byte) return j;
++class Instance {
++  constructor(module, imports) {
++    if (!(module instanceof Module)) throw new TypeError("Expected llhttp Module");
++    const env = imports?.env;
++    if (!env || !CALLBACKS.every(name => typeof env[name] === "function")) throw new LinkError("Missing llhttp callbacks");
++    this.exports = createExports(env);
+   }
+-  return -1;
+ }
+-
+-function decodeAscii(data, from, to) {
+-  let s = "";
+-  for (let j = from; j < to; j++) s += String.fromCharCode(data[j]);
+-  return s;
++async function compile(bytes) { return new Module(bytes); }
++async function instantiate(source, imports) {
++  if (source instanceof Module) return new Instance(source, imports);
++  const module = new Module(source); return {module, instance: new Instance(module, imports)};
+ }
+-
+-// Build the fake WebAssembly module exports
+-const wasmExports = {
+-  memory,
+-  llhttp_alloc(type) { return createParser(type); },
+-  llhttp_free(ptr) { parsers.delete(ptr); },
+-  llhttp_execute,
+-  llhttp_resume(ptr) {
+-    const p = parsers.get(ptr);
+-    if (p) p.paused = false;
+-  },
+-  llhttp_get_error_pos(ptr) {
+-    const p = parsers.get(ptr);
+-    return p ? p.errorPos : 0;
+-  },
+-  llhttp_get_error_reason(ptr) {
+-    const p = parsers.get(ptr);
+-    if (!p) return 0;
+-    if (!p.errorReasonPtr) p.errorReasonPtr = writeStr("OK");
+-    return p.errorReasonPtr;
+-  },
+-  malloc(size) { return walloc(size); },
+-  free(ptr) { /* bump allocator, no-op */ }
++globalThis.WebAssembly = {Module, Instance, Memory, CompileError, LinkError, RuntimeError,
++  compile, instantiate, validate(bytes) { try { inspect(bytes); return true; } catch { return false; } },
++  async compileStreaming(source) { const response = await source; return compile(await response.arrayBuffer()); },
++  async instantiateStreaming(source, imports) { const response = await source; return instantiate(await response.arrayBuffer(), imports); }
+ };
+-
+-// Create a fake compiled WebAssembly module token
+-const fakeModule = Symbol("llhttp-js-module");
+-
+-globalThis.WebAssembly = {
+-  async compile(bytes) { return fakeModule; },
+-  async instantiate(mod, importObj) {
+-    if (importObj && importObj.env) {
+-      envCallbacks = importObj.env;
+-    }
+-    const instance = { exports: wasmExports };
+-    // Spec compatibility:
+-    // - instantiate(bufferSource, imports) resolves to { module, instance }
+-    // - instantiate(module, imports) resolves to instance
+-    // Some bundled CLIs use the first form and expect `.instance.exports`,
+-    // while undici/llhttp-style callers use compile()+instantiate() and expect
+-    // `.exports` directly. Preserve both paths for the fake module token.
+-    if (mod === fakeModule)
+-      return instance;
+-    return { module: fakeModule, instance };
+-  },
+-  Module: function() {},
+-  Instance: function() {},
+-  Memory: function(desc) {
+-    return memory;
+-  },
+-  Table: function() {},
+-  validate(bytes) { return true; },
+-  compileStreaming() { return Promise.resolve(fakeModule); },
+-  instantiateStreaming(source, importObj) {
+-    return Promise.resolve({ module: fakeModule, instance: { exports: wasmExports } });
+-  }
+-};
+-
+-} // end if WebAssembly undefined
++}
+diff --git a/asbestos/asbestos.c b/asbestos/asbestos.c
+index 67ac026..375d567 100644
+--- a/asbestos/asbestos.c
++++ b/asbestos/asbestos.c
+@@ -1180,6 +1180,16 @@ static inline unsigned asbestos_invalidate_gen_load(struct asbestos *asbestos) {
+     return atomic_load_explicit(&asbestos->invalidate_gen, memory_order_acquire);
+ }
+ 
++// Register snapshots must never overwrite the live atomic wakeup byte.
++// poked_ptr always points to the owning task's byte, including in fiber frames.
++static void cpu_copy_registers(struct cpu_state *dest, const struct cpu_state *src) {
++    size_t poke = offsetof(struct cpu_state, _poked);
++    memcpy(dest, src, poke);
++    memcpy((char *)dest + poke + sizeof(dest->_poked),
++           (const char *)src + poke + sizeof(src->_poked),
++           sizeof(*dest) - poke - sizeof(dest->_poked));
++}
++
+ static int cpu_step_to_interrupt(struct cpu_state *cpu, struct tlb *tlb) {
+     struct asbestos *asbestos = cpu->mmu->asbestos;
+ 
+@@ -1206,7 +1216,7 @@ static int cpu_step_to_interrupt(struct cpu_state *cpu, struct tlb *tlb) {
+         memset(frame->ret_cache, 0, sizeof(frame->ret_cache));
+     }
+     frame->last_block = NULL;
+-    frame->cpu = *cpu;
++    cpu_copy_registers(&frame->cpu, cpu);
+     assert(asbestos->mmu == cpu->mmu);
+ 
+     int interrupt = INT_NONE;
+@@ -1366,7 +1376,7 @@ static int cpu_step_to_interrupt(struct cpu_state *cpu, struct tlb *tlb) {
+         if (interrupt == INT_NONE && (++frame->cpu.cycle & ((1 << 10) - 1)) == 0)
+             interrupt = INT_TIMER;
+     }
+-    *cpu = frame->cpu;
++    cpu_copy_registers(cpu, &frame->cpu);
+ 
+     // Release jetsam_lock read. Jetsam cleanup can now proceed.
+     read_wrunlock(&asbestos->jetsam_lock);
+@@ -1382,9 +1392,10 @@ static int cpu_single_step(struct cpu_state *cpu, struct tlb *tlb) {
+     gen_end(&state);
+ 
+     struct fiber_block *block = state.block;
+-    struct fiber_frame frame = {.cpu = *cpu};
++    struct fiber_frame frame = {};
++    cpu_copy_registers(&frame.cpu, cpu);
+     int interrupt = fiber_enter(block, &frame, tlb);
+-    *cpu = frame.cpu;
++    cpu_copy_registers(cpu, &frame.cpu);
+     fiber_block_free(NULL, block);
+     if (interrupt == INT_NONE)
+         interrupt = INT_DEBUG;
+diff --git a/asbestos/guest-arm64/gadgets-aarch64/control.S b/asbestos/guest-arm64/gadgets-aarch64/control.S
+index d5a70af..66ca8ba 100644
+--- a/asbestos/guest-arm64/gadgets-aarch64/control.S
++++ b/asbestos/guest-arm64/gadgets-aarch64/control.S
+@@ -15,6 +15,7 @@
+ // External symbols from entry.S
+ .extern fiber_ret_chain
+ .extern fiber_ret
++.extern fiber_timer_ret
+ .extern fiber_exit
+ 
+ .text
+@@ -45,7 +46,7 @@
+     add w8, w8, #1
+     str w8, [_cpu, #CPU_cycle]
+     tst w8, #0x3ff
+-    b.eq 7778f
++    b.eq 7779f
+     // Check poke flag
+     ldr x8, [_cpu, #CPU_poked_ptr]
+     ldrb w8, [x8]
+@@ -54,9 +55,12 @@
+     str x8, [_cpu, #LOCAL_last_block]
+     mov _pc, \reg
+     gret
+-7778:   // poke or timer — exit to main loop
++7778:   // poke — C dispatch atomically consumes the owning CPU's flag
+     mov _pc, \reg
+     b fiber_ret
++7779:   // Preserve the timer boundary; C must not increment past it.
++    mov _pc, \reg
++    b fiber_timer_ret
+ #endif
+ .endm
+ 
+@@ -196,11 +200,9 @@
+     ldr _pc, [x14, #16]          // x14[2] = return_cont (block->code or fake_ip)
+     // Check if return_cont is chained (bit 63 clear = valid block->code)
+     tbnz _pc, #63, ret_unchained
+-    // Chained cache hit — continue immediately (no poke check, matches x86)
+-    // Poke will be caught at the next branch via inline_chain
+-    sub x8, _pc, #FIBER_BLOCK_code
+-    str x8, [_cpu, #LOCAL_last_block]
+-    gret
++    // A return-only loop must remain interruptible too. Share the generic
++    // chain's poke/timer checks and last_block bookkeeping.
++    b fiber_ret_chain
+ ret_unchained:
+     // Return continuation not yet chained — set last_block to BL's block
+     // so main loop can patch the return_cont on next dispatch
+diff --git a/asbestos/guest-arm64/gadgets-aarch64/entry.S b/asbestos/guest-arm64/gadgets-aarch64/entry.S
+index e2fda9f..1e4019e 100644
+--- a/asbestos/guest-arm64/gadgets-aarch64/entry.S
++++ b/asbestos/guest-arm64/gadgets-aarch64/entry.S
+@@ -82,6 +82,12 @@ fiber_ret_chain:
+ #else
+     // Check bit 63: if set, it's a fake_ip (unchained) → return to main loop
+     tbnz _pc, #63, fiber_ret
++    // Generic chains need the same bounded preemption as inline chains.
++    ldr w8, [_cpu, #CPU_cycle]
++    add w8, w8, #1
++    str w8, [_cpu, #CPU_cycle]
++    tst w8, #0x3ff
++    b.eq chain_timer
+     // Check if we've been poked (timer interrupt pending)
+     ldr x8, [_cpu, #CPU_poked_ptr]
+     ldrb w8, [x8]
+@@ -134,6 +140,16 @@ chain_null_gadget:
+     mov w0, #INT_GPF
+     b fiber_exit
+ 
++chain_timer:
++    ldr x8, [_pc, #(-FIBER_BLOCK_code + FIBER_BLOCK_addr)]
++    str x8, [_cpu, #CPU_pc]
++    b fiber_timer_ret
++
++.global fiber_timer_ret
++fiber_timer_ret:
++    mov w0, #INT_TIMER
++    b fiber_exit
++
+ poke:
+     // Timer interrupt pending — load guest PC from block->addr and return
+     ldr x8, [_pc, #(-FIBER_BLOCK_code + FIBER_BLOCK_addr)]
+diff --git a/asbestos/guest-arm64/gadgets-aarch64/math.S b/asbestos/guest-arm64/gadgets-aarch64/math.S
+index 9df0e73..c567187 100644
+--- a/asbestos/guest-arm64/gadgets-aarch64/math.S
++++ b/asbestos/guest-arm64/gadgets-aarch64/math.S
+@@ -11947,49 +11947,6 @@ make_rounding_sra ursra, "urshl v3.8b, v0.8b, v1.8b", "urshl v3.16b, v0.16b, v1.
+     str xzr, [x15, #8]
+     gret
+ 
+-/*
+- * FCVTZU - Floating-point to unsigned integer (round toward zero)
+- */
+-.gadget fcvtzu_scalar
+-    ldr x8, [_pc]
+-    add _pc, _pc, #8
+-
+-    and x9, x8, #0x1f       // rd (gpr)
+-    ubfx x10, x8, #8, #5    // rn (fp reg)
+-    ubfx x11, x8, #16, #2   // type
+-    ubfx x12, x8, #18, #1   // sf
+-
+-    // Load FP value
+-    add x13, _cpu, #CPU_fp
+-    lsl x14, x10, #4
+-    add x13, x13, x14
+-
+-    cbz x11, .Lfcvtzu_single
+-    // type=1: double
+-    ldr d0, [x13]
+-    b .Lfcvtzu_convert
+-
+-.Lfcvtzu_single:
+-    ldr s0, [x13]
+-    fcvt d0, s0             // convert to double for uniform handling
+-
+-.Lfcvtzu_convert:
+-    fcvtzu x14, d0          // convert to unsigned 64-bit
+-
+-    cbz x12, .Lfcvtzu_32bit
+-    b .Lfcvtzu_store
+-
+-.Lfcvtzu_32bit:
+-    and x14, x14, #0xffffffff
+-
+-.Lfcvtzu_store:
+-    cmp x9, #31
+-    b.eq .Lfcvtzu_done      // XZR - discard
+-    add x15, _cpu, #CPU_x0
+-    str x14, [x15, x9, lsl #3]
+-.Lfcvtzu_done:
+-    gret
+-
+ // Macro for FCVT (FP->int) with different rounding modes
+ // \name: gadget name suffix, \cvt_x_d: 64-bit convert insn, \cvt_w_d: 32-bit convert insn
+ .macro make_fcvt_to_int name, cvt_x_d, cvt_w_d, cvt_x_s, cvt_w_s
+@@ -12043,48 +12000,10 @@ make_fcvt_to_int fcvtmu, fcvtmu, fcvtmu, fcvtmu, fcvtmu
+ make_fcvt_to_int fcvtas, fcvtas, fcvtas, fcvtas, fcvtas
+ make_fcvt_to_int fcvtau, fcvtau, fcvtau, fcvtau, fcvtau
+ 
+-/*
+- * FCVTZS - Floating-point to signed integer (round toward zero)
+- * (kept for backward compatibility — same as make_fcvt_to_int but uses fcvtzs)
+- */
+-.gadget fcvtzs_scalar
+-    ldr x8, [_pc]
+-    add _pc, _pc, #8
+-
+-    and x9, x8, #0x1f       // rd (gpr)
+-    ubfx x10, x8, #8, #5    // rn (fp reg)
+-    ubfx x11, x8, #16, #2   // type
+-    ubfx x12, x8, #18, #1   // sf
+-
+-    add x13, _cpu, #CPU_fp
+-    lsl x14, x10, #4
+-    add x13, x13, x14
+-
+-    cbz x11, .Lfcvtzs_single
+-    ldr d0, [x13]
+-    b .Lfcvtzs_convert
+-
+-.Lfcvtzs_single:
+-    ldr s0, [x13]
+-    fcvt d0, s0
+-
+-.Lfcvtzs_convert:
+-    fcvtzs x14, d0
+-
+-    cbz x12, .Lfcvtzs_32bit
+-    b .Lfcvtzs_store
+-
+-.Lfcvtzs_32bit:
+-    // Truncate to 32-bit signed
+-    sxtw x14, w14
+-
+-.Lfcvtzs_store:
+-    cmp x9, #31
+-    b.eq .Lfcvtzs_done
+-    add x15, _cpu, #CPU_x0
+-    str x14, [x15, x9, lsl #3]
+-.Lfcvtzs_done:
+-    gret
++// Use the architectural destination width for saturation and W-register
++// zero extension, just like the other FP-to-integer rounding modes.
++make_fcvt_to_int fcvtzs, fcvtzs, fcvtzs, fcvtzs, fcvtzs
++make_fcvt_to_int fcvtzu, fcvtzu, fcvtzu, fcvtzu, fcvtzu
+ 
+ /*
+  * FCVTZS (GPR, fixed-point) - FP to signed int with scale factor (result in GPR)
+@@ -12130,7 +12049,8 @@ make_fcvt_to_int fcvtau, fcvtau, fcvtau, fcvtau, fcvtau
+     b .Lfcvtzs_fg_store
+ .Lfcvtzs_fg_32bit:
+     fcvtzs w14, d0
+-    sxtw x14, w14
++    // A W-register write zeroes the upper 32 bits of Xd.
++    mov w14, w14
+ 
+ .Lfcvtzs_fg_store:
+     cmp x9, #31
+diff --git a/asbestos/guest-arm64/gen.c b/asbestos/guest-arm64/gen.c
+index c41caf0..d54d837 100644
+--- a/asbestos/guest-arm64/gen.c
++++ b/asbestos/guest-arm64/gen.c
+@@ -749,25 +749,18 @@ extern void gadget_st1_single_s(void);     // ST1 {Vt.S}[lane], [Xn]
+ extern void gadget_st1_single_d(void);     // ST1 {Vt.D}[lane], [Xn]
+ extern void gadget_addr_add_imm(void);    // _addr += imm (for multi-element single structure)
+ 
+-// Decode ARM64 FP immediate encoding to IEEE bits.
+-// Encoding uses imm8 with bit6 inverted in the instruction encoding.
+-// Value is: (-1)^sign * (16+frac) * 2^(exp-7)
++// VFPExpandImm: expand the raw instruction imm8 directly to IEEE bits.
++// exponent = NOT(b):Replicate(b, E-3):imm8[5:4], fraction = imm8[3:0]:zeros.
+ static uint64_t arm64_fpimm_to_bits(bool is_double, uint8_t imm8) {
+-    int sign = (imm8 >> 7) & 1;
+-    int exp = (imm8 >> 4) & 0x7;
+-    int frac = imm8 & 0xf;
+-    double value = (double)(16 + frac) / (double)(1 << (7 - exp));
+-    if (sign)
+-        value = -value;
+-    if (is_double) {
+-        union { double d; uint64_t u; } conv;
+-        conv.d = value;
+-        return conv.u;
+-    } else {
+-        union { float f; uint32_t u; } conv;
+-        conv.f = (float)value;
+-        return (uint64_t)conv.u;
+-    }
++    unsigned fraction_bits = is_double ? 52 : 23;
++    unsigned exponent_bits = is_double ? 11 : 8;
++    uint64_t b = (imm8 >> 6) & 1;
++    uint64_t exponent = ((b ^ 1) << (exponent_bits - 1))
++        | ((b ? ((1ULL << (exponent_bits - 3)) - 1) : 0) << 2)
++        | ((imm8 >> 4) & 3);
++    return ((uint64_t)(imm8 >> 7) << (fraction_bits + exponent_bits))
++        | (exponent << fraction_bits)
++        | ((uint64_t)(imm8 & 0xf) << (fraction_bits - 4));
+ }
+ 
+ // Interleaved SIMD load/store gadgets (LD2/LD3/LD4, ST2/ST3/ST4)
+@@ -4583,24 +4576,6 @@ static int gen_dp_reg(struct gen_state *state, uint32_t insn) {
+  * - STP Qn, Qm, [Xbase, #imm]
+  */
+ static int gen_simd_fp(struct gen_state *state, uint32_t insn) {
+-    // FMOV (immediate) - scalar floating-point immediate
+-    // Pattern: 0b00011110 0/1 1 0 imm8 10000 Rd
+-    // Mask 0xffa07fe0 ignores imm8 (bits 20-13), Rd (bits 4-0), and type (bit 22)
+-    if ((insn & 0xffa07fe0) == 0x1e201000) {
+-        uint32_t rd = insn & 0x1f;
+-        bool is_double = (insn & 0x00400000) != 0;  // type bit: 1=double, 0=single
+-        uint8_t imm8_raw = (insn >> 13) & 0xff;
+-        uint8_t imm8 = imm8_raw ^ 0x40;  // Invert bit6 per ARM FP immediate encoding
+-        uint64_t bits = arm64_fpimm_to_bits(is_double, imm8);
+-        uint64_t lo = is_double ? bits : (uint64_t)(uint32_t)bits;
+-
+-        gen(state, (unsigned long) gadget_set_vec_imm);
+-        gen(state, rd);
+-        gen(state, lo);
+-        gen(state, 0);
+-        return 1;
+-    }
+-
+     // FMOV (register) - scalar FP register copy
+     // Matches: 0b00011110 type 1 00 0 0 0 0 0 Rn Rd (FMOV scalar)
+     // Mask 0xffbffc00 ignores Rn/Rd and type
+@@ -5439,13 +5414,7 @@ static int gen_simd_fp(struct gen_state *state, uint32_t insn) {
+             // VFPExpandImm expands imm8 to a FP constant at compile time.
+             if (op == 0) {
+                 // FMOV single-precision: Vd.2S (Q=0) or Vd.4S (Q=1)
+-                // VFPExpandImm for single: aBBBBBbcdefgh0..0 (32-bit)
+-                uint32_t a = (imm8 >> 7) & 1;
+-                uint32_t b = (imm8 >> 6) & 1;
+-                uint32_t cdefgh = imm8 & 0x3f;
+-                uint32_t exp = ((1 - b) << 7) | ((b * 0x1f) << 2) | ((cdefgh >> 4) & 3);
+-                uint32_t frac = (cdefgh & 0xf) << 19;
+-                uint32_t fp32 = (a << 31) | (exp << 23) | frac;
++                uint32_t fp32 = (uint32_t)arm64_fpimm_to_bits(false, imm8);
+                 uint64_t elem64 = ((uint64_t)fp32 << 32) | fp32;
+                 gen(state, (unsigned long) gadget_set_vec_imm);
+                 gen(state, rd);
+@@ -5458,13 +5427,7 @@ static int gen_simd_fp(struct gen_state *state, uint32_t insn) {
+                     gen_interrupt(state, INT_UNDEFINED);
+                     return 0;
+                 }
+-                // VFPExpandImm for double: aBBBBBBBBbcdefgh0..0 (64-bit)
+-                uint64_t a = (imm8 >> 7) & 1;
+-                uint64_t b = (imm8 >> 6) & 1;
+-                uint64_t cdefgh = imm8 & 0x3f;
+-                uint64_t exp = ((1 - b) << 10) | ((b * 0xff) << 2) | ((cdefgh >> 4) & 3);
+-                uint64_t frac = (cdefgh & 0xfULL) << 48;
+-                uint64_t fp64 = (a << 63) | (exp << 52) | frac;
++                uint64_t fp64 = arm64_fpimm_to_bits(true, imm8);
+                 gen(state, (unsigned long) gadget_set_vec_imm);
+                 gen(state, rd);
+                 gen(state, fp64);
+diff --git a/fs/poll.c b/fs/poll.c
+index 8da9a6a..c1fd710 100644
+--- a/fs/poll.c
++++ b/fs/poll.c
+@@ -48,15 +48,20 @@ static inline void safe_close(int fd) {
+         close(fd);
+ }
+ 
+-// lock order: fd, then poll
++// Serialize destruction of weak registrations against final fd cleanup.
++// Lock order: cleanup_lock (when needed), fd->poll_lock, then poll->lock.
++static lock_t cleanup_lock = LOCK_INITIALIZER;
+ 
+ struct poll *poll_create() {
+     struct poll *poll = malloc(sizeof(struct poll));
+     if (poll == NULL)
+         return ERR_PTR(_ENOMEM);
+     int err = real_poll_init(&poll->real);
+-    if (err < 0)
+-        return ERR_PTR(errno_map());
++    if (err < 0) {
++        int error = errno_map();
++        free(poll);
++        return ERR_PTR(error);
++    }
+     poll->waiters = 0;
+     poll->notify_pipe[0] = -1;
+     poll->notify_pipe[1] = -1;
+@@ -66,66 +71,88 @@ struct poll *poll_create() {
+     return poll;
+ }
+ 
+-static inline bool poll_fd_is_real(struct poll_fd *pollfd) {
+-    return pollfd->fd->ops->poll == realfs_poll;
+-}
+-
+-// does not do its own locking
+-static struct poll_fd *poll_find_fd(struct poll *poll, struct fd *fd) {
+-    struct poll_fd *poll_fd, *tmp;
+-    list_for_each_entry_safe(&poll->poll_fds, poll_fd, tmp, fds) {
+-        if (poll_fd->fd == fd)
+-            return poll_fd;
++// Does not do its own locking. A negative key preserves generic poll lookup.
++static struct poll_fd *poll_find_fd(struct poll *poll, struct fd *fd, int key) {
++    struct poll_fd *entry;
++    list_for_each_entry(&poll->poll_fds, entry, fds) {
++        if (entry->fd == fd && (key < 0 || entry->key == key))
++            return entry;
+     }
+     return NULL;
+ }
+ 
+-// See comment on pollfd_freelist for context
+-static void poll_fd_free(struct poll_fd *poll_fd) {
+-    struct poll *poll = poll_fd->poll;
+-    memset(poll_fd, 0xba, sizeof(*poll_fd));
+-    poll_fd->poll = NULL; // used to mark it as free
+-    list_add(&poll->pollfd_freelist, &poll_fd->fds);
++// Called under poll->lock. Host waiters may still hold this address.
++static void poll_fd_free(struct poll_fd *entry) {
++    struct poll *poll = entry->poll;
++    entry->poll = NULL;
++    entry->fd = NULL;
++    list_add(&poll->pollfd_freelist, &entry->fds);
++}
++
++static void poll_notify(struct poll *poll) {
++    if (poll->notify_pipe[1] != -1)
++        write(poll->notify_pipe[1], "", 1);
++}
++
++static void poll_host_close(struct poll_fd *entry) {
++    if (entry->host_fd >= 0) {
++        real_poll_update(&entry->poll->real, entry->host_fd, 0, NULL);
++        safe_close(entry->host_fd);
++        entry->host_fd = -1;
++    }
+ }
+ 
+ bool poll_has_fd(struct poll *poll, struct fd *fd) {
+-    return poll_find_fd(poll, fd) != NULL;
++    lock(&poll->lock);
++    bool found = poll_find_fd(poll, fd, -1) != NULL;
++    unlock(&poll->lock);
++    return found;
+ }
+ 
+-int poll_add_fd(struct poll *poll, struct fd *fd, int types, union poll_fd_info info) {
++int poll_add_fd_key(struct poll *poll, struct fd *fd, int key, int types, union poll_fd_info info) {
+     int err;
+     lock(&fd->poll_lock);
+     lock(&poll->lock);
+-
+-    struct poll_fd *poll_fd;
+-    if (!list_empty(&poll->pollfd_freelist)) {
+-        poll_fd = list_first_entry(&poll->pollfd_freelist, struct poll_fd, fds);
+-        list_remove(&poll_fd->fds);
++    // Check and insert atomically. Distinct dup aliases are distinct keys.
++    if (key >= 0 && poll_find_fd(poll, fd, key) != NULL) {
++        err = _EEXIST;
++        goto out;
++    }
++    struct poll_fd *entry;
++    if (poll->waiters == 0 && !list_empty(&poll->pollfd_freelist)) {
++        entry = list_first_entry(&poll->pollfd_freelist, struct poll_fd, fds);
++        list_remove(&entry->fds);
+     } else {
+-        poll_fd = malloc(sizeof(struct poll_fd));
+-        if (poll_fd == NULL) {
++        entry = malloc(sizeof(*entry));
++        if (entry == NULL) {
+             err = _ENOMEM;
+             goto out;
+         }
+     }
+-    poll_fd->fd = fd;
+-    poll_fd->poll = poll;
+-    poll_fd->types = types;
+-    poll_fd->info = info;
+-    poll_fd->triggered_types = 0;
+-
+-    if (poll_fd_is_real(poll_fd)) {
+-        err = real_poll_update(&poll->real, fd->real_fd, types, poll_fd);
+-        if (err < 0) {
+-            free(poll_fd);
++    *entry = (struct poll_fd) {
++        .fd = fd, .poll = poll, .key = key, .host_fd = -1,
++        .types = types, .info = info,
++    };
++    if (fd->ops->poll == realfs_poll) {
++        // kqueue keys by host fd. A private dup prevents aliases from
++        // overwriting each other's mask/udata. This is not a guest fd retain:
++        // final guest OFD close still removes every weak registration.
++        entry->host_fd = fcntl(fd->real_fd, F_DUPFD_CLOEXEC, 3);
++        if (entry->host_fd < 0) {
++            err = errno_map();
++            poll_fd_free(entry);
++            goto out;
++        }
++        if (real_poll_update(&poll->real, entry->host_fd, types | POLL_HUP, entry) < 0) {
+             err = errno_map();
++            poll_host_close(entry);
++            poll_fd_free(entry);
+             goto out;
+         }
+     }
+-
+-    list_add(&fd->poll_fds, &poll_fd->polls);
+-    list_add(&poll->poll_fds, &poll_fd->fds);
+-
++    list_add(&fd->poll_fds, &entry->polls);
++    list_add(&poll->poll_fds, &entry->fds);
++    poll_notify(poll);
+     err = 0;
+ out:
+     unlock(&poll->lock);
+@@ -133,77 +160,79 @@ out:
+     return err;
+ }
+ 
+-int poll_del_fd(struct poll *poll, struct fd *fd) {
+-    int err;
++int poll_add_fd(struct poll *poll, struct fd *fd, int types, union poll_fd_info info) {
++    return poll_add_fd_key(poll, fd, -1, types, info);
++}
++
++int poll_del_fd_key(struct poll *poll, struct fd *fd, int key) {
++    int err = 0;
+     lock(&fd->poll_lock);
+     lock(&poll->lock);
+-    struct poll_fd *poll_fd = poll_find_fd(poll, fd);
+-    if (poll_fd == NULL) {
++    struct poll_fd *entry = poll_find_fd(poll, fd, key);
++    if (entry == NULL) {
+         err = _ENOENT;
+         goto out;
+     }
+-
+-    if (poll_fd_is_real(poll_fd)) {
+-        err = real_poll_update(&poll->real, fd->real_fd, 0, poll_fd);
+-        if (err < 0) {
+-            err = errno_map();
+-            goto out;
+-        }
+-    }
+-
+-    list_remove(&poll_fd->polls);
+-    list_remove(&poll_fd->fds);
+-    poll_fd_free(poll_fd);
+-
+-    err = 0;
++    poll_host_close(entry);
++    list_remove(&entry->polls);
++    list_remove(&entry->fds);
++    poll_fd_free(entry);
++    poll_notify(poll);
+ out:
+     unlock(&poll->lock);
+     unlock(&fd->poll_lock);
+     return err;
+ }
+ 
+-int poll_mod_fd(struct poll *poll, struct fd *fd, int types, union poll_fd_info info) {
+-    int err;
++int poll_del_fd(struct poll *poll, struct fd *fd) {
++    return poll_del_fd_key(poll, fd, -1);
++}
++
++int poll_mod_fd_key(struct poll *poll, struct fd *fd, int key, int types, union poll_fd_info info) {
++    int err = 0;
+     lock(&fd->poll_lock);
+     lock(&poll->lock);
+-    struct poll_fd *poll_fd = poll_find_fd(poll, fd);
+-    if (poll_fd == NULL) {
++    struct poll_fd *entry = poll_find_fd(poll, fd, key);
++    if (entry == NULL) {
+         err = _ENOENT;
+         goto out;
+     }
+-
+-    if (poll_fd_is_real(poll_fd)) {
+-        err = real_poll_update(&poll->real, fd->real_fd, types, poll_fd);
+-        if (err < 0) {
+-            err = errno_map();
+-            goto out;
+-        }
++    if (entry->host_fd >= 0 &&
++            real_poll_update(&poll->real, entry->host_fd, types | POLL_HUP, entry) < 0) {
++        err = errno_map();
++        goto out;
+     }
+-
+-    poll_fd->types = types;
+-    poll_fd->info = info;
+-    poll_fd->triggered_types &= types;
+-
+-    err = 0;
++    entry->types = types;
++    entry->info = info;
++    entry->triggered_types = 0;
++    entry->disabled = false;
++    poll_notify(poll);
+ out:
+     unlock(&poll->lock);
+     unlock(&fd->poll_lock);
+     return err;
+ }
+ 
++int poll_mod_fd(struct poll *poll, struct fd *fd, int types, union poll_fd_info info) {
++    return poll_mod_fd_key(poll, fd, -1, types, info);
++}
++
+ void poll_cleanup_fd(struct fd *fd) {
++    lock(&cleanup_lock);
+     lock(&fd->poll_lock);
+-    struct poll_fd *poll_fd, *tmp;
+-    list_for_each_entry_safe(&fd->poll_fds, poll_fd, tmp, polls) {
+-        lock(&poll_fd->poll->lock);
+-        if (poll_fd_is_real(poll_fd))
+-            real_poll_update(&poll_fd->poll->real, fd->real_fd, 0, poll_fd);
+-        list_remove(&poll_fd->polls);
+-        list_remove(&poll_fd->fds);
+-        unlock(&poll_fd->poll->lock);
+-        poll_fd_free(poll_fd);
++    struct poll_fd *entry, *tmp;
++    list_for_each_entry_safe(&fd->poll_fds, entry, tmp, polls) {
++        struct poll *poll = entry->poll;
++        lock(&poll->lock);
++        poll_host_close(entry);
++        list_remove(&entry->polls);
++        list_remove(&entry->fds);
++        poll_fd_free(entry);
++        poll_notify(poll);
++        unlock(&poll->lock);
+     }
+     unlock(&fd->poll_lock);
++    unlock(&cleanup_lock);
+ }
+ 
+ void poll_wakeup(struct fd *fd, int events) {
+@@ -217,7 +246,6 @@ void poll_wakeup(struct fd *fd, int events) {
+         if (poll->notify_pipe[1] != -1)
+             write(poll->notify_pipe[1], "", 1);
+         unlock(&poll->lock);
+-        // oneshot?
+     }
+     unlock(&fd->poll_lock);
+ }
+@@ -229,6 +257,7 @@ int poll_wait(struct poll *poll_, poll_callback_t callback, void *context, struc
+     if (poll_->waiters++ == 0) {
+         assert(poll_->notify_pipe[0] == -1 && poll_->notify_pipe[1] == -1);
+         if (pipe(poll_->notify_pipe) < 0) {
++            poll_->waiters--;
+             unlock(&poll_->lock);
+             return errno_map();
+         }
+@@ -243,6 +272,8 @@ int poll_wait(struct poll *poll_, poll_callback_t callback, void *context, struc
+         // check if any fds are ready
+         struct poll_fd *poll_fd, *tmp;
+         list_for_each_entry_safe(&poll_->poll_fds, poll_fd, tmp, fds) {
++            if (poll_fd->disabled)
++                continue;
+             struct fd *fd = poll_fd->fd;
+             int poll_types = 0;
+             if (fd->ops->poll)
+@@ -251,27 +282,16 @@ int poll_wait(struct poll *poll_, poll_callback_t callback, void *context, struc
+             if (poll_fd->types & POLL_EDGETRIGGERED) {
+                 poll_types &= ~poll_fd->triggered_types;
+             }
+-            if (poll_types) {
+-                if (callback(context, poll_types, poll_fd->info) == 1)
+-                    res++;
+-
+-                // The real poll does not actually get the FDs set as oneshot.
+-                // But this loop is done while holding the lock, so only one
+-                // thread can get each oneshot event. This doesn't solve the
+-                // thundering herd problem at all, but at least the semantics
+-                // are right. I'll just leave that as a TODO.
++            if (poll_types && callback(context, poll_types, poll_fd->info) == 1) {
++                res++;
++                // ONESHOT disables delivery, retaining the key for MOD rearm.
+                 if (poll_fd->types & POLL_ONESHOT) {
+-                    list_remove(&poll_fd->polls);
+-                    list_remove(&poll_fd->fds);
+-                    if (poll_fd_is_real(poll_fd)) {
+-                        real_poll_update(&poll_->real, fd->real_fd, 0, NULL);
+-                    }
+-                    free(poll_fd);
++                    poll_fd->disabled = true;
++                    if (poll_fd->host_fd >= 0)
++                        real_poll_update(&poll_->real, poll_fd->host_fd, 0, NULL);
+                 }
+-
+-                if (poll_fd->types & POLL_EDGETRIGGERED) {
++                if (poll_fd->types & POLL_EDGETRIGGERED)
+                     poll_fd->triggered_types |= poll_types;
+-                }
+             }
+         }
+         if (res > 0)
+@@ -280,7 +300,7 @@ int poll_wait(struct poll *poll_, poll_callback_t callback, void *context, struc
+         bool signal_pending = false;
+         if (current->sighand != NULL) {
+             lock(&current->sighand->lock);
+-            signal_pending = !!(current->pending & ~current->blocked);
++            signal_pending = !!(task_pending_signals(current) & ~current->blocked);
+             unlock(&current->sighand->lock);
+         }
+         if (signal_pending) {
+@@ -439,10 +459,12 @@ int poll_wait(struct poll *poll_, poll_callback_t callback, void *context, struc
+ }
+ 
+ void poll_destroy(struct poll *poll) {
++    lock(&cleanup_lock);
+     struct poll_fd *poll_fd;
+     struct poll_fd *tmp;
+     list_for_each_entry_safe(&poll->poll_fds, poll_fd, tmp, fds) {
+         lock(&poll_fd->fd->poll_lock);
++        poll_host_close(poll_fd);
+         list_remove(&poll_fd->polls);
+         list_remove(&poll_fd->fds);
+         unlock(&poll_fd->fd->poll_lock);
+@@ -456,6 +478,7 @@ void poll_destroy(struct poll *poll) {
+ 
+     real_poll_close(&poll->real);
+     free(poll);
++    unlock(&cleanup_lock);
+ }
+ 
+ // Platform-specific real_poll implementations
+diff --git a/fs/poll.h b/fs/poll.h
+index 8ed08fd..3b667d6 100644
+--- a/fs/poll.h
++++ b/fs/poll.h
+@@ -24,7 +24,8 @@ struct poll {
+     // almost went in 3.7 but was backed out after discussion at
+     // https://lkml.org/lkml/2012/10/16/302, and anyway wouldn't have solved
+     // the problem on Darwin. My solution is to just not free poll_fds, and
+-    // instead move them to a freelist where they can be reused.
++    // instead retire them until no waiter can hold a returned host event.
++    // Reuse is allowed only when waiters == 0, avoiding pointer ABA as well.
+     struct list pollfd_freelist;
+ 
+     lock_t lock;
+@@ -35,6 +36,9 @@ struct poll_fd {
+     struct fd *fd;
+     struct list fds;
+     int types;
++    int key; // guest fd number for epoll; -1 for the generic poll APIs
++    int host_fd; // private host dup, or -1 for emulated descriptors
++    bool disabled; // EPOLLONESHOT remains registered until MOD rearms it
+     union poll_fd_info {
+         void *ptr;
+         int fd;
+@@ -75,6 +79,10 @@ bool poll_has_fd(struct poll *poll, struct fd *fd);
+ int poll_add_fd(struct poll *poll, struct fd *fd, int types, union poll_fd_info info);
+ int poll_mod_fd(struct poll *poll, struct fd *fd, int types, union poll_fd_info info);
+ int poll_del_fd(struct poll *poll, struct fd *fd);
++// Epoll keys registrations by (guest fd number, open file description).
++int poll_add_fd_key(struct poll *poll, struct fd *fd, int key, int types, union poll_fd_info info);
++int poll_mod_fd_key(struct poll *poll, struct fd *fd, int key, int types, union poll_fd_info info);
++int poll_del_fd_key(struct poll *poll, struct fd *fd, int key);
+ // Indicates that the specified events have been triggered. Each call will
+ // generate a new edge-triggered notification.
+ // please do not call this while holding any locks you would acquire in your poll operation
+diff --git a/fs/real.c b/fs/real.c
+index 0657b68..7cd85dd 100644
+--- a/fs/real.c
++++ b/fs/real.c
+@@ -156,7 +156,7 @@ static bool realfs_should_surface_eintr(void) {
+         return true;
+     if (current->sighand != NULL) {
+         lock(&current->sighand->lock);
+-        bool pending = !!(current->pending & ~current->blocked);
++        bool pending = !!(task_pending_signals(current) & ~current->blocked);
+         unlock(&current->sighand->lock);
+         if (pending)
+             return true;
+diff --git a/fs/sock.c b/fs/sock.c
+index 772caec..d0b9169 100644
+--- a/fs/sock.c
++++ b/fs/sock.c
+@@ -704,7 +704,7 @@ static int sock_wait_for(int real_fd, short events, int timeout_opt) {
+             return _EINTR;
+         if (current->sighand != NULL) {
+             lock(&current->sighand->lock);
+-            bool pending = !!(current->pending & ~current->blocked);
++            bool pending = !!(task_pending_signals(current) & ~current->blocked);
+             unlock(&current->sighand->lock);
+             if (pending)
+                 return _EINTR;
+@@ -1680,7 +1680,7 @@ static ssize_t sock_read(struct fd *fd, void *buf, size_t size) {
+         // original realfs_read behavior for spurious EINTR).
+         if (current->sighand != NULL) {
+             lock(&current->sighand->lock);
+-            bool pending = !!(current->pending & ~current->blocked);
++            bool pending = !!(task_pending_signals(current) & ~current->blocked);
+             unlock(&current->sighand->lock);
+             if (pending) { err = _EINTR; break; }
+         }
+@@ -1704,7 +1704,7 @@ static ssize_t sock_write(struct fd *fd, const void *buf, size_t size) {
+         eintr_count++;
+         if (current->sighand != NULL) {
+             lock(&current->sighand->lock);
+-            bool pending = !!(current->pending & ~current->blocked);
++            bool pending = !!(task_pending_signals(current) & ~current->blocked);
+             unlock(&current->sighand->lock);
+             if (pending) { err = _EINTR; break; }
+         }
+diff --git a/fs/tty.c b/fs/tty.c
+index b289a74..5daaea1 100644
+--- a/fs/tty.c
++++ b/fs/tty.c
+@@ -229,7 +229,16 @@ static int tty_push_char(struct tty *tty, char ch, bool flag, int blocking) {
+ }
+ 
+ static void tty_echo(struct tty *tty, const char *data, size_t size) {
++#ifdef BIBIMER_EMBEDDED
++    // Echo enters the peer PTY and its poll wakeup. Holding the slave lock
++    // here inverts poll -> master -> slave against slave -> peer -> poll.
++    // Like tty_write, invoke the immutable driver with no TTY lock held.
++    unlock(&tty->lock);
++#endif
+     tty->driver->ops->write(tty, data, size, false);
++#ifdef BIBIMER_EMBEDDED
++    lock(&tty->lock);
++#endif
+ }
+ 
+ static bool tty_send_input_signal(struct tty *tty, char ch, sigset_t_ *queue) {
+@@ -298,14 +307,17 @@ ssize_t tty_input(struct tty *tty, const char *input, size_t size, bool blocking
+                 }
+                 if (!(lflags & ECHO_))
+                     echo = false;
+-                for (int i = 0; i < count; i++) {
++                for (int i = 0; i < count && tty->bufsize > 0; i++) {
++                    // Echo temporarily releases the lock; flushes or another
++                    // reader may have consumed data before the next iteration.
+                     // don't delete past a flag
+                     if (tty->buf_flag[tty->bufsize - 1])
+                         break;
+                     tty->bufsize--;
++                    bool echo_control = SHOULD_ECHOCTL(tty->buf[tty->bufsize]);
+                     if (echo) {
+                         tty_echo(tty, "\b \b", 3);
+-                        if (SHOULD_ECHOCTL(tty->buf[tty->bufsize]))
++                        if (echo_control)
+                             tty_echo(tty, "\b \b", 3);
+                     }
+                 }
+@@ -444,7 +456,8 @@ static ssize_t tty_read(struct fd *fd, void *buf, size_t bufsize) {
+     struct tty *tty = fd->tty;
+     lock(&pids_lock);
+     lock(&tty->lock);
+-    if (tty->hung_up || pty_is_half_closed_master(tty)) {
++    if ((tty->hung_up || pty_is_half_closed_master(tty)) &&
++            !(tty->driver == &pty_master && tty->bufsize > 0)) {
+         unlock(&pids_lock);
+         goto error;
+     }
+diff --git a/kernel/calls.c b/kernel/calls.c
+index 7ed4ec5..7f180bd 100644
+--- a/kernel/calls.c
++++ b/kernel/calls.c
+@@ -754,7 +754,7 @@ static inline bool syscall_should_surface_eintr(void) {
+         return true;
+     if (current->sighand != NULL) {
+         lock(&current->sighand->lock);
+-        bool pending = !!(current->pending & ~current->blocked);
++        bool pending = !!(task_pending_signals(current) & ~current->blocked);
+         unlock(&current->sighand->lock);
+         if (pending)
+             return true;
+diff --git a/kernel/epoll.c b/kernel/epoll.c
+index a85a7ec..4be6d25 100644
+--- a/kernel/epoll.c
++++ b/kernel/epoll.c
+@@ -1,3 +1,4 @@
++#include <limits.h>
+ #include "kernel/calls.h"
+ #include "fs/poll.h"
+ 
+@@ -8,12 +9,14 @@ fd_t sys_epoll_create(int_t flags) {
+     if (flags & ~(O_CLOEXEC_))
+         return _EINVAL;
+ 
+-    struct fd *fd = adhoc_fd_create(&epoll_ops);
+-    if (fd == NULL)
+-        return _ENOMEM;
+     struct poll *poll = poll_create();
+     if (IS_ERR(poll))
+         return PTR_ERR(poll);
++    struct fd *fd = adhoc_fd_create(&epoll_ops);
++    if (fd == NULL) {
++        poll_destroy(poll);
++        return _ENOMEM;
++    }
+     fd->epollfd.poll = poll;
+     return f_install(fd, flags);
+ }
+@@ -39,32 +42,55 @@ __attribute__((packed))
+ #define EPOLLET_ (1 << 31)
+ #define EPOLLONESHOT_ (1 << 30)
+ 
++// Pin while holding the fd table lock: close/reuse may race a ctl or wait.
++static struct fd *epoll_get_fd(fd_t number) {
++    lock(&current->files->lock);
++    struct fd *fd = fdtable_get(current->files, number);
++    if (fd != NULL)
++        fd_retain(fd);
++    unlock(&current->files->lock);
++    return fd;
++}
++
+ int_t sys_epoll_ctl(fd_t epoll_f, int_t op, fd_t f, addr_t event_addr) {
+     STRACE("epoll_ctl(%d, %d, %d, %#x)", epoll_f, op, f, event_addr);
+-    struct fd *epoll = f_get(epoll_f);
++    struct fd *epoll = epoll_get_fd(epoll_f);
+     if (epoll == NULL)
+         return _EBADF;
+-    if (epoll->ops != &epoll_ops)
+-        return _EINVAL;
+-    struct fd *fd = f_get(f);
+-    if (fd == NULL)
+-        return _EBADF;
+-
+-    if (op == EPOLL_CTL_DEL_)
+-        return poll_del_fd(epoll->epollfd.poll, fd);
+-
++    struct fd *fd = epoll_get_fd(f);
++    int result;
++    if (fd == NULL) {
++        result = _EBADF;
++        goto out;
++    }
++    if (epoll->ops != &epoll_ops || epoll == fd ||
++            (op != EPOLL_CTL_ADD_ && op != EPOLL_CTL_MOD_ && op != EPOLL_CTL_DEL_)) {
++        result = _EINVAL;
++        goto out;
++    }
++    if (fd->ops->poll == NULL) {
++        result = _EPERM;
++        goto out;
++    }
++    if (op == EPOLL_CTL_DEL_) {
++        result = poll_del_fd_key(epoll->epollfd.poll, fd, f);
++        goto out;
++    }
+     struct epoll_event_ event;
+-    if (user_get(event_addr, event))
+-        return _EFAULT;
+-    STRACE(" {events: %#x, data: %#x}", event.events, event.data);
+-
+-    if (op == EPOLL_CTL_ADD_) {
+-        if (poll_has_fd(epoll->epollfd.poll, fd))
+-            return _EEXIST;
+-        return poll_add_fd(epoll->epollfd.poll, fd, event.events, (union poll_fd_info) event.data);
+-    } else {
+-        return poll_mod_fd(epoll->epollfd.poll, fd, event.events, (union poll_fd_info) event.data);
++    if (user_get(event_addr, event)) {
++        result = _EFAULT;
++        goto out;
+     }
++    union poll_fd_info info = {.num = event.data};
++    if (op == EPOLL_CTL_ADD_)
++        result = poll_add_fd_key(epoll->epollfd.poll, fd, f, event.events, info);
++    else
++        result = poll_mod_fd_key(epoll->epollfd.poll, fd, f, event.events, info);
++out:
++    if (fd != NULL)
++        fd_close(fd);
++    fd_close(epoll);
++    return result;
+ }
+ 
+ struct epoll_context {
+@@ -83,20 +109,25 @@ static int epoll_callback(void *context, int types, union poll_fd_info info) {
+ 
+ int_t sys_epoll_wait(fd_t epoll_f, addr_t events_addr, int_t max_events, int_t timeout) {
+     STRACE("epoll_wait(%d, %#x, %d, %d)", epoll_f, events_addr, max_events, timeout);
+-    struct fd *epoll = f_get(epoll_f);
++    struct fd *epoll = epoll_get_fd(epoll_f);
+     if (epoll == NULL)
+         return _EBADF;
+-    if (epoll->ops != &epoll_ops)
++    if (epoll->ops != &epoll_ops || max_events <= 0 ||
++            max_events > INT_MAX / (int)sizeof(struct epoll_event_)) {
++        fd_close(epoll);
+         return _EINVAL;
++    }
+ 
+     struct timespec timeout_ts;
+     if (timeout >= 0) {
+         timeout_ts.tv_sec = timeout / 1000;
+         timeout_ts.tv_nsec = (timeout % 1000) * 1000000;
+     }
+-    if (max_events <= 0)
+-        return _EINVAL;
+-    struct epoll_event_ events[max_events];
++    struct epoll_event_ *events = malloc(sizeof(*events) * max_events);
++    if (events == NULL) {
++        fd_close(epoll);
++        return _ENOMEM;
++    }
+ 
+     struct epoll_context context = {.events = events, .n = 0, .max_events = max_events};
+     STRACE("...\n");
+@@ -107,7 +138,7 @@ int_t sys_epoll_wait(fd_t epoll_f, addr_t events_addr, int_t max_events, int_t t
+             STRACE(" {events: %#x, data: %#x}", events[i].events, events[i].data);
+         }
+         if (user_write(events_addr, events, sizeof(struct epoll_event_) * res))
+-            return _EFAULT;
++            res = _EFAULT;
+     } else if (res != _EINTR) {
+         // Host-level errors from kqueue/kevent should not propagate to the guest
+         // as unexpected errnos. libuv asserts that epoll_pwait only fails with
+@@ -116,6 +147,8 @@ int_t sys_epoll_wait(fd_t epoll_f, addr_t events_addr, int_t max_events, int_t t
+         printk("epoll_wait: converting error %d to EINTR (pid=%d)\n", res, current->pid);
+         res = _EINTR;
+     }
++    free(events);
++    fd_close(epoll);
+     return res;
+ }
+ 
+diff --git a/kernel/exec.c b/kernel/exec.c
+index 0294ad3..6dcd92f 100644
+--- a/kernel/exec.c
++++ b/kernel/exec.c
+@@ -669,6 +669,13 @@ int __do_execve(const char *file, struct exec_args argv, struct exec_args envp)
+     if (err < 0)
+         return err;
+ 
++#ifdef BIBIMER_EMBEDDED
++    if (stat.mode & (S_ISUID | S_ISGID)) {
++        lock(&pids_lock);
++        current->parent_death_signal = 0;
++        unlock(&pids_lock);
++    }
++#endif
+     // setuid/setgid
+     if (stat.mode & S_ISUID) {
+         current->suid = current->euid;
+diff --git a/kernel/exit.c b/kernel/exit.c
+index b89db0c..330ae6a 100644
+--- a/kernel/exit.c
++++ b/kernel/exit.c
+@@ -24,6 +24,14 @@ static bool exit_tgroup(struct task *task) {
+     list_remove(&task->group_links);
+     bool group_dead = list_empty(&group->threads);
+     if (group_dead) {
++#ifdef BIBIMER_EMBEDDED
++        struct sigqueue *entry, *next;
++        list_for_each_entry_safe(&group->parent_death_queue, entry, next, queue) {
++            list_remove(&entry->queue);
++            free(entry);
++        }
++        group->parent_death_pending = 0;
++#endif
+         // don't need to lock the group since the only pointers to it come from:
+         // - other threads' current->group, but there are none left thanks to that list_empty call
+         // - locking pids_lock first, which do_exit did
+@@ -137,6 +145,24 @@ noreturn void do_exit(int status) {
+ 
+     // reparent children
+     struct task *new_parent = find_new_parent(current);
++#ifdef BIBIMER_EMBEDDED
++    // Include settings installed by child worker threads, not only the child
++    // leader. Legacy wait/children links model CLONE_THREAD differently, so
++    // use the separately maintained Linux death-parent relation. Update every
++    // reference, even a disabled setting, before this task can be freed.
++    for (int pid = 1; pid < MAX_PID; pid++) {
++        struct task *dependent = pid_get_task_zombie(pid);
++        if (!dependent || dependent->parent_death_parent != current)
++            continue;
++        dependent->parent_death_parent = new_parent;
++        if (dependent->parent_death_signal && !dependent->exiting && !dependent->zombie) {
++            struct siginfo_ info = {.code = SI_USER_};
++            info.kill.pid = current->tgid;
++            info.kill.uid = current->uid;
++            send_parent_death_signal(dependent, dependent->parent_death_signal, info);
++        }
++    }
++#endif
+     struct task *child, *tmp;
+     list_for_each_entry_safe(&current->children, child, tmp, siblings) {
+         child->parent = new_parent;
+@@ -354,6 +380,33 @@ noreturn void do_exit_group(int status) {
+ 
+ // always called from init process
+ static void halt_system(void) {
++#ifdef BIBIMER_EMBEDDED
++    // do_exit owns pids_lock. Let guest threads take it while shutting down;
++    // never send a host SIGTERM to a thread in the containing UIKit process.
++    int live = 0;
++    for (int attempt = 0; attempt < 100; attempt++) {
++        live = 0;
++        for (int i = 2; i < MAX_PID; i++) {
++            struct task *task = pid_get_task(i);
++            if (task != NULL) {
++                live++;
++                deliver_signal(task, attempt < 10 ? SIGTERM_ : SIGKILL_, SIGINFO_NIL);
++            }
++        }
++        if (live == 0)
++            break;
++        unlock(&pids_lock);
++        struct timespec delay = {0, 100000000};
++        nanosleep(&delay, NULL);
++        lock(&pids_lock);
++    }
++    if (live != 0) {
++        // Surviving threads may still use these mounts. Report failure and
++        // retain them until the host app is relaunched, rather than free them.
++        printk("BIBIMER_RUNTIME_SHUTDOWN_INCOMPLETE: %d tasks remain\n", live);
++        return;
++    }
++#else
+     int max_iterations = 10; // Timeout: wait maximum 10 seconds
+     for (int state = 0; state < 3; state++) {
+         int tasks_found = 0;
+@@ -385,6 +438,7 @@ static void halt_system(void) {
+         }
+     }
+ 
++#endif
+     // unmount all filesystems
+     lock(&mounts_lock);
+     struct mount *mount, *tmp;
+@@ -402,7 +456,9 @@ static void halt_system(void) {
+     // (stuck in JIT loops after do_exit_group force cleanup) keep
+     // the host process alive indefinitely. _exit is safe here since
+     // init dying means we're shutting down completely.
++#ifndef BIBIMER_EMBEDDED
+     _exit(0);
++#endif
+ }
+ 
+ dword_t sys_exit(dword_t status) {
+diff --git a/kernel/fork.c b/kernel/fork.c
+index ab545d1..8c5730b 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -48,6 +48,10 @@ static struct tgroup *tgroup_copy(struct tgroup *old_group) {
+     struct tgroup *group = malloc(sizeof(struct tgroup));
+     *group = *old_group;
+     list_init(&group->threads);
++#ifdef BIBIMER_EMBEDDED
++    group->parent_death_pending = 0;
++    list_init(&group->parent_death_queue);
++#endif
+     list_add(&old_group->pgroup, &group->pgroup);
+     list_add(&old_group->session, &group->session);
+     if (group->tty) {
+@@ -127,6 +131,11 @@ static int copy_task(struct task *task, dword_t flags, addr_t stack, addr_t ptid
+         task->group->leader = task;
+         task->tgid = task->pid;
+     }
++#ifdef BIBIMER_EMBEDDED
++    else {
++        task->parent_death_parent = current->parent_death_parent;
++    }
++#endif
+     list_add(&task->group->threads, &task->group_links);
+     unlock(&old_group->lock);
+     unlock(&pids_lock);
+diff --git a/kernel/futex.c b/kernel/futex.c
+index 93389c8..5a9746d 100644
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -184,7 +184,7 @@ static int futex_wait(addr_t uaddr, dword_t val, struct timespec *timeout) {
+             }
+             if (current->sighand) {
+                 lock(&current->sighand->lock);
+-                bool sig_pending = !!(current->pending & ~current->blocked);
++                bool sig_pending = !!(task_pending_signals(current) & ~current->blocked);
+                 unlock(&current->sighand->lock);
+                 if (sig_pending) { err = _EINTR; break; }
+             }
+diff --git a/kernel/getset.c b/kernel/getset.c
+index 8edf84f..1873f6d 100644
+--- a/kernel/getset.c
++++ b/kernel/getset.c
+@@ -48,6 +48,13 @@ int_t sys_setuid(uid_t_ uid) {
+         if (uid != current->uid && uid != current->suid)
+             return _EPERM;
+     }
++#ifdef BIBIMER_EMBEDDED
++    if (current->euid != uid) {
++        lock(&pids_lock);
++        current->parent_death_signal = 0;
++        unlock(&pids_lock);
++    }
++#endif
+     current->euid = uid;
+     return 0;
+ }
+@@ -65,6 +72,13 @@ dword_t sys_setresuid(uid_t_ ruid, uid_t_ euid, uid_t_ suid) {
+ 
+     if (ruid != (uid_t) -1)
+         current->uid = ruid;
++#ifdef BIBIMER_EMBEDDED
++    if (euid != (uid_t) -1 && current->euid != euid) {
++        lock(&pids_lock);
++        current->parent_death_signal = 0;
++        unlock(&pids_lock);
++    }
++#endif
+     if (euid != (uid_t) -1)
+         current->euid = euid;
+     if (suid != (uid_t) -1)
+@@ -113,6 +127,13 @@ int_t sys_setgid(uid_t_ gid) {
+         if (gid != current->gid && gid != current->sgid)
+             return _EPERM;
+     }
++#ifdef BIBIMER_EMBEDDED
++    if (current->egid != gid) {
++        lock(&pids_lock);
++        current->parent_death_signal = 0;
++        unlock(&pids_lock);
++    }
++#endif
+     current->egid = gid;
+     return 0;
+ }
+@@ -130,6 +151,13 @@ dword_t sys_setresgid(uid_t_ rgid, uid_t_ egid, uid_t_ sgid) {
+ 
+     if (rgid != (uid_t) -1)
+         current->gid = rgid;
++#ifdef BIBIMER_EMBEDDED
++    if (egid != (uid_t) -1 && current->egid != egid) {
++        lock(&pids_lock);
++        current->parent_death_signal = 0;
++        unlock(&pids_lock);
++    }
++#endif
+     if (egid != (uid_t) -1)
+         current->egid = egid;
+     if (sgid != (uid_t) -1)
+diff --git a/kernel/init.c b/kernel/init.c
+index 9ce8196..e04771a 100644
+--- a/kernel/init.c
++++ b/kernel/init.c
+@@ -59,6 +59,9 @@ static struct task *construct_task(struct task *parent) {
+     struct tgroup *group = malloc(sizeof(struct tgroup));
+     *group = (struct tgroup) {};
+     list_init(&group->threads);
++#ifdef BIBIMER_EMBEDDED
++    list_init(&group->parent_death_queue);
++#endif
+     lock_init(&group->lock);
+     cond_init(&group->child_exit);
+     cond_init(&group->stopped_cond);
+diff --git a/kernel/misc.c b/kernel/misc.c
+index 8536f9e..e59c437 100644
+--- a/kernel/misc.c
++++ b/kernel/misc.c
+@@ -8,6 +8,21 @@
+ 
+ int_t sys_prctl(dword_t option, addr_t arg2, addr_t UNUSED(arg3), addr_t UNUSED(arg4), addr_t UNUSED(arg5)) {
+     switch (option) {
++#ifdef BIBIMER_EMBEDDED
++        case 1: // PR_SET_PDEATHSIG
++            if (arg2 >= NUM_SIGS)
++                return _EINVAL;
++            lock(&pids_lock);
++            current->parent_death_signal = (int) arg2;
++            unlock(&pids_lock);
++            return 0;
++        case 2: { // PR_GET_PDEATHSIG
++            lock(&pids_lock);
++            int_t sig = current->parent_death_signal;
++            unlock(&pids_lock);
++            return user_put(arg2, sig) ? _EFAULT : 0;
++        }
++#endif
+         case PRCTL_SET_KEEPCAPS_:
+             // stub
+             return 0;
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 86041c3..9e5d057 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -87,6 +87,89 @@ static int signal_action(struct sighand *sighand, int sig) {
+     }
+ }
+ 
++#ifdef BIBIMER_EMBEDDED
++// Only PDEATHSIG uses this shared queue. Existing task-directed signal paths
++// keep their upstream behavior. All members of a thread group share sighand.
++static struct sigqueue *take_parent_death_signal_locked(sigset_t_ mask) {
++    struct tgroup *group = current->group;
++    struct sigqueue *entry, *selected = NULL;
++    list_for_each_entry(&group->parent_death_queue, entry, queue) {
++        if (sigset_has(mask, entry->info.sig) &&
++                (!selected || entry->info.sig < selected->info.sig))
++            selected = entry;
++    }
++    if (!selected)
++        return NULL;
++    list_remove(&selected->queue);
++    sigset_del(&group->parent_death_pending, selected->info.sig);
++    list_for_each_entry(&group->parent_death_queue, entry, queue) {
++        if (entry->info.sig == selected->info.sig) {
++            sigset_add(&group->parent_death_pending, entry->info.sig);
++            break;
++        }
++    }
++    return selected;
++}
++
++void send_parent_death_signal(struct task *task, int sig, struct siginfo_ info) {
++    struct tgroup *group = task->group;
++    struct task *member, *live = NULL;
++    list_for_each_entry(&group->threads, member, group_links) {
++        if (!member->exiting && !member->zombie && member->sighand) {
++            live = member;
++            break;
++        }
++    }
++    if (!live)
++        return;
++
++    struct sighand *sighand = live->sighand;
++    lock(&sighand->lock);
++    // Standard signals coalesce; real-time signals retain their individual
++    // records, including the sender, in FIFO order within each signal number.
++    if (signal_action(sighand, sig) != SIGNAL_IGNORE &&
++            (sig >= 32 || !sigset_has(group->parent_death_pending, sig))) {
++        struct sigqueue *entry = malloc(sizeof(*entry));
++        if (!entry)
++            die("could not queue parent-death signal");
++        entry->info = info;
++        entry->info.sig = sig;
++        list_add_tail(&group->parent_death_queue, &entry->queue);
++        sigset_add(&group->parent_death_pending, sig);
++    }
++    unlock(&sighand->lock);
++
++    // Wake eligible consumers without assigning the signal to any one task.
++    // The shared lock makes consumption exclusive, so waking multiple threads
++    // cannot invoke a handler twice. Blocked readers of signalfd/sigwait also
++    // need a pause notification. pids_lock stabilizes all task pointers here.
++    list_for_each_entry(&group->threads, member, group_links) {
++        if (member->exiting || member->zombie || !member->sighand)
++            continue;
++        lock(&member->sighand->lock);
++        bool eligible = !!(group->parent_death_pending &
++                (~member->blocked | member->waiting));
++        notify(&member->pause);
++        unlock(&member->sighand->lock);
++        if (!eligible)
++            continue;
++        cpu_poke(&member->cpu);
++        if (member != current)
++            pthread_kill(member->thread, SIGUSR1);
++        lock(&member->waiting_cond_lock);
++        if (member->waiting_cond)
++            notify(member->waiting_cond);
++        unlock(&member->waiting_cond_lock);
++    }
++    if (sig == SIGCONT_ || sig == SIGKILL_) {
++        lock(&group->lock);
++        group->stopped = false;
++        notify(&group->stopped_cond);
++        unlock(&group->lock);
++    }
++}
++#endif
++
+ static void deliver_signal_unlocked(struct task *task, int sig, struct siginfo_ info) {
+     if (sigset_has(task->pending, sig))
+         return;
+@@ -495,7 +578,8 @@ static void receive_signal(struct sighand *sighand, struct siginfo_ *info) {
+     current->cpu.eip = sighand->action[info->sig].handler;
+     dword_t sp = current->cpu.esp;
+ #endif
+-    if (current->altstack && !is_on_altstack(sp, current)) {
++    if ((action->flags & SA_ONSTACK_) && current->altstack &&
++            !is_on_altstack(sp, current)) {
+         sp = current->altstack + current->altstack_size;
+     }
+     if (xsave_extra) {
+@@ -573,7 +657,7 @@ void signal_delivery_stop(int sig, struct siginfo_ *info) {
+     while (current->ptrace.stopped) {
+         wait_for_ignore_signals(&current->ptrace.cond, &current->ptrace.lock, NULL);
+         lock(&current->sighand->lock);
+-        bool got_sigkill = sigset_has(current->pending, SIGKILL_);
++        bool got_sigkill = sigset_has(task_pending_signals(current), SIGKILL_);
+         unlock(&current->sighand->lock);
+         if (got_sigkill) {
+             STRACE("%d received a SIGKILL in signal delivery stop\n", current->pid);
+@@ -606,6 +690,9 @@ void receive_signals() {
+         current->blocked = current->saved_mask;
+     }
+ 
++#ifdef BIBIMER_EMBEDDED
++    bool private_received = false;
++#endif
+     struct sigqueue *sigqueue, *tmp;
+     list_for_each_entry_safe(&current->queue, sigqueue, tmp, queue) {
+         int sig = sigqueue->info.sig;
+@@ -613,6 +700,9 @@ void receive_signals() {
+             continue;
+         list_remove(&sigqueue->queue);
+         sigset_del(&current->pending, sig);
++#ifdef BIBIMER_EMBEDDED
++        private_received = true;
++#endif
+ 
+         if (current->ptrace.traced && sig != SIGKILL_) {
+             // This notifies the parent, goes to sleep, and waits for the
+@@ -626,6 +716,22 @@ void receive_signals() {
+         free(sigqueue);
+     }
+ 
++#ifdef BIBIMER_EMBEDDED
++    // Consume one shared signal at a time. Keep all others process-pending:
++    // this handler may change its mask, and another thread must still be able
++    // to receive them. Respect the temporary sigsuspend mask for the first
++    // delivery, or the mask installed by a preceding private handler.
++    struct sigqueue *shared = take_parent_death_signal_locked(
++            ~(private_received ? current->blocked : blocked));
++    if (shared) {
++        struct siginfo_ info = shared->info;
++        free(shared);
++        if (current->ptrace.traced && info.sig != SIGKILL_)
++            signal_delivery_stop(info.sig, &info);
++        else
++            receive_signal(sighand, &info);
++    }
++#endif
+     unlock(&sighand->lock);
+ 
+     // this got moved out of the switch case in receive_signal to fix locking problems
+@@ -781,6 +887,10 @@ void sighand_release(struct sighand *sighand) {
+ }
+ 
+ static int do_sigaction(int sig, const struct sigaction_ *action, struct sigaction_ *oldaction) {
++#ifdef BIBIMER_EMBEDDED
++    if (sig <= 0)
++        return _EINVAL;
++#endif
+     if (sig >= NUM_SIGS)
+         return _EINVAL;
+     if (!signal_is_blockable(sig))
+@@ -792,6 +902,13 @@ static int do_sigaction(int sig, const struct sigaction_ *action, struct sigacti
+         *oldaction = sighand->action[sig];
+     if (action)
+         sighand->action[sig] = *action;
++#ifdef BIBIMER_EMBEDDED
++    if (action && signal_action(sighand, sig) == SIGNAL_IGNORE) {
++        struct sigqueue *discarded;
++        while ((discarded = take_parent_death_signal_locked(sig_mask(sig))) != NULL)
++            free(discarded);
++    }
++#endif
+     unlock(&sighand->lock);
+     return 0;
+ }
+@@ -901,7 +1018,9 @@ dword_t sys_rt_sigprocmask(dword_t how, addr_t set_addr, addr_t oldset_addr, dwo
+ int_t sys_rt_sigpending(addr_t set_addr, dword_t size) {
+     STRACE("rt_sigpending(%#x, %d)", set_addr, size);
+     // as defined by the standard
+-    sigset_t_ pending = current->pending & current->blocked;
++    lock(&current->sighand->lock);
++    sigset_t_ pending = task_pending_signals(current) & current->blocked;
++    unlock(&current->sighand->lock);
+     return user_put_sigset(set_addr, size, pending);
+ }
+ 
+@@ -936,6 +1055,14 @@ static bool signalfd_dequeue_locked(sigset_t_ mask, struct siginfo_ *info) {
+             return true;
+         }
+     }
++#ifdef BIBIMER_EMBEDDED
++    struct sigqueue *shared = take_parent_death_signal_locked(mask);
++    if (shared) {
++        *info = shared->info;
++        free(shared);
++        return true;
++    }
++#endif
+     return false;
+ }
+ 
+@@ -1119,6 +1246,12 @@ int_t sys_rt_sigtimedwait(addr_t set_addr, addr_t info_addr, addr_t timeout_addr
+     current->waiting = set;
+     int wait_err;
+     do {
++#ifdef BIBIMER_EMBEDDED
++        if (task_pending_signals(current) & set) {
++            wait_err = _EINTR;
++            break;
++        }
++#endif
+         wait_err = wait_for(&current->pause, &current->sighand->lock, timeout_addr == 0 ? NULL : &timeout);
+     } while (wait_err == 0);
+     current->waiting = 0;
+@@ -1134,9 +1267,18 @@ int_t sys_rt_sigtimedwait(addr_t set_addr, addr_t info_addr, addr_t timeout_addr
+         if (sigset_has(set, sigqueue->info.sig)) {
+             found = true;
+             list_remove(&sigqueue->queue);
++#ifdef BIBIMER_EMBEDDED
++            sigset_del(&current->pending, sigqueue->info.sig);
++#endif
+             break;
+         }
+     }
++#ifdef BIBIMER_EMBEDDED
++    if (!found) {
++        sigqueue = take_parent_death_signal_locked(set);
++        found = sigqueue != NULL;
++    }
++#endif
+     unlock(&current->sighand->lock);
+     if (!found)
+         return _EINTR;
+@@ -1156,6 +1298,22 @@ static int kill_task(struct task *task, dword_t sig, int code) {
+             current->euid != task->uid &&
+             current->euid != task->suid)
+         return _EPERM;
++#ifdef BIBIMER_EMBEDDED
++    // kill()/killpg() address a process even after its original thread has
++    // exited. Preserve credential checks above and exact-thread tgkill/tkill.
++    // SIGKILL is unblockable; any live member will enter do_exit_group().
++    // Other process-directed signals still use the existing delivery policy.
++    if (code == SI_USER_ && sig == SIGKILL_ && task_is_leader(task) &&
++            (task->exiting || task->zombie)) {
++        struct task *member;
++        list_for_each_entry(&task->group->threads, member, group_links) {
++            if (!member->exiting && !member->zombie && member->sighand != NULL) {
++                task = member;
++                break;
++            }
++        }
++    }
++#endif
+     struct siginfo_ info = {
+         .code = code,
+         .kill.pid = current->pid,
+@@ -1167,10 +1325,8 @@ static int kill_task(struct task *task, dword_t sig, int code) {
+ 
+ static int kill_group(pid_t_ pgid, dword_t sig, int code) {
+     struct pid *pid = pid_get(pgid);
+-    if (pid == NULL) {
+-        unlock(&pids_lock);
+-        return _ESRCH;
+-    }
++    if (pid == NULL)
++        return _ESRCH; // do_kill owns pids_lock, including the error path.
+     struct tgroup *tgroup;
+     int err = _EPERM;
+     list_for_each_entry(&pid->pgroup, tgroup, pgroup) {
+@@ -1211,6 +1367,10 @@ static int do_kill(pid_t_ pid, dword_t sig, pid_t_ tgid, int code) {
+         err = kill_group(-pid, sig, code);
+     } else {
+         struct task *task = pid_get_task(pid);
++#ifdef BIBIMER_EMBEDDED
++        if (task == NULL && sig == SIGKILL_ && code == SI_USER_)
++            task = pid_get_task_zombie(pid);
++#endif
+         if (task == NULL) {
+             unlock(&pids_lock);
+             return _ESRCH;
+diff --git a/kernel/signal.h b/kernel/signal.h
+index 5d9a0f7..50823c5 100644
+--- a/kernel/signal.h
++++ b/kernel/signal.h
+@@ -13,6 +13,7 @@ typedef qword_t sigset_t_;
+ #define SIG_IGN_ 1
+ 
+ #define SA_SIGINFO_ 4
++#define SA_ONSTACK_ 0x08000000
+ #define SA_NODEFER_ 0x40000000
+ #define SA_RESETHAND_ 0x80000000
+ 
+@@ -148,6 +149,10 @@ int send_group_signal(dword_t pgid, int sig, struct siginfo_ info);
+ // check for and deliver pending signals on current
+ // must be called without pids_lock, current->group->lock, or current->sighand->lock
+ void receive_signals(void);
++#ifdef BIBIMER_EMBEDDED
++// Requires pids_lock; queues a process-directed parent-death signal.
++void send_parent_death_signal(struct task *task, int sig, struct siginfo_ info);
++#endif
+ // set the signal mask, restore it to what it was before on the next receive_signals call
+ void sigmask_set_temp(sigset_t_ mask);
+ 
+diff --git a/kernel/task.c b/kernel/task.c
+index 538f1d1..a8874e7 100644
+--- a/kernel/task.c
++++ b/kernel/task.c
+@@ -3,6 +3,9 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <time.h>
++#ifdef BIBIMER_EMBEDDED
++#include <signal.h>
++#endif
+ #include "kernel/calls.h"
+ #include "kernel/task.h"
+ #include "kernel/memory.h"
+@@ -58,8 +61,21 @@ struct task *task_create_(struct task *parent) {
+     if (task == NULL)
+         return NULL;
+     *task = (struct task) {};
+-    if (parent != NULL)
+-        *task = *parent;
++    if (parent != NULL) {
++        // The poke byte is concurrently written by signal senders. Do not
++        // copy it (or inherit its address) when creating another guest CPU.
++        size_t poke = offsetof(struct task, cpu) + offsetof(struct cpu_state, _poked);
++        memcpy(task, parent, poke);
++        memcpy((char *)task + poke + sizeof(task->cpu._poked),
++               (char *)parent + poke + sizeof(task->cpu._poked),
++               sizeof(*task) - poke - sizeof(task->cpu._poked));
++    }
++    task->cpu._poked = false;
++    task->cpu.poked_ptr = &task->cpu._poked;
++#ifdef BIBIMER_EMBEDDED
++    task->parent_death_signal = 0;
++    task->parent_death_parent = parent;
++#endif
+     task->pid = pid->id;
+     pid->task = task;
+ 
+@@ -199,6 +215,15 @@ void task_run_current() {
+ 
+ static void *task_thread(void *vtask) {
+     current = vtask;
++#ifdef BIBIMER_EMBEDDED
++    // GCD workers can block SIGUSR1. Guest pthreads inherit that host mask,
++    // which otherwise makes signal-based wakeups of blocking syscalls fail.
++    sigset_t wake_signal;
++    sigemptyset(&wake_signal);
++    sigaddset(&wake_signal, SIGUSR1);
++    if (pthread_sigmask(SIG_UNBLOCK, &wake_signal, NULL) != 0)
++        die("could not unblock guest wakeup signal");
++#endif
+     update_thread_name();
+     task_run_current();
+     die("task_thread returned"); // above function call should never return
+diff --git a/kernel/task.h b/kernel/task.h
+index 2d5776f..f92ba2d 100644
+--- a/kernel/task.h
++++ b/kernel/task.h
+@@ -76,6 +76,12 @@ struct task {
+ 
+     // locked by pids_lock
+     struct task *parent;
++#ifdef BIBIMER_EMBEDDED
++    int parent_death_signal; // protected by pids_lock; cleared on fork/credential changes
++    // Linux threads inherit the process's death-parent, whereas a new process
++    // watches its creating thread. Keep this separate from legacy wait links.
++    struct task *parent_death_parent; // protected by pids_lock; reparented before free
++#endif
+     struct list children;
+     struct list siblings;
+ 
+@@ -152,6 +158,11 @@ struct tgroup {
+     struct list threads; // locked by pids_lock, by majority vote
+     struct task *leader; // immutable
+     struct rusage_ rusage;
++#ifdef BIBIMER_EMBEDDED
++    // PDEATHSIG only: process-directed pending signals, under sighand->lock.
++    sigset_t_ parent_death_pending;
++    struct list parent_death_queue;
++#endif
+ 
+     // locked by pids_lock
+     pid_t_ sid, pgid;
+@@ -198,6 +209,15 @@ struct tgroup {
+     lock_t lock;
+ };
+ 
++// Call under task->sighand->lock, like reads of task->pending.
++static inline sigset_t_ task_pending_signals(struct task *task) {
++#ifdef BIBIMER_EMBEDDED
++    return task->pending | task->group->parent_death_pending;
++#else
++    return task->pending;
++#endif
++}
++
+ static inline bool task_is_leader(struct task *task) {
+     return task->group->leader == task;
+ }
+diff --git a/kernel/time.c b/kernel/time.c
+index 22a8122..ee938da 100644
+--- a/kernel/time.c
++++ b/kernel/time.c
+@@ -3,6 +3,9 @@
+ #include <signal.h>
+ #include <sched.h>
+ #include <sys/time.h>
++#ifdef BIBIMER_EMBEDDED
++#include <sys/select.h>
++#endif
+ #include "kernel/calls.h"
+ #include "kernel/errno.h"
+ #include "kernel/resource.h"
+@@ -188,12 +191,75 @@ uint_t sys_alarm(uint_t seconds) {
+     return seconds;
+ }
+ 
++#ifdef BIBIMER_EMBEDDED
++// SIGUSR1 is the host wakeup for queued guest signals. Block it across the
++// pending check, then let pselect atomically unblock it while entering sleep.
++// A bare nanosleep loses wakeups delivered just before the host call.
++static int embedded_nanosleep(struct timespec req, addr_t rem_addr) {
++    struct timespec start;
++    if (clock_gettime(CLOCK_MONOTONIC, &start) < 0)
++        return errno_map();
++
++    sigset_t wake_signal, old_mask, wait_mask;
++    sigemptyset(&wake_signal);
++    sigaddset(&wake_signal, SIGUSR1);
++    int mask_error = pthread_sigmask(SIG_BLOCK, &wake_signal, &old_mask);
++    if (mask_error != 0)
++        return err_map(mask_error);
++    wait_mask = old_mask;
++    sigdelset(&wait_mask, SIGUSR1);
++
++    lock(&current->sighand->lock);
++    bool pending = !!(task_pending_signals(current) & ~current->blocked);
++    unlock(&current->sighand->lock);
++
++    int error = 0;
++    if (pending)
++        error = _EINTR;
++    else if (pselect(0, NULL, NULL, NULL, &req, &wait_mask) < 0)
++        error = errno_map();
++
++    // Save the result before restoring the mask: restoring can deliver the
++    // queued host wakeup, but guest signal dispatch happens after this syscall.
++    mask_error = pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
++    if (mask_error != 0)
++        return err_map(mask_error);
++
++    if (error == _EINTR && rem_addr != 0) {
++        struct timespec now;
++        if (clock_gettime(CLOCK_MONOTONIC, &now) < 0)
++            return errno_map();
++        struct timespec_ remaining = {
++            .sec = req.tv_sec - (now.tv_sec - start.tv_sec),
++            .nsec = req.tv_nsec - (now.tv_nsec - start.tv_nsec),
++        };
++        if (remaining.nsec < 0) {
++            remaining.sec--;
++            remaining.nsec += 1000000000;
++        } else if (remaining.nsec >= 1000000000) {
++            remaining.sec++;
++            remaining.nsec -= 1000000000;
++        }
++        if (remaining.sec < 0)
++            remaining = (struct timespec_) {0};
++        if (user_put(rem_addr, remaining))
++            return _EFAULT;
++    }
++    return error;
++}
++#endif
++
+ dword_t sys_nanosleep(addr_t req_addr, addr_t rem_addr) {
+     struct timespec_ req_ts;
+     if (user_get(req_addr, req_ts))
+         return _EFAULT;
+     STRACE("nanosleep({%lld, %lld}, 0x%x", (long long)req_ts.sec, (long long)req_ts.nsec, rem_addr);
+ 
++#ifdef BIBIMER_EMBEDDED
++    if (req_ts.sec < 0 || req_ts.nsec < 0 || req_ts.nsec >= 1000000000)
++        return _EINVAL;
++    return embedded_nanosleep(convert_timespec(req_ts), rem_addr);
++#else
+     // Short-circuit for ≤1ms sleeps (common in Go runtime timer management)
+     if (req_ts.sec == 0 && req_ts.nsec <= 1000000) {
+         sched_yield();
+@@ -219,6 +285,7 @@ dword_t sys_nanosleep(addr_t req_addr, addr_t rem_addr) {
+             return _EFAULT;
+     }
+     return 0;
++#endif
+ }
+ 
+ dword_t sys_clock_nanosleep(dword_t clock, dword_t flags, addr_t req_addr, addr_t rem_addr) {
+@@ -228,6 +295,11 @@ dword_t sys_clock_nanosleep(dword_t clock, dword_t flags, addr_t req_addr, addr_
+     STRACE("clock_nanosleep(%d, %d, {%lld, %lld}, 0x%x)", clock, flags,
+            (long long)req_ts.sec, (long long)req_ts.nsec, rem_addr);
+ 
++#ifdef BIBIMER_EMBEDDED
++    if (req_ts.sec < 0 || req_ts.nsec < 0 || req_ts.nsec >= 1000000000 ||
++            (flags & ~TIMER_ABSTIME_))
++        return _EINVAL;
++#endif
+     clockid_t real_clock;
+     if (clockid_to_real(clock, &real_clock))
+         return _EINVAL;
+@@ -251,6 +323,9 @@ dword_t sys_clock_nanosleep(dword_t clock, dword_t flags, addr_t req_addr, addr_
+             return 0; // Already past the target time
+     }
+ 
++#ifdef BIBIMER_EMBEDDED
++    return embedded_nanosleep(req, (flags & TIMER_ABSTIME_) ? 0 : rem_addr);
++#else
+     struct timespec rem;
+     if (nanosleep(&req, &rem) < 0)
+         return errno_map();
+@@ -262,6 +337,7 @@ dword_t sys_clock_nanosleep(dword_t clock, dword_t flags, addr_t req_addr, addr_
+             return _EFAULT;
+     }
+     return 0;
++#endif
+ }
+ 
+ dword_t sys_times(addr_t tbuf) {
+diff --git a/util/sync.c b/util/sync.c
+index c654d39..3dbaef3 100644
+--- a/util/sync.c
++++ b/util/sync.c
+@@ -22,7 +22,11 @@ static bool is_signal_pending(lock_t *lock) {
+         return false;
+     if (lock != &current->sighand->lock)
+         lock(&current->sighand->lock);
+-    bool pending = !!(current->pending & ~current->blocked);
++#ifdef BIBIMER_EMBEDDED
++    bool pending = !!(task_pending_signals(current) & (~current->blocked | current->waiting));
++#else
++    bool pending = !!(task_pending_signals(current) & ~current->blocked);
++#endif
+     if (lock != &current->sighand->lock)
+         unlock(&current->sighand->lock);
+     return pending;
+@@ -118,7 +122,7 @@ void sigusr1_handler() {
+         sigprocmask(SIG_BLOCK, &sigusr1, NULL);
+         if (lock != &current->sighand->lock)
+             lock(&current->sighand->lock);
+-        bool pending = !!(current->pending & ~current->blocked);
++        bool pending = !!(task_pending_signals(current) & ~current->blocked);
+         if (lock != &current->sighand->lock)
+             unlock(&current->sighand->lock);
+         sigprocmask(SIG_UNBLOCK, &sigusr1, NULL);
+diff --git a/util/sync.h b/util/sync.h
+index 89f79fd..25cb58c 100644
+--- a/util/sync.h
++++ b/util/sync.h
+@@ -7,6 +7,7 @@
+ #include <assert.h>
+ #include <setjmp.h>
+ #include <errno.h>
++#include <signal.h>
+ #include "misc.h"
+ #include "debug.h"
+ 
+@@ -133,8 +134,30 @@ extern int current_pid(void);
+ static inline void wrlock_destroy(wrlock_t *lock) {
+     if (pthread_rwlock_destroy(&lock->l) != 0) __builtin_trap();
+ }
++
++static inline int wrlock_acquire(wrlock_t *lock, bool read) {
++#if defined(__APPLE__) && defined(BIBIMER_EMBEDDED)
++    // Repeated SIGUSR1 interruptions can strand Darwin's contended rwlock
++    // queue with no owners. The guest wakeup remains pending while acquiring
++    // the lock; restore this thread's exact mask immediately afterward.
++    // Keep uncontended acquisitions free of signal-mask syscalls.
++    int err = read ? pthread_rwlock_tryrdlock(&lock->l) : pthread_rwlock_trywrlock(&lock->l);
++    if (err != EBUSY && err != EAGAIN)
++        return err;
++    sigset_t wake, previous;
++    sigemptyset(&wake);
++    sigaddset(&wake, SIGUSR1);
++    if (pthread_sigmask(SIG_BLOCK, &wake, &previous)) __builtin_trap();
++    err = read ? pthread_rwlock_rdlock(&lock->l) : pthread_rwlock_wrlock(&lock->l);
++    if (pthread_sigmask(SIG_SETMASK, &previous, NULL)) __builtin_trap();
++    return err;
++#else
++    return read ? pthread_rwlock_rdlock(&lock->l) : pthread_rwlock_wrlock(&lock->l);
++#endif
++}
++
+ static inline void read_wrlock(wrlock_t *lock) {
+-    if (pthread_rwlock_rdlock(&lock->l) != 0) __builtin_trap();
++    if (wrlock_acquire(lock, true) != 0) __builtin_trap();
+     assert(lock->val >= 0);
+     lock->val++;
+ }
+@@ -152,7 +175,7 @@ static inline void read_wrunlock(wrlock_t *lock) {
+     if (pthread_rwlock_unlock(&lock->l) != 0) __builtin_trap();
+ }
+ static inline void __write_wrlock(wrlock_t *lock, const char *file, int line) {
+-    if (pthread_rwlock_wrlock(&lock->l) != 0) __builtin_trap();
++    if (wrlock_acquire(lock, false) != 0) __builtin_trap();
+     assert(lock->val == 0);
+     lock->val = -1;
+     lock->file = file;
