@@ -172,7 +172,7 @@ static NSString *resolverConfiguration(void) {
         if (rc == 0 && self.probe) {
             NSData *script = [NSData dataWithContentsOfURL:[NSBundle.mainBundle URLForResource:@"probe" withExtension:@"sh"]];
             rc = script ? installText(@"/bibimer-probe.sh", script) : -2;
-            for (NSString *name in @[@"agent-runtime", @"extra-agents", @"kernel-runtime", @"bridge-pty", @"node-network", @"provider_gemini", @"probe-gemini-acp", @"epoll-runtime", @"compute-signal", @"bun-math", @"arm64-fp", @"memory-fault", @"signal-stack", @"probe-bun-process", @"probe-claude-sdk", @"probe-opencode-provider", @"probe-opencode-shell-edges", @"opencode-compat", @"provider_opencode"]) {
+            for (NSString *name in @[@"arm64-simd-lanes", @"auth-network", @"agent-runtime", @"extra-agents", @"kernel-runtime", @"bridge-pty", @"node-network", @"provider_gemini", @"probe-gemini-acp", @"epoll-runtime", @"compute-signal", @"bun-math", @"arm64-fp", @"memory-fault", @"signal-stack", @"probe-bun-process", @"probe-claude-sdk", @"probe-opencode-provider", @"probe-opencode-shell-edges", @"opencode-compat", @"provider_opencode"]) {
                 if (rc != 0) break;
                 NSData *agentProbe = [NSData dataWithContentsOfURL:[NSBundle.mainBundle URLForResource:name withExtension:@"py"]];
                 rc = agentProbe ? installText([NSString stringWithFormat:@"/%@.py", name], agentProbe) : -2;

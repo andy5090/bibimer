@@ -160,6 +160,8 @@ shutdown() {
     ' sh "$sleeper" "$resistant"
 }
 case "$tier" in
+    arm64-simd-lanes) check arm64_simd_lanes bounded 60 python3 /arm64-simd-lanes.py ;;
+    auth-network) check auth_network_diagnostics bounded 210 python3 /auth-network.py ;;
     basic) basic ;;
     packages) packages ;;
     agents) agents ;;

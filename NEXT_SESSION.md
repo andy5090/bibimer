@@ -1,5 +1,16 @@
 # Bibimer 다음 세션 시작점
 
+## iOS 입력창 확대·Codex HTTPS 전송 수정 (2026-10-21)
+
+- 사용자가 입력창을 선택하면 화면이 확대되는 현상을 보고했다. 공유 UI의 기본 입력 글꼴14px, 대화 전달 본문12px를 확인하고 `ios/app/build.py`의 iOS 전용 스타일에서 텍스트 입력·textarea를16px로 지정했다. Android 원본·체크박스·라디오 및 viewport의 사용자 확대 설정은 유지한다.
+- 패키징한 실제 UI를 Chromium320/393/852px에서 검사해14개 입력 필드 모두 계산 글꼴16px를 확인했다. `.tools/ios-input-focus/computed-style-verification.json`. 기존 앱 Python6검사·터미널링크5경우·권한/설정회귀도 성공했다.
+- Codex 기기 코드 로그인의 `auth.openai.com/api/accounts/deviceauth/usercode` 요청 전송 실패를 독립 lab에서 재현했다. CA121개·DNS·시각·Python/curl TLS는 정상이나 원본 Codex의 기본 TLS는 send 실패, 명시적 CA의 rustls는 P521 서명 알고리즘 검사에서 panic이었다. ARM64 halfword lane 인덱스 해석 오류로 알고리즘 값이 유실되는 원인을 확인해 `gen.c` 두 곳의 `size & 1`을 공식 명세의 `size >> 1`로 고쳤다. 원본 Codex·인증서 검증·제품 CA/DNS/래퍼는 변경하지 않았다.
+- 신규 승인 엔진 patch **`29dabdb385b105b31c58b5d2d1d5958a216028d2113448eaa8b185233b09c0c8`**. 실제1440개 ARM lane 회귀는 수정 전192개 실패/P521 누락→수정 후 전부 성공/P521 보존(1.816초)했다. 같은 원본 Codex HTTPS는 기본·명시CA·IPv4고정·CA디렉터리·native진단 다섯 조건 모두 정상 TLS와 예상 HTTP 오류 응답까지 도달했다(최종14.802초, errno65 경고16개 보존). 실제 인증 코드를 발급받는 대신 고정 공개 시험 issuer를 사용하고 본문·토큰·코드를 기록하지 않았다. **실제 계정 로그인 완료·모델 응답은 미검증**이다. `ios/runtime-lab/VALIDATION.md`와 `dist/ios-runtime-lab/{arm64-simd-lanes,auth-network}/` 참고.
+- 새 엔진의 후속 실제 회귀도 모두 통과했다. ARMFP1920명령1.198초, Codex 도구6.223초, ClaudeSDK51.731초, GeminiACP64.444초, OpenCode 검색·승인3·Bash 읽기/쓰기·출력·완료254.751초. 네 CLI는 합성 모델 API를 사용했고 각각 복구 연결 경고2/25/18/13개를 보존했다. 런타임 host32검사도 통과했다. 아래2026-10-20의 ff19 기록과 구분한다.
+- 새 엔진과 입력창 수정을 포함한 Simulator/unsigned iPhoneOS 양 SDK 앱 빌드 및 manifest·고정 patcher/notice·공유52자산 보존 검사가 성공했다. `.tools/ios-input-focus/build-{iphonesimulator,iphoneos}-29dabdb3.log`, `package-verification-29dabdb3.json`. 사용자가 **‘수정 준비가 끝나면 재실행’**을 명시 승인한 뒤 수정본을 설치해 **실제 UI20 성공13.89초·JS 오류0·미지원 syscall 경고4개**를 확인했다. `dist/ios-app/smoke/`의 시작 전 수집 manifest도29dab이며 이전 증거는 history에 보존했다.
+- 최종 검사가 끝난 뒤 self-test 인자·터미널 출력 수집 없이 일반 모드로 재실행했다(PID48701). 실제 화면에서 Connected 상태를 확인했다(`.tools/ios-input-focus/normal-screen.png`). 승인된 앱 재시작으로 기존 프로세스는 종료되며 UI의 Session lost를 실행 복원으로 가장하지 않는다. **Setup→Codex→Sign in에서 새 인증을 시작**하면 된다. 파일·저장 목록·인증 파일을 삭제하거나 실제 모델 요청을 수행하지 않았다.
+- CUA가 `Sky Computer Use native pipe startup failed`로 연결되지 않아 실제 iOS 포커스 전후 확대율·키보드 화면 검사는 남아 있다. 현재 Xcode27의 시뮬레이터 창은 `Contents/Applications/DeviceHub.app`이며 예전 `Simulator.app` 경로를 찾지 않는다. 내장 배포판은 Alpine이며 패키지 설치는 `apk add --no-cache curl jq ripgrep` 등으로 수행한다.
+
 ## 웹사이트 문의 제목 입력 제거 (2026-10-21)
 
 - 사용자 피드백에 따라10언어 문의 양식의 별도 제목 필드·필수 검사·번역20항목을 삭제했다. 카테고리/기타 직접입력·본문·선택 이메일·동의만 받는다. 공통 생성기/클라이언트와10개 정책의 수집항목도 갱신했다.

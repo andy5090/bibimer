@@ -1,5 +1,6 @@
 """Parser unit tests only; these are not iOS runtime compatibility evidence."""
 
+import json
 import unittest
 
 from verify_probe import EXPECTED_CHECKS, ProbeFailure, verify
@@ -7,7 +8,13 @@ from verify_probe import EXPECTED_CHECKS, ProbeFailure, verify
 
 def complete_output(tier="basic"):
     lines = [f"BIBIMER_CHECK\t{name}\tPASS" for name in sorted(EXPECTED_CHECKS[tier])]
-    return "ordinary guest output\n" + "\n".join(lines) + f"\nBIBIMER_SUMMARY\t{tier}\tPASS\t{len(lines)}\n"
+    evidence = ""
+    if tier == "auth-network":
+        evidence = "".join("AUTH_NETWORK " + json.dumps({"stage": "codex-tls", "mode": mode,
+            "exitCode": 1, "httpResponseReceived": True, "transportSendFailed": False,
+            "panicked": False, "nativeAuthPromptSeen": False}) + "\n"
+            for mode in ("default", "explicit-ca", "ipv4-host", "cert-dir", "native-debug"))
+    return "ordinary guest output\n" + evidence + "\n".join(lines) + f"\nBIBIMER_SUMMARY\t{tier}\tPASS\t{len(lines)}\n"
 
 
 class VerifyProbeTests(unittest.TestCase):
@@ -110,7 +117,7 @@ class VerifyProbeTests(unittest.TestCase):
 
     def test_exact_recovered_connect_is_never_clean_pass(self):
         diagnostic = "NETDIAG connect(pid=42 comm=curl fd=3) errno=65"
-        for tier in ("packages", "agents", "claude-js", "claude-sdk", "codex-external", "gemini-acp", "gemini-runtime", "opencode-provider", "opencode-search", "opencode-preload-search", "opencode-inspect-preload-search", "opencode-stdio-trace", "opencode-compat-search", "opencode-shell-edges", "opencode-117-search", "opencode-1313-search", "opencode-legacy-provider"):
+        for tier in ("auth-network", "packages", "agents", "claude-js", "claude-sdk", "codex-external", "gemini-acp", "gemini-runtime", "opencode-provider", "opencode-search", "opencode-preload-search", "opencode-inspect-preload-search", "opencode-stdio-trace", "opencode-compat-search", "opencode-shell-edges", "opencode-117-search", "opencode-1313-search", "opencode-legacy-provider"):
             with self.subTest(tier=tier):
                 verified = verify(complete_output(tier), self.result, tier, diagnostic)
                 self.assertEqual(verified["status"], "PASS_WITH_WARNINGS")
@@ -131,6 +138,19 @@ class VerifyProbeTests(unittest.TestCase):
         ):
             with self.subTest(output=output), self.assertRaises(ProbeFailure):
                 verify(output, self.result, "packages", diagnostic)
+
+    def test_auth_connect_warning_requires_every_original_codex_tls_profile(self):
+        output = complete_output("auth-network")
+        diagnostic = "NETDIAG connect(pid=42 comm=curl fd=3) errno=65"
+        rows = output.splitlines(keepends=True)
+        native = next(line for line in rows if line.startswith("AUTH_NETWORK "))
+        invalid = [output.replace('"httpResponseReceived": true', '"httpResponseReceived": false', 1),
+                   output.replace('"panicked": false', '"panicked": true', 1),
+                   output.replace('"exitCode": 1', '"exitCode": 0', 1),
+                   output.replace(native, "", 1), native + output]
+        for value in invalid:
+            with self.subTest(evidence=value), self.assertRaises(ProbeFailure):
+                verify(value, self.result, "auth-network", diagnostic)
 
     def test_bounded_process_name_with_spaces_is_preserved(self):
         diagnostic = "NETDIAG connect(pid=17 comm=npm install @an fd=31) errno=65"

@@ -2,6 +2,18 @@
 
 검증 환경은 전용 `Bibimer Runtime Lab` 시뮬레이터의 iPhone 17 Pro / iOS 26.5 / ARM64다. 기기용 SDK는 iPhoneOS 27.1이며 실제 iPhone의 설치·실행 결과와 구분한다.
 
+## 2026-10-21 입력창·Codex HTTPS 수정 반영
+
+`build.py`의 iOS 전용 스타일에서 텍스트 input·textarea를16px로 지정했다. 공유 UI의 기본14px와 대화 전달 본문의12px 우선 규칙을 모두 덮어쓰며, Android 원본·체크박스·라디오·viewport의 사용자 확대 설정은 유지한다. Chromium320/393/852px에서 패키징한14개 입력 필드의 계산 글꼴이 모두16px임을 확인했다. `.tools/ios-input-focus/computed-style-verification.json`.
+
+Codex 인증 서버의 TLS 전송 실패는 내장 ARM64 halfword lane 인덱스 해석 오류였다. 승인 런타임 patch `29dabdb385b105b31c58b5d2d1d5958a216028d2113448eaa8b185233b09c0c8`을 반영했다. 원본 Codex·provider assertion·CA/DNS·인증서 검증은 유지했고, 실제1440개 CPU 회귀와 원본 Codex의 다섯 HTTPS 대조 및 네 CLI 도구 회귀가 통과했다. 실제 계정 인증 완료·모델 응답은 별도 단계다. 자세한 전후 증거는 [런타임 검증 기록](../runtime-lab/VALIDATION.md)을 따른다.
+
+이 조합으로 양 SDK 앱을 빌드하고, 실제 Simulator 앱의 **UI20 성공13.89초·JavaScript 오류0개·fatal0개**를 확인했다. 미지원 syscall 경고4개를 보존한 `PASS_WITH_WARNINGS`다. `dist/ios-app/smoke/`의 시작 전 설치 바이너리 SHA는 `cb17e923944a5a6e6931c11738ff5ff15680cc00569e673a8c3b1508e8c80a8b`이며 manifest의 런타임도29dab이다. 이전 ff19 증거는 runner가 history에 보존했다. 공유52자산·고정 OpenCode 패처/notice 일치와 CJS0개도 확인했다(`.tools/ios-input-focus/package-verification-29dabdb3.json`). 기존 앱 Python6검사·터미널링크5경우·권한/설정 회귀가 통과했다.
+
+사용자가 앱 재실행을 명시 승인한 뒤 설치·검사를 진행했고, 마지막에는 self-test 인자·출력 수집 없이 일반 모드로 실행해 Connected 화면을 확인했다(PID48701, `.tools/ios-input-focus/normal-screen.png`). 재시작 전 실행 프로세스를 복원했다고 표시하지 않으며 사용자 파일·저장 목록·인증 파일은 유지한다. CUA의 native pipe가 연결되지 않아 실제 터치 포커스 전후 확대율·키보드 동작은 사용자의 직접 확인이 남아 있다.
+
+아래 ff19·364a 빌드의 세부 기록은 당시 증거이며 새29 엔진의 재검증으로 취급하지 않는다.
+
 ## 공유 UI와 실제 게스트 연결
 
 2026-10-20 최종 제품 조합에서 **20개 UI·실행 검사 성공, JavaScript 오류 0개, 12.82초**를 확인했다. 런타임은 `ff19b3b1`이며 아래 고정 OpenCode 호환 패처와 설치 스크립트를 포함한다. Bash의 미지원 syscall 진단을 포함해 runner 판정은 `PASS_WITH_WARNINGS`다. 테스트는 복제된 Android UI의 실제 DOM 이벤트 → WKScriptMessageHandler → 인증된 native HTTP → 앱 내부 Linux → 기존 브리지/PTY 경로를 사용했다.

@@ -1,5 +1,48 @@
 # iOS 실행 환경 검증 기록
 
+## 2026-10-21 원본 Codex HTTPS/TLS 복구
+
+사용자 Setup 로그인에서 나타난 `error sending request`를 독립 lab에서 재현했다. 시험은 실제 로그인 endpoint의 코드를 발급받는 대신 `https://auth.openai.com/.well-known/bibimer-public-tls-probe`를 고정 issuer로 사용해 원본 Codex0.163.0의 동일 HTTP/TLS 클라이언트가 예상한 HTTP 오류 응답까지 도달하는지 확인했다. 응답 본문·인증 코드·토큰은 기록하지 않았으며 실제 인증 완료·모델 호출은 수행하지 않았다. 사용자 앱의 프로세스·로그인 세션·인증 파일은 변경하지 않았다.
+
+기존 엔진에서 CA bundle121개는 Python/curl IPv4 TLS1.3 검증에 성공했고 UTC와 DNS도 정상이었다. 원본 Codex의 기본 TLS는 전송 실패했으며 IPv4 hosts 대조도 같은 결과였다. 명시적 CA를 설정하면 [공식 custom CA 경로](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/http-client/src/custom_ca.rs)가 rustls를 사용했고 `utils/rustls-provider/src/lib.rs:27:9`의 P521 지원 assertion에서 exit101로 중단했다. 이 오류를 우회하거나 인증서 검증을 완화하지 않았다. 아래 ARM64 halfword lane 수정 뒤 **같은 바이너리·CA·기본 DNS**에서 기본 TLS와 rustls 대조가 모두 정상 HTTP 응답에 도달했다. 제품 bootstrap·Codex 래퍼·CA/DNS 설정·HWCAP 변경은 필요하지 않았다.
+
+| 최종 auth-network 대조 | 원본 Codex 결과 |
+| --- | --- |
+| 기본 환경 | HTTP 응답 도달, 전송 실패·panic 없음 |
+| `SSL_CERT_FILE`에 기존 Alpine CA 지정 | HTTP 응답 도달, P521 assertion 정상 통과 |
+| lab의 일시적인 IPv4 hosts 대조 | HTTP 응답 도달, 종료 후 hosts 복원 |
+| `SSL_CERT_DIR`에 기존 CA 디렉터리 지정 | HTTP 응답 도달, 전송 실패·panic 없음 |
+| 본문을 기록하지 않는 제한된 native TLS 진단 | HTTP 응답 도달, 전송 실패·panic 없음 |
+
+승인 patch `29dabdb385b105b31c58b5d2d1d5958a216028d2113448eaa8b185233b09c0c8`의 최종 실제 결과는 **14.802초·PASS_WITH_WARNINGS**, 정확한 connect errno65 경고16개다. 시험 네트워크에서 IPv6 연결은 도달하지 못했으며 기본 클라이언트의 IPv4 fallback은 성공했다. guest 자체 assertion과 증거 판정기가 다섯 실제 Codex 결과의 HTTP 응답·비전송실패·비panic을 모두 요구한 뒤에만 이 경고를 보존한다. `dist/ios-runtime-lab/auth-network/{verification.json,probe-output.txt,build-manifest.json}`에 최종 증거와 이전 실패의 `history/`가 있다. 이 결과는 TLS 전송 복구의 증거이며 실제 ChatGPT 계정 로그인 완료의 증거는 아니다.
+
+같은29dab 엔진·고정 lab bundle에서 원본 CLI 도구 왕복도 다시 실행했다. 아래 결과는 초기ff19·16ed 기록을 그대로 유지한 채 추가한 후속 검증이다. 추론 응답만 별도 게스트 loopback의 합성 서버가 제공하며 실제 계정이나 유료 모델을 사용하지 않았다.
+
+| 최종 후속 검사 | 실제 결과 | 시간 / 경고 수 |
+| --- | --- | --- |
+| ARM64 FP | 1920개 명령 회귀 성공 | 1.198초 / 0 |
+| Codex0.163.0 app-server | 실제 파일 읽기/쓰기·네이티브 완료·exit0 | 6.223초 / 2 |
+| Claude2.1.112 + SDK0.2.112 | 명시적 Bash 승인·실제 파일 읽기/쓰기·구조화 완료·exit0 | 51.731초 / 25 |
+| Gemini0.64.0 ACP | 승인 후 실제 파일 읽기/쓰기, 거절 시 파일 미생성·네이티브 거절·end_turn·exit0 | 64.444초 / 18 |
+| OpenCode1.19.3 + 고정04023 호환 ELF | 원본 glob/grep·명시적 승인3회·실제 Bash 읽기/쓰기·출력 전달·네이티브 완료·exit0 | 254.751초 / 13 |
+
+각각 `dist/ios-runtime-lab/{arm64-fp,codex-external,claude-sdk,gemini-acp,opencode-compat-search}/`에 실제 실행·빌드 manifest와 strict 검증 결과를 보존했다. 모든 실행 manifest의 승인 patch는29dab로 일치한다. ARM64 FP는 PASS, 네 CLI는 정확한 connect errno65만 경고로 보존한 PASS_WITH_WARNINGS다. 원본 Codex·Claude·Gemini, OpenCode의 기존 고정 호환 패치와 제품 설치 스크립트는 이번 TLS 수정에서 변경하지 않았다.
+
+## 2026-10-21 ARM64 halfword lane 수정
+
+이번 실행 엔진의 승인 patch SHA256은 `29dabdb385b105b31c58b5d2d1d5958a216028d2113448eaa8b185233b09c0c8`이다. 아래 2026-10-20의 ff19·16ed 빌드 결과와 구분한다. 기존 성공 기록을 새 엔진의 재검증으로 취급하지 않는다.
+
+원본 Codex0.163.0 Linux ARM64 musl ELF의 rustls provider 검사에서 P521 서명 항목이 없다는 panic을 조사했다. `supported_schemes` 생성 부분의 실제 명령열(ELF 주소 `0xa928dcc`–`0xa928e48`)은 여러 `LD1 {vN.h}[lane]`으로 값을 모은 뒤 `ST2`로 기록한다. 런타임이 halfword 인덱스의 마지막 비트를 `size<0>`으로 해석해 홀수 lane을 직전 짝수 lane에 덮어썼다. [ARM 공식 명세](https://documentation-service.arm.com/static/67e40f3398aa3c3b6eea6a85)의 인덱스는 `Q:S:size<1>`이다. `gen.c`의 일반형·post-index형 두 인덱스 계산을 수정했다. Codex 바이너리·provider assertion·HWCAP·TLS 검증은 변경하지 않았다.
+
+`Resources/arm64-simd-lanes.py`는 LD/ST1–4의 B/H/S/D 모든 lane, 레지스터31→0 순환, 일반 주소·즉시값/레지스터 post-index, 비정렬 주소, 다른 lane 보존과 base writeback을 총1440개 조합으로 검사한다. 별도로 원본 Codex 명령열을 그대로 실행하고 enum 데이터와 P521 항목 보존을 확인한다.
+
+| 빌드 | 실제 결과 | 증거 (`dist/ios-runtime-lab/`) |
+| --- | --- | --- |
+| 수정 전 ff19 | 1440개 중192개 실패. Codex gather tags=`(5,0,3,0,1,0,4,0)`, P521 누락, native exit1 | `arm64-simd-lanes/history/1792512571842509000` |
+| 수정 후29dab | 1440개 전부 성공. Codex gather tags=`(11,5,7,3,9,1,6,4)`, P521 보존. 1.816초·경고0·native exit0 | `arm64-simd-lanes` |
+
+실패192개는 halfword 홀수 lane4개 × load/store2개 × 구조 레지스터 수4개 × 시작 레지스터2개 × 주소형3개의 조합과 일치했다. 이 검사는 CPU 명령 수정의 증거이며 실제 계정 로그인 완료를 뜻하지 않는다. 원본 Codex 네트워크 전후 비교는 별도 auth-network 기록을 따른다.
+
 ## 2026-10-20 앱 통합 후 추가 검사 (진행 중)
 
 이 절은 아래 초기25개 검사와 다른 후속 빌드의 기록이다. OpenCode 버전·Node/WASM 초기 증거를 제외한 핵심 회귀는 승인 patch `16ed4d36061fb35ff5c898336ebfc23575aa9607bc4ba3054b20f8a74abd09bc`에서 다시 실행했다. 최종 앱 검사는 `../app/VALIDATION.md`를 함께 본다. 원본 에이전트 CLI를 내장 Linux에서 실행하며, 모델 응답만 같은 게스트의 합성 HTTP 서버가 제공한다. 실제 계정 인증·실제 모델 응답·실기기 성능을 증명하지 않는다.

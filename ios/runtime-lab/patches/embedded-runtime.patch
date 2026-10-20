@@ -906,7 +906,7 @@ index 9df0e73..c567187 100644
  .Lfcvtzs_fg_store:
      cmp x9, #31
 diff --git a/asbestos/guest-arm64/gen.c b/asbestos/guest-arm64/gen.c
-index c41caf0..d54d837 100644
+index c41caf0..b15af1d 100644
 --- a/asbestos/guest-arm64/gen.c
 +++ b/asbestos/guest-arm64/gen.c
 @@ -749,25 +749,18 @@ extern void gadget_st1_single_s(void);     // ST1 {Vt.S}[lane], [Xn]
@@ -946,7 +946,27 @@ index c41caf0..d54d837 100644
  }
  
  // Interleaved SIMD load/store gadgets (LD2/LD3/LD4, ST2/ST3/ST4)
-@@ -4583,24 +4576,6 @@ static int gen_dp_reg(struct gen_state *state, uint32_t insn) {
+@@ -3980,7 +3973,8 @@ static int gen_ldst(struct gen_state *state, uint32_t insn) {
+             lane = (Q << 3) | (S << 2) | size;
+         } else if (base_opcode == 2) {
+             elem_size = 2;
+-            lane = (Q << 2) | (S << 1) | (size & 1);
++            // Halfword index is Q:S:size<1>; size<0> is not an index bit.
++            lane = (Q << 2) | (S << 1) | (size >> 1);
+         } else if (base_opcode == 4 && size == 0) {
+             elem_size = 4;
+             lane = (Q << 1) | S;
+@@ -4087,7 +4081,8 @@ static int gen_ldst(struct gen_state *state, uint32_t insn) {
+             lane = (Q << 3) | (S << 2) | size;
+         } else if (base_opcode == 2) {
+             elem_size = 2;
+-            lane = (Q << 2) | (S << 1) | (size & 1);
++            // Same Q:S:size<1> index for immediate/register post-index forms.
++            lane = (Q << 2) | (S << 1) | (size >> 1);
+         } else if (base_opcode == 4 && size == 0) {
+             elem_size = 4;
+             lane = (Q << 1) | S;
+@@ -4583,24 +4578,6 @@ static int gen_dp_reg(struct gen_state *state, uint32_t insn) {
   * - STP Qn, Qm, [Xbase, #imm]
   */
  static int gen_simd_fp(struct gen_state *state, uint32_t insn) {
@@ -971,7 +991,7 @@ index c41caf0..d54d837 100644
      // FMOV (register) - scalar FP register copy
      // Matches: 0b00011110 type 1 00 0 0 0 0 0 Rn Rd (FMOV scalar)
      // Mask 0xffbffc00 ignores Rn/Rd and type
-@@ -5439,13 +5414,7 @@ static int gen_simd_fp(struct gen_state *state, uint32_t insn) {
+@@ -5439,13 +5416,7 @@ static int gen_simd_fp(struct gen_state *state, uint32_t insn) {
              // VFPExpandImm expands imm8 to a FP constant at compile time.
              if (op == 0) {
                  // FMOV single-precision: Vd.2S (Q=0) or Vd.4S (Q=1)
@@ -986,7 +1006,7 @@ index c41caf0..d54d837 100644
                  uint64_t elem64 = ((uint64_t)fp32 << 32) | fp32;
                  gen(state, (unsigned long) gadget_set_vec_imm);
                  gen(state, rd);
-@@ -5458,13 +5427,7 @@ static int gen_simd_fp(struct gen_state *state, uint32_t insn) {
+@@ -5458,13 +5429,7 @@ static int gen_simd_fp(struct gen_state *state, uint32_t insn) {
                      gen_interrupt(state, INT_UNDEFINED);
                      return 0;
                  }

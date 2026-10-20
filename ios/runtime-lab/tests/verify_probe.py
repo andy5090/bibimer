@@ -13,6 +13,8 @@ from pathlib import Path
 
 
 EXPECTED_CHECKS = {
+    "arm64-simd-lanes": {"arm64_simd_lanes"},
+    "auth-network": {"auth_network_diagnostics"},
     "basic": {
         "architecture", "file_io", "pipes", "child_exit", "parallel_children",
         "proc", "dev", "persistence_write",
@@ -133,6 +135,22 @@ def verify(output, result, tier, host_console=""):
     if unsuccessful:
         raise ProbeFailure(f"Required checks did not pass: {unsuccessful}")
 
+    if tier == "auth-network":
+        try:
+            observations = [json.loads(line.removeprefix("AUTH_NETWORK "))
+                            for line in output.splitlines() if line.startswith("AUTH_NETWORK ")]
+            native = [row for row in observations if row.get("stage") == "codex-tls"]
+            modes = {"default", "explicit-ca", "ipv4-host", "cert-dir", "native-debug"}
+            if len(native) != 5 or {row.get("mode") for row in native} != modes:
+                raise ProbeFailure("Missing or duplicate original Codex TLS profiles")
+            for row in native:
+                if (type(row.get("exitCode")) is not int or row["exitCode"] != 1 or
+                        row.get("httpResponseReceived") is not True or
+                        any(row.get(key) is not False for key in ("transportSendFailed", "panicked", "nativeAuthPromptSeen"))):
+                    raise ProbeFailure("Original Codex TLS did not reach the fixed public HTTP endpoint")
+        except (TypeError, json.JSONDecodeError) as error:
+            raise ProbeFailure("Malformed original Codex TLS evidence") from error
+
     warnings = []
     for source, content in (("guest output", output), ("host console", host_console)):
         for line in content.splitlines():
@@ -140,7 +158,7 @@ def verify(output, result, tier, host_console=""):
             # not infer an address family: only completed network/package tiers
             # with every required check PASS can downgrade this exact diagnostic.
             # Preserve it as a warning; never report this run as clean PASS.
-            if tier in {"packages", "agents", "claude-js", "claude-sdk", "codex-external", "gemini-acp", "gemini-runtime", "opencode-provider", "opencode-search", "opencode-preload-search", "opencode-inspect-preload-search", "opencode-stdio-trace", "opencode-compat-search", "opencode-shell-edges", "opencode-117-search", "opencode-1313-search", "opencode-legacy-provider"} and RECOVERABLE_CONNECT.fullmatch(line):
+            if tier in {"auth-network", "packages", "agents", "claude-js", "claude-sdk", "codex-external", "gemini-acp", "gemini-runtime", "opencode-provider", "opencode-search", "opencode-preload-search", "opencode-inspect-preload-search", "opencode-stdio-trace", "opencode-compat-search", "opencode-shell-edges", "opencode-117-search", "opencode-1313-search", "opencode-legacy-provider"} and RECOVERABLE_CONNECT.fullmatch(line):
                 warnings.append(f"{source}: recovered connect diagnostic: {line}")
                 continue
             fault = FAULT_MARKER.search(line)

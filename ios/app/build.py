@@ -34,7 +34,12 @@ def package_web(destination):
         shutil.copy2(HERE / 'Resources' / name, destination / name)
     index = (destination / 'index.html').read_text()
     index = index.replace('<script src="app.js" defer>', '<script src="platform.js" defer></script>\n  <script src="app.js" defer>')
-    index = index.replace('</head>', '<style>.ios-unavailable { display:none !important; }</style>\n</head>')
+    # iOS zooms small text fields on focus. Keep the shared Android sizing intact.
+    index = index.replace('</head>', '''<style>
+.ios-unavailable { display:none !important; }
+:root input:not([type="checkbox"]):not([type="radio"]), :root textarea, #handoff-context { font-size:16px !important; }
+</style>
+</head>''')
     (destination / 'index.html').write_text(index)
     app = (destination / 'app.js').read_text()
     metadata_timeout = '}, path === "/native/open-file" ? 120000 : 35000);'

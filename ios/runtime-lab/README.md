@@ -17,6 +17,7 @@
 ## 고정 입력과 준비물
 
 - ios-linuxkit commit: `c8e9dcb954963b0d9f359b3ad9da871f19b28652`
+- 현재 승인 patch SHA256: `29dabdb385b105b31c58b5d2d1d5958a216028d2113448eaa8b185233b09c0c8` (2026-10-21 ARM64 halfword lane 수정). 이전 빌드의 실행 결과와 최신 재검증 범위는 [검증 기록](VALIDATION.md)에서 구분한다.
 - Alpine ARM64: `alpine-minirootfs-3.21.0-aarch64.tar.gz`
 - SHA256: `f31202c4070c4ef7de9e157e1bd01cb4da3a2150035d74ea5372c5e86f1efac1`
 - 빌드 도구: Meson 1.9.1, Ninja 1.13.0. 저장소의 `.tools/ios-runtime/build-venv`에만 설치한다.
@@ -52,7 +53,7 @@ python3 ios/runtime-lab/run_probe.py --tier opencode-shell-edges --timeout 1150
 
 `opencode-shell-edges`는 앞선 설치가 필요하며 exit7·큰 출력·timeout·명시적 중단을 실제 프로세스와 native 이벤트로 확인한다. 수정하지 않은 원본의 `opencode-provider`·구버전·preload tier는 실패 재현용이며 제품 성공 검사로 간주하지 않는다.
 
-실행 엔진 회귀에는 `kernel-runtime`, `bridge-pty`, `epoll-runtime`, `compute-signal`, `arm64-fp`, `bun-math`, `bun-process`, `memory-fault`, `signal-stack`을 사용한다. `tests/test_runtime_rwlock.c`는 Darwin 호스트에서 런타임의 실제 잠금 래퍼와 원본 pthread 대조군을 비교한다. guest 검사를 대신하지 않는다.
+실행 엔진 회귀에는 `kernel-runtime`, `bridge-pty`, `epoll-runtime`, `compute-signal`, `arm64-fp`, `arm64-simd-lanes`, `bun-math`, `bun-process`, `memory-fault`, `signal-stack`을 사용한다. `arm64-simd-lanes`는 single-structure load/store1440개 조합과 원본 Codex rustls 서명 목록의 gather 명령열을 검사한다. `tests/test_runtime_rwlock.c`는 Darwin 호스트에서 런타임의 실제 잠금 래퍼와 원본 pthread 대조군을 비교한다. guest 검사를 대신하지 않는다.
 
 시뮬레이터 ID는 `.tools/ios-runtime/simulator-id.txt`에 보관한다. `--device`를 지정해도 이름이 `Bibimer Runtime Lab`인 시뮬레이터만 사용한다. probe를 실행할 때 해당 실험 앱만 종료·재실행한다. rootfs는 유지된다. 다른 프로젝트·Android·Termux 세션은 다루지 않는다.
 
@@ -74,6 +75,14 @@ python3 ios/runtime-lab/build.py --sdk iphoneos
 
 ## 증거와 검사
 
+`auth-network`는 고정 public URL의 DNS·UTC·Python/curl TLS와 **원본 Codex의 실제 TLS 요청**을 비교한다. Codex는 실제 인증 endpoint 대신 존재하지 않는 고정 issuer 경로를 사용하므로 HTTP 오류 응답까지 도달하는지만 검사한다. 응답 본문·인증 코드·토큰은 기록하지 않고 실제 인증이나 모델 요청을 완료하지 않는다. 별도 lab rootfs에 기존 Codex 인증 파일이 있으면 읽지 않고 중단한다. 기본 환경·명시 CA·IPv4 hosts 대조·CA 디렉터리·제한된 native TLS 진단의 다섯 경우 모두 실제 HTTP 응답에 도달해야 통과한다. hosts 대조는 이 lab 안에서만 일시 적용하고 복원한다. 이 검사는 현재 사용자 Bibimer 앱을 종료하거나 사용자 세션에 입력하지 않는다.
+
+```sh
+python3 ios/runtime-lab/run_probe.py --tier auth-network --timeout 150
+```
+
+검증기는 다섯 Codex 결과를 독립적으로 확인한 뒤에만 정확한 `connect … errno=65` 진단을 경고로 보존한다. 시험 네트워크에서 의도적으로 확인한 IPv6 도달 실패와 정상 클라이언트의 주소 fallback도 이 경고에 남으며 깨끗한 PASS로 표시하지 않는다. 다른 오류·native panic·전송 실패를 무시하지 않는다. 실제 계정 로그인 완료 여부는 사용자의 원래 인증 흐름에서 별도로 확인해야 한다.
+
 `dist/ios-runtime-lab/<tier>/`에 guest 출력, native 종료/시간 JSON, 빌드 manifest, 실행 정보와 실제 실행 바이너리 해시, host console, screenshot을 모은다. 재실행 전 기존 파일을 `history/`에 보존하고 현재 결과를 비워 오래된 성공이 섞이지 않게 한다. 실행 전 manifest를 고정해 도중 다른 빌드와 섞이지 않게 한다. timeout에서는 완료 JSON을 만들지 않으며 실패로 끝난다. 실행 중 앱이 사라져도 실패한다. 저장소에는 바이너리/rootfs/다운로드 파일/실행 로그를 커밋하지 않는다.
 
 ```sh
@@ -90,6 +99,7 @@ Python 단위 검사는 증거 판정기의 검사이며 실제 iOS 실행 증�
 3. **신호로 sleep 중단:** GCD에서 상속된 host SIGUSR1 차단을 guest pthread에서 풀고, guest pending 확인과 host sleep 진입을 `pselect`로 동기화한다. 상대 sleep의 EINTR 잔여 시간도 처리한다.
 4. **실제 CLI 회귀:** 부모 사망 신호·스레드 공유 pending, epoll의 복제FD별 watch와 ONESHOT, compute-only 작업의 중단, ARM64 FP 즉시값과 변환, jitless Node의 llhttp HTTP ABI를 수정한다. 범위별 원본 CLI 및 명령 검사를 함께 둔다.
 5. **Darwin 잠금 경합:** 빈번한 SIGUSR1 중 rwlock 대기열이 소유자 없이 멈추는 host 재현을 확인했다. 경합 중인 blocking 잠금 획득에서만 SIGUSR1을 보류하고 원래 마스크를 복원한다. guest 동시 lazy-page/COW 검사와 실제 OpenCode 후속 검증은 별도로 기록한다.
+6. **ARM64 halfword lane:** LD/ST single-structure의16비트 lane 인덱스를 ARM 명세의 `Q:S:size<1>`로 해석한다. 홀수 lane이 앞 칸을 덮어 원본 Codex의 P521 서명 항목을 유실시키던 결함을 수정했고, 같은1440개 조합의 수정 전 실패·수정 후 성공을 보존한다.
 
 이 패치는 upstream 전체 호환성을 보장하지 않는다. 특히 모든 condition-variable 대기, guest process crash 복구, 다중 장기 세션, 메모리 압박, OS 강제 종료, 백그라운드 지속 실행은 추가 검증 대상이다. 런타임은 앱 프로세스당 하나이고, 종료 뒤에는 앱을 재실행한다. 저장된 파일과 살아 있는 프로세스의 복원을 구분한다.
 
