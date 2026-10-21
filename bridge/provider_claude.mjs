@@ -94,6 +94,48 @@ function respond(value) {
   } else request.finish(result.decision==='accept'?{behavior:'allow',updatedInput:request.input}:{behavior:'deny',message:'User declined in Bibimer'});
 }
 let permissionMode = 'inherit', modelOptions = {};
+const quotaPeriods={five_hour:300,seven_day:10080,seven_day_opus:10080,seven_day_sonnet:10080,seven_day_overage_included:10080,overage:null};
+const quotaPercent=(value,scale)=>typeof value==='number' && Number.isFinite(value) && value>=0 && value<=10000/scale ? value*scale : null;
+function subscriptionEvent(info) {
+  if (!info || typeof info!=='object') return;
+  const rows=[];
+  const add=(kind,value,status)=>{
+    if (!value || typeof value!=='object') return;
+    rows.push({id:'claude:'+kind,kind,windowDurationMins:quotaPeriods[kind] ?? null,
+      usedPercent:quotaPercent(value.utilization,100),resetsAt:value.resetsAt,status});
+  };
+  // CLI unifiedWindows reports fractions (0.24 == 24%), unlike /usage's
+  // percentages. Accept this optional extension by shape; never infer zero.
+  for (const kind of Object.keys(quotaPeriods)) {
+    const value=info.unifiedWindows?.[kind];
+    if (value) add(kind,value,kind===info.rateLimitType?info.status:undefined);
+  }
+  if (Object.hasOwn(quotaPeriods,info.rateLimitType) && !rows.some(row=>row.kind===info.rateLimitType))
+    add(info.rateLimitType,info,info.status);
+  if (!rows.length && ['allowed','allowed_warning','rejected'].includes(info.status)) add('window',info,info.status);
+  if (rows.length) notify('bibimer/subscriptionUsage',{windows:rows});
+}
+function subscriptionReport(report) {
+  if (!report || typeof report!=='object') return;
+  const limits=report.rate_limits;
+  if (!limits || typeof limits!=='object') { notify('bibimer/subscriptionUsage',{unavailable:true});return; }
+  const reset=value=>typeof value==='string' && Number.isFinite(Date.parse(value)) ? Math.floor(Date.parse(value)/1000) : null;
+  const rows=[];
+  if (Array.isArray(limits.limits)) {
+    for (const [index,row] of limits.limits.slice(0,16).entries()) {
+      if (!row || typeof row!=='object') continue;
+      rows.push({id:'claude:report:'+index,kind:row.kind,label:row.label,
+        usedPercent:quotaPercent(row.percent,1),resetsAt:reset(row.resets_at)});
+    }
+  } else {
+    for (const kind of Object.keys(quotaPeriods)) {
+      const value=limits[kind];
+      if (value && typeof value==='object') rows.push({id:'claude:'+kind,kind,windowDurationMins:quotaPeriods[kind],
+        usedPercent:quotaPercent(value.utilization,1),resetsAt:reset(value.resets_at)});
+    }
+  }
+  notify('bibimer/subscriptionUsage',{windows:rows,replace:true});
+}
 async function runTurn(prompt, identity) {
   let finishInput, failed=false, resultSeen=false, answerSeen=false;
   let windowUsage=null;
@@ -112,6 +154,9 @@ async function runTurn(prompt, identity) {
     }
   }
   try {
+    // A new SDK query can resolve a different CLI account/profile. Do not merge
+    // a previous query's account windows into this query's first report.
+    notify('bibimer/subscriptionUsage',{windows:[],replace:true});
     const options={cwd,pathToClaudeCodeExecutable:executable,settingSources:['user','project','local'],
       systemPrompt:{type:'preset',preset:'claude_code'},includePartialMessages:true,canUseTool:permission,
       extraArgs:{'replay-user-messages':null},
@@ -126,6 +171,9 @@ async function runTurn(prompt, identity) {
       if (message.session_id && message.session_id!==thread) throw Error('error_agent_transport');
       if (message.type==='system' && message.subtype==='init') persisted=true;
       if (message.parent_tool_use_id || message.agent_id) continue;
+      if (message.type==='auth_status') notify('bibimer/subscriptionUsage',{windows:[],replace:true});
+      if (message.type==='rate_limit_event') subscriptionEvent(message.rate_limit_info);
+      if (message.type==='assistant' && message.usage_report) subscriptionReport(message.usage_report);
       if (message.type==='system' && ['compact_boundary','conversation_reset'].includes(message.subtype)) {
         windowUsage=null; notify('bibimer/contextUsage',{usedTokens:null,reset:true});
       }

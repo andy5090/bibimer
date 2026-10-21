@@ -66,6 +66,16 @@ export function query({prompt,options}) {
       }
     })();
     if (text==='/context') { emit({type:'result',subtype:'success',session_id:id,is_error:false,result:'Context: controlled session'}); return; }
+    if (text==='quota-status') emit({type:'rate_limit_event',session_id:id,rate_limit_info:{status:'allowed_warning',rateLimitType:'five_hour',resetsAt:Math.floor(Date.now()/1000)+7200}});
+    else if (text==='quota-legacy') emit({type:'rate_limit_event',session_id:id,rate_limit_info:{status:'rejected',rateLimitType:'five_hour',utilization:1,resetsAt:Math.floor(Date.now()/1000)+7200}});
+    else if (text==='quota-none') {} // A CLI/profile that supplies no account usage.
+    else emit({type:'rate_limit_event',session_id:id,rate_limit_info:{status:'allowed',rateLimitType:'five_hour',
+      unifiedWindows:{five_hour:{utilization:0.35,resetsAt:Math.floor(Date.now()/1000)+7200},
+        seven_day:{utilization:0.12,resetsAt:Math.floor(Date.now()/1000)+172800}}}});
+    if (text==='quota-report') emit({type:'assistant',session_id:id,usage_report:{rate_limits:{
+      five_hour:{utilization:1,resets_at:new Date(Date.now()+7200000).toISOString()}}},message:{content:[]}});
+    if (text==='quota-subagent') emit({type:'rate_limit_event',session_id:id,parent_tool_use_id:'hidden-agent',
+      rate_limit_info:{rateLimitType:'five_hour',status:'rejected',utilization:1}});
     emit({type:'stream_event',session_id:id,event:{type:'message_start',message:{id:'msg-live'}}});
     emit({type:'stream_event',session_id:id,event:{type:'content_block_delta',delta:{type:'text_delta',text:'Streaming **Claude**'}}});
     if(text==='approval' || text==='question') {

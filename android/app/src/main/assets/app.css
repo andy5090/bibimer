@@ -456,3 +456,11 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .context-usage[data-level="high"] meter{accent-color:#ee9c91}
 .context-usage p{margin:2px 0 6px;line-height:1.5;overflow-wrap:anywhere}
 #workspace.project-editing #context-usage{display:none}
+#subscription-usage[open]{max-height:min(200px,30dvh);overflow-y:auto;overscroll-behavior:contain}
+#subscription-windows{list-style:none;margin:0 0 6px;padding:0}
+#subscription-windows li{padding:5px 0;border-bottom:1px solid var(--line)}
+#subscription-windows li>div{display:flex;justify-content:space-between;gap:8px}
+#subscription-windows span{min-width:0;overflow-wrap:anywhere}
+#subscription-windows strong{font-weight:500;flex-shrink:0}
+#subscription-windows small{display:block;margin-top:3px;line-height:1.5}
+#workspace.project-editing #subscription-usage{display:none}

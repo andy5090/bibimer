@@ -340,6 +340,7 @@ async function main() {
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='running');
   const initial = (await call('GET','/v1/health')).data.session.id;
   assert.equal(await page.locator('#context-usage').isHidden(),true, 'PTY has no inferred context meter');
+  assert.equal(await page.locator('#subscription-usage').isHidden(),true, 'PTY has no scraped subscription usage');
   const projectA = (await call('GET','/v1/health')).data.project.id;
   const ptyRequests = await page.evaluate(()=>window.messageRequests);
   await page.locator('#input').fill('firstsecond');
@@ -635,6 +636,8 @@ async function main() {
     await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message');
     assert.equal(await page.locator('#context-summary').textContent(),'Not reported');
     assert.equal(await page.locator('#context-meter').isHidden(),true);
+    await page.waitForFunction(()=>document.querySelector('#subscription-summary').textContent.includes('35% used'));
+    assert.equal(await page.locator('#subscription-windows li').count(),2);
     let chatId = (await call('GET','/v1/health')).data.session.id;
     assert.deepEqual((await call('GET','/v1/health')).data.session.options,{permission:'workspace-write',fast:true,model:'',effort:''});
     legacyLiveOptions = true;
@@ -874,6 +877,30 @@ async function main() {
     await reconnect();
     await page.waitForFunction(()=>document.querySelector('#context-summary').textContent==='38% used');
     console.log('PASS: real bridge context usage, reconnect, 10 locales at 320px, token detail and preserved draft');
+    await page.locator('#subscription-usage summary').click();
+    const quotaRequests=await page.evaluate(()=>window.messageRequests);
+    for (const mode of ['used','remaining']) {
+      await page.locator('#tab-settings').click();await choose('context-display',mode);await page.locator('#tab-work').click();
+      assert.equal(await page.locator('#subscription-meter').evaluate(node=>node.value),mode==='used'?35:65);
+      for (const lang of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
+        await page.evaluate(lang=>{localStorage.setItem('testLanguage',lang);window.BibimerRefreshLanguage();},lang);
+        await page.setViewportSize({width:320,height:460});
+        const expected=await page.evaluate(mode=>BibimerI18n.t('context_percent_'+mode,{used:35,remaining:65}),mode);
+        assert.ok((await page.locator('#subscription-summary').textContent()).includes(expected));
+        assert.equal(await page.locator('#subscription-windows li').count(),2);
+        assert.ok((await page.locator('#subscription-windows small').first().textContent()).length>0);
+        assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+        const sendBox=await page.locator('#send').boundingBox();assert.ok(sendBox.y>=0 && sendBox.y+sendBox.height<=460);
+        assert.equal(await page.locator('#input').inputValue(),'Context display draft');
+        if (['en','ko'].includes(lang))await page.screenshot({path:path.join(root,`dist/screenshots/subscription-${mode}-320-${lang}.png`)});
+      }
+      await page.evaluate(()=>{localStorage.setItem('testLanguage','en');window.BibimerRefreshLanguage();});
+    }
+    await page.locator('#tab-settings').click();await choose('context-display','used');await page.locator('#tab-work').click();
+    await page.locator('#subscription-usage summary').click();await page.setViewportSize({width:393,height:780});
+    assert.equal(await page.evaluate(()=>window.messageRequests),quotaRequests);
+    assert.equal((await call('GET','/v1/health')).data.session.id,chatId);
+    console.log('PASS: account subscription quotas, reset times, both display modes, 10 locales/320px and no extra model turn');
     await page.screenshot({path:path.join(root,'dist/screenshots/chat-en.png')});
     await page.locator('#input').fill('approval'); await page.locator('#send').click();
     await page.locator('.request-card').waitFor();
@@ -1171,6 +1198,8 @@ async function main() {
       await page.locator('.request-card').waitFor({state:'hidden'});
       await page.waitForFunction(()=>!document.querySelector('#send').disabled && document.querySelector('#turn-status').textContent==='Ready for your message');
       await page.waitForFunction(agent=>document.querySelector('#context-summary').textContent===(agent==='claude'?'≈ ':'')+'38% used',agent);
+      if(agent==='claude')await page.waitForFunction(()=>document.querySelector('#subscription-summary').textContent.includes('35% used'));
+      else assert.equal(await page.locator('#subscription-meter').isHidden(),true);
       await page.locator('#input').fill('question'); await page.locator('#send').click();
       await page.locator('.question-options button').first().click();
       await page.locator('.question-options button').last().click();

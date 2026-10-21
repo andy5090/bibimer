@@ -65,6 +65,10 @@ for line in sys.stdin:
         emit({"id": message["id"], "result": {"data": [{"cwd": str(Path.cwd()), "skills": rows, "errors": []}]}})
     elif method == "initialize":
         emit({"id": message["id"], "result": {"userAgent": "test"}})
+    elif method == "account/rateLimits/read":
+        emit({"id":message["id"],"result":{"rateLimits":{"limitId":"codex","primary":{
+            "usedPercent":35,"windowDurationMins":300,"resetsAt":int(time.time())+7200},
+            "secondary":{"usedPercent":12,"windowDurationMins":10080,"resetsAt":int(time.time())+172800}}}})
     elif method == "model/list":
         rows = [{"id":"test-codex", "model":"test-codex", "displayName":"Test Codex", "defaultReasoningEffort":"medium", "isDefault":True,
                  "supportedReasoningEfforts":[{"reasoningEffort":level,"description":"Controlled "+level} for level in ["low","medium","high","xhigh"]]},
