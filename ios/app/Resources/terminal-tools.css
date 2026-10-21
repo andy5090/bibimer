@@ -1,0 +1,11 @@
+.ios-terminal-tools{flex:none;display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 5px}
+.ios-terminal-tools>button{min-height:44px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;color:var(--green);font-size:12px}
+.ios-terminal-tools>.hint{flex-basis:100%;margin:0;font-size:11px}
+.ios-terminal-tools>.hint:empty{display:none}
+.ios-terminal-dialog{width:calc(100% - 24px);max-width:600px;height:min(78dvh,640px);padding:14px}
+.ios-terminal-dialog[open]{display:flex;flex-direction:column;gap:8px}
+.ios-terminal-dialog h2,.ios-terminal-dialog .hint{margin:0}
+.ios-terminal-dialog>textarea{flex:1;min-height:100px;width:100%;resize:none;font:16px/1.5 ui-monospace,monospace;white-space:pre;overflow:auto;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+.ios-terminal-dialog>.button-row{flex:none}
+.ios-terminal-dialog>.button-row>button{flex:1 1 100px;min-height:44px;font-size:12px;word-break:keep-all}
+.chat-mode .ios-terminal-tools,#workspace.project-editing .ios-terminal-tools{display:none!important}
