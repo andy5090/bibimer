@@ -254,7 +254,9 @@ public final class MainActivity extends Activity {
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("demo", DemoMode.enabled(MainActivity.this))
                     .put("reviewAccessConfigured", ReviewAccess.configured(ReviewAccessConfig.DIGEST))
-                    .put("termuxInstalled", termuxInstalled()).put("language", language.get())
+                    .put("termuxInstalled", termuxInstalled())
+                    .put("termuxX11Installed", getPackageManager().getLaunchIntentForPackage("com.termux.x11") != null)
+                    .put("language", language.get())
                     .put("languagePreference", language.preference())
                     .put("agentOptions", agentPreferences.get())
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
@@ -508,6 +510,19 @@ public final class MainActivity extends Activity {
                 Intent intent = getPackageManager().getLaunchIntentForPackage("com.termux");
                 if (intent == null) toast(R.string.install_termux_first);
                 else startActivity(intent);
+            });
+        }
+
+        @JavascriptInterface public void openBrowserWindow(String tag) {
+            if (DemoMode.enabled(MainActivity.this) || tag == null || !tag.matches("bibimer-[a-f0-9-]{36}")) return;
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> {
+                if (!requestCurrent(false, epoch)) return;
+                try {
+                    startActivity(new Intent(Intent.ACTION_MAIN)
+                        .setClassName("com.termux.x11", "com.termux.x11.MainActivity")
+                        .setData(Uri.parse(tag)));
+                } catch (Exception ignored) { toast(R.string.browser_required); }
             });
         }
 

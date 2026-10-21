@@ -1,5 +1,21 @@
 # 첫 버전 구조와 API
 
+## Termux:X11 브라우저 실험 (2026-10-21, 별도 워크트리·미배포)
+
+`feat/termux-x11-browser`에서 Android의 작업 폴더별 일반 Firefox 수동 로그인 경로를 추가했다. VNC·ADB·접근성 서비스·별도 개발 PC를 쓰지 않는다. WebView가 Google 로그인 페이지를 직접 로드하거나 Chromium 화면을 중계하는 구현은 아니다. 에이전트의 브라우저 자동 제어도 아직 제공하지 않는다.
+
+- 프로젝트 화면의 브라우저 버튼에서 선택한 프로젝트/실제 Git 워크트리 경로를 고정한다. 인증된 `POST /v1/browser`의 `status`는 도구 설치 여부와 그 작업 폴더의 실행만 조회한다. `start`는 `request_id`와 HTTP(S) URL(선택)을 받고 동일 요청 재시도에는 같은 세션을 반환한다. URL은 자격증명 포함·제어 문자·잘못된 포트·다른 스킴·옵션 문자열을 거절하며 셸 문자열로 실행하지 않는다. 기본은 `about:blank`다. 작업 폴더는 기존 `working_project()`의 등록 프로젝트·실제 Git 워크트리 검증을 통과해야 한다.
+- `BrowserSession`은 기존 Terminal 세션 생명주기를 재사용하는 `kind: browser`이며 코딩 에이전트 항목을 추가하지 않는다. 시작은 현재 에이전트·선택 세션·입력 초안을 바꾸지 않는다. 사이드바 선택·이름 변경·보관·종료·종료 후 목록 삭제 및 유지보수 종료 대상에 포함된다. 브라우저를 선택하면 PTY 입력/특수 키를 숨기고 네이티브 창 조작을 안내한다. 서버도 이 세션의 입력을 거절한다. 시작 중에도 등록 해제/브리지 종료가 실행을 놓치지 않도록 막는다.
+- 자식 실행은 전용 X11 display를 선점하고 `termux-x11 :N -nolisten tcp -tag bibimer-<request UUID>`로 시작한다. 다른 X 서버의 socket/lock을 지우지 않는다. 같은 Termux 사용자의 브리지끼리 공유하는 display lock 및 기존 X socket/lock 확인으로 충돌을 피한다. X11 setup 성공 응답 뒤 `firefox --no-remote --profile <전용 경로> --new-window <URL>`을 실행한다. 사용자의 X startup script/진단 설정은 상속하지 않고 디버깅 포트·headless·인증 우회 옵션을 추가하지 않는다. tag별 창은 공식 최신 Termux:X11 기능으로, 구형 설치본은 시작 실패로 처리한다.
+- 프로필은 비공개 상태 폴더 아래 `browser-profiles/<정규화된 작업 폴더 경로 SHA256>`에 권한0700으로 유지한다. 동일 작업 폴더의 재실행은 같은 프로필, 다른 워크트리는 별도 프로필이다. 실행 중 프로필 lock으로 살아 있는 프로필에 두 번째 실행을 붙이지 않는다. 브라우저 종료·프로젝트 등록 해제 뒤에도 프로필을 유지하며 쿠키 내보내기/가져오기는 없다. 사이트의 만료/로그아웃 정책까지 로그인 유지를 보장하지 않는다.
+- 종료는 기존 소유 POSIX 세션만 대상으로 한다. Firefox 창이 닫히거나 X 서버가 끝나면 해당 실행의 다른 자식을 정리한다. 사용자 Firefox·다른 Termux:X11·다른 프로젝트 브라우저를 프로세스 이름으로 찾거나 종료하지 않는다. 브리지 재시작 뒤 목록은 유지하지만 실행 상태는 `lost`이고 자동 재실행하지 않는다. X11 Android 창/알림의 표시 상태와 서버 프로세스 생명주기는 별개다.
+- 브라우저 stdout/stderr는 폐기하고 웹 페이지·로그인 입력·쿠키·원본 URL을 Chat/PTY/일반 로그/브리지 메타데이터로 전달하지 않는다. 시작 확인은 준비 여부·display 번호 또는 허용한 오류 코드만 보낸다. 중복 방지를 위한 URL 해시와 창 tag만 세션 메타데이터에 남는다. 실제 로그인 데이터와 방문 기록은 사용자가 조작하는 Firefox 프로필 안에 남는다.
+- Android `LocalBridge`는 고정 `POST /v1/browser`만 추가 허용한다. `openBrowserWindow(tag)`는 `bibimer-<UUID>` 형식과 고정 `com.termux.x11/com.termux.x11.MainActivity` 컴포넌트만 사용한다. 임의 패키지·activity·인텐트 URL은 받지 않는다. 새 Android 권한 없이 설치 확인용 `<queries>`만 추가한다. Demo·구형 브리지·새 네이티브 메서드가 없는 iOS에서는 진입을 숨긴다. 비동기 시작 후 작업 폴더/화면이 바뀌면 창을 임의로 앞으로 가져오지 않는다.
+
+설치는 사용자가 공식 Termux:X11 Android 앱과 Termux의 `termux-x11-nightly`, `firefox`를 준비한다. 앱은 설치 명령 복사와 공식 릴리스 링크만 제공하며 설치·권한 변경·운영 브리지 교체를 자동 실행하지 않는다. Google이 로그인을 거절할 가능성은 남아 있다. 실제 기기의 X11 창·터치·한글 입력·팝업·패스키/2단계 인증·Google 로그인·장시간 유지/절전은 검증 전이다. 모의 프로세스/Chromium UI 검사를 실제 사이트 로그인 성공으로 표현하지 않는다.
+
+공식 근거: [Termux:X11 설치·tag별 창·네이티브 activity](https://github.com/termux/termux-x11#readme), [Termux Firefox 패키지](https://github.com/termux/termux-packages/blob/master/x11-packages/firefox/build.sh), [Google의 안전한 브라우저 정책](https://developers.google.com/identity/protocols/oauth2/policies#use_secure_browsers).
+
 ## 구독 한도 수집 (2026-10-21, 미배포)
 
 선택한 Chat 네이티브 실행의 계정 사용 한도를 `subscription_usage: {state, windows, updated_at}`로 전달한다. `windows`는 최대16개로 ID·기간/이름·사용률·초기화 시각·선택적 상태·보고 시각만 포함한다. 토큰/비용/계정명/이메일/자격증명/크레딧 정보와 원본 응답은 전달하지 않으며 메타데이터에도 저장하지 않는다. 서로 다른 실행/계정의 전역 캐시를 만들거나 세션 토큰을 합산하지 않는다. `used_percent: null`과 실제0%를 구분한다. 공유 Chat snapshot/events를 쓰므로 새 Android HTTP 허용 경로나 자산 파일은 없다.

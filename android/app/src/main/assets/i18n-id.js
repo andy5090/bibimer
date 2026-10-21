@@ -1,6 +1,25 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "browser_title": "Browser · eksperimen",
+  "browser_intro": "Buka Firefox di Termux:X11 dan masuk sendiri. Tidak memerlukan VNC atau ADB.",
+  "browser_address": "Alamat situs (opsional)",
+  "browser_start": "Mulai browser",
+  "browser_view": "Buka jendela browser",
+  "browser_setup": "Pasang alat browser",
+  "browser_install_hint": "Pasang aplikasi Android Termux:X11 terbaru dari rilis resmi, lalu jalankan perintah ini di Termux. Pemasangan dilakukan secara manual.",
+  "browser_get_x11": "Rilis Termux:X11",
+  "browser_privacy": "Login disimpan dalam profil Firefox privat folder kerja ini. Meninggalkan layar ini tidak menghentikan browser; akhiri melalui pengelolaan sesi. Profil tetap disimpan.",
+  "browser_auth": "Google masih dapat menolak login. Eksperimen ini tidak melewati batasan autentikasi atau menyediakan kendali browser oleh agen.",
+  "browser_starting": "Memulai browser…",
+  "browser_running": "Browser berjalan. Gunakan Termux:X11 dan akhiri melalui pengelolaan sesi.",
+  "browser_ready": "Alat browser terpasang. Mulai browser untuk masuk secara manual.",
+  "error_browser_url": "Masukkan alamat HTTP atau HTTPS tanpa kredensial.",
+  "error_browser_setup": "Pasang aplikasi Termux:X11 terbaru, termux-x11-nightly, dan Firefox di Termux terlebih dahulu.",
+  "error_browser_start": "Browser tidak dapat dimulai. Periksa Termux:X11 dan Firefox di Termux.",
+  "error_browser_busy": "Profil browser ini sedang digunakan. Tutup jendela yang ada sebelum memulai lagi.",
+  "error_browser_input": "Gunakan jendela Termux:X11 untuk berinteraksi dengan browser ini.",
+
   "subscription_label": "Batas langganan",
   "subscription_window": "Periode kuota",
   "subscription_extra": "Penggunaan ekstra",

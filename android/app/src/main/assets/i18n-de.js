@@ -1,6 +1,25 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "browser_title": "Browser · Experiment",
+  "browser_intro": "Öffne Firefox in Termux:X11 und melde dich selbst an. VNC und ADB sind nicht erforderlich.",
+  "browser_address": "Website-Adresse (optional)",
+  "browser_start": "Browser starten",
+  "browser_view": "Browserfenster öffnen",
+  "browser_setup": "Browserwerkzeuge installieren",
+  "browser_install_hint": "Installiere die aktuelle Android-App Termux:X11 aus den offiziellen Releases und führe diesen Befehl in Termux aus. Die Installation erfolgt manuell.",
+  "browser_get_x11": "Termux:X11-Releases",
+  "browser_privacy": "Die Anmeldung bleibt im privaten Firefox-Profil dieses Arbeitsordners. Beim Verlassen bleibt der Browser aktiv; beende ihn in der Sitzungsverwaltung. Das Profil bleibt erhalten.",
+  "browser_auth": "Google kann die Anmeldung weiterhin ablehnen. Dieses Experiment umgeht keine Anmeldebeschränkungen und bietet keine Browsersteuerung durch Agenten.",
+  "browser_starting": "Browser wird gestartet…",
+  "browser_running": "Browser läuft. Bediene ihn in Termux:X11 und beende ihn in der Sitzungsverwaltung.",
+  "browser_ready": "Browserwerkzeuge sind installiert. Starte den Browser zur manuellen Anmeldung.",
+  "error_browser_url": "Gib eine HTTP- oder HTTPS-Adresse ohne Anmeldedaten ein.",
+  "error_browser_setup": "Installiere zuerst die aktuelle Termux:X11-App sowie termux-x11-nightly und Firefox in Termux.",
+  "error_browser_start": "Der Browser konnte nicht starten. Prüfe Termux:X11 und Firefox in Termux.",
+  "error_browser_busy": "Dieses Browserprofil wird bereits verwendet. Schließe das vorhandene Fenster vor einem Neustart.",
+  "error_browser_input": "Verwende das Termux:X11-Fenster, um diesen Browser zu bedienen.",
+
   "subscription_label": "Abo-Limits",
   "subscription_window": "Kontingentzeitraum",
   "subscription_extra": "Zusätzliche Nutzung",

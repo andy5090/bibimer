@@ -1,6 +1,25 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "browser_title": "Navigateur · expérimental",
+  "browser_intro": "Ouvrez Firefox dans Termux:X11 et connectez-vous vous-même. Aucun VNC ni ADB requis.",
+  "browser_address": "Adresse du site (facultatif)",
+  "browser_start": "Démarrer le navigateur",
+  "browser_view": "Ouvrir la fenêtre du navigateur",
+  "browser_setup": "Installer les outils du navigateur",
+  "browser_install_hint": "Installez la dernière application Android Termux:X11 depuis les versions officielles, puis exécutez cette commande dans Termux. L’installation est manuelle.",
+  "browser_get_x11": "Versions de Termux:X11",
+  "browser_privacy": "La connexion reste dans le profil Firefox privé de ce dossier de travail. Quitter cet écran laisse le navigateur actif ; arrêtez-le dans la gestion des sessions. Le profil est conservé.",
+  "browser_auth": "Google peut encore refuser la connexion. Cette expérience ne contourne pas les restrictions d’authentification et ne permet pas aux agents de contrôler le navigateur.",
+  "browser_starting": "Démarrage du navigateur…",
+  "browser_running": "Navigateur actif. Utilisez Termux:X11 et arrêtez-le dans la gestion des sessions.",
+  "browser_ready": "Outils installés. Démarrez le navigateur pour vous connecter manuellement.",
+  "error_browser_url": "Saisissez une adresse HTTP ou HTTPS sans identifiants.",
+  "error_browser_setup": "Installez d’abord la dernière application Termux:X11, termux-x11-nightly et Firefox dans Termux.",
+  "error_browser_start": "Impossible de démarrer le navigateur. Vérifiez Termux:X11 et Firefox dans Termux.",
+  "error_browser_busy": "Ce profil est déjà utilisé. Fermez la fenêtre existante avant de redémarrer.",
+  "error_browser_input": "Utilisez la fenêtre Termux:X11 pour interagir avec ce navigateur.",
+
   "subscription_label": "Limites du forfait",
   "subscription_window": "Période du quota",
   "subscription_extra": "Usage supplémentaire",

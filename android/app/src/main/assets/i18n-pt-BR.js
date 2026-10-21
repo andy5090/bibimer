@@ -1,6 +1,25 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["pt-BR"] = {
+  "browser_title": "Navegador · experimental",
+  "browser_intro": "Abra o Firefox no Termux:X11 e entre na sua conta. Não requer VNC nem ADB.",
+  "browser_address": "Endereço do site (opcional)",
+  "browser_start": "Iniciar navegador",
+  "browser_view": "Abrir janela do navegador",
+  "browser_setup": "Instalar ferramentas do navegador",
+  "browser_install_hint": "Instale o app Android Termux:X11 mais recente pelas versões oficiais e execute este comando no Termux. A instalação é manual.",
+  "browser_get_x11": "Versões do Termux:X11",
+  "browser_privacy": "O login permanece no perfil privado do Firefox desta pasta de trabalho. Sair desta tela mantém o navegador aberto; encerre-o no gerenciamento de sessões. O perfil é mantido.",
+  "browser_auth": "O Google ainda pode recusar o login. Este experimento não contorna restrições de autenticação nem oferece controle do navegador por agentes.",
+  "browser_starting": "Iniciando navegador…",
+  "browser_running": "Navegador em execução. Use o Termux:X11 e encerre-o no gerenciamento de sessões.",
+  "browser_ready": "Ferramentas instaladas. Inicie o navegador para entrar manualmente.",
+  "error_browser_url": "Insira um endereço HTTP ou HTTPS sem credenciais.",
+  "error_browser_setup": "Instale primeiro o app Termux:X11 mais recente, termux-x11-nightly e Firefox no Termux.",
+  "error_browser_start": "Não foi possível iniciar o navegador. Confira o Termux:X11 e o Firefox no Termux.",
+  "error_browser_busy": "Este perfil está em uso. Feche a janela existente antes de iniciar novamente.",
+  "error_browser_input": "Use a janela do Termux:X11 para interagir com este navegador.",
+
   "subscription_label": "Limites do plano",
   "subscription_window": "Período de uso",
   "subscription_extra": "Uso extra",

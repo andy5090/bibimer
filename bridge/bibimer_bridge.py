@@ -41,6 +41,11 @@ ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
+    "error_browser_url": "Enter an HTTP or HTTPS address without embedded credentials.",
+    "error_browser_setup": "Install the latest Termux:X11 app, termux-x11-nightly and Firefox in Termux first.",
+    "error_browser_start": "The browser could not start. Check Termux:X11 and Firefox in Termux.",
+    "error_browser_busy": "This browser profile is already in use. Close its existing browser window before starting again.",
+    "error_browser_input": "Use the Termux:X11 window to interact with this browser.",
     "error_file_link": "This file link is not valid.",
     "error_file_scope": "Open files from the current project, worktree or Downloads folder.",
     "error_file_access": "Could not read this file. Check its path and Termux access.",
@@ -669,6 +674,173 @@ def session_title(value):
     value = re.sub(r"[\x00-\x1f\x7f-\x9f\u200e\u200f\u202a-\u202e\u2066-\u2069]", " ", value[:4096])
     value = " ".join(value.split())
     return value if len(value) <= 120 else value[:119].rstrip() + "…"
+
+
+def browser_url(value):
+    if not isinstance(value, str) or len(value) > 4096 or any(ord(c) <= 32 or ord(c) == 127 for c in value):
+        raise Problem(400, "error_browser_url")
+    if not value:
+        return "about:blank"
+    try:
+        url = urllib.parse.urlsplit(value)
+        if url.scheme not in {"https", "http"} or not url.hostname or url.username is not None or url.password is not None:
+            raise ValueError()
+        _ = url.port
+        if "\\" in value:
+            raise ValueError()
+    except ValueError:
+        raise Problem(400, "error_browser_url") from None
+    return value
+
+
+class BrowserSession(Session):
+    """A visible Firefox + tagged Termux:X11 window in one owned POSIX session.
+
+    Reuses the session library/stop/maintenance boundary. Browser diagnostics,
+    pages, cookies and keyboard input never become PTY output or metadata.
+    """
+    def __init__(self, project, root, url, launch_id, changed):
+        self.browser_digest = hashlib.sha256(url.encode()).hexdigest()
+        self.browser_tag = "bibimer-" + launch_id
+        profile_key = hashlib.sha256(str(Path(project["path"]).resolve()).encode()).hexdigest()
+        profile = private_dir(private_dir(root / "browser-profiles") / profile_key)
+        argv = [sys.executable, str(Path(__file__).resolve()), "_browser", str(profile),
+                str(private_dir(Path(tempfile.gettempdir()) / "bibimer-x11-displays")), self.browser_tag, url]
+        super().__init__(project, "shell", argv, 80, 24, launch_id, changed)
+        try:
+            end, raw = time.monotonic() + 8, b""
+            while time.monotonic() < end:
+                if select.select([self.master], [], [], .05)[0]:
+                    raw += os.read(self.master, 2048)
+                    if len(raw) > 4096:
+                        break
+                    if b"\n" in raw:
+                        result = json.loads(raw.split(b"\n", 1)[0])
+                        if result.get("ready") is True:
+                            self.browser_display = result["display"]
+                            return
+                        if result.get("code") == "error_browser_busy":
+                            raise Problem(409, "error_browser_busy")
+                        break
+                if self.process.poll() is not None:
+                    break
+            raise Problem(400, "error_browser_start")
+        except (OSError, ValueError, KeyError):
+            raise Problem(400, "error_browser_start") from None
+        finally:
+            if not hasattr(self, "browser_display"):
+                self._signal_members(signal.SIGKILL)
+                with contextlib.suppress(subprocess.TimeoutExpired):
+                    self.process.wait(timeout=2)
+                with contextlib.suppress(OSError):
+                    os.close(self.master)
+
+    def snapshot(self):
+        return dict(super().snapshot(), kind="browser", browser_tag=self.browser_tag,
+                    browser_digest=self.browser_digest, display_title="Firefox · Termux:X11")
+
+    def write(self, data, key):
+        raise Problem(400, "error_browser_input")
+
+    def resize(self, cols, rows):
+        pass
+
+    def _terminate(self):
+        # Let the worker close Firefox before its X server. The inherited watcher
+        # still collects any remaining members of this owned POSIX session.
+        with contextlib.suppress(ProcessLookupError):
+            self.process.terminate()
+        try:
+            self.process.wait(timeout=4)
+        except subprocess.TimeoutExpired:
+            self._signal_members(signal.SIGKILL)
+
+
+def browser_worker(profile, displays, tag, url):
+    # Called only in an owned session. No shell, credentials, remote debugging,
+    # automation flags, user agent changes, profile import or global process kill.
+    processes, locks = [], []
+    def report(**value):
+        print(json.dumps(value), flush=True)
+    def stop(*_):
+        raise SystemExit(0)
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    try:
+        guard = open(Path(profile) / ".bibimer.lock", "a")
+        locks.append(guard)
+        try:
+            fcntl.flock(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            report(code="error_browser_busy")
+            return
+        display = None
+        tmp = Path(os.environ.get("TMPDIR") or tempfile.gettempdir())
+        for number in range(70, 90):
+            lock = open(Path(displays) / str(number), "a")
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                lock.close()
+                continue
+            if (tmp / ".X11-unix" / ("X" + str(number))).exists() or (tmp / (".X" + str(number) + "-lock")).exists():
+                lock.close()
+                continue
+            locks.append(lock)
+            display = number
+            break
+        if display is None:
+            report(code="error_browser_start")
+            return
+        env = dict(os.environ, DISPLAY=":" + str(display), GDK_BACKEND="x11", MOZ_ENABLE_WAYLAND="0")
+        # Do not inherit a user's X startup script or diagnostic capture setting.
+        for key in ("TERMUX_X11_XSTARTUP", "TERMUX_X11_DEBUG", "MOZ_LOG", "MOZ_LOG_FILE"):
+            env.pop(key, None)
+        x11 = subprocess.Popen([shutil.which("termux-x11"), env["DISPLAY"], "-nolisten", "tcp", "-tag", tag],
+            env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
+        processes.append(x11)
+        deadline = time.monotonic() + 5
+        ready = False
+        while time.monotonic() < deadline and x11.poll() is None:
+            try:
+                with socket.socket(socket.AF_UNIX) as connection:
+                    connection.settimeout(.15)
+                    connection.connect(str(tmp / ".X11-unix" / ("X" + str(display))))
+                    # X11 setup request with no credentials; readiness requires
+                    # an actual successful X protocol reply, not socket presence.
+                    connection.sendall(struct.pack("<BBHHHHH", ord("l"), 0, 11, 0, 0, 0, 0))
+                    ready = connection.recv(8)[:1] == b"\x01"
+                if ready:
+                    break
+            except OSError:
+                pass
+            time.sleep(.05)
+        if not ready:
+            report(code="error_browser_start")
+            return
+        firefox = subprocess.Popen([shutil.which("firefox"), "--no-remote", "--profile", profile, "--new-window", url],
+            env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
+        processes.append(firefox)
+        time.sleep(.2)
+        if firefox.poll() is not None or x11.poll() is not None:
+            report(code="error_browser_start")
+            return
+        report(ready=True, display=display)
+        while firefox.poll() is None and x11.poll() is None:
+            time.sleep(.2)
+    except (OSError, TypeError, ValueError):
+        report(code="error_browser_start")
+    finally:
+        for process in reversed(processes):
+            if process.poll() is None:
+                process.terminate()
+            try:
+                process.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+        for lock in locks:
+            lock.close()
 
 
 def quota_number(value, maximum):
@@ -2478,6 +2650,7 @@ class Bridge:
         state = self.state
         self.lock = threading.RLock()
         self.history_lock = threading.Lock()
+        self.browser_lock = threading.Lock()
         self.model_locks = {}
         self.model_cache = {}
         self.command_cache = {}
@@ -2664,6 +2837,8 @@ class Bridge:
                 self.projects[key] = dict(self.projects[key], name=name.strip())
             elif action == "delete":
                 records = self.snapshots(key)
+                if getattr(self, "browser_starting", None) == key:
+                    raise Problem(409, "error_project_delete_active")
                 if self.worktree_creation.active(key):
                     raise Problem(409, "error_worktree_busy")
                 if any(row["state"] in ACTIVE for row in records):
@@ -2748,6 +2923,57 @@ class Bridge:
         project = self.working_project(data)
         return WorkspaceInspector(project).inspect(data)
 
+    def browser(self, data):
+        project = self.working_project(data)
+        action = data.get("action")
+        if action not in {"status", "start"}:
+            raise Problem(400, "error_invalid_json")
+        installed = {name: bool(shutil.which(name)) for name in ("termux-x11", "firefox")}
+        if action == "status":
+            with self.lock:
+                current = next((row for row in self.snapshots(project["id"]) if row.get("kind") == "browser"
+                                and row["project"]["path"] == project["path"] and row["state"] in ACTIVE), None)
+            return {"installed": installed, "session": current}
+        key, url = request_id(data.get("request_id")), browser_url(data.get("url", ""))
+        digest = hashlib.sha256(url.encode()).hexdigest()
+        if not self.browser_lock.acquire(blocking=False):
+            raise Problem(409, "error_browser_busy")
+        session = None
+        try:
+            with self.lock:
+                if self.closing:
+                    raise Problem(409, "error_bridge_stopping")
+                if key in self.deleted_launches:
+                    raise Problem(409, "error_launch_conflict")
+                previous = next((row for row in self.snapshots() if row.get("launch_id") == key), None)
+                if previous:
+                    if (previous.get("kind") != "browser" or previous["project"] != project or
+                            previous.get("browser_digest") != digest):
+                        raise Problem(409, "error_launch_conflict")
+                    return {"session": previous}
+                if any(row.get("kind") == "browser" and row["project"]["path"] == project["path"]
+                       and row["state"] in ACTIVE for row in self.snapshots(project["id"])):
+                    raise Problem(409, "error_browser_busy")
+                if not all(installed.values()):
+                    raise Problem(400, "error_browser_setup")
+                # Prevent unregister/maintenance from missing an in-flight start.
+                self.browser_starting = project["id"]
+            session = BrowserSession(project, self.state, url, key, self.persist)
+            with self.lock:
+                if self.closing or project["id"] not in self.projects:
+                    session.start_reading()
+                    session.stop()
+                    raise Problem(409, "error_bridge_stopping")
+                self.sessions[session.id] = session
+                session.start_reading()
+                self.persist()
+                # Opening a browser never switches the user's agent or draft.
+                return {"session": session.snapshot()}
+        finally:
+            with self.lock:
+                self.browser_starting = None
+            self.browser_lock.release()
+
     def select_agent(self, data):
         with self.lock:
             key, agent = data.get("project_id"), data.get("agent")
@@ -2760,7 +2986,7 @@ class Bridge:
             return {"project_id": key, "agent": agent, "session": self.snapshot_for(key)}
 
     def active_count(self):
-        return sum(session.state in ACTIVE for session in self.sessions.values())
+        return sum(session.state in ACTIVE for session in self.sessions.values()) + bool(getattr(self, "browser_starting", None))
 
     def completions(self, instance, cursor, wait):
         result = self.completion_feed.read(instance, cursor, wait)
@@ -2834,7 +3060,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -3225,12 +3451,12 @@ class Bridge:
             if current and current.get("launch_id") == key:
                 if ((current.get("handoff") or {}).get("request_digest") if (current.get("handoff") or {}).get("created_by") == key else None) != (continuation or {}).get("metadata", {}).get("request_digest"):
                     raise Problem(409, "error_launch_conflict")
-                if (current["project"] != project or current["agent"] != agent or current.get("mode", "terminal") != mode or
+                if (current.get("kind") == "browser" or current["project"] != project or current["agent"] != agent or current.get("mode", "terminal") != mode or
                         current.get("launch_options", current.get("options", {"permission": "inherit"})) != options or
                         any(current.get(field) != (imported or {}).get(field) for field in ("source_thread_id", "import_mode"))):
                     raise Problem(409, "error_launch_conflict")
                 return project_id, project, current
-            if not data.get("new_session") and any(row["agent"] == agent and row["state"] in ACTIVE for row in self.snapshots(project_id)):
+            if not data.get("new_session") and any(row["agent"] == agent and row.get("kind") != "browser" and row["state"] in ACTIVE for row in self.snapshots(project_id)):
                 raise Problem(409, "error_session_exists")
             if imported and imported["import_mode"] == "resume" and any(
                     row["agent"] == agent and row["state"] in ACTIVE and
@@ -3458,6 +3684,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = bridge.folders(data)
         elif method == "POST" and parsed.path == "/v1/inspect":
             result = bridge.inspect_workspace(data)
+        elif method == "POST" and parsed.path == "/v1/browser":
+            result = bridge.browser(data)
         elif method == "POST" and parsed.path == "/v1/session-history":
             result = bridge.session_history(data)
         elif method == "POST" and parsed.path == "/v1/commands":
@@ -3672,6 +3900,9 @@ def show_pairing(state):
 
 def main():
     global CLI_LANGUAGE
+    if len(sys.argv) == 6 and sys.argv[1] == "_browser":
+        browser_worker(*sys.argv[2:])
+        return
     if len(sys.argv) > 1 and sys.argv[1] == "_child":
         fcntl.ioctl(0, termios.TIOCSCTTY, 0)
         os.execvpe(sys.argv[2], sys.argv[2:], os.environ)

@@ -30,6 +30,7 @@
   let canResponseNotifications = false, notificationNavigating = false, notificationRetry, pendingNotification;
   let canDragProjects = false, canOrderProjects = false, canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   let canInspect = false, canOpenFiles = false, openingFile = false;
+  let canBrowser = false, browserState = null;
   const worktrees = {};
   const worktreeChecks = new Map();
   let workspaceDetails = null;
@@ -494,6 +495,7 @@
   }
   function sessionTitle(value) {
     if (value.title) return value.title;
+    if (value.kind === "browser") return t("browser_title");
     if (value.display_title || sessionTitles.get(value.id)) return value.display_title || sessionTitles.get(value.id);
     const date = new Date(value.started_at * 1000);
     return t("agent_" + value.agent) + " · " + (Number.isNaN(date.getTime()) ? value.id.slice(0,8) :
@@ -869,6 +871,76 @@
     if (name === "work") setTimeout(resize, 30);
     else updateEnvironment();
   }
+  function browserKey() {
+    const ctx = fileContext();
+    return [ctx.instance, ctx.project, ctx.path].join("/");
+  }
+  function renderBrowser() {
+    const supported = canBrowser && !demo && !!native.openBrowserWindow;
+    $("browser-open").hidden = !supported;
+    $("browser-open").disabled = !online || paused || !project || switchingProject;
+    const state = browserState;
+    if (!state) return;
+    const valid = state.key === browserKey() && online && !paused && !switchingProject;
+    const installed = environment().termuxX11Installed === true && state.installed?.["termux-x11"] && state.installed?.firefox;
+    const running = state.session && ["running", "stopping"].includes(state.session.state);
+    $("browser-workspace").textContent = state.path;
+    $("browser-status").textContent = t(state.busy ? "browser_starting" : state.loading ? "inspect_loading" : running ? "browser_running" : installed ? "browser_ready" : "error_browser_setup");
+    $("browser-start").disabled = !valid || !installed || state.busy || state.loading || !!running;
+    $("browser-url").disabled = !valid || state.busy || !!running;
+    $("browser-start").textContent = t(state.busy ? "browser_starting" : "browser_start");
+    $("browser-view").hidden = !running;
+    $("browser-view").disabled = !valid || state.session?.state !== "running";
+    $("browser-refresh").disabled = !valid || state.busy || state.loading;
+    $("browser-error").hidden = !state.error && valid;
+    $("browser-error").textContent = t(state.error || (!valid ? "error_connection_failed" : ""));
+  }
+  async function browserStatus(state) {
+    state.loading = true; state.error = null; renderBrowser();
+    try {
+      const result = await api("POST", "/v1/browser", {action:"status", project_id:state.project, worktree_path:state.path});
+      if (browserState !== state || state.key !== browserKey()) return;
+      state.installed = result.installed; state.session = result.session;
+    } catch (error) { if (browserState === state) state.error = error.key || "error_request_failed"; }
+    finally { if (browserState === state) { state.loading = false; renderBrowser(); } }
+  }
+  async function openBrowser() {
+    if (!canBrowser || !online || demo || !native.openBrowserWindow) return;
+    const ctx = fileContext(), key = browserKey();
+    if (!ctx.project || !ctx.online) return;
+    if (!browserState || browserState.key !== key) {
+      browserState = {key, project:ctx.project, path:ctx.path, installed:null, session:null, error:null, payload:null, busy:false};
+      $("browser-url").value = "";
+    }
+    if (!$("browser-dialog").open) $("browser-dialog").showModal();
+    if (!browserState.busy) await browserStatus(browserState);
+  }
+  $("browser-open").addEventListener("click", () => void openBrowser());
+  $("browser-close").addEventListener("click", () => $("browser-dialog").close());
+  $("browser-refresh").addEventListener("click", () => { if (browserState && !browserState.busy) void browserStatus(browserState); });
+  $("browser-guide").addEventListener("click", () => native.openLink("https://github.com/termux/termux-x11/releases/tag/nightly"));
+  $("browser-copy").addEventListener("click", () => native.copyText("pkg install x11-repo && pkg install termux-x11-nightly firefox"));
+  $("browser-view").addEventListener("click", () => {
+    if (browserState?.key === browserKey() && online && !paused && browserState.session?.state === "running") native.openBrowserWindow(browserState.session.browser_tag);
+  });
+  $("browser-url").addEventListener("input", () => { if (browserState && !browserState.busy) browserState.payload = null; });
+  $("browser-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    const state = browserState;
+    if (!state || $("browser-start").disabled || state.busy || state.key !== browserKey()) return;
+    state.payload ||= {action:"start", project_id:state.project, worktree_path:state.path, url:$("browser-url").value.trim(), request_id:uuid()};
+    state.busy = true; state.error = null; renderBrowser();
+    try {
+      const result = await api("POST", "/v1/browser", state.payload);
+      if (browserState !== state) return;
+      state.session = result.session;
+      cacheSession(result.session);
+      // Re-check the workspace and visible dialog after asynchronous startup.
+      if (state.key === browserKey() && online && !paused && $("browser-dialog").open && result.session.state === "running") native.openBrowserWindow(result.session.browser_tag);
+      await refreshSidebar();
+    } catch (error) { if (browserState === state) state.error = error.key || "error_browser_start"; }
+    finally { if (browserState === state) { state.busy = false; renderBrowser(); } }
+  });
   function renderContextUsage() {
     const root = $("context-usage"), meter = $("context-meter");
     root.hidden = !isChat();
@@ -972,6 +1044,7 @@
     $("subscription-updated").textContent = observed > 0 && observed <= 253402300799 ? t("subscription_updated", {time:new Date(observed * 1000).toLocaleString(i18n.language())}) : "";
   }
   function renderSession() {
+    renderBrowser();
     renderContextUsage();
     renderSubscriptionUsage();
     worktreeCreator.render();
@@ -1023,7 +1096,8 @@
     $("browse-project").disabled = !online || switchingProject || busy;
     renderFolderBrowser(); github.render();
     $("project-update").hidden = !online || multipleProjects;
-    $("input").disabled = !online || !session || session.state !== "running" || (isChat() && !session.ready);
+    $("input").disabled = !online || !session || session.kind === "browser" || session.state !== "running" || (isChat() && !session.ready);
+    $("input-form").hidden = session?.kind === "browser";
     const responding = isChat() && !["ready", "failed"].includes(session.turn_state);
     const enqueue = isChat() && canQueue && (responding || session.queued_count > 0);
     const steerable = isChat() && supportsSteer() && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state);
@@ -1047,7 +1121,7 @@
     for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.disabled = $("input").disabled;
     $("terminal-empty").hidden = !!session;
     $("terminal-area").hidden = isChat();
-    $("terminal-keys").hidden = isChat();
+    $("terminal-keys").hidden = isChat() || session?.kind === "browser";
     $("chat-panel").hidden = !isChat();
     $("chat-state").hidden = !isChat();
     $("chat-empty").hidden = conversation.items.size > 0;
@@ -1060,7 +1134,7 @@
     $("input").placeholder = t(isChat() ? "chat_placeholder" : "input_placeholder");
     conversation.enable(online && live);
     $("session-note").textContent = t(!online && session ? "session_unknown" :
-      session && session.state === "lost" ? "session_lost_note" : "session_kept");
+      session && session.state === "lost" ? "session_lost_note" : session?.kind === "browser" ? "browser_running" : "session_kept");
     pickers.sync();
     inspector.update();
     fileViewer.update();
@@ -1152,6 +1226,7 @@
       canOrderProjects = health.features?.includes("project_ordering") === true;
       canDragProjects = health.features?.includes("project_drag_ordering") === true;
       canInspect = health.features?.includes("workspace_inspector") === true;
+      canBrowser = health.features?.includes("browser_x11") === true;
       canOpenFiles = health.features?.includes("file_links") === true;
       canResponseNotifications = health.features?.includes("response_notifications") === true;
       if (JSON.stringify(knownAgents) !== JSON.stringify(health.agents)) {

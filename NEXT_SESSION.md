@@ -1,5 +1,17 @@
 # Bibimer 다음 세션 시작점
 
+## Termux:X11 브라우저 수동 로그인 실험 (2026-10-21, 별도 워크트리·미배포)
+
+- 사용자 요청으로 `b1ba83f`에서 **`feat/termux-x11-browser`** 브랜치와 `/data/data/com.termux/files/home/projects/bibimer-x11-browser` 워크트리를 만들었다. 원본 `bibimer/main`은 변경하지 않았다. 앞선 제안 중 **Termux:X11의 일반 브라우저 창** 방식을 구현했으며 VNC/무선 ADB/접근성 서비스/별도 PC를 사용하지 않는다. 앱 내부 CDP 화면 중계·브라우저 자동 제어는 이번 범위가 아니다.
+- 프로젝트/실제 Git 워크트리 화면의 지구본 버튼 → **브라우저 · 실험**에서 도구 설치 상태·작업 폴더를 확인하고 HTTP(S) 주소(선택)를 입력해 시작한다. 최신 Termux:X11 Android 앱 및 Termux의 `termux-x11-nightly`, `firefox`가 필요하며 설치 명령 복사·공식 릴리스 링크만 제공한다. 설치/권한 변경/기존 브리지 재시작은 자동 수행하지 않는다. 정상 시작 뒤 고정 native activity와 UUID tag로 그 브라우저 창을 열고 사용자가 직접 로그인한다. 새 네이티브 API가 없는 iOS·구형 브리지·Demo에서는 진입을 숨긴다.
+- 인증된 `POST /v1/browser`에서 상태 조회와 명시적 시작을 처리한다. 기존 작업 폴더 검증·요청 UUID 재시도/충돌 검사·프로필 lock·공유 display lock·기존 X socket/lock 보존·X11 setup 성공 확인을 사용한다. 자격증명/제어 문자/잘못된 포트/다른 URL 스킴은 거절하며 셸 문자열로 실행하지 않는다. 현재 에이전트/선택 세션/작성 초안은 유지한다. 늦은 응답 뒤 다른 작업 폴더나 닫은 화면을 임의로 앞으로 가져오지 않는다.
+- 브라우저는 `kind: browser`인 관리 세션으로 목록·보관·이름 변경·종료·종료 후 목록 삭제·브리지 유지보수의 종료 대상에 포함된다. 브라우저 세션의 PTY 입력은 UI/서버 양쪽에서 막는다. 전용 X11 display/Firefox를 소유 POSIX 세션 안에서만 정리하고 사용자 프로세스를 이름으로 종료하지 않는다. 정상 종료는 Firefox를 먼저 정리한 뒤 X 서버를 닫도록 했다. 브리지 재시작 뒤 목록은 유지하지만 실행 복원은 하지 않고 `lost`로 표시한다.
+- 작업 폴더별 비공개 상태 경로의 Firefox 프로필(0700)에 로그인/사이트 기록을 유지하고 다른 워크트리는 분리한다. 종료·목록 삭제·프로젝트 등록 해제로 프로필을 지우지 않는다. 원본 URL/페이지/로그인 입력/쿠키/브라우저 진단 출력은 Chat/PTY/일반 로그/브리지 메타데이터로 전달하지 않는다. URL 해시·창 tag만 중복 방지용 메타데이터로 남긴다. 사이트 만료/로그아웃 정책이나 Google 인증 성공을 보장하지 않는다.
+- 검증: 브라우저 전용 **8개 통과**(`.tools/browser-tests.log`): 설치 조회의 무실행, 인증/Origin/URL/작업 폴더 거절, 요청 재시도와 충돌, 프로필 유지/워크트리 분리/lock, 다른 프로세스 생존, 출력/URL/입력 비노출, 종료와 재시작 비복원, X11 프로토콜/Firefox 실패 정리를 확인했다. 기존 Python scripts **39개 통과**(`.tools/browser-scripts.log`). 전체 격리 Chromium **`smoke_ui.cjs` 통과**(`.tools/browser-ui-final.log`): 설치 미완료 비활성/명령 복사/공식 링크, 10언어320×460 화면, 실제 임시 브리지+모의 X11/Firefox 시작·창 handoff·세션 관리 종료·Chat 초안/선택 유지/모델 입력0, 기존 Queue/Steer·승인/질문·PTY·가져오기·재접속을 확인했다. 초회 UI 검사는 접힌 설치 안내 안의 복사 버튼을 누르려던 검사 절차가 실패했으며 안내를 먼저 펼치도록 고쳐 전체 재검사를 통과했다.
+- 18키를 추가해 **744키×10언어** 및 언어/컨텍스트/구독 renderer·JS/Python 구문·diff 검사가 통과했다. 화면 `dist/screenshots/browser-x11-{setup-320-ko,setup-320-en,running}.png` 중 한국어320px와 실행 상태를 시각 확인했다. Android 전체 Java 소스는 실제 Android36 API·XML에서 대조한 리소스 ID·기존 Play SDK 검사 대역으로 컴파일 성공했다. APK를 생성하는 빌드 경로는 실행하지 않았다. 이전 빌드의 오래된 generated R/class로만 컴파일한 첫 시도는 현재 소스 항목이 없어 실패했으므로 그 결과를 성공 근거로 쓰지 않았다.
+- 전체 브리지 **199개 통과**(`.tools/browser-all-bridge-final.log`). 첫 실행은 기존 Setup 검사의 `play_sdk` import 경로1개가 실패했으며 제품 코드를 바꾸지 않고 `PYTHONPATH=scripts`로 전체 재검사를 통과했다. Firefox를 X 서버보다 먼저 정리하도록 종료 순서를 보강한 최종 소스에서도 브라우저 전용 **8개 재검사 통과**(`.tools/browser-tests-final.log`,18.474초). 이후 UI 새로고침 버튼은 기존 공통 번역의 일반 ‘새로고침’ 문구로 정리했고744키×10언어·구문·diff를 다시 확인했다.
+- **소스 구현과 격리 검증이다. APK/AAB/iOS 빌드·설치·배포·버전 변경·커밋/푸시·main 병합·운영 브리지 교체/재시작·실제 계정/모델 실행은 하지 않았다.** 실제 휴대폰의 최신 X11+Firefox 설치·네이티브 창 연결·창 크기/포커스·터치·한글 입력·팝업·패스키/2단계 인증·Google 로그인 완료 및 장시간/절전 후 유지 검증은 남아 있다. Google 로그인 성공을 확인하기 전 지원 완료로 소개하지 않는다. 설계와 공식 근거는 `docs/architecture.md`, UX는 `docs/interface.md`에 기록했다.
+
 ## OpenCode·Gemini 구독 사용 한도 조사 (2026-10-21, 연동 미구현)
 
 - 사용자 요청으로 공식 문서와 OpenCode1.19.3·Gemini CLI0.64.0 소스를 조사했다. 상세 API/로그인 범위/주의점/공식 근거는 `docs/architecture.md`의 **OpenCode·Gemini 계정 한도 조사**에 기록했다. 이전 Codex·Claude 구독 기능의 미커밋 변경은 유지했다.

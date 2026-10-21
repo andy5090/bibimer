@@ -49,6 +49,11 @@ async function main() {
     fs.writeFileSync(path.join(binaries,'codex'),'#!'+python+'\n'+fs.readFileSync(path.join(root,'bridge/tests/fake_codex.py'),'utf8'),{mode:0o700});
     fs.writeFileSync(path.join(binaries,'opencode'),'#!'+python+'\n'+fs.readFileSync(path.join(root,'bridge/tests/fake_opencode.py'),'utf8'),{mode:0o700});
     fs.writeFileSync(path.join(binaries,'claude'),'#!'+python+'\nprint("2.1.283")\n',{mode:0o700});
+    const browserFixtures = JSON.parse(execFileSync(python,['-c',
+      'import ast,json,sys; tree=ast.parse(open(sys.argv[1]).read()); print(json.dumps({n.targets[0].id:ast.literal_eval(n.value) for n in tree.body if isinstance(n,ast.Assign) and isinstance(n.targets[0],ast.Name) and n.targets[0].id in ("X11","FIREFOX")}))',
+      path.join(root,'bridge/tests/test_browser.py')],{encoding:'utf8'}));
+    for (const [name,fixture] of [['termux-x11','X11'],['firefox','FIREFOX']]) fs.writeFileSync(path.join(binaries,name),'#!'+python+'\n'+browserFixtures[fixture],{mode:0o700});
+    bridgeEnv.TMPDIR=path.join(temporary,'x11-tmp');fs.mkdirSync(bridgeEnv.TMPDIR);
     bridgeEnv.BIBIMER_CLAUDE_SDK_PATH=path.join(root,'bridge/tests/fake_claude_sdk.mjs');
     bridgeEnv.PATH = binaries+':'+process.env.PATH;
   }
@@ -131,6 +136,7 @@ async function main() {
   });
   await page.addInitScript(() => {
     window.setupActions = [];
+    window.browserWindowTags = [];
     window.messageRequests = 0;
     window.Bibimer = {
       // Browser-only stand-in for native preferences; Android persistence is
@@ -139,7 +145,7 @@ async function main() {
         agentOptions:JSON.parse(localStorage.getItem('testAgentOptions') || '{}'),
         enterBehavior:localStorage.getItem('testEnterBehavior') || 'newline',
         contextDisplay:localStorage.getItem('testContextDisplay') || 'used',
-        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.9.0'}),
+        language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,termuxX11Installed:window.x11Installed!==false,version:'0.9.0'}),
       setEnterBehavior:value=>{if (window.failEnterSave) return false;localStorage.setItem('testEnterBehavior',value);return true;},
       setContextDisplay:value=>{if (window.failContextSave) return false;localStorage.setItem('testContextDisplay',value);return true;},
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
@@ -149,6 +155,7 @@ async function main() {
         return window.nativeRequest(...args);
       }, forget:()=>{localStorage.removeItem('testPaired');},
       openTermux:()=>window.setupActions.push('termux'),
+      openBrowserWindow:tag=>window.browserWindowTags.push(tag),
       openGuide:guide=>window.setupActions.push('guide:'+guide),
       copyCommand:name=>window.setupActions.push('copy:'+name),
       copyText:text=>{window.testClipboard=text;},
@@ -901,6 +908,54 @@ async function main() {
     assert.equal(await page.evaluate(()=>window.messageRequests),quotaRequests);
     assert.equal((await call('GET','/v1/health')).data.session.id,chatId);
     console.log('PASS: account subscription quotas, reset times, both display modes, 10 locales/320px and no extra model turn');
+    const beforeBrowserRequests=await page.evaluate(()=>window.messageRequests);
+    await page.evaluate(()=>{window.x11Installed=false;});
+    await page.locator('#browser-open').click();
+    await page.waitForFunction(()=>!document.querySelector('#browser-refresh').disabled);
+    assert.equal(await page.locator('#browser-start').isDisabled(),true);
+    await page.locator('#browser-setup summary').click();
+    await page.locator('#browser-copy').click();
+    assert.equal(await page.evaluate(()=>window.testClipboard),'pkg install x11-repo && pkg install termux-x11-nightly firefox');
+    await page.locator('#browser-guide').click();
+    assert.equal(await page.evaluate(()=>window.testOpenedLink),'https://github.com/termux/termux-x11/releases/tag/nightly');
+    await page.evaluate(()=>{window.x11Installed=true;});
+    await page.locator('#browser-refresh').click();
+    await page.waitForFunction(()=>!document.querySelector('#browser-start').disabled);
+    for(const lang of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
+      await page.evaluate(lang=>{localStorage.setItem('testLanguage',lang);window.BibimerRefreshLanguage();},lang);
+      await page.setViewportSize({width:320,height:460});
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth && document.querySelector('#browser-dialog').scrollWidth<=document.querySelector('#browser-dialog').clientWidth));
+      assert.ok((await page.locator('#browser-start').textContent()).length>0);
+      if(['en','ko'].includes(lang))await page.screenshot({path:path.join(root,`dist/screenshots/browser-x11-setup-320-${lang}.png`)});
+    }
+    await page.evaluate(()=>{localStorage.setItem('testLanguage','en');window.BibimerRefreshLanguage();});
+    await page.setViewportSize({width:393,height:780});
+    await page.locator('#browser-url').fill('https://example.com/login');
+    await page.locator('#browser-start').click();
+    await page.waitForFunction(()=>window.browserWindowTags.length===1);
+    assert.equal(await page.locator('#browser-start').isDisabled(),true);
+    await page.locator('#browser-view').click();
+    assert.equal(await page.evaluate(()=>window.browserWindowTags.length),2);
+    const browserHealth=(await call('GET','/v1/health')).data;
+    const browserRow=browserHealth.projects.flatMap(row=>row.sessions).find(row=>row.kind==='browser');
+    assert.ok(browserRow);assert.equal(browserRow.state,'running');assert.equal(browserHealth.session.id,chatId);
+    assert.match(await page.evaluate(()=>window.browserWindowTags[0]),/^bibimer-[a-f0-9-]{36}$/);
+    await page.screenshot({path:path.join(root,'dist/screenshots/browser-x11-running.png')});
+    await page.locator('#browser-close').click();
+    assert.equal(await page.locator('#input').inputValue(),'Context display draft');
+    assert.equal(await page.evaluate(()=>window.messageRequests),beforeBrowserRequests);
+    await openSidebar();
+    await page.locator('#sidebar-projects [data-key='+JSON.stringify('session/'+browserRow.id)+']').click();
+    await page.waitForFunction(()=>document.querySelector('#input-form').hidden);
+    assert.equal(await page.locator('#terminal-keys').isHidden(),true);
+    await sessionAction('stop');await page.locator('#confirm-stop').click();
+    await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited');
+    await openSidebar();await page.locator('#sidebar-projects [data-key='+JSON.stringify('session/'+chatId)+']').click();
+    await page.waitForFunction(()=>!document.querySelector('#input').disabled);
+    assert.equal(await page.locator('#input').inputValue(),'Context display draft');
+    assert.equal((await call('POST',`/v1/sessions/${browserRow.id}/manage`,{action:'delete'})).ok,true);
+    await reconnect();
+    console.log('PASS: X11 browser setup, 10 locales/320px, owned browser launch, manual window handoff, session stop and preserved agent/draft without model input');
     await page.screenshot({path:path.join(root,'dist/screenshots/chat-en.png')});
     await page.locator('#input').fill('approval'); await page.locator('#send').click();
     await page.locator('.request-card').waitFor();

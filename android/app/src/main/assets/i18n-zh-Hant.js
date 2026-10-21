@@ -1,6 +1,25 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "browser_title": "瀏覽器 · 實驗",
+  "browser_intro": "在 Termux:X11 中開啟 Firefox 並自行登入。無需 VNC 或 ADB。",
+  "browser_address": "網站位址（選填）",
+  "browser_start": "啟動瀏覽器",
+  "browser_view": "開啟瀏覽器視窗",
+  "browser_setup": "安裝瀏覽器工具",
+  "browser_install_hint": "從官方發布頁面安裝最新版 Termux:X11 Android 應用程式，再於 Termux 執行此指令。需手動安裝。",
+  "browser_get_x11": "Termux:X11 發布頁面",
+  "browser_privacy": "登入狀態保存在此工作資料夾的私人 Firefox 設定檔中。離開此畫面不會停止瀏覽器；請於工作階段管理中結束。結束後仍保留設定檔。",
+  "browser_auth": "Google 仍可能拒絕登入。本實驗不繞過驗證限制，也不提供代理程式控制瀏覽器的功能。",
+  "browser_starting": "正在啟動瀏覽器…",
+  "browser_running": "瀏覽器執行中。請在 Termux:X11 操作，於工作階段管理中結束。",
+  "browser_ready": "瀏覽器工具已安裝。啟動瀏覽器即可手動登入。",
+  "error_browser_url": "請輸入不含憑證的 HTTP 或 HTTPS 位址。",
+  "error_browser_setup": "請先安裝最新版 Termux:X11 應用程式及 Termux 中的 termux-x11-nightly 和 Firefox。",
+  "error_browser_start": "無法啟動瀏覽器。請在 Termux 檢查 Termux:X11 和 Firefox。",
+  "error_browser_busy": "此瀏覽器設定檔正在使用中。請關閉現有視窗後重試。",
+  "error_browser_input": "請使用 Termux:X11 視窗操作此瀏覽器。",
+
   "subscription_label": "訂閱額度",
   "subscription_window": "額度週期",
   "subscription_extra": "額外用量",

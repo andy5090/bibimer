@@ -60,6 +60,7 @@
     <section id="workspace" hidden>
       <div class="project-summary">
         <div class="project-label"><strong id="project-name">Add a project</strong><select id="project-switch" aria-label="Switch project" data-i18n-aria-label="switch_project" hidden></select><button id="project-path" type="button" aria-haspopup="dialog" aria-controls="workspace-details-dialog" disabled>A working folder in Termux</button></div>
+        <button id="browser-open" class="icon-button" type="button" data-i18n-aria-label="browser_title" aria-label="Browser · experiment" aria-haspopup="dialog" aria-controls="browser-dialog" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18Z"/></svg></button>
         <button id="new-session" class="icon-button" type="button" aria-label="New session" data-i18n-aria-label="session_new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
         <button id="session-more" class="icon-button" type="button" aria-label="Session actions" data-i18n-aria-label="session_actions" aria-haspopup="dialog">⋯</button>
       </div>
@@ -281,6 +282,19 @@
     </form>
   </dialog>
   <nav class="bottom-nav" aria-label="Main navigation" data-i18n-aria-label="navigation"><button id="tab-work" class="selected" aria-current="page"><span aria-hidden="true">›_</span><span data-i18n="tab_work">Work</span></button><button id="tab-setup"><span aria-hidden="true">☷</span><span data-i18n="tab_setup">Setup</span></button><button id="tab-settings"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h5m6 0h5M4 17h9m6 0h1"/><circle cx="12" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></svg><span data-i18n="tab_settings">Settings</span></button></nav>
+  <dialog id="browser-dialog" class="settings-dialog" aria-labelledby="browser-title">
+    <div class="sidebar-heading"><h2 id="browser-title" data-i18n="browser_title">Browser · experiment</h2><button id="browser-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
+    <p class="hint" data-i18n="browser_intro">Open Firefox in Termux:X11 and sign in yourself. No VNC or ADB is needed.</p>
+    <p id="browser-workspace" class="hint" dir="auto"></p>
+    <p id="browser-status" class="hint" role="status"></p>
+    <form id="browser-form"><label for="browser-url" data-i18n="browser_address">Website address (optional)</label><input id="browser-url" type="url" inputmode="url" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://…"><button id="browser-start" class="primary full" type="submit" data-i18n="browser_start">Start browser</button></form>
+    <button id="browser-view" class="secondary full" type="button" data-i18n="browser_view" hidden>Open browser window</button>
+    <button id="browser-refresh" class="quiet full" type="button" data-i18n="commands_refresh">Refresh</button>
+    <details id="browser-setup"><summary data-i18n="browser_setup">Install browser tools</summary><p class="hint" data-i18n="browser_install_hint">Install the latest Termux:X11 Android app from its official releases, then run this command in Termux. Installation is manual.</p><code class="browser-command">pkg install x11-repo &amp;&amp; pkg install termux-x11-nightly firefox</code><button id="browser-copy" class="secondary full" type="button" data-i18n="copy">Copy</button><button id="browser-guide" class="quiet full" type="button" data-i18n="browser_get_x11">Termux:X11 releases</button></details>
+    <p class="hint" data-i18n="browser_privacy">Login stays in this workspace’s private Firefox profile. Leaving this screen keeps the browser running; end it from session management. Profiles are kept after stopping.</p>
+    <p class="hint" data-i18n="browser_auth">Google may still reject a login. This experiment does not bypass authentication restrictions or provide agent browser control.</p>
+    <p id="browser-error" class="hint danger-text" role="alert" hidden></p>
+  </dialog>
   <dialog id="inspector" aria-labelledby="inspector-title">
     <div class="sidebar-heading"><h2 id="inspector-title" data-i18n="inspect_title">Workspace explorer</h2><button id="inspector-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close sidebar">×</button></div>
     <div class="inspect-tabs" role="tablist" data-i18n-aria-label="inspect_views" aria-label="Workspace views">

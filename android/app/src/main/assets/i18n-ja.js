@@ -1,6 +1,25 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "browser_title": "ブラウザー · 実験",
+  "browser_intro": "Termux:X11でFirefoxを開き、ご自身でログインします。VNCやADBは不要です。",
+  "browser_address": "ウェブサイトのアドレス（任意）",
+  "browser_start": "ブラウザーを起動",
+  "browser_view": "ブラウザーのウィンドウを開く",
+  "browser_setup": "ブラウザーツールをインストール",
+  "browser_install_hint": "公式リリースから最新のTermux:X11 Androidアプリをインストールし、Termuxでこのコマンドを実行してください。インストールは手動です。",
+  "browser_get_x11": "Termux:X11のリリース",
+  "browser_privacy": "ログイン状態はこの作業フォルダー専用のFirefoxプロファイルに保存されます。この画面を離れても実行は続きます。セッション管理から終了してください。終了後もプロファイルは残ります。",
+  "browser_auth": "Googleがログインを拒否する場合があります。この実験は認証制限の回避やエージェントによるブラウザー操作を提供しません。",
+  "browser_starting": "ブラウザーを起動中…",
+  "browser_running": "ブラウザーは実行中です。Termux:X11で操作し、セッション管理から終了してください。",
+  "browser_ready": "ブラウザーツールはインストール済みです。起動して手動でログインしてください。",
+  "error_browser_url": "認証情報を含まないHTTPまたはHTTPSアドレスを入力してください。",
+  "error_browser_setup": "最新のTermux:X11アプリと、Termuxのtermux-x11-nightly・Firefoxを先にインストールしてください。",
+  "error_browser_start": "ブラウザーを起動できませんでした。TermuxでTermux:X11とFirefoxを確認してください。",
+  "error_browser_busy": "このプロファイルは使用中です。既存のウィンドウを閉じてから再起動してください。",
+  "error_browser_input": "このブラウザーはTermux:X11のウィンドウで操作してください。",
+
   "subscription_label": "契約の利用枠",
   "subscription_window": "利用期間",
   "subscription_extra": "追加利用",
