@@ -434,6 +434,32 @@ class ClaudeReceiptTests(unittest.TestCase):
             bridge.worktree_creation.close()
 
 
+class GeminiUsageTests(unittest.TestCase):
+    def test_acp_window_usage_is_forwarded_without_quota_guessing(self):
+        # Exercise the native notification boundary while a prompt is active.
+        self.adapter = provider.Adapter.__new__(provider.Adapter)
+        self.adapter.lock = threading.RLock()
+        self.adapter.thread = self.thread = 'context-session'
+        self.events = []
+        self.adapter.emit = self.events.append
+        self.adapter.turn = 'context-turn'
+        self.adapter.update({'sessionId':self.thread, 'update':{
+            'sessionUpdate':'usage_update', 'used':76000, 'size':200000}})
+        event = self.events[-1]
+        self.assertEqual('bibimer/contextUsage', event['method'])
+        self.assertEqual({'threadId':self.thread, 'turnId':'context-turn', 'usedTokens':76000,
+                          'contextWindow':200000, 'estimated':False}, event['params'])
+        count = len(self.events)
+        self.adapter.update({'sessionId':'foreign', 'update':{'sessionUpdate':'usage_update', 'used':1, 'size':1}})
+        self.adapter.update({'sessionId':self.thread, 'update':{'sessionUpdate':'quota', 'token_count':9999999}})
+        self.assertEqual(count, len(self.events))
+        self.adapter.turn = None
+        self.adapter.update({'sessionId':self.thread, 'update':{
+            'sessionUpdate':'usage_update', 'used':12000, 'size':200000}})
+        self.assertEqual(12000, self.events[-1]['params']['usedTokens'])
+        self.assertIsNone(self.events[-1]['params']['turnId'])
+
+
 class GeminiTests(unittest.TestCase):
     def test_guest_permission_fixture_uses_native_toml_without_core_autoallow(self):
         fixture = module("gemini_fixture_policy", IOS / "tests/probe_gemini_runtime.py")

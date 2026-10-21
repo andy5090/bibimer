@@ -66,6 +66,16 @@ export function query({prompt,options}) {
       }
     })();
     if (text==='/context') { emit({type:'result',subtype:'success',session_id:id,is_error:false,result:'Context: controlled session'}); return; }
+    if (text==='quota-status') emit({type:'rate_limit_event',session_id:id,rate_limit_info:{status:'allowed_warning',rateLimitType:'five_hour',resetsAt:Math.floor(Date.now()/1000)+7200}});
+    else if (text==='quota-legacy') emit({type:'rate_limit_event',session_id:id,rate_limit_info:{status:'rejected',rateLimitType:'five_hour',utilization:1,resetsAt:Math.floor(Date.now()/1000)+7200}});
+    else if (text==='quota-none') {} // A CLI/profile that supplies no account usage.
+    else emit({type:'rate_limit_event',session_id:id,rate_limit_info:{status:'allowed',rateLimitType:'five_hour',
+      unifiedWindows:{five_hour:{utilization:0.35,resetsAt:Math.floor(Date.now()/1000)+7200},
+        seven_day:{utilization:0.12,resetsAt:Math.floor(Date.now()/1000)+172800}}}});
+    if (text==='quota-report') emit({type:'assistant',session_id:id,usage_report:{rate_limits:{
+      five_hour:{utilization:1,resets_at:new Date(Date.now()+7200000).toISOString()}}},message:{content:[]}});
+    if (text==='quota-subagent') emit({type:'rate_limit_event',session_id:id,parent_tool_use_id:'hidden-agent',
+      rate_limit_info:{rateLimitType:'five_hour',status:'rejected',utilization:1}});
     emit({type:'stream_event',session_id:id,event:{type:'message_start',message:{id:'msg-live'}}});
     emit({type:'stream_event',session_id:id,event:{type:'content_block_delta',delta:{type:'text_delta',text:'Streaming **Claude**'}}});
     if(text==='approval' || text==='question') {
@@ -75,9 +85,14 @@ export function query({prompt,options}) {
       if(text==='approval' && result.behavior==='allow') writeFileSync('claude-approved','once');
       if(text==='question' && result.behavior==='allow') { assert.equal(result.updatedInput.answers['Which checks?'],'Unit, UI');writeFileSync('claude-answers','both'); }
     } else if(text==='wait' || text==='backlog') await waiting;
-    emit({type:'assistant',uuid:'live-response',session_id:id,message:{id:'msg-live',role:'assistant',content:[{type:'text',text:'## Claude result\n**Ready** for follow-up'},{type:'tool_use',id:'edit-tool',name:'Edit',input:{file_path:'example.py',old_string:'old',new_string:'new'}}]}});
+    emit({type:'assistant',uuid:'live-response',session_id:id,message:{id:'msg-live',role:'assistant',model:'claude-test',usage:{input_tokens:12000,cache_read_input_tokens:60000,cache_creation_input_tokens:3000,output_tokens:1000},content:[{type:'text',text:'## Claude result\n**Ready** for follow-up'},{type:'tool_use',id:'edit-tool',name:'Edit',input:{file_path:'example.py',old_string:'old',new_string:'new'}}]}});
     emit({type:'user',uuid:'live-tool-result',session_id:id,message:{role:'user',content:[{type:'tool_result',tool_use_id:'edit-tool',content:'file edited'}]}});
-    emit({type:'result',subtype:'success',session_id:id,is_error:false,queued_turn_count:text==='backlog'?1:0});
+    if (text.startsWith('context')) {
+      emit({type:'assistant',session_id:id,parent_tool_use_id:'subagent',message:{model:'helper-model',usage:{input_tokens:9999999},content:[]}});
+      if (text==='context-native') emit({type:'assistant',session_id:id,context_usage:{model:'claude-test',total_tokens:48000,raw_max_tokens:200000},message:{content:[]}});
+      if (text==='context-compact') emit({type:'system',subtype:'compact_boundary',session_id:id});
+    }
+    emit({type:'result',subtype:'success',session_id:id,is_error:false,usage:{input_tokens:9999999},modelUsage:{'claude-test':{inputTokens:9999999,contextWindow:200000},'helper-model':{contextWindow:1000000}},queued_turn_count:text==='backlog'?1:0});
     if(text==='backlog') {
       await new Promise(resolve=>setTimeout(resolve,100));
       emit({type:'assistant',uuid:'continued-response',session_id:id,message:{id:'continued-response',role:'assistant',content:[{type:'text',text:'Claude continued response'}]}});

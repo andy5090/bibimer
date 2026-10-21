@@ -671,6 +671,48 @@ def session_title(value):
     return value if len(value) <= 120 else value[:119].rstrip() + "…"
 
 
+def quota_number(value, maximum):
+    return value if type(value) in (int, float) and 0 <= value <= maximum else None
+
+
+def quota_window(identity, source, previous=None):
+    """Allowlisted account quota metadata only; no credentials, costs or text."""
+    if not isinstance(source, dict):
+        return None
+    row = dict(previous or {"id": identity, "used_percent": None, "resets_at": None,
+                            "window_minutes": None, "kind": "window", "label": "", "status": None})
+    percent = quota_number(source.get("usedPercent"), 10000)
+    reset = source.get("resetsAt")
+    minutes = source.get("windowDurationMins")
+    if percent is not None:
+        row["used_percent"] = percent
+        row["status"] = None
+    if type(reset) is int and 0 < reset <= 253402300799:
+        if row["resets_at"] is not None and row["resets_at"] != reset:
+            row["status"] = None
+            if percent is None:
+                row["used_percent"] = None
+        row["resets_at"] = reset
+    if type(minutes) is int and 0 < minutes <= 527040:
+        if row["window_minutes"] is not None and row["window_minutes"] != minutes:
+            row["status"] = None
+            if percent is None:
+                row["used_percent"] = None
+        row["window_minutes"] = minutes
+    if source.get("status") in ("allowed", "allowed_warning", "rejected"):
+        row["status"] = source["status"]
+    if source.get("kind") in ("primary", "secondary", "five_hour", "seven_day", "seven_day_opus",
+                             "seven_day_sonnet", "seven_day_overage_included", "overage", "session", "weekly_all", "weekly_scoped"):
+        row["kind"] = source["kind"]
+    label = source.get("label")
+    if isinstance(label, str) and label.strip():
+        row["label"] = re.sub(r"[\x00-\x1f\x7f]", "", label)[:64]
+    if not previous and row["used_percent"] is None and row["resets_at"] is None and row["status"] is None:
+        return None
+    row["updated_at"] = time.time() if percent is not None or not previous else previous["updated_at"]
+    return row
+
+
 class ChatSession(Session):
     """One Codex app-server or provider adapter over stdio. Output stays in memory.
 
@@ -688,6 +730,11 @@ class ChatSession(Session):
         self.completed = completed
         self.handoff = handoff
         self.response_preview, self.response_preview_final = "", False
+        self.context_usage = None
+        self.subscription_usage = {"state": "unavailable", "windows": [], "updated_at": None}
+        self.subscription_pending, self.subscription_next = None, 0
+        self.subscription_epoch, self.subscription_supported = 0, True
+        self.subscription_revision = 0
         self.display_title = ""
         self.cols, self.rows = cols, rows
         self.started_at = time.time()
@@ -718,6 +765,9 @@ class ChatSession(Session):
                     "display_title": self.display_title, "handoff": self.handoff,
                     "options": self.options.copy(), "launch_options": self.launch_options.copy(),
                     "default_model": self.default_model, "default_effort": self.default_effort,
+                    "context_usage": dict(self.context_usage) if self.context_usage else None,
+                    "subscription_usage": {**self.subscription_usage,
+                        "windows": [dict(row) for row in self.subscription_usage["windows"]]},
                     "ready": self.thread_id is not None and not self.history_pending,
                     "external_thread_id": self.thread_id, "history_persisted": self.history_persisted, **(self.imported or {}),
                     "turn_state": self.turn_state, "active_turn_id": self.turn_id,
@@ -729,6 +779,72 @@ class ChatSession(Session):
     def _bump(self):
         self.revision += 1
         self.condition.notify_all()
+
+    def _subscription_windows(self, rows, replace=False):
+        windows = {} if replace else {row["id"]: row for row in self.subscription_usage["windows"]}
+        if not isinstance(rows, list):
+            return
+        changed = replace
+        for source in rows[:16]:
+            if not isinstance(source, dict):
+                continue
+            identity = source.get("id")
+            if not isinstance(identity, str) or not 0 < len(identity) <= 160:
+                continue
+            window = quota_window(identity, source, windows.get(identity))
+            if window:
+                windows[identity] = window
+                changed = True
+        if changed:
+            self.subscription_revision += 1
+            self.subscription_usage = {"state": "available" if windows else "unavailable",
+                "windows": list(windows.values())[-16:], "updated_at": time.time()}
+            self._bump()
+
+    def _subscription_codex(self, result, replace=False):
+        if not isinstance(result, dict):
+            return
+        buckets = result.get("rateLimitsByLimitId")
+        if not isinstance(buckets, dict) or not buckets:
+            legacy = result.get("rateLimits")
+            identity = legacy.get("limitId") if isinstance(legacy, dict) else None
+            buckets = {identity if isinstance(identity, str) else "codex": legacy} if isinstance(legacy, dict) else {}
+        rows = []
+        for key, bucket in list(buckets.items())[:8]:
+            if not isinstance(key, str) or len(key) > 120 or not isinstance(bucket, dict):
+                continue
+            for kind in ("primary", "secondary"):
+                source = bucket.get(kind)
+                if isinstance(source, dict):
+                    rows.append({**source, "id": key + ":" + kind, "kind": kind,
+                                 "label": bucket.get("limitName") or (key if key != "codex" else "")})
+        self._subscription_windows(rows, replace)
+
+    def _subscription_failed(self):
+        self.subscription_usage["state"] = "stale" if self.subscription_usage["windows"] else "unavailable"
+        self._bump()
+
+    def _refresh_subscription(self):
+        # Optional read-only RPC on this owned process. Never starts a model turn.
+        if self.agent != "codex" or not self.thread_id or self.state != "running" or not self.subscription_supported:
+            return
+        now = time.monotonic()
+        if self.subscription_pending:
+            key, deadline = self.subscription_pending
+            if now < deadline:
+                return
+            self.rpc_pending.pop(key, None)
+            self.subscription_pending = None
+            self._subscription_failed()
+        if now < self.subscription_next:
+            return
+        self.subscription_next = now + 60
+        try:
+            key = self._rpc("account/rateLimits/read", {}, ("subscription", self.subscription_epoch, self.subscription_revision))
+            self.subscription_pending = (key, now + 10)
+        except Problem:
+            self.rpc_pending.pop("bibimer-" + str(self.rpc_serial), None)
+            self._subscription_failed()
 
     def _put(self, item):
         self._bump()
@@ -847,6 +963,20 @@ class ChatSession(Session):
             kind = self.rpc_pending.pop(message.get("id"), None)
             if not kind:
                 return
+            if isinstance(kind, tuple) and kind[0] == "subscription":
+                if kind[1] != self.subscription_epoch:
+                    return
+                self.subscription_pending = None
+                if "error" in message:
+                    self.subscription_supported = (message.get("error") or {}).get("code") != -32601
+                    self._subscription_failed()
+                elif kind[2] == self.subscription_revision:
+                    result = message.get("result")
+                    if not isinstance(result, dict) or not any(key in result for key in ("rateLimits", "rateLimitsByLimitId")):
+                        self._subscription_failed()
+                    else:
+                        self._subscription_codex(result, replace=True)
+                return
             if isinstance(kind, tuple):
                 if kind[0] == "steer":
                     _, key, digest, expected, entry_id = kind
@@ -919,6 +1049,7 @@ class ChatSession(Session):
                     self._fault("error_import_project")
                     return
                 self.thread_id = result["thread"]["id"]
+                self._refresh_subscription()
                 if not self.display_title:
                     self.display_title = session_title(result["thread"].get("name") or result["thread"].get("preview"))
                 if self.agent == "codex":
@@ -949,11 +1080,64 @@ class ChatSession(Session):
                 self.turn_state = "running"
                 self._bump()
             return
+        if self.agent == "codex" and method == "account/rateLimits/updated":
+            self._subscription_codex(params)
+            return
+        if self.agent == "codex" and method == "account/updated":
+            self.subscription_epoch += 1
+            if self.subscription_pending:
+                self.rpc_pending.pop(self.subscription_pending[0], None)
+            self.subscription_pending, self.subscription_next, self.subscription_supported = None, 0, True
+            self.subscription_usage = {"state": "unavailable", "windows": [], "updated_at": None}
+            self._bump()
+            self._refresh_subscription()
+            return
         if params.get("threadId") and self.thread_id and params["threadId"] != self.thread_id:
             if "id" in message:
                 self._send({"id": message["id"], "error": {"code": -32602, "message": "Wrong thread"}})
             return
-        if method == "bibimer/notice" and self.agent != "codex":
+        if method == "bibimer/subscriptionUsage" and self.agent == "claude":
+            if (params.get("threadId") != self.thread_id or not self.thread_id or
+                    (self.turn_id and params.get("turnId") not in (None, self.turn_id))):
+                return
+            if params.get("unavailable") is True:
+                self._subscription_failed()
+            else:
+                self._subscription_windows(params.get("windows"), params.get("replace") is True)
+        elif method in {"thread/tokenUsage/updated", "bibimer/contextUsage"}:
+            # Current window, never accumulated billing totals. Require an exact
+            # thread match, and reject delayed updates from another active turn.
+            if (not self.thread_id or params.get("threadId") != self.thread_id or
+                    (self.turn_id and params.get("turnId") not in (None, self.turn_id))):
+                return
+            if method == "thread/tokenUsage/updated" and self.agent == "codex":
+                usage = params.get("tokenUsage")
+                if not isinstance(usage, dict):
+                    return
+                last = usage.get("last")
+                if not isinstance(last, dict):
+                    return
+                used, limit, estimated = last.get("totalTokens"), usage.get("modelContextWindow"), False
+            elif method == "bibimer/contextUsage" and self.agent != "codex":
+                used, limit, estimated = params.get("usedTokens"), params.get("contextWindow"), params.get("estimated") is True
+                if used is None and params.get("reset") is True:
+                    self.context_usage = None
+                    self._bump()
+                    return
+            else:
+                return
+            if type(used) is not int or not 0 <= used <= 2**53 - 1:
+                return
+            limit = limit if type(limit) is int and 0 < limit <= 2**53 - 1 else None
+            self.context_usage = {"used_tokens": used, "limit_tokens": limit,
+                                  "estimated": estimated, "updated_at": time.time()}
+            self._bump()
+        elif method == "thread/compacted" or (method in {"item/started", "item/completed"} and
+                (params.get("item") or {}).get("type") == "contextCompaction"):
+            if params.get("threadId") == self.thread_id:
+                self.context_usage = None
+                self._bump()
+        elif method == "bibimer/notice" and self.agent != "codex":
             self._put({"id": str(uuid.uuid4()), "kind": "notice", "code": params.get("code") if params.get("code") in ERROR_MESSAGES else "error_agent_transport"})
         elif "id" in message:
             self._request(message)
@@ -1072,6 +1256,7 @@ class ChatSession(Session):
 
     def events(self, cursor, wait):
         with self.condition:
+            self._refresh_subscription()
             if cursor > self.revision:
                 raise Problem(409, "error_cursor_changed")
             if cursor == self.revision and self.state in ACTIVE and wait:
@@ -2590,7 +2775,7 @@ class Bridge:
     def persist(self):
         with self.lock:
             def metadata(row):
-                return {key: value for key, value in row.items() if key != "display_title"} if row else None
+                return {key: value for key, value in row.items() if key not in {"display_title", "context_usage", "subscription_usage"}} if row else None
             save_json(self.state / "metadata.json", {
                 "format": 4, "projects": list(self.projects.values()),
                 "active_project_id": self.active_project_id,

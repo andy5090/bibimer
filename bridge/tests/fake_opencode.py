@@ -36,6 +36,8 @@ def finish(key, status='completed'):
     states[key]={'type':'idle'}
     latest=messages[key][-1]
     latest['info']['time']['completed']=4
+    latest['info'].update(providerID='test', modelID='coder', tokens={
+        'input':12000, 'output':1000, 'reasoning':2000, 'cache':{'read':60000,'write':1000}})
     latest['parts']=[{'id':'prt_answer','type':'text','text':'## OpenCode result\n**Ready** for follow-up'},
         {'id':'prt_bash','type':'tool','tool':'bash','state':{'status':'completed','input':{'command':'controlled command'},'output':'controlled output','metadata':{'exit':0}}},
         {'id':'prt_edit','type':'tool','tool':'edit','state':{'status':'completed','input':{'filePath':'example.py'},'output':'updated','metadata':{'diff':'-old\n+new'}}}]
@@ -56,7 +58,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if route=='/provider':
             self.reply(200,{'connected':['test'], 'all':[
                 {'id':'test','name':'Test provider','options':{'apiKey':'CATALOG_SECRET'},'models':{
-                    'coder':{'name':'Test Coder','variants':{'low':{},'high':{},'private':{'disabled':True}}},
+                    'coder':{'name':'Test Coder','limit':{'context':200000},'variants':{'low':{},'high':{},'private':{'disabled':True}}},
                     'simple':{'name':'Test Simple','variants':{}}}},
                 {'id':'disconnected','models':{'hidden':{'name':'Never shown'}}}]}); return
         if route=='/session' and method=='GET': self.reply(200,list(threads.values())); return

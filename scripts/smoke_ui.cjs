@@ -138,8 +138,10 @@ async function main() {
       environment:()=>JSON.stringify({paired:localStorage.getItem('testPaired')==='yes',
         agentOptions:JSON.parse(localStorage.getItem('testAgentOptions') || '{}'),
         enterBehavior:localStorage.getItem('testEnterBehavior') || 'newline',
+        contextDisplay:localStorage.getItem('testContextDisplay') || 'used',
         language:localStorage.getItem('testLanguage') || 'en',termuxInstalled:false,version:'0.9.0'}),
       setEnterBehavior:value=>{if (window.failEnterSave) return false;localStorage.setItem('testEnterBehavior',value);return true;},
+      setContextDisplay:value=>{if (window.failContextSave) return false;localStorage.setItem('testContextDisplay',value);return true;},
       setLanguage:language=>{localStorage.setItem('testLanguage',language);return true;},
       setAgentOptions:(agent,value)=>{const all=JSON.parse(localStorage.getItem('testAgentOptions') || '{}');all[agent]=JSON.parse(value);localStorage.setItem('testAgentOptions',JSON.stringify(all));return true;},
       cancelPoll:()=>{}, request:(...args)=>{
@@ -194,6 +196,13 @@ async function main() {
   assert.equal(await page.locator('#tab-settings').getAttribute('aria-current'),'page');
   assert.equal(await page.locator('#enter-behavior').inputValue(),'newline');
   assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
+  assert.equal(await page.locator('#context-display').inputValue(),'used');
+  await choose('context-display','remaining');
+  await page.reload(); await page.locator('#tab-settings').click();
+  assert.equal(await page.locator('#context-display').inputValue(),'remaining');
+  await choose('context-display','used');
+  await page.reload(); await page.locator('#tab-settings').click();
+  assert.equal(await page.locator('#context-display').inputValue(),'used');
   assert.equal(await page.locator('select:visible').count(),0);
   assert.equal(await page.locator('.select-trigger').count(),await page.locator('select').count());
   await page.locator('#enter-behavior').evaluate(node=>{
@@ -330,6 +339,8 @@ async function main() {
   await page.locator('#launch').click();
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='running');
   const initial = (await call('GET','/v1/health')).data.session.id;
+  assert.equal(await page.locator('#context-usage').isHidden(),true, 'PTY has no inferred context meter');
+  assert.equal(await page.locator('#subscription-usage').isHidden(),true, 'PTY has no scraped subscription usage');
   const projectA = (await call('GET','/v1/health')).data.project.id;
   const ptyRequests = await page.evaluate(()=>window.messageRequests);
   await page.locator('#input').fill('firstsecond');
@@ -623,6 +634,10 @@ async function main() {
     assert.equal(await page.locator('#permission').inputValue(),'workspace-write');
     await page.locator('#launch').click();
     await page.waitForFunction(()=>document.querySelector('#turn-status').textContent==='Ready for your message');
+    assert.equal(await page.locator('#context-summary').textContent(),'Not reported');
+    assert.equal(await page.locator('#context-meter').isHidden(),true);
+    await page.waitForFunction(()=>document.querySelector('#subscription-summary').textContent.includes('35% used'));
+    assert.equal(await page.locator('#subscription-windows li').count(),2);
     let chatId = (await call('GET','/v1/health')).data.session.id;
     assert.deepEqual((await call('GET','/v1/health')).data.session.options,{permission:'workspace-write',fast:true,model:'',effort:''});
     legacyLiveOptions = true;
@@ -813,6 +828,79 @@ async function main() {
     assert.equal(await page.evaluate(()=>window.untrusted),undefined);
     await page.locator('.markdown .code-heading .copy-button').last().click();
     assert.ok((await page.evaluate(()=>window.testClipboard)).includes("print('hello')"));
+    await page.waitForFunction(()=>document.querySelector('#context-summary').textContent==='38% used');
+    await page.locator('#context-usage summary').click();
+    assert.equal(await page.locator('#context-detail').textContent(),'76,000 / 200,000 tokens used');
+    await page.locator('#input').fill('Context display draft');
+    for (const lang of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
+      await page.evaluate(lang=>{localStorage.setItem('testLanguage',lang);window.BibimerRefreshLanguage();},lang);
+      await page.setViewportSize({width:320,height:460});
+      assert.equal(await page.locator('#context-summary').textContent(),await page.evaluate(()=>BibimerI18n.t('context_percent_used',{used:38,remaining:62})));
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),lang+' context fits 320px');
+      const sendBox=await page.locator('#send').boundingBox();
+      assert.ok(sendBox.y>=0 && sendBox.y+sendBox.height<=460,lang+' context keeps Send visible');
+      assert.equal(await page.locator('#input').inputValue(),'Context display draft');
+      if (['en','ko'].includes(lang)) await page.screenshot({path:path.join(root,`dist/screenshots/context-320-${lang}.png`)});
+    }
+    await page.evaluate(()=>{localStorage.setItem('testLanguage','en');window.BibimerRefreshLanguage();});
+    // The preference changes only presentation, preserving the live session/draft.
+    const contextRequests = await page.evaluate(()=>window.messageRequests);
+    await page.locator('#tab-settings').click();
+    await page.evaluate(()=>{window.failContextSave=true;});
+    await choose('context-display','remaining');
+    assert.equal(await page.locator('#context-display').inputValue(),'used');
+    await page.locator('#tab-work').click();
+    assert.equal(await page.locator('#context-summary').textContent(),'38% used');
+    await page.evaluate(()=>{window.failContextSave=false;});
+    await page.locator('#tab-settings').click(); await choose('context-display','remaining');
+    await page.locator('#tab-work').click();
+    assert.equal(await page.locator('#context-summary').textContent(),'62% left');
+    assert.equal(await page.locator('#context-detail').textContent(),'124,000 / 200,000 tokens left');
+    assert.equal(await page.locator('#context-meter').evaluate(node=>node.value),62);
+    assert.equal(await page.locator('#input').inputValue(),'Context display draft');
+    assert.equal((await call('GET','/v1/health')).data.session.id,chatId);
+    assert.equal(await page.evaluate(()=>window.messageRequests),contextRequests);
+    for (const lang of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
+      await page.evaluate(lang=>{localStorage.setItem('testLanguage',lang);window.BibimerRefreshLanguage();},lang);
+      await page.setViewportSize({width:320,height:460});
+      assert.equal(await page.locator('#context-summary').textContent(),await page.evaluate(()=>BibimerI18n.t('context_percent_remaining',{remaining:62})));
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+      if (['en','ko'].includes(lang)) await page.screenshot({path:path.join(root,`dist/screenshots/context-remaining-320-${lang}.png`)});
+    }
+    await page.evaluate(()=>{localStorage.setItem('testLanguage','en');window.BibimerRefreshLanguage();});
+    await page.locator('#tab-settings').click();
+    await page.locator('#context-display-trigger').scrollIntoViewIfNeeded();
+    await page.screenshot({path:path.join(root,'dist/screenshots/context-display-settings-320-en.png')});
+    await choose('context-display','used'); await page.locator('#tab-work').click();
+    await page.locator('#context-usage summary').click();
+    await page.setViewportSize({width:393,height:780});
+    await reconnect();
+    await page.waitForFunction(()=>document.querySelector('#context-summary').textContent==='38% used');
+    console.log('PASS: real bridge context usage, reconnect, 10 locales at 320px, token detail and preserved draft');
+    await page.locator('#subscription-usage summary').click();
+    const quotaRequests=await page.evaluate(()=>window.messageRequests);
+    for (const mode of ['used','remaining']) {
+      await page.locator('#tab-settings').click();await choose('context-display',mode);await page.locator('#tab-work').click();
+      assert.equal(await page.locator('#subscription-meter').evaluate(node=>node.value),mode==='used'?35:65);
+      for (const lang of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
+        await page.evaluate(lang=>{localStorage.setItem('testLanguage',lang);window.BibimerRefreshLanguage();},lang);
+        await page.setViewportSize({width:320,height:460});
+        const expected=await page.evaluate(mode=>BibimerI18n.t('context_percent_'+mode,{used:35,remaining:65}),mode);
+        assert.ok((await page.locator('#subscription-summary').textContent()).includes(expected));
+        assert.equal(await page.locator('#subscription-windows li').count(),2);
+        assert.ok((await page.locator('#subscription-windows small').first().textContent()).length>0);
+        assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+        const sendBox=await page.locator('#send').boundingBox();assert.ok(sendBox.y>=0 && sendBox.y+sendBox.height<=460);
+        assert.equal(await page.locator('#input').inputValue(),'Context display draft');
+        if (['en','ko'].includes(lang))await page.screenshot({path:path.join(root,`dist/screenshots/subscription-${mode}-320-${lang}.png`)});
+      }
+      await page.evaluate(()=>{localStorage.setItem('testLanguage','en');window.BibimerRefreshLanguage();});
+    }
+    await page.locator('#tab-settings').click();await choose('context-display','used');await page.locator('#tab-work').click();
+    await page.locator('#subscription-usage summary').click();await page.setViewportSize({width:393,height:780});
+    assert.equal(await page.evaluate(()=>window.messageRequests),quotaRequests);
+    assert.equal((await call('GET','/v1/health')).data.session.id,chatId);
+    console.log('PASS: account subscription quotas, reset times, both display modes, 10 locales/320px and no extra model turn');
     await page.screenshot({path:path.join(root,'dist/screenshots/chat-en.png')});
     await page.locator('#input').fill('approval'); await page.locator('#send').click();
     await page.locator('.request-card').waitFor();
@@ -1109,6 +1197,9 @@ async function main() {
       await page.locator('[data-request-action="chat_decline"]').click();
       await page.locator('.request-card').waitFor({state:'hidden'});
       await page.waitForFunction(()=>!document.querySelector('#send').disabled && document.querySelector('#turn-status').textContent==='Ready for your message');
+      await page.waitForFunction(agent=>document.querySelector('#context-summary').textContent===(agent==='claude'?'≈ ':'')+'38% used',agent);
+      if(agent==='claude')await page.waitForFunction(()=>document.querySelector('#subscription-summary').textContent.includes('35% used'));
+      else assert.equal(await page.locator('#subscription-meter').isHidden(),true);
       await page.locator('#input').fill('question'); await page.locator('#send').click();
       await page.locator('.question-options button').first().click();
       await page.locator('.question-options button').last().click();

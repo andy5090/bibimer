@@ -1,5 +1,57 @@
 # 첫 버전 구조와 API
 
+## 구독 한도 수집 (2026-10-21, 미배포)
+
+선택한 Chat 네이티브 실행의 계정 사용 한도를 `subscription_usage: {state, windows, updated_at}`로 전달한다. `windows`는 최대16개로 ID·기간/이름·사용률·초기화 시각·선택적 상태·보고 시각만 포함한다. 토큰/비용/계정명/이메일/자격증명/크레딧 정보와 원본 응답은 전달하지 않으며 메타데이터에도 저장하지 않는다. 서로 다른 실행/계정의 전역 캐시를 만들거나 세션 토큰을 합산하지 않는다. `used_percent: null`과 실제0%를 구분한다. 공유 Chat snapshot/events를 쓰므로 새 Android HTTP 허용 경로나 자산 파일은 없다.
+
+- **Codex:** thread 초기화 뒤 같은 app-server의 읽기 전용 `account/rateLimits/read`를 요청하고 선택한 세션의 기존 events 폴링에서 최소60초 간격으로 갱신한다. 요청은10초 지나면 폐기하며 실패/미지원/형식 오류가 Chat 시작·응답·대기열을 실패시키지 않는다. 응답 중에도 네이티브 계정 조회만 수행하고 모델 입력/PTY 명령을 주입하지 않는다. [공식 App Server 계정 API](https://developers.openai.com/codex/app-server#6-rate-limits-chatgpt).
+- `rateLimitsByLimitId`가 있으면 그 뷰를 사용하고, 없으면 구형 `rateLimits`를 사용한다. 네이티브 `limitId`와 primary/secondary로 구분하고 `windowDurationMins`를 보존한다. `account/rateLimits/updated`는 희소 보고라 없는/null 값을0으로 덮지 않고 기존 기간에 병합한다. 초기화 시각만 다음 기간으로 바뀌면 이전 비율은 지운다. 더 최신 push가 도착한 뒤 늦게 반환한 read는 덮어쓰지 않는다. `account/updated`는 캐시/대기 응답을 무효화하고 새 계정에서 읽는다. 크레딧 소비/한도 초기화/구매/안내 이메일 요청은 하지 않는다.
+- **Claude:** 주 실행의 `rate_limit_event.rate_limit_info`에서 선택적 `unifiedWindows` 또는 구형 최상위 utilization을 읽는다. 이 경로는 **소수 비율**(0.35→35%, 1→100%)이고 `/usage`의 구조화된 `usage_report.rate_limits`는 **퍼센트**(1→1%)이므로 별도 변환한다. 알려진5시간/7일/Opus/Sonnet/추가 사용 구간만 받아 상태/시각만 온 경우 비율을 만들지 않는다. 하위 에이전트 이벤트는 제외한다. `unifiedWindows`는 모든 SDK 타입에 선언된 안정 계약이 아니므로 형태를 확인하고 실제 값이 있을 때만 사용한다. [공식 저장소의 CLI 보고 형태/제약](https://github.com/anthropics/claude-code/issues/91857), [배포된 SDK 계약](https://unpkg.com/@anthropic-ai/claude-agent-sdk@0.3.301/sdk.d.ts).
+- 사용자가 직접 실행한 명령에서 구조화된 `usage_report`가 오면 기간별 값을 받을 수 있지만, 표시를 위해 `/usage`나 모델 턴을 자동 전송하지 않고 실험적 SDK 조회 메서드도 호출하지 않는다. 새 SDK query나 auth_status는 이전 계정 창을 지운 후 새 보고를 기다린다. 다른 활성 turn의 지연 보고도 무시한다. 지원하지 않는 CLI/SDK/로그인은 확인 불가이며 OpenCode/Gemini의 별도 구독 조회는 미구현이다.
+
+UI는 사용량/남은 양 설정을 적용하고 위험한 기간을 접힌 행에 우선 표시한다. 초기화 시각이 지나면 새 보고 전까지 갱신 대기로 표시하며0%로 추정하지 않는다. 연결 끊김·종료·조회 실패 또는 보고 후5분이 지나면 마지막 확인 값으로 구분한다. 상대 초기화 시간과 기기의 현지 시각을 제공한다. 이 기능의 추가 네트워크 조회는 Codex CLI가 담당하며 Bibimer가 인증 토큰을 읽어 비공개 계정 API를 직접 호출하지 않는다.
+
+## OpenCode·Gemini 계정 한도 조사 (2026-10-21, 연동 미구현)
+
+공식 문서와 Bibimer iOS에 고정한 OpenCode1.19.3·Gemini CLI0.64.0 소스를 기준으로 조사했다. Termux의 설치된 OpenCode는1.17.13이며 Gemini 실행 경로는 존재하지만 실제 실행은 `No such file or directory`로 실패했다. 실제 로그인 계정의 quota 조회나 모델 실행은 하지 않았으므로 다음은 **수집 경로의 확인과 구현 방향**이며 지원 완료가 아니다.
+
+| 대상 | 확인된 계정 데이터 경로 | 현재 Bibimer 연결에서의 제약 |
+| --- | --- | --- |
+| OpenCode Go/Go Plus | Go API의 사용률·초기화 시각. 현재 문서는 모델별5시간/주간/월간 한도를 설명한다. | 로컬 OpenCode HTTP API의 provider 목록/인증 메서드/메시지 토큰만으로는 계정 quota를 받을 수 없다. Go 계정에 별도로 인증한 읽기 경로가 필요하다. |
+| OpenCode의 다른 제공자 | 연결한 제공자별 계정 API에 따라 다름. | Go 한도를 다른 제공자 모델에 표시하거나 별도 Codex·Claude 실행의 계정을 대신 사용할 수 없다. API 과금/잔액도 구독 사용률로 바꾸지 않는다. |
+| Gemini Google 로그인 | Code Assist `retrieveUserQuota`의 모델별 잔여 비율·선택적 잔여량·초기화 시각. | Gemini0.64.0의 ACP는 이 계정 보고를 전달하지 않는다. 같은 네이티브 인증 문맥을 사용하는 별도 구조화 조회 통로가 필요하다. |
+| Gemini API 키·Vertex AI | 로그인 방식/프로젝트별 서비스 quota. | Google 로그인 quota와 같다고 가정할 수 없으며 위 경로를 모든 로그인에 적용하지 않는다. |
+
+### OpenCode Go
+
+- [공식 Go 문서](https://opencode.ai/v2/docs/console/go/)는 Go를 선택적 제공자로 설명하고 모델별5시간·주간·월간 한도 및 Console 조회를 안내한다. OpenCode 자체에 로그인한 모든 제공자의 구독 한도가 하나 있는 구조가 아니다.
+- [OpenCode1.19.3의 Go 사용량 GET 구현](https://github.com/anomalyco/opencode/blob/v1.19.3/packages/console/app/src/routes/zen/go/v1/usage.ts)은 `Authorization: Bearer`로 키를 검증하고 `usage.rolling/weekly/monthly` 각각의 `percent`, `resetsAt`, `status`를 반환한다. 이 구형 구현은 계정 단위3개 창이며 최신 문서의 모델별 한도와 범위가 같다고 단정하지 않는다. [같은 버전의 inference 이관 코드](https://github.com/anomalyco/opencode/blob/v1.19.3/packages/console/app/src/lib/inference-proxy.ts)는 `GET /zen/go/v1/usage`를 새 inference의 `/go/v1/usage`로 전달한다.
+- 조사 시 `https://opencode.ai/zen/go/v1/usage`와 `https://opencode.ai/inference/go/v1/usage`에 **자격증명 없는 GET**을 각각 한 번 보내 두 경로 모두 HTTP401·JSON 응답임을 확인했다. 인증 후200 응답의 현재 스키마/모델별 범위/구독 종류는 미검증이다. 응답 본문이나 사용자 자격증명을 읽거나 저장하지 않았다.
+- 확인한 [provider API 정의](https://github.com/anomalyco/opencode/blob/v1.19.3/packages/opencode/src/server/routes/instance/httpapi/groups/provider.ts)와 배포 SDK에는 범용 계정 quota 조회가 없다. 기존 `bridge/provider_opencode.py`도 세션 메시지/상태와 모델 목록만 읽는다. 메시지 비용·토큰·컨텍스트 사용량을 Go 사용률로 계산하지 않는다.
+- 후속 구현은 **활성 모델의 제공자가 Go인 경우**부터 한정한다. CLI가 실제 사용한 키/환경/설정과 일치하는지 확인하는 경로가 선행돼야 한다. 키는 네이티브 측에서만 다루고 고정 공식 origin의 GET에만 사용한다. 임의 base URL/리다이렉트로 키를 보내지 않으며 상태 파일·로그·WebView에는 허용한 수치만 전달한다. 제공자/키/모델 변경 뒤 이전 창을 무효화하고 최신 응답이 모델별이면 모델별로 분리한다. 별도 플러그인 설치·Console 쿠키 추출은 이 조사에서 수행하지 않았다.
+
+### Gemini CLI
+
+- [공식 명령 문서](https://geminicli.com/docs/reference/commands/#stats)의 `/stats model`은 모델 토큰 통계와 quota를 구분해 보여준다. [0.64.0의 stats 구현](https://github.com/google-gemini/gemini-cli/blob/v0.64.0/packages/cli/src/ui/commands/statsCommand.ts)은 `config.refreshUserQuota()`를 호출한다. 이 UI 함수는 크레딧 조회도 병행하므로 사용량 연동을 위해 통째로 실행하지 않는다.
+- [Code Assist 서버 구현](https://github.com/google-gemini/gemini-cli/blob/v0.64.0/packages/core/src/code_assist/server.ts)은 기본적으로 Google의 `https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota`에 현재 로그인 문맥과 `project`를 담아 POST한다. 이는 모델 생성이 아닌 조회지만 **Google 내부 API**이며 Bibimer용 안정 공개 API로 보장된 것은 아니다. [공식 타입](https://github.com/google-gemini/gemini-cli/blob/v0.64.0/packages/core/src/code_assist/types.ts)의 bucket에는 `modelId`, `remainingFraction`, `remainingAmount`, `resetTime`, `tokenType`이 선택 필드로 있다.
+- 유효한 `remainingFraction`이 있으면 남은 비율은 `100 × remainingFraction`, 사용률은 `100 × (1 - remainingFraction)`로 변환할 수 있다. `remainingAmount`가 없거나0이어도 잔여 비율을 버리지 않는다. 필드 부재를0/소진으로 추정하거나 모델 bucket들을 임의 합산하지 않으며 초기화 시각도 고정된24시간으로 만들지 않는다. 이 값은 Gemini CLI/Code Assist 서비스의 한도이지 Gemini 앱 전체 구독 사용량이 아니다.
+- [0.64.0 ACP 세션 구현](https://github.com/google-gemini/gemini-cli/blob/v0.64.0/packages/cli/src/acp/acpSession.ts)의 `usage_update.used/size`는 컨텍스트 수치다. PromptResponse의 `usage`와 `_meta.quota.token_count/model_usage`는 **해당 턴의 모델 토큰 통계**다. `quota`라는 이름만 보고 잔여 구독 한도로 처리하지 않는다. 이 버전 소스에서 컨텍스트 `usage_update` 발행은 확인했지만 실제 계정 실행 검증을 대신하지 않는다.
+- [ACP 명령 등록](https://github.com/google-gemini/gemini-cli/blob/v0.64.0/packages/cli/src/acp/acpCommandHandler.ts)에 `/stats`는 없고 [ACP RPC 구현](https://github.com/google-gemini/gemini-cli/blob/v0.64.0/packages/cli/src/acp/acpRpcDispatcher.ts)에도 계정 quota 조회가 없다. `/stats model`을 ACP prompt로 자동 전송하면 일반 모델 입력으로 넘어갈 수 있으므로 조회 수단으로 사용하지 않는다.
+- 후속 구현은 동일 Gemini 프로세스의 Config/CodeAssistServer에서 quota만 읽어 제한한 필드를 전달하는 버전 고정 확장 또는 공식 ACP 확장을 검토한다. 별도 helper를 쓰면 현재 인증 방식·프로젝트·계정과 일치하는지 및 자동 로그인/브라우저 실행·토큰 갱신·API 호스트를 먼저 검증해야 한다. 현재 iOS Gemini 어댑터에 이 기능을 구현하지 않았으며 Android의 정식 Gemini 지원 여부와도 별개다.
+
+두 제공자 모두 후속 연동 시 기존 `subscription_usage`와 **사용량(기본)/남은 양** 선택을 재사용할 수 있다. 조회는 최소60초 간격·중복 방지·유한 대기 시간을 두고 계정 변경·기간 만료·오래된 값·실패를 Codex/Claude와 같은 규칙으로 다룬다. 조회 실패는 Chat/승인/대기열을 실패시키지 않는다. 이번 조사는 제품 코드·의존성·CLI 설치·운영 세션을 변경하지 않았다.
+
+## 컨텍스트 수치 전달 (2026-10-21, 미배포)
+
+Chat snapshot/events의 선택 필드 `context_usage`는 `{used_tokens, limit_tokens, estimated, updated_at}` 또는 `null`이다. 한도가 없으면 `limit_tokens: null`이며 사용량 0과 보고 없음은 다르다. JSON 안전 정수만 받고 음수·불리언·문자열 수치는 거절한다. 에이전트의 실제 네이티브 thread ID가 일치해야 하며 다른 활성 turn의 늦은 보고는 무시한다. 갱신은 revision을 올려 기존 폴링/재접속으로 전달하고, 수치를 브리지 메타데이터에 저장하지 않는다. 따라서 브리지 재시작 후 유실 세션의 수치를 현재 값처럼 복원하지 않는다.
+
+- **Codex:** 공식 `thread/tokenUsage/updated`의 `tokenUsage.last.totalTokens`와 `modelContextWindow`를 사용한다. `total`은 누적값이므로 사용하지 않는다. 캐시/추론은 네이티브 total에 다시 더하지 않는다. `contextCompaction`/구형 `thread/compacted`는 이전 값을 무효화하고 다음 사용량 보고를 기다린다. 설치된 CLI의 `generate-json-schema` 계약도 확인했다. [공식 App Server 이벤트](https://developers.openai.com/codex/app-server#turn-events).
+- **Claude:** 주 실행의 최신 assistant `message.usage`에서 input/cache read/cache creation/output을 합산한다. 하위 에이전트 보고를 제외하고 메시지를 합산하지 않는다. result의 `modelUsage`에서는 정확히 일치하는 모델의 `contextWindow`만 취하며 누적 토큰은 사용하지 않는다. assistant 출력 수치는 placeholder일 수 있어 전체를 근사치로 표시한다. CLI가 `/context`의 구조화된 `context_usage`를 보내면 이를 사용하되 명령은 자동 실행하지 않는다. compact boundary/reset은 이전 값을 무효화한다. [공식 SDK 사용량 범위](https://code.claude.com/docs/en/agent-sdk/cost-tracking).
+- **OpenCode:** 현재 세션 메시지 중 마지막 유효 assistant 토큰의 input/output/reasoning/cache read/cache write를 한 번만 합산한다. 진행 중인 0 placeholder는 직전 보고를 지우지 않는다. 그 메시지의 providerID/modelID로 로컬 `/provider` 메타데이터의 `limit.context`를 찾고 한도가 없거나 조회 실패해도 대화를 실패시키지 않는다. 캐시와 메시지 비교로 중복 보고를 줄인다. [공식 모델 한도](https://docs.opencode.ai/docs/providers/#custom-provider).
+- **Gemini(iOS):** ACP `usage_update`의 `used`/`size`를 정규화한다. CLI가 해당 이벤트를 보내지 않는 버전에서는 확인 불가를 유지하며 `_meta.quota`나 모델 이름에서 컨텍스트를 추측하지 않는다. 실제 CLI의 이벤트 발행 여부는 별도 검증이 필요하다. [공식 저장소의 ACP 사용량 보고 이슈](https://github.com/google-gemini/gemini-cli/issues/29389).
+
+UI는 한도가 있을 때만 사용/남은 비율을 계산하며 100%를 넘어선 원본 사용량도 보존한다. 앱 공통 `contextDisplay: used | remaining`을 Android `InputPreferences`의 `context_display` 및 iOS UserDefaults의 `contextDisplay`에 저장한다. 기본/잘못된 저장 값은 `used`다. Android는 commit 성공 뒤 메모리 값을 바꾸며 저장 실패 시 기존 표시를 유지한다. 비율·막대·토큰 상세는 선택한 기준 하나만 표시한다. 사용량 모드는 100% 초과 비율도 표시하고 막대는 100%에서 제한한다. 남은 양은 비율/토큰 0을 하한으로 하며, 한도가 없으면 계산하지 않고 확인 불가를 표시한다. 색의 주의 단계는 어느 모드든 사용률로 결정한다. 이 설정은 브리지에 보내지 않으며 프로세스/모델/초안/대기열/승인을 변경하지 않는다. 요청 후 마지막 보고이므로 작성 중인 초안이나 아직 보고되지 않은 도구 출력까지 실시간으로 포함한다고 보장하지 않는다. PTY·대화 문자 수·누적 청구 토큰 기반의 추정은 하지 않는다.
+
 ## 실행 경계
 
 Bibimer 앱은 입력·상태·터미널 화면을 제공한다. 프로젝트 경로 검증, 폴더 생성, 프로그램 탐색, 프로세스 실행과 제어는 같은 기기의 Termux 브리지가 담당한다. Android 앱이 Termux 전용 파일 경로를 직접 읽지 않는다.

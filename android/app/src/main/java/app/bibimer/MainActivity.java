@@ -258,6 +258,7 @@ public final class MainActivity extends Activity {
                     .put("languagePreference", language.preference())
                     .put("agentOptions", agentPreferences.get())
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
+                    .put("contextDisplay", inputPreferences.getContextDisplay())
                     .put("lastProjectParent", projectLocations.parent())
                     .put("lastProjectFolder", projectLocations.folder())
                     .put("appUpdate", appUpdates.status())
@@ -373,6 +374,10 @@ public final class MainActivity extends Activity {
 
         @JavascriptInterface public boolean setEnterBehavior(String value) {
             return inputPreferences.setEnterBehavior(value);
+        }
+
+        @JavascriptInterface public boolean setContextDisplay(String value) {
+            return inputPreferences.setContextDisplay(value);
         }
 
         @JavascriptInterface public boolean setProjectLocation(String parent, String folder) {

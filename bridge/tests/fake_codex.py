@@ -36,6 +36,12 @@ def item(value, complete=True):
 
 def finish(status="completed"):
     item({"id": "reply", "type": "agentMessage", "text": "# Result\n**Formatted** reply · 비비머\n- First step\n- Second step\n```python\nprint('hello')\n+-------+\n| ASCII |\n+-------+\n```\n| Name | State |\n| --- | --- |\n| Task | Done |\n<script>window.untrusted=true</script>"})
+    if text == "context-compact":
+        item({"id": "compaction", "type": "contextCompaction"})
+    notify("thread/tokenUsage/updated", {"tokenUsage": {
+        "last": {"totalTokens": 12000 if text == "context-compact" else 76000,
+                 "inputTokens": 70000, "cachedInputTokens": 60000, "outputTokens": 6000, "reasoningOutputTokens": 2000},
+        "total": {"totalTokens": 9999999}, "modelContextWindow": 200000}})
     notify("turn/completed", {"turn": {"id": turn, "status": status}})
 
 
@@ -59,6 +65,10 @@ for line in sys.stdin:
         emit({"id": message["id"], "result": {"data": [{"cwd": str(Path.cwd()), "skills": rows, "errors": []}]}})
     elif method == "initialize":
         emit({"id": message["id"], "result": {"userAgent": "test"}})
+    elif method == "account/rateLimits/read":
+        emit({"id":message["id"],"result":{"rateLimits":{"limitId":"codex","primary":{
+            "usedPercent":35,"windowDurationMins":300,"resetsAt":int(time.time())+7200},
+            "secondary":{"usedPercent":12,"windowDurationMins":10080,"resetsAt":int(time.time())+172800}}}})
     elif method == "model/list":
         rows = [{"id":"test-codex", "model":"test-codex", "displayName":"Test Codex", "defaultReasoningEffort":"medium", "isDefault":True,
                  "supportedReasoningEfforts":[{"reasoningEffort":level,"description":"Controlled "+level} for level in ["low","medium","high","xhigh"]]},

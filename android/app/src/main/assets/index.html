@@ -96,6 +96,14 @@
         <div class="composer-actions"><button id="steer" class="quiet" type="button" data-i18n="steer" aria-describedby="delivery-hint" hidden>Steer</button><button id="send" class="primary" type="submit" data-i18n="send">Send</button></div>
       </form>
       <p id="delivery-warning" class="delivery-warning" data-i18n="delivery_update" hidden></p>
+      <details id="context-usage" class="context-usage" hidden>
+        <summary><span data-i18n="context_label">Context</span><span id="context-summary"></span><meter id="context-meter" min="0" max="100" value="0" data-i18n-aria-label="context_label" aria-label="Context" hidden></meter></summary>
+        <p id="context-detail"></p><p id="context-note"></p>
+      </details>
+      <details id="subscription-usage" class="context-usage" hidden>
+        <summary><span data-i18n="subscription_label">Subscription</span><span id="subscription-summary"></span><meter id="subscription-meter" min="0" max="100" value="0" data-i18n-aria-label="subscription_label" aria-label="Subscription" hidden></meter></summary>
+        <ul id="subscription-windows"></ul><p id="subscription-note"></p><p id="subscription-updated"></p>
+      </details>
       <div id="model-controls" class="model-controls">
         <label for="quick-agent" class="sr-only" data-i18n="agent_label">Agent</label><select id="quick-agent"></select>
         <label for="quick-model" class="sr-only" data-i18n="model_label">Model</label><select id="quick-model"></select>
@@ -238,6 +246,12 @@
       </div>
       <p id="enter-behavior-hint" class="hint"></p>
       <p id="enter-modifiers-hint" class="hint" data-i18n="enter_modifiers_hint">With Enter set to New line, Ctrl+Enter sends or queues your message; with Enter set to Send, it inserts a new line. Shift+Enter always inserts a new line. Applies to the message box in Chat and Terminal.</p>
+    </section>
+    <section class="card preference-card">
+      <div class="preference-row"><label for="context-display" data-i18n="context_display_label">Context display</label>
+        <select id="context-display" aria-describedby="context-display-hint"><option value="used" data-i18n="context_display_used">Used</option><option value="remaining" data-i18n="context_display_remaining">Remaining</option></select>
+      </div>
+      <p id="context-display-hint" class="hint"></p>
     </section>
     <section class="card preference-card">
       <div class="preference-row language-preference"><label for="language" data-i18n="language_label">Language</label>

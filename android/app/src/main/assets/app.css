@@ -445,3 +445,22 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 #bridge-maintenance-sessions strong, #bridge-maintenance-sessions small { display:block; }
 #bridge-maintenance-sessions small { margin-top:4px; color:var(--muted); }
 #bridge-maintenance-dialog > button { width:100%; margin-top:10px; }
+/* Last structured context-window report; scoped to the selected Chat session. */
+.context-usage{flex:none;margin:2px 0;color:var(--muted);font-size:11px;min-width:0}
+.context-usage summary{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;min-height:32px;cursor:pointer;list-style:none}
+.context-usage summary::-webkit-details-marker{display:none}
+.context-usage summary::after{content:'⌄';margin-inline-start:auto}
+.context-usage[open] summary::after{content:'⌃'}
+.context-usage meter{width:52px;height:8px;flex:none;accent-color:var(--green)}
+.context-usage[data-level="medium"] meter{accent-color:#dbb56c}
+.context-usage[data-level="high"] meter{accent-color:#ee9c91}
+.context-usage p{margin:2px 0 6px;line-height:1.5;overflow-wrap:anywhere}
+#workspace.project-editing #context-usage{display:none}
+#subscription-usage[open]{max-height:min(200px,30dvh);overflow-y:auto;overscroll-behavior:contain}
+#subscription-windows{list-style:none;margin:0 0 6px;padding:0}
+#subscription-windows li{padding:5px 0;border-bottom:1px solid var(--line)}
+#subscription-windows li>div{display:flex;justify-content:space-between;gap:8px}
+#subscription-windows span{min-width:0;overflow-wrap:anywhere}
+#subscription-windows strong{font-weight:500;flex-shrink:0}
+#subscription-windows small{display:block;margin-top:3px;line-height:1.5}
+#workspace.project-editing #subscription-usage{display:none}

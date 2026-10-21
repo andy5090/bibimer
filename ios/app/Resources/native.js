@@ -26,6 +26,7 @@
       return store("languagePreference", value);
     },
     setEnterBehavior: value => ["send", "newline"].includes(value) && store("enterBehavior", value),
+    setContextDisplay: value => ["used", "remaining"].includes(value) && store("contextDisplay", value),
     setProjectLocation: (parent, folder) => {
       if (![parent, folder].every(path => typeof path === "string" && path.startsWith("/") && !/[\x00-\x1f]/.test(path))) return false;
       store("lastProjectParent", parent); return store("lastProjectFolder", folder);

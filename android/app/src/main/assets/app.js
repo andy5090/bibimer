@@ -51,13 +51,15 @@
   }
   let languagePreference = "system";
   let enterBehavior = environment().enterBehavior === "send" ? "send" : "newline";
+  let contextDisplay = environment().contextDisplay === "remaining" ? "remaining" : "used";
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
     claude:["inherit","default","acceptEdits","plan","bypassPermissions"], opencode:["inherit","ask","allow"]};
   const pickers = new BibimerSelect(t, {
     description: (select, option) => select.id.includes("permission") ? t("permission_hint_" + option.value) :
       select.id === "project-switch" ? knownProjects.find(item => item.id === option.value)?.path || "" :
-      select.id === "enter-behavior" ? t("enter_" + option.value + "_hint") : option.dataset.description || "",
-    context: select => ["language", "enter-behavior"].includes(select.id) ? "app" :
+      select.id === "enter-behavior" ? t("enter_" + option.value + "_hint") :
+      select.id === "context-display" ? t("context_display_" + option.value + "_hint") : option.dataset.description || "",
+    context: select => ["language", "enter-behavior", "context-display"].includes(select.id) ? "app" :
       select.id === "project-switch" ? "projects/" + projectKey() :
       select.id.startsWith("worktree-") ? [instance, select.dataset.context].join("/") :
       select.id.startsWith("import-") ? [projectKey(), importProject, $("import-agent").value].join("/") :
@@ -867,7 +869,111 @@
     if (name === "work") setTimeout(resize, 30);
     else updateEnvironment();
   }
+  function renderContextUsage() {
+    const root = $("context-usage"), meter = $("context-meter");
+    root.hidden = !isChat();
+    const usage = session?.context_usage;
+    const valid = usage && Number.isSafeInteger(usage.used_tokens) && usage.used_tokens >= 0;
+    const limited = valid && Number.isSafeInteger(usage.limit_tokens) && usage.limit_tokens > 0;
+    const format = value => value.toLocaleString(i18n.language());
+    const remainingMode = contextDisplay === "remaining";
+    meter.hidden = !limited;
+    let summary = t("context_unknown"), detail = t("context_unavailable");
+    if (valid) {
+      const used = format(usage.used_tokens);
+      summary = remainingMode ? t("context_unknown") : t("context_tokens", {used});
+      detail = t("context_limit_unknown");
+      if (limited) {
+        const percent = Math.round(usage.used_tokens / usage.limit_tokens * 100);
+        summary = t("context_percent_" + contextDisplay, {used:format(percent), remaining:format(Math.max(0, 100 - percent))});
+        detail = t("context_counts_" + contextDisplay, {used, limit:format(usage.limit_tokens), remaining:format(Math.max(0, usage.limit_tokens - usage.used_tokens))});
+        meter.value = remainingMode ? Math.max(0, 100 - percent) : Math.min(100, percent);
+        meter.setAttribute("aria-valuetext", summary);
+        root.dataset.level = percent >= 90 ? "high" : percent >= 75 ? "medium" : "normal";
+      }
+      if (usage.estimated && (!remainingMode || limited)) summary = "≈ " + summary;
+    }
+    if (!limited) { delete root.dataset.level; meter.value = 0; meter.removeAttribute("aria-valuetext"); }
+    $("context-summary").textContent = summary;
+    $("context-detail").textContent = detail;
+    $("context-note").textContent = valid ? t(usage.estimated ? "context_estimate_note" : "context_note") +
+      ((!online || session.state !== "running") ? " " + t("context_stale") : "") : "";
+  }
+  function subscriptionWindowLabel(row) {
+    const number = value => value.toLocaleString(i18n.language());
+    const minutes = row.window_minutes;
+    const kind = typeof row.kind === "string" ? row.kind : "window";
+    let label = t("subscription_window");
+    if (kind === "overage") label = t("subscription_extra");
+    else if (minutes === 10080 || kind.startsWith("seven_day") || kind.startsWith("weekly_")) label = t("subscription_week");
+    else if (Number.isInteger(minutes) && minutes > 0) {
+      label = minutes % 1440 === 0 ? t("subscription_days", {count:number(minutes / 1440)}) :
+        minutes % 60 === 0 ? t("subscription_hours", {count:number(minutes / 60)}) : t("subscription_minutes", {count:number(minutes)});
+    }
+    if (row.kind === "seven_day_opus") label += " · Opus";
+    if (row.kind === "seven_day_sonnet") label += " · Sonnet";
+    if (row.kind === "seven_day_overage_included") label += " · " + t("subscription_extra");
+    if (typeof row.label === "string" && row.label) label += " · " + row.label;
+    return label;
+  }
+  function renderSubscriptionUsage() {
+    const root = $("subscription-usage"), meter = $("subscription-meter");
+    root.hidden = !isChat();
+    const report = session?.subscription_usage;
+    const now = Date.now() / 1000;
+    const rows = Array.isArray(report?.windows) ? report.windows.filter(row => row && typeof row.id === "string").slice(0,16) : [];
+    const percent = row => typeof row.used_percent === "number" && Number.isFinite(row.used_percent) && row.used_percent >= 0 ? row.used_percent : null;
+    const expired = row => Number.isFinite(row.resets_at) && row.resets_at > 0 && row.resets_at <= now;
+    const outdated = row => Number.isFinite(row.updated_at) && now - row.updated_at > 300;
+    const display = row => {
+      const used = percent(row);
+      if (expired(row)) return t("subscription_waiting");
+      if (used === null) return ["allowed_warning", "rejected"].includes(row.status) ? t("subscription_status_" + row.status) : t("context_unknown");
+      return t("context_percent_" + contextDisplay, {used:Math.round(used).toLocaleString(i18n.language()),
+        remaining:Math.max(0, 100 - Math.round(used)).toLocaleString(i18n.language())});
+    };
+    const priority = row => expired(row) ? -1 : row.status === "rejected" ? 100000 : row.status === "allowed_warning" ? 10000 : percent(row) ?? -1;
+    const selected = [...rows].sort((a,b) => priority(b) - priority(a))[0];
+    const measured = selected && percent(selected) !== null && !expired(selected);
+    const observed = rows.reduce((latest,row) => Math.max(latest, Number.isFinite(row.updated_at) ? row.updated_at : 0), 0);
+    const stale = !!rows.length && (!online || session?.state !== "running" || report?.state === "stale" || (selected && outdated(selected)));
+    let summary = selected ? subscriptionWindowLabel(selected) + " · " + display(selected) : t("context_unknown");
+    if (rows.length > 1) summary += " · +" + (rows.length - 1).toLocaleString(i18n.language());
+    if (stale) summary = t("subscription_last", {value:summary});
+    $("subscription-summary").textContent = summary;
+    meter.hidden = !measured;
+    meter.value = measured ? Math.min(100, contextDisplay === "remaining" ? Math.max(0, 100 - percent(selected)) : percent(selected)) : 0;
+    if (measured) meter.setAttribute("aria-valuetext", display(selected));
+    else meter.removeAttribute("aria-valuetext");
+    const level = selected && !expired(selected) ? selected.status === "rejected" ? 100 : selected.status === "allowed_warning" ? 90 : percent(selected) ?? 0 : 0;
+    root.dataset.level = level >= 90 ? "high" : level >= 75 ? "medium" : "normal";
+    const entries = rows.map(row => {
+      const entry = document.createElement("li"), heading = document.createElement("div"), name = document.createElement("span"), value = document.createElement("strong");
+      name.textContent = subscriptionWindowLabel(row);
+      value.textContent = outdated(row) && !expired(row) ? t("subscription_last", {value:display(row)}) : display(row);
+      heading.append(name, value); entry.append(heading);
+      const reset = document.createElement("small");
+      if (expired(row)) reset.textContent = t("subscription_reset_passed");
+      else if (Number.isFinite(row.resets_at) && row.resets_at > 0 && row.resets_at <= 253402300799) {
+        const minutes = Math.ceil((row.resets_at - now) / 60);
+        const unit = minutes >= 1440 ? "day" : minutes >= 60 ? "hour" : "minute";
+        const count = unit === "day" ? Math.ceil(minutes / 1440) : unit === "hour" ? Math.ceil(minutes / 60) : minutes;
+        reset.textContent = t("subscription_resets", {time:new Intl.RelativeTimeFormat(i18n.language(), {numeric:"always"}).format(count, unit)});
+        reset.title = new Date(row.resets_at * 1000).toLocaleString(i18n.language());
+      } else reset.textContent = t("subscription_reset_unknown");
+      entry.append(reset);
+      if (["allowed", "allowed_warning", "rejected"].includes(row.status)) {
+        const status = document.createElement("small");status.textContent = t("subscription_status_" + row.status);entry.append(status);
+      }
+      return entry;
+    });
+    $("subscription-windows").replaceChildren(...entries);
+    $("subscription-note").textContent = t(rows.length ? "subscription_note" : "subscription_unavailable") + (stale ? " " + t("subscription_stale") : "");
+    $("subscription-updated").textContent = observed > 0 && observed <= 253402300799 ? t("subscription_updated", {time:new Date(observed * 1000).toLocaleString(i18n.language())}) : "";
+  }
   function renderSession() {
+    renderContextUsage();
+    renderSubscriptionUsage();
     worktreeCreator.render();
     renderBridgeUpdate();
     const live = session && ["running", "stopping"].includes(session.state);
@@ -1927,6 +2033,9 @@
     $("enter-behavior").value = enterBehavior;
     $("enter-behavior-hint").textContent = t("enter_" + enterBehavior + "_hint");
     $("input").setAttribute("enterkeyhint", enterBehavior === "send" ? "send" : "enter");
+    $("context-display").value = contextDisplay;
+    $("context-display").disabled = !native.setContextDisplay;
+    $("context-display-hint").textContent = t("context_display_" + contextDisplay + "_hint");
     pickers.sync();
   }
   $("enter-behavior").addEventListener("change", () => {
@@ -1938,11 +2047,24 @@
     } catch (_) { notice("enter_save_failed"); }
     renderInputPreferences();
   });
+  $("context-display").addEventListener("change", () => {
+    const value = $("context-display").value;
+    try {
+      if (!["used", "remaining"].includes(value) || !native.setContextDisplay?.(value)) throw new Error();
+      contextDisplay = value;
+      if (noticeData?.key === "context_display_save_failed") notice("");
+    } catch (_) { notice("context_display_save_failed"); }
+    renderInputPreferences(); renderContextUsage(); renderSubscriptionUsage();
+  });
+  for (const id of ["context-usage", "subscription-usage"]) $(id).addEventListener("toggle", () => {
+    if ($(id).open) $(id === "context-usage" ? "subscription-usage" : "context-usage").open = false;
+  });
   window.BibimerRefreshLanguage = () => refreshLanguage();
   window.BibimerResume = () => {
     paused = false;
     const env = environment();
     enterBehavior = env.enterBehavior === "send" ? "send" : "newline";
+    contextDisplay = env.contextDisplay === "remaining" ? "remaining" : "used";
     refreshLanguage(true); connect();
   };
   window.BibimerBack = () => {
