@@ -30,10 +30,10 @@ def package_web(destination):
     if destination.exists():
         shutil.rmtree(destination)
     shutil.copytree(source, destination)
-    for name in ['platform.js']:
+    for name in ['platform.js', 'terminal-tools.js', 'terminal-tools.css']:
         shutil.copy2(HERE / 'Resources' / name, destination / name)
     index = (destination / 'index.html').read_text()
-    index = index.replace('<script src="app.js" defer>', '<script src="platform.js" defer></script>\n  <script src="app.js" defer>')
+    index = index.replace('<script src="app.js" defer>', '<script src="platform.js" defer></script>\n  <script src="terminal-tools.js" defer></script>\n  <link rel="stylesheet" href="terminal-tools.css">\n  <script src="app.js" defer>')
     # iOS zooms small text fields on focus. Keep the shared Android sizing intact.
     index = index.replace('</head>', '''<style>
 .ios-unavailable { display:none !important; }
