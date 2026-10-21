@@ -79,3 +79,25 @@ node ios/app/tests/test_permissions.cjs
 python3 -m py_compile ios/app/build.py ios/app/run_simulator.py
 python3 -m unittest discover -s ios/app/tests -p 'test_*.py'
 ```
+
+## 2026-10-21 사용자 Codex 확인
+
+사용자가 iOS 앱에서 Codex의 실제 계정 인증 후 동작 성공을 직접 확인했다고 보고했다. 위 자동 설치·버전 및 모의 모델 도구 검사와 구분되는 사용자 확인이다. 인증 파일·모델명·답변·세션 로그는 수집하지 않았으며, 다른 세 CLI의 실제 계정 인증·모델 사용은 이 보고로 확인되지 않았다.
+
+## 2026-10-21 터미널 텍스트 선택·붙여넣기
+
+xterm 출력은 일반 페이지 DOM 선택으로 복사할 수 없어 iOS 전용 ‘텍스트 선택’ 창과 ‘붙여넣기’ 버튼을 추가했다. 기존 dialog 스타일과 읽기 전용 textarea를 사용하며 UI의 16px 입력 글꼴을 유지한다. 스냅샷은 xterm의 공개 buffer/cell API를 사용해 soft-wrap만 합치고 ANSI 표시 속성 대신 실제 표시 문자를 추출한다. 명시적 공백·빈 줄·한국어·emoji를 보존하고 CJK 줄바꿈의 null padding은 가짜 공백으로 넣지 않는다. 닫으면 출력 사본과 선택 참조를 비우고 원래 포커스로 돌아간다. 출력 사본을 앱 파일이나 별도 로그에 저장하지 않는다.
+
+붙여넣기는 버튼 클릭 때만 native RPC로 읽어 초안의 선택 범위에 삽입한다. CRLF·CR을 LF로 맞춘 뒤 UTF-8 16KiB 제한과 커서를 계산하며 자동 PTY 전송·개행 실행은 하지 않는다. 세션·프로젝트·브리지 인스턴스·generation·초안/선택 revision이 달라지면 A→B→A로 되돌아와도 거절한다. 문서별 임의 nonce와 단발 request ID·타임아웃 정리로 이전 문서·지연·중복 응답을 무시하고, native는 현재 canonical WKWebView에만 JSON으로 응답한다. 별도 clipboard 원문 로그·저장소는 만들지 않으며 삽입한 초안은 기존 초안 동작을 따른다.
+
+새 의존성 없이 기존 xterm 번들을 실제 실행한 host 회귀에서 ANSI·CJK 마지막 열·soft-wrap URL·emoji·명시 공백/공백행·끝 빈 행·scrollback 경계를 확인했다. 부분/전체 복사·닫기 정리, 명시적 읽기만 수행, CRLF/caret, 자동 전송 0, 세션/초안/커서 경합과 전체 UTF-8 크기 거절 검사도 성공했다. 기존 Playwright/Chromium 도구로 패키징한 실제 Web 자산의 320/393px × 10언어 20개 레이아웃과 touch 이벤트 부분 복사, 실제 textarea의 선택 범위·CRLF/LF·caret6·초안 경합을 검증했다. 결과와 화면은 `dist/ios-app/terminal-tools-browser/verification.json` 및 PNG에 있다. 시각 검토는 1차 88점 뒤 한국어 버튼 줄바꿈·44px 누름 영역을 수정해 2차 95/pass를 받았다.
+
+설치 전 읽기 전용 집계 상태에서 실행 중 프로세스4개를 확인했다. 사용자의 **‘수정본 설치 후 재실행’** 승인 후 해당 앱을 종료·업데이트하고 실제 WKWebView 검사를 실행했다. 새 필수 검사 `terminal_text_copy_and_draft_paste`를 포함한 **21개 성공14.01초·JS 오류0·fatal0**, 기존 syscall151/152 경고4개를 보존했다. native self-test의 복사·읽기는 모두 private fake clipboard만 사용하며 사용자 인증 파일 내용·대화·PTY 원문·실제 clipboard를 조회하지 않았다. 재설정·앱 삭제·CLI 재설치는 하지 않았다. `dist/ios-app/smoke/verification.json`과 시작 전 수집한29dab manifest가 증거이며 이전 결과는 history에 보존했다. iOS의 길게 누르기 선택 제스처·붙여넣기 권한창의 직접 조작 검증은 CUA 연결 실패로 남아 있다. Chromium touch 이벤트와 native RPC 검사로 실제 제스처·OS 권한창까지 검증했다고 표시하지 않는다.
+
+런타임 패치 `29dabdb385b105b31c58b5d2d1d5958a216028d2113448eaa8b185233b09c0c8`를 그대로 사용한 양 SDK 최종 빌드는 경고·오류 0개로 성공했고 native static analyzer도 진단 0개였다. 공유 16px 입력 규칙과 새 terminal 자산의 번들 바이트 일치를 확인했다. 빌드 준비 시점의 해시는 `dist/ios-app/terminal-tools-browser/package-verification.json`에 있다. 승인 후 설치된 바이너리·터미널 자산이 검사 패키지와 같음을 확인했고, 출력 수집·self-test 인자 없이 일반 모드 PID19249로 열었다. 실제 화면에서 Connected와 Select text/Paste 버튼을 확인했다. `.tools/ios-terminal-tools/applied-verification.json`과 `normal-screen.png`에 적용 결과를 기록했다. 이전 실행 프로세스는 승인된 재시작으로 종료됐으며 현재 Session lost 표시를 실행 복원으로 가장하지 않는다.
+
+```sh
+node ios/app/tests/test_terminal_tools.cjs
+node ios/app/tests/test_clipboard_bridge.cjs
+node ios/app/tests/browser_terminal_tools.cjs .tools/ios-app/iphonesimulator/Bibimer.app/Web
+```

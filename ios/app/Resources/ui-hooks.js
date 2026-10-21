@@ -33,6 +33,15 @@
     pickers.sync();
   };
   const iosRenderSession = renderSession;
+  const iosTerminalTools = window.BibimerTerminalTools?.create({terminal:term,input:$("input"),native,language:()=>i18n.language(),context:()=>({
+    generation,instance,project:projectKey(),session:session?.id || null,tab:currentTab,
+    terminal:currentTab === "work" && !!session && !isChat() && !$("workspace").classList.contains("project-editing"),
+    paste:currentTab === "work" && !!session && !isChat() && !$("workspace").classList.contains("project-editing") && !$("input").disabled
+  })});
+  if (iosTerminalTools) {
+    const iosTab = tab;
+    tab = function(name) { iosTab(name); iosTerminalTools.update(); };
+  }
   const iosSetupRefreshed = new Set(), iosSetupRefreshing = new Set();
   async function iosRefreshSetupAgents(id) {
     if (iosSetupRefreshed.has(id) || iosSetupRefreshing.has(id)) return;
@@ -63,6 +72,7 @@
     } else if (hint.dataset.iosPermission) { delete hint.dataset.iosPermission; updateMode(); }
     if (iosPermissionIssue($("import-agent").value,savedOptions($("import-agent").value).permission,"chat")) $("import-confirm").disabled = true;
     if (online && session?.id && session.setup_action?.action === "install" && session.state === "exited" && session.exit_code === 0) void iosRefreshSetupAgents(session.id);
+    iosTerminalTools?.update();
   };
   const iosWorktreeRender = worktreeCreator.render.bind(worktreeCreator);
   worktreeCreator.render = function() {

@@ -27,6 +27,7 @@ extern int bibimer_create_directory(const char *path);
 @property NSMutableArray<NSString *> *javascriptErrors;
 @property NSString *smokeScript;
 @property NSString *smokeResultName;
+@property NSString *testClipboard;
 @property NSURL *documents;
 @property(nonatomic,strong) dispatch_queue_t runtimeQueue;
 @property BOOL openingFile;
@@ -362,6 +363,30 @@ static void guestExit(int status) {
     dispatch_async(dispatch_get_main_queue(), ^{ [self.web evaluateJavaScript:script completionHandler:nil]; });
 }
 
+- (BOOL)isCurrentClipboardWorkspace:(WKWebView *)web {
+    if (!web || web != self.web || self.exited) return NO;
+    NSURL *index = [[NSBundle.mainBundle URLForResource:@"Web" withExtension:nil] URLByAppendingPathComponent:@"index.html"];
+    return web.URL.isFileURL && [web.URL.URLByStandardizingPath.URLByResolvingSymlinksInPath.path isEqual:index.URLByResolvingSymlinksInPath.path];
+}
+
+- (void)readClipboard:(NSString *)identifier webView:(WKWebView *)web {
+    if (![self isCurrentClipboardWorkspace:web] || UIApplication.sharedApplication.applicationState != UIApplicationStateActive) return;
+    // This is called only by the explicit Paste action. Let iOS apply its paste privacy policy.
+    NSDictionary *response;
+    @try {
+        NSString *raw = self.smokeScript ? self.testClipboard : UIPasteboard.generalPasteboard.string;
+        NSString *text = [[raw stringByReplacingOccurrencesOfString:@"\r\n" withString:@"\n"] stringByReplacingOccurrencesOfString:@"\r" withString:@"\n"];
+        if (!text.length) response = @{@"ok":@NO,@"code":@"clipboard_empty"};
+        else if ([text lengthOfBytesUsingEncoding:NSUTF8StringEncoding] > 16384) response = @{@"ok":@NO,@"code":@"clipboard_large"};
+        else response = @{@"ok":@YES,@"text":text};
+    } @catch (__unused NSException *exception) { response = @{@"ok":@NO,@"code":@"clipboard_failed"}; }
+    NSString *script = [NSString stringWithFormat:@"window.BibimerClipboardReply?.(%@,%@)",jsonString(identifier),jsonString(response)];
+    // Never route a delayed clipboard reply into a replacement WebView.
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if ([self isCurrentClipboardWorkspace:web]) [web evaluateJavaScript:script completionHandler:nil];
+    });
+}
+
 - (void)openLink:(NSString *)value {
     if (value.length > 8192) return;
     NSURL *url = [NSURL URLWithString:value];
@@ -454,10 +479,14 @@ static void guestExit(int status) {
 - (void)userContentController:(WKUserContentController *)controller didReceiveScriptMessage:(WKScriptMessage *)message {
     NSURL *source = message.frameInfo.request.URL;
     NSURL *index = [[NSBundle.mainBundle URLForResource:@"Web" withExtension:nil] URLByAppendingPathComponent:@"index.html"];
-    if (!message.frameInfo.mainFrame || !source.isFileURL || ![source.URLByStandardizingPath.URLByResolvingSymlinksInPath.path isEqual:index.URLByResolvingSymlinksInPath.path] || ![message.body isKindOfClass:NSDictionary.class]) return;
+    if (message.webView != self.web || !message.frameInfo.mainFrame || !source.isFileURL || ![source.URLByStandardizingPath.URLByResolvingSymlinksInPath.path isEqual:index.URLByResolvingSymlinksInPath.path] || ![message.body isKindOfClass:NSDictionary.class]) return;
     NSDictionary *body = message.body;
     NSString *action = body[@"action"];
-    if ([action isEqual:@"request"]) {
+    if ([action isEqual:@"readClipboard"]) {
+        NSString *identifier = body[@"id"];
+        if (![identifier isKindOfClass:NSString.class] || [identifier rangeOfString:@"^[a-f0-9]{32}:[0-9]{1,16}$" options:NSRegularExpressionSearch].location == NSNotFound) return;
+        [self readClipboard:identifier webView:message.webView];
+    } else if ([action isEqual:@"request"]) {
         NSString *identifier = body[@"id"], *method = body[@"method"], *path = body[@"path"], *payload = body[@"body"];
         if (![identifier isKindOfClass:NSString.class] || identifier.length > 80) return;
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-late-health"]) {
@@ -475,6 +504,14 @@ static void guestExit(int status) {
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/share-state"]) {
             NSDictionary *attributes = self.exportFile ? [NSFileManager.defaultManager attributesOfItemAtPath:self.exportFile.path error:nil] : nil;
             [self reply:identifier status:200 data:@{@"busy":@(self.openingFile),@"presented":@([self.presentedViewController isKindOfClass:UIActivityViewController.class]),@"exists":@(attributes != nil),@"size":attributes[NSFileSize] ?: @0}]; return;
+        }
+        if (self.smokeScript && [path isEqual:@"/native/test-clipboard"]) {
+            if ([method isEqual:@"POST"] && [payload isKindOfClass:NSString.class] && [payload lengthOfBytesUsingEncoding:NSUTF8StringEncoding] <= 65536) {
+                NSDictionary *fixture = [NSJSONSerialization JSONObjectWithData:[payload dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
+                if ([fixture isKindOfClass:NSDictionary.class] && [fixture[@"text"] isKindOfClass:NSString.class]) self.testClipboard = fixture[@"text"];
+                else { [self reply:identifier status:400 data:@{}]; return; }
+            } else if (![method isEqual:@"GET"]) { [self reply:identifier status:400 data:@{}]; return; }
+            [self reply:identifier status:200 data:@{@"text":self.testClipboard ?: @""}]; return;
         }
         if ([method isEqual:@"POST"] && [path isEqual:@"/native/open-file"] && [payload isKindOfClass:NSString.class] && payload.length < 16384) { [self openFile:identifier payload:payload]; return; }
         if (![self allowedMethod:method path:path] || [path rangeOfCharacterFromSet:[NSCharacterSet characterSetWithCharactersInString:@"\r\n#\\"]].location != NSNotFound || ![payload isKindOfClass:NSString.class] || [payload lengthOfBytesUsingEncoding:NSUTF8StringEncoding] > 65536) {
@@ -498,7 +535,10 @@ static void guestExit(int status) {
         BOOL validType = [key isEqual:@"agentOptions"] ? [value isKindOfClass:NSDictionary.class] : [value isKindOfClass:NSString.class];
         if (validType && [@[@"languagePreference",@"enterBehavior",@"contextDisplay",@"lastProjectParent",@"lastProjectFolder",@"agentOptions"] containsObject:key] && [NSPropertyListSerialization propertyList:value isValidForFormat:NSPropertyListBinaryFormat_v1_0] && jsonString(value).length < 32768)
             [NSUserDefaults.standardUserDefaults setObject:value forKey:key];
-    } else if ([action isEqual:@"copy"] && [body[@"text"] isKindOfClass:NSString.class]) UIPasteboard.generalPasteboard.string = body[@"text"];
+    } else if ([action isEqual:@"copy"] && [body[@"text"] isKindOfClass:NSString.class]) {
+        if (self.smokeScript) self.testClipboard = body[@"text"];
+        else UIPasteboard.generalPasteboard.string = body[@"text"];
+    }
     else if ([action isEqual:@"link"] && [body[@"url"] isKindOfClass:NSString.class]) [self openLink:body[@"url"]];
     else if ([action isEqual:@"cancelPoll"]) { for (NSURLSessionDataTask *task in self.polls) [task cancel]; [self.polls removeAllObjects]; }
     else if ([action isEqual:@"javascriptError"] && [body[@"message"] isKindOfClass:NSString.class] && self.smokeScript) [self.javascriptErrors addObject:body[@"message"]];
