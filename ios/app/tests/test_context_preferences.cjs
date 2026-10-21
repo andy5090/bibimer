@@ -1,7 +1,7 @@
 // Exercise the shipped iOS JavaScript bridge's stored preference boundary.
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const posts=[],defaults={contextDisplay:'used',agentOptions:{}};
-const context=vm.createContext({window:{__bibimerEnvironment:defaults,webkit:{messageHandlers:{bibimer:{postMessage:value=>posts.push(value)}}},addEventListener(){}}});
+const context=vm.createContext({crypto:require('node:crypto').webcrypto,window:{__bibimerEnvironment:defaults,webkit:{messageHandlers:{bibimer:{postMessage:value=>posts.push(value)}}},addEventListener(){}}});
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../Resources/native.js'),'utf8'),context);
 assert.equal(JSON.parse(context.window.Bibimer.environment()).contextDisplay,'used');
 assert.equal(context.window.Bibimer.setContextDisplay('remaining'),true);
