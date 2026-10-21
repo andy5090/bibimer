@@ -1,0 +1,6 @@
+<en-US>
+See session context usage and supported Codex/Claude subscription limits with reset times. Choose used or remaining amounts in Settings. Missing or stale data is shown explicitly. Includes bridge 0.19.0; update the bridge in Settings to enable the new bridge features.
+</en-US>
+<ko-KR>
+세션 컨텍스트와 지원되는 Codex·Claude 구독 한도·초기화 시각을 표시합니다. 설정에서 사용량·남은 양 중 표시 기준을 선택할 수 있으며 확인 불가·오래된 값은 구분합니다. 내장 브리지 0.19.0을 포함하며 새 브리지 기능은 설정에서 브리지를 업데이트한 뒤 적용됩니다.
+</ko-KR>
