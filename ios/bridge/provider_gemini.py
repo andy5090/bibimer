@@ -126,10 +126,18 @@ class Adapter:
 
     def update(self, params):
         with self.lock:
-            if not self.thread or params.get("sessionId") != self.thread or not self.turn:
+            if not self.thread or params.get("sessionId") != self.thread:
                 return
             update = params.get("update") or {}
             kind = update.get("sessionUpdate")
+            if kind == "usage_update":
+                # Standard ACP window usage only. Gemini's quota/billing metadata
+                # does not describe the current window and is not a fallback.
+                self.notify("bibimer/contextUsage", {"usedTokens": update.get("used"),
+                    "contextWindow": update.get("size"), "estimated": False})
+                return
+            if not self.turn:
+                return
             if kind == "agent_message_chunk" and (update.get("content") or {}).get("type") == "text":
                 key = str(update.get("messageId") or "response")[:200]
                 self.messages[key] = self.text(self.messages.get(key, "") + self.text(update["content"].get("text")))

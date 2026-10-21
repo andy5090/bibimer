@@ -51,13 +51,15 @@
   }
   let languagePreference = "system";
   let enterBehavior = environment().enterBehavior === "send" ? "send" : "newline";
+  let contextDisplay = environment().contextDisplay === "remaining" ? "remaining" : "used";
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
     claude:["inherit","default","acceptEdits","plan","bypassPermissions"], opencode:["inherit","ask","allow"]};
   const pickers = new BibimerSelect(t, {
     description: (select, option) => select.id.includes("permission") ? t("permission_hint_" + option.value) :
       select.id === "project-switch" ? knownProjects.find(item => item.id === option.value)?.path || "" :
-      select.id === "enter-behavior" ? t("enter_" + option.value + "_hint") : option.dataset.description || "",
-    context: select => ["language", "enter-behavior"].includes(select.id) ? "app" :
+      select.id === "enter-behavior" ? t("enter_" + option.value + "_hint") :
+      select.id === "context-display" ? t("context_display_" + option.value + "_hint") : option.dataset.description || "",
+    context: select => ["language", "enter-behavior", "context-display"].includes(select.id) ? "app" :
       select.id === "project-switch" ? "projects/" + projectKey() :
       select.id.startsWith("worktree-") ? [instance, select.dataset.context].join("/") :
       select.id.startsWith("import-") ? [projectKey(), importProject, $("import-agent").value].join("/") :
@@ -867,7 +869,38 @@
     if (name === "work") setTimeout(resize, 30);
     else updateEnvironment();
   }
+  function renderContextUsage() {
+    const root = $("context-usage"), meter = $("context-meter");
+    root.hidden = !isChat();
+    const usage = session?.context_usage;
+    const valid = usage && Number.isSafeInteger(usage.used_tokens) && usage.used_tokens >= 0;
+    const limited = valid && Number.isSafeInteger(usage.limit_tokens) && usage.limit_tokens > 0;
+    const format = value => value.toLocaleString(i18n.language());
+    const remainingMode = contextDisplay === "remaining";
+    meter.hidden = !limited;
+    let summary = t("context_unknown"), detail = t("context_unavailable");
+    if (valid) {
+      const used = format(usage.used_tokens);
+      summary = remainingMode ? t("context_unknown") : t("context_tokens", {used});
+      detail = t("context_limit_unknown");
+      if (limited) {
+        const percent = Math.round(usage.used_tokens / usage.limit_tokens * 100);
+        summary = t("context_percent_" + contextDisplay, {used:format(percent), remaining:format(Math.max(0, 100 - percent))});
+        detail = t("context_counts_" + contextDisplay, {used, limit:format(usage.limit_tokens), remaining:format(Math.max(0, usage.limit_tokens - usage.used_tokens))});
+        meter.value = remainingMode ? Math.max(0, 100 - percent) : Math.min(100, percent);
+        meter.setAttribute("aria-valuetext", summary);
+        root.dataset.level = percent >= 90 ? "high" : percent >= 75 ? "medium" : "normal";
+      }
+      if (usage.estimated && (!remainingMode || limited)) summary = "≈ " + summary;
+    }
+    if (!limited) { delete root.dataset.level; meter.value = 0; meter.removeAttribute("aria-valuetext"); }
+    $("context-summary").textContent = summary;
+    $("context-detail").textContent = detail;
+    $("context-note").textContent = valid ? t(usage.estimated ? "context_estimate_note" : "context_note") +
+      ((!online || session.state !== "running") ? " " + t("context_stale") : "") : "";
+  }
   function renderSession() {
+    renderContextUsage();
     worktreeCreator.render();
     renderBridgeUpdate();
     const live = session && ["running", "stopping"].includes(session.state);
@@ -1927,6 +1960,9 @@
     $("enter-behavior").value = enterBehavior;
     $("enter-behavior-hint").textContent = t("enter_" + enterBehavior + "_hint");
     $("input").setAttribute("enterkeyhint", enterBehavior === "send" ? "send" : "enter");
+    $("context-display").value = contextDisplay;
+    $("context-display").disabled = !native.setContextDisplay;
+    $("context-display-hint").textContent = t("context_display_" + contextDisplay + "_hint");
     pickers.sync();
   }
   $("enter-behavior").addEventListener("change", () => {
@@ -1938,11 +1974,21 @@
     } catch (_) { notice("enter_save_failed"); }
     renderInputPreferences();
   });
+  $("context-display").addEventListener("change", () => {
+    const value = $("context-display").value;
+    try {
+      if (!["used", "remaining"].includes(value) || !native.setContextDisplay?.(value)) throw new Error();
+      contextDisplay = value;
+      if (noticeData?.key === "context_display_save_failed") notice("");
+    } catch (_) { notice("context_display_save_failed"); }
+    renderInputPreferences(); renderContextUsage();
+  });
   window.BibimerRefreshLanguage = () => refreshLanguage();
   window.BibimerResume = () => {
     paused = false;
     const env = environment();
     enterBehavior = env.enterBehavior === "send" ? "send" : "newline";
+    contextDisplay = env.contextDisplay === "remaining" ? "remaining" : "used";
     refreshLanguage(true); connect();
   };
   window.BibimerBack = () => {

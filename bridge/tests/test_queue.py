@@ -108,7 +108,8 @@ class QueueTests(ChatFixture):
         session.configure({'options': {'permission':'read-only', 'fast':True}, 'request_id':str(uuid.uuid4())})
         self.bridge.persist()
         self.assertNotIn('PRIVATE queued', (self.state/'metadata.json').read_text())
-        self.assertNotIn('text', json.dumps(session.snapshot()))
+        self.assertNotIn('"text"', json.dumps(session.snapshot()))
+        self.assertNotIn('PRIVATE queued', json.dumps(session.snapshot()))
         restored = module.Bridge(self.state)
         snapshot = restored.health()['session']
         self.assertEqual('lost', snapshot['state'])

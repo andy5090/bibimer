@@ -36,6 +36,12 @@ def item(value, complete=True):
 
 def finish(status="completed"):
     item({"id": "reply", "type": "agentMessage", "text": "# Result\n**Formatted** reply · 비비머\n- First step\n- Second step\n```python\nprint('hello')\n+-------+\n| ASCII |\n+-------+\n```\n| Name | State |\n| --- | --- |\n| Task | Done |\n<script>window.untrusted=true</script>"})
+    if text == "context-compact":
+        item({"id": "compaction", "type": "contextCompaction"})
+    notify("thread/tokenUsage/updated", {"tokenUsage": {
+        "last": {"totalTokens": 12000 if text == "context-compact" else 76000,
+                 "inputTokens": 70000, "cachedInputTokens": 60000, "outputTokens": 6000, "reasoningOutputTokens": 2000},
+        "total": {"totalTokens": 9999999}, "modelContextWindow": 200000}})
     notify("turn/completed", {"turn": {"id": turn, "status": status}})
 
 

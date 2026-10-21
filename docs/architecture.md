@@ -1,5 +1,16 @@
 # 첫 버전 구조와 API
 
+## 컨텍스트 수치 전달 (2026-10-21, 미배포)
+
+Chat snapshot/events의 선택 필드 `context_usage`는 `{used_tokens, limit_tokens, estimated, updated_at}` 또는 `null`이다. 한도가 없으면 `limit_tokens: null`이며 사용량 0과 보고 없음은 다르다. JSON 안전 정수만 받고 음수·불리언·문자열 수치는 거절한다. 에이전트의 실제 네이티브 thread ID가 일치해야 하며 다른 활성 turn의 늦은 보고는 무시한다. 갱신은 revision을 올려 기존 폴링/재접속으로 전달하고, 수치를 브리지 메타데이터에 저장하지 않는다. 따라서 브리지 재시작 후 유실 세션의 수치를 현재 값처럼 복원하지 않는다.
+
+- **Codex:** 공식 `thread/tokenUsage/updated`의 `tokenUsage.last.totalTokens`와 `modelContextWindow`를 사용한다. `total`은 누적값이므로 사용하지 않는다. 캐시/추론은 네이티브 total에 다시 더하지 않는다. `contextCompaction`/구형 `thread/compacted`는 이전 값을 무효화하고 다음 사용량 보고를 기다린다. 설치된 CLI의 `generate-json-schema` 계약도 확인했다. [공식 App Server 이벤트](https://developers.openai.com/codex/app-server#turn-events).
+- **Claude:** 주 실행의 최신 assistant `message.usage`에서 input/cache read/cache creation/output을 합산한다. 하위 에이전트 보고를 제외하고 메시지를 합산하지 않는다. result의 `modelUsage`에서는 정확히 일치하는 모델의 `contextWindow`만 취하며 누적 토큰은 사용하지 않는다. assistant 출력 수치는 placeholder일 수 있어 전체를 근사치로 표시한다. CLI가 `/context`의 구조화된 `context_usage`를 보내면 이를 사용하되 명령은 자동 실행하지 않는다. compact boundary/reset은 이전 값을 무효화한다. [공식 SDK 사용량 범위](https://code.claude.com/docs/en/agent-sdk/cost-tracking).
+- **OpenCode:** 현재 세션 메시지 중 마지막 유효 assistant 토큰의 input/output/reasoning/cache read/cache write를 한 번만 합산한다. 진행 중인 0 placeholder는 직전 보고를 지우지 않는다. 그 메시지의 providerID/modelID로 로컬 `/provider` 메타데이터의 `limit.context`를 찾고 한도가 없거나 조회 실패해도 대화를 실패시키지 않는다. 캐시와 메시지 비교로 중복 보고를 줄인다. [공식 모델 한도](https://docs.opencode.ai/docs/providers/#custom-provider).
+- **Gemini(iOS):** ACP `usage_update`의 `used`/`size`를 정규화한다. CLI가 해당 이벤트를 보내지 않는 버전에서는 확인 불가를 유지하며 `_meta.quota`나 모델 이름에서 컨텍스트를 추측하지 않는다. 실제 CLI의 이벤트 발행 여부는 별도 검증이 필요하다. [공식 저장소의 ACP 사용량 보고 이슈](https://github.com/google-gemini/gemini-cli/issues/29389).
+
+UI는 한도가 있을 때만 사용/남은 비율을 계산하며 100%를 넘어선 원본 사용량도 보존한다. 앱 공통 `contextDisplay: used | remaining`을 Android `InputPreferences`의 `context_display` 및 iOS UserDefaults의 `contextDisplay`에 저장한다. 기본/잘못된 저장 값은 `used`다. Android는 commit 성공 뒤 메모리 값을 바꾸며 저장 실패 시 기존 표시를 유지한다. 비율·막대·토큰 상세는 선택한 기준 하나만 표시한다. 사용량 모드는 100% 초과 비율도 표시하고 막대는 100%에서 제한한다. 남은 양은 비율/토큰 0을 하한으로 하며, 한도가 없으면 계산하지 않고 확인 불가를 표시한다. 색의 주의 단계는 어느 모드든 사용률로 결정한다. 이 설정은 브리지에 보내지 않으며 프로세스/모델/초안/대기열/승인을 변경하지 않는다. 요청 후 마지막 보고이므로 작성 중인 초안이나 아직 보고되지 않은 도구 출력까지 실시간으로 포함한다고 보장하지 않는다. PTY·대화 문자 수·누적 청구 토큰 기반의 추정은 하지 않는다.
+
 ## 실행 경계
 
 Bibimer 앱은 입력·상태·터미널 화면을 제공한다. 프로젝트 경로 검증, 폴더 생성, 프로그램 탐색, 프로세스 실행과 제어는 같은 기기의 Termux 브리지가 담당한다. Android 앱이 Termux 전용 파일 경로를 직접 읽지 않는다.

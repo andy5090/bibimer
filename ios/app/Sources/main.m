@@ -285,7 +285,7 @@ static void guestExit(int status) {
     NSUserDefaults *preferences = NSUserDefaults.standardUserDefaults;
     NSString *preference = [preferences stringForKey:@"languagePreference"] ?: @"system";
     NSString *language = [preference isEqual:@"system"] ? systemLanguage() : preference;
-    return @{@"selfTest":@(self.smokeScript != nil),@"paired":@YES,@"termuxInstalled":@YES,@"platform":@"ios",@"notifications":@{@"enabled":@NO,@"allowed":@NO,@"state":@"unsupported"},@"language":language,@"systemLanguage":systemLanguage(),@"languagePreference":preference,@"agentOptions":[preferences dictionaryForKey:@"agentOptions"] ?: @{},@"enterBehavior":[preferences stringForKey:@"enterBehavior"] ?: @"newline",@"lastProjectParent":[preferences stringForKey:@"lastProjectParent"] ?: @"/root/projects",@"lastProjectFolder":[preferences stringForKey:@"lastProjectFolder"] ?: @"/root/projects",@"quickSetup":@{@"phase":@"connected",@"id":@"embedded"},@"bundledBridgeVersion":@"0.18.0",@"version":@"0.1.0-ios"};
+    return @{@"selfTest":@(self.smokeScript != nil),@"paired":@YES,@"termuxInstalled":@YES,@"platform":@"ios",@"notifications":@{@"enabled":@NO,@"allowed":@NO,@"state":@"unsupported"},@"language":language,@"systemLanguage":systemLanguage(),@"languagePreference":preference,@"agentOptions":[preferences dictionaryForKey:@"agentOptions"] ?: @{},@"enterBehavior":[preferences stringForKey:@"enterBehavior"] ?: @"newline",@"contextDisplay":[[preferences stringForKey:@"contextDisplay"] isEqual:@"remaining"] ? @"remaining" : @"used",@"lastProjectParent":[preferences stringForKey:@"lastProjectParent"] ?: @"/root/projects",@"lastProjectFolder":[preferences stringForKey:@"lastProjectFolder"] ?: @"/root/projects",@"quickSetup":@{@"phase":@"connected",@"id":@"embedded"},@"bundledBridgeVersion":@"0.18.0",@"version":@"0.1.0-ios"};
 }
 
 - (void)loadWorkspace {
@@ -494,8 +494,9 @@ static void guestExit(int status) {
     } else if ([action isEqual:@"preference"]) {
         NSString *key = body[@"key"];
         id value = body[@"value"];
+        if ([key isEqual:@"contextDisplay"] && (![value isKindOfClass:NSString.class] || ![@[@"used", @"remaining"] containsObject:value])) return;
         BOOL validType = [key isEqual:@"agentOptions"] ? [value isKindOfClass:NSDictionary.class] : [value isKindOfClass:NSString.class];
-        if (validType && [@[@"languagePreference",@"enterBehavior",@"lastProjectParent",@"lastProjectFolder",@"agentOptions"] containsObject:key] && [NSPropertyListSerialization propertyList:value isValidForFormat:NSPropertyListBinaryFormat_v1_0] && jsonString(value).length < 32768)
+        if (validType && [@[@"languagePreference",@"enterBehavior",@"contextDisplay",@"lastProjectParent",@"lastProjectFolder",@"agentOptions"] containsObject:key] && [NSPropertyListSerialization propertyList:value isValidForFormat:NSPropertyListBinaryFormat_v1_0] && jsonString(value).length < 32768)
             [NSUserDefaults.standardUserDefaults setObject:value forKey:key];
     } else if ([action isEqual:@"copy"] && [body[@"text"] isKindOfClass:NSString.class]) UIPasteboard.generalPasteboard.string = body[@"text"];
     else if ([action isEqual:@"link"] && [body[@"url"] isKindOfClass:NSString.class]) [self openLink:body[@"url"]];

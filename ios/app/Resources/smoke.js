@@ -33,6 +33,9 @@
     $("enter-behavior").value = "send"; $("enter-behavior").dispatchEvent(new Event("change"));
     await wait(() => JSON.parse(window.Bibimer.environment()).enterBehavior === "send","input preference");
     $("enter-behavior").value = preferences.enterBehavior; $("enter-behavior").dispatchEvent(new Event("change"));
+    $("context-display").value = "remaining"; $("context-display").dispatchEvent(new Event("change"));
+    await wait(() => JSON.parse(window.Bibimer.environment()).contextDisplay === "remaining","context display preference");
+    $("context-display").value = preferences.contextDisplay || "used"; $("context-display").dispatchEvent(new Event("change"));
     passed("settings_language_input_custom_sheet");
     $("tab-work").click();
     const path = "/root/projects/ios-ui-smoke-" + Date.now();

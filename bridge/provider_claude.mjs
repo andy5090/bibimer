@@ -96,6 +96,10 @@ function respond(value) {
 let permissionMode = 'inherit', modelOptions = {};
 async function runTurn(prompt, identity) {
   let finishInput, failed=false, resultSeen=false, answerSeen=false;
+  let windowUsage=null;
+  const publishUsage = limit => {
+    if (windowUsage) notify('bibimer/contextUsage',{usedTokens:windowUsage.used,contextWindow:limit ?? null,estimated:true});
+  };
   const state = {identity,accepting:true,messages:[],pending:new Map(),wake:null};
   liveInput=state;
   finishInput=()=>{state.accepting=false;state.wake?.();};
@@ -121,7 +125,24 @@ async function runTurn(prompt, identity) {
     for await (const message of active) {
       if (message.session_id && message.session_id!==thread) throw Error('error_agent_transport');
       if (message.type==='system' && message.subtype==='init') persisted=true;
-      if (message.parent_tool_use_id) continue;
+      if (message.parent_tool_use_id || message.agent_id) continue;
+      if (message.type==='system' && ['compact_boundary','conversation_reset'].includes(message.subtype)) {
+        windowUsage=null; notify('bibimer/contextUsage',{usedTokens:null,reset:true});
+      }
+      if (message.type==='assistant' && message.context_usage) {
+        const usage=message.context_usage;
+        windowUsage=null;
+        notify('bibimer/contextUsage',{usedTokens:usage.total_tokens,contextWindow:usage.raw_max_tokens,estimated:true});
+      } else if (message.type==='assistant' && !message.isSidechain && message.message?.usage) {
+        // The latest MAIN-loop request, including caches, rather than result.usage
+        // or modelUsage totals (which can include many steps and subagents).
+        const usage=message.message.usage;
+        const fields=[usage.input_tokens,usage.cache_read_input_tokens ?? 0,usage.cache_creation_input_tokens ?? 0,usage.output_tokens ?? 0];
+        if (fields.every(value=>Number.isSafeInteger(value) && value>=0) && fields.some(value=>value>0)) {
+          windowUsage={model:message.message.model,used:fields.reduce((sum,value)=>sum+value,0)};
+          publishUsage(null);
+        }
+      }
       if (message.type==='command_lifecycle') {
         const pending=state.pending.get(message.command_uuid);
         if (pending && ['queued','started'].includes(message.state) && !pending.accepted) {
@@ -163,6 +184,9 @@ async function runTurn(prompt, identity) {
           if (block.type==='tool_use' && block.name==='TodoWrite') notify('turn/plan/updated',{plan:(block.input?.todos || []).map(todo=>({step:todo.content,status:todo.status}))});
         }
       } else if (message.type==='result') {
+        // Only take the matching model's LIMIT from the cumulative result.
+        // Assistant output counts can be placeholders, so retain the estimate label.
+        publishUsage(message.modelUsage?.[windowUsage?.model]?.contextWindow);
         resultSeen=true; persisted=true; failed=failed || message.is_error || message.subtype!=='success';
         // Claude can fold input into this turn or continue with another native
         // turn. Keep the same Bibimer operation open until the native backlog

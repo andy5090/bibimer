@@ -29,6 +29,7 @@ class Adapter:
         self.permission_mode = 'inherit'
         self.lock, self.output_lock = threading.RLock(), threading.Lock()
         self.pending, self.seen = {}, {}
+        self.context_limits, self.last_context = {}, None
         self.closed = threading.Event()
         password = secrets.token_urlsafe(32)
         self.auth = 'Basic ' + base64.b64encode(('bibimer:' + password).encode()).decode()
@@ -130,7 +131,44 @@ class Adapter:
         return result
 
     def history(self):
-        return self.entries(self.http('GET', '/session/' + self.thread + '/message', limit=50))
+        messages = self.http('GET', '/session/' + self.thread + '/message', limit=50)
+        self.context(messages)
+        return self.entries(messages)
+
+    def context(self, messages):
+        # OpenCode's last populated assistant usage describes the current window.
+        # Cache read/write and reasoning occupy it too; never sum older messages.
+        for message in reversed(messages):
+            info = message.get('info') or {}
+            tokens = info.get('tokens')
+            if info.get('role') != 'assistant' or not isinstance(tokens, dict):
+                continue
+            cache = tokens.get('cache') or {}
+            if not isinstance(cache, dict):
+                continue
+            fields = [tokens.get(key, 0) for key in ('input', 'output', 'reasoning')]
+            fields += [cache.get('read', 0), cache.get('write', 0)]
+            if not all(type(value) is int and 0 <= value <= 2**53 - 1 for value in fields) or not any(fields):
+                continue  # In-flight zero placeholders must not reset the meter.
+            model = (info.get('providerID'), info.get('modelID'))
+            if not all(isinstance(value, str) for value in model):
+                limit = None
+            else:
+                if model not in self.context_limits:
+                    try:
+                        providers = self.http('GET', '/provider')
+                        for provider in providers.get('all', []):
+                            for key, row in provider.get('models', {}).items():
+                                self.context_limits[(provider['id'], key)] = (row.get('limit') or {}).get('context')
+                    except Exception:
+                        pass  # Missing optional metadata cannot fail a model turn.
+                    self.context_limits.setdefault(model, None)
+                limit = self.context_limits[model]
+            value = {'usedTokens': sum(fields), 'contextWindow': limit, 'estimated': False}
+            if value != self.last_context:
+                self.notify('bibimer/contextUsage', value)
+                self.last_context = value
+            return
 
     def complete(self, status):
         if self.turn:
@@ -158,6 +196,7 @@ class Adapter:
                     if self.turn != turn:
                         continue
                     saw_busy = saw_busy or status != 'idle'
+                    self.context(messages)
                     for entry in self.entries(messages):
                         identity = entry['turnId'] + ':' + entry['item']['id']
                         if self.seen.get(identity) != entry:

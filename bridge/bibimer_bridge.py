@@ -688,6 +688,7 @@ class ChatSession(Session):
         self.completed = completed
         self.handoff = handoff
         self.response_preview, self.response_preview_final = "", False
+        self.context_usage = None
         self.display_title = ""
         self.cols, self.rows = cols, rows
         self.started_at = time.time()
@@ -718,6 +719,7 @@ class ChatSession(Session):
                     "display_title": self.display_title, "handoff": self.handoff,
                     "options": self.options.copy(), "launch_options": self.launch_options.copy(),
                     "default_model": self.default_model, "default_effort": self.default_effort,
+                    "context_usage": dict(self.context_usage) if self.context_usage else None,
                     "ready": self.thread_id is not None and not self.history_pending,
                     "external_thread_id": self.thread_id, "history_persisted": self.history_persisted, **(self.imported or {}),
                     "turn_state": self.turn_state, "active_turn_id": self.turn_id,
@@ -953,7 +955,40 @@ class ChatSession(Session):
             if "id" in message:
                 self._send({"id": message["id"], "error": {"code": -32602, "message": "Wrong thread"}})
             return
-        if method == "bibimer/notice" and self.agent != "codex":
+        if method in {"thread/tokenUsage/updated", "bibimer/contextUsage"}:
+            # Current window, never accumulated billing totals. Require an exact
+            # thread match, and reject delayed updates from another active turn.
+            if (not self.thread_id or params.get("threadId") != self.thread_id or
+                    (self.turn_id and params.get("turnId") not in (None, self.turn_id))):
+                return
+            if method == "thread/tokenUsage/updated" and self.agent == "codex":
+                usage = params.get("tokenUsage")
+                if not isinstance(usage, dict):
+                    return
+                last = usage.get("last")
+                if not isinstance(last, dict):
+                    return
+                used, limit, estimated = last.get("totalTokens"), usage.get("modelContextWindow"), False
+            elif method == "bibimer/contextUsage" and self.agent != "codex":
+                used, limit, estimated = params.get("usedTokens"), params.get("contextWindow"), params.get("estimated") is True
+                if used is None and params.get("reset") is True:
+                    self.context_usage = None
+                    self._bump()
+                    return
+            else:
+                return
+            if type(used) is not int or not 0 <= used <= 2**53 - 1:
+                return
+            limit = limit if type(limit) is int and 0 < limit <= 2**53 - 1 else None
+            self.context_usage = {"used_tokens": used, "limit_tokens": limit,
+                                  "estimated": estimated, "updated_at": time.time()}
+            self._bump()
+        elif method == "thread/compacted" or (method in {"item/started", "item/completed"} and
+                (params.get("item") or {}).get("type") == "contextCompaction"):
+            if params.get("threadId") == self.thread_id:
+                self.context_usage = None
+                self._bump()
+        elif method == "bibimer/notice" and self.agent != "codex":
             self._put({"id": str(uuid.uuid4()), "kind": "notice", "code": params.get("code") if params.get("code") in ERROR_MESSAGES else "error_agent_transport"})
         elif "id" in message:
             self._request(message)
@@ -2590,7 +2625,7 @@ class Bridge:
     def persist(self):
         with self.lock:
             def metadata(row):
-                return {key: value for key, value in row.items() if key != "display_title"} if row else None
+                return {key: value for key, value in row.items() if key not in {"display_title", "context_usage"}} if row else None
             save_json(self.state / "metadata.json", {
                 "format": 4, "projects": list(self.projects.values()),
                 "active_project_id": self.active_project_id,
