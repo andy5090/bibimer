@@ -44,9 +44,9 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .settings-dialog .hint { margin:8px 0; font-size:12px; line-height:1.5; }
 .settings-dialog > button { width:100%; margin-top:8px; }
 
-.composer-options { flex:none; margin:-3px 0 10px; }
+.composer-options { flex:none; margin:8px 0 10px; }
 .quick-options { display:flex; align-items:center; gap:6px; }
-.quick-options select { flex:0 1 auto; min-width:0; width:auto; min-height:36px; padding:6px; font-size:12px; background:transparent; color:var(--muted); cursor:pointer; }
+.quick-options select { flex:0 1 auto; min-width:0; width:auto; min-height:32px; padding:3px 6px; font-size:12px; background:transparent; color:var(--muted); cursor:pointer; }
 .quick-options select option { background:var(--card); color:var(--text); }
 .quick-options select:disabled { opacity:.4; cursor:default; }
 .quick-fast { position:relative; display:flex; align-items:center; flex:none; min-height:36px; margin:0 0 0 auto; padding:4px 0; -webkit-tap-highlight-color:transparent; }
@@ -89,15 +89,15 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 /* Shared in-app choices. The select remains the value model, never the visible UI. */
 .select-control { display:flex; flex:1; min-width:0; width:100%; max-width:100%; }
 .select-control > select { display:none!important; }
-.select-trigger { display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; width:100%; min-height:44px; padding:8px 10px; border:1px solid #3a454e; border-radius:8px; background:#14191d; font-size:14px; font-weight:500; text-align:start; }
+.select-trigger { display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; width:100%; min-height:36px; padding:4px 8px; border:1px solid #3a454e; border-radius:8px; background:#14191d; font-size:14px; font-weight:500; text-align:start; }
 .select-value { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .select-trigger svg { flex:none; width:14px; height:14px; fill:none; stroke:var(--muted); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
 .select-trigger[aria-expanded="true"] { border-color:var(--green); }
-.select-control[data-select="project-switch"] .select-trigger { min-height:40px; font-size:13px; font-weight:600; padding:6px 9px; background:var(--card); }
+.select-control[data-select="project-switch"] .select-trigger { min-height:36px; font-size:13px; font-weight:600; padding:4px 8px; background:var(--card); }
 .mode-controls .select-control { flex:0 1 205px; }
 .mode-controls .select-trigger { font-size:12px; }
 .launch-controls .select-control { grid-column:1/-1; }
-.launch-controls .select-trigger { padding:8px 10px; font-size:14px; }
+.launch-controls .select-trigger { padding:4px 8px; font-size:14px; }
 .preference-row .select-control { flex:0 0 124px; }
 .language-preference { flex-wrap:wrap; }
 .language-preference label { flex:1 0 auto; }
@@ -109,7 +109,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .import-provider .select-control { flex:0 1 170px; }
 #import-dialog > .select-control { flex:none; }
 .quick-options .select-control { flex:0 1 auto; width:auto; }
-.quick-options .select-trigger { min-height:36px; padding:6px; background:transparent; color:var(--muted); font-size:12px; }
+.quick-options .select-trigger { min-height:32px; padding:3px 6px; background:transparent; color:var(--muted); font-size:12px; }
 .quick-options .select-trigger[aria-expanded="true"] { color:var(--green); }
 #select-dialog { inset:auto 0 0; margin:0 auto; width:100%; max-width:520px; max-height:min(76dvh,580px); padding:8px 12px max(12px,env(safe-area-inset-bottom)); border:1px solid #414e56; border-bottom:0; border-radius:18px 18px 0 0; overflow:hidden; box-shadow:0 -12px 48px #0005; }
 #select-dialog[open] { display:flex; flex-direction:column; }
@@ -126,12 +126,12 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .select-option[aria-selected="true"] { background:#223a31; border-color:#365b4a; }
 .select-check { flex:0 0 18px; color:var(--green); font-size:17px; visibility:hidden; }
 .select-option[aria-selected="true"] .select-check { visibility:visible; }
-.model-controls { display:flex; flex:none; align-items:center; gap:6px; min-height:36px; margin:-3px 0 3px; }
+.model-controls { display:flex; flex:none; align-items:center; gap:6px; min-height:32px; margin:-3px 0 0; }
 .model-controls .select-control { flex:1 1 0; width:0; }
 .model-controls .select-control[data-select="quick-agent"] { flex:0 1 88px; }
 .model-controls .select-control[data-select="quick-effort"] { flex:0 1 102px; }
-.model-controls .select-trigger { min-height:36px; padding:4px 6px; background:transparent; font-size:11px; gap:4px; }
-#models-refresh { flex:none; min-height:36px; width:28px; padding:0; font-size:18px; }
+.model-controls .select-trigger { min-height:32px; padding:3px 6px; background:transparent; font-size:11px; gap:4px; }
+#models-refresh { flex:none; min-height:32px; width:28px; padding:0; font-size:18px; }
 #models-hint { flex:none; margin:0 0 4px; font-size:10px; }
 #workspace.project-editing .model-controls, #workspace.project-editing #models-hint { display:none; }
 #import-settings-dialog > .select-control { margin:5px 0 10px; }
@@ -449,7 +449,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .composer-options{position:relative}
 .quick-options{gap:4px;min-width:0}
 .quick-options>.select-control{flex:0 1 auto;min-width:0;width:auto}
-.quick-options .select-trigger{min-height:44px;justify-content:flex-start}
+.quick-options .select-trigger{justify-content:flex-start}
 .quick-fast{margin-inline-start:0;align-self:stretch;min-height:44px}
 .quick-options>button{flex:none;min-width:28px;min-height:44px}
 .usage-indicators{display:flex;align-items:center;flex:none;gap:0;margin-inline-start:auto}
