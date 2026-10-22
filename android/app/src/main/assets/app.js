@@ -858,6 +858,7 @@
     setTimeout(resize, 30);
   }
   function tab(name) {
+    closeUsageDetails();
     pickers.close();
     sidebar.close();
     currentTab = name;
@@ -944,13 +945,14 @@
   function renderContextUsage() {
     const root = $("context-usage"), meter = $("context-meter");
     root.hidden = !isChat();
+    if (root.hidden) root.open = false;
     const usage = session?.context_usage;
     const valid = usage && Number.isSafeInteger(usage.used_tokens) && usage.used_tokens >= 0;
     const limited = valid && Number.isSafeInteger(usage.limit_tokens) && usage.limit_tokens > 0;
     const format = value => value.toLocaleString(i18n.language());
     const remainingMode = contextDisplay === "remaining";
     meter.hidden = !limited;
-    let summary = t("context_unknown"), detail = t("context_unavailable");
+    let summary = t("context_unknown"), detail = t("context_unavailable"), compact = "—";
     if (valid) {
       const used = format(usage.used_tokens);
       summary = remainingMode ? t("context_unknown") : t("context_tokens", {used});
@@ -960,6 +962,7 @@
         summary = t("context_percent_" + contextDisplay, {used:format(percent), remaining:format(Math.max(0, 100 - percent))});
         detail = t("context_counts_" + contextDisplay, {used, limit:format(usage.limit_tokens), remaining:format(Math.max(0, usage.limit_tokens - usage.used_tokens))});
         meter.value = remainingMode ? Math.max(0, 100 - percent) : Math.min(100, percent);
+        compact = (usage.estimated ? "≈" : "") + format(remainingMode ? Math.max(0, 100 - percent) : percent) + "%";
         meter.setAttribute("aria-valuetext", summary);
         root.dataset.level = percent >= 90 ? "high" : percent >= 75 ? "medium" : "normal";
       }
@@ -967,9 +970,16 @@
     }
     if (!limited) { delete root.dataset.level; meter.value = 0; meter.removeAttribute("aria-valuetext"); }
     $("context-summary").textContent = summary;
+    $("context-overview").textContent = summary;
     $("context-detail").textContent = detail;
     $("context-note").textContent = valid ? t(usage.estimated ? "context_estimate_note" : "context_note") +
       ((!online || session.state !== "running") ? " " + t("context_stale") : "") : "";
+    const stale = !!valid && (!online || session?.state !== "running");
+    root.dataset.known = String(!!limited); root.dataset.stale = String(stale);
+    root.style.setProperty("--usage-progress", String(meter.value));
+    $("context-compact").textContent = compact;
+    const label = t("context_label") + " · " + summary + (stale ? " · " + t("context_stale") : "");
+    $("context-toggle").setAttribute("aria-label", label); $("context-toggle").title = label;
   }
   function subscriptionWindowLabel(row) {
     const number = value => value.toLocaleString(i18n.language());
@@ -991,6 +1001,7 @@
   function renderSubscriptionUsage() {
     const root = $("subscription-usage"), meter = $("subscription-meter");
     root.hidden = !isChat();
+    if (root.hidden) root.open = false;
     const report = session?.subscription_usage;
     const now = Date.now() / 1000;
     const rows = Array.isArray(report?.windows) ? report.windows.filter(row => row && typeof row.id === "string").slice(0,16) : [];
@@ -1017,6 +1028,13 @@
     meter.value = measured ? Math.min(100, contextDisplay === "remaining" ? Math.max(0, 100 - percent(selected)) : percent(selected)) : 0;
     if (measured) meter.setAttribute("aria-valuetext", display(selected));
     else meter.removeAttribute("aria-valuetext");
+    root.dataset.known = String(!!measured); root.dataset.stale = String(stale);
+    root.style.setProperty("--usage-progress", String(meter.value));
+    $("subscription-compact").textContent = measured ? (contextDisplay === "remaining" ? Math.max(0, 100 - Math.round(percent(selected))) : Math.round(percent(selected))).toLocaleString(i18n.language()) + "%" :
+      selected && expired(selected) ? "↻" : selected && ["allowed_warning", "rejected"].includes(selected.status) ? "!" : "—";
+    const label = t("subscription_label") + " · " + summary;
+    $("subscription-toggle").setAttribute("aria-label", label); $("subscription-toggle").title = label;
+    $("subscription-detail").textContent = summary;
     const level = selected && !expired(selected) ? selected.status === "rejected" ? 100 : selected.status === "allowed_warning" ? 90 : percent(selected) ?? 0 : 0;
     root.dataset.level = level >= 90 ? "high" : level >= 75 ? "medium" : "normal";
     const entries = rows.map(row => {
@@ -1024,6 +1042,17 @@
       name.textContent = subscriptionWindowLabel(row);
       value.textContent = outdated(row) && !expired(row) ? t("subscription_last", {value:display(row)}) : display(row);
       heading.append(name, value); entry.append(heading);
+      entry.className = "usage-window";
+      const used = percent(row), known = used !== null && !expired(row);
+      const risk = row.status === "rejected" ? 100 : row.status === "allowed_warning" ? 90 : used ?? 0;
+      entry.dataset.level = !expired(row) && risk >= 90 ? "high" : !expired(row) && risk >= 75 ? "medium" : "normal";
+      entry.dataset.stale = String(!online || session?.state !== "running" || report?.state === "stale" || outdated(row));
+      const bar = document.createElement("meter");
+      bar.className = "usage-meter"; bar.min = 0; bar.max = 100; bar.hidden = !known;
+      bar.value = known ? Math.min(100, contextDisplay === "remaining" ? Math.max(0, 100 - used) : used) : 0;
+      bar.setAttribute("aria-label", subscriptionWindowLabel(row));
+      if (known) bar.setAttribute("aria-valuetext", value.textContent);
+      entry.append(bar);
       const reset = document.createElement("small");
       if (expired(row)) reset.textContent = t("subscription_reset_passed");
       else if (Number.isFinite(row.resets_at) && row.resets_at > 0 && row.resets_at <= 253402300799) {
@@ -1138,6 +1167,7 @@
     pickers.sync();
     inspector.update();
     fileViewer.update();
+    positionUsageDetails();
   }
   $("copy-resume").addEventListener("click", () => {
     const target = findSession(actionTarget);
@@ -1148,6 +1178,7 @@
     notice("codex_resume_copied");
   });
   function setSession(value) {
+    if (value?.id !== session?.id) closeUsageDetails();
     if (value) value = {...findSession(value.id), ...value};
     if (isChat() && value?.id === session.id && value.output_end < session.output_end) return;
     if (canLibrary) {
@@ -2131,8 +2162,30 @@
     } catch (_) { notice("context_display_save_failed"); }
     renderInputPreferences(); renderContextUsage(); renderSubscriptionUsage();
   });
+  function positionUsageDetails() {
+    if (!document.querySelector(".context-usage[open]")) return;
+    const anchor = $("input-form").getBoundingClientRect().top;
+    const row = $("agent-settings").getBoundingClientRect().top;
+    const room = Math.max(48, anchor - $("workspace").getBoundingClientRect().top - 12);
+    for (const id of ["context-usage", "subscription-usage"]) {
+      $(id).style.setProperty("--usage-input-offset", Math.max(0, row - anchor) + "px");
+      $(id).style.setProperty("--usage-room", room + "px");
+    }
+  }
+  function closeUsageDetails() {
+    $("context-usage").open = false; $("subscription-usage").open = false;
+  }
   for (const id of ["context-usage", "subscription-usage"]) $(id).addEventListener("toggle", () => {
     if ($(id).open) $(id === "context-usage" ? "subscription-usage" : "context-usage").open = false;
+    positionUsageDetails();
+  });
+  document.addEventListener("pointerdown", event => {
+    if (!event.target.closest?.(".usage-indicators")) closeUsageDetails();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && document.querySelector(".context-usage[open]") && !document.querySelector("dialog[open]")) {
+      closeUsageDetails(); event.preventDefault(); event.stopPropagation();
+    }
   });
   window.BibimerRefreshLanguage = () => refreshLanguage();
   window.BibimerResume = () => {
@@ -2149,14 +2202,19 @@
           (dialogs[dialogs.length - 1].id === "bridge-maintenance-dialog" && bridgeMaintenance.stopping)) return true;
       dialogs[dialogs.length - 1].close(); return true;
     }
+    if (document.querySelector(".context-usage[open]")) { closeUsageDetails(); return true; }
     if (!$("commands").hidden && currentTab === "work") { commands.dismiss(); return true; }
     if (currentTab !== "work") { tab("work"); return true; }
     return false;
   };
-  function updateBackState() { native.setBackHandling?.(currentTab !== "work" || !$("commands").hidden || !!document.querySelector("dialog[open]:not(.docked)")); }
+  function updateBackState() { native.setBackHandling?.(currentTab !== "work" || !$("commands").hidden || !!document.querySelector("dialog[open]:not(.docked), .context-usage[open]")); }
   const backObserver = new MutationObserver(updateBackState);
   backObserver.observe($("commands"), {attributes:true, attributeFilter:["hidden"]});
   for (const dialog of document.querySelectorAll("dialog")) backObserver.observe(dialog, {attributes:true, attributeFilter:["open"]});
+  for (const id of ["context-usage", "subscription-usage"]) backObserver.observe($(id), {attributes:true, attributeFilter:["open"]});
+  const usageObserver = new ResizeObserver(positionUsageDetails);
+  for (const id of ["workspace", "input-form", "agent-settings"]) usageObserver.observe($(id));
+  window.visualViewport?.addEventListener("resize", positionUsageDetails);
   refreshLanguage(true);
   if (environment().paired || demo) connect();
 })();

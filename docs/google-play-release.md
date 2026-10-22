@@ -1,5 +1,33 @@
 # Google Play 출시 준비
 
+## 0.26.3 · 셀렉터 높이·설정 줄 간격 내부 테스트 (2026-10-22)
+
+**0.26.3(47)**을 **23:58 Asia/Seoul**에 내부 테스트에 게시했다. 같은 폰의 기존 **Termux:X11·Firefox** 인증 상태를 유지해 업로드·검토·게시했고, Console **활성 / 내부 테스터에게 제공됨**과 새로고침 뒤 상태 유지를 확인했다. 새47만 포함·46제외, EN/KO노트2/2, 오류0·기존 가독화 매핑 파일 경고1·지원 기기 변화0이다. 출시 이름은 `0.26.3 (47) - Compact selectors and row spacing`다.
+
+일반 셀렉터 최소36px·세로4px 패딩, 입력창 아래 모델/권한 셀렉터32px·세로3px 패딩과 설정 섹션 사이8px 간격을 반영했다. 내장 브리지는 **0.19.0 유지**다. 46/47의54개 내장 자산 이름은 같으며 변경된 자산은 `app.css` 하나다. 브리지/설치/유지보수 payload는 바이트 단위로 같아 이번 UI 변경만을 위한 브리지 업데이트는 필요하지 않다.
+
+AAB `dist/play/bibimer-0.26.3-47-release.aab`, SHA-256 `505e49986a19b07e14f4e4b0aa17135e7802744942ba4a44987d4b8a18258bd6`. 전체 Java/D8·bundletool·기존 인증서·54assets 원본·심사 digest/비밀 미포함·브리지/유지보수4payload·설치 스크립트 구문/격리 추출을 검증했다. 버전 변경 뒤 Python scripts39개·전체 격리 Chromium UI·컨텍스트/구독 renderer·726키×10언어·구문 검사를 통과했다. 앞선 실제21개 셀렉터와1,200조합의 배치 검사도 기록했다. `.tools/aab-0.26.3-47-{build.log,verification.json}`, `.tools/release-0.26.3-{python,ui}.log`.
+
+증빙 `dist/play-0.26.3/{review-warning,review-devices,review-notes,published-before-refresh,published}.png`와 관찰 기록 `published.json`, EN/KO출시노트 `release/google-play/release-notes/0.26.3.txt`. 기존 [내부 테스트 링크](https://play.google.com/apps/internaltest/4701718894791581363)와 테스터 설정을 유지했다. **Play 업데이트 수신·실제 앱 설치·새 WebView 동작은 후속**이며 운영 브리지·사용자 세션·iOS·프로덕션·웹사이트 배포는 변경하지 않았다.
+
+## 0.26.2 · 셀렉터·상세 사용량 개선 내부 테스트 (2026-10-22)
+
+**0.26.2(46)**을 **23:21 Asia/Seoul**에 내부 테스트에 게시했다. 같은 폰의 **Termux:X11·Firefox**에서 사용자가 직접 Google 인증을 마친 뒤 일반 브라우저 UI로 업로드·검토·게시했다. Console **활성 / 내부 테스터에게 제공됨**을 확인하고 새로고침 후 다시 검증했다. 새46만 포함·45제외, EN/KO노트2/2, 오류0·기존 가독화 매핑 파일 경고1·지원 기기 변화0이다. 출시 이름은 `0.26.2 (46) - Selector outlines and usage bars`다.
+
+권한 셀렉터 너비·화살표 간격, 전체 셀렉터 아웃라인, 컨텍스트·구독 기간별 상세 막대를 포함한다. 내장 브리지는 **0.19.0 유지**이며 이미 같은 버전을 사용하는 경우 이번 UI 개선만을 위한 브리지 업데이트는 필요하지 않다. AAB `dist/play/bibimer-0.26.2-46-release.aab`, SHA-256 `61bf9c1bb2cbad4a75792eefeb0a0e38222e0e4b76849c6503330470a080b141`. 전체 Java/D8 빌드·bundletool·기존 업로드 인증서·54assets 원본·심사 digest 포함/비밀 원문 미포함·브리지/유지보수4payload·설치 스크립트 구문/격리 추출을 검증했다. Python scripts39개, 컨텍스트/구독 renderer·726키×10언어·구문 검사 및 기능 구현 뒤 전체 격리 Chromium UI 회귀가 통과했다.
+
+증빙 `dist/play-0.26.2/{review-warning,review-notes,published-before-refresh,published}.png`, 실제 UI 관찰 기록 `dist/play-0.26.2/published.json`. 빌드/검증 `.tools/aab-0.26.2-46-{build.log,verification.json}`, 출시노트 `release/google-play/release-notes/0.26.2.txt`. 기존 [내부 테스트 링크](https://play.google.com/apps/internaltest/4701718894791581363)·테스터 설정을 유지했다. **Play 업데이트 수신·실기기 앱 설치·새 WebView UI 실동작은 후속**이다. 이번에 확인한 같은 폰의 X11 브라우저 인증·게시와 앱 설치 검증을 구분한다. 운영 브리지·사용자 세션·iOS·프로덕션·웹사이트 배포는 변경하지 않았다.
+
+## 0.26.1 · 원형 사용량 표시 내부 테스트 (2026-10-22)
+
+**0.26.1(45)**을 **17:40 Asia/Seoul**에 내부 테스트에 게시했다. 기존 Chrome의 Play Console에서 **활성 / 내부 테스터에게 제공됨**을 확인하고 새로고침 후 다시 검증했다. 새45 포함·44 제외, EN/KO노트2/2, 오류0·기존 가독화 매핑 파일 경고1·지원 기기 변화0이다. 출시16, 이름 `0.26.1 (45) - Compact usage indicators`다.
+
+접근 권한 줄의 원형 컨텍스트·구독 지표와 입력창 위 상세 팝업을 반영했다. 내장 브리지는 **0.19.0 유지**이며 44의 브리지와 유지보수 payload4개가 바이트 단위로 같다. 이미0.19.0을 사용하는 경우 이번 UI 개선을 위한 브리지 업데이트는 필요하지 않다. 이전 브리지 사용자는 설정에서0.19.0으로 업데이트해야 기존 사용량 수집 기능을 쓸 수 있다.
+
+AAB `dist/play/bibimer-0.26.1-45-release.aab`, SHA-256 `563f8820ad32e7a6e28762fea8bddfa42db299a2cff50d96a232ec9d8d4fe796`. 빌드·bundletool·서명/기존 업로드 인증서·54assets 원본 일치·심사 digest 포함/비밀 원문 미포함·브리지 payload4개 원본 일치를 검증했다. Python scripts **39개**, 컨텍스트/구독 renderer·**726키×10언어**·언어 UI·JS 구문 검사가 통과했다. 전체 격리 Chromium `smoke_ui.cjs`도 통과했으며 두 표시 모드×10언어의320px 화면에서 한 줄 배치·입력창을 가리지 않는 상세·키보드/Back/바깥 터치 닫기·초안 유지·추가 전송 없음과 기존 Chat/PTY 회귀를 확인했다.
+
+증빙 `dist/play-0.26.1/{review,published-before-refresh,published}.json`, 빌드/검증 `.tools/aab-0.26.1-45-{mac.log,verification.json}`, 검사 `.tools/release-0.26.1-{python,ui}.log`, 출시노트 `release/google-play/release-notes/0.26.1.txt`. 실제 Android WebView·Play 업데이트 수신·실기기 설치는 후속이다. 전체 브리지는 이번 UI 배포에서 재실행하지 않았으며 앞선 Mac 실패 기록을 유지한다. 운영 브리지·사용자 세션·iOS 실행 앱·프로덕션·테스터 설정·웹사이트 배포는 변경하지 않았다.
+
 ## 0.26.0 · 컨텍스트·구독 사용량 내부 테스트 (2026-10-22)
 
 **0.26.0(44)**을 내부 테스트에 게시했다. Console **활성 / 내부 테스터에게 제공됨 / 09:32 Asia/Seoul**, 새44 포함·43 제외, EN/KO노트2/2, 오류0·기존 매핑 파일 경고1·지원 기기 변화0을 확인했다. 내장 브리지는 **0.19.0**이다. 컨텍스트 사용량과 지원되는 Codex·Claude 계정 구독 한도/초기화 시각을 구분해 표시하고 설정에서 사용량/남은 양을 고른다. 새 브리지 기능은 앱 업데이트 후 설정의 브리지 업데이트가 필요하다. 사용자 운영 브리지·세션은 변경하지 않았다.

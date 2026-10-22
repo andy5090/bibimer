@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),asse
 const assets=path.resolve(__dirname,'../../android/app/src/main/assets');
 const now=1830000000;
 class ClockDate extends Date {static now(){return now*1000;}}
-const element=tag=>({tag,hidden:false,textContent:'',dataset:{},attributes:{},children:[],append(...rows){this.children.push(...rows);},replaceChildren(...rows){this.children=rows;},setAttribute(k,v){this.attributes[k]=v;},removeAttribute(k){delete this.attributes[k];}});
+const element=tag=>({tag,hidden:false,textContent:'',dataset:{},style:{setProperty(k,v){this[k]=v;}},attributes:{},children:[],append(...rows){this.children.push(...rows);},replaceChildren(...rows){this.children=rows;},setAttribute(k,v){this.attributes[k]=v;},removeAttribute(k){delete this.attributes[k];}});
 const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,element('div'));return nodes.get(id);};
 const context=vm.createContext({window:{},$:node,Date:ClockDate,document:{createElement:element}});
 for(const locale of ['pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de'])vm.runInContext(fs.readFileSync(path.join(assets,`i18n-${locale}.js`),'utf8'),context);
@@ -15,31 +15,53 @@ window.render=(rows,options={})=>{online=options.online!==false;contextDisplay=o
 window.terminal=()=>{session={mode:'terminal'};renderSubscriptionUsage();};`,context);
 const quota=(used=35,minutes=300,extra={})=>({id:'primary',kind:'primary',window_minutes:minutes,used_percent:used,resets_at:now+7200,updated_at:now,...extra});
 const render=(rows,options)=>context.window.render(rows,options);
+const bars=()=>node('subscription-windows').children.map(row=>row.children.find(child=>child.tag==='meter'));
+const resetText=()=>node('subscription-windows').children[0].children.find(child=>child.tag==='small').textContent;
 render([]);assert.equal(node('subscription-summary').textContent,'Not reported');assert.equal(node('subscription-meter').hidden,true);
+assert.equal(node('subscription-compact').textContent,'—');assert.equal(node('subscription-usage').dataset.known,'false');
 render([quota(),quota(12,10080,{id:'weekly',kind:'secondary'})]);
 assert.equal(node('subscription-summary').textContent,'5 hours · 35% used · +1');assert.equal(node('subscription-meter').value,35);
+assert.equal(node('subscription-compact').textContent,'35%');assert.equal(node('subscription-usage').style['--usage-progress'],'35');
+assert.equal(node('subscription-detail').textContent,node('subscription-summary').textContent);assert.ok(node('subscription-toggle').attributes['aria-label'].includes('5 hours'));
 assert.equal(node('subscription-windows').children.length,2);
-assert.equal(node('subscription-windows').children[0].children[1].textContent,'Resets in 2 hours');
+assert.equal(resetText(),'Resets in 2 hours');
+assert.deepEqual(bars().map(bar=>bar.value),[35,12]);
+assert.equal(bars()[0].hidden,false);assert.equal(bars()[0].attributes['aria-label'],'5 hours');
+assert.equal(bars()[0].attributes['aria-valuetext'],'35% used');
 render([quota()],{mode:'remaining'});assert.equal(node('subscription-summary').textContent,'5 hours · 65% left');assert.equal(node('subscription-meter').value,65);
+assert.equal(node('subscription-compact').textContent,'65%');assert.equal(node('subscription-usage').style['--usage-progress'],'65');
+assert.equal(bars()[0].value,65);assert.equal(bars()[0].attributes['aria-valuetext'],'65% left');
+render([quota(35.5)],{mode:'remaining'});assert.equal(node('subscription-compact').textContent,'64%');assert.ok(node('subscription-summary').textContent.includes('64% left'));
+assert.equal(bars()[0].value,64.5);assert.equal(bars()[0].attributes['aria-valuetext'],'64% left');
 render([quota(0)]);assert.equal(node('subscription-meter').value,0);assert.ok(node('subscription-summary').textContent.includes('0% used'));
+assert.equal(bars()[0].value,0);assert.equal(bars()[0].hidden,false);
 render([quota(100)],{mode:'remaining'});assert.equal(node('subscription-meter').value,0);assert.ok(node('subscription-summary').textContent.includes('0% left'));
+assert.equal(bars()[0].value,0);assert.equal(bars()[0].hidden,false);
 for(const value of [null,undefined,'35',NaN,Infinity,-1]){
  render([{...quota(),used_percent:value}]);assert.equal(node('subscription-meter').hidden,true);assert.ok(node('subscription-summary').textContent.includes('Not reported'));
+ assert.equal(bars()[0].hidden,true);assert.equal(bars()[0].attributes['aria-valuetext'],undefined);
 }
 render([quota(null,300,{status:'allowed_warning'})]);assert.equal(node('subscription-meter').hidden,true);assert.equal(node('subscription-usage').dataset.level,'high');
+assert.equal(node('subscription-compact').textContent,'!');assert.equal(node('subscription-usage').dataset.known,'false');
+assert.equal(bars()[0].hidden,true);
 render([quota(35),quota(null,10080,{id:'rejected',status:'rejected'})]);assert.ok(node('subscription-summary').textContent.startsWith('Weekly'));assert.equal(node('subscription-meter').hidden,true);
-render([quota(80)],{mode:'remaining'});assert.equal(node('subscription-usage').dataset.level,'medium');
+render([quota(80),quota(12,10080,{id:'weekly'})],{mode:'remaining'});assert.equal(node('subscription-usage').dataset.level,'medium');
+assert.deepEqual(bars().map(bar=>bar.value),[20,88]);
+assert.deepEqual(node('subscription-windows').children.map(row=>row.dataset.level),['medium','normal']);
+render([quota(150)]);assert.equal(bars()[0].value,100);assert.ok(bars()[0].attributes['aria-valuetext'].includes('150%'));
 render([quota(35,300,{resets_at:now-1})]);assert.ok(node('subscription-summary').textContent.includes('Awaiting update'));assert.equal(node('subscription-meter').hidden,true);
-assert.equal(node('subscription-windows').children[0].children[1].textContent,'Reset time passed; awaiting a new report.');
-for(const options of [{online:false},{process:'lost'},{state:'stale'}]){render([quota()],options);assert.ok(node('subscription-summary').textContent.startsWith('Last:'));}
+assert.equal(node('subscription-compact').textContent,'↻');assert.equal(node('subscription-usage').dataset.known,'false');
+assert.equal(resetText(),'Reset time passed; awaiting a new report.');assert.equal(bars()[0].hidden,true);
+for(const options of [{online:false},{process:'lost'},{state:'stale'}]){render([quota()],options);assert.ok(node('subscription-summary').textContent.startsWith('Last:'));assert.equal(node('subscription-usage').dataset.stale,'true');}
 render([quota(35,300,{updated_at:now-301})]);assert.ok(node('subscription-summary').textContent.startsWith('Last:'));
 render([quota(60,300,{updated_at:now-301}),quota(12,10080,{id:'weekly'})]);
 assert.ok(node('subscription-summary').textContent.startsWith('Last:'));
 assert.ok(node('subscription-windows').children[0].children[0].children[1].textContent.startsWith('Last:'));
+assert.deepEqual(node('subscription-windows').children.map(row=>row.dataset.stale),['true','false']);
 render([quota(35,15,{label:'<script>literal</script>'})]);assert.ok(node('subscription-summary').textContent.includes('15 minutes'));assert.ok(node('subscription-windows').children[0].children[0].children[0].textContent.includes('<script>'));
 for(const locale of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']){
  context.window.BibimerI18n.setLanguage(locale);
- for(const mode of ['used','remaining']){render([quota()],{mode});assert.ok(!node('subscription-summary').textContent.includes('context_percent'));assert.ok(node('subscription-windows').children[0].children[1].textContent);}
+ for(const mode of ['used','remaining']){render([quota()],{mode});assert.ok(!node('subscription-summary').textContent.includes('context_percent'));assert.ok(resetText());assert.equal(bars()[0].value,mode==='used'?35:65);}
 }
 context.window.terminal();assert.equal(node('subscription-usage').hidden,true);
 console.log('Subscription UI: quotas, both display modes, missing values, reset rollover, status-only limits, stale reports and 10 locales passed');

@@ -836,6 +836,23 @@ async function main() {
     await page.locator('.markdown .code-heading .copy-button').last().click();
     assert.ok((await page.evaluate(()=>window.testClipboard)).includes("print('hello')"));
     await page.waitForFunction(()=>document.querySelector('#context-summary').textContent==='38% used');
+    async function verifyUsageRow() {
+      const layout=await page.evaluate(()=>{
+        const row=document.querySelector('.quick-options'), bounds=row.getBoundingClientRect();
+        const ids=['quick-permission-trigger','context-toggle','subscription-toggle','settings-toggle'];
+        return {height:bounds.height,width:bounds.width,top:bounds.top,bottom:bounds.bottom,
+          controls:ids.map(id=>{const n=document.getElementById(id),r=n.getBoundingClientRect();return {id,top:r.top,bottom:r.bottom,width:r.width,left:r.left,right:r.right,inRow:row.contains(n)};}),
+          rings:document.querySelectorAll('.usage-ring').length,
+          bars:[...row.querySelectorAll('summary meter')].map(n=>n.getBoundingClientRect().width)};
+      });
+      assert.ok(layout.height<=46,'Usage indicators share one compact permission row');
+      assert.equal(layout.rings,2);
+      for(const control of layout.controls) {
+        assert.ok(control.inRow && control.top>=layout.top-1 && control.bottom<=layout.bottom+1,control.id+' stays on the permission row');
+        assert.ok(control.width>=28 && control.left>=0 && control.right<=320,control.id+' fits the mobile screen');
+      }
+      assert.ok(layout.bars.every(width=>width<=1),'Horizontal meters stay out of the compact summaries');
+    }
     await page.locator('#context-usage summary').click();
     assert.equal(await page.locator('#context-detail').textContent(),'76,000 / 200,000 tokens used');
     await page.locator('#input').fill('Context display draft');
@@ -844,6 +861,7 @@ async function main() {
       await page.setViewportSize({width:320,height:460});
       assert.equal(await page.locator('#context-summary').textContent(),await page.evaluate(()=>BibimerI18n.t('context_percent_used',{used:38,remaining:62})));
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),lang+' context fits 320px');
+      await verifyUsageRow();
       const sendBox=await page.locator('#send').boundingBox();
       assert.ok(sendBox.y>=0 && sendBox.y+sendBox.height<=460,lang+' context keeps Send visible');
       assert.equal(await page.locator('#input').inputValue(),'Context display draft');
@@ -956,6 +974,51 @@ async function main() {
     assert.equal((await call('POST',`/v1/sessions/${browserRow.id}/manage`,{action:'delete'})).ok,true);
     await reconnect();
     console.log('PASS: X11 browser setup, 10 locales/320px, owned browser launch, manual window handoff, session stop and preserved agent/draft without model input');
+    await page.setViewportSize({width:320,height:460});
+    await verifyUsageRow();
+    await page.locator('#context-toggle').click();
+    await page.waitForFunction(()=>document.getElementById('context-usage').open);
+    const beforePanel=await page.locator('.quick-options').boundingBox();
+    await page.locator('#subscription-toggle').click();
+    await page.waitForFunction(()=>document.getElementById('subscription-usage').open && !document.getElementById('context-usage').open);
+    const afterPanel=await page.locator('.quick-options').boundingBox();
+    assert.equal(afterPanel.height,beforePanel.height,'Expanded details do not add composer height');
+    const popover=await page.locator('#subscription-popover').boundingBox();
+    assert.ok(popover.y>=0 && popover.y+popover.height<=afterPanel.y,'Details open above the permission row');
+    assert.ok(popover.y+popover.height<=(await page.locator('#input-form').boundingBox()).y,'Details leave the input and Send button uncovered');
+    await page.screenshot({path:path.join(root,'dist/screenshots/usage-ring-details-320-en.png')});
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(()=>!document.querySelector('.context-usage[open]'));
+    await page.locator('#context-toggle').focus();await page.keyboard.press('Enter');
+    await page.waitForFunction(()=>document.getElementById('context-usage').open);
+    assert.equal(await page.evaluate(()=>window.BibimerBack()),true);
+    await page.waitForFunction(()=>!document.querySelector('.context-usage[open]'));
+    await page.locator('#subscription-toggle').click();await page.locator('#input').click();
+    await page.waitForFunction(()=>!document.querySelector('.context-usage[open]'));
+    assert.equal(await page.locator('#input').inputValue(),'Context display draft');
+    for(const mode of ['used','remaining']) {
+      await page.locator('#tab-settings').click();await choose('context-display',mode);await page.locator('#tab-work').click();
+      for(const lang of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
+        await page.evaluate(lang=>{localStorage.setItem('testLanguage',lang);window.BibimerRefreshLanguage();},lang);
+        await verifyUsageRow();
+        assert.equal(await page.locator('#context-usage').evaluate(n=>n.style.getPropertyValue('--usage-progress')),mode==='used'?'38':'62');
+        assert.equal(await page.locator('#subscription-usage').evaluate(n=>n.style.getPropertyValue('--usage-progress')),mode==='used'?'35':'65');
+        assert.ok((await page.locator('#context-toggle').getAttribute('aria-label')).length>0);
+        await page.locator('#context-toggle').click();
+        assert.ok(await page.locator('#context-popover .usage-meter').isVisible());
+        assert.equal(await page.locator('#context-meter').evaluate(n=>n.value),mode==='used'?38:62);
+        await page.locator('#subscription-toggle').click();
+        assert.ok(await page.locator('#subscription-windows .usage-meter').first().isVisible());
+        assert.equal(await page.locator('#subscription-windows .usage-meter').first().evaluate(n=>n.value),mode==='used'?35:65);
+        await page.keyboard.press('Escape');
+        if(['en','ko'].includes(lang))await page.screenshot({path:path.join(root,`dist/screenshots/usage-ring-${mode}-320-${lang}.png`)});
+      }
+    }
+    await page.evaluate(()=>{localStorage.setItem('testLanguage','en');window.BibimerRefreshLanguage();});
+    await page.locator('#tab-settings').click();await choose('context-display','used');await page.locator('#tab-work').click();
+    await page.setViewportSize({width:393,height:780});
+    assert.equal(await page.evaluate(()=>window.messageRequests),quotaRequests);
+    console.log('PASS: compact circular usage indicators share the permission row, both modes/10 locales at 320px, overlay details, keyboard/Android Back/outside dismissal and preserved draft without sending');
     await page.screenshot({path:path.join(root,'dist/screenshots/chat-en.png')});
     await page.locator('#input').fill('approval'); await page.locator('#send').click();
     await page.locator('.request-card').waitFor();
