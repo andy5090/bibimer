@@ -38,7 +38,7 @@ _browser_spec = importlib.util.spec_from_file_location("bibimer_browser_tools", 
 browser_tools = importlib.util.module_from_spec(_browser_spec)
 _browser_spec.loader.exec_module(browser_tools)
 
-VERSION = "0.19.0"
+VERSION = "0.20.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}

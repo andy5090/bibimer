@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## 0.27.0(48) 내부 테스트 배포 준비 (2026-10-23)
+
+- 사용자 ‘내부 테스트 배포’ 요청으로 브라우저 연동 워크트리를 `main`에 통합했다. 구현 커밋 `7fd5f4d`, main 통합 `c626f41`; 미커밋이던 모델/권한4px 간격·응답 중단 버튼28px/세로2px 변경은 `0b560dc`로 보존했다. 충돌은 NEXT 기록과 이미 같은 결과인 CSS였으며 상세 구현 기록과 최종 UI 값을 유지했다.
+- Android **0.27.0 / versionCode48**, 내장 브리지 **0.20.0**으로 구분했다. 기존 업로드 키·심사 코드로 서명한 `dist/play/bibimer-0.27.0-48-release.aab`, SHA-256 **`8523103afc029ceb732516afff119fe52df9322535895f5c35e1a4875bd540c1`**. bundletool·서명/기존 인증서·54assets 원본·실제 DEX 브라우저 native API/브리지 버전·심사 digest/비밀 원문 미포함·설치/유지보수 **5payload**·설치 스크립트 구문/격리 추출/0700을 확인했다. `.tools/aab-0.27.0-48-{build.log,verification.json}`, `.tools/verify-aab-0.27.0.py`.
+- 새 브라우저 기능은 앱 업데이트와 설정의 브리지0.20.0 업데이트가 필요하다. 이 배포 작업에서는 사용자 운영 브리지·기존 에이전트·기존 인증 Firefox를 재시작하지 않는다. 새 브리지 업데이트는 앱의 종료 대상 확인 흐름으로 사용자가 진행한다.
+- 버전 변경 후 Python scripts39개·757키×10언어/언어 UI가 통과했다(`.tools/release-0.27.0-{python,i18n}.log`). 격리 전체 UI/브라우저·유지보수 검사를 진행 중이며, 이전 구현의 전체 브리지204개 및 같은 폰 실제 X11/Firefox 검증은 아래에 기록했다. **이 항목은 서명 빌드 준비 기록이며 Play 게시 완료를 의미하지 않는다.** EN/KO 출시노트 `release/google-play/release-notes/0.27.0.txt`.
+
 ## Firefox·Termux:X11 기본 연동 구현 (2026-10-23, 별도 워크트리·미배포)
 
 - 사용자 승인에 따라 기존 `feat/termux-x11-browser` 워크트리(`/data/data/com.termux/files/home/projects/bibimer-x11-browser`)에 구현했다. `main`의0.26.3 게시 상태를 `d3d4301`로 병합하고, 원본 작업 폴더의 미커밋 UI 수정(모델/권한 간격4px·응답 중단 버튼28px/세로2px·긴 번역 말줄임)도 복사해 보존했다. 원본 `main`에는 기능을 병합하지 않았다.
