@@ -169,15 +169,15 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.26.2",
-    "versionCode": 46,
+    "versionName": "0.26.3",
+    "versionCode": 47,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "61bf9c1bb2cbad4a75792eefeb0a0e38222e0e4b76849c6503330470a080b141",
-    "file": "bibimer-0.26.2-46-release.aab",
+    "sha256": "505e49986a19b07e14f4e4b0aa17135e7802744942ba4a44987d4b8a18258bd6",
+    "file": "bibimer-0.26.3-47-release.aab",
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "bundleValidated": true,
@@ -197,25 +197,29 @@
     "builtOn": "2026-10-22",
     "preparedOn": "2026-10-22",
     "consoleUploadStatus": "published_internal_test",
+    "consoleAcceptedVersionCode": 47,
+    "releasedTrack": "internal_testing",
     "productionReleased": false,
     "productionSubmitted": false,
     "sourceBridgeVersion": "0.19.0",
     "emulatorInstallVerified": false,
     "physicalDeviceVerified": false,
-    "consoleProductionStatus": "not_submitted",
-    "releaseNotesFile": "release/google-play/release-notes/0.26.2.txt",
+    "releaseNotesFile": "release/google-play/release-notes/0.26.3.txt",
+    "consoleInternalTestStatus": "active_available_to_existing_testers",
     "developmentApkBuilt": false,
     "deviceInstallVerified": false,
     "bridgeUpdateRequiredForNewFeatures": false,
-    "evidence": "dist/play-0.26.2/published.json",
-    "consoleAcceptedVersionCode": 46,
-    "releasedTrack": "internal_testing",
-    "consoleInternalTestStatus": "active_available_to_existing_testers",
+    "evidence": "dist/play-0.26.3/published.json",
+    "bridgeAssetsUnchangedFromVersionCode": 46,
+    "changedAssetsFromPreviousVersion": [
+      "app.css"
+    ],
     "publishedOn": "2026-10-22",
     "nativeRequiredAssetAccessVerified": true,
     "sessionMaintenanceUiPackaged": true,
     "usageDetailsBarsPackaged": true,
     "selectorOutlinesPackaged": true,
+    "compactSelectorSpacingPackaged": true,
     "consoleActiveAfterReloadVerified": true
   },
   "consoleScreenshotsUpdatedOn": "2026-10-15",
@@ -330,25 +334,36 @@
     "maintenanceSourceAndFourPayloadsMatch": true,
     "installerShellSyntaxValid": true,
     "installerIsolatedExtractionVerified": true,
-    "consoleUploaded": false,
-    "released": false,
-    "status": "signed_bundle_ready_for_internal_upload",
+    "consoleUploaded": true,
+    "released": true,
+    "status": "published_internal_test",
     "builtOn": "2026-10-22",
     "preparedOn": "2026-10-22",
-    "consoleUploadStatus": "not_uploaded",
-    "consoleAcceptedVersionCode": null,
-    "releasedTrack": null,
+    "consoleUploadStatus": "published_internal_test",
+    "consoleAcceptedVersionCode": 47,
+    "releasedTrack": "internal_testing",
     "productionReleased": false,
     "productionSubmitted": false,
     "sourceBridgeVersion": "0.19.0",
     "emulatorInstallVerified": false,
     "physicalDeviceVerified": false,
     "releaseNotesFile": "release/google-play/release-notes/0.26.3.txt",
-    "consoleInternalTestStatus": "not_uploaded",
+    "consoleInternalTestStatus": "active_available_to_existing_testers",
     "developmentApkBuilt": false,
     "deviceInstallVerified": false,
     "bridgeUpdateRequiredForNewFeatures": false,
-    "evidence": ".tools/aab-0.26.3-47-verification.json"
+    "evidence": "dist/play-0.26.3/published.json",
+    "bridgeAssetsUnchangedFromVersionCode": 46,
+    "changedAssetsFromPreviousVersion": [
+      "app.css"
+    ],
+    "publishedOn": "2026-10-22",
+    "nativeRequiredAssetAccessVerified": true,
+    "sessionMaintenanceUiPackaged": true,
+    "usageDetailsBarsPackaged": true,
+    "selectorOutlinesPackaged": true,
+    "compactSelectorSpacingPackaged": true,
+    "consoleActiveAfterReloadVerified": true
   },
   "previousProductionRelease": {
     "versionName": "0.23.0",
@@ -472,14 +487,14 @@
     "consoleProductionStatus": "available_on_google_play"
   },
   "internalTestRelease": {
-    "versionName": "0.26.2",
-    "versionCode": 46,
-    "releaseName": "0.26.2 (46) - Selector outlines and usage bars",
+    "versionName": "0.26.3",
+    "versionCode": 47,
+    "releaseName": "0.26.3 (47) - Compact selectors and row spacing",
     "consoleStatus": "active_available_to_existing_testers",
     "publishedOn": "2026-10-22",
-    "publishedAtLocal": "2026-10-22 23:21 Asia/Seoul",
+    "publishedAtLocal": "2026-10-22 23:58 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
-    "releaseNotesFile": "release/google-play/release-notes/0.26.2.txt",
+    "releaseNotesFile": "release/google-play/release-notes/0.26.3.txt",
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
@@ -488,18 +503,18 @@
     "productionSubmitted": false,
     "productionReleased": false,
     "includedVersionCodes": [
-      46
+      47
     ],
     "excludedPreviousVersionCodes": [
-      45
+      46
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "refreshedStatusVerified": true,
-    "evidenceType": "Visible Play Console UI via same-phone Termux:X11 Firefox after user-confirmed manual login",
-    "evidence": "dist/play-0.26.2/published.json",
+    "evidenceType": "Visible Play Console UI via same-phone Termux:X11 Firefox with retained user sign-in",
+    "evidence": "dist/play-0.26.3/published.json",
     "emulatorInstallVerified": false,
     "physicalDeviceVerified": false,
     "sourceBridgeVersion": "0.19.0",
@@ -513,9 +528,11 @@
     "usageRingUiPackaged": true,
     "usageDetailsBarsPackaged": true,
     "selectorOutlinesPackaged": true,
+    "compactSelectorSpacingPackaged": true,
     "bridgeTestsReexecuted": false,
     "priorMacBridgeVerificationVersionCode": 44,
-    "samePhoneX11FirefoxPublicationVerified": true
+    "samePhoneX11FirefoxPublicationVerified": true,
+    "bridgeAssetsUnchangedFromVersionCode": 46
   },
   "productionReleaseHistory": [
     {

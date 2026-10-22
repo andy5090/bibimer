@@ -1,5 +1,15 @@
 # Google Play 출시 준비
 
+## 0.26.3 · 셀렉터 높이·설정 줄 간격 내부 테스트 (2026-10-22)
+
+**0.26.3(47)**을 **23:58 Asia/Seoul**에 내부 테스트에 게시했다. 같은 폰의 기존 **Termux:X11·Firefox** 인증 상태를 유지해 업로드·검토·게시했고, Console **활성 / 내부 테스터에게 제공됨**과 새로고침 뒤 상태 유지를 확인했다. 새47만 포함·46제외, EN/KO노트2/2, 오류0·기존 가독화 매핑 파일 경고1·지원 기기 변화0이다. 출시 이름은 `0.26.3 (47) - Compact selectors and row spacing`다.
+
+일반 셀렉터 최소36px·세로4px 패딩, 입력창 아래 모델/권한 셀렉터32px·세로3px 패딩과 설정 섹션 사이8px 간격을 반영했다. 내장 브리지는 **0.19.0 유지**다. 46/47의54개 내장 자산 이름은 같으며 변경된 자산은 `app.css` 하나다. 브리지/설치/유지보수 payload는 바이트 단위로 같아 이번 UI 변경만을 위한 브리지 업데이트는 필요하지 않다.
+
+AAB `dist/play/bibimer-0.26.3-47-release.aab`, SHA-256 `505e49986a19b07e14f4e4b0aa17135e7802744942ba4a44987d4b8a18258bd6`. 전체 Java/D8·bundletool·기존 인증서·54assets 원본·심사 digest/비밀 미포함·브리지/유지보수4payload·설치 스크립트 구문/격리 추출을 검증했다. 버전 변경 뒤 Python scripts39개·전체 격리 Chromium UI·컨텍스트/구독 renderer·726키×10언어·구문 검사를 통과했다. 앞선 실제21개 셀렉터와1,200조합의 배치 검사도 기록했다. `.tools/aab-0.26.3-47-{build.log,verification.json}`, `.tools/release-0.26.3-{python,ui}.log`.
+
+증빙 `dist/play-0.26.3/{review-warning,review-devices,review-notes,published-before-refresh,published}.png`와 관찰 기록 `published.json`, EN/KO출시노트 `release/google-play/release-notes/0.26.3.txt`. 기존 [내부 테스트 링크](https://play.google.com/apps/internaltest/4701718894791581363)와 테스터 설정을 유지했다. **Play 업데이트 수신·실제 앱 설치·새 WebView 동작은 후속**이며 운영 브리지·사용자 세션·iOS·프로덕션·웹사이트 배포는 변경하지 않았다.
+
 ## 0.26.2 · 셀렉터·상세 사용량 개선 내부 테스트 (2026-10-22)
 
 **0.26.2(46)**을 **23:21 Asia/Seoul**에 내부 테스트에 게시했다. 같은 폰의 **Termux:X11·Firefox**에서 사용자가 직접 Google 인증을 마친 뒤 일반 브라우저 UI로 업로드·검토·게시했다. Console **활성 / 내부 테스터에게 제공됨**을 확인하고 새로고침 후 다시 검증했다. 새46만 포함·45제외, EN/KO노트2/2, 오류0·기존 가독화 매핑 파일 경고1·지원 기기 변화0이다. 출시 이름은 `0.26.2 (46) - Selector outlines and usage bars`다.
