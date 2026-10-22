@@ -169,15 +169,15 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.26.0",
-    "versionCode": 44,
+    "versionName": "0.26.1",
+    "versionCode": 45,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "87a289ef05244657077e77a23288c3754ff503538b18636fe71f337745b82a37",
-    "file": "bibimer-0.26.0-44-release.aab",
+    "sha256": "563f8820ad32e7a6e28762fea8bddfa42db299a2cff50d96a232ec9d8d4fe796",
+    "file": "bibimer-0.26.1-45-release.aab",
     "bundleValidated": true,
     "uploadCertificateMatchesPlay": true,
     "packagedAssetsMatchSource": true,
@@ -196,10 +196,10 @@
     "nativeRequiredAssetAccessVerified": true,
     "sessionMaintenanceUiPackaged": true,
     "status": "published_internal_test",
-    "builtOn": "2026-10-21",
+    "builtOn": "2026-10-22",
     "signatureVerified": true,
     "consoleUploadStatus": "published_internal_test",
-    "consoleAcceptedVersionCode": 44,
+    "consoleAcceptedVersionCode": 45,
     "released": true,
     "releasedTrack": "internal_testing",
     "productionReleased": false,
@@ -299,15 +299,15 @@
   },
   "pendingUpdate": {
     "package": "app.bibimer",
-    "versionName": "0.26.0",
-    "versionCode": 44,
+    "versionName": "0.26.1",
+    "versionCode": 45,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "87a289ef05244657077e77a23288c3754ff503538b18636fe71f337745b82a37",
-    "file": "bibimer-0.26.0-44-release.aab",
+    "sha256": "563f8820ad32e7a6e28762fea8bddfa42db299a2cff50d96a232ec9d8d4fe796",
+    "file": "bibimer-0.26.1-45-release.aab",
     "bundleValidated": true,
     "uploadCertificateMatchesPlay": true,
     "packagedAssetsMatchSource": true,
@@ -326,10 +326,10 @@
     "nativeRequiredAssetAccessVerified": true,
     "sessionMaintenanceUiPackaged": true,
     "status": "published_internal_test",
-    "builtOn": "2026-10-21",
+    "builtOn": "2026-10-22",
     "signatureVerified": true,
     "consoleUploadStatus": "published_internal_test",
-    "consoleAcceptedVersionCode": 44,
+    "consoleAcceptedVersionCode": 45,
     "released": true,
     "releasedTrack": "internal_testing",
     "productionReleased": false,
@@ -338,14 +338,14 @@
     "emulatorInstallVerified": false,
     "physicalDeviceVerified": false,
     "consoleProductionStatus": "not_submitted",
-    "preparedOn": "2026-10-21",
+    "preparedOn": "2026-10-22",
     "publishedOn": "2026-10-22",
-    "releaseNotesFile": "release/google-play/release-notes/0.26.0.txt",
+    "releaseNotesFile": "release/google-play/release-notes/0.26.1.txt",
     "consoleUploaded": true,
     "consoleInternalTestStatus": "active_available_to_existing_testers",
     "developmentApkBuilt": false,
     "deviceInstallVerified": false,
-    "bridgeUpdateRequiredForNewFeatures": true
+    "bridgeUpdateRequiredForNewFeatures": false
   },
   "previousProductionRelease": {
     "versionName": "0.23.0",
@@ -469,14 +469,14 @@
     "consoleProductionStatus": "available_on_google_play"
   },
   "internalTestRelease": {
-    "versionName": "0.26.0",
-    "versionCode": 44,
-    "releaseName": "0.26.0 (44) - Context and subscription usage",
+    "versionName": "0.26.1",
+    "versionCode": 45,
+    "releaseName": "0.26.1 (45) - Compact usage indicators",
     "consoleStatus": "active_available_to_existing_testers",
     "publishedOn": "2026-10-22",
-    "publishedAtLocal": "2026-10-22 09:32 Asia/Seoul",
-    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/15/details",
-    "releaseNotesFile": "release/google-play/release-notes/0.26.0.txt",
+    "publishedAtLocal": "2026-10-22 17:40 Asia/Seoul",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/16/details",
+    "releaseNotesFile": "release/google-play/release-notes/0.26.1.txt",
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
@@ -487,24 +487,20 @@
     "emulatorInstallVerified": false,
     "physicalDeviceVerified": false,
     "sourceBridgeVersion": "0.19.0",
-    "bridgeUpdateRequiredForNewFeatures": true,
+    "bridgeUpdateRequiredForNewFeatures": false,
     "realPlayAvailabilityResponseVerified": false,
-    "evidence": "dist/play-0.26.0/published.json",
+    "evidence": "dist/play-0.26.1/published.json",
     "scriptTestsPassed": 39,
-    "focusedBridgeTestsPassed": 16,
     "isolatedBrowserTestsPassed": [
       "ui_with_native_asset_policy"
     ],
     "nativeRequiredAssetAccessVerified": true,
     "sessionMaintenanceUiPackaged": true,
     "consoleActiveAfterReloadVerified": true,
-    "macFullBridgeVerification": {
-      "testsRun": 191,
-      "failures": 16,
-      "errors": 1,
-      "allPassed": false,
-      "note": "PTY/process/proc/Git platform constraints; setup import-path case passed separately; see NEXT_SESSION.md"
-    }
+    "bridgeAssetsUnchangedFromVersionCode": 44,
+    "usageRingUiPackaged": true,
+    "bridgeTestsReexecuted": false,
+    "priorMacBridgeVerificationVersionCode": 44
   },
   "productionReleaseHistory": [
     {
@@ -628,37 +624,43 @@
     "submission": "English and Korean phone screenshots only; existing app version unchanged"
   },
   "previousInternalTestRelease": {
-    "versionName": "0.25.0",
-    "versionCode": 43,
-    "releaseName": "0.25.0 (43) - Guided bridge maintenance",
+    "versionName": "0.26.0",
+    "versionCode": 44,
+    "releaseName": "0.26.0 (44) - Context and subscription usage",
     "consoleStatus": "superseded",
-    "publishedOn": "2026-10-19",
-    "publishedAtLocal": "2026-10-19 19:29 Asia/Seoul",
-    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/14/details",
-    "releaseNotesFile": "release/google-play/release-notes/0.25.0.txt",
+    "publishedOn": "2026-10-22",
+    "publishedAtLocal": "2026-10-22 09:32 Asia/Seoul",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/15/details",
+    "releaseNotesFile": "release/google-play/release-notes/0.26.0.txt",
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
     "errors": [],
     "supportedDeviceChanges": 0,
-    "productionSubmitted": true,
+    "productionSubmitted": false,
     "productionReleased": false,
     "emulatorInstallVerified": false,
     "physicalDeviceVerified": false,
-    "sourceBridgeVersion": "0.18.0",
-    "bridgeUpdateRequiredForNewFeatures": false,
+    "sourceBridgeVersion": "0.19.0",
+    "bridgeUpdateRequiredForNewFeatures": true,
     "realPlayAvailabilityResponseVerified": false,
-    "evidence": "dist/play-0.25.0/internal43-live.png",
-    "scriptTestsPassed": 38,
-    "focusedBridgeTestsPassed": 5,
+    "evidence": "dist/play-0.26.0/published.json",
+    "scriptTestsPassed": 39,
+    "focusedBridgeTestsPassed": 16,
     "isolatedBrowserTestsPassed": [
-      "bridge_maintenance",
-      "maintenance_sessions",
       "ui_with_native_asset_policy"
     ],
     "nativeRequiredAssetAccessVerified": true,
     "sessionMaintenanceUiPackaged": true,
-    "supersededByVersionCode": 44
+    "consoleActiveAfterReloadVerified": true,
+    "macFullBridgeVerification": {
+      "testsRun": 191,
+      "failures": 16,
+      "errors": 1,
+      "allPassed": false,
+      "note": "PTY/process/proc/Git platform constraints; setup import-path case passed separately; see NEXT_SESSION.md"
+    },
+    "supersededByVersionCode": 45
   },
   "consoleScreenshotsVerifiedOn": "2026-10-15",
   "sourceLanguages": [
@@ -897,6 +899,45 @@
       "nativeRequiredAssetAccessVerified": true,
       "sessionMaintenanceUiPackaged": true,
       "supersededByVersionCode": 44
+    },
+    {
+      "versionName": "0.26.0",
+      "versionCode": 44,
+      "releaseName": "0.26.0 (44) - Context and subscription usage",
+      "consoleStatus": "superseded",
+      "publishedOn": "2026-10-22",
+      "publishedAtLocal": "2026-10-22 09:32 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/15/details",
+      "releaseNotesFile": "release/google-play/release-notes/0.26.0.txt",
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "errors": [],
+      "supportedDeviceChanges": 0,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "emulatorInstallVerified": false,
+      "physicalDeviceVerified": false,
+      "sourceBridgeVersion": "0.19.0",
+      "bridgeUpdateRequiredForNewFeatures": true,
+      "realPlayAvailabilityResponseVerified": false,
+      "evidence": "dist/play-0.26.0/published.json",
+      "scriptTestsPassed": 39,
+      "focusedBridgeTestsPassed": 16,
+      "isolatedBrowserTestsPassed": [
+        "ui_with_native_asset_policy"
+      ],
+      "nativeRequiredAssetAccessVerified": true,
+      "sessionMaintenanceUiPackaged": true,
+      "consoleActiveAfterReloadVerified": true,
+      "macFullBridgeVerification": {
+        "testsRun": 191,
+        "failures": 16,
+        "errors": 1,
+        "allPassed": false,
+        "note": "PTY/process/proc/Git platform constraints; setup import-path case passed separately; see NEXT_SESSION.md"
+      },
+      "supersededByVersionCode": 45
     }
   ]
 }
