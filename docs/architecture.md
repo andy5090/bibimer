@@ -1,8 +1,8 @@
 # 첫 버전 구조와 API
 
-## Firefox · Termux:X11 기본 개발 브라우저 (2026-10-23, 별도 워크트리·미배포)
+## Firefox · Termux:X11 기본 개발 브라우저 (2026-10-23, 내부0.27.0·브리지0.20.0)
 
-Android와 같은 폰의 Termux에서 일반 Firefox 창을 실행하고, 사용자가 직접 로그인한 뒤 연결된 에이전트가 같은 창을 조작한다. `feat/termux-x11-browser`에 구현했으며 APK에 반영하지 않았다. 기본 연결은 켜짐이고 브라우저는 첫 요청 때 실행한다.
+Android와 같은 폰의 Termux에서 일반 Firefox 창을 실행하고, 사용자가 직접 로그인한 뒤 연결된 에이전트가 같은 창을 조작한다. `feat/termux-x11-browser`에서 구현해 main에 통합하고 내부0.27.0·브리지0.20.0에 반영했다. 기본 연결은 켜짐이고 브라우저는 첫 요청 때 실행한다.
 
 - 설정 → **Firefox · Termux:X11**에서 에이전트 연결을 켜거나 끈다. 브리지 메타데이터에 공통 선택을 저장한다. 새 Codex·Claude·OpenCode Chat에 도구 경로와 사용 안내를 전달한다. 기존 프로세스·PTY에는 명령을 주입하지 않는다. 연결을 끄면 기존 도구 접근도 차단하며 브라우저 창을 임의 종료하지 않는다.
 - **Termux에서 준비**는 기존 RUN_COMMAND 권한 흐름으로 새 Termux 터미널에 고정 설치 명령만 전달한다. `x11-repo`, `termux-x11-nightly`, `firefox`, `openbox`, `xdotool`, `xclip`, `imagemagick`, `libc++`를 준비하고 Firefox 버전을 확인한다. Termux:X11 Android 앱은 공식 릴리스에서 사용자가 설치한다. 외부 앱 연동 설정/Android 설치 승인을 임의 변경하지 않는다. 명령 복사와 공식 링크도 유지한다.

@@ -18,7 +18,7 @@ Android 앱, Termux, 코딩 에이전트를 하나로 비볐습니다. 세 가�
 
 ## 설치와 배포
 
-[Google Play](https://play.google.com/store/apps/details?id=app.bibimer)에서 Bibimer를 설치할 수 있습니다. **초대받은 내부 테스터에게 0.26.3을 제공합니다.** 브리지가 이미 0.19.0이면 이번 UI 개선을 위한 추가 업데이트는 필요하지 않습니다. 이전 브리지는 사용량 수집을 위해 설정에서 0.19.0으로 업데이트하세요. 마지막으로 공개를 확인한 정식 버전은 0.23.0입니다. 0.25.0은 10월 19일 정식 배포 심사를 제출했으며 이후 승인 상태는 재확인하지 않았습니다. GitHub 공개 APK 배포본은 없으며 개발 버전 빌드는 [빌드 안내](docs/development.md)를 참고하세요.
+Bibimer는 [Google Play](https://play.google.com/store/apps/details?id=app.bibimer)에서 설치할 수 있습니다. **초대받은 내부 테스터는 0.27.0으로 업데이트할 수 있습니다.** Firefox·Termux:X11 브라우저 준비·프로젝트별 프로필 재사용·직접 로그인 후 제어 전달·새 Codex/Claude/OpenCode Chat의 브라우저 도구를 사용하려면 설정에서 **Termux 브리지를 0.20.0으로 업데이트**하세요. 마지막으로 확인한 공개 버전은0.23.0이며,0.25.0은10월19일 프로덕션 심사에 제출한 뒤 승인 상태를 재확인하지 않았습니다. 공개 GitHub APK 릴리스는 없습니다. 소스 빌드는 [개발 가이드](docs/development.md)를 참고하세요.
 
 앱의 최소 Android 버전은 8.0(API 26)입니다. 모든 Android 버전과 기기, 에이전트 설치 환경에서 동작을 확인한 것은 아닙니다.
 
@@ -94,7 +94,7 @@ Bibimer와 Termux를 **같은 Android 휴대폰**에 설치하세요. 터미널�
 
 ## 도움말과 개발
 
-`feat/termux-x11-browser` 개발 워크트리에는 Firefox·Termux:X11 설치 안내, 프로젝트별 프로필 재사용, 직접 로그인 후 제어 전달, 새 Codex·Claude·OpenCode Chat용 브라우저 도구를 구현했습니다. 아직 APK에 반영하지 않았습니다. [브라우저 구조와 검증 범위](docs/architecture.md)를 참고하세요.
+Firefox·Termux:X11 연동은 내부0.27.0·브리지0.20.0에 반영했습니다. [브라우저 구조와 남은 검증 범위](docs/architecture.md)를 참고하세요.
 
 - [자세한 설치·사용 안내와 문제 해결](docs/setup.md)
 - [빌드와 개발 안내](docs/development.md)

@@ -1,11 +1,19 @@
 # Bibimer 다음 세션 시작점
 
+## 0.27.0(48) 내부 테스트 게시 완료 (2026-10-23)
+
+- **08:25 Asia/Seoul**, 같은 폰의 기존 Termux:X11·Firefox에서 사용자 요청대로 내부0.27.0/code48을 게시했다. Console **활성 / 내부 테스터에게 제공됨**, 새48만 포함·47제외·버전 코드1개·EN/KO노트2/2·오류0·기존 가독화 매핑 파일 경고1·확인한 기기 유형의 지원 변화0을 확인했고 **페이지 새로고침 뒤 상태를 재확인**했다. 출시 이름 `0.27.0 (48) - Firefox browser integration`. 기존 내부 트랙/테스터 설정을 유지했다.
+- 준비 커밋 `f3239b7`의 서명 AAB `dist/play/bibimer-0.27.0-48-release.aab`를 그대로 업로드했다. SHA-256 **`8523103afc029ceb732516afff119fe52df9322535895f5c35e1a4875bd540c1`**. 새 키·Doppler 재조회·개발 APK 생성 없음. 내장 브리지는 **0.20.0**, 초기 설치/유지보수에는 새 `browser_tools.py`를 포함한 **5payload**가 들어간다. 전체 빌드/서명/54assets/실제 DEX/비밀 원문 미포함/설치 격리 추출 검증을 통과했다. `.tools/aab-0.27.0-48-{build.log,verification.json}`, `.tools/verify-aab-0.27.0.py`.
+- 버전 변경 후 scripts **39개**, 브라우저·유지보수 **21개**, **전체 격리 Chromium UI**, **757키×10언어**가 모두 통과했다. `.tools/release-0.27.0-{python,bridge,ui,i18n}.log`. 동일 구현의 버전 변경 전 전체 브리지204개 및 실제 폰 Firefox/X11 검증은 아래 기록과 구분한다. 공개 브라우저 프로토콜/비공개 Console API를 호출하지 않고 X11 화면/키보드/마우스/일반 파일 선택창만 사용했다. GTK 파일 선택창은 부모 Firefox 캡처에서 가려져 전용 display의 root 캡처로 확인했다.
+- 증빙 `dist/play-0.27.0/{review-warning,review-devices,review-bundle,review-notes,published-before-refresh,published}.png`, 실제 UI 관찰 `published.json`. README EN/KO·출시 JSON·개발/배포/UI/구조 문서를 내부48 게시 상태로 갱신했다.
+- **앱 업데이트 후 설정에서 Termux 브리지를 0.20.0으로 업데이트해야 브라우저 연동이 표시된다.** 사용자 운영 브리지·기존 에이전트·인증 Firefox를 재시작하지 않았다. 브리지 업데이트는 앱에서 종료 대상을 확인하고 사용자가 진행한다. **Play 업데이트 수신·새 앱 설치·새 APK의 설치→인증 전체 흐름은 미검증**이며 iOS·프로덕션·웹사이트 배포는 변경하지 않았다.
+
 ## 0.27.0(48) 내부 테스트 배포 준비 (2026-10-23)
 
 - 사용자 ‘내부 테스트 배포’ 요청으로 브라우저 연동 워크트리를 `main`에 통합했다. 구현 커밋 `7fd5f4d`, main 통합 `c626f41`; 미커밋이던 모델/권한4px 간격·응답 중단 버튼28px/세로2px 변경은 `0b560dc`로 보존했다. 충돌은 NEXT 기록과 이미 같은 결과인 CSS였으며 상세 구현 기록과 최종 UI 값을 유지했다.
 - Android **0.27.0 / versionCode48**, 내장 브리지 **0.20.0**으로 구분했다. 기존 업로드 키·심사 코드로 서명한 `dist/play/bibimer-0.27.0-48-release.aab`, SHA-256 **`8523103afc029ceb732516afff119fe52df9322535895f5c35e1a4875bd540c1`**. bundletool·서명/기존 인증서·54assets 원본·실제 DEX 브라우저 native API/브리지 버전·심사 digest/비밀 원문 미포함·설치/유지보수 **5payload**·설치 스크립트 구문/격리 추출/0700을 확인했다. `.tools/aab-0.27.0-48-{build.log,verification.json}`, `.tools/verify-aab-0.27.0.py`.
 - 새 브라우저 기능은 앱 업데이트와 설정의 브리지0.20.0 업데이트가 필요하다. 이 배포 작업에서는 사용자 운영 브리지·기존 에이전트·기존 인증 Firefox를 재시작하지 않는다. 새 브리지 업데이트는 앱의 종료 대상 확인 흐름으로 사용자가 진행한다.
-- 버전 변경 후 Python scripts39개·757키×10언어/언어 UI가 통과했다(`.tools/release-0.27.0-{python,i18n}.log`). 격리 전체 UI/브라우저·유지보수 검사를 진행 중이며, 이전 구현의 전체 브리지204개 및 같은 폰 실제 X11/Firefox 검증은 아래에 기록했다. **이 항목은 서명 빌드 준비 기록이며 Play 게시 완료를 의미하지 않는다.** EN/KO 출시노트 `release/google-play/release-notes/0.27.0.txt`.
+- 버전 변경 후 Python scripts39개·757키×10언어/언어 UI가 통과했다(`.tools/release-0.27.0-{python,i18n}.log`). 격리 전체 UI와 브라우저·유지보수21개도 통과했으며, 이전 구현의 전체 브리지204개 및 같은 폰 실제 X11/Firefox 검증은 아래에 기록했다. **이 항목은 서명 빌드 준비 기록이며 Play 게시 완료를 의미하지 않는다.** EN/KO 출시노트 `release/google-play/release-notes/0.27.0.txt`.
 
 ## Firefox·Termux:X11 기본 연동 구현 (2026-10-23, 별도 워크트리·미배포)
 
