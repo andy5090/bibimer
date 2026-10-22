@@ -44,7 +44,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .settings-dialog .hint { margin:8px 0; font-size:12px; line-height:1.5; }
 .settings-dialog > button { width:100%; margin-top:8px; }
 
-.composer-options { flex:none; margin:8px 0 10px; }
+.composer-options { flex:none; margin:4px 0 10px; }
 .quick-options { display:flex; align-items:center; gap:6px; }
 .quick-options select { flex:0 1 auto; min-width:0; width:auto; min-height:32px; padding:3px 6px; font-size:12px; background:transparent; color:var(--muted); cursor:pointer; }
 .quick-options select option { background:var(--card); color:var(--text); }
@@ -420,8 +420,9 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
   background:transparent;
 }
 
-.response-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
-#chat-state #delivery-help { display:grid; place-items:center; width:32px; padding:4px; color:var(--muted); }
+.response-actions { display:flex; align-items:center; gap:6px; min-width:0; flex-shrink:1; }
+#chat-state #interrupt-turn { min-height:28px; padding:2px 6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#chat-state #delivery-help { display:grid; place-items:center; flex:none; width:32px; padding:4px; color:var(--muted); }
 #delivery-help svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; }
 #delivery-help-dialog { max-height:calc(100dvh - 24px); overflow:auto; }
 #delivery-hint { white-space:pre-line; }
