@@ -1,12 +1,12 @@
 # 개발 및 검증
 
-## 0.26.2 · 셀렉터·상세 사용량 개선 번들 준비 (2026-10-22, 게시 대기)
+## 0.26.2 · 셀렉터·상세 사용량 개선 내부 테스트 (2026-10-22)
 
-사용자의 내부 테스트 배포 요청으로 **0.26.2(46)**의 서명 AAB를 준비했다. 권한 셀렉터 너비·화살표 간격, 전체 셀렉터 아웃라인, 컨텍스트·구독 기간별 상세 막대를 포함한다. 내장 브리지는 **0.19.0 유지**이며 이 UI 개선만을 위한 운영 브리지 업데이트는 필요하지 않다.
+**0.26.2(46)**을 **23:21 Asia/Seoul**에 내부 테스트에 게시했다. 같은 폰의 **Termux:X11·Firefox**에서 사용자가 직접 Google 인증을 마친 뒤 일반 브라우저 UI로 업로드·검토·게시했다. Console **활성 / 내부 테스터에게 제공됨**을 확인하고 새로고침 후 다시 검증했다. 새46만 포함·45제외, EN/KO노트2/2, 오류0·기존 가독화 매핑 파일 경고1·지원 기기 변화0이다. 출시 이름은 `0.26.2 (46) - Selector outlines and usage bars`다.
 
-파일 `dist/play/bibimer-0.26.2-46-release.aab`, SHA-256 `61bf9c1bb2cbad4a75792eefeb0a0e38222e0e4b76849c6503330470a080b141`. 전체 Java/D8 빌드·bundletool·기존 업로드 인증서·54assets 원본·심사 digest 포함/비밀 원문 미포함·브리지/유지보수4payload·설치 스크립트 구문/격리 추출을 검증했다. Python scripts39개 및 컨텍스트/구독 renderer·726키×10언어·구문 검사를 통과했고 UI 소스는 기능 구현 후 전체 격리 Chromium 회귀를 통과했다. 빌드 `.tools/aab-0.26.2-46-build.log`, 검증 `.tools/aab-0.26.2-46-verification.json`, 출시노트 `release/google-play/release-notes/0.26.2.txt`.
+권한 셀렉터 너비·화살표 간격, 전체 셀렉터 아웃라인, 컨텍스트·구독 기간별 상세 막대를 포함한다. 내장 브리지는 **0.19.0 유지**이며 이미 같은 버전을 사용하는 경우 이번 UI 개선만을 위한 브리지 업데이트는 필요하지 않다. AAB `dist/play/bibimer-0.26.2-46-release.aab`, SHA-256 `61bf9c1bb2cbad4a75792eefeb0a0e38222e0e4b76849c6503330470a080b141`. 전체 Java/D8 빌드·bundletool·기존 업로드 인증서·54assets 원본·심사 digest 포함/비밀 원문 미포함·브리지/유지보수4payload·설치 스크립트 구문/격리 추출을 검증했다. Python scripts39개, 컨텍스트/구독 renderer·726키×10언어·구문 검사 및 기능 구현 뒤 전체 격리 Chromium UI 회귀가 통과했다.
 
-**Play Console 업로드·게시는 아직 수행하지 않았다.** 현재 Termux에 로그인된 Console 브라우저 연결이 없으며 이전45 배포는 Mac의 기존 Chrome에서 진행했다. 마지막 확인된 내부 배포는 아래 **0.26.1(45)**로 유지한다. 기존 내부 트랙에46만 포함해 게시하고 실제 Console 활성 상태를 확인한 뒤 `listing.json`의 `releaseBundle`/`internalTestRelease`와 README를 갱신한다. 운영 브리지·사용자 세션·실기기 앱 설치·iOS·프로덕션·테스터 설정은 변경하지 않았다.
+증빙 `dist/play-0.26.2/{review-warning,review-notes,published-before-refresh,published}.png`, 실제 UI 관찰 기록 `dist/play-0.26.2/published.json`. 빌드/검증 `.tools/aab-0.26.2-46-{build.log,verification.json}`, 출시노트 `release/google-play/release-notes/0.26.2.txt`. 기존 [내부 테스트 링크](https://play.google.com/apps/internaltest/4701718894791581363)·테스터 설정을 유지했다. **Play 업데이트 수신·실기기 앱 설치·새 WebView UI 실동작은 후속**이다. 이번에 확인한 같은 폰의 X11 브라우저 인증·게시와 앱 설치 검증을 구분한다. 운영 브리지·사용자 세션·iOS·프로덕션·웹사이트 배포는 변경하지 않았다.
 
 ## 0.26.1 · 원형 사용량 표시 내부 테스트 (2026-10-22)
 
