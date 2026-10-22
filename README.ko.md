@@ -94,6 +94,8 @@ Bibimer와 Termux를 **같은 Android 휴대폰**에 설치하세요. 터미널�
 
 ## 도움말과 개발
 
+`feat/termux-x11-browser` 개발 워크트리에는 Firefox·Termux:X11 설치 안내, 프로젝트별 프로필 재사용, 직접 로그인 후 제어 전달, 새 Codex·Claude·OpenCode Chat용 브라우저 도구를 구현했습니다. 아직 APK에 반영하지 않았습니다. [브라우저 구조와 검증 범위](docs/architecture.md)를 참고하세요.
+
 - [자세한 설치·사용 안내와 문제 해결](docs/setup.md)
 - [빌드와 개발 안내](docs/development.md)
 - [버그 제보·기능 제안](https://github.com/andy5090/bibimer/issues)

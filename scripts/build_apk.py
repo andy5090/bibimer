@@ -97,7 +97,7 @@ def installer():
     digest = hashlib.sha256(source).hexdigest()
     adapters = {name: {"data": base64.b64encode(zlib.compress((ROOT / "bridge" / name).read_bytes(), 9)).decode(),
                        "sha256": hashlib.sha256((ROOT / "bridge" / name).read_bytes()).hexdigest()}
-                for name in ("provider_opencode.py", "provider_claude.mjs", "repair_claude_termux.py")}
+                for name in ("provider_opencode.py", "provider_claude.mjs", "repair_claude_termux.py", "browser_tools.py")}
     maintenance_payload = dict(adapters, **{"bibimer_bridge.py": {"data": encoded, "sha256": digest}})
     maintenance = (ROOT / "bridge/maintain_bridge.py").read_text()
     (SRC / "assets/bridge-maintenance.py").write_text(maintenance + "\nif __name__ == '__main__':\n    sys.exit(main(sys.argv[1], " + repr(maintenance_payload) + "))\n")

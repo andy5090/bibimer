@@ -32,7 +32,7 @@ def maintain(action, payload, state=None, folder=None, port=8765):
         # Validate the complete bundled release before stopping or changing anything.
         release = {}
         for name, entry in payload.items():
-            if name not in {"bibimer_bridge.py", "provider_opencode.py", "provider_claude.mjs", "repair_claude_termux.py"}:
+            if name not in {"bibimer_bridge.py", "provider_opencode.py", "provider_claude.mjs", "repair_claude_termux.py", "browser_tools.py"}:
                 raise MaintenanceError("bridge_maintenance_failed")
             content = zlib.decompress(base64.b64decode(entry["data"], validate=True))
             if hashlib.sha256(content).hexdigest() != entry["sha256"]:
@@ -45,7 +45,8 @@ def maintain(action, payload, state=None, folder=None, port=8765):
         # Use the bundled shutdown implementation even when the installed bridge is older.
         with tempfile.TemporaryDirectory(dir=state, prefix="maintenance-") as temporary:
             helper = Path(temporary) / "bibimer_bridge.py"
-            helper.write_bytes(release["bibimer_bridge.py"])
+            for name, content in release.items():
+                (Path(temporary) / name).write_bytes(content)
             spec = importlib.util.spec_from_file_location("bibimer_maintenance_runtime", helper)
             runtime = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(runtime)

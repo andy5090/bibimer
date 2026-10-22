@@ -15,6 +15,7 @@ async function main(){
   const env={...process.env,PATH:path.join(tmp,'bin')+':'+process.env.PATH,BIBIMER_TEST_CODEX_STORE:path.join(tmp,'native-history.json')};
   const source=fs.readFileSync(path.join(root,'bridge/bibimer_bridge.py'),'utf8');
   const bundledVersion=source.match(/^VERSION = "([\d.]+)"/m)[1];
+  fs.copyFileSync(path.join(root,'bridge/browser_tools.py'),path.join(installed,'browser_tools.py'));
   fs.writeFileSync(path.join(installed,'bibimer_bridge.py'),source.replace(/VERSION = "[\d.]+"/,'VERSION = "0.15.0"'));
   const git=(...args)=>execFileSync('git',['-C',projectPath,...args],{stdio:'pipe'});
   git('init','-b','main');git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','--allow-empty','-m','fixture');
@@ -42,7 +43,7 @@ async function main(){
   await call('POST','/v1/project-session',{project_id:project.id,session_id:first.id});
   const before=await call('GET','/v1/health');assert.equal(before.active_sessions,3);
   const payload=path.join(tmp,'payload.json');
-  execFileSync(python,['-c',"import base64,hashlib,json,pathlib,sys,zlib;p=pathlib.Path(sys.argv[1]);files=['bibimer_bridge.py','provider_opencode.py','provider_claude.mjs','repair_claude_termux.py'];pathlib.Path(sys.argv[2]).write_text(json.dumps({n:{'data':base64.b64encode(zlib.compress((p/n).read_bytes())).decode(),'sha256':hashlib.sha256((p/n).read_bytes()).hexdigest()} for n in files}))",path.join(root,'bridge'),payload]);
+  execFileSync(python,['-c',"import base64,hashlib,json,pathlib,sys,zlib;p=pathlib.Path(sys.argv[1]);files=['bibimer_bridge.py','provider_opencode.py','provider_claude.mjs','repair_claude_termux.py','browser_tools.py'];pathlib.Path(sys.argv[2]).write_text(json.dumps({n:{'data':base64.b64encode(zlib.compress((p/n).read_bytes())).decode(),'sha256':hashlib.sha256((p/n).read_bytes()).hexdigest()} for n in files}))",path.join(root,'bridge'),payload]);
   assets=http.createServer((req,res)=>{try{const file=req.url==='/'?'index.html':req.url.slice(1);if(file.includes('..'))throw Error();res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(path.join(root,'android/app/src/main/assets',file)));}catch{res.writeHead(404).end();}});
   await new Promise(resolve=>assets.listen(0,'127.0.0.1',resolve));
   browser=await chromium.launch({executablePath:path.join(process.env.PREFIX,'bin/headless_shell'),headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});

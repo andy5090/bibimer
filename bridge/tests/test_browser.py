@@ -32,6 +32,7 @@ while True:
 FIREFOX = '''
 import os, pathlib, signal, sys, time
 if os.environ.get('BIBIMER_TEST_BROWSER_FAIL'): sys.exit(2)
+if os.environ.get('LD_LIBRARY_PATH') or os.environ.get('LD_PRELOAD'): sys.exit(5)
 profile=pathlib.Path(sys.argv[sys.argv.index('--profile')+1])
 if '--no-remote' not in sys.argv or '--new-window' not in sys.argv: sys.exit(3)
 if any('debug' in arg or 'headless' in arg for arg in sys.argv): sys.exit(4)
@@ -52,7 +53,7 @@ class BrowserTests(BridgeTestCase):
         self.binaries.mkdir()
         self.tmp = self.root/'tmp'
         self.tmp.mkdir()
-        for name, source in [('termux-x11', X11), ('firefox', FIREFOX)]:
+        for name, source in [('termux-x11', X11), ('firefox', FIREFOX), ('openbox', 'import time\nwhile True: time.sleep(.1)'), ('xdotool', ''), ('xclip', ''), ('import', '')]:
             target = self.binaries/name
             target.write_text('#!'+sys.executable+'\n'+source)
             target.chmod(0o700)
@@ -118,7 +119,7 @@ class BrowserTests(BridgeTestCase):
         self.assertEqual(409,self.api('POST','/v1/project/manage',dict(project_id=row['project']['id'],action='delete'))[0])
         profile=Path((self.root/'project/browser-starts').read_text().splitlines()[0])
         self.assertEqual(0o700,profile.stat().st_mode & 0o777)
-        self.assertEqual(409,self.api('POST','/v1/browser',self.payload())[0])
+        self.assertEqual(row['id'],self.api('POST','/v1/browser',self.payload())[1]['session']['id'])
         self.stop(row)
         self.assertTrue((profile/'retained-profile').exists())
         next_row=self.start()
@@ -130,8 +131,9 @@ class BrowserTests(BridgeTestCase):
         changed=dict(body,url='https://example.org')
         self.assertEqual(409,self.api('POST','/v1/browser',changed)[0])
         self.stop(row)
-        self.binaries.joinpath('firefox').unlink()
-        status,result=self.api('POST','/v1/browser',self.payload())
+        lookup=module.shutil.which
+        with patch.object(module.shutil, 'which', side_effect=lambda name: None if name == 'firefox' else lookup(name)):
+            status,result=self.api('POST','/v1/browser',self.payload())
         self.assertEqual(400,status); self.assertEqual('error_browser_setup',result['code'])
 
     def test_profile_lock_survives_other_bridge_and_only_owned_processes_stop(self):
@@ -178,7 +180,7 @@ class BrowserTests(BridgeTestCase):
         self.assertFalse((self.root/'project/browser-starts').exists())
         self.assertEqual(0,self.bridge.active_count())
 
-    def test_registered_worktree_has_separate_profile_and_browser(self):
+    def test_registered_worktree_reuses_project_window_and_profile(self):
         project=self.root/'project'
         for args in [('init',),('config','user.email','fixture@example.test'),('config','user.name','Fixture')]:
             subprocess.run(['git','-C',str(project),*args],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
@@ -189,9 +191,87 @@ class BrowserTests(BridgeTestCase):
         subprocess.run(['git','-C',str(project),'worktree','add','-b','browser-fixture',str(tree)],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         original=self.start()
         other=self.start(self.payload(worktree_path=str(tree)))
-        one=(project/'browser-starts').read_text().strip(); two=(tree/'browser-starts').read_text().strip()
-        self.assertNotEqual(one,two)
-        self.assertNotEqual(original['browser_tag'],other['browser_tag'])
-        self.stop(other)
-        self.assertEqual('running',self.bridge.sessions[original['id']].state)
+        self.assertEqual(original['id'],other['id'])
+        self.assertFalse((tree/'browser-starts').exists())
         self.stop(original)
+        next_row=self.start(self.payload(worktree_path=str(tree)))
+        self.assertEqual((project/'browser-starts').read_text().strip(),(tree/'browser-starts').read_text().strip())
+        self.stop(next_row)
+
+    def agent(self, permission='inherit'):
+        executable=self.binaries/'codex'
+        executable.write_text('#!'+sys.executable+'\n'+Path(__file__).with_name('fake_codex.py').read_text())
+        executable.chmod(0o700)
+        status,result=self.api('POST','/v1/sessions',dict(project_id=self.bridge.project['id'],agent='codex',mode='chat',new_session=True,
+            request_id=str(uuid.uuid4()),options={'permission':permission}))
+        self.assertEqual(200,status,result)
+        return self.bridge.sessions[result['session']['id']]
+
+    def tool(self, agent, action, **data):
+        return self.bridge.browser_tools.handle(dict(capability=agent.browser_key,action=action,**data))
+
+    def test_manual_handoff_blocks_capture_and_input_and_never_grants_tools_an_unlock(self):
+        agent=self.agent()
+        result=self.tool(agent,'open')
+        self.assertTrue(result['manual_login'])
+        browser=next(row for row in self.bridge.sessions.values() if isinstance(row,module.BrowserSession))
+        for action in ('screenshot','click','type','key','scroll','allow','manual'):
+            with self.assertRaises(ValueError): self.tool(agent,action,text='PRIVATE_INPUT',x=1,y=1,key='ctrl+l')
+        body=dict(project_id=agent.project['id'],session_id=browser.id)
+        self.assertEqual(401,self.api('POST','/v1/browser',dict(body,action='allow'),auth=False)[0])
+        self.assertEqual(200,self.api('POST','/v1/browser',dict(body,action='allow'))[0])
+        with patch.object(module.browser_tools,'control',return_value={'ok':True}) as control:
+            self.assertTrue(self.tool(agent,'click',x=1,y=2)['ok'])
+            control.assert_called_once()
+        self.assertEqual(200,self.api('POST','/v1/browser',dict(body,action='manual'))[0])
+        self.assertTrue(browser.browser_manual)
+        self.assertIsNone(browser.browser_owner)
+        with self.assertRaisesRegex(ValueError,'error_browser_manual'): self.tool(agent,'screenshot')
+        text=(self.state/'metadata.json').read_text()
+        self.assertNotIn(agent.browser_key,text)
+        self.assertNotIn('PRIVATE_INPUT',text)
+
+    def test_tools_use_one_agent_at_a_time_and_revoke_exited_sessions(self):
+        one=self.agent();two=self.agent()
+        browser=self.start()
+        self.api('POST','/v1/browser',dict(action='allow',project_id=one.project['id'],session_id=browser['id']))
+        with patch.object(module.browser_tools,'control',return_value={'ok':True}):
+            self.tool(one,'click',x=1,y=1)
+            with self.assertRaisesRegex(ValueError,'error_browser_busy'): self.tool(two,'click',x=1,y=1)
+            self.tool(one,'release')
+            self.tool(two,'click',x=1,y=1)
+            two.stop();two.process.wait(timeout=3)
+            with self.assertRaisesRegex(ValueError,'error_browser_control'): self.tool(two,'screenshot')
+            self.tool(one,'click',x=1,y=1)
+
+    def test_setting_default_saved_disabled_access_and_native_permissions(self):
+        self.assertTrue(self.bridge.browser_enabled)
+        agent=self.agent('read-only')
+        with self.assertRaisesRegex(ValueError,'error_browser_permission'): self.tool(agent,'open')
+        self.assertIn('bibimer-browser',agent.browser_instructions)
+        status,result=self.api('POST','/v1/browser',dict(action='configure',project_id=agent.project['id'],enabled=False))
+        self.assertEqual(200,status);self.assertFalse(result['enabled'])
+        self.assertFalse(json.loads((self.state/'metadata.json').read_text())['browser_enabled'])
+        with self.assertRaisesRegex(ValueError,'error_browser_control'): self.tool(agent,'status')
+        other=self.agent();self.assertIsNone(other.browser_key)
+
+    def test_cli_is_scoped_and_reads_only_the_managed_display(self):
+        agent=self.agent()
+        env={**os.environ,**self.bridge.browser_tools.child_environment(agent.browser_key)}
+        result=subprocess.run([str(self.bridge.browser_tools.bin/'bibimer-browser'),'status'],input='',text=True,
+                              capture_output=True,env=env,timeout=3)
+        self.assertEqual(0,result.returncode);self.assertFalse(json.loads(result.stdout)['running'])
+        env['BIBIMER_BROWSER_SESSION']='invalid'
+        result=subprocess.run([str(self.bridge.browser_tools.bin/'bibimer-browser'),'status'],input='',text=True,
+                              capture_output=True,env=env,timeout=3)
+        self.assertEqual(1,result.returncode);self.assertEqual('error_browser_control',json.loads(result.stdout)['error'])
+
+    def test_only_browser_children_clear_library_overrides_and_auth_is_private(self):
+        with patch.dict(os.environ,LD_LIBRARY_PATH='/agent/private/libs',LD_PRELOAD='/agent/private/preload'):
+            browser=self.start()
+        self.assertEqual('running',browser['state'])
+        session=self.bridge.sessions[browser['id']]
+        self.assertEqual(0o600,session.browser_authority.stat().st_mode & 0o777)
+        self.assertLessEqual(len(str(session.browser_authority).encode()),128)
+        self.assertEqual(0o700,session.browser_authority.parent.stat().st_mode & 0o777)
+        self.assertIn(b'MIT-MAGIC-COOKIE-1',session.browser_authority.read_bytes())

@@ -94,7 +94,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 Path('opencode-command.json').write_text(json.dumps(body))
                 body={**{k:v for k,v in body.items() if k in {'messageID','model','variant'}}, 'parts':[{'type':'text','text':body['arguments']}]}
             if action in {'prompt_async','command'}:
-                assert set(body)<={'messageID','parts','model','variant'}
+                assert set(body)<={'messageID','parts','model','variant','system'}
+                if os.environ.get('BIBIMER_BROWSER_INSTRUCTIONS'):
+                    assert body.get('system')==os.environ['BIBIMER_BROWSER_INSTRUCTIONS'] or action=='command'
                 Path('opencode-model.json').write_text(json.dumps({name:body[name] for name in ['model','variant'] if name in body}))
                 assert body['parts'][0]['type']=='text'
                 message=body['messageID']; text=body['parts'][0]['text']

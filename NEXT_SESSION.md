@@ -1,5 +1,29 @@
 # Bibimer 다음 세션 시작점
 
+## Firefox·Termux:X11 기본 연동 구현 (2026-10-23, 별도 워크트리·미배포)
+
+- 사용자 승인에 따라 기존 `feat/termux-x11-browser` 워크트리(`/data/data/com.termux/files/home/projects/bibimer-x11-browser`)에 구현했다. `main`의0.26.3 게시 상태를 `d3d4301`로 병합하고, 원본 작업 폴더의 미커밋 UI 수정(모델/권한 간격4px·응답 중단 버튼28px/세로2px·긴 번역 말줄임)도 복사해 보존했다. 원본 `main`에는 기능을 병합하지 않았다.
+- 설정 → **Firefox · Termux:X11**에서 에이전트 연결을 저장하고 기본은 켜짐이다. **Termux에서 준비**는 기존 RUN_COMMAND 권한 흐름으로 새 터미널에서 고정 패키지 설치와 Firefox 버전 확인을 실행한다. X11 Android 앱은 공식 릴리스 링크에서 사용자가 설치하며 명령 복사도 유지한다. 설치 완료·권한 허용을 추측하지 않는다. 새 Codex·Claude·OpenCode Chat에는 공통 `bibimer-browser` 명령 경로와 사용 안내를 자동 연결한다. PTY에는 도구 환경만 제공하고 실행 중 프로세스에 명령을 주입하지 않는다. 전역 에이전트 설정/사용자 프로젝트 AGENTS 파일은 바꾸지 않는다.
+- 첫 브라우저 요청에 일반 Firefox를 열고 같은 프로젝트의 워크트리/세션에서 창과0700 프로필을 공유한다. 다른 프로젝트는 분리한다. 기존 실험 프로필·저장소 밖 배포용 실제 로그인 프로필을 이동/복사하지 않는다. 새 창은 직접 로그인 모드로 캡처·입력을 차단하고 앱의 **로그인 완료 · 에이전트 제어 허용**으로만 해제한다. **직접 로그인**으로 돌아가면 진행 중 조작을 마친 뒤 차단·임시 캡처/소유 클립보드 정리를 수행한다. 연결 끄기는 기존 도구 접근도 막되 창/세션은 임의 종료하지 않는다.
+- `browser_tools.py`의 비공개 Unix socket·실행 세션별 메모리 capability로 `open/status/screenshot/click/type/key/scroll/release`를 제공한다. 전용 display/활성 Firefox 창을 확인하고 현재 화면 크기로 좌표를 검증한다. 한 에이전트씩 창을 점유하며 read-only/plan은 입력을 거절한다. 키 입력·원본 URL·페이지·쿠키·capability를 일반 로그/브리지 메타데이터에 저장하지 않는다. 캡처는 에이전트별 최신0600 임시 파일이며 수동 모드/연결 끄기/서비스 종료에 정리한다. 브라우저 진단 출력은 폐기한다.
+- 실기기에서 발견한 세 문제를 수정했다. Firefox 계열 자식에서만 에이전트의 `LD_LIBRARY_PATH`/`LD_PRELOAD`를 제거한다. Xorg는128바이트 넘는 인자를 거절하므로 인증 cookie 파일을 짧은0700 임시 폴더/0600 파일로 두고 종료 후 삭제한다. Firefox의 클립보드 TARGETS 조회 때문에 xclip1회 모드는 한글 붙여넣기가 비었으므로, 소유한 foreground xclip을 유지하고 수동 모드/종료에만 해당 프로세스를 정리한다. GTK 파일 선택창 조작 시 부모를 재활성화하지 않는다. X11은 인증 cookie·TCP 비활성화·UUID tag·소유 display/process lock을 사용한다. VNC/ADB/브라우저 디버깅 포트/자동화 플래그·UA 변조는 없다.
+- 초기 설치와 브리지 유지보수 payload에 새 모듈을 포함하고, 유지보수 사전검증도 전체 payload를 임시 폴더에 구성한 뒤 import하도록 수정했다. 종료·보관·목록·유지보수 대상 및 재시작 뒤 `lost`/출력 비복원 규칙을 유지한다. 앱 설정/설치/로그인 상태·오류는 **757키×10언어**다. 구형 브리지는 새 `browser_tools_x11` 기능을 제공하지 않으므로 UI에서 구분한다.
+- 검증: 전체 브리지 **204개 통과**(`.tools/browser-all-final.log`,180.425초), 최종 조작/수명주기 **13개 재통과**(`.tools/browser-controls-final.log`), Python scripts **39개 통과**(`.tools/browser-source-tests-final.log`), 브라우저 설치 명령/권한/allowlist 확장 후 native action **5개 통과**(`.tools/browser-native-actions-final.log`). 전체 격리 Chromium `smoke_ui.cjs`도 통과했다(`.tools/browser-source-ui-complete.log`): 기본 설정 저장·끄기/켜기·설치 요청·10언어320px·수동 로그인/제어 전환과 기존 Queue/Steer·승인·가져오기·재접속·PTY·초안 유지/추가 모델 입력 없음. 설치 모듈 분리와 네이티브 instruction 필드를 반영하기 전의 최초 검사 실패/중단은 `.tools/browser-{all-new,integration-final,source-ui-final}.log`에 별도 보존하며 최종 성공과 구분한다.
+- **같은 폰의 실제 Termux:X11·Firefox158.0.1**에서 새 임시 프로필/로컬 시험 페이지로 수동 모드 차단, 화면 캡처, 한글 입력·실제 클릭 제출, 스크롤, 파일 선택창 열기·Escape, 수동 모드 복귀 뒤 캡처 삭제를 통과했다. 재현 명령 `python scripts/smoke_browser_native.py`, 결과 `.tools/browser-native-{final.log,result.json}`, 화면 `dist/screenshots/browser-native-local.png`. 한국어320px 설치 dialog와 실제 한글 입력 화면도 시각 확인했다. 시험 창/프로세스만 정리하고 기존 배포용 X11 창으로 돌아갔다. 실제 계정·모델 요청·기존 Firefox 프로필/브리지/에이전트 재시작은 하지 않았다.
+- **APK/AAB/iOS 빌드·설치·배포·버전 변경·운영 브리지 교체·main 기능 병합/원격 push는 하지 않았다.** 다음 명시적 빌드 때 새 앱과 내장 브리지 버전을 구분하고 설치/유지보수 payload를 함께 반영해야 한다. 이전 배포 작업에서의 사용자 Google 로그인/Play 게시 성공은 이 새 APK의 전체 설치 흐름 검증이 아니다. 새 설치·Android WebView→설치/창 연결·실제 에이전트 모델의 도구 선택/이미지 읽기·Google/패스키/2단계 인증·장시간/절전·다중 프로젝트의 실제 동시 창은 후속 검증이다.
+
+## 응답 중단 버튼 세로 여백 축소 (2026-10-23, 미배포)
+
+- 응답 중단 버튼이 두껍게 보인다는 피드백으로 세로 패딩을 **4→2px**, 기본 최소 높이를 **32→28px**로 줄였다. 1px 테두리·붉은 글자·비활성 표시와 기존 중단 동작을 유지한다. 작은 높이 화면에서도28px로 맞춘다.
+- 실제 HTML/CSS/번역 소스의 격리 Chromium에서 320/393px ×460/780px ×10언어 ×활성/비활성 **80조합**으로28px 높이·2px 패딩·테두리/색/흐림·정보 버튼과의 가운데 정렬·화면 경계를 확인했다. 초회에320px 포르투갈어/스페인어의 긴 문구가 화면 밖으로 밀려 나가 response-actions의 축소를 허용하고 중단 문구에 말줄임을 적용했다. 정보 아이콘 너비와 접근성용 전체 버튼 문구를 유지한 최종 검사에서80조합 모두 통과했다. `.tools/interrupt-layout-check.cjs`, 시각 확인한 `dist/screenshots/interrupt-compact-393-ko.png`, diff 검사 통과.
+- 공유 CSS·UI 문서의 소스 반영이며 APK/AAB/iOS 빌드·설치·배포·버전 변경·운영 브리지/사용자 세션/인증 브라우저 재시작은 하지 않았다. 실제 응답 중단 요청을 보내거나 전체 브리지 회귀를 실행하지 않았다. 실제 내부 배포본은 아래0.26.3(47)이다.
+
+## 모델/권한 섹션 간격 축소 (2026-10-23, 미배포)
+
+- 내부0.26.3의 간격이 크다는 사용자 피드백으로 모델 설정과 권한 설정 섹션 사이 간격을 **8→4px**로 줄였다. 공유 CSS의 권한 섹션 상단 마진 한 값을 조정했으며 셀렉터 높이/패딩은 유지한다. UI 문서의 현재 간격도4px로 갱신했다.
+- 격리 Chromium의 실제 HTML/CSS/선택 UI/번역 소스로 320/393/600px ×10언어 ×10권한 ×Fast/지표 표시 상태 **1,200조합**이 통과했다. 섹션 간격4px·셀렉터32px·화살표8px·겹침/넘침 없음과 실제 시트에서 권한 선택 변경을 확인했다(`.tools/permission-layout-check.cjs`). `dist/screenshots/permission-compact-393-ko.png`를 시각 확인하고 diff 검사를 통과했다.
+- 소스 반영이며 APK/AAB/iOS 빌드·설치·배포·버전 변경·운영 브리지/사용자 세션/인증 브라우저 재시작은 하지 않았다. 실제 내부 배포본은 아래0.26.3(47)이다.
+
 ## Termux:X11 브라우저 수동 로그인 실험 (2026-10-21, 별도 워크트리·미배포)
 
 - 2026-10-22 레포 싱크: 원격 `main`의 내부 테스트0.26.0 게시 완료·문서 갱신3개 커밋(`3217bbb`까지)을 반영했다. 브라우저 실험은 별도 브랜치로 유지하며 `main`에 병합하지 않았다. 공통 변경은 문서/출시 정보뿐으로 앱·브리지 실행 소스 변경이나 빌드·설치·운영 재시작은 없고, 충돌 기록을 양쪽 모두 보존한 뒤 diff/출시 JSON 구문만 확인했다.

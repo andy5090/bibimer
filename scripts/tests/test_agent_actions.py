@@ -131,6 +131,14 @@ public class AgentActionsTest {
   for(String agent:new String[]{null,"","gemini; false","shell"})runner.request(agent,"login","en");
   for(String agent:new String[]{"codex","opencode","gemini"})runner.request(agent,"repair","en");
   runner.request("gemini","status","en");check(a.starts==before);
+  SystemClock.now+=2000;int browserBefore=a.starts;
+  check(AgentSetup.supports("browser","install"));
+  check(!AgentSetup.supports("browser","login") && !AgentSetup.supports("browser","install; false"));
+  runner.request("browser","install","ko");check(a.starts==browserBefore+1 && owner[0].equals("browser"));
+  String browserScript=((String[])a.command.extras.get("com.termux.RUN_COMMAND_ARGUMENTS"))[3];
+  check(browserScript.contains("termux-x11-nightly firefox openbox xdotool xclip imagemagick libc++"));
+  check(browserScript.contains("env -u LD_LIBRARY_PATH -u LD_PRELOAD firefox --version"));
+  check(!browserScript.contains("pkill") && !browserScript.contains("bibimer-bridge restart"));
   System.out.println("Agent native actions: allowlist, explicit permission replay, isolation, lifecycle, errors and duplicate taps passed");
  }
 }'''

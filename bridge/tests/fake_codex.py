@@ -48,6 +48,8 @@ def finish(status="completed"):
 for line in sys.stdin:
     message = json.loads(line)
     method, params = message.get("method"), message.get("params", {})
+    if method in {"thread/start", "thread/resume", "thread/fork"} and os.environ.get("BIBIMER_BROWSER_INSTRUCTIONS"):
+        assert params.get("developerInstructions") == os.environ["BIBIMER_BROWSER_INSTRUCTIONS"]
     if method in {"thread/start", "thread/resume", "thread/fork", "turn/start"}:
         with Path("codex-options.jsonl").open("a") as capture:
             capture.write(json.dumps({"method": method, **{key: params[key] for key in ("sandbox", "sandboxPolicy", "approvalPolicy", "serviceTier", "config", "approvalsReviewer", "model", "effort") if key in params}}) + "\n")
@@ -97,7 +99,7 @@ for line in sys.stdin:
         assert params["includeTurns"] is False
         emit({"id": message["id"], "result": {"thread": saved(params["threadId"])}})
     elif method in {"thread/resume", "thread/fork"}:
-        assert set(params) <= {"threadId", "excludeTurns", "sandbox", "approvalPolicy", "approvalsReviewer", "serviceTier", "config"} and params["excludeTurns"] is True
+        assert set(params) <= {"threadId", "excludeTurns", "sandbox", "approvalPolicy", "approvalsReviewer", "serviceTier", "config", "developerInstructions"} and params["excludeTurns"] is True
         if params["threadId"] == "import-failure":
             emit({"id": message["id"], "error": {"code": -32603, "message": "Do not expose private failure detail"}})
             continue

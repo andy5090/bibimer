@@ -349,6 +349,8 @@ class Adapter:
                 try:
                     options = params.get('bibimerOptions', {})
                     body = {'messageID': self.message_id, 'parts': [{'type': 'text', 'text': params['input'][0]['text']}]}
+                    if os.environ.get('BIBIMER_BROWSER_INSTRUCTIONS'):
+                        body['system'] = os.environ['BIBIMER_BROWSER_INSTRUCTIONS']
                     if options.get('model'):
                         provider, model = options['model'].split('/', 1)
                         body['model'] = {'providerID': provider, 'modelID': model}
@@ -356,6 +358,7 @@ class Adapter:
                         body['variant'] = options['effort']
                     if params.get('bibimerCommand'):
                         body.pop('parts')
+                        body.pop('system', None)
                         body.update(params['bibimerCommand'])
                         if options.get('model'):
                             body['model'] = options['model']

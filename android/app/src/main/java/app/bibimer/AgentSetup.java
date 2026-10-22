@@ -6,6 +6,7 @@ import java.io.InputStream;
 /** Allowlisted CLI operations; never accepts executable paths, prompts, or credentials. */
 final class AgentSetup {
     static boolean supports(String agent, String action) {
+        if ("browser".equals(agent)) return "install".equals(action);
         if ("claude".equals(agent)) return ClaudeSetup.supports(action);
         if ("codex".equals(agent) || "opencode".equals(agent))
             return "login".equals(action) || "status".equals(action) || "version".equals(action);
@@ -14,6 +15,7 @@ final class AgentSetup {
     }
 
     static String label(String agent) {
+        if ("browser".equals(agent)) return "Firefox";
         if ("codex".equals(agent)) return "Codex";
         if ("claude".equals(agent)) return "Claude";
         if ("opencode".equals(agent)) return "OpenCode";
@@ -27,6 +29,9 @@ final class AgentSetup {
 
     static String action(String agent, String action, InputStream input, String language) throws IOException {
         if (!supports(agent, action)) throw new IOException("Unknown agent action");
+        if ("browser".equals(agent)) return ClaudeSetup.terminal(
+            "set -e\npkg install -y x11-repo\npkg install -y termux-x11-nightly firefox openbox xdotool xclip imagemagick libc++\n" +
+            "env -u LD_LIBRARY_PATH -u LD_PRELOAD firefox --version\n", language);
         if ("claude".equals(agent)) return ClaudeSetup.action(action, input, language);
         boolean korean = "ko".equals(language);
         String missing = "printf '%s\\n' '" + label(agent) +

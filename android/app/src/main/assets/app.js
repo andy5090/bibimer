@@ -30,7 +30,7 @@
   let canResponseNotifications = false, notificationNavigating = false, notificationRetry, pendingNotification;
   let canDragProjects = false, canOrderProjects = false, canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   let canInspect = false, canOpenFiles = false, openingFile = false;
-  let canBrowser = false, browserState = null;
+  let canBrowser = false, browserState = null, browserEnabled = true;
   const worktrees = {};
   const worktreeChecks = new Map();
   let workspaceDetails = null;
@@ -60,7 +60,7 @@
       select.id === "project-switch" ? knownProjects.find(item => item.id === option.value)?.path || "" :
       select.id === "enter-behavior" ? t("enter_" + option.value + "_hint") :
       select.id === "context-display" ? t("context_display_" + option.value + "_hint") : option.dataset.description || "",
-    context: select => ["language", "enter-behavior", "context-display"].includes(select.id) ? "app" :
+    context: select => ["language", "enter-behavior", "context-display", "browser-agent-tools"].includes(select.id) ? "app" :
       select.id === "project-switch" ? "projects/" + projectKey() :
       select.id.startsWith("worktree-") ? [instance, select.dataset.context].join("/") :
       select.id.startsWith("import-") ? [projectKey(), importProject, $("import-agent").value].join("/") :
@@ -878,18 +878,27 @@
   }
   function renderBrowser() {
     const supported = canBrowser && !demo && !!native.openBrowserWindow;
+    $("browser-preference").hidden = demo || !native.openBrowserWindow;
+    $("browser-agent-tools").disabled = !supported || !online || paused || !project;
+    $("browser-agent-tools").value = browserEnabled ? "on" : "off";
+    $("browser-settings-open").disabled = !supported || !online || paused || !project;
     $("browser-open").hidden = !supported;
     $("browser-open").disabled = !online || paused || !project || switchingProject;
+    pickers.sync();
     const state = browserState;
     if (!state) return;
     const valid = state.key === browserKey() && online && !paused && !switchingProject;
-    const installed = environment().termuxX11Installed === true && state.installed?.["termux-x11"] && state.installed?.firefox;
+    const installed = environment().termuxX11Installed === true && state.installed && Object.values(state.installed).every(Boolean);
     const running = state.session && ["running", "stopping"].includes(state.session.state);
     $("browser-workspace").textContent = state.path;
-    $("browser-status").textContent = t(state.busy ? "browser_starting" : state.loading ? "inspect_loading" : running ? "browser_running" : installed ? "browser_ready" : "error_browser_setup");
+    $("browser-status").textContent = t(state.busy ? "browser_starting" : state.loading ? "inspect_loading" : running ? (state.session.browser_manual !== false ? "browser_manual_status" : browserEnabled ? "browser_control_status" : "browser_tools_off") : installed ? "browser_ready" : "error_browser_setup");
     $("browser-start").disabled = !valid || !installed || state.busy || state.loading || !!running;
     $("browser-url").disabled = !valid || state.busy || !!running;
     $("browser-start").textContent = t(state.busy ? "browser_starting" : "browser_start");
+    for (const [id, show] of [["browser-manual", running && state.session.browser_manual === false], ["browser-allow", running && state.session.browser_manual !== false]]) {
+      $(id).hidden = !show;
+      $(id).disabled = !valid || state.busy || state.loading || state.session?.state !== "running";
+    }
     $("browser-view").hidden = !running;
     $("browser-view").disabled = !valid || state.session?.state !== "running";
     $("browser-refresh").disabled = !valid || state.busy || state.loading;
@@ -902,6 +911,7 @@
       const result = await api("POST", "/v1/browser", {action:"status", project_id:state.project, worktree_path:state.path});
       if (browserState !== state || state.key !== browserKey()) return;
       state.installed = result.installed; state.session = result.session;
+      browserEnabled = result.enabled !== false;
     } catch (error) { if (browserState === state) state.error = error.key || "error_request_failed"; }
     finally { if (browserState === state) { state.loading = false; renderBrowser(); } }
   }
@@ -916,11 +926,37 @@
     if (!$("browser-dialog").open) $("browser-dialog").showModal();
     if (!browserState.busy) await browserStatus(browserState);
   }
+  $("browser-settings-open").addEventListener("click", () => void openBrowser());
+  for (const button of document.querySelectorAll("[data-browser-guide]")) button.addEventListener("click", () => native.openLink("https://github.com/termux/termux-x11/releases/tag/nightly"));
+  $("browser-agent-tools").addEventListener("change", async () => {
+    const enabled = $("browser-agent-tools").value === "on";
+    $("browser-agent-tools").disabled = true;
+    $("browser-preference-error").hidden = true;
+    try {
+      const result = await api("POST", "/v1/browser", {action:"configure", project_id:project.id, enabled});
+      browserEnabled = result.enabled === true;
+    } catch (error) {
+      $("browser-preference-error").textContent = t(error.key || "error_request_failed");
+      $("browser-preference-error").hidden = false;
+    } finally { renderBrowser(); }
+  });
+  for (const action of ["manual", "allow"]) $("browser-" + action).addEventListener("click", async () => {
+    const state = browserState;
+    if (!state || state.key !== browserKey() || state.busy || !state.session) return;
+    state.busy = true; state.error = null; renderBrowser();
+    try {
+      const result = await api("POST", "/v1/browser", {action, project_id:state.project, worktree_path:state.path, session_id:state.session.id});
+      if (browserState !== state) return;
+      state.session = result.session; cacheSession(result.session);
+      if (action === "manual" && state.key === browserKey() && online && !paused && $("browser-dialog").open) native.openBrowserWindow(result.session.browser_tag);
+    } catch (error) { if (browserState === state) state.error = error.key || "error_browser_control"; }
+    finally { if (browserState === state) { state.busy = false; renderBrowser(); } }
+  });
   $("browser-open").addEventListener("click", () => void openBrowser());
   $("browser-close").addEventListener("click", () => $("browser-dialog").close());
   $("browser-refresh").addEventListener("click", () => { if (browserState && !browserState.busy) void browserStatus(browserState); });
   $("browser-guide").addEventListener("click", () => native.openLink("https://github.com/termux/termux-x11/releases/tag/nightly"));
-  $("browser-copy").addEventListener("click", () => native.copyText("pkg install x11-repo && pkg install termux-x11-nightly firefox"));
+  $("browser-copy").addEventListener("click", () => native.copyText(document.querySelector(".browser-command").textContent));
   $("browser-view").addEventListener("click", () => {
     if (browserState?.key === browserKey() && online && !paused && browserState.session?.state === "running") native.openBrowserWindow(browserState.session.browser_tag);
   });
@@ -1257,7 +1293,8 @@
       canOrderProjects = health.features?.includes("project_ordering") === true;
       canDragProjects = health.features?.includes("project_drag_ordering") === true;
       canInspect = health.features?.includes("workspace_inspector") === true;
-      canBrowser = health.features?.includes("browser_x11") === true;
+      canBrowser = health.features?.includes("browser_tools_x11") === true;
+      browserEnabled = health.browser_enabled !== false;
       canOpenFiles = health.features?.includes("file_links") === true;
       canResponseNotifications = health.features?.includes("response_notifications") === true;
       if (JSON.stringify(knownAgents) !== JSON.stringify(health.agents)) {
@@ -1993,8 +2030,9 @@
   for (const button of document.querySelectorAll("[data-command]")) button.addEventListener("click", () => native.copyCommand(button.dataset.command));
   for (const button of document.querySelectorAll("[data-agent-copy]")) button.addEventListener("click", () => native.copyText($(button.dataset.agentCopy).textContent));
   window.BibimerAgentActionStatus = (agent, code) => {
-    if (demo || !["codex", "claude", "opencode", "gemini"].includes(agent) || !["agent_action_sent", "quick_permission", "quick_termux_missing", "quick_termux_old", "quick_start_failed"].includes(code)) return;
+    if (demo || !["codex", "claude", "opencode", "gemini", "browser"].includes(agent) || !["agent_action_sent", "quick_permission", "quick_termux_missing", "quick_termux_old", "quick_start_failed"].includes(code)) return;
     if (agent === "opencode" && code === "agent_action_sent") code = "agent_opencode_action_sent";
+    if (agent === "browser" && code === "agent_action_sent") code = "browser_install_sent";
     const status = $("agent-action-status-" + agent);
     status.dataset.i18n = code; status.textContent = t(code); status.hidden = false;
   };

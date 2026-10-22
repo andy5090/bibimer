@@ -250,6 +250,14 @@
       <p id="enter-behavior-hint" class="hint"></p>
       <p id="enter-modifiers-hint" class="hint" data-i18n="enter_modifiers_hint">With Enter set to New line, Ctrl+Enter sends or queues your message; with Enter set to Send, it inserts a new line. Shift+Enter always inserts a new line. Applies to the message box in Chat and Terminal.</p>
     </section>
+    <section id="browser-preference" class="card preference-card" hidden>
+      <h2 data-i18n="browser_title">Firefox · Termux:X11</h2>
+      <div class="preference-row"><label for="browser-agent-tools" data-i18n="browser_tools_label">Agent connection</label><select id="browser-agent-tools" aria-describedby="browser-default-hint"><option value="on" data-i18n="browser_tools_on">Automatic</option><option value="off" data-i18n="browser_tools_off">Off</option></select></div>
+      <p id="browser-default-hint" class="hint" data-i18n="browser_default_hint"></p>
+      <div class="button-row"><button type="button" data-agent="browser" data-agent-action="install" class="secondary" data-i18n="browser_prepare">Prepare in Termux</button><button id="browser-settings-open" type="button" class="secondary" data-i18n="browser_view">Open browser window</button></div>
+      <button type="button" data-browser-guide class="quiet" data-i18n="browser_get_x11">Termux:X11 releases</button>
+      <p id="browser-preference-error" class="hint danger-text" role="status" hidden></p>
+    </section>
     <section class="card preference-card">
       <div class="preference-row"><label for="context-display" data-i18n="context_display_label">Context display</label>
         <select id="context-display" aria-describedby="context-display-hint"><option value="used" data-i18n="context_display_used">Used</option><option value="remaining" data-i18n="context_display_remaining">Remaining</option></select>
@@ -291,8 +299,10 @@
     <p id="browser-status" class="hint" role="status"></p>
     <form id="browser-form"><label for="browser-url" data-i18n="browser_address">Website address (optional)</label><input id="browser-url" type="url" inputmode="url" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://…"><button id="browser-start" class="primary full" type="submit" data-i18n="browser_start">Start browser</button></form>
     <button id="browser-view" class="secondary full" type="button" data-i18n="browser_view" hidden>Open browser window</button>
+    <button id="browser-manual" class="secondary full" type="button" data-i18n="browser_manual" hidden>Sign in yourself</button>
+    <button id="browser-allow" class="primary full" type="button" data-i18n="browser_allow" hidden>Login complete · allow agent control</button>
     <button id="browser-refresh" class="quiet full" type="button" data-i18n="commands_refresh">Refresh</button>
-    <details id="browser-setup"><summary data-i18n="browser_setup">Install browser tools</summary><p class="hint" data-i18n="browser_install_hint">Install the latest Termux:X11 Android app from its official releases, then run this command in Termux. Installation is manual.</p><code class="browser-command">pkg install x11-repo &amp;&amp; pkg install termux-x11-nightly firefox</code><button id="browser-copy" class="secondary full" type="button" data-i18n="copy">Copy</button><button id="browser-guide" class="quiet full" type="button" data-i18n="browser_get_x11">Termux:X11 releases</button></details>
+    <details id="browser-setup"><summary data-i18n="browser_setup">Install browser tools</summary><p class="hint" data-i18n="browser_install_hint">Install the latest Termux:X11 Android app from its official releases, then run this command in Termux. Installation is manual.</p><button class="secondary full" type="button" data-agent="browser" data-agent-action="install" data-i18n="browser_prepare">Prepare in Termux</button><p id="agent-action-status-browser" class="hint" role="status" hidden></p><code class="browser-command">pkg install -y x11-repo &amp;&amp; pkg install -y termux-x11-nightly firefox openbox xdotool xclip imagemagick libc++</code><button id="browser-copy" class="secondary full" type="button" data-i18n="copy">Copy</button><button id="browser-guide" class="quiet full" type="button" data-i18n="browser_get_x11">Termux:X11 releases</button></details>
     <p class="hint" data-i18n="browser_privacy">Login stays in this workspace’s private Firefox profile. Leaving this screen keeps the browser running; end it from session management. Profiles are kept after stopping.</p>
     <p class="hint" data-i18n="browser_auth">Google may still reject a login. This experiment does not bypass authentication restrictions or provide agent browser control.</p>
     <p id="browser-error" class="hint danger-text" role="alert" hidden></p>

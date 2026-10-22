@@ -28,7 +28,8 @@ class MaintenanceTests(test_restart.RestartTests):
         self.source = Path(module.__file__).read_bytes()
         self.old = self.source.replace(f'VERSION = "{module.VERSION}"'.encode(), b'VERSION = "0.15.0"')
         (self.folder / 'bibimer_bridge.py').write_bytes(self.old)
-        self.payload = self.bundle({'bibimer_bridge.py': self.source, 'provider_opencode.py': b'# adapter\n'})
+        (self.folder / 'browser_tools.py').write_bytes(Path(module.__file__).with_name('browser_tools.py').read_bytes())
+        self.payload = self.bundle({'bibimer_bridge.py': self.source, 'provider_opencode.py': b'# adapter\n', 'browser_tools.py': Path(module.__file__).with_name('browser_tools.py').read_bytes()})
 
     @staticmethod
     def bundle(files):
@@ -134,7 +135,7 @@ class MaintenanceTests(test_restart.RestartTests):
                                      b'if __name__ == "__main__":\n    sys.exit(9)\n    try:')
         token = (self.state / 'token.json').read_bytes()
         with self.assertRaises(maintenance.MaintenanceError):
-            self.run_maintenance(payload=self.bundle({'bibimer_bridge.py': broken, 'provider_opencode.py': b'# new adapter\n'}))
+            self.run_maintenance(payload=self.bundle({'bibimer_bridge.py': broken, 'provider_opencode.py': b'# new adapter\n', 'browser_tools.py': Path(module.__file__).with_name('browser_tools.py').read_bytes()}))
         deadline = time.monotonic() + 6
         while time.monotonic() < deadline:
             health = module.bridge_health(self.state, self.port)

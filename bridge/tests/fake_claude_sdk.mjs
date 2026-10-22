@@ -26,6 +26,7 @@ export function query({prompt,options}) {
       {value:'haiku',displayName:'Test Haiku',supportsEffort:false}],
     close:()=>{}
   };
+  if(process.env.BIBIMER_BROWSER_INSTRUCTIONS) assert.equal(options.systemPrompt?.append,process.env.BIBIMER_BROWSER_INSTRUCTIONS);
   assert.ok([undefined,'default','acceptEdits','plan','bypassPermissions'].includes(options.permissionMode));
   assert.equal(options.allowDangerouslySkipPermissions,options.permissionMode==='bypassPermissions'?true:undefined);
   writeFileSync('claude-options.json',JSON.stringify({permissionMode:options.permissionMode,allowDangerouslySkipPermissions:options.allowDangerouslySkipPermissions,model:options.model,effort:options.effort}));

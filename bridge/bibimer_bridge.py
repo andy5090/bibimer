@@ -33,6 +33,10 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+import importlib.util
+_browser_spec = importlib.util.spec_from_file_location("bibimer_browser_tools", Path(__file__).with_name("browser_tools.py"))
+browser_tools = importlib.util.module_from_spec(_browser_spec)
+_browser_spec.loader.exec_module(browser_tools)
 
 VERSION = "0.19.0"
 PORT = 8765
@@ -41,6 +45,9 @@ ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
+    "error_browser_manual": "Finish manual login in Bibimer before allowing agent control.",
+    "error_browser_control": "Could not control this browser. Open Termux:X11 and try again.",
+    "error_browser_permission": "This session permission mode does not allow browser input.",
     "error_browser_url": "Enter an HTTP or HTTPS address without embedded credentials.",
     "error_browser_setup": "Install the latest Termux:X11 app, termux-x11-nightly and Firefox in Termux first.",
     "error_browser_start": "The browser could not start. Check Termux:X11 and Firefox in Termux.",
@@ -369,7 +376,7 @@ def terminal_command(argv, agent, options):
 
 
 class Session:
-    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, options=None):
+    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, options=None, browser_env=None):
         self.id = str(uuid.uuid4())
         self.launch_id = launch_id
         self.project, self.agent = project.copy(), agent
@@ -389,6 +396,7 @@ class Session:
         try:
             fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
             env = launch_environment(agent, self.options)
+            env.update(browser_env or {})
             env.update(TERM="xterm-256color", COLORTERM="truecolor")
             # Avoid preexec_fn in the multithreaded HTTP server. The small child
             # entry point claims its controlling terminal before exec'ing the CLI.
@@ -700,13 +708,33 @@ class BrowserSession(Session):
     pages, cookies and keyboard input never become PTY output or metadata.
     """
     def __init__(self, project, root, url, launch_id, changed):
+        self.browser_manual = True
+        self.browser_owner = None
+        self.browser_control_lock = threading.Lock()
         self.browser_digest = hashlib.sha256(url.encode()).hexdigest()
         self.browser_tag = "bibimer-" + launch_id
-        profile_key = hashlib.sha256(str(Path(project["path"]).resolve()).encode()).hexdigest()
+        profile_key = hashlib.sha256(project["id"].encode()).hexdigest()
         profile = private_dir(private_dir(root / "browser-profiles") / profile_key)
         argv = [sys.executable, str(Path(__file__).resolve()), "_browser", str(profile),
                 str(private_dir(Path(tempfile.gettempdir()) / "bibimer-x11-displays")), self.browser_tag, url]
-        super().__init__(project, "shell", argv, 80, 24, launch_id, changed)
+        self.id, self.launch_id = str(uuid.uuid4()), launch_id
+        self.project, self.agent = project.copy(), "shell"
+        self.options = agent_options("shell")
+        self.cols, self.rows = 80, 24
+        self.state, self.exit_code = "running", None
+        self.started_at = time.time()
+        self.buffer, self.offset = bytearray(), 0
+        self.condition = threading.Condition(threading.RLock())
+        self.io_lock = threading.Lock()
+        self.inputs, self.changed = collections.OrderedDict(), changed
+        # A GUI worker needs no controlling PTY. Keep readiness on a private pipe,
+        # separate from every agent terminal and from Android terminal diagnostics.
+        self.process = subprocess.Popen(argv, cwd=project["path"], env=browser_tools.environment(),
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            start_new_session=True, close_fds=True)
+        self.master = os.dup(self.process.stdout.fileno())
+        self.process.stdout.close()
+        os.set_blocking(self.master, False)
         try:
             end, raw = time.monotonic() + 8, b""
             while time.monotonic() < end:
@@ -718,6 +746,7 @@ class BrowserSession(Session):
                         result = json.loads(raw.split(b"\n", 1)[0])
                         if result.get("ready") is True:
                             self.browser_display = result["display"]
+                            self.browser_authority = Path(result["authority"])
                             return
                         if result.get("code") == "error_browser_busy":
                             raise Problem(409, "error_browser_busy")
@@ -736,8 +765,16 @@ class BrowserSession(Session):
                     os.close(self.master)
 
     def snapshot(self):
-        return dict(super().snapshot(), kind="browser", browser_tag=self.browser_tag,
+        return dict(super().snapshot(), kind="browser", browser_tag=self.browser_tag, browser_manual=self.browser_manual,
                     browser_digest=self.browser_digest, display_title="Firefox · Termux:X11")
+
+    def _read(self):
+        try:
+            while self.process.poll() is None:
+                if select.select([self.master], [], [], .2)[0] and not os.read(self.master, 65536):
+                    return
+        except (OSError, ValueError):
+            return
 
     def write(self, data, key):
         raise Problem(400, "error_browser_input")
@@ -745,7 +782,16 @@ class BrowserSession(Session):
     def resize(self, cols, rows):
         pass
 
+    def _watch(self):
+        try:
+            super()._watch()
+        finally:
+            with self.browser_control_lock:
+                browser_tools.clear_clipboard(self)
+
     def _terminate(self):
+        with self.browser_control_lock:
+            browser_tools.clear_clipboard(self)
         # Let the worker close Firefox before its X server. The inherited watcher
         # still collects any remaining members of this owned POSIX session.
         with contextlib.suppress(ProcessLookupError):
@@ -760,6 +806,7 @@ def browser_worker(profile, displays, tag, url):
     # Called only in an owned session. No shell, credentials, remote debugging,
     # automation flags, user agent changes, profile import or global process kill.
     processes, locks = [], []
+    authority_dir = None
     def report(**value):
         print(json.dumps(value), flush=True)
     def stop(*_):
@@ -792,11 +839,20 @@ def browser_worker(profile, displays, tag, url):
         if display is None:
             report(code="error_browser_start")
             return
-        env = dict(os.environ, DISPLAY=":" + str(display), GDK_BACKEND="x11", MOZ_ENABLE_WAYLAND="0")
+        env = browser_tools.environment()
+        env["DISPLAY"] = ":" + str(display)
+        # Xorg rejects command-line arguments over 128 bytes. Profiles can live
+        # under long state paths; keep its ephemeral auth file in a short private
+        # directory instead of passing the profile path to -auth.
+        authority_dir = Path(tempfile.mkdtemp(prefix="bba-"))
+        authority = authority_dir / "a"
+        cookie = secrets.token_bytes(16)
+        browser_tools.authority(authority, display, cookie)
+        env["XAUTHORITY"] = str(authority)
         # Do not inherit a user's X startup script or diagnostic capture setting.
         for key in ("TERMUX_X11_XSTARTUP", "TERMUX_X11_DEBUG", "MOZ_LOG", "MOZ_LOG_FILE"):
             env.pop(key, None)
-        x11 = subprocess.Popen([shutil.which("termux-x11"), env["DISPLAY"], "-nolisten", "tcp", "-tag", tag],
+        x11 = subprocess.Popen([shutil.which("termux-x11"), env["DISPLAY"], "-nolisten", "tcp", "-auth", str(authority), "-tag", tag],
             env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
         processes.append(x11)
         deadline = time.monotonic() + 5
@@ -806,9 +862,9 @@ def browser_worker(profile, displays, tag, url):
                 with socket.socket(socket.AF_UNIX) as connection:
                     connection.settimeout(.15)
                     connection.connect(str(tmp / ".X11-unix" / ("X" + str(display))))
-                    # X11 setup request with no credentials; readiness requires
-                    # an actual successful X protocol reply, not socket presence.
-                    connection.sendall(struct.pack("<BBHHHHH", ord("l"), 0, 11, 0, 0, 0, 0))
+                    name = b"MIT-MAGIC-COOKIE-1"
+                    connection.sendall(struct.pack("<BBHHHHH", ord("l"), 0, 11, 0, len(name), len(cookie), 0)
+                        + name + b"\0" * (-len(name) % 4) + cookie)
                     ready = connection.recv(8)[:1] == b"\x01"
                 if ready:
                     break
@@ -816,17 +872,20 @@ def browser_worker(profile, displays, tag, url):
                 pass
             time.sleep(.05)
         if not ready:
-            report(code="error_browser_start")
+            report(code="error_browser_start", phase="x11", display=display, exit_code=x11.poll(), socket_ready=(tmp / ".X11-unix" / ("X" + str(display))).exists())
             return
-        firefox = subprocess.Popen([shutil.which("firefox"), "--no-remote", "--profile", profile, "--new-window", url],
+        wm = subprocess.Popen([shutil.which("openbox"), "--sm-disable"], env=env, stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
+        processes.append(wm)
+        firefox = subprocess.Popen([shutil.which("firefox"), "--no-remote", "--new-instance", "--profile", profile, "--new-window", url],
             env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
         processes.append(firefox)
         time.sleep(.2)
-        if firefox.poll() is not None or x11.poll() is not None:
-            report(code="error_browser_start")
+        if firefox.poll() is not None or x11.poll() is not None or wm.poll() is not None:
+            report(code="error_browser_start", phase="firefox" if firefox.poll() is not None else "window_manager" if wm.poll() is not None else "x11")
             return
-        report(ready=True, display=display)
-        while firefox.poll() is None and x11.poll() is None:
+        report(ready=True, display=display, authority=str(authority))
+        while firefox.poll() is None and x11.poll() is None and wm.poll() is None:
             time.sleep(.2)
     except (OSError, TypeError, ValueError):
         report(code="error_browser_start")
@@ -841,6 +900,8 @@ def browser_worker(profile, displays, tag, url):
                 process.wait()
         for lock in locks:
             lock.close()
+        if authority_dir:
+            shutil.rmtree(authority_dir, ignore_errors=True)
 
 
 def quota_number(value, maximum):
@@ -891,7 +952,7 @@ class ChatSession(Session):
     Reuses the PTY session's scoped process stop, but never opens a PTY or
     derives messages by scraping a terminal screen. No arbitrary RPC passthrough.
     """
-    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, imported=None, options=None, catalog=None, completed=None, handoff=None):
+    def __init__(self, project, agent, argv, cols, rows, launch_id, changed, imported=None, options=None, catalog=None, completed=None, handoff=None, browser_env=None):
         self.id, self.launch_id = str(uuid.uuid4()), launch_id
         self.project, self.agent = project.copy(), agent
         self.options = agent_options(agent, options)
@@ -924,7 +985,9 @@ class ChatSession(Session):
         self.queue_paused, self.queue_inflight = False, None
         self.steer_errors = collections.OrderedDict()
         self.can_steer = agent == "codex"
+        self.browser_instructions = (browser_env or {}).get("BIBIMER_BROWSER_INSTRUCTIONS", "")
         self.process = subprocess.Popen(provider_command(argv[0], agent),
+            env={**os.environ, **(browser_env or {})},
             cwd=project["path"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
         os.set_blocking(self.process.stdin.fileno(), False)
@@ -1211,6 +1274,8 @@ class ChatSession(Session):
                 # Explicit choices are applied at every turn, including restores
                 # to Agent default after switching away from it.
                 overrides = codex_options({**self.options, "permission": "inherit"}) if self.agent == "codex" else {"bibimerOptions": self.options}
+                if self.agent == "codex" and self.browser_instructions:
+                    overrides["developerInstructions"] = self.browser_instructions
                 if self.imported:
                     self._rpc("thread/" + self.imported["import_mode"],
                         {"threadId": self.imported["source_thread_id"], "excludeTurns": True, **overrides}, "import")
@@ -2651,6 +2716,7 @@ class Bridge:
         self.lock = threading.RLock()
         self.history_lock = threading.Lock()
         self.browser_lock = threading.Lock()
+        self.browser_tools = None
         self.model_locks = {}
         self.model_cache = {}
         self.command_cache = {}
@@ -2664,6 +2730,7 @@ class Bridge:
             self.token = secrets.token_urlsafe(32)
             save_json(state / "token.json", self.token)
         saved = read_json(state / "metadata.json", {})
+        self.browser_enabled = saved.get("browser_enabled", True) is not False
         self.projects, self.sessions, self.previous_sessions = {}, {}, {}
         self.selected_agents = dict(saved.get("selected_agents") or {})
         self.selected_sessions = dict(saved.get("selected_sessions") or {})
@@ -2926,14 +2993,44 @@ class Bridge:
     def browser(self, data):
         project = self.working_project(data)
         action = data.get("action")
-        if action not in {"status", "start"}:
+        if action not in {"status", "start", "manual", "allow", "configure"}:
             raise Problem(400, "error_invalid_json")
-        installed = {name: bool(shutil.which(name)) for name in ("termux-x11", "firefox")}
+        installed = {name: bool(shutil.which(name)) for name in browser_tools.TOOLS}
+        if action == "configure":
+            if type(data.get("enabled")) is not bool:
+                raise Problem(400, "error_invalid_json")
+            with self.lock:
+                self.browser_enabled = data["enabled"]
+                browsers = [row for row in self.sessions.values() if isinstance(row, BrowserSession)]
+                self.persist()
+            if not data["enabled"]:
+                for browser in browsers:
+                    with browser.browser_control_lock:
+                        browser.browser_owner = None
+                        browser_tools.clear_clipboard(browser)
+                if self.browser_tools:
+                    self.browser_tools.clear_screens()
+            return {"enabled": self.browser_enabled}
+        if action in {"manual", "allow"}:
+            with self.lock:
+                current = self.sessions.get(data.get("session_id"))
+                if not isinstance(current, BrowserSession) or current.project["id"] != project["id"] or current.state != "running":
+                    raise Problem(409, "error_browser_start")
+            with current.browser_control_lock:
+                if current.process.poll() is not None:
+                    raise Problem(409, "error_browser_start")
+                current.browser_manual = action == "manual"
+                current.browser_owner = None
+                browser_tools.clear_clipboard(current)
+                if self.browser_tools:
+                    self.browser_tools.clear_screens()
+                return {"session": current.snapshot()}
         if action == "status":
             with self.lock:
                 current = next((row for row in self.snapshots(project["id"]) if row.get("kind") == "browser"
-                                and row["project"]["path"] == project["path"] and row["state"] in ACTIVE), None)
-            return {"installed": installed, "session": current}
+                                and row["project"]["id"] == project["id"] and row["state"] in ACTIVE), None)
+            return {"installed": installed, "session": current, "enabled": self.browser_enabled,
+                    "install_command": browser_tools.INSTALL}
         key, url = request_id(data.get("request_id")), browser_url(data.get("url", ""))
         digest = hashlib.sha256(url.encode()).hexdigest()
         if not self.browser_lock.acquire(blocking=False):
@@ -2951,9 +3048,10 @@ class Bridge:
                             previous.get("browser_digest") != digest):
                         raise Problem(409, "error_launch_conflict")
                     return {"session": previous}
-                if any(row.get("kind") == "browser" and row["project"]["path"] == project["path"]
-                       and row["state"] in ACTIVE for row in self.snapshots(project["id"])):
-                    raise Problem(409, "error_browser_busy")
+                current = next((row for row in self.snapshots(project["id"]) if row.get("kind") == "browser"
+                       and row["state"] in ACTIVE), None)
+                if current:
+                    return {"session": current}
                 if not all(installed.values()):
                     raise Problem(400, "error_browser_setup")
                 # Prevent unregister/maintenance from missing an in-flight start.
@@ -3002,7 +3100,7 @@ class Bridge:
         with self.lock:
             def metadata(row):
                 return {key: value for key, value in row.items() if key not in {"display_title", "context_usage", "subscription_usage"}} if row else None
-            save_json(self.state / "metadata.json", {
+            save_json(self.state / "metadata.json", {"browser_enabled": self.browser_enabled,
                 "format": 4, "projects": list(self.projects.values()),
                 "active_project_id": self.active_project_id,
                 "selected_agents": self.selected_agents,
@@ -3057,10 +3155,10 @@ class Bridge:
     def health(self):
         with self.lock:
             return {"version": VERSION, "protocol": 1, "instance": self.instance,
-                    "home": str(Path.home()), "project": self.project,
+                    "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11", "browser_tools_x11"], "active_sessions": self.active_count(),
                     "agents": self.agents(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -3499,11 +3597,18 @@ class Bridge:
             if agent == "claude" and not self.check_program(agent, executable):
                 raise Problem(400, "error_program_unavailable")
             argv = [executable, "-i"] if agent == "shell" else [executable]
+            browser_env, browser_key = None, None
+            if agent != "shell" and self.browser_enabled:
+                if self.browser_tools is None:
+                    self.browser_tools = browser_tools.Service(self)
+                browser_key = secrets.token_urlsafe(32)
+                browser_env = self.browser_tools.child_environment(browser_key)
             try:
                 session = (ChatSession if mode == "chat" else Session)(project, agent, argv, cols, rows, key, self.persist,
-                    options=options, **({"imported": imported, "catalog": catalog, "completed": self.completion_feed.publish, "handoff": (continuation or {}).get("metadata")} if mode == "chat" else {}))
+                    options=options, browser_env=browser_env, **({"imported": imported, "catalog": catalog, "completed": self.completion_feed.publish, "handoff": (continuation or {}).get("metadata")} if mode == "chat" else {}))
             except OSError:
                 raise Problem(400, "error_launch_failed") from None
+            session.browser_key = browser_key
             if continuation:
                 session.queue[key] = {"id": key, "text": continuation["prompt"], "state": "queued"}
                 session.display_title = session_title(continuation["instruction"])
@@ -3567,6 +3672,12 @@ class Server(http.server.ThreadingHTTPServer):
         self.bridge = bridge
         self.slots = threading.BoundedSemaphore(16)
         super().__init__(address, Handler)
+
+    def server_close(self):
+        if self.bridge.browser_tools:
+            self.bridge.browser_tools.close()
+            self.bridge.browser_tools = None
+        super().server_close()
 
     def process_request(self, request, client_address):
         if not self.slots.acquire(blocking=False):

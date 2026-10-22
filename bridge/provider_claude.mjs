@@ -158,7 +158,7 @@ async function runTurn(prompt, identity) {
     // a previous query's account windows into this query's first report.
     notify('bibimer/subscriptionUsage',{windows:[],replace:true});
     const options={cwd,pathToClaudeCodeExecutable:executable,settingSources:['user','project','local'],
-      systemPrompt:{type:'preset',preset:'claude_code'},includePartialMessages:true,canUseTool:permission,
+      systemPrompt:{type:'preset',preset:'claude_code',...(process.env.BIBIMER_BROWSER_INSTRUCTIONS?{append:process.env.BIBIMER_BROWSER_INSTRUCTIONS}:{})},includePartialMessages:true,canUseTool:permission,
       extraArgs:{'replay-user-messages':null},
       ...(permissionMode==='inherit'?{}:{permissionMode}),
       ...(permissionMode==='bypassPermissions'?{allowDangerouslySkipPermissions:true}:{}),

@@ -92,6 +92,8 @@ The app connects to a bridge on the phone's loopback address. Bibimer has no adv
 
 ## Help and development
 
+The `feat/termux-x11-browser` development worktree adds Firefox with Termux:X11: guided preparation, a retained project profile, manual sign-in handoff, and browser tools for new Codex/Claude/OpenCode chats. It has not been included in an APK release. See the [browser architecture](docs/architecture.md) (Korean).
+
 - [Detailed setup and troubleshooting](docs/setup.md) (Korean)
 - [Build and development guide](docs/development.md) (Korean)
 - [Report a bug or request a feature](https://github.com/andy5090/bibimer/issues)
