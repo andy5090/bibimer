@@ -836,7 +836,7 @@ async function main() {
         return {height:bounds.height,width:bounds.width,top:bounds.top,bottom:bounds.bottom,
           controls:ids.map(id=>{const n=document.getElementById(id),r=n.getBoundingClientRect();return {id,top:r.top,bottom:r.bottom,width:r.width,left:r.left,right:r.right,inRow:row.contains(n)};}),
           rings:document.querySelectorAll('.usage-ring').length,
-          bars:['context-meter','subscription-meter'].map(id=>document.getElementById(id).getBoundingClientRect().width)};
+          bars:[...row.querySelectorAll('summary meter')].map(n=>n.getBoundingClientRect().width)};
       });
       assert.ok(layout.height<=46,'Usage indicators share one compact permission row');
       assert.equal(layout.rings,2);
@@ -844,7 +844,7 @@ async function main() {
         assert.ok(control.inRow && control.top>=layout.top-1 && control.bottom<=layout.bottom+1,control.id+' stays on the permission row');
         assert.ok(control.width>=28 && control.left>=0 && control.right<=320,control.id+' fits the mobile screen');
       }
-      assert.ok(layout.bars.every(width=>width<=1),'Horizontal meters have no visible layout width');
+      assert.ok(layout.bars.every(width=>width<=1),'Horizontal meters stay out of the compact summaries');
     }
     await page.locator('#context-usage summary').click();
     assert.equal(await page.locator('#context-detail').textContent(),'76,000 / 200,000 tokens used');
@@ -949,6 +949,13 @@ async function main() {
         assert.equal(await page.locator('#context-usage').evaluate(n=>n.style.getPropertyValue('--usage-progress')),mode==='used'?'38':'62');
         assert.equal(await page.locator('#subscription-usage').evaluate(n=>n.style.getPropertyValue('--usage-progress')),mode==='used'?'35':'65');
         assert.ok((await page.locator('#context-toggle').getAttribute('aria-label')).length>0);
+        await page.locator('#context-toggle').click();
+        assert.ok(await page.locator('#context-popover .usage-meter').isVisible());
+        assert.equal(await page.locator('#context-meter').evaluate(n=>n.value),mode==='used'?38:62);
+        await page.locator('#subscription-toggle').click();
+        assert.ok(await page.locator('#subscription-windows .usage-meter').first().isVisible());
+        assert.equal(await page.locator('#subscription-windows .usage-meter').first().evaluate(n=>n.value),mode==='used'?35:65);
+        await page.keyboard.press('Escape');
         if(['en','ko'].includes(lang))await page.screenshot({path:path.join(root,`dist/screenshots/usage-ring-${mode}-320-${lang}.png`)});
       }
     }

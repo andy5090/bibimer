@@ -1,0 +1,6 @@
+<en-US>
+Selectors now have consistent outlines, with a compact permission selector and a nearby arrow. Context and subscription details include progress bars; subscription bars show each quota window separately. Used/remaining display, warning colors and unknown/stale states are preserved. Includes bridge 0.19.0; no bridge update is needed if you already use 0.19.0.
+</en-US>
+<ko-KR>
+모든 셀렉터에 아웃라인을 적용하고 권한 선택 너비와 화살표 간격을 줄였습니다. 컨텍스트·구독 상세에 가로 프로그레스 바를 추가했으며 구독은 기간별로 표시합니다. 사용량·남은 양 설정과 경고색, 확인 불가·오래된 값 구분을 유지합니다. 내장 브리지는 0.19.0이며 이미 같은 버전을 사용하면 브리지 업데이트가 필요하지 않습니다.
+</ko-KR>

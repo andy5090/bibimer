@@ -970,6 +970,17 @@
       name.textContent = subscriptionWindowLabel(row);
       value.textContent = outdated(row) && !expired(row) ? t("subscription_last", {value:display(row)}) : display(row);
       heading.append(name, value); entry.append(heading);
+      entry.className = "usage-window";
+      const used = percent(row), known = used !== null && !expired(row);
+      const risk = row.status === "rejected" ? 100 : row.status === "allowed_warning" ? 90 : used ?? 0;
+      entry.dataset.level = !expired(row) && risk >= 90 ? "high" : !expired(row) && risk >= 75 ? "medium" : "normal";
+      entry.dataset.stale = String(!online || session?.state !== "running" || report?.state === "stale" || outdated(row));
+      const bar = document.createElement("meter");
+      bar.className = "usage-meter"; bar.min = 0; bar.max = 100; bar.hidden = !known;
+      bar.value = known ? Math.min(100, contextDisplay === "remaining" ? Math.max(0, 100 - used) : used) : 0;
+      bar.setAttribute("aria-label", subscriptionWindowLabel(row));
+      if (known) bar.setAttribute("aria-valuetext", value.textContent);
+      entry.append(bar);
       const reset = document.createElement("small");
       if (expired(row)) reset.textContent = t("subscription_reset_passed");
       else if (Number.isFinite(row.resets_at) && row.resets_at > 0 && row.resets_at <= 253402300799) {

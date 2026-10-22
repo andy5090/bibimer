@@ -46,7 +46,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 
 .composer-options { flex:none; margin:-3px 0 10px; }
 .quick-options { display:flex; align-items:center; gap:6px; }
-.quick-options select { flex:0 1 auto; min-width:0; width:auto; min-height:36px; padding:6px 2px; font-size:12px; border:0; border-radius:4px; background:transparent; color:var(--muted); cursor:pointer; }
+.quick-options select { flex:0 1 auto; min-width:0; width:auto; min-height:36px; padding:6px; font-size:12px; background:transparent; color:var(--muted); cursor:pointer; }
 .quick-options select option { background:var(--card); color:var(--text); }
 .quick-options select:disabled { opacity:.4; cursor:default; }
 .quick-fast { position:relative; display:flex; align-items:center; flex:none; min-height:36px; margin:0 0 0 auto; padding:4px 0; -webkit-tap-highlight-color:transparent; }
@@ -93,7 +93,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .select-value { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .select-trigger svg { flex:none; width:14px; height:14px; fill:none; stroke:var(--muted); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
 .select-trigger[aria-expanded="true"] { border-color:var(--green); }
-.select-control[data-select="project-switch"] .select-trigger { min-height:40px; font-size:13px; font-weight:600; padding:6px 9px; background:var(--card); border-color:var(--line); }
+.select-control[data-select="project-switch"] .select-trigger { min-height:40px; font-size:13px; font-weight:600; padding:6px 9px; background:var(--card); }
 .mode-controls .select-control { flex:0 1 205px; }
 .mode-controls .select-trigger { font-size:12px; }
 .launch-controls .select-control { grid-column:1/-1; }
@@ -109,7 +109,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .import-provider .select-control { flex:0 1 170px; }
 #import-dialog > .select-control { flex:none; }
 .quick-options .select-control { flex:0 1 auto; width:auto; }
-.quick-options .select-trigger { min-height:36px; padding:6px 2px; border:0; border-radius:4px; background:transparent; color:var(--muted); font-size:12px; }
+.quick-options .select-trigger { min-height:36px; padding:6px; background:transparent; color:var(--muted); font-size:12px; }
 .quick-options .select-trigger[aria-expanded="true"] { color:var(--green); }
 #select-dialog { inset:auto 0 0; margin:0 auto; width:100%; max-width:520px; max-height:min(76dvh,580px); padding:8px 12px max(12px,env(safe-area-inset-bottom)); border:1px solid #414e56; border-bottom:0; border-radius:18px 18px 0 0; overflow:hidden; box-shadow:0 -12px 48px #0005; }
 #select-dialog[open] { display:flex; flex-direction:column; }
@@ -130,7 +130,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .model-controls .select-control { flex:1 1 0; width:0; }
 .model-controls .select-control[data-select="quick-agent"] { flex:0 1 88px; }
 .model-controls .select-control[data-select="quick-effort"] { flex:0 1 102px; }
-.model-controls .select-trigger { min-height:36px; padding:4px 2px; border:0; background:transparent; font-size:11px; gap:4px; }
+.model-controls .select-trigger { min-height:36px; padding:4px 6px; background:transparent; font-size:11px; gap:4px; }
 #models-refresh { flex:none; min-height:36px; width:28px; padding:0; font-size:18px; }
 #models-hint { flex:none; margin:0 0 4px; font-size:10px; }
 #workspace.project-editing .model-controls, #workspace.project-editing #models-hint { display:none; }
@@ -448,8 +448,8 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 /* Last structured context-window report; scoped to the selected Chat session. */
 .composer-options{position:relative}
 .quick-options{gap:4px;min-width:0}
-.quick-options>.select-control{flex:1 1 0;min-width:0;width:0}
-.quick-options .select-trigger{min-height:44px}
+.quick-options>.select-control{flex:0 1 auto;min-width:0;width:auto}
+.quick-options .select-trigger{min-height:44px;justify-content:flex-start}
 .quick-fast{margin-inline-start:0;align-self:stretch;min-height:44px}
 .quick-options>button{flex:none;min-width:28px;min-height:44px}
 .usage-indicators{display:flex;align-items:center;flex:none;gap:0;margin-inline-start:auto}
@@ -463,8 +463,8 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .usage-ring-progress{stroke:var(--usage-color);stroke-dasharray:var(--usage-progress,0) 100;transform:rotate(-90deg);transform-origin:12px 12px}
 .usage-ring-icon{stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
 .context-usage[data-known="false"] .usage-ring-progress{display:none}
-.context-usage[data-level="medium"]{--usage-color:#dbb56c}
-.context-usage[data-level="high"]{--usage-color:#ee9c91}
+.context-usage[data-level="medium"],.usage-window[data-level="medium"]{--usage-color:#dbb56c}
+.context-usage[data-level="high"],.usage-window[data-level="high"]{--usage-color:#ee9c91}
 .context-usage[data-level="medium"] .usage-value,.context-usage[data-level="high"] .usage-value{color:var(--usage-color)}
 .context-usage[data-stale="true"] .usage-ring,.context-usage[data-stale="true"] .usage-value{opacity:.6}
 .context-usage[data-stale="true"] summary::after{content:'◷';position:absolute;inset-inline-end:1px;top:0;font-size:9px;line-height:12px}
@@ -472,6 +472,12 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .usage-popover{position:absolute;z-index:8;inset-inline:0;bottom:calc(100% + var(--usage-input-offset,0px) + 6px);max-height:min(240px,42dvh,var(--usage-room,240px));overflow-y:auto;overscroll-behavior:contain;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);box-shadow:0 6px 24px #0006;color:var(--text);font-size:12px}
 .usage-popover>strong{display:block;margin-bottom:6px;font-size:12px}
 .usage-popover p{margin:4px 0;line-height:1.5;overflow-wrap:anywhere}
+.usage-meter{display:block;appearance:none;-webkit-appearance:none;width:100%;height:8px;margin:8px 0;border:0;border-radius:999px;overflow:hidden;background:var(--line)}
+.usage-meter::-webkit-meter-bar{height:8px;border:0;border-radius:999px;background:var(--line);box-shadow:none}
+.usage-meter::-webkit-meter-optimum-value,.usage-meter::-webkit-meter-suboptimum-value,.usage-meter::-webkit-meter-even-less-good-value{border-radius:999px;background:var(--usage-color)}
+.usage-meter::-moz-meter-bar{border-radius:999px;background:var(--usage-color)}
+.usage-window{--usage-color:var(--green)}
+#context-usage[data-stale="true"] .usage-meter,.usage-window[data-stale="true"] .usage-meter{opacity:.6}
 #workspace.project-editing #context-usage{display:none}
 #subscription-windows{list-style:none;margin:0 0 6px;padding:0}
 #subscription-windows li{padding:5px 0;border-bottom:1px solid var(--line)}
