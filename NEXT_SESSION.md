@@ -2,6 +2,8 @@
 
 ## Termux:X11 브라우저 수동 로그인 실험 (2026-10-21, 별도 워크트리·미배포)
 
+- 2026-10-22 레포 싱크: 원격 `main`의 내부 테스트0.26.0 게시 완료·문서 갱신3개 커밋(`3217bbb`까지)을 반영했다. 브라우저 실험은 별도 브랜치로 유지하며 `main`에 병합하지 않았다. 공통 변경은 문서/출시 정보뿐으로 앱·브리지 실행 소스 변경이나 빌드·설치·운영 재시작은 없고, 충돌 기록을 양쪽 모두 보존한 뒤 diff/출시 JSON 구문만 확인했다.
+
 - 후속 레포 싱크: 구현을 `02c2710`으로 커밋하고 원격 `main`의 추가10개 커밋(`d30f28f`까지)을 이 실험 브랜치에 통합했다. 로컬 `main`은 원격과 같은 지점으로 fast-forward했으며 브라우저 실험은 `main`에 병합하지 않았다. 원격의 Android0.26.0(44)/브리지0.19.0 및 iOS 클립보드 변경을 유지했다. 이번 동기화에서 앱 빌드·설치·운영 브리지 변경은 하지 않았다.
 - 통합 뒤 브라우저8개·Python scripts39개 재검사와744키×10언어, iOS 클립보드/터미널 도구/컨텍스트 설정 Node 검사를 모두 통과했다. `.tools/browser-sync-{tests,scripts}.log`. 충돌은 `NEXT_SESSION.md`의 맨 위 추가 기록 한 곳뿐이었으며 양쪽 기록을 보존했다. 실제 소스의 공통 변경은 manifest 버전과 브리지 버전뿐이다.
 
@@ -15,13 +17,15 @@
 - 전체 브리지 **199개 통과**(`.tools/browser-all-bridge-final.log`). 첫 실행은 기존 Setup 검사의 `play_sdk` import 경로1개가 실패했으며 제품 코드를 바꾸지 않고 `PYTHONPATH=scripts`로 전체 재검사를 통과했다. Firefox를 X 서버보다 먼저 정리하도록 종료 순서를 보강한 최종 소스에서도 브라우저 전용 **8개 재검사 통과**(`.tools/browser-tests-final.log`,18.474초). 이후 UI 새로고침 버튼은 기존 공통 번역의 일반 ‘새로고침’ 문구로 정리했고744키×10언어·구문·diff를 다시 확인했다.
 - **최초 구현은 소스와 격리 검증까지만 수행했다. 후속 커밋·동기화는 위 기록과 같으며, 브라우저 실험의 APK/AAB/iOS 빌드·설치·배포·main 병합·운영 브리지 교체/재시작·실제 계정/모델 실행은 하지 않았다.** 실제 휴대폰의 최신 X11+Firefox 설치·네이티브 창 연결·창 크기/포커스·터치·한글 입력·팝업·패스키/2단계 인증·Google 로그인 완료 및 장시간/절전 후 유지 검증은 남아 있다. Google 로그인 성공을 확인하기 전 지원 완료로 소개하지 않는다. 설계와 공식 근거는 `docs/architecture.md`, UX는 `docs/interface.md`에 기록했다.
 
-## Android 0.26.0(44) 내부 테스트 배포 준비 (2026-10-21, Google 로그인 대기)
+## Android 0.26.0(44) 내부 테스트 게시 완료 (2026-10-22)
 
 - 사용자 요청대로 먼저 iOS 복사·붙여넣기와 원격의 컨텍스트/구독 기능을 병합하고 `e5b9ad0`까지 `origin/main`에 동기화했다. 새 사용량 기능을 포함하는 Android 버전을 **0.26.0 / versionCode44**, 내장 브리지를 **0.19.0**으로 올렸다. 기존 브리지에서 업데이트를 감지하도록 버전을 구분했으며 사용자 운영 브리지·세션은 교체·재시작하지 않았다. iOS 실행 앱도 변경하지 않았다.
 - 기존 저장소 밖 업로드 키·심사 코드 파일을 사용해 `dist/play/bibimer-0.26.0-44-release.aab`를 서명 빌드했다. SHA-256 **`87a289ef05244657077e77a23288c3754ff503538b18636fe71f337745b82a37`**. bundletool·서명/업로드 인증서·54assets 원본·내장 브리지와 유지보수4payload·실제 DEX의contextDisplay저장/네이티브asset문자열·심사digest포함/비밀원문미포함을 검증했다. 새 의존성·키 생성 없음. `.tools/aab-0.26.0-44-{mac.log,verification.json}`.
 - Python scripts39개, 컨텍스트/구독 renderer·726키×10언어/언어선택, 격리 Chromium 전체 UI가 통과했다. 실제 임시 브리지/모의 에이전트로 두 사용량 모드·구독 초기화/상태/컨텍스트 분리·추가 모델 턴 없음과 기존 Chat·PTY·승인·대기열·재접속을 확인했다. Mac `/tmp`·`/var` 경로 별칭으로 실패한 최초검사는 `TMPDIR=/private/tmp`로 보정한 재검사와 구분한다. `.tools/release-0.26.0-{python-canonical,ui-canonical,node}.log`.
 - 전체 브리지 Mac 재검사는 **191개, failures16/errors1**로 전체 성공이 아니다. 새 컨텍스트/구독16개는 모두 통과했으며 남은 실패는 PTY·프로세스 유지보수·`/proc`/Git 출력 경계 등이다. import경로 오류인 Setup1개는 `PYTHONPATH=scripts:bridge/tests`를 지정한 개별 재검사로 통과했다. 최초 기본경로 실행은 failures33/errors2로 별도 보존했다. `.tools/release-0.26.0-bridge{,-canonical}.log`. 실제 Android 설치·실기기 구독/계정 이벤트·업데이트 수신은 이번에 검증하지 않았다.
-- EN/KO 출시노트는 `release/google-play/release-notes/0.26.0.txt`(268/155자). Playwright의 별도 Chrome `bibimer-play` 창에서 Play Console을 열었지만 Google 로그인 화면이며 사용자에게 직접 로그인을 요청했다. **아직 업로드·내부 게시·44의 Console 수용을 확인하지 않았다.** 로그인 후 내부 트랙의 현재 최대 코드/배포 상태를 확인하고44 업로드→검토→기존 내부 테스터 게시→Console 활성 상태를 검증해야 한다. 기존 내부43/정식 심사 기록은 유지한다. UI 자동화 원문은 로컬 `.playwright-cli/`에만 남기고 git 로컬 exclude로 제외했다.
+- **2026-10-22 09:32 Asia/Seoul**, 기존 로그인된 Chrome에서 사용자 승인에 따라 AppleScript로 동일 AAB를 업로드하고 내부 테스트에 게시했다. Console **활성 / 내부 테스터에게 제공됨**, 새44 포함·43 제외, EN/KO 출시노트2/2, 오류0·기존 가독화 매핑 파일 경고1·지원 기기 변화0을 확인했다. 게시 후 페이지를 새로고침해 활성 상태를 다시 확인했다. 출시 이름은 `0.26.0 (44) - Context and subscription usage`, 내부 출시15다. 증빙 `dist/play-0.26.0/{review,published-before-refresh,published}.json`.
+- 새 기능은 앱 업데이트 후 **설정에서 브리지0.19.0 업데이트**가 필요하다. 기존 [내부 테스트 참여 링크](https://play.google.com/apps/internaltest/4701718894791581363)를 유지했다. 실제 기기의 Play 업데이트 수신·설치는 미검증이며 운영 브리지·사용자 세션·iOS 실행 앱·프로덕션·테스터 설정은 변경하지 않았다. 정식0.25.0(43)의 심사 결과는 이번에 재확인하지 않았다.
+- 초기 별도 Chrome의 Google 로그인 대기 후, 사용자가 지정한 기존 Chrome으로 전환했다. Computer Use는 `Sky Computer Use native pipe startup failed`가 계속 발생했다. 일반 AppleScript가 창 없는 다른 Chrome 프로세스를 선택하던 문제를 피하도록 실제 사용자 창이 있는 프로세스를 지정했다. 새 Chrome 창/프로필 생성이나 인증 정보 추출 없이 기존 로그인 탭에서 게시했다. UI 자동화·증거 원문은 무시되는 `.tools/`, `dist/`, `.playwright-cli/`에만 보관했다.
 
 ## iOS Codex 실제 인증·동작 사용자 확인 (2026-10-21)
 
