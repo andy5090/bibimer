@@ -3,6 +3,16 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    maintenance_recovery_option: ["Reopen sessions after updating", "업데이트 후 세션 다시 열기"],
+    maintenance_recovery_hint: ["Chat resumes the saved conversation. Terminals start fresh in the same folder; Firefox reopens its profile in manual login mode. Interrupted responses, commands, queued messages and terminal output are not replayed.", "Chat은 저장된 대화를 이어갑니다. 터미널은 같은 폴더에서 새로 실행하며 Firefox는 기존 프로필의 직접 로그인 모드로 엽니다. 중단된 응답·명령·대기열·터미널 출력은 복원하지 않습니다."],
+    maintenance_recovery_retry: ["Retry reopening", "다시 열기 재시도"],
+    maintenance_recovery_progress: ["Reopening sessions: {done}/{total}", "세션 다시 여는 중: {done}/{total}"],
+    maintenance_recovery_result: ["Sessions reopened: {done}/{total}", "다시 연 세션: {done}/{total}"],
+    maintenance_recovery_no_history: ["No saved conversation to resume", "이어갈 저장된 대화 없음"],
+    maintenance_recovery_failed: ["Could not reopen; check the agent and project folder", "다시 열지 못함 · 에이전트와 프로젝트 폴더 확인"],
+    maintenance_recovery_uncertain: ["Reopen status unknown; automatic retry is blocked", "실행 여부 확인 불가 · 자동 재시도 차단"],
+    error_maintenance_recovery: ["Could not reopen these sessions. Check the recovery status in Settings.", "세션을 다시 열지 못했습니다. 설정에서 복구 상태를 확인하세요."],
+
     error_browser_permission: ["This session permission mode does not allow browser input.", "이 세션의 권한 모드에서는 브라우저 입력을 허용하지 않습니다."],
     error_browser_control: ["Could not control this browser. Open Termux:X11 and try again.", "브라우저를 조작하지 못했습니다. Termux:X11을 열고 다시 시도하세요."],
     error_browser_manual: ["Finish manual login in Bibimer before allowing agent control.", "Bibimer에서 직접 로그인을 마친 뒤 에이전트 제어를 허용하세요."],

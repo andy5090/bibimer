@@ -488,3 +488,6 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 #subscription-windows strong{font-weight:500;flex-shrink:0}
 #subscription-windows small{display:block;margin-top:3px;line-height:1.5}
 #workspace.project-editing #subscription-usage{display:none}
+
+#bridge-recovery-rows { list-style:none; padding:0; margin:8px 0; color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
+#bridge-recovery-rows li { margin:6px 0; }

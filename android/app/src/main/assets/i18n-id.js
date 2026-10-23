@@ -1,6 +1,15 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "maintenance_recovery_option": "Buka kembali sesi setelah pembaruan",
+  "maintenance_recovery_hint": "Chat melanjutkan percakapan tersimpan. Terminal dimulai ulang di folder yang sama; Firefox membuka profilnya dalam mode login manual. Respons terputus, perintah, antrean dan keluaran terminal tidak dipulihkan.",
+  "maintenance_recovery_retry": "Coba buka kembali",
+  "maintenance_recovery_progress": "Membuka kembali sesi: {done}/{total}",
+  "maintenance_recovery_result": "Sesi dibuka kembali: {done}/{total}",
+  "maintenance_recovery_no_history": "Tidak ada percakapan tersimpan untuk dilanjutkan",
+  "maintenance_recovery_failed": "Gagal membuka kembali; periksa agen dan folder proyek",
+  "maintenance_recovery_uncertain": "Status eksekusi tidak diketahui; percobaan otomatis diblokir",
+  "error_maintenance_recovery": "Sesi tidak dapat dibuka kembali. Periksa pemulihan di Pengaturan.",
   "error_browser_permission": "Mode izin sesi ini tidak mengizinkan input browser.",
   "error_browser_control": "Browser tidak dapat dikontrol. Buka Termux:X11 dan coba lagi.",
   "error_browser_manual": "Selesaikan login manual di Bibimer sebelum mengizinkan kontrol agen.",

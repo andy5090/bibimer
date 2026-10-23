@@ -107,8 +107,9 @@
     refresh:refreshSidebar,open:async(id,sessionId)=>{await refreshCatalog();await selectSession(id,sessionId);}
   });
 
-  const bridgeMaintenance = new BibimerMaintenance(t, () => ({instance,online,paused,allowed:canMaintainBridge}), api, {
-    changed:renderBridgeUpdate,title:sessionTitle,status:sessionStatus,start:runBridgeMaintenance
+  const bridgeMaintenance = new BibimerMaintenance(t, () => ({instance,online,paused,reopen:!!native.maintainBridgeWithRecovery,allowed:canMaintainBridge}), api, {
+    changed:renderBridgeUpdate,title:sessionTitle,status:sessionStatus,start:runBridgeMaintenance,id:uuid,
+    find:id=>knownProjects.flatMap(project=>project.sessions || []).find(row=>row.id===id)
   });
 
   const commands = new BibimerCommands($("input"), $("commands"), t, () => {
@@ -1266,6 +1267,7 @@
         notice(lostQueue ? "queue_lost" : "bridge_restarted");
       }
       instance = health.instance;
+      bridgeMaintenance.setRecovery(health);
       bridgeVersion = typeof health.version === "string" ? health.version : "";
       multipleProjects = health.features?.includes("multiple_projects") === true;
       canBrowse = health.features?.includes("browse_folders") === true;
@@ -2094,13 +2096,15 @@
   function canMaintainBridge(action) {
     const env=environment(), phase=native.bridgeMaintenanceStatus?.();
     return !demo && !!native.maintainBridge && env.paired && ["update","restart"].includes(action) &&
-      phase!=="bridge_maintenance_running" && Date.now()>=maintenanceRequestedUntil &&
+      phase!=="bridge_maintenance_running" && !bridgeMaintenance.recovering && Date.now()>=maintenanceRequestedUntil &&
       (action!=="update" || !online || compareBridgeVersions(bridgeVersion,env.bundledBridgeVersion)===null || compareBridgeVersions(bridgeVersion,env.bundledBridgeVersion)<0);
   }
-  function runBridgeMaintenance(action) {
+  function runBridgeMaintenance(action, recovery=null) {
     if(paused || !canMaintainBridge(action))return;
     maintenanceRequestedUntil=Date.now()+1000;
-    native.maintainBridge(action);renderBridgeUpdate();setTimeout(renderBridgeUpdate,1100);
+    if(recovery && native.maintainBridgeWithRecovery)native.maintainBridgeWithRecovery(action,JSON.stringify(recovery));
+    else native.maintainBridge(action);
+    renderBridgeUpdate();setTimeout(renderBridgeUpdate,1100);
   }
   function renderBridgeUpdate() {
     const bundled = environment().bundledBridgeVersion;
@@ -2121,6 +2125,8 @@
     $("bridge-update-install").disabled = bridgeMaintenance.busy || !canMaintainBridge("update");
     $("bridge-restart").disabled = bridgeMaintenance.busy || !canMaintainBridge("restart");
     bridgeMaintenance.render();
+    bridgeMaintenance.renderRecovery?.();
+    if($("settings").hidden===false)void bridgeMaintenance.pollRecovery?.();
     $("bridge-update-guide").hidden = supported || comparison === null || comparison >= 0;
     if (maintenancePhase === "bridge_maintenance_done" && maintenanceRefresh !== maintenancePhase) {
       maintenanceRefresh = maintenancePhase;

@@ -94,6 +94,19 @@ public class MaintenanceHarness {
   DemoMode.enabled=true;runner.request(a,"restart");check(a.starts==3);DemoMode.enabled=false;
   a.pm.missing=true;runner.request(a,"restart");check(BridgeMaintenance.status(a).equals("quick_termux_missing"));a.pm.missing=false;
   a.pm.version="0.117";runner.request(a,"restart");check(BridgeMaintenance.status(a).equals("quick_termux_old"));
+  a.pm.version="0.118";
+  String uuid="01234567-0123-4123-8123-012345678901";
+  String recovery="{\\\"id\\\":\\\""+uuid+"\\\",\\\"instance\\\":\\\""+uuid+"\\\",\\\"session_ids\\\":[\\\""+uuid+"\\\"]}";
+  check(BridgeMaintenance.validRecovery("update",recovery));
+  check(!BridgeMaintenance.validRecovery("restart",recovery));
+  check(!BridgeMaintenance.validRecovery("update",recovery+"; arbitrary command"));
+  check(!BridgeMaintenance.validRecovery("update",recovery.replace(uuid,"$(secret)")));
+  TermuxSetup.allowed=false;runner.request(a,"update",recovery);TermuxSetup.allowed=true;runner.permissionResult(a);
+  check(a.starts==4);
+  script=(String)a.command.extras.get("com.termux.RUN_COMMAND_STDIN");
+  check(script.startsWith("BIBIMER_MAINTENANCE_REOPEN='"));
+  String encoded=script.substring(script.indexOf("'")+1,script.indexOf("' "));
+  check(new String(java.util.Base64.getDecoder().decode(encoded),java.nio.charset.StandardCharsets.UTF_8).equals(recovery));
   System.out.println("native bridge maintenance passed");
  }
 }'''

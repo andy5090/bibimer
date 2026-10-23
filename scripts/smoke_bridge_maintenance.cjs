@@ -17,7 +17,7 @@ let server,browser;
   window.row=(id,mode='chat',turn_state='ready')=>({id:id.repeat(8)+'-aaaa-aaaa-aaaa-'+id.repeat(12),project:window.project,state:'running',archived:true,agent:mode==='chat'?'codex':'shell',mode,turn_state,title:'Session <b>'+id+'</b>',queued_count:turn_state==='waiting'?2:0});
   window.Bibimer={environment:()=>JSON.stringify({paired:true,demo:window.demo,language:window.lang,bundledBridgeVersion:'0.16.0',version:'0.21.0'}),
    bridgeMaintenanceStatus:()=>window.phase,maintainBridge:action=>{window.calls.push(action);window.phase='bridge_maintenance_running';},cancelPoll:()=>{},setEnterBehavior:()=>true,setAgentOptions:()=>true,
-   request:(id,method,route)=>{
+   request:(id,method,route,body)=>{
     const reply=(ok,data)=>setTimeout(()=>window.BibimerNativeReply(id,{ok,status:ok?200:503,data}),0);
     if(method==='POST'&&route.endsWith('/stop')){
       const sessionId=route.split('/')[3];window.stops.push(sessionId);
@@ -25,9 +25,17 @@ let server,browser;
       const finish=()=>{if(window.ackWithoutExit)window.sessions.find(row=>row.id===sessionId).state='stopping';else window.sessions=window.sessions.filter(row=>row.id!==sessionId);if(window.injectOnStop){window.sessions.push(window.row('f'));window.injectOnStop=false;}reply(true,{ok:true});};
       if(window.holdStop){window.holdStop=false;window.releaseStop=finish;}else finish();return;
     }
+    if(route==='/v1/maintenance/recovery'){
+      if(method==='POST'){
+        window.recoveryCalls=(window.recoveryCalls || 0)+1;window.recoveryRequest=JSON.parse(body);
+        if(window.failRecovery){reply(false,{code:'error_maintenance_recovery'});return;}
+        window.recovery={...window.recovery,restored:2,failed:0,retryable:0,rows:window.recovery.rows.map(row=>row.state==='failed'?{...row,state:'restored',error:null}:row)};
+      }
+      reply(true,{recovery:window.recovery});return;
+    }
     if(route!=='/v1/health')throw Error('Unexpected mutation/request '+route);window.healthReads++;
     if(window.failHealth){reply(false,{code:'error_connection_failed'});return;}
-    const finish=()=>reply(true,{protocol:1,instance:window.instance,version:window.version,features:['multiple_projects','session_library'],agents:[{id:'shell',installed:true}],
+    const finish=()=>reply(true,{protocol:1,instance:window.instance,version:window.version,features:['multiple_projects','session_library',...(window.recovery===undefined?[]:['maintenance_recovery'])],maintenance_recovery:window.recovery,agents:[{id:'shell',installed:true}],
       project:window.project,session:null,active_sessions:window.sessions.length,projects:[{...window.project,session:null,sessions:window.sessions}]});
     if(window.holdNextHealth){window.holdNextHealth=false;window.releaseHealth=finish;}else finish();
    }
@@ -101,6 +109,7 @@ let server,browser;
  assert.equal(await page.locator('#bridge-update-install').isDisabled(),false);
  await page.evaluate(()=>{window.failHealth=false;window.sessions=[];window.BibimerResume();});
  await page.waitForFunction(()=>!document.querySelector('#bridge-restart').disabled);
+ await page.evaluate(()=>{window.Bibimer.maintainBridgeWithRecovery=()=>{throw Error('Unconfirmed maintenance');};});
  for(const lang of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']){
   await page.evaluate(lang=>{window.lang=lang;window.BibimerResume();},lang);
   await page.waitForTimeout(100);
@@ -108,11 +117,30 @@ let server,browser;
   assert.ok(layout.w<=320&&layout.scroll<=layout.client+1,lang+' overflow');
   assert.ok(!layout.text.includes('bridge_maintenance_'),lang+' untranslated');
   await page.evaluate(()=>{window.sessions=[window.row('a'),window.row('b','chat','running'),window.row('c','terminal')];});
-  await open();const modal=await page.locator('#bridge-maintenance-dialog').evaluate(el=>({scroll:el.scrollWidth,client:el.clientWidth,text:el.textContent}));
+  await open();assert.equal(await page.locator('#bridge-maintenance-reopen').isChecked(),true);assert.equal(await page.locator('#bridge-maintenance-reopen-option').isVisible(),true);const modal=await page.locator('#bridge-maintenance-dialog').evaluate(el=>({scroll:el.scrollWidth,client:el.clientWidth,text:el.textContent}));
   assert.ok(modal.scroll<=modal.client+1,lang+' modal overflow');assert.ok(!modal.text.includes('bridge_maintenance_'),lang+' modal untranslated');
   fs.mkdirSync(path.resolve(__dirname,'../dist/screenshots'),{recursive:true});if(['en','ko'].includes(lang))await page.screenshot({path:path.resolve(__dirname,'../dist/screenshots/bridge-maintenance-end-320-'+lang+'.png')});
   await cancel();await page.evaluate(()=>window.sessions=[]);
  }
+ await page.evaluate(()=>{
+   window.lang='en';window.recovery={id:'01234567-0123-4123-8123-012345678901',state:'partial',restored:1,total:4,failed:1,skipped:1,uncertain:1,retryable:1,
+     rows:[{id:window.row('a').id,state:'failed',error:'maintenance_recovery_failed'},
+           {id:window.row('b').id,state:'skipped',error:'maintenance_recovery_no_history'},
+           {id:window.row('c').id,state:'uncertain',error:'maintenance_recovery_uncertain'}]};window.BibimerResume();
+ });
+ await page.waitForFunction(()=>document.querySelector('#bridge-recovery-status').textContent.includes('1/4'));
+ assert.equal(await page.locator('#bridge-recovery-rows li').count(),3);
+ const stopCount=await page.evaluate(()=>window.stops.length);
+ await page.evaluate(()=>window.failRecovery=true);await page.locator('#bridge-recovery-retry').click();
+ await page.waitForFunction(()=>document.querySelector('#bridge-recovery-status').textContent.includes('Could not reopen these sessions'));
+ assert.equal(await page.evaluate(()=>window.recoveryCalls),1);
+ await page.evaluate(()=>window.failRecovery=false);await page.locator('#bridge-recovery-retry').click();
+ await page.waitForFunction(()=>document.querySelector('#bridge-recovery-status').textContent.includes('2/4'));
+ assert.equal(await page.locator('#bridge-recovery-retry').isVisible(),false);
+ assert.equal(await page.locator('#bridge-recovery-rows li').count(),2);
+ assert.equal(await page.evaluate(()=>window.stops.length),stopCount);
+ assert.deepEqual(await page.evaluate(()=>window.recoveryRequest),{id:'01234567-0123-4123-8123-012345678901'});
+ console.log('PASS: reopening defaults on in 10 locales at 320px; partial results separate skipped/uncertain rows; retry errors and success never stop sessions');
  assert.deepEqual(errors,[]);
  console.log('PASS: new session during stop and stale bridge never terminated; update/restart completion reconnect; offline recovery; 10 locales and confirmation at 320px');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();if(server)await new Promise(r=>server.close(r));});

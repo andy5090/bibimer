@@ -18,7 +18,7 @@ class MaintenanceError(Exception):
         self.code = code
 
 
-def maintain(action, payload, state=None, folder=None, port=8765):
+def maintain(action, payload, state=None, folder=None, port=8765, recovery=None):
     if action not in {"update", "restart"}:
         raise MaintenanceError("bridge_maintenance_failed")
     state = state or Path.home() / ".local/state/bibimer"
@@ -32,7 +32,7 @@ def maintain(action, payload, state=None, folder=None, port=8765):
         # Validate the complete bundled release before stopping or changing anything.
         release = {}
         for name, entry in payload.items():
-            if name not in {"bibimer_bridge.py", "provider_opencode.py", "provider_claude.mjs", "repair_claude_termux.py", "browser_tools.py"}:
+            if name not in {"bibimer_bridge.py", "provider_opencode.py", "provider_claude.mjs", "repair_claude_termux.py", "browser_tools.py", "maintenance_recovery.py"}:
                 raise MaintenanceError("bridge_maintenance_failed")
             content = zlib.decompress(base64.b64decode(entry["data"], validate=True))
             if hashlib.sha256(content).hexdigest() != entry["sha256"]:
@@ -63,6 +63,16 @@ def maintain(action, payload, state=None, folder=None, port=8765):
                 for project in before.get("projects", []) for row in project.get("sessions", [])
             )):
                 raise MaintenanceError("bridge_maintenance_busy")
+            recovery_id = None
+            if recovery is not None:
+                if action != "update":
+                    raise MaintenanceError("bridge_maintenance_failed")
+                # The instance is verified before restart; metadata is loaded by
+                # the old health response, which contains only stopped targets.
+                try:
+                    recovery_id = runtime.maintenance_recovery.prepare(state, before, recovery)
+                except (ValueError, TypeError, KeyError, OSError):
+                    raise MaintenanceError("bridge_maintenance_failed") from None
             # Fail closed if the state is locked but its authenticated server cannot be checked.
             if not before:
                 with open(state / "bridge.lock", "a") as bridge_lock:
@@ -98,10 +108,11 @@ def maintain(action, payload, state=None, folder=None, port=8765):
                         if os.path.exists(pending):
                             os.unlink(pending)
 
-                def start():
+                def start(reopen=False):
                     # No pairing and no terminal/output capture.
                     return subprocess.Popen([sys.executable, str(folder / "bibimer_bridge.py"), "serve",
-                        "--state-dir", str(state), "--port", str(port)], stdin=subprocess.DEVNULL,
+                        "--state-dir", str(state), "--port", str(port),
+                        *(["--recover-maintenance", recovery_id] if reopen and recovery_id else [])], stdin=subprocess.DEVNULL,
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
 
                 try:
@@ -122,7 +133,7 @@ def maintain(action, payload, state=None, folder=None, port=8765):
                     raise
                 # Release only once all files form a complete release.
                 fcntl.flock(bridge_lock, fcntl.LOCK_UN)
-                child = start()
+                child = start(reopen=True)
                 deadline = time.monotonic() + 8
                 while time.monotonic() < deadline:
                     health = runtime.bridge_health(state, port)
@@ -152,7 +163,11 @@ def maintain(action, payload, state=None, folder=None, port=8765):
 
 def main(action, payload):
     try:
-        code = maintain(action, payload)
+        encoded = os.environ.pop("BIBIMER_MAINTENANCE_REOPEN", None)
+        if encoded and len(encoded) > 16000:
+            raise ValueError("Invalid recovery size")
+        recovery = json.loads(base64.b64decode(encoded, validate=True)) if encoded else None
+        code = maintain(action, payload, recovery=recovery)
     except MaintenanceError as error:
         code = error.code
     except Exception:

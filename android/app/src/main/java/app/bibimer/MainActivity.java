@@ -479,6 +479,14 @@ public final class MainActivity extends Activity {
             });
         }
 
+        @JavascriptInterface public void maintainBridgeWithRecovery(String action, String recovery) {
+            if (DemoMode.enabled(MainActivity.this) || !BridgeMaintenance.validRecovery(action, recovery)) return;
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> {
+                if (requestCurrent(false, epoch)) bridgeMaintenance.request(MainActivity.this, action, recovery);
+            });
+        }
+
         @JavascriptInterface public void startAgentAction(String agent, String action) {
             if (DemoMode.enabled(MainActivity.this) || !AgentSetup.supports(agent, action)) return;
             final long epoch = DemoMode.epoch();

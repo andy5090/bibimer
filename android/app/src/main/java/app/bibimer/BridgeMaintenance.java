@@ -19,7 +19,7 @@ import org.json.JSONObject;
 final class BridgeMaintenance {
     static final int REQUEST_PERMISSION = 26;
     private static final String ACTION = "app.bibimer.BRIDGE_MAINTENANCE_RESULT";
-    private String pending;
+    private String pending, pendingRecovery;
     private long epoch;
 
     static boolean supports(String action) { return "update".equals(action) || "restart".equals(action); }
@@ -35,24 +35,35 @@ final class BridgeMaintenance {
         return value;
     }
 
-    void request(Activity activity, String action) {
+    // Deliberately narrow wire format: only canonical UUIDs, never shell text.
+    static boolean validRecovery(String action, String value) {
+        String id = "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}";
+        return "update".equals(action) && value != null && value.length() <= 5200 &&
+            value.matches("\\{\"id\":\"" + id + "\",\"instance\":\"" + id +
+                "\",\"session_ids\":\\[\"" + id + "\"(?:,\"" + id + "\"){0,127}\\]\\}");
+    }
+
+    void request(Activity activity, String action) { request(activity, action, null); }
+
+    void request(Activity activity, String action, String recovery) {
+        if (recovery != null && !validRecovery(action, recovery)) return;
         if (!supports(action) || DemoMode.enabled(activity) || activity.isDestroyed() || pending != null ||
             "bridge_maintenance_running".equals(status(activity))) return;
         if (!TermuxSetup.permitted(activity)) {
-            pending = action; epoch = DemoMode.epoch();
+            pending = action; pendingRecovery = recovery; epoch = DemoMode.epoch();
             phase(activity, "quick_permission");
             try { activity.requestPermissions(new String[]{TermuxSetup.PERMISSION}, REQUEST_PERMISSION); }
-            catch (Exception ignored) { pending = null; }
+            catch (Exception ignored) { pending = null; pendingRecovery = null; }
             return;
         }
-        start(activity, action);
+        start(activity, action, recovery);
     }
 
     void permissionResult(Activity activity) {
-        String action = pending; pending = null;
+        String action = pending, recovery = pendingRecovery; pending = null; pendingRecovery = null;
         if (action == null || activity.isDestroyed() || DemoMode.enabled(activity) || epoch != DemoMode.epoch()) return;
         if (!TermuxSetup.permitted(activity)) { phase(activity, "quick_permission"); return; }
-        start(activity, action);
+        start(activity, action, recovery);
     }
 
     private static PendingIntent callback(Context c, String id) {
@@ -61,7 +72,7 @@ final class BridgeMaintenance {
             PendingIntent.FLAG_ONE_SHOT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0));
     }
 
-    private static synchronized void start(Activity activity, String action) {
+    private static synchronized void start(Activity activity, String action, String recovery) {
         try {
             if ("bridge_maintenance_running".equals(status(activity))) return;
             String[] version = activity.getPackageManager().getPackageInfo("com.termux", 0).versionName.split("[.\\-]");
@@ -79,7 +90,9 @@ final class BridgeMaintenance {
             String helper = new String(output.toByteArray(), StandardCharsets.UTF_8);
             if (helper.isEmpty() || helper.contains("BIBIMER_MAINTENANCE_PYTHON") || helper.indexOf('\0') >= 0) throw new IllegalStateException();
             String script = "python - " + action + " <<'BIBIMER_MAINTENANCE_PYTHON'\n" + helper + "\nBIBIMER_MAINTENANCE_PYTHON\n";
-            if (script.length() > 220000) throw new IllegalStateException();
+            if (recovery != null) script = "BIBIMER_MAINTENANCE_REOPEN='" +
+                java.util.Base64.getEncoder().encodeToString(recovery.getBytes(StandardCharsets.UTF_8)) + "' " + script;
+            if (script.length() > 228000) throw new IllegalStateException();
             String id = UUID.randomUUID().toString();
             if (!prefs(activity).edit().putString("id", id).putString("phase", "bridge_maintenance_running")
                 .putLong("started", System.currentTimeMillis()).commit()) throw new IllegalStateException();

@@ -29,20 +29,21 @@ class MaintenanceTests(test_restart.RestartTests):
         self.old = self.source.replace(f'VERSION = "{module.VERSION}"'.encode(), b'VERSION = "0.15.0"')
         (self.folder / 'bibimer_bridge.py').write_bytes(self.old)
         (self.folder / 'browser_tools.py').write_bytes(Path(module.__file__).with_name('browser_tools.py').read_bytes())
-        self.payload = self.bundle({'bibimer_bridge.py': self.source, 'provider_opencode.py': b'# adapter\n', 'browser_tools.py': Path(module.__file__).with_name('browser_tools.py').read_bytes()})
+        (self.folder / 'maintenance_recovery.py').write_bytes(Path(module.__file__).with_name('maintenance_recovery.py').read_bytes())
+        self.payload = self.bundle({'bibimer_bridge.py': self.source, 'provider_opencode.py': b'# adapter\n', 'browser_tools.py': Path(module.__file__).with_name('browser_tools.py').read_bytes(), 'maintenance_recovery.py': Path(module.__file__).with_name('maintenance_recovery.py').read_bytes()})
 
     @staticmethod
     def bundle(files):
         return {name: {'data': base64.b64encode(zlib.compress(data)).decode(), 'sha256': hashlib.sha256(data).hexdigest()} for name, data in files.items()}
 
-    def run_maintenance(self, action='update', payload=None):
+    def run_maintenance(self, action='update', payload=None, recovery=None):
         original = subprocess.Popen
         def spawn(*args, **kwargs):
             process = original(*args, **kwargs)
             self.processes.append(process)
             return process
         with patch.object(maintenance.subprocess, 'Popen', side_effect=spawn):
-            return maintenance.maintain(action, payload or self.payload, self.state, self.folder, self.port)
+            return maintenance.maintain(action, payload or self.payload, self.state, self.folder, self.port, recovery=recovery)
 
     def test_update_and_restart_keep_token_archived_session_and_native_history(self):
         fixture = self.root / 'codex'
@@ -91,6 +92,32 @@ class MaintenanceTests(test_restart.RestartTests):
             self.post(endpoint + '/stop', {})
             event_until(lambda e: e['session']['state'] == 'exited')
 
+    def test_failed_update_rolls_back_without_reopening_or_passing_new_flags_to_old_bridge(self):
+        self.server()
+        self.post('/v1/project',{'path':str(self.root/'project'),'create':True})
+        row=self.post('/v1/sessions',{'agent':'shell','request_id':str(uuid.uuid4())})['session']
+        self.post('/v1/sessions/'+row['id']+'/stop',{})
+        deadline=time.monotonic()+5
+        while module.bridge_health(self.state,self.port)['active_sessions'] and time.monotonic()<deadline:time.sleep(.02)
+        request=dict(id=str(uuid.uuid4()),instance=module.bridge_health(self.state,self.port)['instance'],session_ids=[row['id']])
+        # The fallback release genuinely does not understand the new CLI flag.
+        old=self.old.replace(b'    parser.add_argument("--recover-maintenance", default=None)\n',b'')
+        old=old.replace(b'            if args.recover_maintenance:',b'            if False:')
+        (self.folder/'bibimer_bridge.py').write_bytes(old)
+        broken=self.source.replace(b'if __name__ == "__main__":\n    try:',b'if __name__ == "__main__":\n    sys.exit(9)\n    try:')
+        payload=self.bundle({'bibimer_bridge.py':broken,**{name:Path(module.__file__).with_name(name).read_bytes() for name in ['browser_tools.py','maintenance_recovery.py']}})
+        with self.assertRaises(maintenance.MaintenanceError):self.run_maintenance(payload=payload,recovery=request)
+        deadline=time.monotonic()+5
+        health=None
+        while time.monotonic()<deadline:
+            health=module.bridge_health(self.state,self.port)
+            if health:break
+            time.sleep(.03)
+        self.assertIsNotNone(health)
+        self.assertEqual('0.15.0',health['version'])
+        self.assertEqual(0,health['active_sessions'])
+        self.assertEqual('armed',module.maintenance_recovery.read(self.state)['state'])
+
     def test_active_session_blocks_both_actions_without_touching_files(self):
         process = self.server()
         self.post('/v1/project', {'path': str(self.root / 'project'), 'create': True})
@@ -135,7 +162,7 @@ class MaintenanceTests(test_restart.RestartTests):
                                      b'if __name__ == "__main__":\n    sys.exit(9)\n    try:')
         token = (self.state / 'token.json').read_bytes()
         with self.assertRaises(maintenance.MaintenanceError):
-            self.run_maintenance(payload=self.bundle({'bibimer_bridge.py': broken, 'provider_opencode.py': b'# new adapter\n', 'browser_tools.py': Path(module.__file__).with_name('browser_tools.py').read_bytes()}))
+            self.run_maintenance(payload=self.bundle({'bibimer_bridge.py': broken, 'provider_opencode.py': b'# new adapter\n', 'browser_tools.py': Path(module.__file__).with_name('browser_tools.py').read_bytes(), 'maintenance_recovery.py': Path(module.__file__).with_name('maintenance_recovery.py').read_bytes()}))
         deadline = time.monotonic() + 6
         while time.monotonic() < deadline:
             health = module.bridge_health(self.state, self.port)

@@ -53,6 +53,7 @@ class SetupTests(ChatFixture):
         installer.write_text('set -eu\n[ "$BIBIMER_SKIP_START" = 1 ]\n[ "$BIBIMER_CLAUDE" = 0 ]\n' +
             'cp '+shlex.quote(str(ROOT/'bridge/bibimer_bridge.py'))+' '+shlex.quote(str(path))+'\n' +
             'cp '+shlex.quote(str(ROOT/'bridge/browser_tools.py'))+' '+shlex.quote(str(path.with_name('browser_tools.py')))+'\n' +
+            'cp '+shlex.quote(str(ROOT/'bridge/maintenance_recovery.py'))+' '+shlex.quote(str(path.with_name('maintenance_recovery.py')))+'\n' +
             'printf x >> '+shlex.quote(str(marker))+'\n')
         for _ in range(2):
             result=setup.connect(path,self.state,self.server.server_port,installer)
@@ -141,7 +142,7 @@ class SetupTests(ChatFixture):
         with patch.object(Path, 'home', return_value=isolated):
             exec(compile(payload, '<isolated-installer>', 'exec'), {})
         destination = isolated/'.local/share/bibimer'
-        for name in ['bibimer_bridge.py', 'provider_opencode.py', 'provider_claude.mjs', 'repair_claude_termux.py', 'browser_tools.py']:
+        for name in ['bibimer_bridge.py', 'provider_opencode.py', 'provider_claude.mjs', 'repair_claude_termux.py', 'browser_tools.py','maintenance_recovery.py']:
             self.assertEqual((ROOT/'bridge'/name).read_bytes(), (destination/name).read_bytes())
             self.assertEqual(0o700, (destination/name).stat().st_mode & 0o777)
         import hashlib

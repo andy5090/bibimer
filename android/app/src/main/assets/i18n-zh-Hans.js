@@ -1,6 +1,15 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "maintenance_recovery_option": "更新后重新打开会话",
+  "maintenance_recovery_hint": "Chat 继续已保存的对话。终端在同一文件夹启动新进程；Firefox 使用原配置进入手动登录模式。不会恢复中断的回复、命令、队列或终端输出。",
+  "maintenance_recovery_retry": "重试打开",
+  "maintenance_recovery_progress": "正在重新打开会话：{done}/{total}",
+  "maintenance_recovery_result": "已重新打开会话：{done}/{total}",
+  "maintenance_recovery_no_history": "没有可继续的已保存对话",
+  "maintenance_recovery_failed": "无法重新打开；请检查代理和项目文件夹",
+  "maintenance_recovery_uncertain": "无法确认执行状态；已阻止自动重试",
+  "error_maintenance_recovery": "无法重新打开会话。请在设置中查看恢复状态。",
   "error_browser_permission": "此会话的权限模式不允许浏览器输入。",
   "error_browser_control": "无法控制浏览器。请打开 Termux:X11 后重试。",
   "error_browser_manual": "请在 Bibimer 中完成手动登录后允许智能体控制。",

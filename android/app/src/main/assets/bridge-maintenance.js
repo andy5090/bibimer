@@ -2,9 +2,12 @@
 window.BibimerMaintenance = class BibimerMaintenance {
   constructor(t, context, request, actions) {
     this.t=t;this.context=context;this.request=request;this.actions=actions;this.state=null;
+    this.recoveryError=null;this.recovery=null;this.recoverySupported=false;this.recoveryPolling=false;this.recoveryChecked=0;
     this.dialog=document.getElementById("bridge-maintenance-dialog");
     this.$=id=>document.getElementById("bridge-maintenance-"+id);
     this.$("confirm").addEventListener("click",()=>void this.confirm());
+    this.$("reopen").addEventListener("change",()=>{if(this.state && !this.busy)this.state.reopen=this.$("reopen").checked;});
+    document.getElementById("bridge-recovery-retry").addEventListener("click",()=>void this.retryRecovery());
     this.$("cancel").addEventListener("click",()=>this.dialog.close());
     this.dialog.addEventListener("cancel",event=>{if(this.stopping)event.preventDefault();});
     this.dialog.addEventListener("close",()=>{if(!this.stopping){this.state=null;this.actions.changed();}});
@@ -38,7 +41,7 @@ window.BibimerMaintenance = class BibimerMaintenance {
     // Offline state is checked by the authenticated Termux maintenance helper.
     // Stale rows never authorize terminating sessions we cannot inspect.
     if(!ctx.online){this.actions.start(action);return;}
-    const state=this.state={action,instance:ctx.instance,rows:null,loading:true,busy:false,error:null,stopped:0};
+    const state=this.state={action,instance:ctx.instance,rows:null,loading:true,busy:false,error:null,stopped:0,reopen:action==="update" && !!ctx.reopen};
     this.dialog.showModal();this.changed();
     await this.load(state);
   }
@@ -46,6 +49,7 @@ window.BibimerMaintenance = class BibimerMaintenance {
     state.loading=true;state.error=null;this.changed();
     try {
       state.rows=await this.health(state);
+      if(state.rows.length>128)state.reopen=false;
       if(!state.rows.length)this.start(state);
     } catch(error) {if(this.state===state)state.error=error.key==="bridge_restarted"?error.key:"bridge_maintenance_stop_failed";}
     finally {if(this.state===state){state.loading=false;this.changed();}}
@@ -53,7 +57,8 @@ window.BibimerMaintenance = class BibimerMaintenance {
   same(a,b) { return a.length===b.length && a.every(row=>b.some(other=>row.id===other.id)); }
   start(state) {
     this.ensure(state);
-    const action=state.action;this.state=null;this.dialog.close();this.actions.start(action);
+    const action=state.action;this.state=null;this.dialog.close();this.actions.start(action, state.reopen && state.rows?.length ?
+      {id:this.actions.id(),instance:state.instance,session_ids:state.rows.map(row=>row.id)} : null);
   }
   async confirm() {
     const state=this.state;if(!state || this.busy)return;
@@ -79,11 +84,49 @@ window.BibimerMaintenance = class BibimerMaintenance {
     } catch(error) {if(this.state===state)state.error=error.key==="bridge_restarted"?error.key:"bridge_maintenance_stop_failed";}
     finally {if(this.state===state){state.busy=false;this.changed();}}
   }
+  get recovering() { return this.recovery?.state==="restoring"; }
+  setRecovery(health) {
+    this.recoverySupported=health.features?.includes("maintenance_recovery")===true;
+    this.recovery=this.recoverySupported?health.maintenance_recovery:null;
+  }
+  async pollRecovery() {
+    const ctx=this.context();
+    if(!this.recoverySupported || this.recoveryPolling || !ctx.online || ctx.paused || Date.now()-this.recoveryChecked<1500)return;
+    const instance=ctx.instance;this.recoveryPolling=true;this.recoveryChecked=Date.now();
+    try {
+      const value=await this.request("GET","/v1/maintenance/recovery");
+      if(this.context().instance===instance)this.recovery=value.recovery;
+    } catch(_) {} finally {this.recoveryPolling=false;this.renderRecovery();}
+  }
+  async retryRecovery() {
+    const ctx=this.context(),plan=this.recovery;
+    if(!plan?.retryable || this.recovering || this.recoveryPolling || !ctx.online || ctx.paused)return;
+    this.recoveryPolling=true;this.recoveryError=null;this.renderRecovery();
+    try {
+      const result=await this.request("POST","/v1/maintenance/recovery",{id:plan.id});
+      if(this.context().instance===ctx.instance)this.recovery=result.recovery;
+    } catch(_) {if(this.context().instance===ctx.instance)this.recoveryError="error_maintenance_recovery";} finally {this.recoveryPolling=false;this.renderRecovery();}
+  }
+  renderRecovery() {
+    const plan=this.recovery,ctx=this.context(),$=id=>document.getElementById("bridge-recovery-"+id);
+    document.getElementById("bridge-recovery").hidden=!plan;
+    if(!plan)return;
+    $("status").textContent=this.recoveryError?this.t(this.recoveryError):this.t(this.recovering?"maintenance_recovery_progress":"maintenance_recovery_result",{done:plan.restored,total:plan.total});
+    $("rows").replaceChildren(...plan.rows.filter(row=>["failed","skipped","uncertain"].includes(row.state)).map(row=>{
+      const item=document.createElement("li"),source=this.actions.find?.(row.id);
+      item.textContent=(source?this.actions.title(source):row.id.slice(0,8))+" · "+this.t(row.error || "maintenance_recovery_failed");return item;
+    }));
+    $("retry").hidden=!plan.retryable;
+    $("retry").disabled=this.recovering || this.recoveryPolling || !ctx.online || ctx.paused;
+  }
   render() {
     const state=this.state;if(!state)return;
     this.$("confirm").textContent=this.t(state.rows ? state.action==="update"?"bridge_maintenance_end_update":"bridge_maintenance_end_restart":"sidebar_refresh");
     this.$("confirm").disabled=this.busy || !this.context().online || this.context().paused;
     this.$("cancel").disabled=state.busy;
+    this.$("reopen-option").hidden=state.action!=="update" || !this.context().reopen;
+    this.$("reopen").checked=state.reopen;
+    this.$("reopen").disabled=this.busy || (state.rows?.length || 0)>128;
     this.$("confirm").setAttribute("aria-busy",String(this.busy));
     this.$("progress").textContent=this.t(state.error || (state.loading?"sidebar_loading":state.busy?"bridge_maintenance_stopping":"bridge_maintenance_active"),
       {count:state.rows?.length || 0,done:state.stopped});

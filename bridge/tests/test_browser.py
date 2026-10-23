@@ -83,6 +83,33 @@ class BrowserTests(BridgeTestCase):
         while time.monotonic()<end and self.bridge.sessions[row['id']].state!='exited': time.sleep(.02)
         self.assertEqual('exited', self.bridge.sessions[row['id']].state)
 
+    def test_explicit_maintenance_reopens_same_profile_and_id_in_manual_mode(self):
+        row=self.start()
+        session=self.bridge.get_session(row['id'])
+        old_pid=session.process.pid
+        # The user previously allowed control; reopening must revoke it.
+        self.api('POST','/v1/browser',dict(action='allow',project_id=row['project']['id'],session_id=row['id']))
+        self.stop(row)
+        request=dict(id=str(uuid.uuid4()),instance=self.bridge.instance,session_ids=[row['id']])
+        module.maintenance_recovery.prepare(self.state,self.bridge.health(),request)
+        self.bridge.recovery=module.maintenance_recovery.Recovery(self.bridge)
+        self.bridge.recovery.begin(request['id'])
+        deadline=time.monotonic()+8
+        while self.bridge.recovery.running and time.monotonic()<deadline:time.sleep(.02)
+        summary=self.bridge.recovery.snapshot()
+        self.assertEqual(1,summary['restored'],summary)
+        reopened=self.bridge.get_session(row['id'])
+        self.assertNotEqual(old_pid,reopened.process.pid)
+        self.assertTrue(reopened.browser_manual)
+        self.assertIsNone(reopened.browser_owner)
+        deadline=time.monotonic()+3
+        while (self.root/'project/browser-starts').read_text().count('\n')<2 and time.monotonic()<deadline:time.sleep(.02)
+        starts=(self.root/'project/browser-starts').read_text().splitlines()
+        self.assertEqual(2,len(starts))
+        self.assertEqual(starts[0],starts[1])
+        self.assertTrue((Path(starts[0])/'retained-profile').exists())
+        self.assertNotIn('PRIVATE_URL',(self.state/module.maintenance_recovery.NAME).read_text())
+
     def test_authenticated_status_does_not_launch_and_rejects_untrusted_url_or_workspace(self):
         data={'action':'status','project_id':self.bridge.project['id']}
         self.assertEqual(401,self.api('POST','/v1/browser',data,auth=False)[0])

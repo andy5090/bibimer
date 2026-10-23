@@ -1,6 +1,15 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "maintenance_recovery_option": "更新後重新開啟工作階段",
+  "maintenance_recovery_hint": "Chat 會繼續已儲存的對話。終端機在相同資料夾啟動新程序；Firefox 使用原設定檔進入手動登入模式。不會還原中斷的回覆、命令、佇列或終端機輸出。",
+  "maintenance_recovery_retry": "重試開啟",
+  "maintenance_recovery_progress": "正在重新開啟工作階段：{done}/{total}",
+  "maintenance_recovery_result": "已重新開啟的工作階段：{done}/{total}",
+  "maintenance_recovery_no_history": "沒有可繼續的已儲存對話",
+  "maintenance_recovery_failed": "無法重新開啟；請檢查代理程式及專案資料夾",
+  "maintenance_recovery_uncertain": "無法確認執行狀態；已封鎖自動重試",
+  "error_maintenance_recovery": "無法重新開啟工作階段。請在設定中查看復原狀態。",
   "error_browser_permission": "此工作階段的權限模式不允許瀏覽器輸入。",
   "error_browser_control": "無法控制瀏覽器。請開啟 Termux:X11 後重試。",
   "error_browser_manual": "請在 Bibimer 中完成手動登入後允許代理程式控制。",

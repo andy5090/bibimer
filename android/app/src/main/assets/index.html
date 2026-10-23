@@ -240,6 +240,11 @@
       <h2 data-i18n="bridge_update_title">Termux bridge</h2><p id="bridge-update-version" class="hint"></p><p id="bridge-update-status" class="hint" role="status"></p>
       <p id="bridge-maintenance-hint" class="hint" data-i18n="bridge_maintenance_hint"></p>
       <p id="bridge-maintenance-status" class="hint" role="status"></p>
+      <div id="bridge-recovery" hidden>
+        <p id="bridge-recovery-status" class="hint" role="status" aria-live="polite"></p>
+        <ul id="bridge-recovery-rows"></ul>
+        <button id="bridge-recovery-retry" type="button" class="secondary" data-i18n="maintenance_recovery_retry">Retry reopening</button>
+      </div>
       <div class="button-row"><button id="bridge-update-install" type="button" class="secondary" data-i18n="bridge_maintenance_update">Update bridge</button><button id="bridge-restart" type="button" class="secondary" data-i18n="bridge_maintenance_restart">Restart bridge</button></div>
       <button id="bridge-update-guide" type="button" class="secondary" data-i18n="bridge_update_setup" hidden>Open setup guide</button>
     </section>
@@ -463,6 +468,10 @@
     <h2 id="bridge-maintenance-title" data-i18n="bridge_maintenance_confirm_title">End sessions to continue?</h2>
     <p id="bridge-maintenance-confirm-hint" class="hint" data-i18n="bridge_maintenance_confirm_hint"></p>
     <ul id="bridge-maintenance-sessions"></ul>
+    <div id="bridge-maintenance-reopen-option" hidden>
+      <label class="check"><input id="bridge-maintenance-reopen" type="checkbox" checked> <span data-i18n="maintenance_recovery_option">Reopen sessions after updating</span></label>
+      <p class="hint" data-i18n="maintenance_recovery_hint"></p>
+    </div>
     <p id="bridge-maintenance-progress" class="hint" role="status" aria-live="polite"></p>
     <button id="bridge-maintenance-confirm" type="button" class="danger"></button>
     <button id="bridge-maintenance-cancel" type="button" class="secondary" data-i18n="stop_cancel">Keep working</button>

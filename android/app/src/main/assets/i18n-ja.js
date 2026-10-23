@@ -1,6 +1,15 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "maintenance_recovery_option": "更新後にセッションを開き直す",
+  "maintenance_recovery_hint": "Chatは保存済みの会話を再開します。ターミナルは同じフォルダーで新規起動し、Firefoxは既存プロファイルの手動ログインモードで開きます。中断した応答、コマンド、キュー、ターミナル出力は復元しません。",
+  "maintenance_recovery_retry": "再度開く",
+  "maintenance_recovery_progress": "セッションを開き直しています：{done}/{total}",
+  "maintenance_recovery_result": "開き直したセッション：{done}/{total}",
+  "maintenance_recovery_no_history": "再開できる保存済み会話がありません",
+  "maintenance_recovery_failed": "開けませんでした。エージェントとプロジェクトフォルダーを確認してください",
+  "maintenance_recovery_uncertain": "実行状態を確認できません。自動再試行は停止しています",
+  "error_maintenance_recovery": "セッションを開き直せませんでした。設定で復旧状態を確認してください。",
   "error_browser_permission": "このセッションの権限ではブラウザー入力を許可していません。",
   "error_browser_control": "ブラウザーを操作できませんでした。Termux:X11を開いて再試行してください。",
   "error_browser_manual": "Bibimerで手動ログインを完了してから操作を許可してください。",

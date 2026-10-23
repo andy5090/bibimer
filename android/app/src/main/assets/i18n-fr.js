@@ -1,6 +1,15 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "maintenance_recovery_option": "Rouvrir les sessions après la mise à jour",
+  "maintenance_recovery_hint": "Chat reprend la conversation enregistrée. Les terminaux redémarrent dans le même dossier ; Firefox rouvre son profil en mode de connexion manuelle. Les réponses interrompues, commandes, files et sorties du terminal ne sont pas restaurées.",
+  "maintenance_recovery_retry": "Réessayer l’ouverture",
+  "maintenance_recovery_progress": "Réouverture des sessions : {done}/{total}",
+  "maintenance_recovery_result": "Sessions rouvertes : {done}/{total}",
+  "maintenance_recovery_no_history": "Aucune conversation enregistrée à reprendre",
+  "maintenance_recovery_failed": "Ouverture impossible ; vérifiez l’agent et le dossier du projet",
+  "maintenance_recovery_uncertain": "État d’exécution inconnu ; nouvelle tentative automatique bloquée",
+  "error_maintenance_recovery": "Impossible de rouvrir les sessions. Consultez la récupération dans les paramètres.",
   "error_browser_permission": "Les autorisations de cette session ne permettent pas la saisie dans le navigateur.",
   "error_browser_control": "Impossible de contrôler le navigateur. Ouvrez Termux:X11 et réessayez.",
   "error_browser_manual": "Terminez la connexion manuelle dans Bibimer avant d’autoriser le contrôle.",

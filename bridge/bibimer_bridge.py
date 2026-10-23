@@ -37,14 +37,18 @@ import importlib.util
 _browser_spec = importlib.util.spec_from_file_location("bibimer_browser_tools", Path(__file__).with_name("browser_tools.py"))
 browser_tools = importlib.util.module_from_spec(_browser_spec)
 _browser_spec.loader.exec_module(browser_tools)
+_recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_recovery", Path(__file__).with_name("maintenance_recovery.py"))
+maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
+_recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.20.0"
+VERSION = "0.21.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
+    "error_maintenance_recovery": "Could not reopen these sessions. Check the recovery status in Settings.",
     "error_browser_manual": "Finish manual login in Bibimer before allowing agent control.",
     "error_browser_control": "Could not control this browser. Open Termux:X11 and try again.",
     "error_browser_permission": "This session permission mode does not allow browser input.",
@@ -2766,6 +2770,7 @@ class Bridge:
         self.github = GitHubImport(self)
         self.worktree_creation = WorktreeCreation(self)
         self.linked_files = LinkedFiles(self)
+        self.recovery = maintenance_recovery.Recovery(self)
         self.persist()
 
     @property
@@ -2990,7 +2995,14 @@ class Bridge:
         project = self.working_project(data)
         return WorkspaceInspector(project).inspect(data)
 
-    def browser(self, data):
+    def recovery_target(self, receipt):
+        if receipt:
+            session_id, launch_id = receipt
+            current = next((row for row in self.snapshots() if row['id'] == session_id), None)
+            if not current or current['state'] != 'exited' or current.get('launch_id') != launch_id:
+                raise Problem(409, "error_maintenance_recovery")
+
+    def browser(self, data, restore_id=None):
         project = self.working_project(data)
         action = data.get("action")
         if action not in {"status", "start", "manual", "allow", "configure"}:
@@ -3040,6 +3052,7 @@ class Bridge:
             with self.lock:
                 if self.closing:
                     raise Problem(409, "error_bridge_stopping")
+                self.recovery_target(restore_id)
                 if key in self.deleted_launches:
                     raise Problem(409, "error_launch_conflict")
                 previous = next((row for row in self.snapshots() if row.get("launch_id") == key), None)
@@ -3058,10 +3071,19 @@ class Bridge:
                 self.browser_starting = project["id"]
             session = BrowserSession(project, self.state, url, key, self.persist)
             with self.lock:
+                try:
+                    self.recovery_target(restore_id)
+                except Problem:
+                    session.start_reading()
+                    session.stop()
+                    raise
                 if self.closing or project["id"] not in self.projects:
                     session.start_reading()
                     session.stop()
                     raise Problem(409, "error_bridge_stopping")
+                if restore_id:
+                    session.id = restore_id[0]
+                    self.previous_sessions.pop(restore_id[0], None)
                 self.sessions[session.id] = session
                 session.start_reading()
                 self.persist()
@@ -3084,7 +3106,7 @@ class Bridge:
             return {"project_id": key, "agent": agent, "session": self.snapshot_for(key)}
 
     def active_count(self):
-        return sum(session.state in ACTIVE for session in self.sessions.values()) + bool(getattr(self, "browser_starting", None))
+        return sum(session.state in ACTIVE for session in self.sessions.values()) + bool(getattr(self, "browser_starting", None)) + bool(self.recovery.running)
 
     def completions(self, instance, cursor, wait):
         result = self.completion_feed.read(instance, cursor, wait)
@@ -3158,8 +3180,8 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11", "browser_tools_x11"], "active_sessions": self.active_count(),
-                    "agents": self.agents(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11", "browser_tools_x11", "maintenance_recovery"], "active_sessions": self.active_count(),
+                    "agents": self.agents(), "maintenance_recovery": self.recovery.snapshot(),
                     "session": self.snapshot_for(self.active_project_id)}
 
     def pair(self, code):
@@ -3513,7 +3535,7 @@ class Bridge:
                               "mode": "chat", "new_session": True, "options": options, "request_id": key}, continuation)
         return {"session": result}
 
-    def launch(self, data, continuation=None, select=True):
+    def launch(self, data, continuation=None, select=True, restore_id=None):
         key = request_id(data.get("request_id"))
         cols = integer(data.get("cols", 80), 20, 300)
         rows = integer(data.get("rows", 24), 4, 200)
@@ -3537,6 +3559,7 @@ class Bridge:
         working = self.working_project(data)
 
         def target():
+            self.recovery_target(restore_id)
             if self.closing:
                 raise Problem(409, "error_bridge_stopping")
             project_id = data.get("project_id", self.active_project_id)
@@ -3616,6 +3639,9 @@ class Bridge:
                 # Keep the link when the transferred native conversation is resumed.
                 session.handoff = next((row.get("handoff") for row in self.snapshots(project_id)
                     if row["agent"] == agent and row.get("external_thread_id") == imported["source_thread_id"] and row.get("handoff")), None)
+            if restore_id:
+                session.id = restore_id[0]
+                self.previous_sessions.pop(restore_id[0], None)
             self.sessions[session.id] = session
             if select:
                 self.selected_sessions.setdefault(project_id, {})[agent] = session.id
@@ -3770,6 +3796,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 raise Problem(400, "error_invalid_json") from None
         if method == "GET" and parsed.path == "/v1/health":
             result = bridge.health()
+        elif parsed.path == "/v1/maintenance/recovery" and method in {"GET", "POST"}:
+            try:
+                result = {"recovery": bridge.recovery.begin(data.get("id")) if method == "POST" else bridge.recovery.snapshot()}
+            except (ValueError, TypeError, OSError):
+                raise Problem(409, "error_maintenance_recovery") from None
         elif method == "GET" and parsed.path == "/v1/completions":
             query = urllib.parse.parse_qs(parsed.query)
             try:
@@ -4019,6 +4050,7 @@ def main():
         os.execvpe(sys.argv[2], sys.argv[2:], os.environ)
     parser = argparse.ArgumentParser(description="Bibimer Termux bridge")
     parser.add_argument("command", choices=["start", "serve", "pair", "status", "restart"], nargs="?", default="start")
+    parser.add_argument("--recover-maintenance", default=None)
     parser.add_argument("--port", type=int, default=PORT)
     parser.add_argument("--state-dir", type=Path, default=default_state())
     parser.add_argument("--language", choices=["en", "ko"],
@@ -4069,8 +4101,12 @@ def main():
         signal.signal(signal.SIGTERM, shutdown)
         signal.signal(signal.SIGINT, shutdown)
         try:
+            if args.recover_maintenance:
+                with contextlib.suppress(ValueError, TypeError, OSError):
+                    bridge.recovery.begin(args.recover_maintenance, automatic=True)
             server.serve_forever(poll_interval=0.2)
         finally:
+            bridge.closing = True
             bridge.linked_files.close()
             bridge.github.close()
             bridge.worktree_creation.close()
