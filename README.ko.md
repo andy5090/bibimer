@@ -18,7 +18,7 @@ Android 앱, Termux, 코딩 에이전트를 하나로 비볐습니다. 세 가�
 
 ## 설치와 배포
 
-Bibimer는 [Google Play](https://play.google.com/store/apps/details?id=app.bibimer)에서 설치할 수 있습니다. **초대받은 내부 테스터는 0.27.0으로 업데이트할 수 있습니다.** Firefox·Termux:X11 브라우저 준비·프로젝트별 프로필 재사용·직접 로그인 후 제어 전달·새 Codex/Claude/OpenCode Chat의 브라우저 도구를 사용하려면 설정에서 **Termux 브리지를 0.20.0으로 업데이트**하세요. 마지막으로 확인한 공개 버전은0.23.0이며,0.25.0은10월19일 프로덕션 심사에 제출한 뒤 승인 상태를 재확인하지 않았습니다. 공개 GitHub APK 릴리스는 없습니다. 소스 빌드는 [개발 가이드](docs/development.md)를 참고하세요.
+Bibimer는 [Google Play](https://play.google.com/store/apps/details?id=app.bibimer)에서 설치할 수 있습니다. **초대받은 내부 테스터는 0.28.0으로 업데이트할 수 있습니다.** 설정에서 **Termux 브리지를 0.21.0으로 업데이트**하면 업데이트 후 세션을 다시 여는 기능을 사용할 수 있습니다. 저장된 Chat은 대화를 이어가고 터미널은 같은 폴더에서 새로 실행하며 Firefox는 기존 프로필의 직접 로그인 모드로 엽니다. 중단된 작업·대기열은 재실행하지 않습니다. 마지막으로 확인한 공개 버전은0.23.0이며,0.25.0은10월19일 프로덕션 심사에 제출한 뒤 승인 상태를 재확인하지 않았습니다. 공개 GitHub APK 릴리스는 없습니다. 소스 빌드는 [개발 가이드](docs/development.md)를 참고하세요.
 
 앱의 최소 Android 버전은 8.0(API 26)입니다. 모든 Android 버전과 기기, 에이전트 설치 환경에서 동작을 확인한 것은 아닙니다.
 

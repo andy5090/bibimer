@@ -217,7 +217,7 @@ Codex [공식 `turn/steer`](https://learn.chatgpt.com/docs/app-server#steer-an-a
 
 `bridge-maintenance.js`는 연결 세션이 있는 경우 명시적인 종료 확인을 먼저 받는다. 인증된 최신 health에서 전체 프로젝트·보관/워크트리/PTY 세션 ID를 고정하고, 실행 직전 같은 instance와 ID 집합인지 재확인한다. 목록이 달라지면 새 목록을 표시해 다시 확인받는다. 기존 `/v1/sessions/<id>/stop`을 순서대로 요청하고 health에서 모든 대상이 실제로 종료됐는지 최대 20초 확인한다(각 HTTP 요청의 별도 제한 적용). 종료 요청 수락만으로 유지보수를 시작하지 않는다. 도중 새 ID·실패·확인 불가·앱 pause/브리지 교체가 발생하면 중단하고 자동 재개하지 않는다. 유지보수 직전 도착한 새 세션은 기존 Termux 도우미의 실행 세션 검사로 거절하며 임의 종료하지 않는다. 별도 강제 종료 API·원격 명령·자동 승인·자동 모델 재개를 추가하지 않는다. 확인 창은 중복 클릭/처리 중 Back을 막고 네이티브 고정 `update`/`restart` 경로를 호출한다.
 
-소스에 구현한 업데이트 후 다시 열기는 새 Android 메서드 `maintainBridgeWithRecovery`로 계획 ID·기존 instance·확인한 세션 ID(최대128개)의 UUID만 전달한다. 기본 선택이며 해제할 수 있다. 네이티브는 정해진 JSON 형식과 크기를 검사하고 고정 스크립트의 base64 환경 값으로 전달한다. 기존 앱·오프라인 경로·일반 재시작은 이 기능을 호출하지 않는다. 새 도우미가 종료 후 기존 브리지의 인증된 health에서 instance와 종료 상태를 재검증하므로 업데이트 전 브리지가 복구 API를 지원할 필요는 없다.
+내부0.28.0·브리지0.21.0의 업데이트 후 다시 열기는 새 Android 메서드 `maintainBridgeWithRecovery`로 계획 ID·기존 instance·확인한 세션 ID(최대128개)의 UUID만 전달한다. 기본 선택이며 해제할 수 있다. 네이티브는 정해진 JSON 형식과 크기를 검사하고 고정 스크립트의 base64 환경 값으로 전달한다. 기존 앱·오프라인 경로·일반 재시작은 이 기능을 호출하지 않는다. 새 도우미가 종료 후 기존 브리지의 인증된 health에서 instance와 종료 상태를 재검증하므로 업데이트 전 브리지가 복구 API를 지원할 필요는 없다.
 
 `maintenance_recovery.py`는 상태 폴더의0600 `maintenance-recovery.json`에 허용된 프로젝트/옵션/네이티브 ID와 처리 영수증만 원자적으로 저장한다. 본문·명령·대기열·URL·계정 사용량·자격 증명은 복사하지 않는다. 설치/유지보수 payload는 이 모듈을 추가한6개다. 성공할 새 릴리스 시작에만 `serve --recover-maintenance <계획 UUID>`를 붙이고 실패 롤백의 이전 브리지에는 붙이지 않는다. 일반 시작은 파일이 남아도 자동으로 실행하지 않는다. 자동 실행은15분 내 armed 계획과 다른 새 instance에서만 허용한다.
 
