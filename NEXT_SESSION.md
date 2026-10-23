@@ -1,5 +1,13 @@
 # Bibimer 다음 세션 시작점
 
+## 0.28.1(50) 정식 배포 심사 제출 (2026-10-23)
+
+- **2026-10-23 12:06 Asia/Seoul**, 검증된 내부0.28.1(50)을 같은 번들로 프로덕션 승급해 변경 **1개** 전송을 확정했다. 기존178개 국가/지역 **100% 전체 출시**, 새50만 포함·43제외. 새 빌드/업로드/버전/키 변경 없음. SHA-256 **`c532b23e457ec85241f119e86d9e55250154b1c5c3d4a1c2bb001974191f1939`** 재확인.
+- 새로고침 후 게시 개요에 **in_review** 및 이번 프로덕션50/전체 출시 시작을 확인했다. 관리형 게시가 꺼져 있어 **Google 승인 후 자동 게시**한다. **새50 정식 공개 완료가 아니다.** 현재 공개 **0.25.0(43)**이10월22일22:33 게시·Google Play 제공됨을 재확인했다. 이전43 기록과 currentPublicVersion을 갱신했다.
+- 정식 EN/KO누적 노트 `release/google-play/release-notes/0.28.1-production.txt`: 사용량/구독 표시·Firefox/X11·업데이트 후 다시 열기·설정 간격·브리지0.21.0 안내. 오류0·기존 가독화 매핑 파일 경고1·지원기기 변화0. 내부50 및 기존 테스터/공개 대상국/관리형 게시 설정은 유지한다.
+- 증빙 `dist/production-0.28.1/` (`previous-release`, `review-bundle`, `review-notes`, `review-warning`, `review-devices`, `review-rollout`, `submission-confirmation`, `submitted` 화면 및 `submitted.json`). 실제 같은 폰의 기존 X11 Firefox에서 일반 UI로 처리했고 비공개 Console API/브라우저 디버깅 프로토콜을 사용하지 않았다. 프로덕션 `https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582`, 게시개요 `https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing`.
+- **후속: Google 검사/심사 결과와 승인 후 공개 버전50 상태 확인.** 현재 실제 기기 Play 업데이트 수신/설치와 새 APK의 브라우저/복구 전체 흐름은 미검증이다. 사용자 운영 브리지/에이전트/인증 Firefox·내부 트랙·웹사이트 배포·iOS는 재시작/변경하지 않았다.
+
 ## 0.28.1(50) 내부 테스트 게시 완료 (2026-10-23)
 
 - **2026-10-23 11:11 Asia/Seoul**, 같은 폰의 기존 Termux:X11·Firefox에서 게시하고 **새로고침 후 활성 / 내부 테스터에게 제공됨**을 확인했다. 새50만 포함·49제외·버전 코드1개·EN/KO노트2/2·오류0·기존 가독화 매핑 파일 경고1·확인한 기기 유형의 지원 변화0. 기존 트랙/테스터 설정 유지. 출시 이름 `0.28.1 (50) - Compact model and permission spacing`.

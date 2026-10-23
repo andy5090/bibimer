@@ -1,0 +1,12 @@
+<en-US>
+Compact model and permission controls, with circular context and supported subscription usage indicators.
+Firefox with Termux:X11: guided preparation, project profiles and manual sign-in before agent control.
+Reopen saved coding-agent chats after bridge updates. Terminals start fresh; interrupted commands and queued messages are not replayed.
+Update the Termux bridge to 0.21.0 in Settings to enable the new browser and session reopening features.
+</en-US>
+<ko-KR>
+모델·권한 설정을 간결하게 정리하고 컨텍스트·지원되는 구독 사용량을 원형으로 표시합니다.
+Firefox·Termux:X11 설치 안내와 프로젝트별 프로필을 제공하며 직접 로그인한 뒤 에이전트 제어를 허용합니다.
+브리지 업데이트 후 저장된 에이전트 대화를 다시 엽니다. 터미널은 새로 실행하고 중단된 명령·대기열은 재실행하지 않습니다.
+새 브라우저·세션 다시 열기 기능은 설정에서 Termux 브리지를 0.21.0으로 업데이트하세요.
+</ko-KR>
