@@ -45,7 +45,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .settings-dialog > button { width:100%; margin-top:8px; }
 
 #browser-dialog{width:calc(100vw - 32px);max-width:480px;max-height:calc(100dvh - 32px);overflow-y:auto}#browser-dialog .sidebar-heading h2{margin:0}#browser-form{display:grid;gap:8px}#browser-url{width:100%;min-width:0;font-size:16px}.browser-command{display:block;font-size:12px;overflow-wrap:anywhere;white-space:pre-wrap}#browser-dialog button{min-height:44px}#browser-workspace{overflow-wrap:anywhere}#browser-open svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6}
-.composer-options { flex:none; margin:4px 0 10px; }
+.composer-options { flex:none; margin:0 0 10px; }
 .quick-options { display:flex; align-items:center; gap:6px; }
 .quick-options select { flex:0 1 auto; min-width:0; width:auto; min-height:32px; padding:3px 6px; font-size:12px; background:transparent; color:var(--muted); cursor:pointer; }
 .quick-options select option { background:var(--card); color:var(--text); }

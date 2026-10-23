@@ -1,0 +1,8 @@
+<en-US>
+Reduced the gap between model and permission controls to match the compact settings layout.
+Touch targets and selector heights are preserved.
+</en-US>
+<ko-KR>
+모델 선택 줄과 권한 선택 줄 사이의 중복 여백을 제거해 간격을 줄였습니다.
+기존 터치 영역과 셀렉터 높이는 유지합니다.
+</ko-KR>
