@@ -26,6 +26,8 @@
   let canCommands = false, canHandoff = false, handoff = null;
   let canModels = false, canSwitchAgents = false, selectedAgent = "shell";
   let canLibrary = false, canWorktrees = false, activeViewKey = null, draftPath = null, importPath = null;
+  let canInitialMessage = false;
+  const launchAttempts = new Map();
   let actionTarget = null, deleteTarget = null, libraryBusy = false, worktreeLoading = false, worktreeError = null;
   let canResponseNotifications = false, notificationNavigating = false, notificationRetry, pendingNotification;
   let canDragProjects = false, canOrderProjects = false, canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
@@ -113,9 +115,9 @@
   });
 
   const commands = new BibimerCommands($("input"), $("commands"), t, () => {
-    const agent = session?.agent, path = session?.project?.path;
+    const agent = session?.agent || $("agent").value, path = session?.project?.path || draftPath || project?.path;
     return {agent, path, project:projectKey(), view:viewKey(), key:[instance, projectKey(), agent, path].join("/"),
-      mode:session?.mode, supported:canCommands, enabled:!$("input").disabled && ["codex", "claude", "opencode"].includes(agent)};
+      mode:session?.mode || $("mode").value, supported:canCommands, enabled:!$("input").disabled && ["codex", "claude", "opencode"].includes(agent)};
   }, data => api("POST", "/v1/commands", data));
 
   function environment() {
@@ -396,11 +398,12 @@
   function renderAgents() {
     const selected = $("agent").value;
     $("agent").replaceChildren();
-    for (const agent of knownAgents.length ? knownAgents : [{id:"shell", installed:true}]) {
+    for (const agent of (knownAgents.length ? [...knownAgents].sort((a,b) => (a.id === "shell") - (b.id === "shell")) : [{id:"shell", installed:true}])) {
       const option = document.createElement("option");
       option.value = agent.id;
       option.textContent = t("agent_" + agent.id) + (!agent.installed ? t("install_required_suffix") : agent.available === false ? t("repair_required_suffix") : "");
       option.disabled = !agent.installed || agent.available === false;
+      if (agent.id === "shell") option.dataset.description = t("terminal_secondary");
       $("agent").append(option);
     }
     if ([...$("agent").options].some(option => option.value === selected && !option.disabled)) $("agent").value = selected;
@@ -417,6 +420,13 @@
       (canLibrary || !canSwitchAgents || !owned || !["running", "stopping"].includes(owned.state));
   }
   function supportsChat() { return !!knownAgents.find(agent => agent.id === $("agent").value)?.modes?.includes("chat"); }
+  function newSessionAgent(preferred = selectedAgent) {
+    const agents = knownAgents.filter(agent => agent.id !== "shell");
+    const available = agent => agent.installed && agent.available !== false;
+    return agents.find(agent => agent.id === preferred && available(agent))?.id ||
+      agents.find(agent => available(agent) && agent.modes?.includes("chat"))?.id ||
+      agents.find(available)?.id || agents[0]?.id || "shell";
+  }
   function projectKey(value = project) { return value?.id || value?.path || null; }
   function viewKey() { return canLibrary ? activeViewKey : canSwitchAgents ? projectKey() + "/" + selectedAgent : projectKey(); }
   function rememberView() {
@@ -611,13 +621,14 @@
       }
     } finally { titleLoading = false; }
   }
-  async function selectSession(projectId, id, path = null) {
+  async function selectSession(projectId, id, path = null, draftAgent = null) {
     if (!online || busy || switchingProject || settingsBusy || libraryBusy) return;
     if (!canLibrary) { await changeProject({project_id:projectId}); sidebar.close(); tab("work"); return; }
     switchingProject = true; ++generation; clearTimeout(retryTimer); native.cancelPoll?.(); renderSession();
     try {
       const entry = knownProjects.find(row => row.id === projectId);
-      const agent = projectId === projectKey() ? selectedAgent : entry?.agent || "shell";
+      const preferred = projectId === projectKey() ? selectedAgent : entry?.agent || "shell";
+      const agent = id === null ? draftAgent || newSessionAgent(preferred) : preferred;
       const result = await api("POST", "/v1/project-session", {project_id:projectId, session_id:id, agent});
       selectedProjectId = projectId; adoptProject(entry); rememberView();
       selectedAgent = result.agent; draftPath = path || result.session?.project?.path || entry.path;
@@ -797,7 +808,7 @@
     if (canLibrary) {
       if (projectKey(next) !== projectKey()) {
         $("import-dialog").close(); rememberView(); project = next;
-        draftPath = next?.path || null; selectedAgent = next?.agent || "shell"; setSession(null);
+        draftPath = next?.path || null; selectedAgent = newSessionAgent(next?.agent); setSession(null);
       } else project = next;
       return;
     }
@@ -805,7 +816,7 @@
       $("import-dialog").close();
       rememberView();
       project = next;
-      selectedAgent = next?.agent || "shell";
+      selectedAgent = newSessionAgent(next?.agent);
       setSession(null);
       const view = views.get(viewKey());
       $("input").value = view?.text || "";
@@ -831,7 +842,8 @@
   function updateMode() {
     $("mode").querySelector('[value="chat"]').disabled = !supportsChat();
     if (!supportsChat()) $("mode").value = "terminal";
-    $("mode-hint").textContent = t($("agent").value === "codex" && !persistentCodex ? "codex_storage_update" : supportsChat() ? "mode_hint" : "mode_terminal_hint");
+    $("mode-hint").textContent = t($("agent").value === "codex" && !persistentCodex ? "codex_storage_update" : supportsChat() ? "mode_hint" : "mode_terminal_hint") +
+      (!session && supportsChat() && !canInitialMessage ? " " + t("new_chat_update") : "");
     pickers.sync();
   }
   function isChat() { return session?.mode === "chat"; }
@@ -1148,7 +1160,8 @@
     $("quick-agent").value = live ? session.agent : $("agent").value;
     $("quick-agent").disabled = !online || !project || busy || switchingProject || settingsBusy || (!!live && !canSwitchAgents);
     $("agent").disabled = $("quick-agent").disabled;
-    $("launch").disabled = !online || !project || busy || switchingProject;
+    $("launch").disabled = !online || !project || busy || switchingProject || settingsBusy;
+    $("mode").disabled = !online || busy || switchingProject || settingsBusy;
     $("import-session").disabled = $("launch").disabled || !knownAgents.some(importable);
     if ($("agent").value === "codex" && $("mode").value === "chat" && !persistentCodex) $("launch").disabled = true;
     if ($("agent").value !== "shell" && !canOptions) $("launch").disabled = true;
@@ -1162,13 +1175,17 @@
     $("browse-project").disabled = !online || switchingProject || busy;
     renderFolderBrowser(); github.render();
     $("project-update").hidden = !online || multipleProjects;
-    $("input").disabled = !online || !session || session.kind === "browser" || session.state !== "running" || (isChat() && !session.ready);
+    const newChat = !session && supportsChat() && $("mode").value === "chat";
+    const chatDisplay = isChat() || newChat;
+    $("input").disabled = newChat ? !online || !project || busy || switchingProject :
+      !online || !session || session.kind === "browser" || session.state !== "running" || (isChat() && !session.ready);
     $("input-form").hidden = session?.kind === "browser";
     const responding = isChat() && !["ready", "failed"].includes(session.turn_state);
     const enqueue = isChat() && canQueue && (responding || session.queued_count > 0);
     const steerable = isChat() && supportsSteer() && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state);
     $("send").textContent = t(enqueue ? "queue_send" : "send");
-    $("send").disabled = $("input").disabled || settingsBusy || sending.has(session?.id) || (responding && !canQueue);
+    $("send").disabled = $("input").disabled || settingsBusy || sending.has(session?.id) || (responding && !canQueue) ||
+      (newChat && (!canInitialMessage || $("launch").disabled));
     $("steer").hidden = !steerable;
     $("steer").disabled = $("input").disabled || settingsBusy || sending.has(session?.id);
     $("delivery-warning").hidden = !isChat() || !responding || canQueue;
@@ -1184,20 +1201,21 @@
     renderWorkspaceSummary(); renderWorkspaceDetails();
     void refreshProjectWorktrees(project);
     renderSessionActions(); renderProjectSettings(); renderSidebar();
-    for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.disabled = $("input").disabled;
+    for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.disabled = !session || $("input").disabled;
     $("terminal-empty").hidden = !!session;
-    $("terminal-area").hidden = isChat();
-    $("terminal-keys").hidden = isChat() || session?.kind === "browser";
-    $("chat-panel").hidden = !isChat();
+    $("terminal-area").hidden = chatDisplay;
+    $("terminal-keys").hidden = chatDisplay || session?.kind === "browser";
+    $("chat-panel").hidden = !chatDisplay;
+    $("chat-empty").textContent = t(newChat ? canInitialMessage ? "new_chat_hint" : "new_chat_update" : "chat_empty");
     $("chat-state").hidden = !isChat();
     $("chat-empty").hidden = conversation.items.size > 0;
-    $("workspace").classList.toggle("chat-mode", isChat());
+    $("workspace").classList.toggle("chat-mode", chatDisplay);
     $("workspace").classList.toggle("has-requests", isChat() && conversation.requests.size > 0);
     $("turn-status").textContent = isChat() ? (session.state === "running" ? t("chat_state_" + session.turn_state) : label) : "";
     $("turn-status").classList.toggle("response-progress", isResponding(session));
     $("interrupt-turn").hidden = !isChat() || !["running", "waiting"].includes(session.turn_state);
     $("interrupt-turn").disabled = !online || !live;
-    $("input").placeholder = t(isChat() ? "chat_placeholder" : "input_placeholder");
+    $("input").placeholder = t(chatDisplay ? "chat_placeholder" : "input_placeholder");
     conversation.enable(online && live);
     $("session-note").textContent = t(!online && session ? "session_unknown" :
       session && session.state === "lost" ? "session_lost_note" : session?.kind === "browser" ? "browser_running" : "session_kept");
@@ -1261,6 +1279,7 @@
         const lostQueue = queued.length > 0 || session?.queued_count > 0;
         setSession(null);
         modelCatalogs.clear();
+        launchAttempts.clear();
         sessionTitles.clear(); titleChecks.clear();
         worktreeChecks.clear();
         for (const key of Object.keys(worktrees)) delete worktrees[key];
@@ -1288,6 +1307,7 @@
       canModels = health.features?.includes("model_options") === true;
       canSwitchAgents = health.features?.includes("agent_sessions") === true;
       canLibrary = health.features?.includes("session_library") === true;
+      canInitialMessage = health.features?.includes("initial_chat_message") === true;
       canSessionTitles = health.features?.includes("session_titles") === true;
       canWorktrees = health.features?.includes("git_worktrees") === true;
       canCreateWorktrees = health.features?.includes("worktree_creation") === true;
@@ -1381,7 +1401,7 @@
     }
   }
   async function refreshCatalog() {
-    if (!multipleProjects || !online || paused || switchingProject || libraryBusy || catalogRequest) return;
+    if (!multipleProjects || !online || paused || busy || switchingProject || libraryBusy || catalogRequest) return;
     catalogRequest = true;
     const ticket = generation;
     try {
@@ -1501,6 +1521,7 @@
     const text = $("input").value;
     if (!text.trim() || sending.has(session?.id) || $(steer ? "steer" : "send").disabled) return;
     if (steer && $("steer").hidden) return;
+    if (!session) { if (!steer) await launchSession(text); return; }
     const id = session.id, key = viewKey();
     const turn = session.active_turn_id;
     rememberView();
@@ -1662,6 +1683,9 @@
   });
 
   async function changeAgent(agent, openExisting = false) {
+    if (!session && canLibrary && !openExisting) {
+      await selectSession(projectKey(), null, draftPath || project?.path, agent); return;
+    }
     if (!openExisting && session?.mode === "chat" && agent !== session.agent && ["codex", "claude", "opencode"].includes(agent)) {
       if (busy || switchingProject || settingsBusy) { renderSession(); return; }
       openHandoff(session.id, agent); renderSession(); return;
@@ -1912,21 +1936,52 @@
       notice(importError); await connect();
     } finally { busy = false; renderSession(); }
   });
-  $("launch").addEventListener("click", async () => {
-    if (busy) return;
-    const key = projectKey();
-    busy = true; renderSession(); notice("");
+  async function launchSession(initialText = null) {
+    if (busy || $("launch").disabled || (initialText !== null && (!canInitialMessage || session || $("mode").value !== "chat"))) return;
+    const key = viewKey(), sourceProject = projectKey(), sourceInstance = instance;
+    rememberView(); busy = true; ++generation; clearTimeout(retryTimer); native.cancelPoll?.(); notice("");
+    let attempt = launchAttempts.get(key);
+    function accepted(value) {
+      if (instance !== sourceInstance) return;
+      launchAttempts.delete(key);
+      if (initialText !== null && views.get(key)?.text === initialText) Object.assign(views.get(key), {text:"", start:0, end:0});
+      cacheSession(value);
+      if (projectKey() === sourceProject && (viewKey() === key || session?.id === value.id)) {
+        ++generation; setSession(value); resize(); startPoll();
+      }
+    }
     try {
-      const data = await api("POST", "/v1/sessions", {agent:$("agent").value, mode:$("mode").value,
+      const invoking = initialText !== null && !demo ? commands.invocation(initialText) : Promise.resolve({});
+      renderSession();
+      const invocation = await invoking;
+      if (instance !== sourceInstance || viewKey() !== key || paused) return;
+      const payload = {agent:$("agent").value, mode:$("mode").value,
         ...(canLibrary ? {new_session:true, worktree_path:draftPath || project.path} : {}),
         ...(canOptions ? {options:{...savedOptions($("agent").value),
           ...(canModels && $("agent").value === "opencode" && $("mode").value === "terminal" ? {effort:""} : {})}} : {}),
         ...(multipleProjects ? {project_id:selectedProjectId} : {}),
-        cols:Math.max(20, term.cols), rows:Math.max(4, term.rows), request_id:uuid()});
-      if (projectKey() === key) { ++generation; setSession(data.session); resize(); startPoll(); }
-    } catch (error) { notice(error.key || "error_request_failed"); await connect(); }
-    finally { busy = false; renderSession(); }
-  });
+        ...(initialText !== null ? {initial_message:{text:initialText, ...invocation}} : {})};
+      const signature = JSON.stringify([sourceInstance, payload]);
+      if (attempt && attempt.signature !== signature) { notice("error_input_uncertain", "check_delivery"); return; }
+      if (!attempt) {
+        attempt = {signature, payload:{...payload, cols:Math.max(20, term.cols), rows:Math.max(4, term.rows), request_id:uuid()}};
+        launchAttempts.set(key, attempt);
+      }
+      const data = await api("POST", "/v1/sessions", attempt.payload);
+      accepted(data.session);
+    } catch (error) {
+      if (error.status && error.status < 500) launchAttempts.delete(key);
+      notice(error.key || "error_request_failed", !error.status || error.status >= 500 ? "check_delivery" : null);
+      if (attempt && (!error.status || error.status >= 500)) {
+        try {
+          const health = await api("GET", "/v1/health");
+          const value = health.projects?.flatMap(row => row.sessions || []).find(row => row.launch_id === attempt.payload.request_id);
+          if (health.instance === sourceInstance && value) { accepted(value); notice(""); }
+        } catch (_) { /* Keep the draft and request ID for an explicit retry. */ }
+      }
+    } finally { busy = false; resizeInput(); renderSession(); startPoll(); }
+  }
+  $("launch").addEventListener("click", () => launchSession());
   $("pair-form").addEventListener("submit", async event => {
     event.preventDefault();
     if (demo || paused || online || $("pair").disabled) return;
@@ -1957,7 +2012,7 @@
     ++generation; clearTimeout(retryTimer); native.forget(); github.reset();
     connected(false); $("workspace").hidden = true; $("welcome").hidden = false;
     setSession(null); instance = null; projectInitialized = false; updateEnvironment();
-    views.clear(); modelCatalogs.clear(); selectedAgent = "shell"; selectedProjectId = null; knownProjects = []; $("input").value = "";
+    views.clear(); launchAttempts.clear(); modelCatalogs.clear(); selectedAgent = "shell"; selectedProjectId = null; knownProjects = []; $("input").value = "";
     sessionTitles.clear(); titleChecks.clear();
     for (const key of Object.keys(worktrees)) delete worktrees[key];
     worktreeChecks.clear(); workspaceDetails = null;

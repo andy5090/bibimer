@@ -98,6 +98,8 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .mode-controls .select-control { flex:0 1 205px; }
 .mode-controls .select-trigger { font-size:12px; }
 .launch-controls > label, .launch-controls .select-control { grid-column:1/-1; }
+.launch-controls > .mode-controls { grid-column:1/-1; margin:0; }
+.launch-controls > label { margin:0; font-size:12px; color:var(--text); }
 .launch-controls .select-trigger { padding:4px 8px; font-size:14px; }
 .preference-row .select-control { flex:0 0 124px; }
 .language-preference { flex-wrap:wrap; }

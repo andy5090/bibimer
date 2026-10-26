@@ -33,9 +33,9 @@ window.BibimerWorktreeCreate = class BibimerWorktreeCreate {
       }));
       for(const id of ["base","agent","mode","branch-choice"])this.$(id).dataset.context=project.id;
       this.$("base").replaceChildren(...info.refs.map(row=>{const option=new Option(row.label,row.ref);option.dataset.commit=row.commit;return option;}));
-      const agents=ctx.agents;
+      const agents=[...ctx.agents].sort((a,b)=>(a.id==="shell")-(b.id==="shell"));
       this.$("agent").replaceChildren(...agents.map(row=>{const option=new Option(this.t("agent_"+row.id),row.id);option.disabled=!row.installed || row.available===false;option.dataset.description=option.disabled?this.t(row.installed?"error_program_unavailable":"error_program_missing"):"";return option;}));
-      this.$("agent").value=agents.find(row=>row.id===project.agent && row.installed && row.available!==false)?.id || agents.find(row=>row.installed && row.available!==false)?.id || "";
+      this.$("agent").value=agents.find(row=>row.id!=="shell" && row.id===project.agent && row.installed && row.available!==false)?.id || agents.find(row=>row.id!=="shell" && row.installed && row.available!==false)?.id || agents.find(row=>row.id!=="shell")?.id || agents[0]?.id || "";
       this.modes();
       if(!fresh) state.job=[...status.jobs].reverse().find(row=>!row.session_id && ["creating","complete","interrupted"].includes(row.state)) || null;
       if(state.job)this.restoreJob(state);
@@ -68,7 +68,7 @@ window.BibimerWorktreeCreate = class BibimerWorktreeCreate {
     for(const option of this.$("agent").options) {
       option.text=t("agent_"+option.value);
       const agent=ctx.agents.find(row=>row.id===option.value);
-      option.dataset.description=option.disabled?t(agent?.installed?"error_program_unavailable":"error_program_missing"):"";
+      option.dataset.description=option.disabled?t(agent?.installed?"error_program_unavailable":"error_program_missing"):option.value==="shell"?t("terminal_secondary"):"";
     }
     for(const option of this.$("mode").options)option.text=t("mode_"+option.value);
     if(ctx.instance!==state.instance){state.auto=false;state.error="bridge_restarted";}
@@ -85,7 +85,7 @@ window.BibimerWorktreeCreate = class BibimerWorktreeCreate {
     this.$("create-submit").textContent=t(state.busy?(state.phase==="launching"?"worktree_session_starting":"worktree_creating"):job?.state==="creating"?"worktree_creating":
       job?.session_id?"worktree_open_session":job?.state==="complete"?"worktree_start_session":"worktree_create_start");
     this.$("create-submit").disabled=waiting || !ctx.online || ctx.instance!==state.instance || !state.info ||
-      (!job && (!branch || used || !this.$("agent").value || !this.$("base").value)) || (!!job && !["complete"].includes(job.state));
+      (!job && (!branch || used || !this.$("agent").value || this.$("agent").selectedOptions[0]?.disabled || !this.$("base").value)) || (!!job && !["complete"].includes(job.state));
     this.$("create-submit").setAttribute("aria-busy",String(waiting));
     this.$("create-reset").hidden=!job && !state.payload && !state.error;
     this.$("create-reset").textContent=t(state.info?"worktree_create_another":"sidebar_refresh");

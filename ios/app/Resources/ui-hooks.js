@@ -67,7 +67,7 @@
     const hint = $("mode-hint");
     if (issue) {
       $("launch").disabled = true;
-      if (context.chat) { $("send").disabled = true; $("steer").disabled = true; }
+      if (context.chat || (!session && context.mode === "chat")) { $("send").disabled = true; $("steer").disabled = true; }
       hint.dataset.iosPermission = "true"; hint.textContent = t(issue); hint.hidden = false;
     } else if (hint.dataset.iosPermission) { delete hint.dataset.iosPermission; updateMode(); }
     if (iosPermissionIssue($("import-agent").value,savedOptions($("import-agent").value).permission,"chat")) $("import-confirm").disabled = true;

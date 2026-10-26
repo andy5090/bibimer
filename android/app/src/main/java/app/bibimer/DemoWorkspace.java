@@ -89,7 +89,7 @@ final class DemoWorkspace {
         final Map<String, Object> project;
         final List<Map<String, Object>> items = new ArrayList<>(), requests = new ArrayList<>(), queue = new ArrayList<>();
         Map<String, Object> options;
-        String state = "running", turn = "ready", title = "", output = "", turnId = "";
+        String state = "running", turn = "ready", title = "", output = "", turnId = "", launchId = id;
         boolean archived, paused;
         int replay, phase;
         long revision, due, started = clock.getAsLong();
@@ -106,7 +106,7 @@ final class DemoWorkspace {
             items.add(value); if (items.size() > 100) items.remove(0);
         }
         Map<String, Object> snapshot() {
-            return object("id", id, "project", project, "agent", agent, "mode", mode, "state", state,
+            return object("id", id, "launch_id", launchId, "project", project, "agent", agent, "mode", mode, "state", state,
                 "display_title", title, "title", title, "archived", archived, "options", options, "launch_options", options,
                 "ready", true, "turn_state", turn, "active_turn_id", turnId, "queued_count", queue.size(),
                 "queue_paused", paused, "can_steer", agent.equals("codex") || agent.equals("claude"), "started_at", started / 1000.0,
@@ -187,7 +187,7 @@ final class DemoWorkspace {
         return object("version", "demo", "protocol", 1, "demo", true, "instance", instance, "home", HOME, "project", project,
             "projects", rows, "agents", agents, "session", selected == null ? null : selected.snapshot(), "features", Arrays.asList(
             "multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "agent_options", "live_agent_options",
-            "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands",
+            "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands",
             "git_worktrees", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "agent_handoff", "file_links"));
     }
     private String samplePath(String path) {
@@ -329,10 +329,18 @@ final class DemoWorkspace {
             select(project, selected); project.put("agent", agent); return object("project", project, "session", selected == null ? null : selected.snapshot());
         }
         if (path.equals("/v1/sessions")) {
+            Map<String, Object> initial = data.get("initial_message") instanceof Map ? (Map<String, Object>)data.get("initial_message") : null;
+            if (data.containsKey("initial_message")) {
+                require(initial != null && text(data, "mode").equals("chat") && Boolean.TRUE.equals(data.get("new_session")), "error_chat_mode");
+                checkInput(initial);
+            }
+            for (Session existing : sessions.values()) if (existing.launchId.equals(text(data, "request_id"))) return object("session", existing.snapshot());
             Map<String, Object> project = project(data); String folder = data.containsKey("worktree_path") ? text(data, "worktree_path") : text(project, "path");
             Session session = create(project, text(data, "agent"), text(data, "mode"), folder, data.get("options") instanceof Map ? (Map<String, Object>)data.get("options") : object());
+            if (!text(data, "request_id").isEmpty()) session.launchId = text(data, "request_id");
             session.title = provider(session.agent) + " · sample";
-            if (session.mode.equals("chat")) completeLog(session); else { session.output = "DEMO TERMINAL — prerecorded output. No commands run.\r\n" + folder + " $ "; session.revision++; }
+            if (session.mode.equals("chat")) { if (initial != null) begin(session); else completeLog(session); }
+            else { session.output = "DEMO TERMINAL — prerecorded output. No commands run.\r\n" + folder + " $ "; session.revision++; }
             select(project, session); return object("session", session.snapshot());
         }
         if (path.equals("/v1/models")) return object("agent", data.get("agent"), "models", Arrays.asList(object("id", "demo-model", "name", "Sample model · no inference", "description", "Fictional selector example", "efforts", Arrays.asList(object("id", "low"), object("id", "high")))));

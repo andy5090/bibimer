@@ -29,6 +29,7 @@ import tempfile
 import termios
 import threading
 import time
+from types import SimpleNamespace
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -3180,7 +3181,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11", "browser_tools_x11", "maintenance_recovery"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11", "browser_tools_x11", "maintenance_recovery"], "active_sessions": self.active_count(),
                     "agents": self.agents(), "maintenance_recovery": self.recovery.snapshot(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -3551,6 +3552,16 @@ class Bridge:
             raise Problem(400, "error_session_action")
         if mode == "terminal" and agent == "opencode" and options.get("effort"):
             raise Problem(400, "error_effort_terminal")
+        initial = data.get("initial_message")
+        initial_digest = None
+        if "initial_message" in data:
+            if (mode != "chat" or data.get("new_session") is not True or imported or continuation or restore_id or
+                    not isinstance(initial, dict) or set(initial) - {"text", "command_id"}):
+                raise Problem(400, "error_chat_mode")
+            text = initial.get("text")
+            if not isinstance(text, str) or not text.strip() or len(text.encode()) > 16384:
+                raise Problem(400, "error_input_size")
+            initial_digest = hashlib.sha256(json.dumps(initial, sort_keys=True).encode()).hexdigest()
         with self.lock:
             project_id = data.get("project_id", self.active_project_id)
             if project_id is None:
@@ -3570,6 +3581,10 @@ class Bridge:
                 raise Problem(409, "error_launch_conflict")
             current = next((row for row in self.snapshots() if row.get("launch_id") == key), None)
             if current and current.get("launch_id") == key:
+                # The initial prompt and its receipt stay in memory. After a restart,
+                # reject retries whose delivery can no longer be confirmed.
+                if getattr(self.sessions.get(current["id"]), "initial_message_digest", None) != initial_digest:
+                    raise Problem(409, "error_launch_conflict")
                 if ((current.get("handoff") or {}).get("request_digest") if (current.get("handoff") or {}).get("created_by") == key else None) != (continuation or {}).get("metadata", {}).get("request_digest"):
                     raise Problem(409, "error_launch_conflict")
                 if (current.get("kind") == "browser" or current["project"] != project or current["agent"] != agent or current.get("mode", "terminal") != mode or
@@ -3599,6 +3614,7 @@ class Bridge:
             project = dict(project)
         catalog = self.models({"project_id": project_id, "worktree_path": project["path"], "agent": agent})["models"] if options.get("model") else []
         validate_model_selection(options, catalog)
+        initial_invocation = self.command_input(SimpleNamespace(project=working, agent=agent), initial) if initial is not None else None
         if imported:
             result = self.history_call(project, "thread/read", {"threadId": imported["source_thread_id"], "includeTurns": False}, agent)
             source = result.get("thread", {})
@@ -3632,9 +3648,13 @@ class Bridge:
             except OSError:
                 raise Problem(400, "error_launch_failed") from None
             session.browser_key = browser_key
+            session.initial_message_digest = initial_digest
             if continuation:
                 session.queue[key] = {"id": key, "text": continuation["prompt"], "state": "queued"}
                 session.display_title = session_title(continuation["instruction"])
+            elif initial is not None:
+                session.queue[key] = {"id": key, "text": initial["text"], "state": "queued", "_invocation": initial_invocation}
+                session.display_title = session_title(initial["text"])
             elif imported and isinstance(session, ChatSession):
                 # Keep the link when the transferred native conversation is resumed.
                 session.handoff = next((row.get("handoff") for row in self.snapshots(project_id)
