@@ -1129,6 +1129,7 @@
     renderBridgeUpdate();
     const live = session && ["running", "stopping"].includes(session.state);
     $("workspace").classList.toggle("launch-mode", !live);
+    $("workspace").classList.toggle("new-session", !session);
     let label = t("process_idle");
     if (session) {
       if (session.state === "running") label = t("process_running");
