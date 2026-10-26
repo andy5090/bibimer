@@ -97,7 +97,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .select-control[data-select="project-switch"] .select-trigger { min-height:36px; font-size:13px; font-weight:600; padding:4px 8px; background:var(--card); }
 .mode-controls .select-control { flex:0 1 205px; }
 .mode-controls .select-trigger { font-size:12px; }
-.launch-controls .select-control { grid-column:1/-1; }
+.launch-controls > label, .launch-controls .select-control { grid-column:1/-1; }
 .launch-controls .select-trigger { padding:4px 8px; font-size:14px; }
 .preference-row .select-control { flex:0 0 124px; }
 .language-preference { flex-wrap:wrap; }
