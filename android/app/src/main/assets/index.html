@@ -60,7 +60,7 @@
     <section id="workspace" hidden>
       <div class="project-summary">
         <div class="project-label"><strong id="project-name">Add a project</strong><select id="project-switch" aria-label="Switch project" data-i18n-aria-label="switch_project" hidden></select><button id="project-path" type="button" aria-haspopup="dialog" aria-controls="workspace-details-dialog" disabled>A working folder in Termux</button></div>
-        <button id="browser-open" class="icon-button" type="button" data-i18n-aria-label="browser_title" aria-label="Browser · experiment" aria-haspopup="dialog" aria-controls="browser-dialog" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18Z"/></svg></button>
+        <button id="browser-open" class="icon-button" type="button" data-i18n-aria-label="browser_view" aria-label="Open browser window" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18Z"/></svg></button>
         <button id="new-session" class="icon-button" type="button" aria-label="New session" data-i18n-aria-label="session_new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
         <button id="session-more" class="icon-button" type="button" aria-label="Session actions" data-i18n-aria-label="session_actions" aria-haspopup="dialog">⋯</button>
       </div>
@@ -259,7 +259,7 @@
       <h2 data-i18n="browser_title">Firefox · Termux:X11</h2>
       <div class="preference-row"><label for="browser-agent-tools" data-i18n="browser_tools_label">Agent connection</label><select id="browser-agent-tools" aria-describedby="browser-default-hint"><option value="on" data-i18n="browser_tools_on">Automatic</option><option value="off" data-i18n="browser_tools_off">Off</option></select></div>
       <p id="browser-default-hint" class="hint" data-i18n="browser_default_hint"></p>
-      <div class="button-row"><button type="button" data-agent="browser" data-agent-action="install" class="secondary" data-i18n="browser_prepare">Prepare in Termux</button><button id="browser-settings-open" type="button" class="secondary" data-i18n="browser_view">Open browser window</button></div>
+      <div class="button-row"><button type="button" data-agent="browser" data-agent-action="install" class="secondary" data-i18n="browser_prepare">Prepare in Termux</button><button id="browser-settings-open" type="button" class="primary" data-i18n="browser_login_settings" aria-haspopup="dialog" aria-controls="browser-dialog">Login and agent control</button></div>
       <button type="button" data-browser-guide class="quiet" data-i18n="browser_get_x11">Termux:X11 releases</button>
       <p id="browser-preference-error" class="hint danger-text" role="status" hidden></p>
     </section>

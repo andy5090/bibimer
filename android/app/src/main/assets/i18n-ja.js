@@ -17,6 +17,7 @@ window.BibimerTranslations.ja = {
   "browser_default_hint": "必要なときにFirefoxを開き、プロジェクトのワークツリー間でプロファイルを共有します。新しいエージェントセッションは既定で接続します。オフにすると既存のツールアクセスも停止します。",
   "browser_control_status": "エージェント操作を許可しています。認証情報の入力前に手動ログインを選んでください。",
   "browser_manual_status": "手動ログインモードです。エージェントの画面取得と入力を停止しています。",
+  "browser_login_settings": "ログインとエージェント制御",
   "browser_allow": "ログイン完了 · エージェント操作を許可",
   "browser_manual": "手動でログイン",
   "browser_prepare": "Termuxで準備",

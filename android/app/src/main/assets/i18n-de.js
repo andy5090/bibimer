@@ -17,6 +17,7 @@ window.BibimerTranslations.de = {
   "browser_default_hint": "Firefox öffnet sich bei Bedarf und nutzt das Projektprofil in allen Worktrees. Neue Agent-Sitzungen werden standardmäßig verbunden. Ausschalten sperrt auch bestehende Tool-Zugriffe.",
   "browser_control_status": "Agent-Steuerung erlaubt. Vor der Eingabe von Zugangsdaten die manuelle Anmeldung wählen.",
   "browser_manual_status": "Manuelle Anmeldung. Bildschirmaufnahmen und Eingaben durch Agenten sind gesperrt.",
+  "browser_login_settings": "Anmeldung und Agentensteuerung",
   "browser_allow": "Angemeldet · Agent-Steuerung erlauben",
   "browser_manual": "Manuell anmelden",
   "browser_prepare": "In Termux vorbereiten",

@@ -928,7 +928,7 @@
     } catch (error) { if (browserState === state) state.error = error.key || "error_request_failed"; }
     finally { if (browserState === state) { state.loading = false; renderBrowser(); } }
   }
-  async function openBrowser() {
+  async function openBrowser(windowOnly = false) {
     if (!canBrowser || !online || demo || !native.openBrowserWindow) return;
     const ctx = fileContext(), key = browserKey();
     if (!ctx.project || !ctx.online) return;
@@ -936,8 +936,12 @@
       browserState = {key, project:ctx.project, path:ctx.path, installed:null, session:null, error:null, payload:null, busy:false};
       $("browser-url").value = "";
     }
-    if (!$("browser-dialog").open) $("browser-dialog").showModal();
-    if (!browserState.busy) await browserStatus(browserState);
+    const state = browserState;
+    if (!windowOnly && !$("browser-dialog").open) $("browser-dialog").showModal();
+    if (!state.busy) await browserStatus(state);
+    if (browserState !== state || state.key !== browserKey() || !online || paused || switchingProject) return;
+    if (windowOnly && state.session?.state === "running") native.openBrowserWindow(state.session.browser_tag);
+    else if (windowOnly && !$("browser-dialog").open) $("browser-dialog").showModal();
   }
   $("browser-settings-open").addEventListener("click", () => void openBrowser());
   for (const button of document.querySelectorAll("[data-browser-guide]")) button.addEventListener("click", () => native.openLink("https://github.com/termux/termux-x11/releases/tag/nightly"));
@@ -965,7 +969,7 @@
     } catch (error) { if (browserState === state) state.error = error.key || "error_browser_control"; }
     finally { if (browserState === state) { state.busy = false; renderBrowser(); } }
   });
-  $("browser-open").addEventListener("click", () => void openBrowser());
+  $("browser-open").addEventListener("click", () => void openBrowser(true));
   $("browser-close").addEventListener("click", () => $("browser-dialog").close());
   $("browser-refresh").addEventListener("click", () => { if (browserState && !browserState.busy) void browserStatus(browserState); });
   $("browser-guide").addEventListener("click", () => native.openLink("https://github.com/termux/termux-x11/releases/tag/nightly"));

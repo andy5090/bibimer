@@ -17,6 +17,7 @@ window.BibimerTranslations["zh-Hant"] = {
   "browser_default_hint": "需要時開啟 Firefox，並在專案的各個工作樹共用同一設定檔。新代理程式工作階段預設連線。關閉後也會封鎖現有工具存取。",
   "browser_control_status": "已允許代理程式控制。輸入憑證前請選擇手動登入。",
   "browser_manual_status": "手動登入模式。已封鎖代理程式擷取畫面及輸入。",
+  "browser_login_settings": "登入與代理控制",
   "browser_allow": "登入完成 · 允許代理程式控制",
   "browser_manual": "手動登入",
   "browser_prepare": "在 Termux 中準備",

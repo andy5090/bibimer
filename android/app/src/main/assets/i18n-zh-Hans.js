@@ -17,6 +17,7 @@ window.BibimerTranslations["zh-Hans"] = {
   "browser_default_hint": "需要时打开 Firefox，并在项目的各个工作树中复用同一配置。新智能体会话默认连接。关闭后也会阻止现有工具访问。",
   "browser_control_status": "已允许智能体控制。输入凭据前请选择手动登录。",
   "browser_manual_status": "手动登录模式。已阻止智能体截图和输入。",
+  "browser_login_settings": "登录与智能体控制",
   "browser_allow": "登录完成 · 允许智能体控制",
   "browser_manual": "手动登录",
   "browser_prepare": "在 Termux 中准备",

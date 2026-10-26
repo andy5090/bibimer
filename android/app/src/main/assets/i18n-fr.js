@@ -17,6 +17,7 @@ window.BibimerTranslations.fr = {
   "browser_default_hint": "Firefox s’ouvre au besoin et partage le profil du projet entre les worktrees. Les nouvelles sessions sont connectées par défaut. La désactivation bloque aussi les accès existants.",
   "browser_control_status": "Contrôle des agents autorisé. Choisissez la connexion manuelle avant de saisir vos identifiants.",
   "browser_manual_status": "Connexion manuelle. Les captures et les saisies des agents sont bloquées.",
+  "browser_login_settings": "Connexion et contrôle de l’agent",
   "browser_allow": "Connexion terminée · autoriser les agents",
   "browser_manual": "Se connecter manuellement",
   "browser_prepare": "Préparer dans Termux",

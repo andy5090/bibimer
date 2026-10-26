@@ -17,6 +17,7 @@ window.BibimerTranslations.id = {
   "browser_default_hint": "Firefox dibuka saat diperlukan dan menggunakan kembali profil proyek di seluruh worktree. Sesi agen baru terhubung secara default. Menonaktifkan juga memblokir akses alat yang sudah ada.",
   "browser_control_status": "Kontrol agen diizinkan. Pilih login manual sebelum memasukkan kredensial.",
   "browser_manual_status": "Mode login manual. Tangkapan layar dan input agen diblokir.",
+  "browser_login_settings": "Login dan kontrol agen",
   "browser_allow": "Login selesai · izinkan kontrol agen",
   "browser_manual": "Login sendiri",
   "browser_prepare": "Siapkan di Termux",

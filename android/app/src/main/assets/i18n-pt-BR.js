@@ -17,6 +17,7 @@ window.BibimerTranslations["pt-BR"] = {
   "browser_default_hint": "O Firefox abre quando necessário e reutiliza o perfil do projeto nas worktrees. Novas sessões do agente são conectadas por padrão. Desativar também bloqueia o acesso das sessões existentes.",
   "browser_control_status": "Controle do agente permitido. Escolha login manual antes de inserir credenciais.",
   "browser_manual_status": "Modo de login manual. Capturas de tela e entradas do agente estão bloqueadas.",
+  "browser_login_settings": "Login e controle do agente",
   "browser_allow": "Login concluído · permitir controle do agente",
   "browser_manual": "Entrar manualmente",
   "browser_prepare": "Preparar no Termux",

@@ -17,6 +17,7 @@ window.BibimerTranslations.es = {
   "browser_default_hint": "Firefox se abre cuando hace falta y reutiliza el perfil del proyecto entre worktrees. Las sesiones nuevas se conectan por defecto. Desactivarlo también bloquea el acceso existente.",
   "browser_control_status": "Control del agente permitido. Elige el inicio manual antes de introducir credenciales.",
   "browser_manual_status": "Modo de inicio de sesión manual. Las capturas y entradas del agente están bloqueadas.",
+  "browser_login_settings": "Inicio de sesión y control del agente",
   "browser_allow": "Sesión iniciada · permitir control del agente",
   "browser_manual": "Iniciar sesión manualmente",
   "browser_prepare": "Preparar en Termux",

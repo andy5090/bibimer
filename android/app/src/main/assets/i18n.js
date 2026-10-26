@@ -20,6 +20,7 @@
     browser_default_hint: ["Firefox opens when needed and reuses the project’s profile across worktrees. Connection is enabled by default for new agent sessions. Turning it off blocks existing tool access.", "필요할 때 Firefox를 열고 프로젝트의 워크트리에서 같은 프로필을 사용합니다. 새 에이전트 세션은 기본으로 연결됩니다. 사용 안 함을 선택하면 기존 도구 접근도 차단됩니다."],
     browser_control_status: ["Agent control is allowed. Choose manual login before entering credentials.", "에이전트 제어가 허용되어 있습니다. 인증 정보를 입력하기 전에 직접 로그인을 선택하세요."],
     browser_manual_status: ["Manual login mode. Agent screenshots and input are blocked.", "직접 로그인 모드입니다. 에이전트 화면 캡처와 입력이 차단됩니다."],
+    browser_login_settings: ["Login and agent control", "로그인 및 에이전트 제어"],
     browser_allow: ["Login complete · allow agent control", "로그인 완료 · 에이전트 제어 허용"],
     browser_manual: ["Sign in yourself", "직접 로그인"],
     browser_prepare: ["Prepare in Termux", "Termux에서 준비"],
