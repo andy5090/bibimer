@@ -195,8 +195,8 @@
     "installerShellSyntaxValid": true,
     "installerIsolatedExtractionVerified": true,
     "consoleUploaded": true,
-    "released": false,
-    "status": "ready_internal_test_publish",
+    "released": true,
+    "status": "published_internal_test",
     "builtOn": "2026-10-26",
     "preparedOn": "2026-10-26",
     "preparedAtLocal": "2026-10-26T17:11:24.278222+09:00",
@@ -204,7 +204,7 @@
     "releaseNotesFile": "release/google-play/release-notes/0.29.0.txt",
     "sourceBridgeVersion": "0.22.0",
     "bridgeUpdateRequiredForNewFeatures": true,
-    "consoleUploadStatus": "accepted_ready_to_publish",
+    "consoleUploadStatus": "published_internal_test",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "scriptTestsPassed": 39,
     "firstMessageControllerTestsPassed": true,
@@ -228,7 +228,13 @@
       "no_deobfuscation_mapping_file"
     ],
     "reviewErrors": [],
-    "supportedDeviceChanges": 0
+    "supportedDeviceChanges": 0,
+    "publishedOn": "2026-10-26",
+    "publishedAtLocal": "2026-10-26 23:58 Asia/Seoul",
+    "consoleStatus": "active_available_to_existing_testers",
+    "consoleActiveAfterReloadVerified": true,
+    "sourceCommit": "9de2454",
+    "evidence": "dist/play-0.29.0/published.json"
   },
   "consoleScreenshotsUpdatedOn": "2026-10-15",
   "playAppSigning": {
@@ -357,8 +363,8 @@
     "installerShellSyntaxValid": true,
     "installerIsolatedExtractionVerified": true,
     "consoleUploaded": true,
-    "released": false,
-    "status": "ready_internal_test_publish",
+    "released": true,
+    "status": "published_internal_test",
     "builtOn": "2026-10-26",
     "preparedOn": "2026-10-26",
     "preparedAtLocal": "2026-10-26T17:11:24.278222+09:00",
@@ -366,7 +372,7 @@
     "releaseNotesFile": "release/google-play/release-notes/0.29.0.txt",
     "sourceBridgeVersion": "0.22.0",
     "bridgeUpdateRequiredForNewFeatures": true,
-    "consoleUploadStatus": "accepted_ready_to_publish",
+    "consoleUploadStatus": "published_internal_test",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "scriptTestsPassed": 39,
     "firstMessageControllerTestsPassed": true,
@@ -392,7 +398,13 @@
       "no_deobfuscation_mapping_file"
     ],
     "reviewErrors": [],
-    "supportedDeviceChanges": 0
+    "supportedDeviceChanges": 0,
+    "publishedOn": "2026-10-26",
+    "publishedAtLocal": "2026-10-26 23:58 Asia/Seoul",
+    "consoleStatus": "active_available_to_existing_testers",
+    "consoleActiveAfterReloadVerified": true,
+    "sourceCommit": "9de2454",
+    "evidence": "dist/play-0.29.0/published.json"
   },
   "previousProductionRelease": {
     "versionName": "0.25.0",
@@ -573,53 +585,60 @@
     "productionSubmissionEvidence": "dist/production-0.28.1/submitted.png"
   },
   "internalTestRelease": {
-    "versionName": "0.28.1",
-    "versionCode": 50,
-    "releaseName": "0.28.1 (50) - Compact model and permission spacing",
-    "publishedOn": "2026-10-23",
-    "publishedAtLocal": "2026-10-23 11:11 Asia/Seoul",
-    "releaseNotesFile": "release/google-play/release-notes/0.28.1.txt",
+    "versionName": "0.29.0",
+    "versionCode": 51,
+    "releaseName": "0.29.0 (51) - Start chats from the first message",
+    "publishedOn": "2026-10-26",
+    "publishedAtLocal": "2026-10-26 23:58 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
-    "evidence": "dist/play-0.28.1/published.json",
-    "consoleActiveAfterReloadVerified": true,
-    "sourceBridgeVersion": "0.21.0",
-    "bridgeUpdateRequiredForNewFeatures": false,
-    "nativeRequiredAssetAccessVerified": true,
-    "sessionMaintenanceUiPackaged": true,
-    "maintenanceRecoveryPackaged": true,
-    "browserIntegrationPackaged": true,
-    "agentBrowserInstructionsPackaged": true,
-    "compactComposerGapPackaged": true,
-    "layoutVariantsPassed": 1600,
-    "scriptTestsPassed": 39,
-    "isolatedBrowserTestsPassed": true,
-    "emulatorInstallVerified": false,
-    "physicalDeviceVerified": false,
-    "productionSubmitted": true,
-    "productionReleased": false,
-    "realPlayAvailabilityResponseVerified": false,
-    "samePhoneX11FirefoxPublicationVerified": true,
     "consoleStatus": "active_available_to_existing_testers",
-    "warnings": [
-      "no_deobfuscation_mapping_file"
-    ],
-    "errors": [],
-    "supportedDeviceChanges": 0,
-    "supportedDeviceChangesScope": "observed Console rows: phone, tablet, TV, wearable, car, Chromebook, Android XR; min/target SDK unchanged",
     "includedVersionCodes": [
-      50
+      51
     ],
     "excludedPreviousVersionCodes": [
-      49
+      50
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
+    "errors": [],
+    "warnings": [
+      "no_deobfuscation_mapping_file"
+    ],
+    "supportedDeviceChanges": 0,
+    "supportedDeviceChangesScope": "observed Console rows: phone, tablet, TV, wearable, car, Chromebook, Android XR; min/target SDK unchanged",
     "refreshedStatusVerified": true,
-    "evidenceType": "Visible Play Console in retained same-phone Termux:X11 Firefox; native screenshot/input/file chooser only",
-    "productionSubmissionStatus": "in_review",
-    "productionSubmissionEvidence": "dist/production-0.28.1/submitted.png"
+    "productionSubmitted": false,
+    "productionReleased": false,
+    "sourceCommit": "9de2454",
+    "releaseNotesFile": "release/google-play/release-notes/0.29.0.txt",
+    "evidence": "dist/play-0.29.0/published.json",
+    "consoleActiveAfterReloadVerified": true,
+    "sourceBridgeVersion": "0.22.0",
+    "bridgeUpdateRequiredForNewFeatures": true,
+    "nativeRequiredAssetAccessVerified": true,
+    "sessionMaintenanceUiPackaged": true,
+    "maintenanceRecoveryPackaged": true,
+    "browserIntegrationPackaged": true,
+    "agentBrowserInstructionsPackaged": true,
+    "browserSettingsEntryPackaged": true,
+    "initialMessageLaunchPackaged": true,
+    "agentFirstSelectionPackaged": true,
+    "desktopNewSessionLayoutPackaged": true,
+    "scriptTestsPassed": 39,
+    "fullBridgeTestsPassed": 221,
+    "fullBridgeVerification": "passed",
+    "browserEntryTestsPassed": true,
+    "firstMessageControllerTestsPassed": true,
+    "localFirefoxLayoutVariantsPassedBeforeVersionBump": 520,
+    "sourceLanguageKeys": 770,
+    "sourceLanguageCount": 10,
+    "emulatorInstallVerified": false,
+    "physicalDeviceVerified": false,
+    "realPlayAvailabilityResponseVerified": false,
+    "samePhoneX11FirefoxPublicationVerified": true,
+    "bundleSha256": "52403c9b6629913e9ea4abba30a5bd278937ffbcf86f9adef305a36caadf5e41"
   },
   "productionReleaseHistory": [
     {
@@ -777,32 +796,32 @@
     "submission": "English and Korean phone screenshots only; existing app version unchanged"
   },
   "previousInternalTestRelease": {
-    "versionName": "0.28.0",
-    "versionCode": 49,
-    "releaseName": "0.28.0 (49) - Reopen sessions after bridge updates",
+    "versionName": "0.28.1",
+    "versionCode": 50,
+    "releaseName": "0.28.1 (50) - Compact model and permission spacing",
     "publishedOn": "2026-10-23",
-    "publishedAtLocal": "2026-10-23 09:36 Asia/Seoul",
-    "releaseNotesFile": "release/google-play/release-notes/0.28.0.txt",
+    "publishedAtLocal": "2026-10-23 11:11 Asia/Seoul",
+    "releaseNotesFile": "release/google-play/release-notes/0.28.1.txt",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
-    "evidence": "dist/play-0.28.0/published.json",
+    "evidence": "dist/play-0.28.1/published.json",
     "consoleActiveAfterReloadVerified": true,
     "sourceBridgeVersion": "0.21.0",
-    "bridgeUpdateRequiredForNewFeatures": true,
+    "bridgeUpdateRequiredForNewFeatures": false,
     "nativeRequiredAssetAccessVerified": true,
     "sessionMaintenanceUiPackaged": true,
     "maintenanceRecoveryPackaged": true,
     "browserIntegrationPackaged": true,
     "agentBrowserInstructionsPackaged": true,
+    "compactComposerGapPackaged": true,
+    "layoutVariantsPassed": 1600,
+    "scriptTestsPassed": 39,
+    "isolatedBrowserTestsPassed": true,
     "emulatorInstallVerified": false,
     "physicalDeviceVerified": false,
-    "productionSubmitted": false,
+    "productionSubmitted": true,
     "productionReleased": false,
-    "scriptTestsPassed": 39,
-    "focusedBridgeTestsPassed": 32,
-    "isolatedBrowserTestsPassed": true,
     "realPlayAvailabilityResponseVerified": false,
     "samePhoneX11FirefoxPublicationVerified": true,
-    "fullBridgeTestsPassedBeforeVersionBump": 213,
     "consoleStatus": "superseded",
     "warnings": [
       "no_deobfuscation_mapping_file"
@@ -811,10 +830,10 @@
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed Console rows: phone, tablet, TV, wearable, car, Chromebook, Android XR; min/target SDK unchanged",
     "includedVersionCodes": [
-      49
+      50
     ],
     "excludedPreviousVersionCodes": [
-      48
+      49
     ],
     "releaseNotesLocales": [
       "en-US",
@@ -822,7 +841,9 @@
     ],
     "refreshedStatusVerified": true,
     "evidenceType": "Visible Play Console in retained same-phone Termux:X11 Firefox; native screenshot/input/file chooser only",
-    "supersededByVersionCode": 50
+    "productionSubmissionStatus": "in_review",
+    "productionSubmissionEvidence": "dist/production-0.28.1/submitted.png",
+    "supersededByVersionCode": 51
   },
   "consoleScreenshotsVerifiedOn": "2026-10-15",
   "sourceLanguages": [
@@ -1254,6 +1275,56 @@
       "refreshedStatusVerified": true,
       "evidenceType": "Visible Play Console in retained same-phone Termux:X11 Firefox; native screenshot/input/file chooser only",
       "supersededByVersionCode": 50
+    },
+    {
+      "versionName": "0.28.1",
+      "versionCode": 50,
+      "releaseName": "0.28.1 (50) - Compact model and permission spacing",
+      "publishedOn": "2026-10-23",
+      "publishedAtLocal": "2026-10-23 11:11 Asia/Seoul",
+      "releaseNotesFile": "release/google-play/release-notes/0.28.1.txt",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+      "evidence": "dist/play-0.28.1/published.json",
+      "consoleActiveAfterReloadVerified": true,
+      "sourceBridgeVersion": "0.21.0",
+      "bridgeUpdateRequiredForNewFeatures": false,
+      "nativeRequiredAssetAccessVerified": true,
+      "sessionMaintenanceUiPackaged": true,
+      "maintenanceRecoveryPackaged": true,
+      "browserIntegrationPackaged": true,
+      "agentBrowserInstructionsPackaged": true,
+      "compactComposerGapPackaged": true,
+      "layoutVariantsPassed": 1600,
+      "scriptTestsPassed": 39,
+      "isolatedBrowserTestsPassed": true,
+      "emulatorInstallVerified": false,
+      "physicalDeviceVerified": false,
+      "productionSubmitted": true,
+      "productionReleased": false,
+      "realPlayAvailabilityResponseVerified": false,
+      "samePhoneX11FirefoxPublicationVerified": true,
+      "consoleStatus": "superseded",
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "errors": [],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed Console rows: phone, tablet, TV, wearable, car, Chromebook, Android XR; min/target SDK unchanged",
+      "includedVersionCodes": [
+        50
+      ],
+      "excludedPreviousVersionCodes": [
+        49
+      ],
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "refreshedStatusVerified": true,
+      "evidenceType": "Visible Play Console in retained same-phone Termux:X11 Firefox; native screenshot/input/file chooser only",
+      "productionSubmissionStatus": "in_review",
+      "productionSubmissionEvidence": "dist/production-0.28.1/submitted.png",
+      "supersededByVersionCode": 51
     }
   ]
 }
