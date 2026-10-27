@@ -1,5 +1,17 @@
 # 개발 및 검증
 
+## 0.31.0(53) 터미널 키보드 내부 테스트 게시 완료 (2026-10-28)
+
+**2026-10-28 00:40 Asia/Seoul**, 기존 Chrome의 Play Console에서 **Android0.31.0/code53 · 브리지0.23.0**을 내부 테스트에 게시하고 **새로고침 후 활성 / 내부 테스터에게 제공됨**을 확인했다. 출시24, 새53만 포함·52제외·EN/KO노트2/2·오류0·기존 가독화 매핑 파일 경고1·확인한7개 기기 유형의 지원 변화0이다. 기존 트랙과 테스터 설정은 유지했다.
+
+터미널의 하단 Chat 입력창·에이전트 전환 선택기를 숨기고 직접 입력을 사용한다. 네 방향키는 역T자 배치, Ctrl·Alt는 다음 키 한 번에 적용하며 F1~F12는 펼쳐 사용한다. 보조 키와 펼친 상태는 화면·세션·연결 전환 시 초기화하고 Chat 초안은 유지한다. 좁은 사이드바의 프로젝트 추가 폼 수정도 포함한다. **브리지0.23.0 유지**로 이미 같은 버전을 쓰면 이번 UI를 위한 추가 브리지 업데이트는 필요 없다.
+
+동기화한 소스 `a9f3162`의 AAB `dist/play/bibimer-0.31.0-53-release.aab`를 업로드했다. **3,355,186bytes**, SHA-256 `58cfb9227e0915085fbdb1ea0fe5d30317f9b2c57979735441eaeb6960a4e02d`. 실제 리소스/Java/D8·bundletool·서명/기존 인증서·55assets 원본·브리지0.23.0·설치/유지보수6payload/해시·셸 구문·private receiver·심사 digest와 비밀 원문 미포함·언어 split 비활성을 확인했다. 새 키·Doppler 재조회·개발 APK 생성은 없다.
+
+현재 소스의 Python scripts39개·805키×10언어·특수 키 인코딩/상태·새 Chat 회귀·전체 격리 UI 회귀가 통과했다. 공유 실제 UI에서 프로젝트 폼80개·키보드100개 배치와 시각 검토를 통과했다. 별도 iOS QA Simulator의 native WKWebView→Linux21개 검사도 통과했으며 기존 syscall151/152경고4개를 유지한 `PASS_WITH_WARNINGS`다. 이는 Android 설치본 검증과 구분한다. 전체 브리지229개·같은 폰 Firefox600배치는 이전0.30.0 기록이며 이번 UI 배포에서 반복한 검사로 간주하지 않는다.
+
+증빙 `dist/play-0.31.0/{review.png,confirmation.png,published.png,published.json}`, `.tools/aab-0.31.0-53-{build.log,final-verify.log,verification.json}`. EN/KO노트 `release/google-play/release-notes/0.31.0.txt`는323/201자다. [기존 내부 테스트 링크](https://play.google.com/apps/internaltest/4701718894791581363)를 유지한다. **Play 업데이트 수신·새 앱 설치·Android WebView/IME·실제 iPhone 검증은 후속**이다. 운영 브리지·사용자 세션·기존 인증 브라우저는 재시작하지 않았고 프로덕션·웹사이트는 변경하지 않았다. 정식 배포 마지막 확인(10월23일 공개43/50심사 중)은 갱신하지 않았다. iOS TestFlight 제공 상태는 `NEXT_SESSION.md`와 `ios/app/TESTFLIGHT.md`의 별도 기록을 따른다.
+
 ## 0.30.0(52) 내부 테스트 게시 완료 (2026-10-27)
 
 **2026-10-27 22:24 Asia/Seoul**, 같은 폰의 Termux:X11·Firefox에서 사용자 제어 허용 후 **Android0.30.0/code52 · 브리지0.23.0**을 게시했다. **새로고침 후 활성 / 내부 테스터에게 제공됨**을 재확인했다. 새52만 포함·51제외·버전 코드1개·EN/KO노트2/2·오류0·기존 가독화 매핑 파일 경고1·확인한7개 기기 유형의 지원 변화0이다. 기존 트랙/테스터 설정은 유지했다.
