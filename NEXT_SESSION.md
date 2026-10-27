@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## 레포 동기화와 Android·iOS 통합 검증 (2026-10-28)
+
+- 사용자 요청으로 미커밋 iOS TestFlight 배포 도구·아이콘/개인정보 manifest와10월27일 사이드바·터미널 직접 입력·Codex 초기화 수정 사항을 보존해6개 논리 커밋으로 나눴다. `4a3dccd`(아이콘/개인정보), `95b41c0`(배포 도구/회귀/안내), `cf93f44`(프로젝트 폼 폭), `c13f0b4`(터미널 입력/검토 붙여넣기), `dffeabf`(Codex 기한), `81a0047`(검증/사용 안내)다.
+- `origin/main`의11개 커밋을 받아 Android **0.30.0(52)·브리지0.23.0** 게시 기록·첫 메시지로 Chat 시작·에이전트 연결 관리·좁은 폼 수정을 `52cc312`로 병합했다. main 재배치나 강제 push 없이 양쪽 이력을 보존한다. `NEXT_SESSION.md`의 양쪽 추가 기록을 모두 유지했고, `app.js`의 충돌은 원격 `newChat/chatDisplay`와 입력 활성 조건을 유지하면서 `input-form.hidden = !chatDisplay`를 적용해 새 Chat 초안은 표시하고 Terminal은 숨겼다. 기존 원격 작업 기록194개 제목을 모두 보존했다.
+- 통합 후 iOS 브리지 **51개**, 앱 Python **20개**, 실제 공유 UI **80개 배치**, 에이전트 연결/브라우저 진입/iOS 권한·설정/터미널 도구 검사가 통과했다. 새 Chat 검사 대역의 `agentConnections.render`와 전체 UI 검사의 기본 에이전트 선택 기대값은 원격의 새 동작에 맞춰 테스트 전용으로 보정했다. 새 Chat 검사에서 새 초안 표시·Terminal 입력창 숨김도 통과했고, 전체 격리 UI 회귀가 최종 **PASS/exit0**이다(`.tools/repo-sync-oct28-ui.log`). 소스 구문·diff·로컬 변경24개 파일의 비밀/산출물 검사도 통과했고 `dist/`·`.tools/`·인증 파일은 커밋하지 않았다.
+- 이번 작업은 저장소 소스 통합이다. **Android 내부0.30.0(52), iOS TestFlight0.1.0(1) 배포본은 그대로**이며 새 앱 빌드·설치·배포·운영 브리지/사용자 세션/인증 브라우저 재시작을 하지 않았다. Terminal 입력/사이드바/Codex 수정은 새 배포 빌드 전까지 설치본에 미반영이다. 실제 iPhone·업데이트된 Android WebView 검증도 별도다.
+
 ## macOS TestFlight 보고: 사이드바·Codex 조회·터미널 입력 UI (2026-10-27, 소스 수정·미배포)
 
 - 사용자 macOS TestFlight **0.1.0(1)**에서 프로젝트 추가 폼의 가로 스크롤·왼쪽 잘림과 Codex 조회 실패/기존 Chat 시작 실패를 실제 확인했다. 공유 CSS grid의 auto 최소 너비를 `minmax(0,1fr)`와 자식 `min-width:0`으로 보정하고 버튼 행 줄바꿈을 허용해 폼이 사이드바 너비 안에 맞도록 했다.

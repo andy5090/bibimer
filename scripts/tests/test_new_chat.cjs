@@ -18,7 +18,7 @@ function fixture() {
     key:draft,viewKey:()=>ctx.key,projectKey:()=>ctx.project.id,uuid:()=>"request-"+(++identity),clearTimeout(){},
     savedOptions:()=>({permission:"read-only",model:"native-model",effort:"high"}),
     rememberView:()=>ctx.views.set(ctx.key,{text:fields.input.value,start:0,end:fields.input.value.length}),
-    renderSession(){},resizeInput(){},resize(){},startPoll(){},cacheSession(){},
+    renderSession(){},resizeInput(){},resize(){},startPoll(){},cacheSession(){},agentConnections:{render(){}},
     setSession:value=>{ctx.session=value;ctx.key="project/"+value.id;fields.input.value=ctx.views.get(ctx.key)?.text || "";},
     notice:(key,suffix)=>ctx.lastNotice={key,suffix},isChat:()=>ctx.session?.mode==="chat",supportsChat:()=>true,updateMode(){},
     selectSession:async(...args)=>ctx.selection=args,
@@ -46,10 +46,14 @@ function fixture() {
     vm.runInContext(source.match(/  function renderSession\(\) \{[\s\S]*?\n  \}/)[0],ctx);
     ctx.renderSession();assert.equal(fields.input.disabled,false);assert.equal(fields.send.disabled,false);
     assert.equal(fields["chat-panel"].hidden,false);assert.equal(fields["terminal-keys"].hidden,true);
+    assert.equal(fields["input-form"].hidden,false,"A new Chat draft keeps its composer visible");
     ctx.canInitialMessage=false;ctx.renderSession();assert.equal(fields.input.disabled,false);assert.equal(fields.send.disabled,true);
     assert.equal(fields["chat-empty"].textContent,"new_chat_update");
     ctx.canInitialMessage=true;ctx.busy=true;ctx.renderSession();assert.equal(fields.input.disabled,true);
     ctx.busy=false;fields.agent.value="shell";fields.mode.value="terminal";ctx.renderSession();assert.equal(fields.input.disabled,true);
+    assert.equal(fields["input-form"].hidden,true,"Explicit terminal setup hides the Chat composer");
+    ctx.session={id:"terminal",agent:"shell",mode:"terminal",state:"running"};ctx.renderSession();
+    assert.equal(fields["input-form"].hidden,true,"A running terminal keeps direct xterm input");
     ctx.session={id:"existing",agent:"codex",mode:"chat",state:"running",ready:true,turn_state:"ready"};ctx.canInitialMessage=false;ctx.renderSession();
     assert.equal(fields.input.disabled,false);assert.equal(fields.send.disabled,false,"Existing chat remains usable on older bridges");
   }

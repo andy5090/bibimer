@@ -358,6 +358,7 @@ async function main() {
   await page.locator('#create-folder').check();
   await page.locator('#project-form button[type=submit]').click();
   await page.locator('#project-form').waitFor({state:'hidden'});
+  await choose('agent','shell');
   await page.locator('#launch').click();
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='running');
   const initial = (await call('GET','/v1/health')).data.session.id;
@@ -471,6 +472,7 @@ async function main() {
   const projectB = (await call('GET','/v1/health')).data.project.id;
   assert.notEqual(projectA,projectB);
   console.log('PASS: folder browsing, hidden folders, pagination, Unicode names, missing-folder retry, cancel/stale replies, existing project import, old bridge guidance and mobile layout in both languages');
+  await choose('agent','shell');
   await page.locator('#launch').click();
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='running');
   const secondSession = (await call('GET','/v1/health')).data.session.id;
