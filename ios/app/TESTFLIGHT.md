@@ -1,15 +1,16 @@
 # iOS TestFlight 배포
 
-## 0.1.0(2) 업로드 완료·그룹 추가 대기 (2026-10-28)
+## 0.1.0(2) TestFlight 내부 배포 완료 (2026-10-28)
 
 - 소스 `a9f3162`의 터미널 하단 입력/에이전트 전환 제거, 역T자 방향키·일회 Ctrl/Alt·확장 F1–F12, 검토 후 붙여넣기, 사이드바 폭과 Codex 초기 조회 기한 수정을 기기용으로 빌드했다. 기존0.1.0(1)은 계속 제공 중이다.
 - 별도 QA Simulator에서 실제 WKWebView·내장 ARM64 Linux21개 검사/12.79초 통과, JavaScript 오류0·fatal0·진단 실패0이며 알려진 syscall151/152 경고4개만 있다. 앱 Python20개와 공유 UI80+키보드100배치·805키×10언어·전체 격리 UI 회귀도 통과했다. agent-first 기본 선택 때문에 smoke가 셸 선택 전에 launch 활성화를 기다리던 테스트 조건을 고쳐 재통과했다. 실제 모델 응답을 새로 요청하지 않았다.
 - 아카이브 `dist/ios-testflight/0.1.0-2-unsigned-oct28/Bibimer.xcarchive`와 export `dist/ios-testflight/0.1.0-2-export-oct28/`를 사용했다. IPA8,329,512bytes·SHA-256 `26ae6accdda88a7bcc86d8371d56163ef99da92084ad611784be3b2dfa405219`, 배포 서명/프로파일 검증 및 현재 소스와58개 Web 자산 일치를 확인했다. 기존 팀·번들·Xcode 계정을 유지하고 기기를 등록하지 않았다.
 - **2026-10-28 00:40:26 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**다. `dist/ios-testflight/upload-0.1.0-2/{upload-receipt.json,xcode-upload.log}`에 결과를 보관하며 로그는0600이다.
-- **ASC 처리·암호화 응답·기존 내부 그룹에 새 빌드 추가는 아직 확인하지 않았다.** 기존 Chrome의 Apple 로그인 갱신이 빈 로딩 화면/authResult=FAILED 상태라 사용자의 직접 로그인 완료를 기다린다. 그룹 자동 배포OFF·기존 테스터1명을 유지하므로 업로드 성공을 새 TestFlight 제공 완료로 간주하지 않는다. 로그인 후 처리 상태·테스트 안내·수출 규정을 확인하고 기존 Bibimer Internal에0.1.0(2)를 추가해 테스트 중 상태를 확인한다. 재업로드/새 그룹/외부 초대는 필요하지 않다.
+- 사용자가 기존 Chrome의 Apple 로그인을 직접 완료한 뒤 처리된2번 빌드를 확인했다. 수출 규정 응답은 기존과 동일한 **표준 암호화(Apple OS 외/병행 구현)·프랑스 배포 안 함**이다. 암호화가 없다고 선언하거나 Info.plist 면제 키를 추가하지 않았다. en-US 테스트 내용에 영어·한국어 안내602자를 저장하고 저장 완료를 확인했다.
+- **2026-10-28 00:53 Asia/Seoul**, 기존 **Bibimer Internal** 그룹에2번을 추가하고 새 그룹 화면에서 **0.1.0(2)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드2개를 확인했다. 기존1번도 테스트 중으로 유지한다. 빌드 ID `419d25ce-9d93-49ad-b8f6-23776c2a7b8c`; 그룹/테스터 범위·자동 배포OFF는 유지했고 재업로드·새 초대·외부 베타 심사·정식 App Store 제출은 하지 않았다. 완료 증빙은 `dist/ios-testflight/upload-0.1.0-2/{upload-receipt.json,internal-testing.png,internal-testing-summary.png}`다. TestFlight 앱에서0.1.0(2)를 업데이트한다.
 - 실제 iPhone·macOS TestFlight 업데이트 설치와 장시간/잠금/발열, 제공자별 실제 계정 응답은 이번 검사에 포함하지 않았다.
 
-## 현재 배포 상태 (2026-10-25)
+## 첫 배포 기록 (2026-10-25)
 
 - 첫 iOS 배포 후보는 `app.bibimer.ios`, **0.1.0(1)**이다. 최신 공유 UI·게스트 소스를 기기용으로 컴파일하고 기존 브랜드 아이콘의 불투명1024px AppIcon을 포함했다. Android 버전·배포 설정은 변경하지 않았다.
 - `dist/ios-testflight/0.1.0-1-unsigned-final/Bibimer.xcarchive`에서 실제 Xcode archive가 통과했다. iPhoneOS27.1·arm64·SDK metadata·실행 파일/dSYM UUID 일치,507개 manifest 자산 원본 일치·개인정보 manifest·iPhone/iPad 아이콘을 확인했다. 이 아카이브 자체는 unsigned이고, 아래 별도 export에서 배포 서명·업로드를 완료했다.
