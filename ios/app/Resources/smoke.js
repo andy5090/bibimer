@@ -42,7 +42,8 @@
     $("path").value = path; $("create-folder").checked = true; $("project-form").requestSubmit();
     await wait(() => snapshot()?.project?.path === path,"project creation");
     passed("project_create",{path});
-    await wait(() => !$("launch").disabled,"launch controls ready");
+    // Agent-first drafts may select an uninstalled CLI; choose the shell before checking launch readiness.
+    await wait(() => !snapshot().busy && !snapshot().switchingProject,"project controls ready");
     if ($("agent").value !== "shell") { $("agent").value = "shell"; $("agent").dispatchEvent(new Event("change")); }
     $("mode").value = "terminal"; $("mode").dispatchEvent(new Event("change"));
     await wait(() => !$("launch").disabled,"terminal controls ready");
