@@ -72,6 +72,19 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .agent-install .command code { overflow-wrap:anywhere; }
 .agent-install .full { margin-bottom:8px; }
 
+/* Wrapped actions and neighboring action groups need their own vertical space. */
+.button-row { align-items:stretch; row-gap:8px; }
+.button-row > button { flex-basis:120px; min-width:0; overflow-wrap:anywhere; }
+.button-row + .button-row,
+.hint + .button-row,
+.setup-step > .button-row,
+.agent-install > .button-row,
+.preference-card > .button-row { margin-top:8px; }
+.agent-install > button.full,
+.preference-card > button,
+#browser-setup > button { margin-top:8px; }
+#browser-setup > button { display:block; }
+
 .composer-actions { display:flex; flex:none; align-items:flex-end; justify-content:flex-end; gap:2px; }
 .composer textarea:placeholder-shown { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .composer-actions .quiet { min-height:28px; padding:4px 7px; font-size:11px; color:var(--green); }
@@ -457,7 +470,7 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .app-update-banner p { flex:1 1 150px; min-width:0; margin:0; color:var(--green); font-size:12px; line-height:1.5; }
 .app-update-banner > div { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px; margin-inline-start:auto; }
 .app-update-banner button { font-size:12px; }
-#app-update-card .button-row { display:flex; flex-wrap:wrap; gap:6px; }
+#app-update-card .button-row { display:flex; flex-wrap:wrap; gap:8px 6px; }
 #app-update-card .button-row button { min-width:0; white-space:normal; overflow-wrap:anywhere; flex:1 1 130px; }
 #bridge-update-version { overflow-wrap:anywhere; }
 
@@ -541,3 +554,13 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 
 #bridge-recovery-rows { list-style:none; padding:0; margin:8px 0; color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
 #bridge-recovery-rows li { margin:6px 0; }
+
+/* Account setup stays in the app; native authentication pages open on request. */
+#agent-connection-dialog{max-width:480px;width:calc(100% - 24px)}
+#agent-connection-dialog .sidebar-heading h2{margin:0;min-width:0}
+#agent-connection-dialog>.sidebar-heading{margin-bottom:12px}
+#agent-connection-dialog label{display:block;margin-bottom:5px}
+#agent-connection-dialog select,#agent-connection-dialog input{width:100%;font-size:16px}
+#agent-connection-form,#agent-connection-code-form{display:grid;gap:8px;margin-top:8px}
+#agent-connection-job>button{margin-top:8px}
+#agent-connection-instructions{white-space:pre-wrap;overflow-wrap:anywhere}

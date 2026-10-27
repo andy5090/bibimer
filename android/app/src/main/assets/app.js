@@ -32,6 +32,7 @@
   let canResponseNotifications = false, notificationNavigating = false, notificationRetry, pendingNotification;
   let canDragProjects = false, canOrderProjects = false, canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   let canInspect = false, canOpenFiles = false, openingFile = false;
+  let canConnections = false;
   let canBrowser = false, browserState = null, browserEnabled = true;
   const worktrees = {};
   const worktreeChecks = new Map();
@@ -94,6 +95,12 @@
   const fileViewer = new BibimerFileViewer(t, fileContext, data => api("POST", "/v1/inspect", data), openAndroidFile);
   const inspector = new BibimerInspector(t, fileContext, data => api("POST", "/v1/inspect", data), path => fileViewer.open(path));
 
+  const agentConnections = new BibimerAgentConnections(t,
+    () => ({online:online && !switchingProject, supported:canConnections, paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
+    data => api("POST", "/v1/agent-connections", data),
+    {sync:() => pickers.sync(), uuid:uuid, link:url => native.openLink(url),
+     terminal:agent => { if (native.startAgentAction) native.startAgentAction(agent, "login"); }});
+  $("agent-connections-open").addEventListener("click", () => void agentConnections.open(selectedAgent === "shell" ? "codex" : selectedAgent));
   const github = new BibimerGitHub(t, () => ({online:online && !paused, supported:canGitHub, home:termuxHome}),
     data => api("POST", "/v1/github", data), {
       copy:text => native.copyText(text), link:url => native.openLink(url), termux:() => native.openTermux(), refresh:refreshSidebar,
@@ -348,13 +355,14 @@
     renderQuickSetup();
   }
   function updateEnvironment() {
+    agentConnections.update();
     renderNotificationSettings();
     renderAppUpdates(); renderBridgeUpdate();
     const env = environment();
     $("demo-banner").hidden = !demo;
     $("demo-settings-card").hidden = !demo;
     $("review-access-open").hidden = demo;
-    for (const id of ["forget", "open-termux", "setup-open-termux", "quick-open-termux", "quick-app-permissions", "export-installer", "pair"]) $(id).disabled = demo;
+    for (const id of ["agent-connections-open", "forget", "open-termux", "setup-open-termux", "quick-open-termux", "quick-app-permissions", "export-installer", "pair"]) $(id).disabled = demo;
     $("termux-status").textContent = t(env.termuxInstalled ? "installed" : "install_needed");
     $("termux-status").className = "badge" + (env.termuxInstalled ? " connected" : "");
     $("reconnect-welcome").hidden = !env.paired;
@@ -866,7 +874,7 @@
     $("install-command").textContent = (i18n.language() === "ko" ? "BIBIMER_LANGUAGE=ko " : "") + "bash ~/storage/downloads/bibimer-setup.sh";
     renderAgents(); renderProjects(); updateEnvironment(); renderSession(); renderNotice();
     conversation.localize();
-    renderFolderBrowser(); github.render();
+    renderFolderBrowser(); github.render(); agentConnections.render();
     renderImport(true);
     setTimeout(resize, 30);
   }
@@ -1178,7 +1186,7 @@
     $("edit-project").disabled = (!multipleProjects && !!live) || !online || switchingProject || busy;
     $("project-switch").disabled = !online || switchingProject || busy;
     $("browse-project").disabled = !online || switchingProject || busy;
-    renderFolderBrowser(); github.render();
+    renderFolderBrowser(); github.render(); agentConnections.render();
     $("project-update").hidden = !online || multipleProjects;
     const newChat = !session && supportsChat() && $("mode").value === "chat";
     const chatDisplay = isChat() || newChat;
@@ -1320,6 +1328,8 @@
       canOrderProjects = health.features?.includes("project_ordering") === true;
       canDragProjects = health.features?.includes("project_drag_ordering") === true;
       canInspect = health.features?.includes("workspace_inspector") === true;
+      canConnections = health.features?.includes("agent_connections") === true;
+      agentConnections.update();
       canBrowser = health.features?.includes("browser_tools_x11") === true;
       browserEnabled = health.browser_enabled !== false;
       canOpenFiles = health.features?.includes("file_links") === true;
@@ -2101,13 +2111,14 @@
   for (const button of document.querySelectorAll("[data-agent-action]")) button.addEventListener("click", () => {
     if (demo || paused || button.disabled) return;
     try {
-      if (!native.startAgentAction) throw new Error();
-      native.startAgentAction(button.dataset.agent, button.dataset.agentAction);
+      if (["codex", "claude", "opencode", "gemini"].includes(button.dataset.agent) && ["status", "version", "login"].includes(button.dataset.agentAction)) {
+        void agentConnections.open(button.dataset.agent).then(() => { if (button.dataset.agentAction === "version") void agentConnections.load("version"); });
+      } else { if (!native.startAgentAction) throw new Error(); native.startAgentAction(button.dataset.agent, button.dataset.agentAction); }
     } catch (_) { window.BibimerAgentActionStatus(button.dataset.agent, "quick_start_failed"); }
   });
   const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", interrupt:"\x03", enter:"\r"};
   for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.addEventListener("click", () => sendRaw(keys[button.dataset.key]));
-  window.BibimerPause = () => { pickers.close(); paused = true; ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
+  window.BibimerPause = () => { agentConnections.pause(); pickers.close(); paused = true; ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
   $("language").addEventListener("change", () => {
     try {
       if (!native.setLanguage($("language").value)) throw new Error();

@@ -15,22 +15,24 @@ These are configurations checked on an **Android 16 arm64 phone on 2026-10-19**.
 
 Agent requirements differ from Bibimer's minimum Android version. The phone uses Termux Node.js 26.4.0, npm 11.19.0, glibc 2.42-0 and glibc-runner 2.0-3; these are reference versions, not a requirement to replace working tools.
 
-## Start authentication and provider setup from the app
+## Manage accounts and providers in Bibimer (development source, unreleased)
 
-The development source provides **Sign in with Termux** for Codex, Claude Code, and Gemini CLI, and **Connect provider** for OpenCode in **Setup → Prepare an agent**. Each opens a new terminal on the same phone. Existing bridge, project, and running sessions are preserved. Credentials, codes, and CLI output are not returned to Bibimer. Complete account/provider selection and browser authentication yourself.
+Open **Settings → Agent accounts and providers → Manage connections**, or the account/status/version actions under **Setup → Prepare an agent**. A connected Termux bridge advertising `agent_connections` is required; its source version is **0.23.0**. This needs the next explicit app build and bridge update and is absent from internal0.29.0(51).
 
-| Agent | Button action | Additional checks |
+| Agent | In-app operations | Additional step |
 | --- | --- | --- |
-| Codex | Installed `codex login` | `codex login status`, `codex --version` |
-| Claude Code | Dedicated launcher preferred, with `auth login` | `auth status`, `--version`, existing repair/adapter setup |
-| OpenCode | **Connect provider** → installed wrapper's `opencode auth login` provider selector and authentication setup | `opencode auth list` (configuration list, not an access test), `opencode --version` |
-| Gemini CLI | Run the installed CLI interactively through Termux Node.js | Same entry with `--version`; no standalone sign-in status action |
+| Codex | Native account configuration/authentication type, version, API key entry, ChatGPT login initiation and completion | Complete website authentication yourself in a browser |
+| Claude Code | Native `auth status` JSON and version | Explicit **Set up in Termux instead** for native login |
+| OpenCode | Native provider list/configuration/authentication methods, API keys, supported OAuth code/automatic callbacks, version | Plugin methods requiring additional native forms use the explicit Termux fallback |
+| Gemini CLI | Installation and version; use Node.js for the installed npm entry when necessary | Authentication status remains unavailable; choose login in the existing interactive native flow |
 
-OpenCode’s **Connect provider** action selects a provider and configures its API key or supported authentication method. The underlying command remains `auth login`, as documented in the [official OpenCode CLI guide](https://opencode.ai/docs/cli/#auth). **Configured providers** lists saved configuration; it does not establish model access.
+Connection, status and version actions stay in the app. An unavailable/older bridge shows guidance and the explicit Termux fallback. Installation, Claude repair and adapter preparation retain their existing Termux actions and permissions. Bridge queries need no new terminal.
 
-Gemini does not use an invented `gemini auth login` command. Choose **Sign in with Google** after opening the CLI, or use **`/auth`** in the CLI when already authenticated. Bibimer does not send `/auth` as a prompt, log you out, or select an account. This matches the installed 0.58.0 help, built-in command source, and [official authentication guide](https://geminicli.com/docs/get-started/authentication/). Gemini's structured Bibimer Chat integration remains unimplemented.
+Keys and codes are entered in masked fields and sent only through the local bridge to the agent's existing credential store. They are absent from Bibimer preferences, conversations, general logs and bridge metadata. Keys clear immediately on submission; fields also clear on closing, backgrounding or changing project. Browser authentication opens only on user action, with the site's origin displayed. Pending login processes and authorization details stay in memory for up to ten minutes, with cancellation, expiry and bridge shutdown cleanup.
 
-Termux 0.118+, BIBIMER's Android command permission, and Termux's `allow-external-apps=true` setting are required. Granting permission runs only the selected agent action, without switching to bridge installation. If activity launching is blocked, open the terminal from Termux's notification. Manual command copying remains available. **A request-sent message does not confirm authentication. A new APK build and installation are required; real permission dialogs, terminal switching, and browser return are not yet verified.**
+**Configured does not establish model access.** No model prompt, slash command or paid request is used as an authentication test. Existing projects, sessions, drafts and approvals are preserved. Authentication changes are not promised to affect existing processes immediately; the model catalog cache is invalidated after saving.
+
+Validation uses fictional native agents and UI controller tests. New real-account login/key saving, installed Android WebView and browser return remain unverified. Shared iOS UI/native routing is prepared, while its runtime feature flag stays disabled pending validation. Do not paste keys or authorization codes into conversations or project settings.
 
 ## Codex
 
