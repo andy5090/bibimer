@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## Android0.32.0(54)·TestFlight0.1.0(3) 내부 배포 완료 (2026-10-28)
+
+- 최종 소스와 검증 기록을5개 논리 커밋으로 나눠 **`a11b52ea2e2f00e73fd7910c180c6d715a2a9c03`**까지 정상 push하고 HEAD/origin/main 일치·clean을 확인한 뒤 업로드했다. 아래 준비 기록의 실제 최신 소스와 같은 산출물을 사용한다.
+- **02:06 Asia/Seoul**, 기존 Chrome에서 Android **0.32.0(54)·브리지0.23.1**을 내부 테스트에 게시했다. 새로고침 후 **활성/내부 테스터에게 제공됨**, 출시25·54만 포함/53제외·버전 코드1개·EN/KO2/2·오류0·기존 매핑 경고1·기기 유형7행의 지원 변화0을 확인했다. 기존 테스터/트랙·프로덕션은 유지한다. `dist/play-0.32.0/{review.png,confirmation.png,published.png,published-summary.png,published.json}` 참조.
+- AAB는3,355,974bytes·SHA-256 `53c2238d8922a206ae4bed4199746c04588e416b239841f94f3a674ebd9d1b08`다. 이번 키 UI와 함께 구형 GitHub CLI 확인 수정이 포함돼 **앱 업데이트 후 설정에서 브리지0.23.1 업데이트**가 필요하다. 운영 브리지를 이 배포 작업에서 재시작하지 않았으며 실제 Play 업데이트 수신/설치는 별도다.
+- iOS **0.1.0(3)**은 **02:06:11 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**다. 기존 팀/번들/계정을 사용했고 IPA8,330,767bytes·SHA-256 `97cde470edcb0ab4e846e362da540bb0ee825ae6b3b2fe6223cb7e4d5797e03e`의 서명과58개 Web 원본 일치를 확인했다. Apple 처리 후 기존 표준 암호화(Apple OS 외/병행)·프랑스 배포 안 함으로 응답하고 en-US 테스트 안내에 영어·한국어673자를 저장했다. **02:12 Asia/Seoul**, 기존 Bibimer Internal 그룹의 **0.1.0(3)·테스트 중·90일 후 만료**, 테스터1명·빌드3개를 확인했다. 기존1/2번과 그룹/테스터 범위·자동 배포OFF를 유지한다. 새 초대·외부 베타 심사·정식 제출은 하지 않았다. 빌드 ID `ea92b315-9985-421b-ae1c-287530eabf0d`; 증빙 `dist/ios-testflight/upload-0.1.0-3/{upload-receipt.json,internal-testing.png,internal-testing-summary.png}`과0600 업로드 로그. TestFlight 앱에서0.1.0(3)을 업데이트한다. 실제 iPhone·macOS 새 설치/포커스·장시간·제공자별 새 실제 모델 응답은 별도 검증이다.
+
 ## 특수 키 축소·홀딩 보조 키와0.32.0 배포 준비 (2026-10-28)
 
 - 사용자 요청으로 Android/iOS 공유 특수 키의 크기를 줄였다. 기본 키는 네 열의 동작 키와 역T자 방향키로 **항상2줄·68px**를 유지한다. 키 높이는44→32px, 글자는12→11px로 줄였고, 좁은 화면에서 동작 키가3줄이 되던 분기를 없앴다. Esc/Tab/Enter와 방향키·에이전트 선택기 숨김 동작은 유지한다. 사용자 후속 요청으로 F1–F12 펼침 버튼을 기본 키 윗줄로 옮기고 펼침/접힘에 맞춰 위/아래 화살표 아이콘을 표시한다.
