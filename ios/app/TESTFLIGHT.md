@@ -1,11 +1,13 @@
 # iOS TestFlight 배포
 
-## 0.1.0(3) 배포 후보 준비 (2026-10-28)
+## 0.1.0(3) TestFlight 내부 배포 완료 (2026-10-28)
 
 - 기본 특수 키2줄68px·펼친 F키1줄 추가104px, 윗줄 F펼침 버튼과 위/아래 화살표, Ctrl+C 전용 키 제거와 Ctrl/Alt/Shift 홀딩 토글을 포함한다. 보조 키는 다시 누르면 해제하며 세션/화면/연결 변경에도 초기화한다. Ctrl+C는 Ctrl을 켜고 키보드 C를 입력한다. 구형 GitHub CLI 인증 확인과 Mac의 키보드 가이드/화면 높이 수정도 포함한다. 공유 브리지는0.23.1이다.
 - 10언어·120키보드/80사이드바 배치, 제어 문자/홀딩/Shift 조합,805키×10언어·전체 격리 UI, scripts39개·GitHub13개·앱20개가 통과했다. 별도 QA Simulator의 실제 WKWebView/내장 Linux21개가13.99초에 통과했다. 기존 syscall151/152 경고4개·fatal/진단 실패0으로 PASS_WITH_WARNINGS다.58개 Web 파일이 현재 소스와 일치한다.
 - `dist/ios-testflight/0.1.0-3-unsigned-oct28/Bibimer.xcarchive`에서 기존 팀·번들·Xcode 계정으로 App Store 배포 서명/export를 완료했다. IPA `dist/ios-testflight/0.1.0-3-export-oct28/export/Bibimer.ipa`,8,330,767bytes·SHA-256 `97cde470edcb0ab4e846e362da540bb0ee825ae6b3b2fe6223cb7e4d5797e03e`다. 등록 기기/새 키/인증서 폐기 없이 서명/프로파일 검증까지 통과했다.
-- **아직 업로드/ASC 처리·기존 내부 그룹 제공 완료는 확인하지 않았다.** 사용자 요청 순서대로 레포 동기화 후 업로드하고 기존 Bibimer Internal/테스터1명 범위에서 처리한다. 현재 배포0.1.0(2)은 그대로다. 실제 iPhone·macOS TestFlight 업데이트 설치·외장 키보드/IME·작은 키 터치/F키 스와이프·제공자별 새 실제 모델 응답 검증은 별도다.
+- 최종 소스 `a11b52ea2e2f00e73fd7910c180c6d715a2a9c03`를 레포에 동기화한 뒤 **2026-10-28 02:06:11 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**를 확인했다. Apple 처리 후 기존 표준 암호화(Apple OS 외/병행)·프랑스 배포 안 함으로 응답하고, en-US 테스트 안내에 영어·한국어673자를 저장해 저장 완료를 확인했다.
+- **02:12 Asia/Seoul**, 기존 **Bibimer Internal** 그룹의 **0.1.0(3)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드3개를 확인했다. 기존1/2번도 테스트 중이다. 빌드 ID `ea92b315-9985-421b-ae1c-287530eabf0d`; 그룹/테스터 범위·자동 배포OFF를 유지하고 새 초대·외부 베타 심사·정식 App Store 제출은 하지 않았다. 증빙은 `dist/ios-testflight/upload-0.1.0-3/{upload-receipt.json,internal-testing.png,internal-testing-summary.png}`와0600 업로드 로그다. TestFlight 앱에서0.1.0(3)을 업데이트한다.
+- 실제 iPhone·macOS TestFlight 업데이트 설치·외장 키보드/IME·작은 키 터치/F키 스와이프·제공자별 새 실제 모델 응답 검증은 별도다.
 
 ## 0.1.0(2) TestFlight 내부 배포 완료 (2026-10-28)
 
