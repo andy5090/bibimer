@@ -1163,7 +1163,7 @@
     renderFolderBrowser(); github.render();
     $("project-update").hidden = !online || multipleProjects;
     $("input").disabled = !online || !session || session.kind === "browser" || session.state !== "running" || (isChat() && !session.ready);
-    $("input-form").hidden = session?.kind === "browser";
+    $("input-form").hidden = !isChat();
     const responding = isChat() && !["ready", "failed"].includes(session.turn_state);
     const enqueue = isChat() && canQueue && (responding || session.queued_count > 0);
     const steerable = isChat() && supportsSteer() && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state);

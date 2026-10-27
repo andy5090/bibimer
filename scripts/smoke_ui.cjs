@@ -54,6 +54,8 @@ async function main() {
       path.join(root,'bridge/tests/test_browser.py')],{encoding:'utf8'}));
     for (const [name,fixture] of [['termux-x11','X11'],['firefox','FIREFOX']]) fs.writeFileSync(path.join(binaries,name),'#!'+python+'\n'+browserFixtures[fixture],{mode:0o700});
     fs.writeFileSync(path.join(binaries,'openbox'),'#!'+python+'\nimport time\nwhile True: time.sleep(.1)\n',{mode:0o700});
+    // Presence-only browser tools, matching the isolated bridge browser fixtures.
+    for (const name of ["xdotool","xclip","import"]) fs.writeFileSync(path.join(binaries,name),"#!"+python+"\n",{mode:0o700});
     bridgeEnv.TMPDIR=path.join(temporary,'x11-tmp');fs.mkdirSync(bridgeEnv.TMPDIR);
     bridgeEnv.BIBIMER_CLAUDE_SDK_PATH=path.join(root,'bridge/tests/fake_claude_sdk.mjs');
     bridgeEnv.PATH = binaries+':'+process.env.PATH;
@@ -82,6 +84,17 @@ async function main() {
   }
   async function closeSidebar() {
     if (await page.locator('#sidebar').evaluate(node=>node.open)) await page.locator('#sidebar-close').click();
+  }
+  async function terminalText(text) {
+    assert.equal(await page.locator('#input-form').isVisible(),false, 'Terminal uses direct xterm input rather than the Chat composer');
+    const before = await page.evaluate(()=>window.messageRequests);
+    await page.locator('.xterm-helper-textarea').focus();
+    await page.keyboard.insertText(text);
+    await page.waitForFunction(count=>window.messageRequests>count,before);
+  }
+  async function terminalCommand(text) {
+    await terminalText(text);
+    await page.locator('#terminal-keys [data-key="enter"]').click();
   }
   async function sessionAction(id) {
     if (!await page.locator('#session-dialog').evaluate(node=>node.open)) await page.locator('#session-more').click();
@@ -125,7 +138,7 @@ async function main() {
       if (legacyQueueSteer && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>feature!=='queue_steer');
       if (legacyClaudeSteer && endpoint === '/v1/health' && result.ok) result.data.features = result.data.features.filter(feature=>feature!=='claude_steer');
       if (endpoint.includes('/events?') && !result.ok) failedEventRequests++;
-      if (heldReply?.endpoint === endpoint) {
+      if (heldReply?.endpoint === endpoint && (!heldReply.data || JSON.parse(body).data === heldReply.data)) {
         const held = heldReply; heldReply = null; held.entered(); await held.promise;
       }
       if (endpoint === '/v1/pair' && result.ok) {
@@ -352,25 +365,13 @@ async function main() {
   assert.equal(await page.locator('#subscription-usage').isHidden(),true, 'PTY has no scraped subscription usage');
   const projectA = (await call('GET','/v1/health')).data.project.id;
   const ptyRequests = await page.evaluate(()=>window.messageRequests);
-  await page.locator('#input').fill('firstsecond');
-  await page.locator('#input').evaluate(node=>node.setSelectionRange(5,5));
-  await page.locator('#input').press('Enter');
-  assert.equal(await page.locator('#input').inputValue(),'first\nsecond');
-  await page.locator('#input').evaluate(node=>node.setSelectionRange(0,5));
-  await page.locator('#input').press('Enter');
-  assert.equal(await page.locator('#input').inputValue(),'\n\nsecond');
-  await page.locator('#input').press('Shift+Enter');
-  await page.locator('#input').press('Control+Shift+Enter');
-  assert.equal(await page.locator('#input').inputValue(),'\n\n\n\nsecond');
-  assert.equal(await page.evaluate(()=>window.messageRequests),ptyRequests);
+  assert.equal(await page.locator('#input-form').isVisible(),false);
   // The terminal's dedicated Enter key still sends a raw carriage return.
   await page.locator('[data-key="enter"]').click();
   await page.waitForFunction(before=>window.messageRequests===before+1,ptyRequests);
-  await page.locator('#input').fill("printf 'CTRL_ENTER_PTY_CHECK\\n'");
-  await page.locator('#input').press('Control+Enter');
-  await page.waitForFunction(before=>window.messageRequests===before+2 && document.querySelector('#input').value==='',ptyRequests);
-  await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('CTRL_ENTER_PTY_CHECK'));
-  await page.locator('#input').fill('Draft A · 한글');
+  await terminalCommand("printf 'DIRECT_PTY_CHECK\\n'");
+  await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('DIRECT_PTY_CHECK'));
+  await terminalText('# Draft A · 한글');
   await openSidebar(); await page.locator('#edit-project').click();
   // Browse existing folders while project A continues running.
   const browseRoot = path.join(temporary, 'existing projects');
@@ -473,34 +474,39 @@ async function main() {
   await page.locator('#launch').click();
   await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='running');
   const secondSession = (await call('GET','/v1/health')).data.session.id;
-  assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
-  await page.locator('#input').fill('Keep this draft');
+  assert.equal(await page.locator('#input-form').isVisible(),false);
+  await terminalText('# Draft B');
+  await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('# Draft B'));
   await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('enter-behavior','send');
   await page.locator('#tab-work').click();
-  assert.equal(await page.locator('#input').inputValue(),'Keep this draft');
+  assert.ok((await page.locator('#terminal').innerText()).includes('# Draft B'));
   assert.equal((await call('GET','/v1/health')).data.session.id,secondSession);
-  assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'send');
-  await page.locator('#input').fill("printf 'PROJECT_''B_ONLY\\n'");
-  await page.locator('#input').press('Enter');
-  await page.waitForFunction(()=>document.querySelector('#input').value==='');
-  await page.locator('#input').fill('Draft B');
+  // Changing Chat Enter behavior does not alter the terminal's direct Enter key.
+  await page.locator('#terminal-keys [data-key="enter"]').click();
+  await terminalCommand("printf 'PROJECT_''B_ONLY\\n'");
+  await terminalText('# Draft B');
   await choose('project-switch',projectA);
-  await page.waitForFunction(()=>document.querySelector('#input').value==='Draft A · 한글');
+  await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('# Draft A · 한글'));
+  await page.locator('#terminal-keys [data-key="enter"]').click();
   assert.equal((await call('GET','/v1/health')).data.active_sessions,2);
   const heldText = "printf 'PROJECT_''A_ONLY\\n'";
+  await terminalText(heldText);
   let releaseReply, inputAccepted;
   const accepted = new Promise(resolve=>{inputAccepted=resolve;});
-  heldReply = {endpoint:`/v1/sessions/${initial}/input`, entered:inputAccepted,
+  heldReply = {endpoint:`/v1/sessions/${initial}/input`, data:Buffer.from("\r").toString("base64"), entered:inputAccepted,
     promise:new Promise(resolve=>{releaseReply=resolve;})};
-  await page.locator('#input').fill(heldText);
-  await page.locator('#input').press('Enter');
+  // Hold the actual Enter key's delivery response after the bridge accepts it.
+  // Switching now must not redirect any queued data to the other terminal.
+  await page.locator('#terminal-keys [data-key="enter"]').click();
   await accepted;
   await choose('project-switch',projectB);
-  await page.waitForFunction(()=>document.querySelector('#input').value==='Draft B');
-  await page.locator('#input').fill(heldText);
+  await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('# Draft B'));
+  const bBeforeReply = (await call('GET',`/v1/sessions/${secondSession}/events?cursor=0&wait=0`)).data;
+  const bCursorBeforeReply = bBeforeReply.cursor;
   releaseReply(); await delay(100);
-  assert.equal(await page.locator('#input').inputValue(),heldText);
+  assert.ok((await page.locator('#terminal').innerText()).includes('# Draft B'));
+  assert.equal((await call('GET',`/v1/sessions/${secondSession}/events?cursor=${bCursorBeforeReply}&wait=0`)).data.data,'', 'A delayed input response must not send anything to terminal B');
   const aOutput = (await call('GET',`/v1/sessions/${initial}/events?cursor=0&wait=0`)).data;
   const bOutput = (await call('GET',`/v1/sessions/${secondSession}/events?cursor=0&wait=0`)).data;
   assert.ok(Buffer.from(aOutput.data,'base64').toString().includes('PROJECT_A_ONLY'));
@@ -513,29 +519,25 @@ async function main() {
   await choose('project-switch',projectA);
   await page.waitForFunction(()=>document.querySelector('#project-path').title.endsWith('/project'));
   await page.waitForFunction(()=>!document.querySelector('#input').disabled);
-  assert.equal(await page.locator('#input').inputValue(),'');
+  assert.equal(await page.locator('#input-form').isVisible(),false);
   assert.equal((await call('GET','/v1/health')).data.session.id,initial);
   await page.screenshot({path:path.join(root,'dist/screenshots/projects-en.png')});
-  console.log('PASS: two active projects, draft restore, delayed send reply isolation, separate terminal output and scoped stop');
-  await page.locator('#input').fill("printf 'PHONE_''DEVELOPMENT\\n'");
-  await page.locator('#input').press('Enter');
-  await page.waitForFunction(()=>document.querySelector('#input').value==='');
+  console.log('PASS: two active projects, terminal input-line preservation, delayed send reply isolation, separate terminal output and scoped stop');
+  await terminalCommand("printf 'PHONE_''DEVELOPMENT\\n'");
   // Render xterm output and ensure Korean input survives the roundtrip.
-  await page.locator('#input').fill("printf '비비''머\\n'");
-  await page.locator('#send').click();
+  await terminalCommand("printf '비비''머\\n'");
   await delay(400);
   const output = (await call('GET',`/v1/sessions/${initial}/events?cursor=0&wait=0`)).data;
   const text = Buffer.from(output.data,'base64').toString('utf8');
   assert.ok(text.includes('PHONE_DEVELOPMENT') && text.includes('비비머'));
-  await page.locator('#input').fill("printf '\\033[31mANSI_RED\\033[0m \\033[1;32mBOLD_GREEN\\033[0m\\n\\033[38;5;208mCOLOR_256\\033[0m \\033[38;2;12;180;220mTRUE_COLOR\\033[0m\\n+-------+\\n| ASCII |\\n+-------+\\n'");
-  await page.locator('#send').click();
+  await terminalCommand("printf '\\033[31mANSI_RED\\033[0m \\033[1;32mBOLD_GREEN\\033[0m\\n\\033[38;5;208mCOLOR_256\\033[0m \\033[38;2;12;180;220mTRUE_COLOR\\033[0m\\n+-------+\\n| ASCII |\\n+-------+\\n'");
   await page.waitForFunction(()=>[...document.querySelectorAll('.xterm-rows span')].some(node=>node.textContent==='ANSI_RED' && getComputedStyle(node).color==='rgb(237, 119, 119)'));
   assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.xterm-rows span')].some(node=>node.textContent==='TRUE_COLOR' && getComputedStyle(node).color==='rgb(12, 180, 220)')));
   assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.xterm-rows span')].some(node=>node.textContent.includes('BOLD_GREEN') && Number(getComputedStyle(node).fontWeight)>=700)));
   assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.xterm-rows span')].some(node=>node.textContent==='COLOR_256' && getComputedStyle(node).color==='rgb(255, 135, 0)')));
   await page.screenshot({path:path.join(root,'dist/screenshots/session-en.png')});
-  const draft = 'Draft instruction · 작성 중';
-  await page.locator('#input').fill(draft);
+  const draft = '# Draft instruction · 작성 중';
+  await terminalText(draft);
   // Display-size changes must preserve the live page, draft and PTY process.
   // Native Activity/configuration delivery still requires an installed APK.
   await page.evaluate(() => { window.resizeStateMarker = {}; });
@@ -544,7 +546,7 @@ async function main() {
     await page.setViewportSize(viewport);
     await delay(350);
     assert.equal(await page.evaluate(marker => marker === window.resizeStateMarker, resizeMarker), true);
-    assert.equal(await page.locator('#input').inputValue(), draft);
+    assert.ok((await page.locator('#terminal').innerText()).includes(draft));
     assert.ok(await page.locator('#connection').evaluate(node => node.classList.contains('connected')));
     const current = (await call('GET','/v1/health')).data.session;
     assert.equal(current.id, initial);
@@ -555,7 +557,7 @@ async function main() {
   await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('language','ko');
   await page.locator('#tab-work').click();
-  assert.equal(await page.locator('#input').inputValue(),draft);
+  assert.ok((await page.locator('#terminal').innerText()).includes(draft));
   assert.equal(await page.locator('#process').innerText(),'실행 중');
   assert.equal((await call('GET','/v1/health')).data.session.id,initial);
   await page.screenshot({path:path.join(root,'dist/screenshots/session-ko.png')});
@@ -564,19 +566,20 @@ async function main() {
   await page.evaluate(()=>window.BibimerResume());
   await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
   assert.equal((await call('GET','/v1/health')).data.session.id,initial);
-  assert.equal(await page.locator('#input').inputValue(),draft);
-  await page.locator('#input').fill('');
-  // A narrow viewport / keyboard-height viewport must keep the send action visible.
+  assert.ok((await page.locator('#terminal').innerText()).includes(draft));
+  await page.locator('#terminal-keys [data-key="enter"]').click();
+  // A narrow viewport / keyboard-height viewport must keep direct terminal keys visible.
   await page.setViewportSize({width:360,height:460});
   await delay(300);
-  const sendBox = await page.locator('#send').boundingBox();
+  const sendBox = await page.locator('#terminal-keys [data-key="enter"]').boundingBox();
+  assert.equal(await page.locator('#input-form').isVisible(),false);
   assert.ok(sendBox.y>=0 && sendBox.y+sendBox.height<=460);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:path.join(root,'dist/screenshots/keyboard-ko.png')});
   await closeSidebar(); await page.locator('#tab-settings').click();
   await choose('language','en');
   await page.locator('#tab-work').click();
-  const englishSendBox = await page.locator('#send').boundingBox();
+  const englishSendBox = await page.locator('#terminal-keys [data-key="enter"]').boundingBox();
   assert.ok(englishSendBox.y>=0 && englishSendBox.y+englishSendBox.height<=460);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:path.join(root,'dist/screenshots/keyboard-en.png')});
@@ -1207,7 +1210,7 @@ async function main() {
     assert.equal((await call('GET','/v1/health')).data.session.mode,'chat');
     await sessionAction('stop'); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
-    console.log('PASS: Enter defaults to newline in Chat/PTY and during responses; Send setting queues, modifiers/selection/IME/repeat guards, preserved drafts and sessions; structured chat and interrupt; no model task sent');
+    console.log('PASS: Enter defaults to newline in Chat and during responses; terminal direct Enter remains independent; Send setting queues, modifiers/selection/IME/repeat guards, preserved drafts and sessions; structured chat and interrupt; no model task sent');
     const beforeImport = fs.readFileSync(path.join(temporary,'project/turn-count'),'utf8');
     await page.locator('#import-session').click();
     await page.locator('.import-entry').waitFor();
@@ -1383,7 +1386,7 @@ async function main() {
     await choose('agent','opencode'); await choose('mode','terminal');
     await page.locator('#launch').click();
     await page.waitForFunction(()=>!document.querySelector('#input').disabled);
-    await page.locator('#input').fill('terminal check'); await page.locator('#input').press('Enter');
+    await terminalCommand('terminal check');
     await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('OpenCode input: terminal check'));
     await sessionAction('stop'); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});

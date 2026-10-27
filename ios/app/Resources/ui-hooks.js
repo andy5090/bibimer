@@ -33,7 +33,7 @@
     pickers.sync();
   };
   const iosRenderSession = renderSession;
-  const iosTerminalTools = window.BibimerTerminalTools?.create({terminal:term,input:$("input"),native,language:()=>i18n.language(),context:()=>({
+  const iosTerminalTools = window.BibimerTerminalTools?.create({terminal:term,input:$("input"),native,send:text=>sendRaw(text.replace(/\r?\n/g,"\r") + "\r"),language:()=>i18n.language(),context:()=>({
     generation,instance,project:projectKey(),session:session?.id || null,tab:currentTab,
     terminal:currentTab === "work" && !!session && !isChat() && !$("workspace").classList.contains("project-editing"),
     paste:currentTab === "work" && !!session && !isChat() && !$("workspace").classList.contains("project-editing") && !$("input").disabled

@@ -22,7 +22,7 @@ EXPECTED_CHECKS = {
     'native_proxy_route_boundary',
     'native_share_reentry_preserves_file',
     'native_late_health_preserves_failure',
-    'terminal_text_copy_and_draft_paste',
+    'terminal_text_copy_and_reviewed_paste',
 }
 AGENT_CHECKS = {'agents_shared_ui_connected', 'four_agents_available'} | {
     agent + '_' + action + '_ui' for agent in ['codex', 'claude', 'opencode', 'gemini'] for action in ['install', 'version']

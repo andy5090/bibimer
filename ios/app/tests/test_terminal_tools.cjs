@@ -27,12 +27,11 @@ function fixture(term) {
   const document=new Document(), area=document.createElement("div");area.id="terminal-area";document.body.append(area);
   const input=document.createElement("textarea");input.value="draft";input.setSelectionRange(1,3);document.body.append(input);input.focus();
   const state={generation:1,instance:"bridge1",project:"project1",session:"session1",tab:"work",terminal:true,paste:true};
-  const copies=[],reads=[];let sent=0;
-  input.addEventListener("submit",()=>sent++);
+  const copies=[],reads=[],sent=[];let sendResult=true,sendWait=null;
   const native={copyText:value=>copies.push(value),readClipboard:()=>new Promise((resolve,reject)=>reads.push({resolve,reject}))};
-  const controller=tools.create({terminal:term,input,native,context:()=>({...state}),language:()=>"ko",document});
+  const controller=tools.create({terminal:term,input,native,send:async value=>{sent.push(value);return sendWait ? await sendWait : sendResult;},context:()=>({...state}),language:()=>"ko",document});
   const $=id=>document.getElementById("ios-terminal-"+id);
-  return {document,input,state,copies,reads,controller,$,sent:()=>sent};
+  return {document,input,state,copies,reads,controller,$,sent:()=>sent,setSendResult:value=>{sendResult=value;},setSendWait:value=>{sendWait=value;}};
 }
 (async()=>{
   const term=await terminal("\x1b[31m1234567한\x1b[0m\r\n한글 😀  \r\n   \r\n\r\nhttps://example.invalid/long?q=가😀\r\n\r\n");
@@ -54,7 +53,12 @@ function fixture(term) {
   f.$("close").click();assert.equal(f.$("text").value,"");assert.equal(f.document.activeElement,f.input);
   f.$("paste").click();assert.equal(f.reads.length,1);assert.equal(f.$("paste").disabled,true);
   f.reads[0].resolve("echo '한글'\nsecond line");await flush();
-  assert.equal(f.input.value,"decho '한글'\nsecond lineft");assert.equal(f.sent(),0,"Paste never submits or sends raw PTY input");
+  assert.equal(f.input.value,"draft");assert.deepEqual(f.sent(),[],"Reading clipboard never sends raw PTY input");
+  assert.equal(f.$("dialog").open,true);assert.equal(f.$("text").value,"echo '한글'\nsecond line");assert.equal(f.$("text").readOnly,false);
+  assert.equal(f.$("send").hidden,false);assert.equal(f.$("copy-all").hidden,true);
+  f.$("text").value="edited command";f.$("send").click();await flush();
+  assert.deepEqual(f.sent(),["edited command"],"Only explicit confirmation sends the reviewed commands");assert.equal(f.$("dialog").open,false);assert.equal(f.input.value,"draft");
+  assert.equal(f.input.selectionStart,1);assert.equal(f.input.selectionEnd,3,"Paste preview does not modify a saved Chat draft or cursor");
   const old=f.input.value;
   f.$("paste").click();f.reads[1].resolve("");await flush();assert.equal(f.input.value,old);
   f.$("paste").click();f.reads[2].reject(new Error("denied"));await flush();assert.equal(f.input.value,old);
@@ -64,10 +68,20 @@ function fixture(term) {
   const edit=fixture(term);edit.$("paste").click();edit.input.value="changed";edit.input.dispatchEvent(new Event("input"));edit.input.value="draft";edit.input.dispatchEvent(new Event("input"));edit.reads[0].resolve("wrong");await flush();assert.equal(edit.input.value,"draft");
   const cursor=fixture(term);cursor.$("paste").click();cursor.input.setSelectionRange(0,0);cursor.input.setSelectionRange(1,3);cursor.reads[0].resolve("wrong");await flush();assert.equal(cursor.input.value,"draft");
   const large=fixture(term);large.$("paste").click();large.reads[0].resolve("한".repeat(6000));await flush();assert.equal(large.input.value,"draft");
-  const total=fixture(term);total.input.value="a".repeat(16383);total.input.setSelectionRange(16383,16383);total.$("paste").click();total.reads[0].resolve("한");await flush();assert.equal(total.input.value.length,16383);
-  const crlf=fixture(term);crlf.$("paste").click();crlf.reads[0].resolve("x\r\ny\rz");await flush();assert.equal(crlf.input.value,"dx\ny\nzft");assert.equal(crlf.input.selectionStart,6);
+  const total=fixture(term);total.input.value="a".repeat(16383);total.input.setSelectionRange(16383,16383);total.$("paste").click();total.reads[0].resolve("한");await flush();assert.equal(total.input.value.length,16383);assert.equal(total.$("text").value,"한","Preview is independent of hidden composer content");
+  const crlf=fixture(term);crlf.$("paste").click();crlf.reads[0].resolve("x\r\ny\rz");await flush();assert.equal(crlf.$("text").value,"x\ny\nz");assert.equal(crlf.input.value,"draft");assert.equal(crlf.input.selectionStart,1);
+  for (const field of ["session","project","instance","generation","tab"]) {
+    const changed=fixture(term);changed.$("paste").click();changed.reads[0].resolve("echo no");await flush();
+    changed.state[field]="other";changed.controller.update();assert.equal(changed.$("dialog").open,false);assert.equal(changed.$("text").value,"");
+    changed.$("send").click();await flush();assert.deepEqual(changed.sent(),[],field+" cannot send preview to a different context");
+  }
+  const failure=fixture(term);failure.setSendResult(false);failure.$("paste").click();failure.reads[0].resolve("echo retry");await flush();failure.$("send").click();await flush();
+  assert.equal(failure.$("dialog").open,true);assert.equal(failure.$("text").value,"echo retry");assert.equal(failure.$("send").disabled,false);
+  const repeated=fixture(term);let delivered;repeated.setSendWait(new Promise(resolve=>{delivered=resolve;}));
+  repeated.$("paste").click();repeated.reads[0].resolve("echo once");await flush();repeated.$("send").click();repeated.$("send").click();assert.deepEqual(repeated.sent(),["echo once"]);delivered(true);await flush();
+  const editedLarge=fixture(term);editedLarge.$("paste").click();editedLarge.reads[0].resolve("ok");await flush();editedLarge.$("text").value="a".repeat(16384);editedLarge.$("send").click();await flush();assert.deepEqual(editedLarge.sent(),[]);
   const hidden=fixture(term);hidden.$("select").click();hidden.state.terminal=false;hidden.state.paste=false;hidden.controller.update();assert.equal(hidden.$("tools").hidden,true);assert.equal(hidden.$("text").value,"");
-  for(const language of ["en","ko","pt-BR","es","id","zh-Hans","ja","zh-Hant","fr","de"]) for(const key of ["select","paste","title","hint","selection","all","close","copied","choose","empty","failed","changed","large","pasted"]) assert.equal(typeof tools.label(language,key),"string");
+  for(const language of ["en","ko","pt-BR","es","id","zh-Hans","ja","zh-Hant","fr","de"]) for(const key of ["select","paste","title","hint","selection","all","close","copied","choose","empty","failed","changed","large","send","pasteHint","sendFailed"]) assert.equal(typeof tools.label(language,key),"string");
   term.dispose();scrolled.dispose();
-  console.log("terminal tools: real ANSI/CJK/emoji/wrap/whitespace, partial copy/cleanup, explicit draft-only paste and all race/size/locale boundaries passed");
+  console.log("terminal tools: real ANSI/CJK/emoji/wrap/whitespace, partial copy/cleanup, explicit reviewed terminal paste, untouched drafts and all race/size/locale boundaries passed");
 })().catch(error=>{console.error(error);process.exitCode=1;});
