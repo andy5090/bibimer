@@ -1,5 +1,16 @@
 # Bibimer 다음 세션 시작점
 
+## 특수 키 축소·홀딩 보조 키와0.32.0 배포 준비 (2026-10-28)
+
+- 사용자 요청으로 Android/iOS 공유 특수 키의 크기를 줄였다. 기본 키는 네 열의 동작 키와 역T자 방향키로 **항상2줄·68px**를 유지한다. 키 높이는44→32px, 글자는12→11px로 줄였고, 좁은 화면에서 동작 키가3줄이 되던 분기를 없앴다. Esc/Tab/Enter와 방향키·에이전트 선택기 숨김 동작은 유지한다. 사용자 후속 요청으로 F1–F12 펼침 버튼을 기본 키 윗줄로 옮기고 펼침/접힘에 맞춰 위/아래 화살표 아이콘을 표시한다.
+- F1–F12를 펼칠 때만 **한 줄32px와 간격4px를 추가해 총104px**가 된다. 여러 줄로 쌓는 대신 F키 패널 안에서만 가로 스크롤한다.320px 화면의 기존 높이는 기본140px·펼침238px였으며 각각68px·104px로 축소했다. 매우 짧은 화면에서 필요한 기존 workspace 스크롤/키 영역 보정은 유지한다. 이를 제거한 초기 시도에서는320×360의 아래15px가 내비게이션에 가려져 복구 후 재검증했다.
+- Ctrl+C 전용 버튼은 제거했다. Ctrl·Alt·Shift는 한 번 누르면 계속 누른 상태를 유지하며 다시 누르면 해제하는 홀딩 토글이다. 초록색과 aria-pressed로 상태를 표시하고 세션/프로젝트/화면/연결 변경에 해제한다. Shift+Tab·방향키·F키, ASCII 영문/기호, Ctrl/Alt/Shift 조합을 전달한다. 붙여넣기/IME 문자열 전체는 바꾸지 않는다. 일반 PTY의 Ctrl+C/Ctrl+Shift+C처럼 동일 제어 문자인 조합은 구별할 수 없다. 함수 키 modifier 값은 [xterm 제어 시퀀스](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html)의 표를 따르며 Shift+Tab은 내장 xterm과 같은 CSI Z다.
+- 실제 공유 UI의 **10언어×Android/iOS×6화면 =120키보드 배치**(320/393/700/1000px 폭,320×460·320×360 포함)와 기존 사이드바80배치가 통과했다. 기본2줄/펼침1줄 추가·높이68/104px·하단 키 가시성·F12까지 패널 스크롤 접근·기본 키 유지·윗줄 펼침 버튼/화살표 아이콘·Ctrl+C/Shift+Tab/Shift+Left/Ctrl+Alt+Shift+F12 실제 입력 경로·홀딩/해제/세션 변경 초기화·Chat 초안/직접 입력/검토 붙여넣기를 확인했다. 제어 문자/보조 키·새 Chat·805키×10언어·iOS 앱 Python20개와 전체 격리 UI 회귀도 통과했다. 전체 UI 회귀 뒤 추가한320×360의 누락을 위 보정 복구 후120배치로 재통과했다. 시각 판정98/pass다.
+- 증빙: `dist/terminal-keyboard-compact/verification.json`,320px 축소/펼침 및320×360/데스크톱 캡처, `.omx/state/terminal-keyboard-compact/ralph-progress.json`, `.tools/terminal-keyboard-compact-{layout,ui,ios-tests}.log`. 이전 배포 검증용 `dist/terminal-keyboard/` 캡처는 덮어쓰지 않았다.
+- 사용자 완료 후 레포 싱크·Play 내부/TestFlight 배포 요청에 따라 Android0.32.0(54)·브리지0.23.1과 iOS0.1.0(3)을 준비한다. 앞서 동기화한 구형 GitHub CLI 인증 fallback과 Mac 키보드/높이 수정도 포함한다. Android가 GitHub 수정 브리지를 감지하도록0.23.0→0.23.1을 사용한다. 네이티브 요구 버전은 빌드 시 공유 VERSION에서 생성되므로 Java 상수를 별도 수정하지 않는다.
+- 기존 업로드 키의 AAB `dist/play/bibimer-0.32.0-54-release.aab`는3,355,974bytes·SHA-256 `53c2238d8922a206ae4bed4199746c04588e416b239841f94f3a674ebd9d1b08`다. manifest54·55assets 원본·브리지0.23.1/GitHub fallback·6payload/해시·기존 서명/인증서·bundletool·심사 digest와 비밀 원문 미포함·언어 split 비활성 검사를 통과했다. Python scripts39개·GitHub13개·iOS 앱20개도 통과했다.
+- 최신 Simulator/iphoneos 빌드와58개 Web 원본 일치를 확인했다. 별도 QA Simulator의 실제 WKWebView/내장 Linux21개가13.99초에 PASS_WITH_WARNINGS이며 기존 syscall151/152 경고4개·fatal/진단 실패0이다. 사용자 앱/세션은 재시작하지 않았다. iOS0.1.0(3) unsigned archive/배포 서명/export와 최종 전체 격리 UI 회귀(exit0)도 통과했다. IPA8,330,767bytes·SHA-256 `97cde470edcb0ab4e846e362da540bb0ee825ae6b3b2fe6223cb7e4d5797e03e`다. **새 후보의 스토어 게시 완료는 아직 확인하지 않았다.** Play 내부0.31.0(53)·TestFlight0.1.0(2)은 기존 배포 상태다. 실제 Android WebView/새 iPhone 설치·작은 키 터치·F키 스와이프/외장 키보드·IME와 Mac 설치본 포커스는 후속이다.
+
 ## GitHub·Mac 포커스 수정 레포 동기화 (2026-10-27 UTC)
 
 - 사용자 레포 싱크 요청으로 원격 `412dbbd`까지의22개 커밋을 받고, 이 세션의 GitHub 구버전 인증·Mac 키보드 배치 수정만 그 위에 반영했다. `NEXT_SESSION.md`의 추가 위치 충돌은 양쪽 기록과 원격의 모든 기존 제목을 보존해 해결했다. 원격 Android0.31.0·브리지0.23.0·TestFlight0.1.0(2)의 배포 기록과 직접 터미널 입력/특수 키·Codex 기한 변경을 유지한다.
