@@ -9,14 +9,14 @@ function node(id, dataset = {}) {
     addEventListener(name, listener) { this.listeners[name] = listener; }};
   nodes.set(id, value); return value;
 }
-for (const key of ["escape", "tab", "up", "down", "left", "right", "interrupt", "enter", ...Array.from({length: 12}, (_, i) => "f" + (i + 1))]) node(key, {key});
-node("ctrl", {modifier: "ctrl"}); node("alt", {modifier: "alt"});
+for (const key of ["escape", "tab", "up", "down", "left", "right", "enter", ...Array.from({length: 12}, (_, i) => "f" + (i + 1))]) node(key, {key});
+node("ctrl", {modifier: "ctrl"}); node("alt", {modifier: "alt"}); node("shift", {modifier: "shift"});
 node("terminal-function-keys"); node("terminal-functions-toggle"); node("terminal-keys").scrollIntoView = () => {};
 const buttons = [...nodes.values()].filter(value => value.dataset.key || value.dataset.modifier).concat(nodes.get("terminal-functions-toggle"));
 const ctx = vm.createContext({$: id => nodes.get(id), online: true, paused: false, switchingProject: false, currentTab: "work",
   instance: "bridge", projectId: "project", projectKey: () => ctx.projectId,
   session: {id: "one", state: "running", mode: "terminal", kind: "terminal"}, isChat: () => ctx.session?.mode === "chat",
-  terminalCtrl: false, terminalAlt: false, terminalKeysContext: "", sent: [],
+  terminalCtrl: false, terminalAlt: false, terminalShift: false, terminalKeysContext: "", sent: [],
   sendRaw: text => { ctx.sent.push(text); return Promise.resolve(true); },
   term: {modes: {applicationCursorKeysMode: false}, focus() {}},
   document: {querySelectorAll: selector => selector.includes("[data-key]") ? buttons.filter(button => button.dataset.key)
@@ -42,26 +42,39 @@ for (const sequence of ["[A", "OD", "OP", "[24~"]) {
 assert.equal(encode(esc + "[1;2D", true, false), esc + "[1;6D", "Preserve physical Shift");
 assert.equal(encode(esc + "[24;3~", true, false), esc + "[24;7~", "Preserve physical Alt");
 for (const input of ["pasted command", "한글 입력", esc + "[200~paste\ntext" + esc + "[201~"]) assert.equal(encode(input, true, true), input, "Pastes stay literal");
+for (const [input, expected] of [["a","A"],["1","!"],["[","{"],["/","?"],["ß","ß"],["한","한"],["\t",esc+"[Z"],[esc+"[A",esc+"[1;2A"],[esc+"OP",esc+"[1;2P"],[esc+"[24~",esc+"[24;2~"]]) assert.equal(encode(input,false,false,true),expected,"Shift "+input);
+assert.equal(encode(esc+"[24~",true,true,true),esc+"[24;8~","All three modifiers combine");
+assert.equal(encode(esc+"[1;2D",false,false,true),esc+"[1;2D","Shift is not applied twice");
+assert.equal(encode("c",true,false,true),"\x03");
+assert.equal(encode("2",true,false,true),"\x00");
+assert.equal(encode("[",true,false,true),esc);
+assert.equal(encode("a phrase 한글",true,true,true),"a phrase 한글","Shift does not rewrite a paste");
 ctx.term.modes.applicationCursorKeysMode = true;
 nodes.get("left").listeners.click(); assert.equal(ctx.sent.pop(), esc + "OD", "Application cursor mode");
 nodes.get("ctrl").listeners.click(); assert.equal(ctx.terminalCtrl, true); assert.equal(ctx.sent.length, 0);
 nodes.get("alt").listeners.click(); assert.equal(ctx.terminalAlt, true); assert.equal(ctx.sent.length, 0);
 nodes.get("right").listeners.click(); assert.equal(ctx.sent.pop(), esc + "[1;7C");
-assert.equal(ctx.terminalCtrl, false); assert.equal(ctx.terminalAlt, false);
-nodes.get("ctrl").listeners.click(); ctx.sendTerminalData("c"); assert.equal(ctx.sent.pop(), "\x03");
-ctx.sendTerminalData("c"); assert.equal(ctx.sent.pop(), "c", "Modifier only consumes one input");
+assert.equal(ctx.terminalCtrl, true); assert.equal(ctx.terminalAlt, true, "Modifiers stay held after a key");
+nodes.get("alt").listeners.click(); assert.equal(ctx.terminalCtrl, true, "Alt release does not release Ctrl");
+ctx.sendTerminalData("c"); assert.equal(ctx.sent.pop(), "\x03", "Held Ctrl plus c replaces the shortcut button");
+ctx.sendTerminalData("d"); assert.equal(ctx.sent.pop(), "\x04", "Held Ctrl applies to subsequent keys");
+ctx.sendTerminalData("pasted text"); assert.equal(ctx.sent.pop(), "pasted text"); assert.equal(ctx.terminalCtrl, true);
+nodes.get("ctrl").listeners.click(); ctx.sendTerminalData("c"); assert.equal(ctx.sent.pop(), "c", "A second tap releases Ctrl");
 nodes.get("alt").listeners.click(); nodes.get("alt").listeners.click(); assert.equal(ctx.terminalAlt, false, "Second tap cancels");
+nodes.get("shift").listeners.click(); ctx.sendTerminalData("a"); assert.equal(ctx.sent.pop(),"A");
+nodes.get("tab").listeners.click(); assert.equal(ctx.sent.pop(),esc+"[Z"); assert.equal(ctx.terminalShift,true);
+nodes.get("shift").listeners.click(); ctx.sendTerminalData("a"); assert.equal(ctx.sent.pop(),"a");
 for (const [property, value] of [["currentTab", "settings"], ["online", false], ["paused", true], ["switchingProject", true], ["projectId", "other"]]) {
-  nodes.get("ctrl").listeners.click(); nodes.get("terminal-functions-toggle").listeners.click();
+  nodes.get("ctrl").listeners.click(); nodes.get("shift").listeners.click(); nodes.get("terminal-functions-toggle").listeners.click();
   assert.equal(nodes.get("terminal-function-keys").hidden, false);
   const previous = ctx[property]; ctx[property] = value; ctx.updateTerminalKeys();
-  assert.equal(ctx.terminalCtrl, false, property); assert.equal(nodes.get("terminal-function-keys").hidden, true, property);
+  assert.equal(ctx.terminalCtrl, false, property); assert.equal(ctx.terminalShift,false,property); assert.equal(nodes.get("terminal-function-keys").hidden, true, property);
   ctx[property] = previous; ctx.updateTerminalKeys();
 }
 for (const next of [{id: "two", state: "running", mode: "terminal"}, {id: "one", state: "exited", mode: "terminal"}, {id: "one", state: "running", mode: "chat"}, {id: "browser", state: "running", kind: "browser"}]) {
-  nodes.get("ctrl").listeners.click(); ctx.session = next; ctx.updateTerminalKeys();
-  assert.equal(ctx.terminalCtrl, false);
+  nodes.get("ctrl").listeners.click(); nodes.get("shift").listeners.click(); ctx.session = next; ctx.updateTerminalKeys();
+  assert.equal(ctx.terminalCtrl, false); assert.equal(ctx.terminalShift,false);
   if (!ctx.terminalKeysEnabled()) { ctx.sendTerminalData("x"); nodes.get("enter").listeners.click(); assert.equal(ctx.sent.length, 0, "Inactive contexts cannot send"); }
   ctx.session = {id: "one", state: "running", mode: "terminal"}; ctx.updateTerminalKeys();
 }
-console.log("PASS terminal key encoding, one-shot modifiers, application mode and context guards");
+console.log("PASS terminal key encoding, held modifier toggles, application mode and context guards");

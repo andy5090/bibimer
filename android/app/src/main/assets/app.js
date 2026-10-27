@@ -82,7 +82,7 @@
   const fit = new FitAddon.FitAddon();
   term.loadAddon(fit);
   term.open($("terminal"));
-  let terminalCtrl = false, terminalAlt = false, terminalKeysContext = "";
+  let terminalCtrl = false, terminalAlt = false, terminalShift = false, terminalKeysContext = "";
   const sidebar = new BibimerSidebar(t, {
     refresh:refreshSidebar, manage:openSessionActions, manageProject:openProjectSettings,
     moveProject:(id, position) => manageProject(id, "move_to", position),
@@ -2120,7 +2120,7 @@
       } else { if (!native.startAgentAction) throw new Error(); native.startAgentAction(button.dataset.agent, button.dataset.agentAction); }
     } catch (_) { window.BibimerAgentActionStatus(button.dataset.agent, "quick_start_failed"); }
   });
-  const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", left:"\x1b[D", right:"\x1b[C", interrupt:"\x03", enter:"\r",
+  const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", left:"\x1b[D", right:"\x1b[C", enter:"\r",
     f1:"\x1bOP", f2:"\x1bOQ", f3:"\x1bOR", f4:"\x1bOS", f5:"\x1b[15~", f6:"\x1b[17~", f7:"\x1b[18~", f8:"\x1b[19~", f9:"\x1b[20~", f10:"\x1b[21~", f11:"\x1b[23~", f12:"\x1b[24~"};
   function terminalKeysEnabled() {
     return online && !paused && !switchingProject && currentTab === "work" && session?.state === "running" && !isChat() && session.kind !== "browser";
@@ -2128,29 +2128,34 @@
   function updateTerminalKeys() {
     const context = JSON.stringify([instance, projectKey(), session?.id, session?.state, session?.mode, session?.kind, currentTab, online, paused, switchingProject]);
     if (context !== terminalKeysContext) {
-      terminalKeysContext = context; terminalCtrl = terminalAlt = false;
+      terminalKeysContext = context; terminalCtrl = terminalAlt = terminalShift = false;
       $("terminal-function-keys").hidden = true;
       $("terminal-functions-toggle").setAttribute("aria-expanded", "false");
     }
     for (const button of document.querySelectorAll("#terminal-keys button")) {
       button.disabled = !terminalKeysEnabled();
-      if (button.dataset.modifier) button.setAttribute("aria-pressed", String(button.dataset.modifier === "ctrl" ? terminalCtrl : terminalAlt));
+      if (button.dataset.modifier) button.setAttribute("aria-pressed", String(button.dataset.modifier === "ctrl" ? terminalCtrl : button.dataset.modifier === "alt" ? terminalAlt : terminalShift));
     }
   }
-  function modifiedTerminalData(data, ctrl, alt) {
-    if (!ctrl && !alt) return data;
-    const modifier = (ctrl ? 4 : 0) | (alt ? 2 : 0);
+  function modifiedTerminalData(data, ctrl, alt, shift = false) {
+    if (!ctrl && !alt && !shift) return data;
+    const modifier = (ctrl ? 4 : 0) | (alt ? 2 : 0) | (shift ? 1 : 0);
+    if (data === "\t" && shift) return "\x1b[Z";
     const cursor = data.match(/^\x1b(?:\[|O)([ABCDHFPQRS])$/);
     if (cursor) return "\x1b[1;" + (1 + modifier) + cursor[1];
     const sequence = data.match(/^\x1b\[(\d+)(?:;(\d+))?([ABCDHFPQRS~])$/);
     if (sequence && (sequence[3] !== "~" || [1,2,3,4,5,6,15,17,18,19,20,21,23,24].includes(Number(sequence[1])))) {
       return "\x1b[" + sequence[1] + ";" + (1 + ((Number(sequence[2] || 1) - 1) | modifier)) + sequence[3];
     }
-    // A latched modifier affects one key, never a whole paste or IME phrase.
+    // Modifiers apply to individual keys, never a whole paste or IME phrase.
     if (Array.from(data).length !== 1) return data;
+    if (shift) {
+      if (/^[a-z]$/.test(data)) data = data.toUpperCase();
+      else data = {"1":"!","2":"@","3":"#","4":"$","5":"%","6":"^","7":"&","8":"*","9":"(","0":")","-":"_","=":"+","[":"{","]":"}","\\":"|",";":":","'":"\"",",":"<",".":">","/":"?","`":"~"}[data] || data;
+    }
     if (ctrl) {
       const code = /^[a-z]$/.test(data) ? data.charCodeAt(0) - 32 : data.charCodeAt(0);
-      if (code >= 64 && code <= 95) data = String.fromCharCode(code & 31);
+      if ((code >= 64 && code <= 95) || (code >= 123 && code <= 126)) data = String.fromCharCode(code & 31);
       else if (data === " " || data === "`") data = "\x00";
       else if (data === "?") data = "\x7f";
     }
@@ -2158,8 +2163,7 @@
   }
   function sendTerminalData(data) {
     if (!terminalKeysEnabled()) return Promise.resolve(false);
-    const text = modifiedTerminalData(data, terminalCtrl, terminalAlt);
-    terminalCtrl = terminalAlt = false; updateTerminalKeys();
+    const text = modifiedTerminalData(data, terminalCtrl, terminalAlt, terminalShift);
     return sendRaw(text);
   }
   for (const button of document.querySelectorAll("#terminal-keys button")) button.addEventListener("pointerdown", event => event.preventDefault());
@@ -2172,7 +2176,8 @@
   for (const button of document.querySelectorAll("#terminal-keys [data-modifier]")) button.addEventListener("click", () => {
     if (!terminalKeysEnabled()) return;
     if (button.dataset.modifier === "ctrl") terminalCtrl = !terminalCtrl;
-    else terminalAlt = !terminalAlt;
+    else if (button.dataset.modifier === "alt") terminalAlt = !terminalAlt;
+    else terminalShift = !terminalShift;
     updateTerminalKeys(); term.focus();
   });
   $("terminal-functions-toggle").addEventListener("click", () => {

@@ -3,7 +3,7 @@
 const fs=require("node:fs"),path=require("node:path"),http=require("node:http"),assert=require("node:assert/strict");
 if(process.platform==="android")Object.defineProperty(process,"platform",{value:"linux"});
 const {chromium}=require("../../.tools/ui/node_modules/playwright-core");
-const root=path.resolve(__dirname,"../.."),assets=path.join(root,"android/app/src/main/assets"),ios=path.join(root,"ios/app/Resources"),out=path.join(root,"dist/ios-terminal-ui");
+const root=path.resolve(__dirname,"../.."),assets=path.join(root,"android/app/src/main/assets"),ios=path.join(root,"ios/app/Resources"),out=path.join(root,"dist/ios-terminal-ui-compact");
 fs.mkdirSync(out,{recursive:true});
 let browser,server;
 (async()=>{
@@ -24,7 +24,7 @@ let browser,server;
  await new Promise(r=>server.listen(0,"127.0.0.1",r));
  browser=await chromium.launch({executablePath:process.env.BIBIMER_CHROMIUM||(process.platform==="darwin"?"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome":path.join(process.env.PREFIX||"/usr","bin/headless_shell")),headless:true});
  const results=[],keyboardResults=[],errors=[];
- const keyboardOut=path.join(root,"dist/terminal-keyboard");fs.mkdirSync(keyboardOut,{recursive:true});
+ const keyboardOut=path.join(root,"dist/terminal-keyboard-compact");fs.mkdirSync(keyboardOut,{recursive:true});
  for(const platform of ["android","ios"]){
   const page=await browser.newPage({viewport:{width:1100,height:800},reducedMotion:"reduce"});page.on("pageerror",e=>errors.push(platform+": "+e.message));
   await page.addInitScript(()=>{
@@ -85,7 +85,7 @@ let browser,server;
   await page.evaluate(()=>{sent=[];});
   const keyboard=page.locator("#terminal-keys"), functions=page.locator("#terminal-function-keys"), toggle=page.locator("#terminal-functions-toggle");
   assert.equal(await functions.isVisible(),false,"Function keys start collapsed");
-  const keyboardSamples=[{width:320,height:800},{width:393,height:800},{width:700,height:800},{width:1000,height:800},{width:320,height:460}];
+  const keyboardSamples=[{width:320,height:800},{width:393,height:800},{width:700,height:800},{width:1000,height:800},{width:320,height:460},{width:320,height:360}];
   for(const language of ["en","ko","pt-BR","es","id","zh-Hans","ja","zh-Hant","fr","de"]){
    for(const viewport of keyboardSamples){
     await page.setViewportSize(viewport);
@@ -94,11 +94,23 @@ let browser,server;
     if(await page.locator("#sidebar").evaluate(n=>n.open&&!n.classList.contains("docked")))await page.locator("#sidebar-close").click();
     if(await toggle.getAttribute("aria-expanded")==="true")await toggle.click();
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    const where=`${platform} ${language} ${viewport.width}x${viewport.height}`;
+    const collapsed=await keyboard.evaluate(n=>({height:n.getBoundingClientRect().height,rows:[...new Set([...n.querySelectorAll(".terminal-keyboard button")].map(button=>Math.round(button.getBoundingClientRect().y)))]}));
+    assert.ok(collapsed.height<=68.1,"Collapsed keys stay compact: "+where);
+    assert.equal(collapsed.rows.length,2,"Base keys occupy exactly two rows: "+where);
+    assert.equal(Math.round((await toggle.boundingBox()).y),collapsed.rows[0],"The F-key expand button stays in the top base row: "+where);
+    assert.equal(await toggle.locator("svg").getAttribute("aria-hidden"),"true","The chevron is decorative; aria-expanded conveys state");
+    assert.equal(await toggle.locator("svg").evaluate(n=>getComputedStyle(n).transform),"none","Collapsed chevron points up: "+where);
+    assert.equal(await page.locator(".terminal-key-actions button").count(),7);
+    assert.equal(await page.locator('#terminal-keys [data-key="interrupt"]').count(),0,"No dedicated Ctrl+C button");
     if(platform==="android"&&language==="ko"&&viewport.width===320&&viewport.height===800)await page.screenshot({path:path.join(keyboardOut,"android-ko-320x800-collapsed.png")});
     await toggle.click();
+    await functions.evaluate(n=>{n.scrollLeft=0;});
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     assert.equal(await functions.isVisible(),true);
+    if(viewport.height===360)await page.screenshot({path:path.join(keyboardOut,`${platform}-${language}-320x360-expanded.png`)});
     assert.equal(await toggle.getAttribute("aria-expanded"),"true");
+    assert.equal(await toggle.locator("svg").evaluate(n=>getComputedStyle(n).transform),"matrix(-1, 0, 0, -1, 0, 0)","Expanded chevron points down: "+where);
     const geometry=await keyboard.evaluate(n=>{
      const rect=node=>{const r=node.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom,right:r.right};};
      const container=document.querySelector("#work");
@@ -108,30 +120,38 @@ let browser,server;
       arrows:Object.fromEntries(["up","down","left","right"].map(key=>[key,rect(n.querySelector('[data-key="'+key+'"]'))])),
       f:[...n.querySelectorAll("#terminal-function-keys button")].map(rect),scroll:document.documentElement.scrollWidth};
     });
-    const where=`${platform} ${language} ${viewport.width}x${viewport.height}`;
     assert.ok(geometry.panel.bottom<=geometry.base.y,"F-key collection must be above the base keyboard: "+where);
+    assert.ok(geometry.toolbar.height<=104.1,"Expanded keys add only one compact row: "+where);
+    assert.ok(Math.abs(geometry.toolbar.height-collapsed.height-36)<0.1,"F panel adds 32px plus a 4px gap: "+where);
+    assert.ok(Math.abs(geometry.base.height-collapsed.height)<0.1,"Expansion preserves the two base rows: "+where);
+    assert.equal(geometry.keys.find(key=>key.key==="terminal-functions-toggle").y,geometry.base.y,"The expanded toggle remains in the top base row: "+where);
     assert.equal(geometry.f.length,12);
     for(const key of geometry.keys){
-     assert.ok(key.width>=43.9&&key.height>=43.9,"Every key has a 44px touch target: "+where+" "+key.key);
-     assert.ok(key.x>=-0.1&&key.right<=viewport.width+0.1,"Key remains within viewport: "+where+" "+key.key);
+     assert.ok(key.width>=31.9&&key.height>=31.9&&key.height<=32.1,"Every key stays usable and compact: "+where+" "+key.key);
+     if(!/^f\d+$/.test(key.key))assert.ok(key.x>=-0.1&&key.right<=viewport.width+0.1,"Base key remains within viewport: "+where+" "+key.key);
      assert.ok(key.bottom<=geometry.nav.y+0.1,"Key remains above navigation: "+where+" "+key.key+" "+JSON.stringify(geometry));
     }
     assert.ok(geometry.scroll<=viewport.width,"No horizontal page overflow: "+where);
     const {up,down,left,right}=geometry.arrows;
     assert.ok(Math.abs(up.x-down.x)<1&&up.y<down.y,"Up sits above Down: "+where);
     assert.ok(left.x<down.x&&down.x<right.x&&Math.abs(left.y-down.y)<1&&Math.abs(right.y-down.y)<1,"Left/Down/Right form the bottom inverted-T row: "+where);
-    const columns=geometry.f.filter(key=>Math.abs(key.y-geometry.f[0].y)<1).length;
-    assert.equal(columns,geometry.workWidth>=600?12:6,"Function columns follow the workspace width: "+where);
+    assert.ok(geometry.f.every(key=>Math.abs(key.y-geometry.f[0].y)<0.1),"F1–F12 never wrap into multiple rows: "+where);
+    for(const key of ["escape","tab","enter"])assert.equal(await page.locator('[data-key="'+key+'"]').isVisible(),true,"Expansion retains base keys: "+where);
+    // Reach both ends through panel-only scrolling; the page must never widen.
+    const rail=await functions.evaluate(n=>{n.scrollLeft=n.scrollWidth;const panel=n.getBoundingClientRect(),last=n.lastElementChild.getBoundingClientRect();return {left:n.scrollLeft,width:n.clientWidth,scrollWidth:n.scrollWidth,lastLeft:last.left,lastRight:last.right,panelLeft:panel.left,panelRight:panel.right};});
+    assert.ok(rail.lastLeft>=rail.panelLeft-0.1&&rail.lastRight<=rail.panelRight+0.1,"F12 is reachable in the function rail: "+where);
+    if(rail.scrollWidth>rail.width)assert.ok(rail.left>0,"Narrow F-key panels scroll horizontally: "+where);
+    await functions.evaluate(n=>{n.scrollLeft=0;});
     for(const key of ["left","right"])assert.ok(geometry.keys.find(row=>row.key===key).label?.length,"Localized arrow label: "+where);
     assert.equal(await toggle.getAttribute("aria-label"),await page.evaluate(()=>BibimerI18n.t("expand_function_keys")));assert.equal(await functions.getAttribute("aria-label"),await page.evaluate(()=>BibimerI18n.t("function_keys")));
-    keyboardResults.push({platform,language,...viewport,workWidth:geometry.workWidth,columns,toolbar:geometry.toolbar});
+    keyboardResults.push({platform,language,...viewport,workWidth:geometry.workWidth,collapsedHeight:collapsed.height,expandedHeight:geometry.toolbar.height,baseRows:collapsed.rows.length,functionRows:1,functionScrollWidth:rail.scrollWidth,functionViewportWidth:rail.width});
     if(["en","ko"].includes(language)&&[320,1000].includes(viewport.width))await page.screenshot({path:path.join(keyboardOut,`${platform}-${language}-${viewport.width}x${viewport.height}-expanded.png`)});
    }
   }
-  // A narrow workspace in a large window must retain six F-key columns.
+  // Docking or resizing a large window must still use one scrollable function row.
   await page.setViewportSize({width:1000,height:800});
   await page.locator("#work").evaluate(n=>{n.style.maxWidth="560px";});
-  assert.equal(await functions.locator("button").evaluateAll(nodes=>nodes.filter(n=>Math.abs(n.getBoundingClientRect().y-nodes[0].getBoundingClientRect().y)<1).length),6);
+  assert.equal(await functions.locator("button").evaluateAll(nodes=>new Set(nodes.map(n=>Math.round(n.getBoundingClientRect().y))).size),1);
   await page.locator("#work").evaluate(n=>{n.style.maxWidth="";});
   await toggle.click();assert.equal(await functions.isVisible(),false);assert.equal(await toggle.getAttribute("aria-expanded"),"false");
   await page.setViewportSize({width:393,height:800});
@@ -144,9 +164,29 @@ let browser,server;
   await page.screenshot({path:path.join(keyboardOut,`${platform}-ko-modifiers-expanded.png`)});
   await page.locator('[data-key="f12"]').click();await page.waitForFunction(()=>sent.length===1);
   assert.equal(await page.evaluate(()=>atob(sent[0].data)),"\x1b[24;7~","Ctrl+Alt+F12 uses the actual native terminal input path");
-  for(const modifier of ["ctrl","alt"])assert.equal(await page.locator('[data-modifier="'+modifier+'"]').getAttribute("aria-pressed"),"false","The next key consumes the modifiers");
+  for(const modifier of ["ctrl","alt"])assert.equal(await page.locator('[data-modifier="'+modifier+'"]').getAttribute("aria-pressed"),"true","Modifiers stay held after sending a key");
+  await page.locator('[data-modifier="alt"]').click();
+  await page.keyboard.type("c");await page.waitForFunction(()=>sent.length===2);
+  assert.equal(await page.evaluate(()=>atob(sent[1].data)),"\x03","Held Ctrl plus typed c sends an interrupt");
+  assert.equal(await page.locator('[data-modifier="ctrl"]').getAttribute("aria-pressed"),"true");
+  await page.locator('[data-modifier="ctrl"]').click();
+  await page.keyboard.type("c");await page.waitForFunction(()=>sent.length===3);
+  assert.equal(await page.evaluate(()=>atob(sent[2].data)),"c","Second tap releases Ctrl before further input");
+  await page.locator('[data-modifier="shift"]').click();
+  await page.locator('[data-key="tab"]').click();await page.waitForFunction(()=>sent.length===4);
+  assert.equal(await page.evaluate(()=>atob(sent[3].data)),"\x1b[Z","Held Shift plus Tab sends reverse Tab");
+  await page.locator('[data-key="left"]').click();await page.waitForFunction(()=>sent.length===5);
+  assert.equal(await page.evaluate(()=>atob(sent[4].data)),"\x1b[1;2D","Held Shift plus Left preserves the modifier");
+  await page.keyboard.type("a");await page.waitForFunction(()=>sent.length===6);
+  assert.equal(await page.evaluate(()=>atob(sent[5].data)),"A","Held Shift changes individual ASCII letters");
+  assert.equal(await page.locator('[data-modifier="shift"]').getAttribute("aria-pressed"),"true");
+  await page.locator('[data-modifier="ctrl"]').click();
+  await page.locator('[data-modifier="alt"]').click();
+  await page.locator('[data-key="f12"]').click();await page.waitForFunction(()=>sent.length===7);
+  assert.equal(await page.evaluate(()=>atob(sent[6].data)),"\x1b[24;8~","Ctrl/Alt/Shift combine on function keys");
+  await page.screenshot({path:path.join(keyboardOut,`${platform}-ko-modifiers-expanded.png`)});
   await page.evaluate(()=>layoutTest.setSession({id:"different-terminal",agent:"shell",mode:"terminal",state:"running",project:{id:"p1",path:"/projects/example"},output_end:0}));
-  for(const modifier of ["ctrl","alt"])assert.equal(await page.locator('[data-modifier="'+modifier+'"]').getAttribute("aria-pressed"),"false","Changing terminal clears modifiers");
+  for(const modifier of ["ctrl","alt","shift"])assert.equal(await page.locator('[data-modifier="'+modifier+'"]').getAttribute("aria-pressed"),"false","Changing terminal clears modifiers");
   assert.equal(await functions.isVisible(),false,"Changing terminal collapses the F-key panel");
   await page.evaluate(()=>{layoutTest.setSession({id:"terminal1",agent:"shell",mode:"terminal",state:"running",project:{id:"p1",path:"/projects/example"},output_end:0});sent=[];});
   if(platform==="ios"){

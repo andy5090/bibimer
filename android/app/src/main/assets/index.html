@@ -101,9 +101,11 @@
         </div>
         <div class="terminal-keyboard">
           <div class="terminal-key-actions">
-            <button type="button" data-key="escape">Esc</button><button type="button" data-key="tab">Tab</button><button type="button" data-key="interrupt">Ctrl+C</button><button type="button" data-key="enter" aria-label="Enter">↵</button>
+            <button type="button" data-key="escape">Esc</button><button type="button" data-key="tab">Tab</button>
+            <button id="terminal-functions-toggle" type="button" aria-expanded="false" aria-controls="terminal-function-keys" aria-label="Show or hide function keys" data-i18n-aria-label="expand_function_keys">F1–F12<svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="m3 8 3-3 3 3"/></svg></button>
             <button type="button" data-modifier="ctrl" aria-pressed="false">Ctrl</button><button type="button" data-modifier="alt" aria-pressed="false">Alt</button>
-            <button id="terminal-functions-toggle" type="button" aria-expanded="false" aria-controls="terminal-function-keys" aria-label="Show or hide function keys" data-i18n-aria-label="expand_function_keys">F1–F12</button>
+            <button type="button" data-modifier="shift" aria-pressed="false">Shift</button>
+            <button type="button" data-key="enter" aria-label="Enter">↵</button>
           </div>
           <div class="terminal-arrows">
             <button type="button" data-key="up" aria-label="Up arrow" data-i18n-aria-label="arrow_up">↑</button>
