@@ -1,5 +1,13 @@
 # Bibimer 다음 세션 시작점
 
+## Android0.31.0(53) 게시·iOS0.1.0(2) 업로드 (2026-10-28)
+
+- 구현·검증 후5개 논리 커밋을 정상 push했고 소스 기준은 **`a9f316280f319bb29cba9882a1f1de36e806b3b8`**이다. 당시 HEAD/origin/main 일치·ahead/behind0/0·작업 트리 clean을 확인했다. 이 기록 아래의 ‘배포 준비’는 게시 전 상태를 보존한 이력이다.
+- **2026-10-28 00:40 Asia/Seoul**, 기존 Chrome의 Play Console에서 Android **0.31.0(53)·브리지0.23.0**을 내부 테스트에 게시했다. 새로고침 후 **활성 / 내부 테스터에게 제공됨**, 출시24·53만 포함/52제외·버전 코드1개·EN/KO2/2·오류0·기존 매핑 파일 경고1·기기 유형7행의 지원 변화0을 확인했다. 기존 테스터/트랙·프로덕션은 변경하지 않았다. 증빙 `dist/play-0.31.0/{review.png,confirmation.png,published.png,published.json}`. AAB와 검증은 아래 준비 기록의 동일 파일·해시다. 실제 Play 업데이트 수신·설치는 후속이다.
+- iOS **0.1.0(2)**는 최신 기기용 빌드·unsigned Xcode archive·기존 팀의 App Store Connect 자동 배포 서명/export를 통과했다.58개 Web 자산이 현재 공유 소스 패키징 결과와 일치한다. IPA `dist/ios-testflight/0.1.0-2-export-oct28/export/Bibimer.ipa`,8,329,512bytes·SHA-256 `26ae6accdda88a7bcc86d8371d56163ef99da92084ad611784be3b2dfa405219`다. **00:40:26 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**를 확인했다. 기기 등록·새 키·인증서 폐기 없이 기존 팀 ZA9HMYAJT7과 번들 app.bibimer.ios를 유지했다. `dist/ios-testflight/upload-0.1.0-2/upload-receipt.json`과0600 `xcode-upload.log` 참조.
+- **TestFlight 새 빌드 제공은 아직 완료하지 않았다.** 기존 Chrome Apple 세션 만료 후 로그인 페이지가 로딩 중 멈추고 authResult=FAILED로 돌아온다. 기존 탭에서 사용자가 직접 Apple 로그인을 마치도록 요청했으며 회신 대기 중이다. 업로드 자체는 Xcode 계정으로 성공했지만 ASC 처리 결과·수출 규정 응답·테스트 안내 저장·기존 Bibimer Internal 그룹에2번 빌드 추가·테스트 중 상태는 별도 확인해야 한다. 그룹 자동 배포는 기존OFF·테스터1명 유지로 새 업로드만으로 테스터에게 제공됐다고 표시하지 않는다. 기존0.1.0(1)은 그대로다.
+- 로그인 복구 후 같은 Chrome의 [기존 내부 그룹](https://appstoreconnect.apple.com/teams/de8119d6-cda7-41ce-b0e1-5d1f49c57367/apps/6826729307/testflight/groups/05c12695-3fe4-411f-acf8-53bce8a31aac/builds)에서 진행한다.2번을 중복 재업로드하거나 새 그룹/외부 초대/공개 링크를 만들지 않는다. 암호화 응답은 실제 구성·기존 한국 내부 범위를 재확인하며 암호화 없음으로 선언하지 않는다. 이번 iOS 바이너리의 실제 iPhone·macOS TestFlight 업데이트 설치·계정별 모델 응답·잠금/장시간 검증은 후속이다.
+
 ## 터미널 선택기 정리·특수 키 확장과 배포 준비 (2026-10-28)
 
 - Android/iOS 공유 Terminal에서 하단 에이전트 전환 선택기와 빈 모델 행을 숨겼다. Chat과 새 Chat 초안은 기존 선택기·입력창을 유지하고 새 터미널의 실행 프로그램은 시작 화면에서 고른다. 실행 중 프로세스·프로젝트·인증 상태는 변경하지 않는다.
