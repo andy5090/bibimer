@@ -1,0 +1,14 @@
+<en-US>
+Manage agent accounts and provider connections in Bibimer.
+View supported connection status and CLI versions without switching to Termux.
+Enter API keys and complete supported browser sign-in flows from connection settings.
+Improved spacing when mobile action buttons wrap to another row.
+Update the Termux bridge to 0.23.0 in Settings to use connection management.
+</en-US>
+<ko-KR>
+Bibimer 안에서 에이전트 계정과 프로바이더 연결을 관리합니다.
+지원되는 연결 상태와 CLI 버전을 Termux로 이동하지 않고 확인합니다.
+연결 설정에서 API 키를 입력하고 지원되는 브라우저 인증을 진행합니다.
+모바일 버튼이 다음 줄로 넘어갈 때 줄 사이 간격을 개선했습니다.
+연결 관리 기능을 사용하려면 설정에서 Termux 브리지를 0.23.0으로 업데이트하세요.
+</ko-KR>
