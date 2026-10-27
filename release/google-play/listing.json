@@ -237,7 +237,7 @@
     "previousFullBridgeVerificationVersionCode": 52,
     "developmentApkBuilt": false,
     "deviceInstallVerified": false,
-    "productionSubmitted": false,
+    "productionSubmitted": true,
     "productionReleased": false,
     "realPlayAvailabilityResponseVerified": false,
     "terminalDirectInputPackaged": true,
@@ -282,12 +282,11 @@
   },
   "consoleScreenshotsStatus": "published",
   "productionRelease": {
-    "versionName": "0.28.1",
-    "versionCode": 50,
-    "releaseName": "0.28.1 (50) - Browser and session recovery",
+    "versionName": "0.32.0",
+    "versionCode": 54,
+    "releaseName": "0.32.0 (54) - Compact terminals and agent accounts",
     "consoleStatus": "in_review",
-    "submittedOn": "2026-10-23",
-    "submittedAtLocal": "2026-10-23 12:06 Asia/Seoul",
+    "promotionPreparedOn": "2026-10-28",
     "changeCount": 1,
     "rolloutPercent": 100,
     "allExistingTargetCountries": true,
@@ -297,31 +296,43 @@
     "publicAvailabilityConfirmed": false,
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582",
     "publishingOverviewUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
+    "consoleReleaseNumber": 9,
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
     "errors": [],
     "supportedDeviceChanges": 0,
+    "supportedDeviceChangesScope": "observed Console rows: phone, tablet, TV, wearable, car, Chromebook, Android XR; min/target SDK unchanged",
     "preReviewChecksCompleted": true,
-    "releaseNotesFile": "release/google-play/release-notes/0.28.1-production.txt",
+    "releaseNotesFile": "release/google-play/release-notes/0.32.0-production.txt",
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
+    "releaseNotesCharacters": {
+      "en-US": 344,
+      "ko-KR": 220
+    },
     "reusedValidatedInternalTestBundle": true,
-    "previousPublicVersionName": "0.25.0",
-    "previousPublicVersionCode": 43,
-    "sourceBridgeVersion": "0.21.0",
-    "bundleSha256": "c532b23e457ec85241f119e86d9e55250154b1c5c3d4a1c2bb001974191f1939",
+    "previousPublicVersionName": "0.28.1",
+    "previousPublicVersionCode": 50,
+    "sourceBridgeVersion": "0.23.1",
+    "bundleSha256": "53c2238d8922a206ae4bed4199746c04588e416b239841f94f3a674ebd9d1b08",
     "includedVersionCodes": [
-      50
+      54
     ],
     "excludedPreviousVersionCodes": [
-      43
+      50
     ],
-    "evidence": "dist/production-0.28.1/submitted.png",
+    "evidence": "dist/production-0.32.0/submitted.json",
     "physicalDeviceVerified": false,
-    "note": "Pre-review checks completed; Google is reviewing production version 50. Managed publishing is disabled, so approval publishes automatically. Public availability of version 50 has not been confirmed."
+    "note": "Final native Chrome submission accepted; after reload at 02:28 Asia/Seoul, publishing overview lists version 54 under changes in review and pre-review checks completed with no active error notice. Managed publishing remains disabled, so approval publishes automatically. Version 54 public availability and device installation are unverified.",
+    "submittedOn": "2026-10-28",
+    "submittedAtLocal": "2026-10-28 02:27 Asia/Seoul",
+    "refreshedStatusVerified": true,
+    "submissionVerifiedAtLocal": "2026-10-28 02:28 Asia/Seoul",
+    "transientSubmissionError": "UnexpectedError (4E69A2E2) was briefly displayed; in-review state persisted and the error notice was absent after reload.",
+    "transientSubmissionErrorEvidence": "dist/production-0.32.0/accepted-with-transient-error.png"
   },
   "internalTesterParticipation": {
     "consoleRegistration": "saved_one_tester",
@@ -429,7 +440,7 @@
     "previousFullBridgeVerificationVersionCode": 52,
     "developmentApkBuilt": false,
     "deviceInstallVerified": false,
-    "productionSubmitted": false,
+    "productionSubmitted": true,
     "productionReleased": false,
     "realPlayAvailabilityResponseVerified": false,
     "terminalDirectInputPackaged": true,
@@ -453,48 +464,60 @@
     "terminalFunctionToggleChevronsPackaged": true
   },
   "previousProductionRelease": {
-    "versionName": "0.25.0",
-    "versionCode": 43,
-    "releaseName": "0.25.0 (43) - Guided bridge maintenance",
+    "versionName": "0.28.1",
+    "versionCode": 50,
+    "releaseName": "0.28.1 (50) - Browser and session recovery",
     "consoleStatus": "available_on_google_play",
-    "submittedOn": "2026-10-19",
-    "submittedAtLocal": "2026-10-19 22:59 Asia/Seoul",
+    "submittedOn": "2026-10-23",
+    "submittedAtLocal": "2026-10-23 12:06 Asia/Seoul",
     "changeCount": 1,
     "rolloutPercent": 100,
     "allExistingTargetCountries": true,
+    "targetCountryCount": 178,
     "managedPublishing": false,
     "publishAfterApproval": true,
     "publicAvailabilityConfirmed": true,
-    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582/releases/7/details",
-    "releaseDetailsUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582/releases/7/details",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582/releases/8/details",
+    "publishingOverviewUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
     "errors": [],
     "supportedDeviceChanges": 0,
     "preReviewChecksCompleted": true,
-    "releaseNotesFile": "release/google-play/release-notes/0.25.0-production.txt",
+    "releaseNotesFile": "release/google-play/release-notes/0.28.1-production.txt",
+    "releaseNotesLocales": [
+      "en-US",
+      "ko-KR"
+    ],
     "reusedValidatedInternalTestBundle": true,
-    "previousPublicVersionName": "0.23.0",
-    "previousPublicVersionCode": 40,
-    "sourceBridgeVersion": "0.18.0",
-    "bundleSha256": "1385627d648344205be5d17c2711e2f86c7802cbabcd1e825c4aff1291a46cab",
-    "note": "Console accepted the production submission and lists version 43 under changes in review. Pre-review checks are running; changes will be sent for review when checks succeed. Managed publishing is disabled, so approval publishes automatically. Public availability is not yet confirmed.",
-    "evidence": "dist/production-0.28.1/previous-release.png",
+    "previousPublicVersionName": "0.25.0",
+    "previousPublicVersionCode": 43,
+    "sourceBridgeVersion": "0.21.0",
+    "bundleSha256": "c532b23e457ec85241f119e86d9e55250154b1c5c3d4a1c2bb001974191f1939",
+    "includedVersionCodes": [
+      50
+    ],
+    "excludedPreviousVersionCodes": [
+      43
+    ],
+    "evidence": "dist/production-0.32.0/previous-release.png",
     "physicalDeviceVerified": false,
-    "publishedOn": "2026-10-22",
-    "publishedAtLocal": "2026-10-22 22:33 Asia/Seoul",
-    "availabilityVerifiedOn": "2026-10-23"
+    "note": "Production release 8 confirmed available on Google Play, published 2026-10-23 12:16 Asia/Seoul. Verified on 2026-10-28 before promoting internal version 54.",
+    "publishedOn": "2026-10-23",
+    "publishedAtLocal": "2026-10-23 12:16 Asia/Seoul",
+    "availabilityVerifiedOn": "2026-10-28",
+    "consoleReleaseNumber": 8
   },
   "publicStoreUrl": "https://play.google.com/store/apps/details?id=app.bibimer",
   "currentPublicVersion": {
-    "versionName": "0.25.0",
-    "versionCode": 43,
-    "verifiedOn": "2026-10-23",
+    "versionName": "0.28.1",
+    "versionCode": 50,
+    "verifiedOn": "2026-10-28",
     "consoleProductionAvailabilityVerified": true,
     "devicePublicUpdateVerified": false,
-    "verificationEvidence": "Console production release 0.25.0 (43) available on Google Play, published 2026-10-22 22:33 Asia/Seoul; track covers 178 countries. Device installation was not checked.",
-    "evidence": "dist/production-0.28.1/previous-release.png"
+    "verificationEvidence": "Console production release 8 confirms 0.28.1 (50) available on Google Play, published 2026-10-23 12:16 Asia/Seoul. Device installation was not checked.",
+    "evidence": "dist/production-0.32.0/previous-release.png"
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
@@ -704,7 +727,7 @@
     "developmentApkBuilt": false,
     "deviceInstallVerified": false,
     "physicalDeviceVerified": false,
-    "productionSubmitted": false,
+    "productionSubmitted": true,
     "productionReleased": false,
     "realPlayAvailabilityResponseVerified": false,
     "terminalDirectInputPackaged": true,
@@ -890,6 +913,52 @@
       "publishedOn": "2026-10-22",
       "publishedAtLocal": "2026-10-22 22:33 Asia/Seoul",
       "availabilityVerifiedOn": "2026-10-23"
+    },
+    {
+      "versionName": "0.28.1",
+      "versionCode": 50,
+      "releaseName": "0.28.1 (50) - Browser and session recovery",
+      "consoleStatus": "available_on_google_play",
+      "submittedOn": "2026-10-23",
+      "submittedAtLocal": "2026-10-23 12:06 Asia/Seoul",
+      "changeCount": 1,
+      "rolloutPercent": 100,
+      "allExistingTargetCountries": true,
+      "targetCountryCount": 178,
+      "managedPublishing": false,
+      "publishAfterApproval": true,
+      "publicAvailabilityConfirmed": true,
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582/releases/8/details",
+      "publishingOverviewUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "errors": [],
+      "supportedDeviceChanges": 0,
+      "preReviewChecksCompleted": true,
+      "releaseNotesFile": "release/google-play/release-notes/0.28.1-production.txt",
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "reusedValidatedInternalTestBundle": true,
+      "previousPublicVersionName": "0.25.0",
+      "previousPublicVersionCode": 43,
+      "sourceBridgeVersion": "0.21.0",
+      "bundleSha256": "c532b23e457ec85241f119e86d9e55250154b1c5c3d4a1c2bb001974191f1939",
+      "includedVersionCodes": [
+        50
+      ],
+      "excludedPreviousVersionCodes": [
+        43
+      ],
+      "evidence": "dist/production-0.32.0/previous-release.png",
+      "physicalDeviceVerified": false,
+      "note": "Production release 8 confirmed available on Google Play, published 2026-10-23 12:16 Asia/Seoul. Verified on 2026-10-28 before promoting internal version 54.",
+      "publishedOn": "2026-10-23",
+      "publishedAtLocal": "2026-10-23 12:16 Asia/Seoul",
+      "availabilityVerifiedOn": "2026-10-28",
+      "consoleReleaseNumber": 8
     }
   ],
   "screenshotsExampleData": {
