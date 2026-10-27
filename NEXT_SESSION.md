@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## Mac 포커스 순간 올라오는 입력 보조 영역 대응 (2026-10-27 UTC, 미빌드)
+
+- 사용자가 Mac에서 입력창에 포커스하는 순간 하단 영역이 애니메이션으로 올라와 내비게이션·사이드바 프로젝트 추가 버튼을 가린다고 구체화했고, **아무 버튼도 없는 빈 영역**이라고 확인했다. 원격을 동기화해 **TestFlight0.1.0(3)에 앞선 높이 수정이 이미 포함된 배포 기록**을 확인했다. 처음의 미배포 안내는 이 기록 확인 뒤 정정했으며, 사용자 설치 빌드 번호는 미확인이다. TestFlight 전용 현상이나 단일 원인은 확정하지 않았다.
+- WebKit 원본에서 포커스된 HTML 필드의 `inputAccessoryView`와 `inputAssistantItem` 요청이 WKWebView로 전달되는 별도 경로를 확인했다([WebKit 원본](https://github.com/WebKit/WebKit/blob/main/Source/WebKit/UIProcess/ios/WKContentViewInteraction.mm)). 기존 높이 수정으로 이 경로는 바뀌지 않는다. `BibimerWorkspaceWebView`의 공개 responder getter를 재정의해 **Mac에서만 기본 입력 보조 뷰를 nil로 반환하고 양쪽 보조 버튼 그룹을 비운다.** Mac 판정은 앞선 배치와 같은 helper를 사용한다. iPhone/iPad는 super의 원래 뷰/버튼을 유지한다. 비공개 API·런타임 메서드 교체·강제 blur·키보드/IME 차단은 추가하지 않았다.
+- 버튼 없는 빈 영역에 대해서는 native root scroll view가 키보드 inset으로 이동하는 별도 원인 후보도 다뤘다. [WebKit292603](https://bugs.webkit.org/show_bug.cgi?id=292603)은 DOM scrollTop이0이어도 native contentOffset 이동으로 빈 영역이 생기는 보고이지만 **사용자 Mac의 동일 원인 증거는 아니다.** Mac의 바깥 scroll view만 bounce를 끄고 delegate/레이아웃 콜백에서 시작 위치를 유지한다. 기본 배율·비확대 중·문서 높이가 현재 WebView 안에 들어오는 경우에만 적용하고, 확대/더 긴 문서는 보정하지 않는다. 내부 DOM 목록 스크롤이나 입력 초안은 건드리지 않는다.
+- iOS 앱 Python20개와 Node 권한/설치 catalog·클립보드·컨텍스트·링크4개 스크립트 및 diff 검사를 통과했다. 이 검사는 실제 Mac 입력 보조 영역의 시각 검증을 대신하지 않는다. 현재 내장 Linux 환경에는 Xcode/UIKit SDK가 없어 네이티브 컴파일·설치본 재현은 못 했다. **새 TestFlight 빌드·배포는 하지 않았으며 이번 보완은3번에 미포함**이다. 다음 빌드에서 실제 Mac의 Chat/프로젝트 폼/xterm 포커스·해제·한글 조합·붙여넣기·하단 버튼/탭, iPhone/iPad의 키보드/보조 바를 확인한다. 사라지지 않으면 native keyboard frame·WebView frame·root scroll offset을 비교해 빈 영역 원인을 더 좁힌다.
+
 ## Android0.32.0(54)·TestFlight0.1.0(3) 내부 배포 완료 (2026-10-28)
 
 - 최종 소스와 검증 기록을5개 논리 커밋으로 나눠 **`a11b52ea2e2f00e73fd7910c180c6d715a2a9c03`**까지 정상 push하고 HEAD/origin/main 일치·clean을 확인한 뒤 업로드했다. 아래 준비 기록의 실제 최신 소스와 같은 산출물을 사용한다.

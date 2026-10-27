@@ -12,7 +12,36 @@
 
 extern int bibimer_create_directory(const char *path);
 
-@interface BibimerController : UIViewController <WKScriptMessageHandler, WKNavigationDelegate, NSURLSessionTaskDelegate>
+static BOOL usesDesktopInput(void) {
+#if TARGET_OS_MACCATALYST
+    return YES;
+#else
+    if (@available(iOS 14.0,*)) return [NSProcessInfo.processInfo isiOSAppOnMac];
+    return NO;
+#endif
+}
+
+@interface BibimerWorkspaceWebView : WKWebView
+@end
+
+@implementation BibimerWorkspaceWebView
+- (UIView *)inputAccessoryView {
+    // WebKit forwards the focused HTML field's accessory request here.
+    // Mac typing must not raise the iOS form toolbar over workspace controls.
+    return usesDesktopInput() ? nil : [super inputAccessoryView];
+}
+
+- (UITextInputAssistantItem *)inputAssistantItem {
+    UITextInputAssistantItem *item = [super inputAssistantItem];
+    if (usesDesktopInput()) {
+        item.leadingBarButtonGroups = @[];
+        item.trailingBarButtonGroups = @[];
+    }
+    return item;
+}
+@end
+
+@interface BibimerController : UIViewController <WKScriptMessageHandler, WKNavigationDelegate, NSURLSessionTaskDelegate, UIScrollViewDelegate>
 @property WKWebView *web;
 @property UILabel *status;
 @property UITextView *bootstrapOutput;
@@ -296,22 +325,21 @@ static void guestExit(int status) {
     NSString *shim = [NSString stringWithContentsOfURL:[NSBundle.mainBundle URLForResource:@"native" withExtension:@"js"] encoding:NSUTF8StringEncoding error:nil];
     NSString *source = [[@"window.__bibimerEnvironment=" stringByAppendingString:jsonString([self environment])] stringByAppendingFormat:@";\n%@",shim];
     [configuration.userContentController addUserScript:[[WKUserScript alloc] initWithSource:source injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES]];
-    self.web = [[WKWebView alloc] initWithFrame:CGRectZero configuration:configuration];
+    self.web = [[BibimerWorkspaceWebView alloc] initWithFrame:CGRectZero configuration:configuration];
     self.web.navigationDelegate = self; self.web.opaque = NO; self.web.backgroundColor = self.view.backgroundColor;
     self.web.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+    if (usesDesktopInput()) {
+        self.web.scrollView.delegate = self;
+        self.web.scrollView.bounces = NO;
+        self.web.scrollView.alwaysBounceVertical = NO;
+    }
     self.web.accessibilityIdentifier = @"bibimerWorkspace"; self.web.translatesAutoresizingMaskIntoConstraints = NO;
 #if TARGET_OS_SIMULATOR
     if (@available(iOS 16.4,*)) self.web.inspectable = YES;
 #endif
     [self.view addSubview:self.web];
-    BOOL desktopHost = NO;
-#if TARGET_OS_MACCATALYST
-    desktopHost = YES;
-#else
-    if (@available(iOS 14.0,*)) desktopHost = [NSProcessInfo.processInfo isiOSAppOnMac];
-#endif
     // Desktop input must not reserve space for an iOS onscreen keyboard.
-    NSLayoutYAxisAnchor *bottom = desktopHost ? self.view.safeAreaLayoutGuide.bottomAnchor : self.view.keyboardLayoutGuide.topAnchor;
+    NSLayoutYAxisAnchor *bottom = usesDesktopInput() ? self.view.safeAreaLayoutGuide.bottomAnchor : self.view.keyboardLayoutGuide.topAnchor;
     [NSLayoutConstraint activateConstraints:@[
         [self.web.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
         [self.web.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
@@ -320,6 +348,30 @@ static void guestExit(int status) {
     ]];
     NSURL *ui = [NSBundle.mainBundle URLForResource:@"Web" withExtension:nil];
     [self.web loadFileURL:[ui URLByAppendingPathComponent:@"index.html"] allowingReadAccessToURL:ui];
+}
+
+- (void)restoreDesktopWorkspaceOrigin {
+    if (!usesDesktopInput() || !self.web) return;
+    UIScrollView *scroll = self.web.scrollView;
+    CGFloat scale = scroll.zoomScale, minimum = scroll.minimumZoomScale;
+    // Leave zoom/panning and genuinely taller content alone. The fitted app
+    // shell scrolls its own panels; a keyboard inset must not pan the root.
+    if (scroll.isZooming || scale < minimum - 0.001 || scale > minimum + 0.001 ||
+        scroll.contentSize.height > scroll.bounds.size.height + 1) return;
+    CGPoint origin = scroll.contentOffset;
+    CGFloat top = -scroll.adjustedContentInset.top;
+    if (origin.y >= top - 0.5 && origin.y <= top + 0.5) return;
+    origin.y = top;
+    [scroll setContentOffset:origin animated:NO];
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    if (scrollView == self.web.scrollView) [self restoreDesktopWorkspaceOrigin];
+}
+
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    [self restoreDesktopWorkspaceOrigin];
 }
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
