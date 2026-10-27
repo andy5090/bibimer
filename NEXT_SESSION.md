@@ -1,5 +1,14 @@
 # Bibimer 다음 세션 시작점
 
+## 터미널 선택기 정리·특수 키 확장과 배포 준비 (2026-10-28)
+
+- Android/iOS 공유 Terminal에서 하단 에이전트 전환 선택기와 빈 모델 행을 숨겼다. Chat과 새 Chat 초안은 기존 선택기·입력창을 유지하고 새 터미널의 실행 프로그램은 시작 화면에서 고른다. 실행 중 프로세스·프로젝트·인증 상태는 변경하지 않는다.
+- 특수 키에 좌우를 추가해 ↑ / ←↓→ 역 T자로 배치했다. Ctrl·Alt는 다음 키 한 번에 적용하며 두 번 누르면 취소한다. F1–F12는 기본 키 위에 펼치고 실제 작업 영역 폭에 따라6/12열을 사용한다. 키마다44px 터치 영역을 유지하고320×460의 펼친 패널은 workspace 스크롤로 전체 접근을 제공한다. 세션/프로젝트/화면·연결 상태 변경에는 보조 키와 확장 상태를 초기화한다. 다중 글자 붙여넣기/IME를 통째로 제어 문자로 바꾸지 않는다. 기본/응용 방향키·F1–F12와 Ctrl/Alt 조합은 xterm 시퀀스로 전달한다.
+- 검증: 실제 공유 UI의 기존80배치와 키보드100배치(10언어×Android/iOS×5화면),805키×10언어, 제어 문자·보조 키 수명/컨텍스트 가드·새 Chat·컨텍스트/구독·연결 제어 검사와 전체 격리 UI 회귀가 통과했다. Python scripts39개·iOS 앱20개도 통과했다. macOS 임시 경로 별칭 차이로 scripts 최초2개 실패는 TMPDIR=/private/tmp의 동일39개 재검사에서 해소했다. 시각 판정97/pass, `dist/terminal-keyboard/verification.json`과 `.omx/state/terminal-keyboard/ralph-progress.json`이 증빙이다.
+- 별도 `Bibimer TestFlight QA` Simulator에서 최신 앱의 실제 WKWebView·ARM64 Linux **21개 검사/12.79초 통과**, JavaScript 오류0·fatal0·진단 실패0이다. 기존 syscall151/152 경고4개만 있어 PASS_WITH_WARNINGS로 구분한다. agent-first 기본 선택을 반영하기 전 smoke fixture의 launch 대기 시간 초과는 셸을 먼저 명시적으로 고른 뒤 준비 상태를 검사하도록 보정해 재통과했다. 사용자 앱·기존 세션은 재시작하지 않았다. `.tools/terminal-keys-{ui,scripts,ios-native-qa}.log`, `dist/ios-app/testflight-fix-smoke/` 참조.
+- 사용자가 레포 싱크 후 Play 내부 테스트와 TestFlight 배포를 요청했다. Android **0.31.0(53)** 후보는 기존 업로드 키로 빌드·검증 완료했다. `dist/play/bibimer-0.31.0-53-release.aab`, SHA-256 `58cfb9227e0915085fbdb1ea0fe5d30317f9b2c57979735441eaeb6960a4e02d`,3,355,186bytes다. bundletool·서명/기존 인증서·55assets 원본·브리지0.23.0·6payload/해시/셸 구문·심사 digest와 비밀 원문 미포함 검사를 통과했다. 브리지0.23.0 유지로 이번 키 UI만을 위한 브리지 업데이트는 필요하지 않다. iOS **0.1.0(2)** 기기용 빌드·unsigned archive까지 완료했고 배포 서명/export를 진행 중이다.
+- **현재 새 후보의 스토어 게시 완료는 아직 확인하지 않았다.** Play 내부0.30.0(52)와 TestFlight0.1.0(1)은 기존 제공 상태다. 기존 Chrome의 Play Console 로그인을 확인했고 Apple 탭은 인증 화면 로딩이 지연돼 사용자의 직접 로그인 완료를 기다린다. 이후 업로드/처리/그룹 추가 결과를 별도로 기록한다. 실제 iPhone·새 Play 설치/Android WebView/IME와 실제 계정 모델 응답 검증은 이번 회귀에 포함하지 않았다.
+
 ## 레포 동기화와 Android·iOS 통합 검증 (2026-10-28)
 
 - 사용자 요청으로 미커밋 iOS TestFlight 배포 도구·아이콘/개인정보 manifest와10월27일 사이드바·터미널 직접 입력·Codex 초기화 수정 사항을 보존해6개 논리 커밋으로 나눴다. `4a3dccd`(아이콘/개인정보), `95b41c0`(배포 도구/회귀/안내), `cf93f44`(프로젝트 폼 폭), `c13f0b4`(터미널 입력/검토 붙여넣기), `dffeabf`(Codex 기한), `81a0047`(검증/사용 안내)다.
