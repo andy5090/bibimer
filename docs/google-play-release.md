@@ -1,5 +1,17 @@
 # Google Play 출시 준비
 
+## 0.32.0(54) 특수 키 축소·홀딩 보조 키 내부 테스트 게시 완료 (2026-10-28)
+
+**2026-10-28 02:06 Asia/Seoul**, 기존 Chrome의 Play Console에서 **Android0.32.0/code54 · 브리지0.23.1**을 내부 테스트에 게시했다. **새로고침 후 활성 / 내부 테스터에게 제공됨**을 확인했고 출시25·새54만 포함/53제외·버전 코드1개·EN/KO노트2/2·오류0·기존 매핑 파일 경고1·확인한7개 기기 유형의 지원 변화0이다. 기존 내부 트랙·테스터 설정은 유지했다.
+
+기본 특수 키는 항상2줄·68px이며 F1~F12를 펼칠 때 가로 한 줄을 추가해104px가 된다. F펼침 버튼은 윗줄에 두고 위/아래 화살표로 상태를 표시한다. Ctrl+C 전용 버튼은 제거했다. **Ctrl·Alt·Shift는 다시 누를 때까지 유지**하고 세션·화면·연결 전환에는 초기화한다. Ctrl을 켜고 키보드 C를 입력하면 Ctrl+C다. 구형 GitHub CLI의 로그인 확인도 수정했다. **앱 업데이트 후 설정에서 Termux 브리지0.23.1을 업데이트**해야 해당 GitHub 수정이 적용된다. 운영 브리지나 사용자 세션은 이번 게시로 자동 갱신하지 않았다.
+
+먼저 소스를 `a11b52e`까지 동기화한 뒤 검증된 동일 AAB를 업로드했다. `dist/play/bibimer-0.32.0-54-release.aab`,3,355,974bytes·SHA-256 `53c2238d8922a206ae4bed4199746c04588e416b239841f94f3a674ebd9d1b08`. 실제 리소스/Java/D8·bundletool·서명/기존 인증서·55assets 원본·브리지0.23.1/GitHub fallback·설치/유지보수6payload/해시·셸 구문·private receiver·심사 digest와 비밀 원문 미포함·언어 split 비활성을 확인했다. 새 키·Doppler 재조회·개발 APK 생성은 없다.
+
+현재 Python scripts39개·GitHub13개·iOS 앱20개, 특수 키 인코딩/홀딩/Shift 조합·새 Chat·805키×10언어·전체 격리 UI 회귀를 통과했다. 실제 공유 UI의 키보드120배치·사이드바80배치와 시각 판정98/pass를 확인했다. 별도 iOS QA Simulator의 native WKWebView/내장 Linux21개는13.99초·fatal/진단 실패0이며 기존 syscall151/152 경고4개를 유지한 `PASS_WITH_WARNINGS`다. 이는 Android 설치본 검사와 구분하며 이전0.30.0의 전체 브리지229개·같은 폰 Firefox600배치를 이번 검증으로 재사용하지 않는다.
+
+증빙 `dist/play-0.32.0/{review.png,confirmation.png,published.png,published-summary.png,published.json}`, `.tools/aab-0.32.0-54-{build.log,final-verify.log,verification.json}`, `.tools/release-0.32.0-ui.log`. EN/KO노트 `release/google-play/release-notes/0.32.0.txt`는365/229자다. [기존 내부 테스트 링크](https://play.google.com/apps/internaltest/4701718894791581363)를 유지했다. **Play 업데이트 수신·새 앱 설치·실제 Android WebView/IME·작은 키 터치·F키 스와이프는 후속**이다. 프로덕션·웹사이트는 변경하지 않았고 정식 마지막 확인(10월23일 공개43/50심사 중)도 갱신하지 않았다. iOS의 Mac 화면 수정·TestFlight 제공 상태는 `NEXT_SESSION.md`와 `ios/app/TESTFLIGHT.md`의 별도 기록을 따른다.
+
 ## 0.31.0(53) 터미널 키보드 내부 테스트 게시 완료 (2026-10-28)
 
 **2026-10-28 00:40 Asia/Seoul**, 기존 Chrome의 Play Console에서 **Android0.31.0/code53 · 브리지0.23.0**을 내부 테스트에 게시하고 **새로고침 후 활성 / 내부 테스터에게 제공됨**을 확인했다. 출시24, 새53만 포함·52제외·EN/KO노트2/2·오류0·기존 가독화 매핑 파일 경고1·확인한7개 기기 유형의 지원 변화0이다. 기존 트랙과 테스터 설정은 유지했다.
