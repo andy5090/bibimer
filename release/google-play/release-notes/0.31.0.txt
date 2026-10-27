@@ -1,0 +1,14 @@
+<en-US>
+Terminal sessions use direct input without the Chat composer or bottom agent selector.
+All four arrow keys use an inverted-T layout.
+Use one-shot Ctrl and Alt modifiers, and expand F1-F12 when needed.
+Project forms now fit narrow sidebars.
+The Termux bridge remains 0.23.0; no bridge update is needed if you already use it.
+</en-US>
+<ko-KR>
+터미널 세션에서 하단 Chat 입력창과 에이전트 선택기를 숨기고 직접 입력합니다.
+네 방향키를 역T자 형태로 배치했습니다.
+Ctrl·Alt를 다음 키 한 번에 적용하고 필요할 때 F1~F12를 펼칩니다.
+프로젝트 추가 폼이 좁은 사이드바 너비에 맞도록 수정했습니다.
+Termux 브리지는 0.23.0을 유지하며 이미 사용 중이면 추가 업데이트가 필요 없습니다.
+</ko-KR>
