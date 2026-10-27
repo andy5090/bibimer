@@ -85,7 +85,31 @@
       </div>
       <div id="session-note" class="session-note">Closing the app does not stop your session.</div>
       <div id="terminal-keys" class="keys" aria-label="Terminal keys" data-i18n-aria-label="special_keys">
-        <button data-key="escape">Esc</button><button data-key="tab">Tab</button><button data-key="up" aria-label="Up arrow" data-i18n-aria-label="arrow_up">↑</button><button data-key="down" aria-label="Down arrow" data-i18n-aria-label="arrow_down">↓</button><button data-key="interrupt">Ctrl+C</button><button data-key="enter" aria-label="Enter">↵</button>
+        <div id="terminal-function-keys" class="terminal-function-keys" role="group" aria-label="Function keys" data-i18n-aria-label="function_keys" hidden>
+          <button type="button" data-key="f1">F1</button>
+          <button type="button" data-key="f2">F2</button>
+          <button type="button" data-key="f3">F3</button>
+          <button type="button" data-key="f4">F4</button>
+          <button type="button" data-key="f5">F5</button>
+          <button type="button" data-key="f6">F6</button>
+          <button type="button" data-key="f7">F7</button>
+          <button type="button" data-key="f8">F8</button>
+          <button type="button" data-key="f9">F9</button>
+          <button type="button" data-key="f10">F10</button>
+          <button type="button" data-key="f11">F11</button>
+          <button type="button" data-key="f12">F12</button>
+        </div>
+        <div class="terminal-keyboard">
+          <div class="terminal-key-actions">
+            <button type="button" data-key="escape">Esc</button><button type="button" data-key="tab">Tab</button><button type="button" data-key="interrupt">Ctrl+C</button><button type="button" data-key="enter" aria-label="Enter">↵</button>
+            <button type="button" data-modifier="ctrl" aria-pressed="false">Ctrl</button><button type="button" data-modifier="alt" aria-pressed="false">Alt</button>
+            <button id="terminal-functions-toggle" type="button" aria-expanded="false" aria-controls="terminal-function-keys" aria-label="Show or hide function keys" data-i18n-aria-label="expand_function_keys">F1–F12</button>
+          </div>
+          <div class="terminal-arrows">
+            <button type="button" data-key="up" aria-label="Up arrow" data-i18n-aria-label="arrow_up">↑</button>
+            <button type="button" data-key="left" aria-label="Left arrow" data-i18n-aria-label="arrow_left">←</button><button type="button" data-key="down" aria-label="Down arrow" data-i18n-aria-label="arrow_down">↓</button><button type="button" data-key="right" aria-label="Right arrow" data-i18n-aria-label="arrow_right">→</button>
+          </div>
+        </div>
       </div>
       <section id="chat-queue" class="chat-queue" hidden aria-label="Queued messages" data-i18n-aria-label="queue_label">
         <div class="queue-heading"><span id="queue-count" role="status"></span><button id="queue-resume" type="button" class="quiet" data-i18n="queue_resume" hidden>Resume queue</button></div>

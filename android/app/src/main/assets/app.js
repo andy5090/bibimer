@@ -82,6 +82,7 @@
   const fit = new FitAddon.FitAddon();
   term.loadAddon(fit);
   term.open($("terminal"));
+  let terminalCtrl = false, terminalAlt = false, terminalKeysContext = "";
   const sidebar = new BibimerSidebar(t, {
     refresh:refreshSidebar, manage:openSessionActions, manageProject:openProjectSettings,
     moveProject:(id, position) => manageProject(id, "move_to", position),
@@ -883,6 +884,7 @@
     pickers.close();
     sidebar.close();
     currentTab = name;
+    updateTerminalKeys();
     updateBackState();
     for (const page of ["work", "setup", "settings"]) {
       $(page).hidden = name !== page;
@@ -1216,7 +1218,7 @@
     renderWorkspaceSummary(); renderWorkspaceDetails();
     void refreshProjectWorktrees(project);
     renderSessionActions(); renderProjectSettings(); renderSidebar();
-    for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.disabled = !session || $("input").disabled;
+    updateTerminalKeys();
     $("terminal-empty").hidden = !!session;
     $("terminal-area").hidden = chatDisplay;
     $("terminal-keys").hidden = chatDisplay || session?.kind === "browser";
@@ -1470,7 +1472,7 @@
     inputQueue = job.catch(() => false);
     return job;
   }
-  term.onData(sendRaw);
+  term.onData(sendTerminalData);
   function updateQueue(event) {
     if (event.session?.id !== session?.id || !Array.isArray(event.queue) || event.session.output_end < queueRevision) return;
     queued = event.queue;
@@ -2118,9 +2120,68 @@
       } else { if (!native.startAgentAction) throw new Error(); native.startAgentAction(button.dataset.agent, button.dataset.agentAction); }
     } catch (_) { window.BibimerAgentActionStatus(button.dataset.agent, "quick_start_failed"); }
   });
-  const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", interrupt:"\x03", enter:"\r"};
-  for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.addEventListener("click", () => sendRaw(keys[button.dataset.key]));
-  window.BibimerPause = () => { agentConnections.pause(); pickers.close(); paused = true; ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
+  const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", left:"\x1b[D", right:"\x1b[C", interrupt:"\x03", enter:"\r",
+    f1:"\x1bOP", f2:"\x1bOQ", f3:"\x1bOR", f4:"\x1bOS", f5:"\x1b[15~", f6:"\x1b[17~", f7:"\x1b[18~", f8:"\x1b[19~", f9:"\x1b[20~", f10:"\x1b[21~", f11:"\x1b[23~", f12:"\x1b[24~"};
+  function terminalKeysEnabled() {
+    return online && !paused && !switchingProject && currentTab === "work" && session?.state === "running" && !isChat() && session.kind !== "browser";
+  }
+  function updateTerminalKeys() {
+    const context = JSON.stringify([instance, projectKey(), session?.id, session?.state, session?.mode, session?.kind, currentTab, online, paused, switchingProject]);
+    if (context !== terminalKeysContext) {
+      terminalKeysContext = context; terminalCtrl = terminalAlt = false;
+      $("terminal-function-keys").hidden = true;
+      $("terminal-functions-toggle").setAttribute("aria-expanded", "false");
+    }
+    for (const button of document.querySelectorAll("#terminal-keys button")) {
+      button.disabled = !terminalKeysEnabled();
+      if (button.dataset.modifier) button.setAttribute("aria-pressed", String(button.dataset.modifier === "ctrl" ? terminalCtrl : terminalAlt));
+    }
+  }
+  function modifiedTerminalData(data, ctrl, alt) {
+    if (!ctrl && !alt) return data;
+    const modifier = (ctrl ? 4 : 0) | (alt ? 2 : 0);
+    const cursor = data.match(/^\x1b(?:\[|O)([ABCDHFPQRS])$/);
+    if (cursor) return "\x1b[1;" + (1 + modifier) + cursor[1];
+    const sequence = data.match(/^\x1b\[(\d+)(?:;(\d+))?([ABCDHFPQRS~])$/);
+    if (sequence && (sequence[3] !== "~" || [1,2,3,4,5,6,15,17,18,19,20,21,23,24].includes(Number(sequence[1])))) {
+      return "\x1b[" + sequence[1] + ";" + (1 + ((Number(sequence[2] || 1) - 1) | modifier)) + sequence[3];
+    }
+    // A latched modifier affects one key, never a whole paste or IME phrase.
+    if (Array.from(data).length !== 1) return data;
+    if (ctrl) {
+      const code = /^[a-z]$/.test(data) ? data.charCodeAt(0) - 32 : data.charCodeAt(0);
+      if (code >= 64 && code <= 95) data = String.fromCharCode(code & 31);
+      else if (data === " " || data === "`") data = "\x00";
+      else if (data === "?") data = "\x7f";
+    }
+    return (alt ? "\x1b" : "") + data;
+  }
+  function sendTerminalData(data) {
+    if (!terminalKeysEnabled()) return Promise.resolve(false);
+    const text = modifiedTerminalData(data, terminalCtrl, terminalAlt);
+    terminalCtrl = terminalAlt = false; updateTerminalKeys();
+    return sendRaw(text);
+  }
+  for (const button of document.querySelectorAll("#terminal-keys button")) button.addEventListener("pointerdown", event => event.preventDefault());
+  for (const button of document.querySelectorAll("#terminal-keys [data-key]")) button.addEventListener("click", () => {
+    let data = keys[button.dataset.key];
+    if (!data || !terminalKeysEnabled()) return;
+    if (["up","down","left","right"].includes(button.dataset.key) && term.modes.applicationCursorKeysMode) data = data.replace("[", "O");
+    void sendTerminalData(data); term.focus();
+  });
+  for (const button of document.querySelectorAll("#terminal-keys [data-modifier]")) button.addEventListener("click", () => {
+    if (!terminalKeysEnabled()) return;
+    if (button.dataset.modifier === "ctrl") terminalCtrl = !terminalCtrl;
+    else terminalAlt = !terminalAlt;
+    updateTerminalKeys(); term.focus();
+  });
+  $("terminal-functions-toggle").addEventListener("click", () => {
+    if (!terminalKeysEnabled()) return;
+    const panel = $("terminal-function-keys"); panel.hidden = !panel.hidden;
+    $("terminal-functions-toggle").setAttribute("aria-expanded", String(!panel.hidden));
+    if (!panel.hidden) $("terminal-keys").scrollIntoView({block: "nearest"});
+  });
+  window.BibimerPause = () => { agentConnections.pause(); pickers.close(); paused = true; updateTerminalKeys(); ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
   $("language").addEventListener("change", () => {
     try {
       if (!native.setLanguage($("language").value)) throw new Error();
