@@ -74,7 +74,7 @@ The app also offers **Set up and connect**, which requires Android's Termux comm
 
 Open the sidebar and choose **Project Add**. Browse to a Termux folder, or enter a path such as `~/projects/my-project` and choose to create the folder if needed. Save the project, select **Terminal**, and start a session.
 
-Try a shell command such as `pwd` from the input field. Your command runs in that project's folder on your phone.
+Tap the terminal, type a shell command such as `pwd`, and press Enter. Your command runs in that project's folder on your phone.
 
 ### 4. Add a coding agent
 

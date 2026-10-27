@@ -1,5 +1,27 @@
 # Bibimer 다음 세션 시작점
 
+## macOS TestFlight 보고: 사이드바·Codex 조회·터미널 입력 UI (2026-10-27, 소스 수정·미배포)
+
+- 사용자 macOS TestFlight **0.1.0(1)**에서 프로젝트 추가 폼의 가로 스크롤·왼쪽 잘림과 Codex 조회 실패/기존 Chat 시작 실패를 실제 확인했다. 공유 CSS grid의 auto 최소 너비를 `minmax(0,1fr)`와 자식 `min-width:0`으로 보정하고 버튼 행 줄바꿈을 허용해 폼이 사이드바 너비 안에 맞도록 했다.
+- 사용자 후속 요청으로 **Android/iOS Terminal에서는 하단 Chat 입력창을 숨기고 직접 xterm 입력·특수 키·에이전트/다음 실행 설정을 유지**한다. Chat 입력·초안/커서는 그대로 유지한다. iOS 붙여넣기는 기존 복사 창을 편집 가능한 검토 창으로 재사용하고 **터미널로 전송**을 명시적으로 눌러야 전송한다. 읽기/미리보기만으로 실행하지 않으며 세션·프로젝트·탭 전환 시 창·내용을 비운다.
+- 같은 macOS TestFlight 앱에서 모델 호출 없이 실제 Codex0.163.0의 `initialize`·`model/list`를 진단했다. 직접 RPC 초기화1.77초·모델7개2.10초, 실제 HistoryClient 초기화1.53초·모델7개가 성공했고, 기존 앱 UI에도 모델7개가 다시 표시됐다. 최초 실패의 단일 원인은 미확정이다. 기존 브리지의 Codex 조회8초·Chat 시작20초가 iOS interpreter cold start에 짧은 점을 확인해 **조회 총125초(초기화/페이지 공유), Chat 시작135초**로 보정했다. Android 제한·권한·인증 설정을 바꾸거나 실패를 성공으로 취급하지 않는다.
+- 지연된 초기화/모델 응답, 조회 총시간 초과, 조회 전용 메서드·모델 턴 미실행, 소유 프로세스 그룹 정리, Chat 시작 기한을 검사하는 회귀4개를 추가했다. 기존8초 구현이 같은9초 지연 회귀에 실패함을 확인했고 수정 후 통과했다. iOS 브리지 전체 **49개 통과**. 실제 UI의 10언어×4너비×Android/iOS **80개 배치**와 xterm 직접 입력/특수 Enter·Chat 초안/커서·iOS 붙여넣기 검토/명시 전송을 통과했다. 증빙 `dist/ios-terminal-ui/`, 실제 앱 모델 목록 `.tools/ios-testflight-fixes/codex-models-recovered.png`.
+- 사용자 TestFlight 앱·기존 인증/프로젝트·사용자 Simulator를 교체하거나 재시작하지 않았다. 진단용 터미널 하나를 따로 열어 검사 후 해당 셸만 `exit`로 종료하고 기존 Codex 화면으로 돌아왔다. 모델 응답·사용량 소비 검증은 하지 않았다. 이번 소스는 **TestFlight0.1.0(1)/Android 배포본에 미반영**이며 새 배포 빌드·실기기 재검증이 필요하다. 별도 `Bibimer TestFlight QA` Simulator 최신 소스에서 native WKWebView→guest **21개 검사 통과**,11.93초·fatal0·진단실패0, 기존 syscall151/152 경고4개를 보존한 `PASS_WITH_WARNINGS`다(`dist/ios-app/testflight-fix-smoke/`). 최종 빌드의 terminal-tools/smoke/guest run.py가 현재 소스와 같음을 확인했다. 공유 전체 `scripts/smoke_ui.cjs`도 실제 PTY 직접 입력·프로젝트 격리·Chat/모델/승인/대기열/Steer/Claude/OpenCode 회귀를 통과했다(`.tools/ui-terminal-composer-smoke.log`, `TMPDIR=/private/tmp`, macOS의 X11 유틸리티 존재 검사는 명시적 fixture). 앱 Python20개·iOS JS4종·구문/diff 검사도 통과했다.
+
+## iOS TestFlight 내부 테스트 제공 완료 (2026-10-25)
+
+- 사용자가 실기기 구매 전 **TestFlight까지 진행**하도록 요청했다. 첫 iOS 후보는 `app.bibimer.ios`·**0.1.0(1)**이며 Android 공개/내부 트랙과 구분한다. 최신 소스의 기기용/Simulator 컴파일을 완료했고 사용자 기존 Simulator·Linux 파일·인증·세션을 교체하거나 종료하지 않았다.
+- `ios/app/distribute.py`에 기존 device `.app`를 정상 Xcode 타깃으로 감싼 archive·명시적 자동 프로비저닝·로컬 App Store Connect IPA export 경로를 추가했다. 새 의존성·업로드/인증키 수집 옵션은 없다. 다른 팀/시뮬레이터/변조 실행 파일/심볼 불일치/기존 archive 덮어쓰기를 거절한다. 빌드·서명 로그는 무시되는0700출력 폴더의0600파일에만 둔다.
+- `ios/app/Assets.xcassets`에 기존 브랜드 아이콘의1024px 불투명AppIcon, `Resources/PrivacyInfo.xcprivacy`에 실제 네이티브/런타임의4개 API 사유를 준비했다. `dist/ios-testflight/0.1.0-1-unsigned-final/Bibimer.xcarchive`의 Xcode archive·iPhoneOS27.1/arm64·SDK metadata·일치dSYM·507개manifest자산·privacy·iPhone/iPad아이콘을 확인했다. 이 아카이브 자체는 unsigned이며, 아래 별도 export에서 배포 서명·IPA·업로드를 완료했다.
+- 별도 `Bibimer TestFlight QA` 시뮬레이터를 만들어 실제 최신 앱 WKWebView→native→내장Linux **21개 UI검사 통과**,34.08초·JS오류0·fatal0·진단실패0을 확인했다. 기존 syscall151/152경고4개와 APK네트워크복구경고1개를 보존한 `PASS_WITH_WARNINGS`다. 앱 Python20개(배포경계14개 포함), 권한/설정/클립보드/터미널 Node검사 통과. `dist/ios-app/testflight-smoke/`, `.tools/ios-testflight-{device-final-build,simulator-build,qa,app-tests-final}.log`.
+- 사용자가 Apple 이중 인증과 새 Developer Program License Agreement 동의를 직접 완료했다. 실제 계정 배너가 사라진 뒤 App Store Connect에 **Bibimer / app.bibimer.ios / SKU bibimer-ios / 기본언어 en-US / Apple ID6826729307**을 등록했다. 유료 앱 계약 안내도 있지만 이번 무료 앱 등록·업로드를 막지 않았으므로 별도 계약 동의는 하지 않았다. 인증 정보·계약 화면의 개인정보는 기록하지 않는다.
+- 자동서명 archive의 최초 시도는 등록 실기기가 없어 개발용 프로파일 생성에 실패했다(`dist/ios-testflight/0.1.0-1-signed/xcodebuild.log`). **unsigned archive에서 App Store Connect export를 직접 실행**하면 개발 프로파일 단계 없이 성공한다. `distribute.py --archive ... --export`에 이 경로를 반영했다. 가짜UDID/기기등록·인증서폐기는 없다.
+- 배포용 IPA `dist/ios-testflight/export-unsigned-probe/export/Bibimer.ipa`: **8,275,988bytes**, SHA-256 **`33d0032b1eb815d352363a992b7614de3b244157cd29253ad77b2e76bec6e504`**. codesign strict·App Store 프로파일·팀/번들ID·만료·get-task-allow=false·기기목록없음을 검증했다. **2026-10-25 11:23 Asia/Seoul**, Xcode `destination=upload`에서 `Upload succeeded`/exit0을 확인했다. `.tools/ios-testflight-upload-0.1.0-1.log`, `dist/ios-testflight/upload-0.1.0-1/upload-receipt.json`. 이후 Apple 처리·암호화 응답·내부 제공까지 완료했다(아래 기록).
+- App Store Connect 처리 완료 후 암호화 질문에서 **표준 암호화 사용(Apple OS 외 구현 포함)**·**프랑스 배포 안 함**을 선택했다. 이번 한국 계정 소유자용 첫 내부 테스트 범위이며 프랑스/외부 배포 확대 전 신고를 재검토한다. `ITSAppUsesNonExemptEncryption=false`를 임의 추가하지 않았다.
+- **Bibimer Internal** 그룹에 검증된 **0.1.0(1)** 하나를 추가하고 계정 소유자 한 명만 초대했다. 실제 화면에서 **내부 그룹·테스터1명·빌드1개 / 테스트 중 / 테스터 초대됨 / 90일 후 만료**를 확인했다. 자동 배포는 꺼져 있어 이후 빌드는 직접 추가한다. 다른 테스터·외부 그룹·공개 링크·정식 App Store 출시는 없다.
+- 베타 앱 설명·공개 지원 이메일·마케팅URL은 저장 후 재방문하여 유지됨을 확인했다. 심사용 추가 정보는 연락처 필수값 부족으로 저장되지 않았고, 내부 테스트에 불필요한 외부 베타 심사 연락처는 입력하지 않았다. Chrome 팝업 차단은 해소됐다. 실제 iPhone에서 같은 Apple 계정의 초대 메일을 열고 TestFlight에서 수락·설치해야 한다. 초대 수락/설치/실기기 실행은 아직 미확인이다.
+- 증빙: `dist/ios-testflight/upload-0.1.0-1/{upload-receipt.json,internal-testing.jpg}`. 내부 그룹 `https://appstoreconnect.apple.com/teams/de8119d6-cda7-41ce-b0e1-5d1f49c57367/apps/6826729307/testflight/groups/05c12695-3fe4-411f-acf8-53bce8a31aac/builds`. 후속은 실제 iPhone 초기 준비·파일/인증 Safari 왕복·잠금 복귀·메모리/발열·최신 네 CLI 실제 모델 검증과 라이선스/다운로드 코드 심사 적합성 검토다. 상세 명령·한계는 `ios/app/TESTFLIGHT.md`.
+
 ## 0.28.1(50) 정식 배포 심사 제출 (2026-10-23)
 
 - **2026-10-23 12:06 Asia/Seoul**, 검증된 내부0.28.1(50)을 같은 번들로 프로덕션 승급해 변경 **1개** 전송을 확정했다. 기존178개 국가/지역 **100% 전체 출시**, 새50만 포함·43제외. 새 빌드/업로드/버전/키 변경 없음. SHA-256 **`c532b23e457ec85241f119e86d9e55250154b1c5c3d4a1c2bb001974191f1939`** 재확인.
