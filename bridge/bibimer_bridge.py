@@ -29,6 +29,7 @@ import tempfile
 import termios
 import threading
 import time
+from types import SimpleNamespace
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -41,13 +42,17 @@ _recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_rec
 maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
 _recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.21.0"
+VERSION = "0.23.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
+    "error_agent_connection": "Could not complete the agent connection. Check the installed agent and try again.",
+    "error_connection_busy": "Another connection operation is in progress.",
+    "error_connection_expired": "This connection request has expired. Start again.",
+    "error_connection_unsupported": "Use this agent’s native setup for this authentication method.",
     "error_maintenance_recovery": "Could not reopen these sessions. Check the recovery status in Settings.",
     "error_browser_manual": "Finish manual login in Bibimer before allowing agent control.",
     "error_browser_control": "Could not control this browser. Open Termux:X11 and try again.",
@@ -580,6 +585,7 @@ def provider_command(executable, agent):
 
 class HistoryClient:
     """Short-lived, read-only app-server RPC. Never starts or resumes a thread."""
+    methods = {"initialize", "thread/list", "thread/read", "model/list", "skills/list", "commands/list"}
     def __init__(self, executable, cwd, agent="codex"):
         self.process = subprocess.Popen(provider_command(executable, agent),
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
@@ -598,7 +604,7 @@ class HistoryClient:
             raise
 
     def call(self, method, params):
-        if method not in {"initialize", "thread/list", "thread/read", "model/list", "skills/list", "commands/list"}:
+        if method not in self.methods:
             raise Problem(400, "error_import_invalid")
         try:
             self.serial += 1
@@ -616,7 +622,10 @@ class HistoryClient:
                     continue
                 line, self.buffer = self.buffer.split(b"\n", 1)
                 response = json.loads(line)
-                if response.get("id") != self.serial or "method" in response:
+                if "method" in response:
+                    self.notification(response)
+                    continue
+                if response.get("id") != self.serial:
                     continue
                 if "error" in response:
                     code = "error_history_unsupported" if response["error"].get("code") == -32601 else "error_history"
@@ -627,6 +636,9 @@ class HistoryClient:
         except (OSError, ValueError, KeyError, TypeError):
             pass
         raise Problem(400, "error_history")
+
+    def notification(self, value):
+        pass
 
     def __exit__(self, *_):
         with contextlib.suppress(OSError):
@@ -703,6 +715,284 @@ def browser_url(value):
     except ValueError:
         raise Problem(400, "error_browser_url") from None
     return value
+
+
+class AccountClient(HistoryClient):
+    """Account-only RPC; never creates a thread or sends a model request."""
+    methods = {"initialize", "account/read", "account/login/start", "account/login/cancel"}
+
+    def __init__(self, executable, cwd):
+        super().__init__(executable, cwd)
+        self.completed = {}
+
+    def notification(self, value):
+        if value.get("method") == "account/login/completed":
+            params = value.get("params") or {}
+            key = params.get("loginId")
+            if isinstance(key, str) and len(key) < 128:
+                self.completed[key] = params.get("success") is True
+
+
+class AgentConnections:
+    """Explicit native account operations. Secrets remain in native credential stores.
+
+    Pending login processes and URLs live only in memory for ten minutes. No
+    conversation, PTY, CLI diagnostics, credential file or generic RPC is exposed.
+    """
+    def __init__(self, bridge):
+        self.bridge = bridge
+        self.lock = threading.RLock()
+        self.jobs = {}
+        self.closed = False
+
+    @staticmethod
+    def text(value, limit=256):
+        return value if isinstance(value, str) and len(value) <= limit and not any(ord(c) < 32 for c in value) else ""
+
+    @staticmethod
+    def command(argv, timeout=8):
+        process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                   start_new_session=True, close_fds=True)
+        raw, end = b"", time.monotonic() + timeout
+        try:
+            while time.monotonic() < end:
+                if select.select([process.stdout], [], [], .05)[0]:
+                    chunk = os.read(process.stdout.fileno(), 4096)
+                    if not chunk:
+                        return process.wait(timeout=.5), raw
+                    raw += chunk
+                    if len(raw) > 65536:
+                        break
+            raise ValueError()
+        finally:
+            with contextlib.suppress(ProcessLookupError): os.killpg(process.pid, signal.SIGTERM)
+            try: process.wait(timeout=.5)
+            except subprocess.TimeoutExpired:
+                with contextlib.suppress(ProcessLookupError): os.killpg(process.pid, signal.SIGKILL)
+                process.wait(timeout=1)
+            process.stdout.close()
+
+    def client(self, executable, cwd):
+        spec = importlib.util.spec_from_file_location("bibimer_account_opencode", Path(__file__).with_name("provider_opencode.py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        # Never chdir in this threaded bridge; pass the selected directory explicitly.
+        return module.Adapter(executable, account=True, cwd=cwd)
+
+    def catalog(self, client):
+        report = client.http("GET", "/provider")
+        methods = client.http("GET", "/provider/auth")
+        rows = []
+        for provider in report.get("all", [])[:1000]:
+            identity = provider.get("id")
+            if not isinstance(identity, str) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", identity): continue
+            choices = []
+            native = methods.get(identity, [])
+            # OpenCode's default connect form is a plain API key when no plugin
+            # provides its own methods. Native plugin prompts require its own UI.
+            if not native: native = [{"type": "api", "label": "API key"}]
+            for index, method in enumerate(native[:32]):
+                kind = method.get("type")
+                choices.append({"id": str(index), "type": kind if kind in {"api", "oauth"} else "unsupported",
+                    "name": self.text(method.get("label")) or "API key",
+                    "supported": kind in {"api", "oauth"} and not method.get("prompts")})
+            rows.append({"id": identity, "name": self.text(provider.get("name")) or identity,
+                         "connected": identity in report.get("connected", []), "methods": choices})
+        return rows
+
+    def invalidate(self):
+        with self.bridge.lock:
+            self.bridge.model_cache.clear()
+
+    def snapshot(self, job):
+        return {key: value for key, value in job.items() if key in {
+            "id", "agent", "provider", "status", "url", "instructions", "code_required", "code_submitted", "expires_at"}}
+
+    def finish(self, job, status):
+        job["status"] = status
+        if job.get("timer"): job["timer"].cancel()
+        for key in ("url", "instructions", "code_required"):
+            job.pop(key, None)
+        client = job.pop("client", None)
+        if client:
+            if job["agent"] == "codex":
+                if status in {"cancelled", "expired"} and job.get("login_id"):
+                    with contextlib.suppress(Exception): client.call("account/login/cancel", {"loginId": job["login_id"]})
+                client.__exit__(None, None, None)
+            else: client.close()
+        if status == "saved": self.invalidate()
+
+    def expire(self, agent, job):
+        with self.lock:
+            if self.jobs.get(agent) is job:
+                self.finish(job, "expired")
+                self.jobs.pop(agent, None)
+
+    def callback(self, job, code=None):
+        try:
+            body = {"method": job["method"]}
+            if code is not None: body["code"] = code
+            result = job["client"].http("POST", "/provider/" + job["provider"] + "/oauth/callback", body, timeout=300)
+            success = result is True
+        except Exception:
+            success = False
+        finally:
+            code = None
+        with self.lock:
+            if self.jobs.get(job["agent"]) is job and job["status"] == "pending":
+                self.finish(job, "saved" if success else "failed")
+
+    def handle(self, data):
+        try:
+            if not self.lock.acquire(False): raise Problem(409, "error_connection_busy")
+            try: return self._handle(data)
+            finally: self.lock.release()
+        except Problem as error:
+            if error.code.startswith("error_history"):
+                raise Problem(400, "error_connection_unsupported" if error.code == "error_history_unsupported" else "error_agent_connection") from None
+            raise
+        except Exception:
+            # Never expose native errors, URLs, entered keys or command output.
+            raise Problem(400, "error_agent_connection") from None
+
+    def _handle(self, data):
+        agent, action = data.get("agent"), data.get("action")
+        if agent not in {"codex", "claude", "opencode", "gemini"} or action not in {"status", "version", "start", "poll", "code", "cancel"}:
+            raise Problem(400, "error_invalid_json")
+        if self.closed or self.bridge.closing: raise Problem(409, "error_bridge_stopping")
+        # The account belongs to the installed CLI; a supplied project only scopes
+        # native provider configuration and never changes the selected project.
+        cwd = str(Path.home())
+        if data.get("project_id"):
+            cwd = self.bridge.working_project(data)["path"]
+        if action in {"poll", "code", "cancel"}:
+            job = self.jobs.get(agent)
+            if not job or data.get("id") != job["id"]: raise Problem(409, "error_connection_expired")
+            if job["cwd"] != cwd: raise Problem(409, "error_connection_expired")
+            if time.time() >= job["expires_at"]:
+                self.finish(job, "expired")
+            elif action == "cancel":
+                self.finish(job, "cancelled")
+            elif job["status"] == "pending":
+                if agent == "codex":
+                    job["client"].call("account/read", {"refreshToken": False})
+                    completed = job["client"].completed.get(job["login_id"])
+                    if completed is not None: self.finish(job, "saved" if completed else "failed")
+                elif action == "code":
+                    if not job.get("code_required") or job.get("submitted"): raise Problem(409, "error_connection_busy")
+                    code = self.text(data.get("code"), 4096)
+                    if not code: raise Problem(400, "error_invalid_json")
+                    job["submitted"] = True
+                    job["code_submitted"] = True
+                    threading.Thread(target=self.callback, args=(job, code), daemon=True).start()
+            return {"job": self.snapshot(job)}
+        executable = self.bridge.agent_executable(agent)
+        if not executable:
+            if action == "start": raise Problem(400, "error_program_missing")
+            return {"agent": agent, "installed": False, "state": "unavailable", "providers": []}
+        if action == "version":
+            argv = [executable, "--version"]
+            entry = Path(executable).resolve()
+            if agent == "gemini" and str(entry).endswith("/@google/gemini-cli/bundle/gemini.js"):
+                node = shutil.which("node")
+                if not node: raise Problem(400, "error_program_missing")
+                argv = [node, str(entry), "--version"]
+            status, raw = self.command(argv, timeout=8)
+            match = re.search(rb"(?<![A-Za-z0-9])[0-9]{1,5}\.[0-9]{1,5}\.[0-9]{1,5}(?:[-+][A-Za-z0-9.-]{1,64})?", raw)
+            if status or not match: raise ValueError()
+            return {"agent": agent, "installed": True, "version": match[0].decode("ascii")}
+        if action == "status":
+            job = self.jobs.get(agent)
+            if job and job["cwd"] == cwd and job["status"] == "pending" and time.time() < job["expires_at"]:
+                return {"agent": agent, "installed": True, "state": "unknown", "providers": [], "job": self.snapshot(job)}
+            result = {"agent": agent, "installed": True, "state": "unknown", "providers": []}
+            if agent == "codex":
+                with AccountClient(executable, cwd) as client:
+                    account = client.call("account/read", {"refreshToken": False}).get("account")
+                if account is not None and not isinstance(account, dict): raise ValueError()
+                result["state"] = "configured" if isinstance(account, dict) else "signed_out"
+                if isinstance(account, dict):
+                    result["method"] = account.get("type") if account.get("type") in {"apiKey", "chatgpt"} else "other"
+            elif agent == "claude":
+                status, raw = self.command([executable, "auth", "status"])
+                if status not in {0, 1}: raise ValueError()
+                report = json.loads(raw)
+                if type(report.get("loggedIn")) is not bool: raise ValueError()
+                result["state"] = "configured" if report["loggedIn"] else "signed_out"
+                method = report.get("authMethod")
+                if method in {"none", "claude.ai", "oauth_token", "api_key", "api_key_helper", "third_party"}: result["method"] = method
+            elif agent == "opencode":
+                client = self.client(executable, cwd)
+                try: result["providers"] = self.catalog(client)
+                finally: client.close()
+                result["state"] = "configured" if any(row["connected"] for row in result["providers"]) else "signed_out"
+            return result
+        if agent not in {"codex", "opencode"}: raise Problem(400, "error_connection_unsupported")
+        key = request_id(data.get("request_id"))
+        secret = self.text(data.get("key", ""), 8192)
+        fingerprint = hashlib.sha256(json.dumps([cwd, data.get("provider"), data.get("method"), secret], sort_keys=True).encode()).hexdigest()
+        previous = self.jobs.get(agent)
+        if previous and time.time() < previous["expires_at"]:
+            if previous["id"] == key:
+                if previous["fingerprint"] != fingerprint: raise Problem(409, "error_launch_conflict")
+                return {"job": self.snapshot(previous)}
+            if previous["status"] == "pending": raise Problem(409, "error_connection_busy")
+        job = {"id": key, "agent": agent, "cwd": cwd, "fingerprint": fingerprint, "status": "pending", "expires_at": int(time.time()) + 600}
+        client = None
+        try:
+            if agent == "codex":
+                method = data.get("method")
+                if method not in {"apiKey", "chatgpt"}: raise Problem(400, "error_connection_unsupported")
+                if method == "apiKey" and not secret: raise Problem(400, "error_invalid_json")
+                client = AccountClient(executable, cwd).__enter__()
+                response = client.call("account/login/start", {"type": method, **({"apiKey": secret} if method == "apiKey" else {})})
+                if response.get("type") != method: raise ValueError()
+                if method == "chatgpt":
+                    job.update(url=self.login_url(response.get("authUrl")), login_id=self.text(response.get("loginId"), 128), code_required=False)
+                    if not job["login_id"]: raise ValueError()
+            else:
+                client = self.client(executable, cwd)
+                rows = self.catalog(client)
+                provider = next((row for row in rows if row["id"] == data.get("provider")), None)
+                choice = next((row for row in (provider or {}).get("methods", []) if row["id"] == data.get("method")), None)
+                if not choice or not choice["supported"]: raise Problem(400, "error_connection_unsupported")
+                job.update(provider=provider["id"], method=int(choice["id"]))
+                method = choice["type"]
+                if method == "api":
+                    if not secret: raise Problem(400, "error_invalid_json")
+                    if client.http("PUT", "/auth/" + job["provider"], {"type": "api", "key": secret}) is not True: raise ValueError()
+                else:
+                    response = client.http("POST", "/provider/" + job["provider"] + "/oauth/authorize", {"method": job["method"]})
+                    if response.get("method") not in {"auto", "code"}: raise ValueError()
+                    job.update(url=self.login_url(response.get("url")), instructions=self.text(response.get("instructions"), 4096), code_required=response["method"] == "code")
+            job["client"] = client
+            client = None
+            self.jobs[agent] = job
+            if (agent == "codex" and method == "apiKey") or (agent == "opencode" and method == "api"):
+                self.finish(job, "saved")
+            elif agent == "opencode" and not job["code_required"]:
+                threading.Thread(target=self.callback, args=(job,), daemon=True).start()
+            if job["status"] == "pending":
+                timer = threading.Timer(600, self.expire, args=(agent, job)); timer.daemon = True; job["timer"] = timer; timer.start()
+            return {"job": self.snapshot(job)}
+        finally:
+            secret = None
+            if client:
+                if agent == "codex": client.__exit__(None, None, None)
+                else: client.close()
+
+    @staticmethod
+    def login_url(value):
+        if not isinstance(value, str) or len(value) > 8192: raise ValueError()
+        url = urllib.parse.urlsplit(value)
+        if url.scheme != "https" or not url.hostname or url.username or url.password or any(ord(c) < 33 for c in value): raise ValueError()
+        return value
+
+    def close(self):
+        with self.lock:
+            self.closed = True
+            for job in self.jobs.values(): self.finish(job, "cancelled")
+            self.jobs.clear()
 
 
 class BrowserSession(Session):
@@ -2722,6 +3012,7 @@ class Bridge:
         self.browser_lock = threading.Lock()
         self.browser_tools = None
         self.model_locks = {}
+        self.agent_connections = AgentConnections(self)
         self.model_cache = {}
         self.command_cache = {}
         self.command_locks = {}
@@ -3180,7 +3471,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11", "browser_tools_x11", "maintenance_recovery"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11", "browser_tools_x11", "maintenance_recovery", "agent_connections"], "active_sessions": self.active_count(),
                     "agents": self.agents(), "maintenance_recovery": self.recovery.snapshot(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -3551,6 +3842,16 @@ class Bridge:
             raise Problem(400, "error_session_action")
         if mode == "terminal" and agent == "opencode" and options.get("effort"):
             raise Problem(400, "error_effort_terminal")
+        initial = data.get("initial_message")
+        initial_digest = None
+        if "initial_message" in data:
+            if (mode != "chat" or data.get("new_session") is not True or imported or continuation or restore_id or
+                    not isinstance(initial, dict) or set(initial) - {"text", "command_id"}):
+                raise Problem(400, "error_chat_mode")
+            text = initial.get("text")
+            if not isinstance(text, str) or not text.strip() or len(text.encode()) > 16384:
+                raise Problem(400, "error_input_size")
+            initial_digest = hashlib.sha256(json.dumps(initial, sort_keys=True).encode()).hexdigest()
         with self.lock:
             project_id = data.get("project_id", self.active_project_id)
             if project_id is None:
@@ -3570,6 +3871,10 @@ class Bridge:
                 raise Problem(409, "error_launch_conflict")
             current = next((row for row in self.snapshots() if row.get("launch_id") == key), None)
             if current and current.get("launch_id") == key:
+                # The initial prompt and its receipt stay in memory. After a restart,
+                # reject retries whose delivery can no longer be confirmed.
+                if getattr(self.sessions.get(current["id"]), "initial_message_digest", None) != initial_digest:
+                    raise Problem(409, "error_launch_conflict")
                 if ((current.get("handoff") or {}).get("request_digest") if (current.get("handoff") or {}).get("created_by") == key else None) != (continuation or {}).get("metadata", {}).get("request_digest"):
                     raise Problem(409, "error_launch_conflict")
                 if (current.get("kind") == "browser" or current["project"] != project or current["agent"] != agent or current.get("mode", "terminal") != mode or
@@ -3599,6 +3904,7 @@ class Bridge:
             project = dict(project)
         catalog = self.models({"project_id": project_id, "worktree_path": project["path"], "agent": agent})["models"] if options.get("model") else []
         validate_model_selection(options, catalog)
+        initial_invocation = self.command_input(SimpleNamespace(project=working, agent=agent), initial) if initial is not None else None
         if imported:
             result = self.history_call(project, "thread/read", {"threadId": imported["source_thread_id"], "includeTurns": False}, agent)
             source = result.get("thread", {})
@@ -3632,9 +3938,13 @@ class Bridge:
             except OSError:
                 raise Problem(400, "error_launch_failed") from None
             session.browser_key = browser_key
+            session.initial_message_digest = initial_digest
             if continuation:
                 session.queue[key] = {"id": key, "text": continuation["prompt"], "state": "queued"}
                 session.display_title = session_title(continuation["instruction"])
+            elif initial is not None:
+                session.queue[key] = {"id": key, "text": initial["text"], "state": "queued", "_invocation": initial_invocation}
+                session.display_title = session_title(initial["text"])
             elif imported and isinstance(session, ChatSession):
                 # Keep the link when the transferred native conversation is resumed.
                 session.handoff = next((row.get("handoff") for row in self.snapshots(project_id)
@@ -3700,6 +4010,7 @@ class Server(http.server.ThreadingHTTPServer):
         super().__init__(address, Handler)
 
     def server_close(self):
+        self.bridge.agent_connections.close()
         if self.bridge.browser_tools:
             self.bridge.browser_tools.close()
             self.bridge.browser_tools = None
@@ -3832,6 +4143,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = bridge.session_history(data)
         elif method == "POST" and parsed.path == "/v1/commands":
             result = bridge.commands(data)
+        elif method == "POST" and parsed.path == "/v1/agent-connections":
+            result = bridge.agent_connections.handle(data)
         elif method == "POST" and parsed.path == "/v1/models":
             result = bridge.models(data)
         elif method == "POST" and parsed.path == "/v1/project-agent":

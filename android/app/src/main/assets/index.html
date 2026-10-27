@@ -28,6 +28,7 @@
   <script src="file-viewer.js" defer></script>
   <script src="inspector.js" defer></script>
   <script src="commands.js" defer></script>
+  <script src="agent-connections.js" defer></script>
   <script src="github.js" defer></script>
   <script src="worktree-create.js" defer></script>
   <script src="bridge-maintenance.js" defer></script>
@@ -60,17 +61,17 @@
     <section id="workspace" hidden>
       <div class="project-summary">
         <div class="project-label"><strong id="project-name">Add a project</strong><select id="project-switch" aria-label="Switch project" data-i18n-aria-label="switch_project" hidden></select><button id="project-path" type="button" aria-haspopup="dialog" aria-controls="workspace-details-dialog" disabled>A working folder in Termux</button></div>
-        <button id="browser-open" class="icon-button" type="button" data-i18n-aria-label="browser_title" aria-label="Browser · experiment" aria-haspopup="dialog" aria-controls="browser-dialog" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18Z"/></svg></button>
+        <button id="browser-open" class="icon-button" type="button" data-i18n-aria-label="browser_view" aria-label="Open browser window" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18Z"/></svg></button>
         <button id="new-session" class="icon-button" type="button" aria-label="New session" data-i18n-aria-label="session_new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
         <button id="session-more" class="icon-button" type="button" aria-label="Session actions" data-i18n-aria-label="session_actions" aria-haspopup="dialog">⋯</button>
       </div>
       <button id="project-update" class="quiet" data-i18n="projects_update" hidden>Update the bridge to use multiple projects</button>
       <div class="session-bar"><span id="session-title"></span><span id="process" class="badge">Not started</span></div>
       <button id="handoff-source" class="quiet" type="button" hidden></button>
-      <div id="mode-controls" class="mode-controls"><label for="mode" data-i18n="mode_label">Session interface</label><select id="mode"><option value="terminal" data-i18n="mode_terminal">Terminal · PTY</option><option value="chat" data-i18n="mode_chat">Chat · formatted text</option></select></div>
       <div id="launch-controls" class="launch-controls">
-        <label class="sr-only" for="agent" data-i18n="program_label">Program to run</label>
-        <select id="agent"><option value="shell">Terminal</option></select>
+        <label for="agent" data-i18n="program_label">Agent to run</label>
+        <select id="agent"><option value="shell">Terminal (shell)</option></select>
+        <div id="mode-controls" class="mode-controls"><label for="mode" data-i18n="mode_label">Display mode</label><select id="mode"><option value="terminal" data-i18n="mode_terminal">Terminal · PTY</option><option value="chat" data-i18n="mode_chat">Chat · UI formatting</option></select></div>
         <button id="launch" class="primary" data-i18n="start_session">Start session</button>
         <button id="import-session" class="secondary" data-i18n="import_session">Import session</button>
       </div>
@@ -225,8 +226,7 @@
       <h2 data-i18n="return_title">When you come back</h2>
       <p data-i18n="return_body">Reopen the app to reconnect to a live bridge. If it is unavailable, run the start command in Termux. If Android stopped the environment, the previous process may no longer be recoverable.</p>
       <p data-i18n="bridge_update_hint">After installing an updated setup file, stop your active session and run the restart command in Termux.</p>
-      <button data-command="restart" class="quiet" data-i18n="copy_restart">Copy bridge restart command</button>
-      <button id="forget" class="quiet" data-i18n="forget">Forget this app's connection</button>
+      <div class="button-row"><button data-command="restart" class="quiet" data-i18n="copy_restart">Copy bridge restart command</button><button id="forget" class="quiet" data-i18n="forget">Forget this app's connection</button></div>
     </section>
   </main>
   <main id="settings" class="page scroll" hidden>
@@ -255,11 +255,12 @@
       <p id="enter-behavior-hint" class="hint"></p>
       <p id="enter-modifiers-hint" class="hint" data-i18n="enter_modifiers_hint">With Enter set to New line, Ctrl+Enter sends or queues your message; with Enter set to Send, it inserts a new line. Shift+Enter always inserts a new line. Applies to the message box in Chat and Terminal.</p>
     </section>
+    <section class="card preference-card"><h2 data-i18n="connections_title">Agent accounts and providers</h2><p class="hint" data-i18n="connections_hint">View connections and versions, choose providers, and enter supported API keys here.</p><button id="agent-connections-open" type="button" class="secondary" data-i18n="connections_manage">Manage connections</button></section>
     <section id="browser-preference" class="card preference-card" hidden>
       <h2 data-i18n="browser_title">Firefox · Termux:X11</h2>
       <div class="preference-row"><label for="browser-agent-tools" data-i18n="browser_tools_label">Agent connection</label><select id="browser-agent-tools" aria-describedby="browser-default-hint"><option value="on" data-i18n="browser_tools_on">Automatic</option><option value="off" data-i18n="browser_tools_off">Off</option></select></div>
       <p id="browser-default-hint" class="hint" data-i18n="browser_default_hint"></p>
-      <div class="button-row"><button type="button" data-agent="browser" data-agent-action="install" class="secondary" data-i18n="browser_prepare">Prepare in Termux</button><button id="browser-settings-open" type="button" class="secondary" data-i18n="browser_view">Open browser window</button></div>
+      <div class="button-row"><button type="button" data-agent="browser" data-agent-action="install" class="secondary" data-i18n="browser_prepare">Prepare in Termux</button><button id="browser-settings-open" type="button" class="primary" data-i18n="browser_login_settings" aria-haspopup="dialog" aria-controls="browser-dialog">Login and agent control</button></div>
       <button type="button" data-browser-guide class="quiet" data-i18n="browser_get_x11">Termux:X11 releases</button>
       <p id="browser-preference-error" class="hint danger-text" role="status" hidden></p>
     </section>
@@ -282,10 +283,32 @@
       <button id="notification-permission" class="secondary" type="button" data-i18n="notifications_android_settings" hidden>Android notification settings</button>
     </section>
     <p class="hint preferences-saved" data-i18n="app_settings_saved">Saved on this phone for all projects and sessions.</p>
-    <button type="button" class="quiet" data-guide="privacy" data-i18n="privacy_policy">Privacy policy</button>
-    <button id="review-access-open" type="button" class="quiet review-access-link" data-i18n="review_access" aria-haspopup="dialog" aria-controls="review-access-dialog">Review access</button>
+    <div class="button-row"><button type="button" class="quiet" data-guide="privacy" data-i18n="privacy_policy">Privacy policy</button><button id="review-access-open" type="button" class="quiet review-access-link" data-i18n="review_access" aria-haspopup="dialog" aria-controls="review-access-dialog">Review access</button></div>
     <p id="version" class="version"></p>
   </main>
+  <dialog id="agent-connection-dialog" class="settings-dialog" aria-labelledby="agent-connection-title">
+    <div class="sidebar-heading"><h2 id="agent-connection-title" data-i18n="connections_title">Agent accounts and providers</h2><button id="agent-connection-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
+    <label for="agent-connection-agent" data-i18n="program_label">Agent to run</label><select id="agent-connection-agent"><option value="codex">Codex</option><option value="claude">Claude Code</option><option value="opencode">OpenCode</option><option value="gemini">Gemini CLI</option></select>
+    <p id="agent-connection-status" class="hint" role="status" aria-live="polite"></p><p id="agent-connection-version" class="hint"></p>
+    <div class="button-row"><button id="agent-connection-refresh" class="secondary" type="button" data-i18n="connection_refresh">Refresh connection</button><button id="agent-connection-version-check" class="secondary" type="button" data-i18n="agent_action_version">Check version</button></div>
+    <p class="hint" data-i18n="connection_scope">Uses this agent’s saved account in Termux. Existing sessions stay running. Saved configuration does not verify model access.</p>
+    <form id="agent-connection-form" autocomplete="off">
+      <div id="agent-connection-provider-field"><label for="agent-connection-provider" data-i18n="connection_provider">Provider</label><select id="agent-connection-provider"></select></div>
+      <label for="agent-connection-method" data-i18n="connection_method">Authentication method</label><select id="agent-connection-method"></select>
+      <div id="agent-connection-key-field"><label for="agent-connection-key">API key</label><input id="agent-connection-key" type="password" maxlength="8192" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="agent-connection-private"></div>
+      <p id="agent-connection-private" class="hint" data-i18n="connection_private">Keys are sent only to the local Termux bridge and saved by the agent. Bibimer does not save them in settings or conversations.</p>
+      <button id="agent-connection-submit" class="primary" type="submit" data-i18n="connection_connect">Connect</button>
+    </form>
+    <section id="agent-connection-job" hidden>
+      <p id="agent-connection-job-status" role="status" aria-live="polite" class="hint"></p><p id="agent-connection-instructions" class="hint" dir="auto"></p><p id="agent-connection-site" class="hint" dir="ltr"></p>
+      <button id="agent-connection-browser" class="primary full" type="button" data-i18n="connection_browser">Continue in browser</button>
+      <form id="agent-connection-code-form" autocomplete="off"><label for="agent-connection-code" data-i18n="connection_code">Authorization code</label><input id="agent-connection-code" type="password" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" required><button id="agent-connection-code-submit" class="primary" type="submit" data-i18n="connection_submit_code">Submit code</button></form>
+      <button id="agent-connection-cancel" class="secondary full" type="button" data-i18n="cancel_project">Cancel</button>
+    </section>
+    <p id="agent-connection-error" class="hint danger-text" role="alert" hidden></p>
+    <p id="agent-connection-fallback-hint" class="hint" data-i18n="connection_fallback">This method needs the agent’s native setup. Open Termux only when you choose the button below.</p>
+    <button id="agent-connection-terminal" class="quiet" type="button" data-i18n="connection_terminal">Set up in Termux instead</button>
+  </dialog>
   <dialog id="review-access-dialog" class="settings-dialog" aria-labelledby="review-access-title" aria-describedby="review-access-hint">
     <h2 id="review-access-title" data-i18n="review_access">Review access</h2>
     <p id="review-access-hint" class="hint" data-i18n="review_access_hint">For authorized reviewers. Enter the access code provided in your review instructions.</p>
@@ -485,8 +508,8 @@
       <input id="worktree-branch" type="text" aria-label="New branch" data-i18n-aria-label="worktree_new_branch" maxlength="200" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="feature/my-task" aria-describedby="worktree-branch-hint">
       <p id="worktree-branch-hint" class="hint"></p>
       <label for="worktree-base" data-i18n="worktree_base_label">Start from</label><select id="worktree-base"></select>
-      <label for="worktree-agent" data-i18n="agent_label">Agent</label><select id="worktree-agent"></select>
-      <label for="worktree-mode" data-i18n="mode_label">Session interface</label><select id="worktree-mode"></select>
+      <label for="worktree-agent" data-i18n="program_label">Agent to run</label><select id="worktree-agent"></select>
+      <label for="worktree-mode" data-i18n="mode_label">Display mode</label><select id="worktree-mode"></select>
       <p class="hint" data-i18n="worktree_folder_hint">Worktrees are stored in a separate folder in Termux.</p>
       <p id="worktree-create-path" class="hint" dir="auto"></p>
       <p id="worktree-create-status" class="hint" role="status" aria-live="polite"></p>

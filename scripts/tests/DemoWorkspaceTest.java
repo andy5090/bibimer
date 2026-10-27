@@ -203,8 +203,20 @@ public final class DemoWorkspaceTest {
         f.post("/v1/project", "path", DemoWorkspace.ROOT);
         check(list(f.health().get("projects")).size() == 1, "Registering existing sample folder reuses it");
     }
+    private static void initialMessage() {
+        Fixture f = new Fixture(); String request = "initial-message-receipt";
+        Map<String, Object> payload = data("project_id", f.projectId(), "agent", "codex", "mode", "chat", "new_session", true,
+            "request_id", request, "initial_message", data("text", "PRIVATE_FIRST_MESSAGE"));
+        Map<String, Object> first = map(f.demo.request("POST", "/v1/sessions", payload).get("session"));
+        check(text(first, "turn_state").equals("running"), "Initial Send starts sample replay");
+        Map<String, Object> again = map(f.demo.request("POST", "/v1/sessions", payload).get("session"));
+        check(text(first, "id").equals(text(again, "id")), "Initial Send retry reuses session");
+        check(text(first, "launch_id").equals(request), "Receipt can reconcile lost native replies");
+        check(!f.events(text(first, "id")).toString().contains("PRIVATE_FIRST_MESSAGE"), "Demo never retains submitted first message");
+    }
     public static void main(String[] args) {
         initialProtocol(); inputAndReplay(); approvalsAndQuestions(); queueAndInterrupt(); terminalAndInspector(); managementAndHistory(); resetAndSafetyLimits(); githubSample(); normalDraftBoundary(); uiQueueAddContract(); projectResponseContract();
-        System.out.println("DemoWorkspace: " + assertions + " behavioral assertions passed across 11 scenarios");
+        initialMessage();
+        System.out.println("DemoWorkspace: " + assertions + " behavioral assertions passed across 12 scenarios");
     }
 }

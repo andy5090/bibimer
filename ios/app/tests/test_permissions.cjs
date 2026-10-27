@@ -32,6 +32,7 @@ assert.equal(context.permissionModes.codex.includes("app-sandbox"),true);
 context.renderSettings(); context.renderSession();
 assert.equal(saved,"read-only","Unsupported saved choices must never become inherit or app-sandbox automatically");
 assert.equal(field("launch").disabled,true);
+assert.equal(field("send").disabled,true,"A new chat must respect the stored iOS policy before session creation");
 assert.equal(field("permission").options.find(option=>option.value === "read-only").disabled,true);
 assert.equal(field("permission-hint").textContent,"error_ios_codex_sandbox");
 assert.equal(field("permission").options.find(option=>option.value === "app-sandbox").disabled,false);

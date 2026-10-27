@@ -298,7 +298,7 @@ def adapt(base, claude_provider=None, opencode_provider=None):
             result.update(platform="ios", runtime="embedded-arm64-linux")
             # OS notifications/file viewers are native capabilities, not a guest
             # guarantee. The app decides which native facilities are available.
-            result["features"] = [feature for feature in result["features"] if feature not in {"response_notifications", "claude_steer"}]
+            result["features"] = [feature for feature in result["features"] if feature not in {"response_notifications", "claude_steer", "agent_connections"}]
             result["features"].append("ios_agent_setup")
             return result
 

@@ -15,22 +15,24 @@ Bibimer와 **같은 휴대폰의 Termux**에서 진행한다. 별도 PC나 원�
 
 Bibimer 앱의 최소 Android 버전과 각 에이전트의 요구사항은 다르다. 이 폰의 Termux Node.js는 26.4.0, npm은 11.19.0, glibc는 2.42-0, glibc-runner는 2.0-3이다. 모두 같은 버전으로 바꿔야 한다는 뜻은 아니다.
 
-## 앱에서 인증·제공자 연결 시작하기
+## Bibimer에서 계정·프로바이더 연결 관리하기 (내부0.30.0)
 
-개발 소스의 **Setup → 에이전트 준비**에서 Codex·Claude Code·Gemini CLI에는 **Termux에서 로그인**, OpenCode에는 **제공자 연결** 버튼을 제공한다. 누르면 같은 폰의 새 Termux 터미널에서 아래 작업을 시작한다. 기존 브리지·프로젝트·실행 세션은 유지하며, 키·인증 코드·CLI 출력은 Bibimer로 가져오지 않는다. 계정/제공자 선택과 브라우저 인증은 사용자가 직접 완료한다.
+**설정 → 에이전트 계정 및 프로바이더 → 연결 관리**, 또는 **Setup → 에이전트 준비**의 계정 연결·조회·버전 버튼으로 앱 안의 관리 화면을 연다. 먼저 같은 폰의 Termux 브리지를 연결해야 한다. 내부0.30.0(52)에 포함했으며 새 `agent_connections` 기능을 사용하려면 설정에서 브리지를 **0.23.0**으로 업데이트해야 한다.
 
-| 에이전트 | 실행 버튼의 작업 | 추가 확인 버튼 |
+| 에이전트 | Bibimer 안에서 조회·입력 | 별도 단계 |
 | --- | --- | --- |
-| Codex | 설치된 `codex login` | `codex login status`, `codex --version` |
-| Claude Code | 전용 런처 우선으로 `auth login` | `auth status`, `--version`, 기존 복구/어댑터 준비 |
-| OpenCode | **제공자 연결** → 설치된 래퍼의 `opencode auth login`으로 제공자 선택·인증 설정 | `opencode auth list`(설정 목록이며 접속 성공 검증은 아님), `opencode --version` |
-| Gemini CLI | Termux Node.js로 설치된 Gemini CLI를 대화형 실행 | 같은 경로의 `--version`; 독립 로그인 상태 명령은 제공하지 않음 |
+| Codex | App Server의 계정 설정 상태·인증 종류, CLI 버전, API 키 입력, ChatGPT 브라우저 로그인 시작/완료 확인 | 웹사이트 인증은 사용자가 브라우저에서 직접 완료 |
+| Claude Code | `auth status` JSON의 로그인 상태·인증 종류와 CLI 버전 | 로그인은 명시적인 **Termux에서 직접 설정** 버튼으로 기존 기본 인증 실행 |
+| OpenCode | 네이티브 API의 프로바이더 목록·연결 설정·인증 방식 선택, API 키 입력, 지원되는 OAuth 코드 입력/자동 완료 확인, 버전 | 추가 네이티브 입력 양식이 있는 플러그인은 비활성 설명과 Termux 경로 제공 |
+| Gemini CLI | 설치 여부·버전. 설치된 npm 진입 파일은 필요한 경우 Node.js로 실행 | 인증 상태는 확인 불가로 유지. 로그인은 기존 대화형 실행에서 사용자가 선택 |
 
-OpenCode의 **제공자 연결**은 사용할 제공자를 선택하고 API 키 또는 해당 제공자가 지원하는 인증 방식을 설정하는 흐름이다. 실제 CLI 명령 이름은 `auth login`이며 [OpenCode 공식 CLI 안내](https://opencode.ai/docs/cli/#auth)에 따라 사용한다. **설정된 제공자 확인**은 저장된 설정 목록이며 모델 접근 성공을 판정하지 않는다.
+계정 연결·상태 확인·버전 버튼은 자동으로 Termux로 이동하지 않는다. 구형/미연결 브리지는 앱에 안내를 표시하고 **Termux에서 직접 설정**을 선택할 때만 기존 실행 경로를 연다. 설치·Claude 복구/어댑터 준비는 기존의 명시적인 Termux 동작을 유지하며 RUN_COMMAND 권한과 외부 앱 연동 허용이 필요하다. 브리지 기반 조회 자체에는 새 Termux 터미널이 필요하지 않다.
 
-Gemini는 별도 `gemini auth login` 명령을 사용하지 않는다. 실행 후 **Google 로그인**을 선택하고, 이미 인증되어 있으면 CLI에서 **`/auth`**로 로그인 방식을 선택한다. 앱이 `/auth`를 프롬프트로 전송하거나 로그아웃·계정 선택을 대신하지 않는다. 설치된0.58.0의 도움말·내장 명령 소스와 [공식 인증 안내](https://geminicli.com/docs/get-started/authentication/)를 확인했다. Gemini의 Bibimer 구조화 Chat 연동은 여전히 미구현이다.
+API 키·인증 코드는 전용 마스킹 입력란에서만 받는다. 앱 설정·대화·일반 로그·브리지 메타데이터에는 저장하지 않고, 같은 기기의 로컬 브리지를 거쳐 네이티브 에이전트의 기존 인증 저장소에 반영한다. 키는 전송 직후, 입력은 화면 닫기/백그라운드/프로젝트 변경 시 지운다. 브라우저 인증 주소는 사용자가 버튼을 눌러 열며 인증 사이트의 출처를 표시한다. 진행 중 로그인은 메모리에서 최대10분 유지하고 취소·만료·브리지 종료 시 해당 로그인용 프로세스만 정리한다.
 
-Termux 0.118 이상, BIBIMER의 Android 명령 실행 권한과 Termux `allow-external-apps=true` 설정이 필요하다. 권한 허용 후에는 선택한 에이전트의 작업만 실행하며 브리지 설치로 바뀌지 않는다. 화면 열기가 차단되면 Termux 알림에서 터미널을 연다. 명령 복사 경로도 유지한다. **실행 요청 표시는 인증 완료가 아니다. 새 APK 빌드·설치 후 적용되며 실제 권한 창·화면 전환·브라우저 복귀는 아직 검증하지 않았다.**
+**설정됨은 모델 접근 성공을 뜻하지 않는다.** 모델 요청·슬래시 명령·과금 조회를 인증 검사에 사용하지 않는다. 기존 프로젝트·실행 세션·초안·승인을 바꾸거나 종료하지 않으며 변경한 인증이 실행 중 프로세스에 즉시 적용된다고 보장하지 않는다. API 키 저장 뒤 모델 카탈로그 캐시는 무효화한다.
+
+임시 네이티브 에이전트와 UI 제어 함수로 검증했으며 실제 계정의 새 로그인·키 저장, 설치본 Android WebView와 브라우저 복귀는 후속 검증이다. iOS는 공유 UI/네이티브 경로만 준비했으며 해당 런타임의 연결 기능 표시는 검증 전까지 끈다. 실제 키나 인증 코드를 대화창·프로젝트 설정에 붙여 넣지 않는다.
 
 ## Codex
 
@@ -50,20 +52,20 @@ codex --version
 codex login
 ```
 
-Termux에 안내된 주소를 같은 폰의 브라우저에서 열어 로그인을 완료한다. 브라우저 반환이 안 되면 `codex login --device-auth`를 사용할 수 있다. 이 방식은 계정/워크스페이스에서 기기 코드 로그인이 허용되어야 한다. API 키를 사용하는 경우도 Bibimer 입력창이 아닌 Termux에서 CLI 인증을 진행한다. [OpenAI 공식 인증 안내](https://learn.chatgpt.com/docs/auth).
+Termux에 안내된 주소를 같은 폰의 브라우저에서 열어 로그인을 완료한다. 브라우저 반환이 안 되면 `codex login --device-auth`를 사용할 수 있다. 이 방식은 계정/워크스페이스에서 기기 코드 로그인이 허용되어야 한다. API 키는 내부0.30.0의 연결 관리 창이나 Termux CLI에서 설정한다. 대화 입력창에는 입력하지 않는다. [OpenAI 공식 인증 안내](https://learn.chatgpt.com/docs/auth).
 
 ## Claude Code
 
 현재 폰은 기존 npm 진입점의 `claude native binary not installed` 오류 때문에 **Bibimer 전용 런타임**을 사용한다. 2026-10-19 일반 `claude` 명령도 이 런타임으로 연결해 버전 출력과 SDK 초기화를 확인했다. 원래 npm 연결은 `$PREFIX/bin/claude.npm-before-bibimer`에 백업했다. 이는 현재 폰에 직접 적용한 연결 수정이며 일반 복구 설치기는 기존 전역 CLI를 교체하지 않는다. 일반 `npm install -g @anthropic-ai/claude-code`만으로 이 구성이 재현된다고 안내하지 않는다.
 
-개발 소스의 **Setup → Claude Code · Termux**에는 **Termux에서 복구 / Termux에서 어댑터 준비 / Termux에서 로그인 / 로그인 상태 확인 / 버전 확인** 버튼이 있다. 각 버튼은 같은 폰의 새 Termux 터미널에 해당 고정 작업만 요청한다. 로그인·상태·버전은 Bibimer 전용 런처가 있으면 우선 사용하고, 없으면 설치된 `claude`를 사용한다. 복구·어댑터는 앱에 포함된 독립 스크립트를 전달하므로 다운로드 폴더의 파일에 의존하지 않는다. 기존 브리지·에이전트 세션은 재시작하지 않는다.
+내부0.30.0의 **Setup → Claude Code · Termux**에는 **Termux에서 복구 / Termux에서 어댑터 준비 / Termux에서 로그인 / 로그인 상태 확인 / 버전 확인** 버튼이 있다. 상태·버전 버튼은 위 앱 내 연결 관리 창을 연다. 복구·어댑터·로그인은 같은 폰의 새 Termux 터미널에 해당 고정 작업만 요청한다. 로그인·상태·버전은 Bibimer 전용 런처가 있으면 우선 사용하고, 없으면 설치된 `claude`를 사용한다. 복구·어댑터는 앱에 포함된 독립 스크립트를 전달하므로 다운로드 폴더의 파일에 의존하지 않는다. 기존 브리지·에이전트 세션은 재시작하지 않는다.
 
-이 실행 버튼에는 Termux 0.118 이상과 Android의 **BIBIMER → Termux 환경에서 명령 실행** 권한, Termux의 `allow-external-apps=true` 설정이 필요하다. 권한 요청을 허용하면 선택했던 작업만 실행하며 초기 브리지 설치로 바뀌지 않는다. 권한과 설정은 사용자가 허용한다. [Termux 공식 RUN_COMMAND 안내](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent)에 따르면 Android의 백그라운드 화면 열기 제한 때문에 Termux 알림을 직접 눌러야 할 수 있다. 실행 요청 표시는 설치·로그인 성공 확인이 아니며 진행·오류·결과는 Termux에서 확인한다. 로그인은 사용자가 브라우저에서 완료하고, 인증 출력은 Bibimer로 가져오지 않는다. 버튼이 동작하지 않으면 아래 명령 복사를 사용한다.
+Termux 작업 실행 버튼에는 Termux 0.118 이상과 Android의 **BIBIMER → Termux 환경에서 명령 실행** 권한, Termux의 `allow-external-apps=true` 설정이 필요하다. 권한 요청을 허용하면 선택했던 작업만 실행하며 초기 브리지 설치로 바뀌지 않는다. 권한과 설정은 사용자가 허용한다. [Termux 공식 RUN_COMMAND 안내](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent)에 따르면 Android의 백그라운드 화면 열기 제한 때문에 Termux 알림을 직접 눌러야 할 수 있다. 실행 요청 표시는 설치·로그인 성공 확인이 아니며 진행·오류·결과는 Termux에서 확인한다. 로그인은 사용자가 브라우저에서 완료하고, 인증 출력은 Bibimer로 가져오지 않는다. 버튼이 동작하지 않으면 아래 명령 복사를 사용한다.
 
-**다음 APK 빌드·설치 후 적용된다.** 현재 배포 앱에는 실행 버튼이 없으며 새 버튼의 실제 기기 권한 요청·Termux 화면 전환·브라우저 복귀는 아직 검증하지 않았다.
+**내부0.30.0(52)에 포함했다.** 새 설치본의 실제 기기 권한 요청·Termux 화면 전환·브라우저 복귀는 아직 검증하지 않았다.
 
 1. **arm64 Termux**, `$PREFIX/glibc/lib/ld-linux-aarch64.so.1`에 있는 glibc 로더, `ripgrep`을 먼저 준비한다. glibc가 없다면 [glibc 패키지 프로젝트](https://github.com/termux-pacman/glibc-packages)의 요구사항을 확인한다. Bibimer 설정 파일은 glibc를 설치하지 않는다. 이 선행 환경을 처음 설치하는 과정은 별도 검증 대상이다.
-2. Bibimer의 **Setup → Claude Code · Termux → Claude 복구 명령 복사**를 누른다. 앱에 내장된 독립 설치 내용 전체를 복사하므로 설정 파일 저장·다운로드 폴더 접근이 필요하지 않다. 이번 소스 변경은 다음 APK 빌드/설치 후 적용되며 구형 배포 앱의 버튼은 여전히 저장 파일을 참조한다.
+2. Bibimer의 **Setup → Claude Code · Termux → Claude 복구 명령 복사**를 누른다. 앱에 내장된 독립 설치 내용 전체를 복사하므로 설정 파일 저장·다운로드 폴더 접근이 필요하지 않다. 내부0.30.0(52)에 포함했으며 구형 앱의 버튼은 저장 파일을 참조할 수 있다.
 3. Termux에서 ripgrep을 준비한 뒤 복사한 명령을 붙여 넣어 실행한다. 런타임 복구에 Chat SDK 준비도 포함된다.
 
 ```sh

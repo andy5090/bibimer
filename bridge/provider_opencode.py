@@ -23,8 +23,9 @@ import uuid
 
 
 class Adapter:
-    def __init__(self, executable):
-        self.cwd = str(Path.cwd().resolve())
+    def __init__(self, executable, account=False, cwd=None):
+        self.account = account
+        self.cwd = str(Path(cwd or Path.cwd()).resolve())
         self.thread, self.turn, self.message_id = None, None, None
         self.permission_mode = 'inherit'
         self.lock, self.output_lock = threading.RLock(), threading.Lock()
@@ -36,7 +37,7 @@ class Adapter:
         env = dict(os.environ, OPENCODE_SERVER_USERNAME='bibimer', OPENCODE_SERVER_PASSWORD=password,
                    OPENCODE_DISABLE_AUTOUPDATE='true', OPENCODE_AUTO_SHARE='false')
         self.process = subprocess.Popen([executable, 'serve', '--hostname', '127.0.0.1', '--port', '0', '--log-level', 'ERROR'],
-            cwd=self.cwd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            cwd=self.cwd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, start_new_session=account)
         self.base = None
         end, buffer = time.monotonic() + 7, b''
         while time.monotonic() < end:
@@ -56,8 +57,10 @@ class Adapter:
         def drain():
             while self.process.stdout.read(4096):
                 pass
-        threading.Thread(target=drain, daemon=True).start()
-        threading.Thread(target=self.monitor, daemon=True).start()
+        self.drain_thread = threading.Thread(target=drain, daemon=True)
+        self.drain_thread.start()
+        if not account:
+            threading.Thread(target=self.monitor, daemon=True).start()
 
     def emit(self, value):
         with self.output_lock:
@@ -398,12 +401,24 @@ class Adapter:
     def close(self):
         self.closed.set()
         if self.process.poll() is None:
-            self.process.terminate()
+            if self.account:
+                try: os.killpg(self.process.pid, signal.SIGTERM)
+                except ProcessLookupError: pass
+            else: self.process.terminate()
             try:
                 self.process.wait(timeout=.5)
             except subprocess.TimeoutExpired:
-                self.process.kill()
+                if self.account:
+                    try: os.killpg(self.process.pid, signal.SIGKILL)
+                    except ProcessLookupError: pass
+                else: self.process.kill()
                 self.process.wait(timeout=1)
+
+        if self.account:
+            try: os.killpg(self.process.pid, signal.SIGKILL)
+            except ProcessLookupError: pass
+            if hasattr(self, "drain_thread"): self.drain_thread.join(timeout=1)
+            self.process.stdout.close()
 
 
 def main():
