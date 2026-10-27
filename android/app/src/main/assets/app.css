@@ -178,7 +178,10 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .sidebar-footer button { flex:1; font-size:12px; }
 #sidebar-status { flex:none; margin:2px 6px; font-size:10px; }
 #sidebar-status:empty { display:none; }
-#project-form { flex:none; margin:0 0 4px; max-height:55dvh; overflow:auto; padding:10px; }
+#project-form { flex:none; grid-template-columns:minmax(0,1fr); min-width:0; margin:0 0 4px; max-height:55dvh; overflow:auto; padding:10px; }
+#project-form > * { min-width:0; }
+#project-form .check input { flex:none; }
+#project-form .button-row { flex-wrap:wrap; }
 #project-form .folder-input { gap:3px; }
 #project-form input { min-width:0; }
 #session-dialog { padding:12px; }
