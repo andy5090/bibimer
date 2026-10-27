@@ -15,9 +15,9 @@ Bibimer와 **같은 휴대폰의 Termux**에서 진행한다. 별도 PC나 원�
 
 Bibimer 앱의 최소 Android 버전과 각 에이전트의 요구사항은 다르다. 이 폰의 Termux Node.js는 26.4.0, npm은 11.19.0, glibc는 2.42-0, glibc-runner는 2.0-3이다. 모두 같은 버전으로 바꿔야 한다는 뜻은 아니다.
 
-## Bibimer에서 계정·프로바이더 연결 관리하기 (개발 소스, 미배포)
+## Bibimer에서 계정·프로바이더 연결 관리하기 (내부0.30.0)
 
-**설정 → 에이전트 계정 및 프로바이더 → 연결 관리**, 또는 **Setup → 에이전트 준비**의 계정 연결·조회·버전 버튼으로 앱 안의 관리 화면을 연다. 먼저 같은 폰의 Termux 브리지를 연결해야 한다. 새 `agent_connections` 기능을 제공하는 브리지 소스 버전은 **0.23.0**이며 다음 명시적 앱 빌드와 브리지 업데이트 뒤 사용할 수 있다. 현재 내부0.29.0(51)에는 포함되지 않는다.
+**설정 → 에이전트 계정 및 프로바이더 → 연결 관리**, 또는 **Setup → 에이전트 준비**의 계정 연결·조회·버전 버튼으로 앱 안의 관리 화면을 연다. 먼저 같은 폰의 Termux 브리지를 연결해야 한다. 내부0.30.0(52)에 포함했으며 새 `agent_connections` 기능을 사용하려면 설정에서 브리지를 **0.23.0**으로 업데이트해야 한다.
 
 | 에이전트 | Bibimer 안에서 조회·입력 | 별도 단계 |
 | --- | --- | --- |
@@ -52,20 +52,20 @@ codex --version
 codex login
 ```
 
-Termux에 안내된 주소를 같은 폰의 브라우저에서 열어 로그인을 완료한다. 브라우저 반환이 안 되면 `codex login --device-auth`를 사용할 수 있다. 이 방식은 계정/워크스페이스에서 기기 코드 로그인이 허용되어야 한다. API 키를 사용하는 경우도 Bibimer 입력창이 아닌 Termux에서 CLI 인증을 진행한다. [OpenAI 공식 인증 안내](https://learn.chatgpt.com/docs/auth).
+Termux에 안내된 주소를 같은 폰의 브라우저에서 열어 로그인을 완료한다. 브라우저 반환이 안 되면 `codex login --device-auth`를 사용할 수 있다. 이 방식은 계정/워크스페이스에서 기기 코드 로그인이 허용되어야 한다. API 키는 내부0.30.0의 연결 관리 창이나 Termux CLI에서 설정한다. 대화 입력창에는 입력하지 않는다. [OpenAI 공식 인증 안내](https://learn.chatgpt.com/docs/auth).
 
 ## Claude Code
 
 현재 폰은 기존 npm 진입점의 `claude native binary not installed` 오류 때문에 **Bibimer 전용 런타임**을 사용한다. 2026-10-19 일반 `claude` 명령도 이 런타임으로 연결해 버전 출력과 SDK 초기화를 확인했다. 원래 npm 연결은 `$PREFIX/bin/claude.npm-before-bibimer`에 백업했다. 이는 현재 폰에 직접 적용한 연결 수정이며 일반 복구 설치기는 기존 전역 CLI를 교체하지 않는다. 일반 `npm install -g @anthropic-ai/claude-code`만으로 이 구성이 재현된다고 안내하지 않는다.
 
-개발 소스의 **Setup → Claude Code · Termux**에는 **Termux에서 복구 / Termux에서 어댑터 준비 / Termux에서 로그인 / 로그인 상태 확인 / 버전 확인** 버튼이 있다. 각 버튼은 같은 폰의 새 Termux 터미널에 해당 고정 작업만 요청한다. 로그인·상태·버전은 Bibimer 전용 런처가 있으면 우선 사용하고, 없으면 설치된 `claude`를 사용한다. 복구·어댑터는 앱에 포함된 독립 스크립트를 전달하므로 다운로드 폴더의 파일에 의존하지 않는다. 기존 브리지·에이전트 세션은 재시작하지 않는다.
+내부0.30.0의 **Setup → Claude Code · Termux**에는 **Termux에서 복구 / Termux에서 어댑터 준비 / Termux에서 로그인 / 로그인 상태 확인 / 버전 확인** 버튼이 있다. 상태·버전 버튼은 위 앱 내 연결 관리 창을 연다. 복구·어댑터·로그인은 같은 폰의 새 Termux 터미널에 해당 고정 작업만 요청한다. 로그인·상태·버전은 Bibimer 전용 런처가 있으면 우선 사용하고, 없으면 설치된 `claude`를 사용한다. 복구·어댑터는 앱에 포함된 독립 스크립트를 전달하므로 다운로드 폴더의 파일에 의존하지 않는다. 기존 브리지·에이전트 세션은 재시작하지 않는다.
 
-이 실행 버튼에는 Termux 0.118 이상과 Android의 **BIBIMER → Termux 환경에서 명령 실행** 권한, Termux의 `allow-external-apps=true` 설정이 필요하다. 권한 요청을 허용하면 선택했던 작업만 실행하며 초기 브리지 설치로 바뀌지 않는다. 권한과 설정은 사용자가 허용한다. [Termux 공식 RUN_COMMAND 안내](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent)에 따르면 Android의 백그라운드 화면 열기 제한 때문에 Termux 알림을 직접 눌러야 할 수 있다. 실행 요청 표시는 설치·로그인 성공 확인이 아니며 진행·오류·결과는 Termux에서 확인한다. 로그인은 사용자가 브라우저에서 완료하고, 인증 출력은 Bibimer로 가져오지 않는다. 버튼이 동작하지 않으면 아래 명령 복사를 사용한다.
+Termux 작업 실행 버튼에는 Termux 0.118 이상과 Android의 **BIBIMER → Termux 환경에서 명령 실행** 권한, Termux의 `allow-external-apps=true` 설정이 필요하다. 권한 요청을 허용하면 선택했던 작업만 실행하며 초기 브리지 설치로 바뀌지 않는다. 권한과 설정은 사용자가 허용한다. [Termux 공식 RUN_COMMAND 안내](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent)에 따르면 Android의 백그라운드 화면 열기 제한 때문에 Termux 알림을 직접 눌러야 할 수 있다. 실행 요청 표시는 설치·로그인 성공 확인이 아니며 진행·오류·결과는 Termux에서 확인한다. 로그인은 사용자가 브라우저에서 완료하고, 인증 출력은 Bibimer로 가져오지 않는다. 버튼이 동작하지 않으면 아래 명령 복사를 사용한다.
 
-**다음 APK 빌드·설치 후 적용된다.** 현재 배포 앱에는 실행 버튼이 없으며 새 버튼의 실제 기기 권한 요청·Termux 화면 전환·브라우저 복귀는 아직 검증하지 않았다.
+**내부0.30.0(52)에 포함했다.** 새 설치본의 실제 기기 권한 요청·Termux 화면 전환·브라우저 복귀는 아직 검증하지 않았다.
 
 1. **arm64 Termux**, `$PREFIX/glibc/lib/ld-linux-aarch64.so.1`에 있는 glibc 로더, `ripgrep`을 먼저 준비한다. glibc가 없다면 [glibc 패키지 프로젝트](https://github.com/termux-pacman/glibc-packages)의 요구사항을 확인한다. Bibimer 설정 파일은 glibc를 설치하지 않는다. 이 선행 환경을 처음 설치하는 과정은 별도 검증 대상이다.
-2. Bibimer의 **Setup → Claude Code · Termux → Claude 복구 명령 복사**를 누른다. 앱에 내장된 독립 설치 내용 전체를 복사하므로 설정 파일 저장·다운로드 폴더 접근이 필요하지 않다. 이번 소스 변경은 다음 APK 빌드/설치 후 적용되며 구형 배포 앱의 버튼은 여전히 저장 파일을 참조한다.
+2. Bibimer의 **Setup → Claude Code · Termux → Claude 복구 명령 복사**를 누른다. 앱에 내장된 독립 설치 내용 전체를 복사하므로 설정 파일 저장·다운로드 폴더 접근이 필요하지 않다. 내부0.30.0(52)에 포함했으며 구형 앱의 버튼은 저장 파일을 참조할 수 있다.
 3. Termux에서 ripgrep을 준비한 뒤 복사한 명령을 붙여 넣어 실행한다. 런타임 복구에 Chat SDK 준비도 포함된다.
 
 ```sh

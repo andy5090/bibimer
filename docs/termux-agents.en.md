@@ -15,9 +15,9 @@ These are configurations checked on an **Android 16 arm64 phone on 2026-10-19**.
 
 Agent requirements differ from Bibimer's minimum Android version. The phone uses Termux Node.js 26.4.0, npm 11.19.0, glibc 2.42-0 and glibc-runner 2.0-3; these are reference versions, not a requirement to replace working tools.
 
-## Manage accounts and providers in Bibimer (development source, unreleased)
+## Manage accounts and providers in Bibimer (internal 0.30.0)
 
-Open **Settings → Agent accounts and providers → Manage connections**, or the account/status/version actions under **Setup → Prepare an agent**. A connected Termux bridge advertising `agent_connections` is required; its source version is **0.23.0**. This needs the next explicit app build and bridge update and is absent from internal0.29.0(51).
+Open **Settings → Agent accounts and providers → Manage connections**, or the account/status/version actions under **Setup → Prepare an agent**. A connected Termux bridge advertising `agent_connections` is required; its source version is **0.23.0**. This is included in internal 0.30.0(52); update the bridge to 0.23.0 from Settings after updating the app.
 
 | Agent | In-app operations | Additional step |
 | --- | --- | --- |
@@ -52,21 +52,21 @@ codex --version
 codex login
 ```
 
-Open the printed URL in the same phone's browser. If the browser callback fails, `codex login --device-auth` is an alternative when device code login is allowed for your account/workspace. Configure any API key authentication in Termux, not Bibimer's composer. See [OpenAI authentication](https://learn.chatgpt.com/docs/auth).
+Open the printed URL in the same phone's browser. If the browser callback fails, `codex login --device-auth` is an alternative when device code login is allowed for your account/workspace. Configure API keys in the connection manager in internal 0.30.0 or in the Termux CLI. Do not enter them in the conversation composer. See [OpenAI authentication](https://learn.chatgpt.com/docs/auth).
 
 ## Claude Code
 
 The phone uses Bibimer's separate runtime because its original npm entry failed with `claude native binary not installed`. On 2026-10-19 we also connected the normal `claude` command to that runtime and verified its version output and SDK initialization. The original npm link is backed up at `$PREFIX/bin/claude.npm-before-bibimer`. This was a direct repair on this phone; the general repair installer still preserves the global CLI. An ordinary global npm installation does not reproduce this configuration.
 
-The development source adds five buttons under **Setup → Claude Code · Termux**: **Repair in Termux**, **Set up adapter in Termux**, **Sign in with Termux**, **Check sign-in**, and **Check version**. Each requests one fixed action in a new Termux terminal on the same phone. Sign-in, status, and version prefer Bibimer's dedicated launcher, falling back to the installed `claude` command when absent. Repair and adapter setup use standalone scripts bundled with the app, without relying on a Downloads file. Existing bridge and agent sessions are preserved.
+Internal 0.30.0 includes five buttons under **Setup → Claude Code · Termux**: **Repair in Termux**, **Set up adapter in Termux**, **Sign in with Termux**, **Check sign-in**, and **Check version**. Status and version actions open the in-app connection manager above. Repair, adapter setup and sign-in request one fixed action in a new Termux terminal on the same phone. Sign-in, status, and version prefer Bibimer's dedicated launcher, falling back to the installed `claude` command when absent. Repair and adapter setup use standalone scripts bundled with the app, without relying on a Downloads file. Existing bridge and agent sessions are preserved.
 
-These buttons require Termux 0.118+, BIBIMER's Android **Run commands in Termux environment** permission, and Termux's `allow-external-apps=true` setting. Granting the requested permission runs only the selected action, without switching to bridge installation. The user controls both permissions and settings. The [official Termux RUN_COMMAND guide](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent) explains that Android activity-launch restrictions may require opening Termux from its notification. A request-sent message does not confirm installation or sign-in; inspect progress, errors, and results in Termux. Finish browser sign-in yourself. Authentication output is not returned to Bibimer. The command-copying fallback remains available.
+The Termux execution buttons require Termux 0.118+, BIBIMER's Android **Run commands in Termux environment** permission, and Termux's `allow-external-apps=true` setting. Granting the requested permission runs only the selected action, without switching to bridge installation. The user controls both permissions and settings. The [official Termux RUN_COMMAND guide](https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent) explains that Android activity-launch restrictions may require opening Termux from its notification. A request-sent message does not confirm installation or sign-in; inspect progress, errors, and results in Termux. Finish browser sign-in yourself. Authentication output is not returned to Bibimer. The command-copying fallback remains available.
 
-**A new APK build and installation are required.** Released versions do not yet include these buttons. Device permission requests, Termux switching, and returning from browser login with the new buttons remain unverified.
+**These actions are included in internal 0.30.0(52).** Device permission requests, Termux switching, and returning from browser login with the new buttons remain unverified.
 
 Prerequisites: **arm64 Termux**, an existing glibc loader at `$PREFIX/glibc/lib/ld-linux-aarch64.so.1`, and ripgrep. See the [glibc packages project](https://github.com/termux-pacman/glibc-packages) if needed. Bibimer does not install glibc; preparing that environment from scratch remains unverified.
 
-In **Setup → Claude Code · Termux**, choose **Copy Claude repair command**, then paste and run it in Termux. The command contains the complete bundled installer, so no exported file or Downloads access is required. This source change reaches the app after the next APK build/install; older distributed versions still copy a command that references an exported file. Prepare ripgrep first if needed:
+In **Setup → Claude Code · Termux**, choose **Copy Claude repair command**, then paste and run it in Termux. The command contains the complete bundled installer, so no exported file or Downloads access is required. This is included in internal 0.30.0(52); older versions may still copy a command that references an exported file. Prepare ripgrep first if needed:
 
 ```sh
 pkg install ripgrep

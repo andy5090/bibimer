@@ -1,14 +1,18 @@
 # Google Play 출시 준비
 
-## 0.30.0(52) 내부 테스트 배포 준비 (2026-10-27)
+## 0.30.0(52) 내부 테스트 게시 완료 (2026-10-27)
 
-사용자 요청 순서대로 앱 내 에이전트 연결 관리·모바일 버튼 간격을 `79c455a`로 main에 동기화한 뒤 배포 준비 커밋 `481c9d7`의 **Android0.30.0/code52 · 브리지0.23.0**을 기존 업로드 키로 빌드했다. 서명 AAB `dist/play/bibimer-0.30.0-52-release.aab`, SHA-256 `c13b94d641613a92278b780015125a02b4dcbb3390c3eacad8df9fda2dd95243`. 키 재생성·개발 APK 생성 없음.
+**2026-10-27 22:24 Asia/Seoul**, 같은 폰의 Termux:X11·Firefox에서 사용자 제어 허용 후 **Android0.30.0/code52 · 브리지0.23.0**을 게시했다. **새로고침 후 활성 / 내부 테스터에게 제공됨**을 재확인했다. 새52만 포함·51제외·버전 코드1개·EN/KO노트2/2·오류0·기존 가독화 매핑 파일 경고1·확인한7개 기기 유형의 지원 변화0이다. 기존 트랙/테스터 설정은 유지했다.
 
-실제 리소스/Java/D8·bundletool·기존 서명/인증서·55assets 원본·새 연결 관리 JS/네이티브 요청 경로·간격 CSS·브리지0.23.0·6payload 원본/해시·설치 구문/격리 추출/0700·심사 digest/비밀 원문 미포함 검증 통과. 같은 백엔드 소스의 전체 브리지229개(앱 버전 변경 전), 버전 변경 후 scripts39개·801키×10언어·연결 관리/브라우저 진입/심사 진입/Demo/iOS 권한 검사가 통과했다.
+설정의 **에이전트 계정 및 프로바이더 → 연결 관리**, Setup 공통 연결/상태/버전 조회, 지원되는 API 키 입력·브라우저 인증, 모바일 버튼 줄바꿈 간격과 좁은 입력 폼 보정을 포함한다. Claude 로그인·Gemini 인증 및 추가 양식이 필요한 OpenCode 인증은 명시적 Termux 경로를 유지한다. **앱 업데이트 후 설정에서 Termux 브리지0.23.0 업데이트**가 필요하다.
 
-**Play 업로드/게시 전이다.** Firefox가 직접 로그인 모드라 사용자 제어 허용을 요청했으며 인증 화면/쿠키를 읽거나 잠금을 우회하지 않는다. 기존 내부51과 프로덕션/테스터 설정은 유지했다. 앱 설치 후 설정에서 브리지0.23.0 업데이트가 필요하며 운영 브리지·사용자 세션은 재시작하지 않았다. 실제 계정의 새 인증/키 저장·Play 수신/설치·WebView 화면/IME/브라우저 복귀·iOS 네이티브 빌드/배포는 미검증이다.
+구현 `79c455a`와 배포 준비를 main에 동기화하고 실제 Firefox에서 발견한 폼 넘침 수정 `0f3e096`까지 push한 뒤 최종 재빌드했다. 기존 업로드 키의 AAB `dist/play/bibimer-0.30.0-52-release.aab`, SHA-256 `9dd4915bbbfd9ae6d7a7e6309b3bf4923c1f81b2709c57b3c8198f22c1bc9d5c`. 실제 리소스/Java/D8·bundletool·서명/기존 인증서·55assets 원본·연결 native 경로·브리지0.23.0·6payload 원본/해시·설치 구문/격리 추출/0700·심사 digest/비밀 원문 미포함 검증 통과. 새 키·개발 APK 생성 없음.
 
-증빙 `.tools/aab-0.30.0-52-{build.log,verification.json,final-verify.log}`, `.tools/release-0.30.0-scripts.log`, 앞선 `.tools/agent-connections-bridge-final.log`. 한·영 노트 `release/google-play/release-notes/0.30.0.txt`는365/209자다. 실제 화면 배치 검사는 제어 허용 후 가능하며 기존 소스/제어 함수 검증과 구분한다.
+전체 브리지229개(앱 버전 변경 전 같은 백엔드)·버전 변경 후 scripts39개·801키×10언어·연결 제어 함수/브라우저/심사/Demo/iOS 권한 검사를 통과했다. 같은 폰의 일반 Firefox 합성 화면에서 버튼 간격300개와 연결 폼300개, 총600개 배치를 통과했다(320/360/393/600/1024px·10언어). 실제 계정·인증 화면·쿠키·모델 요청은 사용하지 않았다.
+
+증빙 `dist/play-0.30.0/`의 검토·최종 확인·새로고침 후 게시 화면과 `published.json`, `.tools/aab-0.30.0-52-{build.log,verification.json,final-verify.log}`, `.tools/release-0.30.0-scripts.log`, `.tools/agent-connections-bridge-final.log`. EN/KO노트 `release/google-play/release-notes/0.30.0.txt`는365/209자다. 빌드 검증 JSON은 게시 전 기록이고 실제 게시 여부는 별도 게시 증빙/listing에 기록했다. 미업로드 이전 초안은 `dist/history/0.30.0-before-account-layout/`에 보존했다.
+
+**새 실제 계정 로그인/키 저장·Play 업데이트 수신/설치·Android WebView/IME/브라우저 복귀·iOS 네이티브 빌드/배포는 미검증**이다. iOS 연결 관리 기능은 검증 전 비활성 상태다. 운영 브리지·사용자 세션·인증 Firefox를 재시작하지 않았다. 프로덕션·웹사이트 배포는 변경하지 않았고 프로덕션 마지막 확인(10월23일50심사 중/공개43)도 갱신하지 않았다.
 
 ## 0.29.0(51) 내부 테스트 게시 완료 (2026-10-26)
 

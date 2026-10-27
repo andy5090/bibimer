@@ -320,7 +320,7 @@ Android `AgentPreferences`는 에이전트별 마지막 선택만 `SharedPrefere
 [Android의 안전한 파일 공유 안내](https://developer.android.com/training/secure-file-sharing)의 content URI와 임시 읽기 권한 방식에 맞췄다. 리소스·Java 컴파일 및 브리지/브라우저 검증을 마쳤지만 실제 Android 앱 간 URI 접근·기본 앱 선택·복귀 동작은 APK 설치 후 검증한다.
 
 
-## 에이전트 연결 관리 API (개발 소스, 브리지0.23.0)
+## 에이전트 연결 관리 API (내부0.30.0, 브리지0.23.0)
 
 인증된 `POST /v1/agent-connections`는 고정된 에이전트와 `status/version/start/poll/code/cancel`만 허용한다. 기존 프로젝트를 선택적으로 조회 범위에 쓰며 새 프로젝트·세션·턴을 만들지 않는다. Codex는 별도 account 전용 App Server RPC, Claude는 네이티브 JSON 상태, OpenCode는 별도 Basic 인증 루프백 서버의 provider/auth API를 쓴다. Gemini는 버전 외 인증 상태를 추측하지 않는다. 일반 CLI 출력·자격 증명 파일 원문을 응답하지 않는다.
 
