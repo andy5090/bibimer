@@ -1,0 +1,12 @@
+<en-US>
+Start chats with a new message and manage supported agent accounts in Settings.
+Terminal sessions use direct input without chat controls. Compact two-row keys include arrows and held Ctrl, Alt and Shift; expand F1-F12 in one row.
+Improved narrow sidebar forms and older GitHub CLI sign-in checks.
+Update the Termux bridge to 0.23.1 in Settings.
+</en-US>
+<ko-KR>
+새 메시지로 대화를 시작하고 설정에서 지원되는 에이전트 계정 연결을 관리하세요.
+터미널은 하단 채팅 입력창 없이 직접 입력합니다. 특수 키는 두 줄로 줄였으며 방향키와 Ctrl·Alt·Shift 홀딩, 한 줄로 펼치는 F1~F12를 제공합니다.
+좁은 사이드바의 프로젝트 추가 폼과 구형 GitHub CLI 로그인 확인을 개선했습니다.
+설정에서 Termux 브리지를 0.23.1로 업데이트하세요.
+</ko-KR>
