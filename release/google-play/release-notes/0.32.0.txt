@@ -1,0 +1,14 @@
+<en-US>
+Terminal keys now fit two compact rows. Expand F1-F12 as a horizontal row.
+Ctrl, Alt and Shift stay held until tapped again. Use Ctrl+C through the Ctrl key and keyboard.
+Improved Shift combinations for Tab, arrows, function keys and ASCII input.
+Fixed GitHub sign-in checks with older GitHub CLIs.
+Update the Termux bridge to 0.23.1 in Settings for the GitHub fix.
+</en-US>
+<ko-KR>
+터미널 특수 키를 두 줄로 줄이고 F1~F12는 가로 한 줄로 펼칩니다.
+Ctrl·Alt·Shift는 다시 누를 때까지 유지합니다. Ctrl을 켜고 키보드의 C를 눌러 Ctrl+C를 입력합니다.
+Tab·방향키·함수 키·영문과 기호의 Shift 조합을 개선했습니다.
+구형 GitHub CLI의 로그인 확인을 수정했습니다.
+GitHub 수정을 적용하려면 설정에서 Termux 브리지를 0.23.1로 업데이트하세요.
+</ko-KR>
