@@ -37,6 +37,9 @@ def package_web(destination):
     # iOS zooms small text fields on focus. Keep the shared Android sizing intact.
     index = index.replace('</head>', '''<style>
 .ios-unavailable { display:none !important; }
+/* Native constraints size the WebView; keep navigation inside that height. */
+html, body { height:100%; overflow:hidden; }
+:root #app { height:100%; }
 :root input:not([type="checkbox"]):not([type="radio"]), :root textarea, #handoff-context { font-size:16px !important; }
 </style>
 </head>''')

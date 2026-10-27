@@ -21,12 +21,21 @@ import json, os, sys, time
 from pathlib import Path
 args = sys.argv[1:]
 if args[:2] == ['auth', 'status']:
+    if os.environ.get('FIXTURE_LEGACY_GH') == '1':
+        if '--json' in args:
+            print('unknown flag: --json', file=sys.stderr)
+            sys.exit(1)
+        print('PRIVATE_TOKEN_MUST_NEVER_ESCAPE', file=sys.stderr)
+        sys.exit(1 if os.environ.get('FIXTURE_AUTH_FAILED') == '1' else 0)
     print(json.dumps([{'login':'fixture', 'state':'success'}]))
 elif args[:2] == ['auth', 'login']:
     print('! First copy your one-time code: ABCD-1234', file=sys.stderr, flush=True)
     print('PRIVATE_TOKEN_MUST_NEVER_ESCAPE', file=sys.stderr, flush=True)
     time.sleep(30)
 elif args[0] == 'api':
+    if 'user' in args:
+        print(json.dumps({'login':'fixture', 'token':'PRIVATE_TOKEN_MUST_NEVER_ESCAPE'}))
+        sys.exit(0)
     page = 2 if 'page=2&' in ' '.join(args) else 1
     count = 50 if page == 1 else 1
     print(json.dumps([{'full_name':f'fixture/repo-{page}-{i}', 'private':True,
@@ -232,6 +241,38 @@ os.execvp('git', ['git', 'clone', '--', sys.argv[3], sys.argv[4]])
             status, data = self.github("repositories")
             self.assertEqual((400, "error_github_api"), (status, data["code"]))
             self.assertNotIn("PRIVATE_TOKEN", json.dumps(data))
+
+    def test_legacy_cli_login_is_confirmed_without_auth_status_json(self):
+        with mock.patch.dict(os.environ, {"FIXTURE_LEGACY_GH": "1"}):
+            status, data = self.github("status")
+            self.assertEqual((200, "fixture", False), (status, data["account"], data["auth_issue"]))
+            self.assertNotIn("PRIVATE_TOKEN", json.dumps(data))
+            self.assertNotIn("PRIVATE_TOKEN", "".join(path.read_text() for path in self.state.glob("*.json")))
+            self.assertEqual(200, self.github("repositories")[0])
+
+    def test_legacy_cli_without_valid_login_keeps_login_and_poll_available(self):
+        with mock.patch.dict(os.environ, {"FIXTURE_LEGACY_GH": "1", "FIXTURE_AUTH_FAILED": "1"}):
+            status, data = self.github("status")
+            self.assertEqual((200, None, True), (status, data["account"], data["auth_issue"]))
+            self.assertNotIn("PRIVATE_TOKEN", json.dumps(data))
+            self.assertEqual(200, self.github("login")[0])
+            self.assertEqual(200, self.github("poll")[0])
+            self.assertEqual(200, self.github("cancel_login")[0])
+
+    def test_auth_status_does_not_fallback_for_other_errors_or_report_false_login(self):
+        unsupported = subprocess.CompletedProcess([], 1, b"", b"unknown flag: --json")
+        success = subprocess.CompletedProcess([], 0, b"", b"")
+        failed = subprocess.CompletedProcess([], 1, b"PRIVATE_TOKEN", b"PRIVATE_TOKEN")
+        cases = ([failed], [unsupported, success, failed],
+                 [unsupported, success, subprocess.CompletedProcess([], 0, b"[]", b"")],
+                 [subprocess.CompletedProcess([], 0, b"[null]", b"")],
+                 [subprocess.TimeoutExpired("gh", 18)])
+        for responses in cases:
+            with self.subTest(responses=len(responses)), mock.patch.object(module.subprocess, "run", side_effect=responses) as run:
+                status, data = self.github("status")
+                self.assertEqual((400, "error_github_api"), (status, data["code"]))
+                self.assertEqual(len(responses), run.call_count)
+                self.assertNotIn("PRIVATE_TOKEN", json.dumps(data))
 
     def test_storage_failure_does_not_leave_an_unstarted_clone_running(self):
         with mock.patch.object(module, "save_json", side_effect=OSError("fixture full disk")):

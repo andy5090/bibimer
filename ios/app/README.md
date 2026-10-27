@@ -9,6 +9,7 @@ Android 앱과 같은 프로젝트·워크트리·세션·Chat·PTY 터미널 UI
 - `Resources/platform.js`: iOS 설치 안내, 네 가지 CLI의 설치·버전·로그인 작업, iOS의 실행 제약을 표시한다.
 - `Resources/ui-hooks.js`: 공유 UI 내부의 세션 탐색과 iOS 설치 작업을 연결한다.
 - `build.py`: 기존 Android assets를 빌드 산출물에 복사해 iOS 코드만 적용한다. 원본 Android assets는 수정하지 않는다.
+- macOS에서 실행되는 iOS 앱은 공개 `isiOSAppOnMac` API로 구분해 WebView 하단을 창의 안전 영역에 맞춘다(Mac Catalyst도 같은 배치). iPhone/iPad는 기존 키보드 레이아웃 가이드를 따른다. iOS 웹 패키지의 루트 높이는 실제 WebView 높이에 맞추고 문서 바깥 스크롤을 막아 입력 포커스로 하단 내비게이션이 밀리는 경로를 보완했다. 2026-10-27 소스 반영이며 macOS TestFlight 설치본의 실제 포커스·창 크기 변경과 iPhone/iPad 키보드 검증은 남아 있다.
 - 새 세션의 **실행할 에이전트**, **표시 방식 → 대화 · UI 포맷팅 / 터미널 · PTY** 문구와 첫 메시지 전송으로 새 세션을 시작하는 동작은 공유 UI/브리지에서 가져온다. 코딩 에이전트를 우선 선택하고 **터미널 (셸)**은 목록 마지막의 보조 선택으로 둔다. iOS 전용 권한 검사도 새 세션의 전송 버튼에 적용한다. 셀렉터 아웃라인·축소한 패딩과 모델/권한 줄 간격·원형 사용량 표시와 상세 막대·응답 중단 버튼 여백도 같은 소스를 사용한다. 사용량 수치는 에이전트의 구조화된 보고가 있을 때만 표시한다. 2026-10-26 웹 자산 패키징과 iOS Codex/Gemini 첫 메시지 검사를 통과했으며, 네이티브 앱 빌드·설치·WKWebView 실화면 확인은 아직 하지 않았다.
 - 고정 런타임의 `wasm-polyfill.js`를 게스트에 포함해 jitless Node의 HTTP 파서 경로를 연결한다. 일반적인 WASM 실행 지원을 의미하지 않으며 `fetch-polyfill.js`는 포함하지 않는다.
 - OpenCode의 고정 ARM64-musl 1.19.3 payload에는 검증한 출력 수집 호환 패처를 별도 복사본에 적용한다. npm 원본은 유지하고 실제 버전 검사를 통과한 뒤 게시한다. `opencode_compat.py`·공식 MIT notice는 필수 자산이며 CJS preload는 포함하지 않는다.

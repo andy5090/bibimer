@@ -2525,13 +2525,36 @@ class GitHubImport:
     def api(self, endpoint, query):
         return self.command_json(["api", "--hostname", "github.com", "--method", "GET", endpoint, "--jq", query])
 
+    def authentication_rows(self):
+        args = [self.executable("gh"), "auth", "status", "--hostname", "github.com", "--active"]
+        try:
+            result = subprocess.run([*args, "--json", "hosts", "--jq",
+                '[.hosts["github.com"][]? | {login, state}]'], cwd=str(Path.home()),
+                env=self.environment(), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, timeout=18)
+            # Alpine 3.21 bundles gh 2.63, before auth status gained JSON output.
+            # Never parse its human-readable status, which can contain credentials.
+            if result.returncode and b"unknown flag: --json" in result.stderr:
+                legacy = subprocess.run(args, cwd=str(Path.home()), env=self.environment(),
+                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=18)
+                if legacy.returncode:
+                    return [{"state": "error"}]
+                user = self.api("user", "{login}")
+                if not isinstance(user, dict):
+                    raise ValueError()
+                return [{"login": user.get("login"), "state": "success"}]
+            if result.returncode or len(result.stdout) > BUFFER_LIMIT:
+                raise ValueError()
+            return json.loads(result.stdout)
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            raise Problem(400, "error_github_api") from None
+
     def status(self):
         installed = bool(shutil.which("gh") and shutil.which("git"))
         result = {"installed": installed, "account": None}
         if installed:
-            rows = self.command_json(["auth", "status", "--hostname", "github.com", "--active",
-                "--json", "hosts", "--jq", '[.hosts["github.com"][]? | {login, state}]'])
-            if not isinstance(rows, list):
+            rows = self.authentication_rows()
+            if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
                 raise Problem(400, "error_github_api")
             for row in rows:
                 if row.get("state") == "success" and isinstance(row.get("login"), str):

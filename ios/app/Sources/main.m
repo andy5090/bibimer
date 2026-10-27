@@ -304,11 +304,19 @@ static void guestExit(int status) {
     if (@available(iOS 16.4,*)) self.web.inspectable = YES;
 #endif
     [self.view addSubview:self.web];
+    BOOL desktopHost = NO;
+#if TARGET_OS_MACCATALYST
+    desktopHost = YES;
+#else
+    if (@available(iOS 14.0,*)) desktopHost = [NSProcessInfo.processInfo isiOSAppOnMac];
+#endif
+    // Desktop input must not reserve space for an iOS onscreen keyboard.
+    NSLayoutYAxisAnchor *bottom = desktopHost ? self.view.safeAreaLayoutGuide.bottomAnchor : self.view.keyboardLayoutGuide.topAnchor;
     [NSLayoutConstraint activateConstraints:@[
         [self.web.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
         [self.web.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.web.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.web.bottomAnchor constraintEqualToAnchor:self.view.keyboardLayoutGuide.topAnchor]
+        [self.web.bottomAnchor constraintEqualToAnchor:bottom]
     ]];
     NSURL *ui = [NSBundle.mainBundle URLForResource:@"Web" withExtension:nil];
     [self.web loadFileURL:[ui URLByAppendingPathComponent:@"index.html"] allowingReadAccessToURL:ui];

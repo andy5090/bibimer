@@ -1,5 +1,24 @@
 # Bibimer 다음 세션 시작점
 
+## GitHub·Mac 포커스 수정 레포 동기화 (2026-10-27 UTC)
+
+- 사용자 레포 싱크 요청으로 원격 `412dbbd`까지의22개 커밋을 받고, 이 세션의 GitHub 구버전 인증·Mac 키보드 배치 수정만 그 위에 반영했다. `NEXT_SESSION.md`의 추가 위치 충돌은 양쪽 기록과 원격의 모든 기존 제목을 보존해 해결했다. 원격 Android0.31.0·브리지0.23.0·TestFlight0.1.0(2)의 배포 기록과 직접 터미널 입력/특수 키·Codex 기한 변경을 유지한다.
+- 통합 후 GitHub13개·iOS 앱20개·iOS Codex/Gemini 첫 메시지2개와 Node 권한·클립보드·설정·링크4개 스크립트가 통과했다. 실제 iOS 웹 패키징에서 이번 화면 높이 수정과 원격의 최신 연결 관리/터미널 자산 보존·JS 구문을 확인했다. 두 수정은 배포된 TestFlight2에 포함됐다고 표시하지 않으며 이 동기화에서 새 앱 빌드·배포·운영 세션 변경은 하지 않는다.
+
+## macOS TestFlight 입력 포커스 시 하단 영역 가림 대응 (2026-10-27, 미빌드)
+
+- 사용자가 macOS TestFlight에서 프롬프트 입력창에 포커스하면 키보드는 보이지 않지만 작은 키보드 영역처럼 하단이 올라와 버튼·내비게이션을 가린다고 제보했다. 기존 네이티브 코드는 실행 호스트와 관계없이 WebView 하단을 `keyboardLayoutGuide.topAnchor`에 고정했다. 이 경로를 수정했으며 설치본의 정확한 키보드 프레임·실제 원인 확정은 네이티브 화면 검증 전이다.
+- 공개 [`NSProcessInfo.isiOSAppOnMac`](https://developer.apple.com/documentation/foundation/processinfo/isiosapponmac?language=objc)로 Mac에서 실행되는 iOS 앱을 구분하고, Mac Catalyst를 포함해 하단을 창의 `safeAreaLayoutGuide.bottomAnchor`에 맞춘다. iPhone/iPad는 기존 키보드 가이드를 유지한다. `package_web()`의 iOS 전용 스타일에서 html/body 높이100%·바깥 스크롤 금지·앱 높이100%를 적용해 실제 WebView 크기에 맞췄다. Android UI 소스·입력/전송/IME·포커스 이벤트는 변경하지 않았다.
+- 검증: iOS Python 패키징/검증기 **6개**, 기존 Node 권한/설치 catalog·클립보드 RPC·컨텍스트 설정·터미널 링크 **4개 스크립트** 통과. 실제 `package_web()`의 변경 스타일·기존 viewport/확대 허용·관련 자산·app.js 구문을 확인했고 diff 검사도 통과했다. 터미널 텍스트 전체 Node 검사는 이 작업 환경에 생성 자산 `vendor/xterm.js`가 없어 시작하지 못했으며 성공으로 처리하지 않았다.
+- 현재 환경에는 Xcode/UIKit SDK·`xcrun`과 Firefox/Termux:X11이 없어 네이티브 컴파일·macOS/WKWebView 화면 재현은 하지 못했다. **TestFlight 새 빌드·배포·설치본 검증은 남아 있다.** 새 설치본에서 Mac의 반복 포커스/해제·작은/큰 창·입력/전송·하단 탭 가시성, iPhone/iPad의 실제 키보드 표시/숨김·외장 키보드·IME를 확인한다. 앞선 GitHub 수정은 유지했으며 APK/AAB 빌드·운영 브리지/세션 변경은 하지 않았다.
+
+## macOS TestFlight의 GitHub 연결 확인 오류 수정 (2026-10-27, 미빌드)
+
+- 사용자 제보는 **macOS에서 실행한 TestFlight 앱**의 GitHub 연결 후 `Could not reach GitHub…` 오류다. 내장 Alpine 3.21의 실제 `gh 2.63.0`이 공유 브리지의 `gh auth status --json`을 `unknown flag: --json`으로 거절하는 것을 재현했다. 인증 실패 여부를 확인하기 전에 미지원 옵션으로 실패하던 문제다.
+- 해당 옵션 미지원일 때만 기존 `gh auth status --hostname github.com --active`의 종료 코드로 인증을 확인하고, 성공하면 `gh api user --jq '{login}'`의 구조화된 계정 이름을 사용하도록 공유 브리지를 수정했다. 사람이 읽는 인증 상태 출력은 버리고 토큰을 파싱·반환·저장하지 않는다. 다른 오류는 기존 오류로 유지하며 인증 미확인은 연결 성공으로 바꾸지 않는다. iOS 적응 계층도 같은 수정 소스를 사용한다.
+- 검증: GitHub HTTP/실제 로컬 Git **13개**, iOS 게스트 패키징 **3개**, iOS Codex/Gemini 첫 메시지 **2개** 통과. 구버전 인증/재로그인 가능·현행 CLI 경로·실패/타임아웃·잘못된 응답·민감 표식 비노출을 확인했다. 현재 내장 환경의 실제 CLI·기존 로그인과 iOS 적응 계층으로 임시 상태에서 수정 전 `error_github_api`(0.95초), 수정 후 **계정 확인·저장소 목록 조회 성공**(8.02초)을 대조했다. 계정 이름·저장소 목록·인증 원문은 검증 출력에 남기지 않았다. 대조 스크립트의 최초 실행 2회는 임시 폴더의 보조 모듈 누락으로 시작 전에 실패했고, 두 모듈을 함께 준비한 최종 대조가 위 결과다.
+- **소스 수정 완료이며 TestFlight 빌드·배포 및 설치본 UI 검증은 하지 않았다.** 새 iOS 빌드의 내장 브리지 반영이 필요하다. Android APK/AAB 빌드·운영 브리지 재시작·사용자 세션 종료·인증 변경은 하지 않았다.
+
 ## Android0.31.0(53)·iOS TestFlight0.1.0(2) 배포 완료 (2026-10-28)
 
 - 구현·검증 후5개 논리 커밋을 정상 push했고 소스 기준은 **`a9f316280f319bb29cba9882a1f1de36e806b3b8`**이다. 당시 HEAD/origin/main 일치·ahead/behind0/0·작업 트리 clean을 확인했다. 이 기록 아래의 ‘배포 준비’는 게시 전 상태를 보존한 이력이다.
