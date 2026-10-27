@@ -1,5 +1,14 @@
 # iOS TestFlight 배포
 
+## 0.1.0(2) 업로드 완료·그룹 추가 대기 (2026-10-28)
+
+- 소스 `a9f3162`의 터미널 하단 입력/에이전트 전환 제거, 역T자 방향키·일회 Ctrl/Alt·확장 F1–F12, 검토 후 붙여넣기, 사이드바 폭과 Codex 초기 조회 기한 수정을 기기용으로 빌드했다. 기존0.1.0(1)은 계속 제공 중이다.
+- 별도 QA Simulator에서 실제 WKWebView·내장 ARM64 Linux21개 검사/12.79초 통과, JavaScript 오류0·fatal0·진단 실패0이며 알려진 syscall151/152 경고4개만 있다. 앱 Python20개와 공유 UI80+키보드100배치·805키×10언어·전체 격리 UI 회귀도 통과했다. agent-first 기본 선택 때문에 smoke가 셸 선택 전에 launch 활성화를 기다리던 테스트 조건을 고쳐 재통과했다. 실제 모델 응답을 새로 요청하지 않았다.
+- 아카이브 `dist/ios-testflight/0.1.0-2-unsigned-oct28/Bibimer.xcarchive`와 export `dist/ios-testflight/0.1.0-2-export-oct28/`를 사용했다. IPA8,329,512bytes·SHA-256 `26ae6accdda88a7bcc86d8371d56163ef99da92084ad611784be3b2dfa405219`, 배포 서명/프로파일 검증 및 현재 소스와58개 Web 자산 일치를 확인했다. 기존 팀·번들·Xcode 계정을 유지하고 기기를 등록하지 않았다.
+- **2026-10-28 00:40:26 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**다. `dist/ios-testflight/upload-0.1.0-2/{upload-receipt.json,xcode-upload.log}`에 결과를 보관하며 로그는0600이다.
+- **ASC 처리·암호화 응답·기존 내부 그룹에 새 빌드 추가는 아직 확인하지 않았다.** 기존 Chrome의 Apple 로그인 갱신이 빈 로딩 화면/authResult=FAILED 상태라 사용자의 직접 로그인 완료를 기다린다. 그룹 자동 배포OFF·기존 테스터1명을 유지하므로 업로드 성공을 새 TestFlight 제공 완료로 간주하지 않는다. 로그인 후 처리 상태·테스트 안내·수출 규정을 확인하고 기존 Bibimer Internal에0.1.0(2)를 추가해 테스트 중 상태를 확인한다. 재업로드/새 그룹/외부 초대는 필요하지 않다.
+- 실제 iPhone·macOS TestFlight 업데이트 설치와 장시간/잠금/발열, 제공자별 실제 계정 응답은 이번 검사에 포함하지 않았다.
+
 ## 현재 배포 상태 (2026-10-25)
 
 - 첫 iOS 배포 후보는 `app.bibimer.ios`, **0.1.0(1)**이다. 최신 공유 UI·게스트 소스를 기기용으로 컴파일하고 기존 브랜드 아이콘의 불투명1024px AppIcon을 포함했다. Android 버전·배포 설정은 변경하지 않았다.
