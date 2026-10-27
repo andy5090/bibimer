@@ -1190,6 +1190,8 @@
     $("project-update").hidden = !online || multipleProjects;
     const newChat = !session && supportsChat() && $("mode").value === "chat";
     const chatDisplay = isChat() || newChat;
+    $("quick-agent").hidden = !chatDisplay;
+    $("model-controls").hidden = !chatDisplay && $("quick-model").hidden;
     $("input").disabled = newChat ? !online || !project || busy || switchingProject :
       !online || !session || session.kind === "browser" || session.state !== "running" || (isChat() && !session.ready);
     $("input-form").hidden = !chatDisplay;

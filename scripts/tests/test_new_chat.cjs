@@ -41,21 +41,25 @@ function fixture() {
       importable:()=>false,findSession:()=>null,supportsSteer:()=>false,isResponding:()=>false,sessionTitle:()=>"Existing session",supportsChat:()=>fields.agent.value!=="shell"});
     for(const name of ["renderBrowser","renderContextUsage","renderSubscriptionUsage","renderBridgeUpdate","renderSettings","renderModels","renderImport",
       "renderFolderBrowser","renderQueue","renderHandoff","renderWorkspaceSummary","renderWorkspaceDetails","refreshProjectWorktrees","renderSessionActions",
-      "renderProjectSettings","renderSidebar","positionUsageDetails"])ctx[name]=()=>{};
+      "renderProjectSettings","renderSidebar","positionUsageDetails","updateTerminalKeys"])ctx[name]=()=>{};
     ctx.pickers={sync(){}};
     vm.runInContext(source.match(/  function renderSession\(\) \{[\s\S]*?\n  \}/)[0],ctx);
     ctx.renderSession();assert.equal(fields.input.disabled,false);assert.equal(fields.send.disabled,false);
     assert.equal(fields["chat-panel"].hidden,false);assert.equal(fields["terminal-keys"].hidden,true);
     assert.equal(fields["input-form"].hidden,false,"A new Chat draft keeps its composer visible");
+    assert.equal(fields["quick-agent"].hidden,false,"New Chat keeps its agent selector");
     ctx.canInitialMessage=false;ctx.renderSession();assert.equal(fields.input.disabled,false);assert.equal(fields.send.disabled,true);
     assert.equal(fields["chat-empty"].textContent,"new_chat_update");
     ctx.canInitialMessage=true;ctx.busy=true;ctx.renderSession();assert.equal(fields.input.disabled,true);
     ctx.busy=false;fields.agent.value="shell";fields.mode.value="terminal";ctx.renderSession();assert.equal(fields.input.disabled,true);
     assert.equal(fields["input-form"].hidden,true,"Explicit terminal setup hides the Chat composer");
+    assert.equal(fields["quick-agent"].hidden,true,"Terminal setup uses the launch program selector");
     ctx.session={id:"terminal",agent:"shell",mode:"terminal",state:"running"};ctx.renderSession();
     assert.equal(fields["input-form"].hidden,true,"A running terminal keeps direct xterm input");
+    assert.equal(fields["quick-agent"].hidden,true,"Terminal has no agent switching selector");
     ctx.session={id:"existing",agent:"codex",mode:"chat",state:"running",ready:true,turn_state:"ready"};ctx.canInitialMessage=false;ctx.renderSession();
     assert.equal(fields.input.disabled,false);assert.equal(fields.send.disabled,false,"Existing chat remains usable on older bridges");
+    assert.equal(fields["quick-agent"].hidden,false,"Returning to Chat restores agent switching");
   }
   {
     const {ctx}=fixture();ctx.knownAgents=[{id:"shell",installed:true},{id:"codex",installed:false},{id:"claude",installed:true,modes:["chat"]}];
