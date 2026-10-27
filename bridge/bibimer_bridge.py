@@ -42,7 +42,7 @@ _recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_rec
 maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
 _recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.23.0"
+VERSION = "0.23.1"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
