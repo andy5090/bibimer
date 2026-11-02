@@ -54,7 +54,7 @@
     </section>
     <noscript><div class="contact-notice"><p>Aktifkan JavaScript untuk menggunakan formulir ini. Anda juga dapat melaporkan masalah di GitHub.</p><a href="https://github.com/andy5090/bibimer/issues">Buka isu GitHub</a></div></noscript>
     <form id="contact-form" class="contact-form" novalidate data-sending="Mengirim…" data-send="Kirim pertanyaan" data-invalid="Periksa kolom wajib dan format email jika diisi." data-error="Pertanyaan tidak dapat dikirim. Teks Anda tetap tersimpan di halaman ini. Coba lagi." data-limited="Terlalu banyak pertanyaan. Tunggu sebentar lalu coba lagi." data-conflict="Referensi ini sudah dipakai untuk isi yang berbeda. Ubah pesan lalu coba lagi." aria-labelledby="contact-title" hidden>
-      <p class="contact-notice">Jangan sertakan kata sandi, kunci API, kode penyandingan, atau berkas proyek pribadi. Lampiran tidak diterima.</p>
+      <p class="contact-notice">Jangan masukkan nama, nomor telepon, alamat atau data pribadi lain dalam pesan. Jangan kirim kata sandi, kunci API, kode penyandingan atau berkas pribadi. Lampiran tidak diterima.</p>
       <div class="field category-picker">
         <label id="category-label">Kategori <span class="field-required">Wajib</span></label>
         <button id="category-trigger" class="category-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="category-options" aria-labelledby="category-label category-value"><span id="category-value">Laporan bug</span><span aria-hidden="true">⌄</span></button>
@@ -63,9 +63,9 @@
       </div>
       <div class="field" id="custom-category-field" hidden><label for="custom-category">Kategori Anda <span class="field-required">Wajib</span></label><input id="custom-category" name="customCategory" maxlength="80" autocomplete="off"></div>
       <div class="field"><label for="contact-message">Pesan <span class="field-required">Wajib</span></label><textarea id="contact-message" name="message" required minlength="10" maxlength="5000" rows="7" aria-describedby="message-hint"></textarea><span id="message-hint" class="field-hint">10–5.000 karakter. Sertakan langkah dan pesan kesalahan jika relevan.</span></div>
-      <div class="field"><label for="contact-email">Email balasan (opsional)</label><input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" aria-describedby="email-hint"><span id="email-hint" class="field-hint">Kosongkan jika tidak memerlukan balasan.</span></div>
+      <div class="field"><label for="contact-email">Email balasan (opsional)</label><input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" aria-describedby="email-hint"><span id="email-hint" class="field-hint">Hanya untuk membalas. Kosongkan jika tidak memerlukan balasan.</span></div>
       <div class="contact-honeypot" aria-hidden="true"><label for="contact-website">Website</label><input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
-      <div class="consent-field"><label><input type="checkbox" name="consent" required><span>Saya setuju pertanyaan ini disimpan dalam basis data dan diteruskan ke kanal Discord pribadi. Pertanyaan yang berusia lebih dari 90 hari dihapus secara terjadwal. Jika saya memberikan email, email tersebut digunakan untuk membalas. <a href="/id/privacy/">Kebijakan privasi</a></span></label></div>
+      <div class="consent-field"><label><input type="checkbox" name="consent" required><span>Saya setuju pertanyaan dan email opsional disimpan untuk penanganan dan balasan serta diteruskan sebagai notifikasi dukungan pribadi. Catatan basis data dihapus berkala setelah 90 hari. Lihat kebijakan untuk penyimpanan notifikasi. <a href="/id/privacy/">Kebijakan privasi</a></span></label></div>
       <p id="contact-status" class="contact-status" role="status" aria-live="polite" tabindex="-1" hidden></p>
       <button id="contact-submit" class="contact-submit" type="submit">Kirim pertanyaan<span aria-hidden="true">↗</span></button>
     </form>

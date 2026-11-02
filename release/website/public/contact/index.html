@@ -54,7 +54,7 @@
     </section>
     <noscript><div class="contact-notice"><p>Enable JavaScript to use this form. You can also report a problem on GitHub.</p><a href="https://github.com/andy5090/bibimer/issues">Open GitHub issues</a></div></noscript>
     <form id="contact-form" class="contact-form" novalidate data-sending="Sending…" data-send="Send inquiry" data-invalid="Check the required fields and enter a valid email if you provide one." data-error="We couldn’t send your inquiry. Your text is still here. Please try again." data-limited="Too many inquiries. Please wait a while and try again." data-conflict="This reference has already been used for different content. Edit the message and try again." aria-labelledby="contact-title" hidden>
-      <p class="contact-notice">Do not include passwords, API keys, pairing codes, or private project files. Attachments are not accepted.</p>
+      <p class="contact-notice">Do not put names, phone numbers, addresses or other personal information in the message. Do not send passwords, API keys, pairing codes or private project files. No attachments.</p>
       <div class="field category-picker">
         <label id="category-label">Category <span class="field-required">Required</span></label>
         <button id="category-trigger" class="category-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="category-options" aria-labelledby="category-label category-value"><span id="category-value">Bug report</span><span aria-hidden="true">⌄</span></button>
@@ -63,9 +63,9 @@
       </div>
       <div class="field" id="custom-category-field" hidden><label for="custom-category">Your category <span class="field-required">Required</span></label><input id="custom-category" name="customCategory" maxlength="80" autocomplete="off"></div>
       <div class="field"><label for="contact-message">Message <span class="field-required">Required</span></label><textarea id="contact-message" name="message" required minlength="10" maxlength="5000" rows="7" aria-describedby="message-hint"></textarea><span id="message-hint" class="field-hint">10–5,000 characters. Include the steps and error message, if relevant.</span></div>
-      <div class="field"><label for="contact-email">Reply email (optional)</label><input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" aria-describedby="email-hint"><span id="email-hint" class="field-hint">Leave this blank if you don’t need a reply.</span></div>
+      <div class="field"><label for="contact-email">Reply email (optional)</label><input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" aria-describedby="email-hint"><span id="email-hint" class="field-hint">Used only to reply. Leave blank if you do not need a reply.</span></div>
       <div class="contact-honeypot" aria-hidden="true"><label for="contact-website">Website</label><input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
-      <div class="consent-field"><label><input type="checkbox" name="consent" required><span>I agree to database storage of this inquiry and forwarding to a private Discord channel. Inquiries older than 90 days are deleted by scheduled cleanup. If I provide an email, it will be used to reply. <a href="/privacy/">Privacy policy</a></span></label></div>
+      <div class="consent-field"><label><input type="checkbox" name="consent" required><span>I agree to storing this inquiry and my optional email to handle and reply to it, and forwarding a private support notification. Inquiry database records are regularly deleted after 90 days. See the privacy policy for notification retention. <a href="/privacy/">Privacy policy</a></span></label></div>
       <p id="contact-status" class="contact-status" role="status" aria-live="polite" tabindex="-1" hidden></p>
       <button id="contact-submit" class="contact-submit" type="submit">Send inquiry<span aria-hidden="true">↗</span></button>
     </form>

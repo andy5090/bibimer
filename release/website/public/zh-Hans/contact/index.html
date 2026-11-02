@@ -54,7 +54,7 @@
     </section>
     <noscript><div class="contact-notice"><p>请启用 JavaScript 以使用此表单，也可在 GitHub 上报告问题。</p><a href="https://github.com/andy5090/bibimer/issues">打开 GitHub 问题页面</a></div></noscript>
     <form id="contact-form" class="contact-form" novalidate data-sending="发送中…" data-send="发送咨询" data-invalid="请检查必填项；如填写邮箱，请确认格式正确。" data-error="发送失败，已保留您填写的内容。请重试。" data-limited="咨询过于频繁，请稍后重试。" data-conflict="此编号已用于其他内容，请修改内容后重试。" aria-labelledby="contact-title" hidden>
-      <p class="contact-notice">请勿提交密码、API 密钥、配对码或私人项目文件。不支持附件。</p>
+      <p class="contact-notice">请勿在正文中填写姓名、电话、地址等个人信息，也不要提交密码、API密钥、配对码或私人项目文件。不支持附件。</p>
       <div class="field category-picker">
         <label id="category-label">咨询类别 <span class="field-required">必填</span></label>
         <button id="category-trigger" class="category-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="category-options" aria-labelledby="category-label category-value"><span id="category-value">错误报告</span><span aria-hidden="true">⌄</span></button>
@@ -63,9 +63,9 @@
       </div>
       <div class="field" id="custom-category-field" hidden><label for="custom-category">自定义类别 <span class="field-required">必填</span></label><input id="custom-category" name="customCategory" maxlength="80" autocomplete="off"></div>
       <div class="field"><label for="contact-message">内容 <span class="field-required">必填</span></label><textarea id="contact-message" name="message" required minlength="10" maxlength="5000" rows="7" aria-describedby="message-hint"></textarea><span id="message-hint" class="field-hint">10–5,000 个字符。如有需要，请说明操作步骤和错误信息。</span></div>
-      <div class="field"><label for="contact-email">回复邮箱（可选）</label><input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" aria-describedby="email-hint"><span id="email-hint" class="field-hint">如不需要回复，可留空。</span></div>
+      <div class="field"><label for="contact-email">回复邮箱（可选）</label><input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" aria-describedby="email-hint"><span id="email-hint" class="field-hint">仅用于回复。如无需回复，可留空。</span></div>
       <div class="contact-honeypot" aria-hidden="true"><label for="contact-website">Website</label><input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
-      <div class="consent-field"><label><input type="checkbox" name="consent" required><span>我同意将咨询内容保存于数据库并转发至私人 Discord 频道。超过 90 天的咨询将定期删除。如提供邮箱，将用于回复。 <a href="/zh-Hans/privacy/">隐私政策</a></span></label></div>
+      <div class="consent-field"><label><input type="checkbox" name="consent" required><span>我同意为处理和回复咨询而保存内容和可选邮箱，并转发私人支持通知。咨询数据库记录在提交满90天后定期删除。通知保留范围请参阅隐私政策。 <a href="/zh-Hans/privacy/">隐私政策</a></span></label></div>
       <p id="contact-status" class="contact-status" role="status" aria-live="polite" tabindex="-1" hidden></p>
       <button id="contact-submit" class="contact-submit" type="submit">发送咨询<span aria-hidden="true">↗</span></button>
     </form>

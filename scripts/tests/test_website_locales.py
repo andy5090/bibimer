@@ -87,7 +87,9 @@ class WebsiteLocalesTests(unittest.TestCase):
                     if suffix == 'privacy/':
                         counts = Counter(t for t, _ in page.tags)
                         self.assertEqual(counts['h3'], 8)
-                        self.assertEqual(counts['li'], 3)
+                        self.assertEqual(counts['h4'], 1)
+                        self.assertEqual(counts['ol'], 0)
+                        self.assertIn('90', (ROOT / ('' if locale == 'en' else locale) / 'privacy/index.html').read_text())
                         self.assertIn('data-deletion', ids)
                         self.assertEqual(counts['p'], Counter(t for t, _ in Page(ROOT / 'privacy/index.html').tags)['p'])
 

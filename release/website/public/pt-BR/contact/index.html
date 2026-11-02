@@ -54,7 +54,7 @@
     </section>
     <noscript><div class="contact-notice"><p>Ative o JavaScript para usar o formulário. Você também pode relatar problemas no GitHub.</p><a href="https://github.com/andy5090/bibimer/issues">Abrir issues no GitHub</a></div></noscript>
     <form id="contact-form" class="contact-form" novalidate data-sending="Enviando…" data-send="Enviar consulta" data-invalid="Confira os campos obrigatórios e o formato do e-mail, se informado." data-error="Não foi possível enviar. Seu texto foi mantido. Tente novamente." data-limited="Muitas consultas. Aguarde um pouco e tente novamente." data-conflict="Esta referência já foi usada com outro conteúdo. Edite a mensagem e tente novamente." aria-labelledby="contact-title" hidden>
-      <p class="contact-notice">Não inclua senhas, chaves de API, códigos de pareamento ou arquivos privados. Não aceitamos anexos.</p>
+      <p class="contact-notice">Não inclua nomes, telefones, endereços ou outros dados pessoais na mensagem. Não envie senhas, chaves de API, códigos de pareamento ou arquivos privados. Não aceitamos anexos.</p>
       <div class="field category-picker">
         <label id="category-label">Categoria <span class="field-required">Obrigatório</span></label>
         <button id="category-trigger" class="category-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="category-options" aria-labelledby="category-label category-value"><span id="category-value">Relatar um erro</span><span aria-hidden="true">⌄</span></button>
@@ -63,9 +63,9 @@
       </div>
       <div class="field" id="custom-category-field" hidden><label for="custom-category">Sua categoria <span class="field-required">Obrigatório</span></label><input id="custom-category" name="customCategory" maxlength="80" autocomplete="off"></div>
       <div class="field"><label for="contact-message">Mensagem <span class="field-required">Obrigatório</span></label><textarea id="contact-message" name="message" required minlength="10" maxlength="5000" rows="7" aria-describedby="message-hint"></textarea><span id="message-hint" class="field-hint">De 10 a 5.000 caracteres. Inclua os passos e a mensagem de erro, se necessário.</span></div>
-      <div class="field"><label for="contact-email">E-mail para resposta (opcional)</label><input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" aria-describedby="email-hint"><span id="email-hint" class="field-hint">Deixe em branco se não precisar de resposta.</span></div>
+      <div class="field"><label for="contact-email">E-mail para resposta (opcional)</label><input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" aria-describedby="email-hint"><span id="email-hint" class="field-hint">Usado apenas para responder. Deixe em branco se não precisar de resposta.</span></div>
       <div class="contact-honeypot" aria-hidden="true"><label for="contact-website">Website</label><input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
-      <div class="consent-field"><label><input type="checkbox" name="consent" required><span>Concordo com o armazenamento da consulta em um banco de dados e o envio a um canal privado do Discord. Consultas com mais de 90 dias são excluídas periodicamente. Se eu informar um e-mail, ele será usado para responder. <a href="/pt-BR/privacy/">Política de privacidade</a></span></label></div>
+      <div class="consent-field"><label><input type="checkbox" name="consent" required><span>Concordo com o armazenamento da consulta e do e-mail opcional para tratamento e resposta e com o envio de uma notificação privada de suporte. Os registros da base são excluídos periodicamente após 90 dias. Consulte a política para a retenção das notificações. <a href="/pt-BR/privacy/">Política de privacidade</a></span></label></div>
       <p id="contact-status" class="contact-status" role="status" aria-live="polite" tabindex="-1" hidden></p>
       <button id="contact-submit" class="contact-submit" type="submit">Enviar consulta<span aria-hidden="true">↗</span></button>
     </form>

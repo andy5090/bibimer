@@ -54,7 +54,7 @@
     </section>
     <noscript><div class="contact-notice"><p>フォームを使用するにはJavaScriptを有効にしてください。GitHubでも問題を報告できます。</p><a href="https://github.com/andy5090/bibimer/issues">GitHubのIssueを開く</a></div></noscript>
     <form id="contact-form" class="contact-form" novalidate data-sending="送信中…" data-send="送信する" data-invalid="必須項目と、入力したメールアドレスの形式をご確認ください。" data-error="送信できませんでした。入力内容は保持されています。もう一度お試しください。" data-limited="お問い合わせが多すぎます。しばらくしてからお試しください。" data-conflict="この受付番号は別の内容に使用されています。内容を編集して再送信してください。" aria-labelledby="contact-title" hidden>
-      <p class="contact-notice">パスワード、APIキー、ペアリングコード、非公開のプロジェクトファイルは送信しないでください。添付ファイルは受け付けていません。</p>
+      <p class="contact-notice">本文に氏名、電話番号、住所などの個人情報を入力しないでください。パスワード、APIキー、ペアリングコード、非公開ファイルも送信しないでください。添付は受け付けません。</p>
       <div class="field category-picker">
         <label id="category-label">お問い合わせの種類 <span class="field-required">必須</span></label>
         <button id="category-trigger" class="category-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="category-options" aria-labelledby="category-label category-value"><span id="category-value">不具合の報告</span><span aria-hidden="true">⌄</span></button>
@@ -63,9 +63,9 @@
       </div>
       <div class="field" id="custom-category-field" hidden><label for="custom-category">種類を入力 <span class="field-required">必須</span></label><input id="custom-category" name="customCategory" maxlength="80" autocomplete="off"></div>
       <div class="field"><label for="contact-message">内容 <span class="field-required">必須</span></label><textarea id="contact-message" name="message" required minlength="10" maxlength="5000" rows="7" aria-describedby="message-hint"></textarea><span id="message-hint" class="field-hint">10〜5,000文字。必要に応じて操作手順とエラーメッセージをご記入ください。</span></div>
-      <div class="field"><label for="contact-email">返信先メールアドレス（任意）</label><input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" aria-describedby="email-hint"><span id="email-hint" class="field-hint">返信が不要な場合は空欄にしてください。</span></div>
+      <div class="field"><label for="contact-email">返信先メールアドレス（任意）</label><input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" aria-describedby="email-hint"><span id="email-hint" class="field-hint">返信にのみ使用します。返信が不要な場合は空欄にしてください。</span></div>
       <div class="contact-honeypot" aria-hidden="true"><label for="contact-website">Website</label><input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
-      <div class="consent-field"><label><input type="checkbox" name="consent" required><span>お問い合わせをデータベースに保存し、非公開のDiscordチャンネルに転送することに同意します。90日を過ぎたお問い合わせは定期的に削除されます。メールアドレスを入力した場合、返信に使用されます。 <a href="/ja/privacy/">プライバシーポリシー</a></span></label></div>
+      <div class="consent-field"><label><input type="checkbox" name="consent" required><span>問い合わせ処理と返信のため、本文と任意のメールを保存し、非公開サポート通知に転送することに同意します。データベースの記録は90日経過後に定期削除します。通知の保管範囲はプライバシーポリシーをご確認ください。 <a href="/ja/privacy/">プライバシーポリシー</a></span></label></div>
       <p id="contact-status" class="contact-status" role="status" aria-live="polite" tabindex="-1" hidden></p>
       <button id="contact-submit" class="contact-submit" type="submit">送信する<span aria-hidden="true">↗</span></button>
     </form>
