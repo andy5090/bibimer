@@ -1,4 +1,7 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="#FFFFFFFF" android:pathData="M4,5L12,12L4,19L2,17L8,12L2,7ZM12,17H22V20H12Z" />
+    android:width="24dp" android:height="24dp" android:viewportWidth="72" android:viewportHeight="72">
+    <!-- Center the launcher symbol with notification-sized padding and a solid alpha mask. -->
+    <group android:translateX="-17.5" android:translateY="-18">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M27,25h10v58H27zM43,25h18l19,15 -19,15H43V44h14l7,-4 -7,-5H43zM43,54h18l19,14 -19,15H43V72h14l7,-4 -7,-4H43z" />
+    </group>
 </vector>
