@@ -12,9 +12,9 @@
 
 `contact-locales.json`과 `python3 scripts/build_website_contact.py`로10개정적문의페이지를 생성한다. 공통 `assets/contact.js`/`contact.css`와자체접근성선택기를 사용한다. 별도 제목 입력은 받지 않으며 기존 DB의 제목 칸은 본문 앞부분으로 자동 채운다. 이전 클라이언트가 보낸 제목도 받아 기존 재시도와 호환한다. 서버는 `functions/api/contact.js`, D1스키마는 `migrations/0001_contact_inquiries.sql`, Pages설정은 `wrangler.toml`이다. DB binding은 `CONTACT_DB`이고 DB는 `bibimer-contact`다. 웹훅/남용방지키는 암호화된 Pages비밀설정 `DISCORD_WEBHOOK_URL`/`CONTACT_RATE_KEY`로만 주입한다. 값은 소스에 넣지 않는다.
 
-DB를 먼저 커밋한 뒤 접수번호를 반환하고Discord알림을시도한다. UUID/내용 기반중복방지·동일출처/16KB제한·IP의키기반해시당5건/시간·바인딩SQL·멘션차단을 제공한다. 연락처와내용을일반로그에남기지않는다. `notification_status`/`notification_attempts`/`notification_error`로전달실패를확인한다. Discord는최대2회만재시도하며네트워크불명시중복알림가능성이있다. DB저장은알림전달보장을뜻하지않는다. 긴Discord본문은잘라도DB에는전체본문을저장한다.
+DB를 먼저 커밋한 뒤 접수번호를 반환하고Discord알림을시도한다. UUID/내용 기반중복방지·동일출처/16KB제한·IP의키기반해시당5건/시간·바인딩SQL·멘션차단을 제공한다. 연락처와내용을일반로그에남기지않는다. `notification_status`/`notification_attempts`/`notification_error`로전달실패를확인한다. Discord는429/서버오류응답에만최대2회시도하며네트워크/타임아웃처럼전달여부가불명확하면중복전송을피하기위해재시도하지않는다. DB저장은알림전달보장을뜻하지않는다. 긴Discord본문은잘라도DB에는전체본문을저장한다.
 
-`maintenance-worker.js` / `wrangler.maintenance.toml`의일일cron이90일지난DB행을정리한다(UTC03:17). 공개API/URL을제공하지않는다. Discord알림보관은별도운영자처리/삭제요청대상이다. 기존고객데이터가없는새DB에마이그레이션을적용했으며임의의다른DB는수정하지않았다.
+`maintenance-worker.js` / `wrangler.maintenance.toml`의매시간cron(매시17분)이90일지난DB행과추적된Discord알림을정리한다. 공개API/URL을제공하지않는다. Discord삭제실패시본문/이메일없는삭제식별자만유지해다음실행에서재시도한다. 기존고객데이터가없는새DB에마이그레이션을적용했으며임의의다른DB는수정하지않았다.
 
 검사:
 
@@ -48,6 +48,16 @@ FROM contact_inquiries ORDER BY created_at DESC LIMIT 20;
 개인정보삭제요청은접수번호로대상과요청자를확인하고D1행과해당Discord알림을각각정리한다. 공개조회/관리API는없다. 웹훅을바꾸면Pages비밀을갱신하고다시배포한다. 자동재전송관리화면은제공하지않으므로실패/pending은운영자가확인한다.
 
 최종배포 **https://0824d178.bibimer.pages.dev**.44공개리소스원본·보안헤더/404·API거절조건,실제공개양식의D1저장/Discord전송·동일UUID재전송중복없음을확인했다. 초기Workers미지원redirect옵션은수정·회귀검사·재배포후실제전송으로확인했다. 증빙 `dist/website-contact/`, 상세검증/한계는NEXT_SESSION.md를따른다. 시각판정94/pass. 아래는이전시점의변경기록이며‘문의폼없음’등은이번구성으로대체됐다.
+
+## Discord 문의 알림 90일 정리 배포 (2026-11-03)
+
+2026-11-02에새마이그레이션/API를배포했고, 11-03에Doppler `bibimer/prd`의 `DISCORD_WEBHOOK_URL`을Pages/정리Worker에동일하게연결했다. Pages `https://b3723536.bibimer.pages.dev`, Worker버전 `c0d25793-5306-4114-b1c1-3b733582f41a`와매시17분cron배포를확인했다. 웹훅유효성HTTP200·로컬정리회귀는통과했으나실제만료메시지삭제는아직관찰하지않았다. 공개정책은아직변경하지않았다.
+
+새 알림의 `wait=true` 응답에서 메시지 ID만 읽어 `contact_discord_messages`에 메시지 ID·웹훅 ID·원래 문의 접수 시각을 저장한다. 본문·이메일·토큰은 이 정리 테이블에 저장하지 않는다. 문의 DB의 90일 정리와 별도로, 매시간 최대20개의 만료 메시지를 웹훅 DELETE API로 개별 삭제한다. 삭제 성공204 또는 Unknown Message10008 확인 뒤에만 식별자를 지운다. 네트워크/권한/호출제한/웹훅변경 실패는 식별자를 남기고 다음 실행에 재시도하며 cron을 실패로 표시한다. 원본 문의 DB는 이 실패와 관계없이 만료 정리한다.
+
+적용 순서: 새 마이그레이션 `0002_discord_retention.sql`을 D1에 적용 → 기존 Pages와 동일한 `DISCORD_WEBHOOK_URL`을 유지보수 Worker의 비밀 설정에도 주입 → Pages API와 유지보수 Worker 배포 → 격리된 테스트 메시지로 실제 삭제를 확인한다. Worker 설정에 토큰을 넣거나 비밀 값을 출력하지 않는다. Pages에 저장한 비밀은 Worker로 자동 공유되지 않는다. 웹훅 교체 전 이전 웹훅 메시지를 정리해야 하며, 토큰을 잃으면 이 경로로 삭제할 수 없다.
+
+예전 알림은 메시지 ID를 저장하지 않았으므로 소급 삭제하지 않는다. 웹훅은 채널의 메시지 목록을 조회하는 기능을 제공하지 않는다. 기존 메시지는 Discord에서 별도 정리하거나 운영자가 확인한 메시지/웹훅 ID와 접수 시각을 정리 테이블에 등록해야 한다. 채널의 다른 메시지나 운영자의 답변은 자동 삭제하지 않는다. 전송 성공 응답 유실·ID 저장 실패는 자동 복구할 수 없어 문의 행의 `missing_message_id`/`message_tracking_failed` 또는 전달 불명 상태를 확인해 별도 정리한다. 실제 배포·정리 확인 전 공개 정책의 기존 보관 안내는 변경하지 않는다.
 
 ## 언어별 단어·어절 줄바꿈 적용 (2026-10-18)
 

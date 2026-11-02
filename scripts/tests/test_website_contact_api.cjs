@@ -8,7 +8,7 @@ const { webcrypto, randomUUID } = require("node:crypto");
 
 const root = path.join(__dirname, "../..");
 const source = fs.readFileSync(path.join(root, "release/website/functions/api/contact.js"), "utf8");
-const migration = fs.readFileSync(path.join(root, "release/website/migrations/0001_contact_inquiries.sql"), "utf8");
+const migration = ["0001_contact_inquiries.sql", "0002_discord_retention.sql"].map(name => fs.readFileSync(path.join(root, "release/website/migrations", name), "utf8")).join("\n");
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), "bibimer-contact-api-"));
 const originalFetch = global.fetch;
 global.crypto ??= webcrypto;
@@ -54,6 +54,7 @@ function request(data, options = {}) {
 async function main() {
   const { onRequest, CONTACT_SQL } = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
   const webhookCalls = [];
+  let messageSequence = 123456789012345678n;
   function workersRequest(url, options) {
     if (![undefined, "manual", "follow"].includes(options.redirect)) {
       throw new TypeError("Unsupported redirect mode");
@@ -63,7 +64,7 @@ async function main() {
   global.fetch = async (url, options) => {
     workersRequest(url, options);
     webhookCalls.push({ url, options, body: JSON.parse(options.body) });
-    return new Response("{}", { status: 200 });
+    return new Response(JSON.stringify({id: String(messageSequence++)}), { status: 200 });
   };
   await assert.rejects(global.fetch("https://discord.com/api/webhooks/123456/test-token", {
     method: "POST", redirect: "error", body: "{}",
@@ -95,6 +96,12 @@ async function main() {
   assert.equal(saved[0].email, "reply@example.com");
   assert.equal(saved[0].notification_status, "sent");
   assert.equal(saved[0].notification_attempts, 1);
+  const tracked = python("import json,sqlite3,sys; x=json.load(sys.stdin); c=sqlite3.connect(x['file']); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute('SELECT * FROM contact_discord_messages')])); c.close()", {file: db.file});
+  assert.equal(tracked.length, 1);
+  assert.equal(tracked[0].message_id, "123456789012345678");
+  assert.equal(tracked[0].webhook_id, "123456");
+  assert.equal(tracked[0].created_at, saved[0].created_at);
+  assert.deepEqual(Object.keys(tracked[0]).sort(), ["created_at", "message_id", "webhook_id"]);
   assert.match(saved[0].rate_hash, /^[a-f0-9]{64}$/);
   assert.match(saved[0].content_hash, /^[a-f0-9]{64}$/);
   assert.ok(!JSON.stringify(saved).includes("192.0.2.5"));
@@ -290,9 +297,9 @@ c=sqlite3.connect(db); print(json.dumps({'count':c.execute('SELECT COUNT(*) FROM
     answer = await send(payload());
     assert.equal(answer.result.status, 202);
     assert.equal(rows(answer.env.CONTACT_DB)[0].notification_error, "timeout");
-    assert.equal(rows(answer.env.CONTACT_DB)[0].notification_attempts, 2);
+    assert.equal(rows(answer.env.CONTACT_DB)[0].notification_attempts, 1);
     let tries = 0;
-    global.fetch = async () => new Response("{}", { status: ++tries === 1 ? 503 : 200 });
+    global.fetch = async () => new Response(JSON.stringify({id: String(messageSequence++)}), { status: ++tries === 1 ? 503 : 200 });
     answer = await send(payload());
     assert.equal(rows(answer.env.CONTACT_DB)[0].notification_status, "sent");
     assert.equal(rows(answer.env.CONTACT_DB)[0].notification_attempts, 2);
@@ -304,7 +311,7 @@ c=sqlite3.connect(db); print(json.dumps({'count':c.execute('SELECT COUNT(*) FROM
     answer = await send(payload());
     assert.equal(answer.result.status, 202);
     assert.equal(rows(answer.env.CONTACT_DB)[0].notification_error, "network");
-    assert.equal(rows(answer.env.CONTACT_DB)[0].notification_attempts, 2);
+    assert.equal(rows(answer.env.CONTACT_DB)[0].notification_attempts, 1);
   } finally { global.setTimeout = oldTimeout; }
 
   // A successful webhook followed by a failed status write must never be resent.
@@ -314,11 +321,30 @@ c=sqlite3.connect(db); print(json.dumps({'count':c.execute('SELECT COUNT(*) FROM
     return deliveryDB.prepare(sql);
   } };
   let delivered = 0;
-  global.fetch = async () => { delivered += 1; return new Response("{}", { status: 200 }); };
+  global.fetch = async () => { delivered += 1; return new Response(JSON.stringify({id: String(messageSequence++)}), { status: 200 }); };
   answer = await send(payload(), { env: environment(statusFailureDB) });
   assert.equal(answer.result.status, 202);
   assert.equal(delivered, 1);
   assert.equal(rows(deliveryDB)[0].notification_status, "pending");
+
+  for (const body of ["{}", "not json", '{"id":"../bad"}']) {
+    let calls = 0;
+    global.fetch = async () => { calls++; return new Response(body, {status: 200}); };
+    const invalidResult = await send(payload());
+    assert.equal(calls, 1);
+    assert.equal(rows(invalidResult.env.CONTACT_DB)[0].notification_error, "missing_message_id");
+  }
+  const trackingDB = database();
+  let trackingCalls = 0;
+  global.fetch = async () => { trackingCalls++; return new Response('{"id":"123456789012345678"}', {status: 200}); };
+  const trackingFailure = {prepare(sql) {
+    if (sql === CONTACT_SQL.track) throw Error("private tracking storage failure");
+    return trackingDB.prepare(sql);
+  }};
+  await send(payload(), {env: environment(trackingFailure)});
+  assert.equal(trackingCalls, 1);
+  assert.equal(rows(trackingDB)[0].notification_error, "message_tracking_failed");
+  global.fetch = async () => new Response(JSON.stringify({id: String(messageSequence++)}), {status: 200});
 
   // Old inquiries are deleted opportunistically; current inquiries and rate indexes remain.
   const retentionDB = database();

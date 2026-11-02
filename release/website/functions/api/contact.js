@@ -19,6 +19,8 @@ export const CONTACT_SQL = Object.freeze({
   cleanup: "DELETE FROM contact_inquiries WHERE created_at < ?1",
   attempt: `UPDATE contact_inquiries SET notification_attempts = notification_attempts + 1,
     notification_status = 'pending', notification_error = NULL WHERE request_id = ?1`,
+  track: `INSERT INTO contact_discord_messages (message_id, webhook_id, created_at)
+    VALUES (?1, ?2, ?3)`,
   sent: `UPDATE contact_inquiries SET notification_status = 'sent', notification_error = NULL,
     notified_at = ?2 WHERE request_id = ?1`,
   failed: `UPDATE contact_inquiries SET notification_status = 'failed', notification_error = ?2
@@ -143,7 +145,7 @@ async function run(db, sql, ...args) {
   return result;
 }
 
-async function notify(db, data, rawURL) {
+async function notify(db, data, rawURL, createdAt) {
   const url = webhookURL(rawURL);
   if (!url) {
     await run(db, CONTACT_SQL.failed, data.requestId, rawURL ? "invalid_webhook" : "missing_webhook");
@@ -158,6 +160,7 @@ async function notify(db, data, rawURL) {
     let error = "network";
     let retry = true;
     let delivered = false;
+    let trackingError;
     let retryDelay = 1000;
     try {
       // Workers supports manual/follow only. Manual also keeps webhook tokens
@@ -165,11 +168,19 @@ async function notify(db, data, rawURL) {
       const result = await fetch(url, { method: "POST", redirect: "manual",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify(webhookBody(data)),
         signal: controller.signal });
-      // Never retain or log Discord's response body, webhook URL, or user content.
-      if (result.body) await result.body.cancel().catch(() => {});
       if (result.ok) {
+        // Only retain identifiers needed for deletion, never the response/content/token.
+        // A successful delivery must not be resent if parsing or storage fails.
         delivered = true;
+        let message;
+        try { message = await result.json(); } catch { message = null; }
+        if (!message || typeof message.id !== "string" || !/^\d{6,22}$/.test(message.id)) {
+          await run(db, CONTACT_SQL.failed, data.requestId, "missing_message_id");
+          return;
+        }
+        await run(db, CONTACT_SQL.track, message.id, new URL(url).pathname.split("/")[3], createdAt);
       } else {
+        if (result.body) await result.body.cancel().catch(() => {});
         error = `http_${result.status}`;
         retry = result.status === 429 || result.status >= 500;
         if (result.status === 429) {
@@ -180,8 +191,16 @@ async function notify(db, data, rawURL) {
           }
         }
       }
-    } catch { error = controller.signal.aborted ? "timeout" : "network"; }
+    } catch {
+      if (delivered) trackingError = true;
+      error = controller.signal.aborted ? "timeout" : "network";
+      retry = false;
+    }
     finally { clearTimeout(timeout); }
+    if (trackingError) {
+      await run(db, CONTACT_SQL.failed, data.requestId, "message_tracking_failed");
+      return;
+    }
     if (delivered) {
       // A failed status write must not trigger another Discord delivery.
       await run(db, CONTACT_SQL.sent, data.requestId, Date.now());
@@ -223,7 +242,7 @@ export async function onRequest(context) {
       return failure(429, "rate_limited", { "Retry-After": "3600" });
     }
     const background = Promise.allSettled([
-      notify(db, data, env.DISCORD_WEBHOOK_URL),
+      notify(db, data, env.DISCORD_WEBHOOK_URL, now),
       run(db, CONTACT_SQL.cleanup, now - RETENTION),
     ]);
     if (typeof context.waitUntil === "function") context.waitUntil(background);
