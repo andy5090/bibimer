@@ -55,6 +55,7 @@
   }
   let languagePreference = "system";
   let enterBehavior = environment().enterBehavior === "send" ? "send" : "newline";
+  let responseDelivery = environment().responseDelivery === "steer" ? "steer" : "queue";
   let contextDisplay = environment().contextDisplay === "remaining" ? "remaining" : "used";
   const permissionModes = {codex:["inherit","read-only","workspace-write","yolo"],
     claude:["inherit","default","acceptEdits","plan","bypassPermissions"], opencode:["inherit","ask","allow"]};
@@ -83,6 +84,7 @@
   term.loadAddon(fit);
   term.open($("terminal"));
   let terminalCtrl = false, terminalAlt = false, terminalShift = false, terminalKeysContext = "";
+  let terminalFullscreen = false, terminalFullscreenContext = "";
   const sidebar = new BibimerSidebar(t, {
     refresh:refreshSidebar, manage:openSessionActions, manageProject:openProjectSettings,
     moveProject:(id, position) => manageProject(id, "move_to", position),
@@ -884,6 +886,7 @@
     pickers.close();
     sidebar.close();
     currentTab = name;
+    updateTerminalFullscreen();
     updateTerminalKeys();
     updateBackState();
     for (const page of ["work", "setup", "settings"]) {
@@ -1198,13 +1201,7 @@
       !online || !session || session.kind === "browser" || session.state !== "running" || (isChat() && !session.ready);
     $("input-form").hidden = !chatDisplay;
     const responding = isChat() && !["ready", "failed"].includes(session.turn_state);
-    const enqueue = isChat() && canQueue && (responding || session.queued_count > 0);
-    const steerable = isChat() && supportsSteer() && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state);
-    $("send").textContent = t(enqueue ? "queue_send" : "send");
-    $("send").disabled = $("input").disabled || settingsBusy || sending.has(session?.id) || (responding && !canQueue) ||
-      (newChat && (!canInitialMessage || $("launch").disabled));
-    $("steer").hidden = !steerable;
-    $("steer").disabled = $("input").disabled || settingsBusy || sending.has(session?.id);
+    renderSendAction();
     $("delivery-warning").hidden = !isChat() || !responding || canQueue;
     $("delivery-hint").textContent = t(!canQueue ? "delivery_update" : (supportsSteer() ? "delivery_steer" : "delivery_queue") + (canBatchQueue ? "_batch" : ""));
     renderQueue(); commands.render(); renderHandoff();
@@ -1219,6 +1216,7 @@
     void refreshProjectWorktrees(project);
     renderSessionActions(); renderProjectSettings(); renderSidebar();
     updateTerminalKeys();
+    updateTerminalFullscreen();
     $("terminal-empty").hidden = !!session;
     $("terminal-area").hidden = chatDisplay;
     $("terminal-keys").hidden = chatDisplay || session?.kind === "browser";
@@ -1534,12 +1532,30 @@
     finally { sending.delete(id); renderSession(); }
   }
   $("queue-resume").addEventListener("click", () => changeQueue(session?.id, "resume"));
-  $("input-form").addEventListener("submit", event => { event.preventDefault(); submitInput(false); });
-  $("steer").addEventListener("click", () => submitInput(true));
-  async function submitInput(steer) {
+  function preferredInputSteer() {
+    return responseDelivery === "steer" && isChat() && supportsSteer() && !!session.active_turn_id &&
+      ["running", "waiting"].includes(session.turn_state) && !$("input").value.trimStart().startsWith("/");
+  }
+  function renderSendAction() {
+    const active = isChat() && !["ready", "failed"].includes(session.turn_state);
+    const primarySteer = preferredInputSteer();
+    const enqueue = isChat() && canQueue && (active || session.queued_count > 0);
+    const newChat = !session && supportsChat() && $("mode").value === "chat";
+    const blocked = $("input").disabled || settingsBusy || sending.has(session?.id);
+    $("send").textContent = t(primarySteer ? "steer" : enqueue ? "queue_send" : "send");
+    $("send").disabled = blocked || (active && !canQueue && !primarySteer) ||
+      (newChat && (!canInitialMessage || $("launch").disabled));
+    $("steer").hidden = !(isChat() && supportsSteer() && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state));
+    $("steer").textContent = t(primarySteer ? "queue_send" : "steer");
+    $("steer").dataset.i18n = primarySteer ? "queue_send" : "steer";
+    $("steer").disabled = blocked || (primarySteer && !canQueue);
+  }
+  $("input-form").addEventListener("submit", event => { event.preventDefault(); submitInput(preferredInputSteer(), "send"); });
+  $("steer").addEventListener("click", () => submitInput(!preferredInputSteer(), "steer"));
+  async function submitInput(steer, source = "send") {
     const text = $("input").value;
-    if (!text.trim() || sending.has(session?.id) || $(steer ? "steer" : "send").disabled) return;
-    if (steer && $("steer").hidden) return;
+    if (!text.trim() || sending.has(session?.id) || $(source).disabled) return;
+    if (source === "steer" && $("steer").hidden) return;
     if (!session) { if (!steer) await launchSession(text); return; }
     const id = session.id, key = viewKey();
     const turn = session.active_turn_id;
@@ -1577,7 +1593,7 @@
     if (width !== composerWidth) { composerWidth = width; resizeInput(); }
   }).observe($("input-form"));
   matchMedia("(min-width:700px) and (min-height:650px)").addEventListener("change", resizeInput);
-  $("input").addEventListener("input", () => { resizeInput(); rememberView(); });
+  $("input").addEventListener("input", () => { resizeInput(); rememberView(); renderSendAction(); });
   let composing = false;
   $("input").addEventListener("compositionstart", () => { composing = true; });
   $("input").addEventListener("compositionend", () => { composing = false; });
@@ -2120,7 +2136,28 @@
       } else { if (!native.startAgentAction) throw new Error(); native.startAgentAction(button.dataset.agent, button.dataset.agentAction); }
     } catch (_) { window.BibimerAgentActionStatus(button.dataset.agent, "quick_start_failed"); }
   });
-  const keys = {escape:"\x1b", tab:"\t", up:"\x1b[A", down:"\x1b[B", left:"\x1b[D", right:"\x1b[C", enter:"\r",
+  function updateTerminalFullscreen() {
+    const eligible = currentTab === "work" && !!session && !isChat() && session.kind !== "browser";
+    const context = JSON.stringify([instance, projectKey(), session?.id]);
+    if (!eligible || context !== terminalFullscreenContext) terminalFullscreen = false;
+    terminalFullscreenContext = context;
+    $("app").classList.toggle("terminal-fullscreen", terminalFullscreen);
+    const button = $("terminal-fullscreen-toggle");
+    button.hidden = !eligible;
+    button.setAttribute("aria-pressed", String(terminalFullscreen));
+    const label = terminalFullscreen ? "terminal_fullscreen_exit" : "terminal_fullscreen_enter";
+    button.setAttribute("data-i18n-aria-label", label);
+    button.setAttribute("aria-label", t(label));
+    updateBackState();
+  }
+  function setTerminalFullscreen(expanded) {
+    terminalFullscreen = expanded;
+    updateTerminalFullscreen();
+    setTimeout(resize, 30);
+  }
+  $("terminal-fullscreen-toggle").addEventListener("pointerdown", event => event.preventDefault());
+  $("terminal-fullscreen-toggle").addEventListener("click", () => setTerminalFullscreen(!terminalFullscreen));
+  const keys = {escape:"\x1b", pageup:"\x1b[5~", pagedown:"\x1b[6~", tab:"\t", up:"\x1b[A", down:"\x1b[B", left:"\x1b[D", right:"\x1b[C", enter:"\r",
     f1:"\x1bOP", f2:"\x1bOQ", f3:"\x1bOR", f4:"\x1bOS", f5:"\x1b[15~", f6:"\x1b[17~", f7:"\x1b[18~", f8:"\x1b[19~", f9:"\x1b[20~", f10:"\x1b[21~", f11:"\x1b[23~", f12:"\x1b[24~"};
   function terminalKeysEnabled() {
     return online && !paused && !switchingProject && currentTab === "work" && session?.state === "running" && !isChat() && session.kind !== "browser";
@@ -2319,6 +2356,8 @@
     finally { notificationNavigating = false; notificationRetry = setTimeout(window.BibimerOpenNotification, 500); }
   };
   function renderInputPreferences() {
+    $("response-delivery").value = responseDelivery;
+    $("response-delivery").disabled = !native.setResponseDelivery;
     $("enter-behavior").value = enterBehavior;
     $("enter-behavior-hint").textContent = t("enter_" + enterBehavior + "_hint");
     $("input").setAttribute("enterkeyhint", enterBehavior === "send" ? "send" : "enter");
@@ -2335,6 +2374,15 @@
       if (noticeData?.key === "enter_save_failed") notice("");
     } catch (_) { notice("enter_save_failed"); }
     renderInputPreferences();
+  });
+  $("response-delivery").addEventListener("change", () => {
+    const value = $("response-delivery").value;
+    try {
+      if (!["queue", "steer"].includes(value) || !native.setResponseDelivery?.(value)) throw new Error();
+      responseDelivery = value;
+      if (noticeData?.key === "response_delivery_save_failed") notice("");
+    } catch (_) { notice("response_delivery_save_failed"); }
+    renderInputPreferences(); renderSession();
   });
   $("context-display").addEventListener("change", () => {
     const value = $("context-display").value;
@@ -2375,6 +2423,7 @@
     paused = false;
     const env = environment();
     enterBehavior = env.enterBehavior === "send" ? "send" : "newline";
+    responseDelivery = env.responseDelivery === "steer" ? "steer" : "queue";
     contextDisplay = env.contextDisplay === "remaining" ? "remaining" : "used";
     refreshLanguage(true); connect();
   };
@@ -2387,10 +2436,11 @@
     }
     if (document.querySelector(".context-usage[open]")) { closeUsageDetails(); return true; }
     if (!$("commands").hidden && currentTab === "work") { commands.dismiss(); return true; }
+    if (terminalFullscreen) { setTerminalFullscreen(false); return true; }
     if (currentTab !== "work") { tab("work"); return true; }
     return false;
   };
-  function updateBackState() { native.setBackHandling?.(currentTab !== "work" || !$("commands").hidden || !!document.querySelector("dialog[open]:not(.docked), .context-usage[open]")); }
+  function updateBackState() { native.setBackHandling?.(terminalFullscreen || currentTab !== "work" || !$("commands").hidden || !!document.querySelector("dialog[open]:not(.docked), .context-usage[open]")); }
   const backObserver = new MutationObserver(updateBackState);
   backObserver.observe($("commands"), {attributes:true, attributeFilter:["hidden"]});
   for (const dialog of document.querySelectorAll("dialog")) backObserver.observe(dialog, {attributes:true, attributeFilter:["open"]});

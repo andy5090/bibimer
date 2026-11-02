@@ -9,7 +9,7 @@ function node(id, dataset = {}) {
     addEventListener(name, listener) { this.listeners[name] = listener; }};
   nodes.set(id, value); return value;
 }
-for (const key of ["escape", "tab", "up", "down", "left", "right", "enter", ...Array.from({length: 12}, (_, i) => "f" + (i + 1))]) node(key, {key});
+for (const key of ["escape", "tab", "pageup", "pagedown", "up", "down", "left", "right", "enter", ...Array.from({length: 12}, (_, i) => "f" + (i + 1))]) node(key, {key});
 node("ctrl", {modifier: "ctrl"}); node("alt", {modifier: "alt"}); node("shift", {modifier: "shift"});
 node("terminal-function-keys"); node("terminal-functions-toggle"); node("terminal-keys").scrollIntoView = () => {};
 const buttons = [...nodes.values()].filter(value => value.dataset.key || value.dataset.modifier).concat(nodes.get("terminal-functions-toggle"));
@@ -24,7 +24,7 @@ const ctx = vm.createContext({$: id => nodes.get(id), online: true, paused: fals
 });
 vm.runInContext(source.slice(source.indexOf("  const keys = {escape:"), source.indexOf("  window.BibimerPause =")), ctx);
 const encode = ctx.modifiedTerminalData, esc = "\x1b";
-for (const [key, expected] of Object.entries({up: "[A", down: "[B", left: "[D", right: "[C", f1: "OP", f2: "OQ", f3: "OR", f4: "OS", f5: "[15~", f6: "[17~", f7: "[18~", f8: "[19~", f9: "[20~", f10: "[21~", f11: "[23~", f12: "[24~"})) {
+for (const [key, expected] of Object.entries({pageup: "[5~", pagedown: "[6~", up: "[A", down: "[B", left: "[D", right: "[C", f1: "OP", f2: "OQ", f3: "OR", f4: "OS", f5: "[15~", f6: "[17~", f7: "[18~", f8: "[19~", f9: "[20~", f10: "[21~", f11: "[23~", f12: "[24~"})) {
   vm.runInContext("updateTerminalKeys()", ctx); nodes.get(key).listeners.click();
   assert.equal(ctx.sent.pop(), esc + expected, key);
 }
@@ -33,8 +33,8 @@ for (const [input, expected] of [["c", "\x03"], ["C", "\x03"], [" ", "\x00"], ["
 }
 assert.equal(encode("c", true, true), esc + "\x03");
 assert.equal(encode("x", false, true), esc + "x");
-for (const sequence of ["[A", "OD", "OP", "[24~"]) {
-  const [prefix, tail] = sequence.startsWith("[24") ? ["[24;", "~"] : ["[1;", sequence.at(-1)];
+for (const sequence of ["[A", "OD", "OP", "[24~", "[5~", "[6~"]) {
+  const [prefix, tail] = sequence.endsWith("~") ? [sequence.slice(0,-1) + ";", "~"] : ["[1;", sequence.at(-1)];
   for (const [ctrl, alt, param] of [[false, true, 3], [true, false, 5], [true, true, 7]]) {
     assert.equal(encode(esc + sequence, ctrl, alt), esc + prefix + param + tail);
   }

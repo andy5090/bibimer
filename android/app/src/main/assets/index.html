@@ -66,7 +66,7 @@
         <button id="session-more" class="icon-button" type="button" aria-label="Session actions" data-i18n-aria-label="session_actions" aria-haspopup="dialog">⋯</button>
       </div>
       <button id="project-update" class="quiet" data-i18n="projects_update" hidden>Update the bridge to use multiple projects</button>
-      <div class="session-bar"><span id="session-title"></span><span id="process" class="badge">Not started</span></div>
+      <div class="session-bar"><span id="session-title"></span><span id="process" class="badge">Not started</span><button id="terminal-fullscreen-toggle" class="icon-button" type="button" aria-label="Expand terminal" data-i18n-aria-label="terminal_fullscreen_enter" aria-pressed="false" aria-controls="workspace" hidden><svg class="fullscreen-enter-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg><svg class="fullscreen-exit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h5V3M16 3v5h5M8 21v-5H3M21 16h-5v5"/></svg></button></div>
       <button id="handoff-source" class="quiet" type="button" hidden></button>
       <div id="launch-controls" class="launch-controls">
         <label for="agent" data-i18n="program_label">Agent to run</label>
@@ -108,6 +108,8 @@
             <button type="button" data-key="enter" aria-label="Enter">↵</button>
           </div>
           <div class="terminal-arrows">
+            <button type="button" data-key="pageup" aria-label="Page up" data-i18n-aria-label="page_up">PgUp</button>
+            <button type="button" data-key="pagedown" aria-label="Page down" data-i18n-aria-label="page_down">PgDn</button>
             <button type="button" data-key="up" aria-label="Up arrow" data-i18n-aria-label="arrow_up">↑</button>
             <button type="button" data-key="left" aria-label="Left arrow" data-i18n-aria-label="arrow_left">←</button><button type="button" data-key="down" aria-label="Down arrow" data-i18n-aria-label="arrow_down">↓</button><button type="button" data-key="right" aria-label="Right arrow" data-i18n-aria-label="arrow_right">→</button>
           </div>
@@ -280,6 +282,10 @@
       </div>
       <p id="enter-behavior-hint" class="hint"></p>
       <p id="enter-modifiers-hint" class="hint" data-i18n="enter_modifiers_hint">With Enter set to New line, Ctrl+Enter sends or queues your message; with Enter set to Send, it inserts a new line. Shift+Enter always inserts a new line. Applies to the message box in Chat and Terminal.</p>
+      <div class="preference-row"><label for="response-delivery" data-i18n="response_delivery_label">Send while responding</label>
+        <select id="response-delivery" aria-describedby="response-delivery-hint"><option value="queue" data-i18n="queue_send">Queue</option><option value="steer" data-i18n="steer">Steer</option></select>
+      </div>
+      <p id="response-delivery-hint" class="hint" data-i18n="response_delivery_hint">Choose what Send and the send keyboard shortcut do during a response. Steer applies to supported agents and otherwise uses the queue. Native slash commands use the queue.</p>
     </section>
     <section class="card preference-card"><h2 data-i18n="connections_title">Agent accounts and providers</h2><p class="hint" data-i18n="connections_hint">View connections and versions, choose providers, and enter supported API keys here.</p><button id="agent-connections-open" type="button" class="secondary" data-i18n="connections_manage">Manage connections</button></section>
     <section id="browser-preference" class="card preference-card" hidden>

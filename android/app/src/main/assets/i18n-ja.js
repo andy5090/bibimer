@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "response_delivery_save_failed": "応答中の送信設定を保存できませんでした。",
+  "response_delivery_hint": "応答中の送信ボタンと送信ショートカットの既定の動作を選びます。方向修正が利用できない場合はキューに追加します。ネイティブのスラッシュコマンドはキューで処理します。",
+  "response_delivery_label": "応答中の送信方法",
+  "terminal_fullscreen_enter": "ターミナルを全画面表示",
+  "terminal_fullscreen_exit": "ターミナルを元のサイズに戻す",
+  "page_up": "前のページ",
+  "page_down": "次のページ",
+
   "connections_title": "エージェントのアカウントとプロバイダー",
   "connections_hint": "接続とバージョンの確認、プロバイダーの選択、対応するAPIキーの入力をここで行います。",
   "connections_manage": "接続を管理",
@@ -392,9 +400,9 @@ window.BibimerTranslations.ja = {
   enter_behavior_label: "Enter キー",
   enter_newline: "改行",
   enter_send: "送信",
-  enter_newline_hint: "既定では Enter で改行します。送信またはキューに追加ボタンでメッセージを送ってください。",
-  enter_send_hint: "Enter でメッセージを送信します。エージェントの応答中はキューに追加します。",
-  enter_modifiers_hint: "Enter が改行の場合、Ctrl+Enter で送信またはキューに追加します。Enter が送信の場合、Ctrl+Enter で改行します。Shift+Enter は常に改行します。チャットとターミナルのメッセージ入力欄に適用されます。",
+  "enter_newline_hint": "Enterは既定で改行します。送信ボタンまたは送信ショートカットで送信してください。",
+  "enter_send_hint": "Enterで送信します。応答中は選択した送信方法を使用します。",
+  "enter_modifiers_hint": "Enterが改行の場合はCtrl+Enterで送信し、送信の場合はCtrl+Enterで改行します。Shift+Enterは常に改行します。ターミナルへの直接入力は従来の動作を維持します。",
   enter_save_failed: "Enter キーの設定を保存できませんでした。以前の設定を維持しています。もう一度お試しください。",
   agent_settings: "セッション設定",
   settings_done: "完了",

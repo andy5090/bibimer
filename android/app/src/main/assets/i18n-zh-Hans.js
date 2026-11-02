@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "response_delivery_save_failed": "无法保存回复期间的发送设置。",
+  "response_delivery_hint": "选择回复期间发送按钮和发送快捷键的默认操作。无法使用方向调整时加入队列。原生斜杠命令使用队列。",
+  "response_delivery_label": "回复期间的发送操作",
+  "terminal_fullscreen_enter": "终端全屏",
+  "terminal_fullscreen_exit": "恢复终端大小",
+  "page_up": "向上翻页",
+  "page_down": "向下翻页",
+
   "connections_title": "代理账户与提供商",
   "connections_hint": "在此查看连接和版本、选择提供商并输入支持的 API 密钥。",
   "connections_manage": "管理连接",
@@ -392,9 +400,9 @@ window.BibimerTranslations["zh-Hans"] = {
   enter_behavior_label: "Enter 键",
   enter_newline: "换行",
   enter_send: "发送",
-  enter_newline_hint: "Enter 默认用于换行。请使用发送或加入队列按钮提交消息。",
-  enter_send_hint: "Enter 用于发送消息；智能体回复期间，会将消息加入队列。",
-  enter_modifiers_hint: "Enter 设为换行时，Ctrl+Enter 发送消息或将其加入队列；设为发送时，Ctrl+Enter 换行。Shift+Enter 始终换行。适用于聊天和终端模式中的消息输入框。",
+  "enter_newline_hint": "Enter 默认换行。请使用发送按钮或发送快捷键提交。",
+  "enter_send_hint": "Enter 提交消息，回复期间使用所选发送操作。",
+  "enter_modifiers_hint": "Enter 设为换行时，Ctrl+Enter 发送；设为发送时，Ctrl+Enter 换行。Shift+Enter 始终换行。终端直接输入保持原有行为。",
   enter_save_failed: "无法保存 Enter 键设置。原有设置仍然有效，请重试。",
   agent_settings: "会话设置",
   settings_done: "完成",

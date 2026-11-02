@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "response_delivery_save_failed": "Die Sendeeinstellung während einer Antwort konnte nicht gespeichert werden.",
+  "response_delivery_hint": "Wähle die Standardaktion der Sendetaste und des Sendekürzels während einer Antwort. Ist Steer nicht verfügbar, wird die Nachricht eingereiht. Native Slash-Befehle verwenden die Warteschlange.",
+  "response_delivery_label": "Senden während einer Antwort",
+  "terminal_fullscreen_enter": "Terminal vergrößern",
+  "terminal_fullscreen_exit": "Terminalgröße wiederherstellen",
+  "page_up": "Seite nach oben",
+  "page_down": "Seite nach unten",
+
   "connections_title": "Agent-Konten und Anbieter",
   "connections_hint": "Verbindungen und Versionen prüfen, Anbieter wählen und unterstützte API-Schlüssel hier eingeben.",
   "connections_manage": "Verbindungen verwalten",
@@ -392,9 +400,9 @@ window.BibimerTranslations.de = {
   "enter_behavior_label": "Eingabetaste",
   "enter_newline": "Neue Zeile",
   "enter_send": "Senden",
-  "enter_newline_hint": "Die Eingabetaste fügt standardmäßig eine neue Zeile ein. Verwende Senden oder Einreihen, um deine Nachricht zu übermitteln.",
-  "enter_send_hint": "Die Eingabetaste sendet deine Nachricht oder reiht sie ein, während der Agent antwortet.",
-  "enter_modifiers_hint": "Wenn die Eingabetaste auf Neue Zeile eingestellt ist, sendet Strg+Eingabe die Nachricht oder reiht sie ein; bei Senden fügt Strg+Eingabe eine neue Zeile ein. Umschalt+Eingabe fügt immer eine neue Zeile ein. Gilt für das Nachrichtenfeld in Chat und Terminal.",
+  "enter_newline_hint": "Enter fügt standardmäßig einen Zeilenumbruch ein. Sende mit der Schaltfläche oder dem Tastenkürzel.",
+  "enter_send_hint": "Enter sendet die Nachricht während einer Antwort mit der gewählten Aktion.",
+  "enter_modifiers_hint": "Ist Enter auf Zeilenumbruch gestellt, sendet Strg+Enter; ist Enter auf Senden gestellt, fügt Strg+Enter einen Zeilenumbruch ein. Umschalt+Enter fügt immer einen Zeilenumbruch ein. Die direkte Terminaleingabe bleibt unverändert.",
   "enter_save_failed": "Das Verhalten der Eingabetaste konnte nicht gespeichert werden. Deine vorherige Auswahl bleibt aktiv. Versuche es erneut.",
   "agent_settings": "Sitzungseinstellungen",
   "settings_done": "Fertig",

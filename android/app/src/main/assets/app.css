@@ -20,6 +20,8 @@
 #terminal-functions-toggle svg{width:12px;height:12px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 #terminal-functions-toggle[aria-expanded=true] svg{transform:rotate(180deg)}
 .terminal-arrows{display:grid;grid-template-columns:repeat(3,32px);grid-template-rows:repeat(2,32px);gap:4px}
+.terminal-arrows [data-key=pageup]{grid-column:1;grid-row:1}
+.terminal-arrows [data-key=pagedown]{grid-column:3;grid-row:1}
 .terminal-arrows [data-key=up]{grid-column:2;grid-row:1}
 .terminal-arrows [data-key=left]{grid-column:1;grid-row:2}
 .terminal-arrows [data-key=down]{grid-column:2;grid-row:2}
@@ -584,3 +586,19 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 #agent-connection-form>div{min-width:0}
 #agent-connection-job>button{margin-top:8px}
 #agent-connection-instructions{white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* Expand the existing terminal view without replacing its session or terminal instance. */
+.session-bar #session-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#terminal-fullscreen-toggle{flex:none;width:32px;min-height:32px;padding:5px;border:1px solid var(--line)}
+#terminal-fullscreen-toggle svg{width:20px;height:20px}
+#terminal-fullscreen-toggle .fullscreen-exit-icon{display:none}
+#terminal-fullscreen-toggle[aria-pressed=true] .fullscreen-enter-icon{display:none}
+#terminal-fullscreen-toggle[aria-pressed=true] .fullscreen-exit-icon{display:block}
+#app.terminal-fullscreen>.topbar,#app.terminal-fullscreen>#announcements,#app.terminal-fullscreen>.bottom-nav,
+#app.terminal-fullscreen>#demo-banner,#app.terminal-fullscreen>#sidebar.docked,#app.terminal-fullscreen>#inspector.docked{display:none}
+#app.terminal-fullscreen #work{position:fixed;inset:0;z-index:10;padding:6px 8px;background:var(--bg);overflow:hidden}
+#app.terminal-fullscreen #workspace{overflow:hidden}
+#app.terminal-fullscreen #workspace>:not(.session-bar):not(#terminal-area):not(#terminal-keys){display:none!important}
+#app.terminal-fullscreen .session-bar{margin-bottom:4px}
+#app.terminal-fullscreen #terminal-area{min-height:0}
+#app.terminal-fullscreen #terminal-keys{align-self:center}

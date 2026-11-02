@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.es = {
+  "response_delivery_save_failed": "No se pudo guardar la acción de envío durante la respuesta.",
+  "response_delivery_hint": "Elige la acción predeterminada del botón y del atajo de envío durante una respuesta. Si Steer no está disponible, se usa la cola. Los comandos nativos con barra usan la cola.",
+  "response_delivery_label": "Envío durante la respuesta",
+  "terminal_fullscreen_enter": "Ampliar terminal",
+  "terminal_fullscreen_exit": "Restaurar tamaño del terminal",
+  "page_up": "Página anterior",
+  "page_down": "Página siguiente",
+
   "connections_title": "Cuentas y proveedores de agentes",
   "connections_hint": "Consulta conexiones y versiones, elige proveedores e introduce claves de API compatibles aquí.",
   "connections_manage": "Gestionar conexiones",
@@ -392,9 +400,9 @@ window.BibimerTranslations.es = {
   enter_behavior_label: "Tecla Enter",
   enter_newline: "Nueva línea",
   enter_send: "Enviar",
-  enter_newline_hint: "Enter inserta una nueva línea de forma predeterminada. Usa Enviar o Añadir a la cola para enviar el mensaje.",
-  enter_send_hint: "Enter envía el mensaje o lo añade a la cola mientras el agente responde.",
-  enter_modifiers_hint: "Con Enter en Nueva línea, Ctrl+Enter envía o pone el mensaje en cola; con Enter en Enviar, inserta una nueva línea. Shift+Enter siempre inserta una nueva línea. Se aplica al cuadro de mensajes de Chat y Terminal.",
+  "enter_newline_hint": "Enter inserta una nueva línea de forma predeterminada. Usa el botón o el atajo de envío para enviar.",
+  "enter_send_hint": "Enter envía el mensaje con la acción seleccionada durante una respuesta.",
+  "enter_modifiers_hint": "Si Enter está en Nueva línea, Ctrl+Enter envía; si está en Enviar, Ctrl+Enter inserta una nueva línea. Shift+Enter siempre inserta una nueva línea. La entrada directa del terminal conserva su comportamiento original.",
   enter_save_failed: "No se pudo guardar el comportamiento de Enter. La opción anterior sigue activa. Vuelve a intentarlo.",
   agent_settings: "Ajustes de la sesión",
   settings_done: "Listo",

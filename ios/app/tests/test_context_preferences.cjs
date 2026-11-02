@@ -11,3 +11,11 @@ for(const value of [null,undefined,'','both','USED',0])assert.equal(context.wind
 assert.equal(posts.length,1);assert.equal(defaults.contextDisplay,'remaining');
 assert.equal(context.window.Bibimer.setContextDisplay('used'),true);assert.equal(defaults.contextDisplay,'used');
 console.log('iOS context preference: valid choices, native persistence message and rejected invalid values passed');
+assert.equal(context.window.Bibimer.setResponseDelivery('steer'),true);
+assert.equal(JSON.parse(context.window.Bibimer.environment()).responseDelivery,'steer');
+assert.equal(posts.at(-1).key,'responseDelivery');assert.equal(posts.at(-1).value,'steer');
+const beforeInvalid=posts.length;
+for(const value of [null,undefined,'','both','STEER',0])assert.equal(context.window.Bibimer.setResponseDelivery(value),false);
+assert.equal(posts.length,beforeInvalid);assert.equal(defaults.responseDelivery,'steer');
+assert.equal(context.window.Bibimer.setResponseDelivery('queue'),true);assert.equal(defaults.responseDelivery,'queue');
+console.log('iOS response delivery: validated queue/Steer choices and native persistence messages passed');

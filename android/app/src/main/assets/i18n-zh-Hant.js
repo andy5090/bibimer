@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "response_delivery_save_failed": "無法儲存回覆期間的傳送設定。",
+  "response_delivery_hint": "選擇回覆期間傳送按鈕與傳送快捷鍵的預設動作。無法使用方向調整時加入佇列。原生斜線指令使用佇列。",
+  "response_delivery_label": "回覆期間的傳送動作",
+  "terminal_fullscreen_enter": "終端機全螢幕",
+  "terminal_fullscreen_exit": "還原終端機大小",
+  "page_up": "向上翻頁",
+  "page_down": "向下翻頁",
+
   "connections_title": "代理程式帳戶與供應商",
   "connections_hint": "在此檢視連線和版本、選擇供應商並輸入支援的 API 金鑰。",
   "connections_manage": "管理連線",
@@ -392,9 +400,9 @@ window.BibimerTranslations["zh-Hant"] = {
   enter_behavior_label: "Enter 鍵",
   enter_newline: "換行",
   enter_send: "傳送",
-  enter_newline_hint: "Enter 預設用於換行。請使用傳送或加入佇列按鈕提交訊息。",
-  enter_send_hint: "Enter 用於傳送訊息；AI 代理回覆期間，會將訊息加入佇列。",
-  enter_modifiers_hint: "Enter 設為換行時，Ctrl+Enter 傳送訊息或將其加入佇列；設為傳送時，Ctrl+Enter 換行。Shift+Enter 始終換行。適用於聊天和終端機模式中的訊息輸入框。",
+  "enter_newline_hint": "Enter預設換行。請使用傳送按鈕或傳送快捷鍵送出。",
+  "enter_send_hint": "Enter送出訊息，回覆期間使用所選的傳送動作。",
+  "enter_modifiers_hint": "Enter設為換行時，Ctrl+Enter傳送；設為傳送時，Ctrl+Enter換行。Shift+Enter一律換行。終端機直接輸入維持原有行為。",
   enter_save_failed: "無法儲存 Enter 鍵設定。原有設定仍然有效，請重試。",
   agent_settings: "工作階段設定",
   settings_done: "完成",

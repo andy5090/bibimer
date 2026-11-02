@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "response_delivery_save_failed": "Pengaturan pengiriman saat respons berlangsung tidak dapat disimpan.",
+  "response_delivery_hint": "Pilih tindakan bawaan tombol dan pintasan kirim saat respons berlangsung. Jika Steer tidak tersedia, pesan masuk antrean. Perintah garis miring bawaan menggunakan antrean.",
+  "response_delivery_label": "Pengiriman saat respons berlangsung",
+  "terminal_fullscreen_enter": "Perbesar terminal",
+  "terminal_fullscreen_exit": "Kembalikan ukuran terminal",
+  "page_up": "Halaman atas",
+  "page_down": "Halaman bawah",
+
   "connections_title": "Akun dan penyedia agen",
   "connections_hint": "Lihat koneksi dan versi, pilih penyedia, dan masukkan kunci API yang didukung di sini.",
   "connections_manage": "Kelola koneksi",
@@ -392,9 +400,9 @@ window.BibimerTranslations.id = {
   enter_behavior_label: "Tombol Enter",
   enter_newline: "Baris baru",
   enter_send: "Kirim",
-  enter_newline_hint: "Secara bawaan, Enter menyisipkan baris baru. Gunakan Kirim atau Antrekan untuk mengirim pesan.",
-  enter_send_hint: "Enter mengirim pesan, atau memasukkannya ke antrean saat agen sedang merespons.",
-  enter_modifiers_hint: "Jika Enter diatur ke Baris baru, Ctrl+Enter mengirim atau mengantrekan pesan; jika diatur ke Kirim, Ctrl+Enter menyisipkan baris baru. Shift+Enter selalu menyisipkan baris baru. Berlaku untuk kotak pesan di Chat dan Terminal.",
+  "enter_newline_hint": "Secara bawaan, Enter menyisipkan baris baru. Gunakan tombol atau pintasan kirim untuk mengirim.",
+  "enter_send_hint": "Enter mengirim pesan dengan tindakan yang dipilih saat respons berlangsung.",
+  "enter_modifiers_hint": "Jika Enter diatur ke Baris baru, Ctrl+Enter mengirim; jika diatur ke Kirim, Ctrl+Enter menyisipkan baris baru. Shift+Enter selalu menyisipkan baris baru. Input terminal langsung tetap bekerja seperti semula.",
   enter_save_failed: "Tidak dapat menyimpan perilaku tombol Enter. Pilihan sebelumnya tetap aktif. Coba lagi.",
   agent_settings: "Pengaturan sesi",
   settings_done: "Selesai",

@@ -179,7 +179,7 @@ Android `ResponseNotificationService`는 UI와 별개 `LocalBridge`/TokenStore�
 - 0.2.1부터 재시작 직후 남은 마지막 세션의 `events` 조회는 종료·유실 상태와 빈 출력을 반환한다. 커서는 0으로 초기화되며 이전 커서가 전달되면 `gap`을 알린다. 이 기록에는 입력·종료 등의 조작을 허용하지 않으며 새 세션을 시작하면 이전 ID는 더 이상 조회하지 않는다. 종료 기록 조회가 연결 오류로 처리되어 새 세션 시작을 막는 문제를 방지한다.
 - 화면 비활성·Activity 파괴는 출력 폴링을 중단한다. 세션 종료 API를 호출하지 않는다.
 - 프로젝트·에이전트 전환 시 현재 폴링을 취소하고 요청 세대를 바꾼다. 지연된 출력·전송 응답이 다른 세션의 화면이나 입력을 변경하지 않게 확인한다. 프로젝트·에이전트별 입력 초안·프로그램 선택·질문 답변 초안은 화면 메모리에만 보관하며 앱 프로세스 종료 후에는 복원하지 않는다. 최근 출력과 대기열은 해당 세션의 브리지 메모리에서 다시 읽는다.
-- 앱의 별도 Settings 페이지는 연결 전에도 사용할 수 있다. Enter 설정은 `InputPreferences`가 Android `input` 환경 설정의 `enter_behavior`에 `newline` 또는 `send`로 저장하고 성공한 저장만 화면에 반영한다. 기본·알 수 없는 값은 `newline`이다. 네이티브 `environment().enterBehavior`와 검증된 `setEnterBehavior`로 연결하며 Chat/PTY 공통 입력창에만 적용한다. 줄바꿈 설정에서는 Ctrl+Enter로 전송/대기열 추가, 보내기 설정에서는 Ctrl+Enter로 줄바꿈하며 Shift/Meta/Alt+Enter는 항상 줄바꿈한다. IME 조합 중 전송과 키 반복 전송을 막는다. 프로젝트·세션·인증 토큰과 독립적이고 `enterkeyhint`도 선택에 맞춰 바뀐다.
+- 앱의 별도 Settings 페이지는 연결 전에도 사용할 수 있다. Enter 설정은 `InputPreferences`가 Android `input` 환경 설정의 `enter_behavior`에 `newline` 또는 `send`로 저장하고 성공한 저장만 화면에 반영한다. 기본·알 수 없는 값은 `newline`이다. 네이티브 `environment().enterBehavior`와 검증된 `setEnterBehavior`로 연결하며 Chat/PTY 공통 입력창에만 적용한다. 줄바꿈 설정에서는 Ctrl+Enter로 전송(응답 중에는 저장한 전송 동작 적용), 보내기 설정에서는 Ctrl+Enter로 줄바꿈하며 Shift/Meta/Alt+Enter는 항상 줄바꿈한다. IME 조합 중 전송과 키 반복 전송을 막는다. 프로젝트·세션·인증 토큰과 독립적이고 `enterkeyhint`도 선택에 맞춰 바뀐다.
 - 언어는 Settings에서 선택하며 Android의 별도 `appearance` 환경 설정에 저장한다. 기본은 영어이며 언어 전환은 화면 문구만 갱신한다. 인증 토큰 초기화와 언어 설정은 독립적이다.
 
 출력은 세션마다 최대 1MiB의 메모리 버퍼와 바이트 커서를 사용한다. 클라이언트가 마지막 커서부터 읽거나 0부터 다시 재생할 수 있다. 오래된 출력이 버퍼에서 제거되면 `gap`을 반환한다. 잘린 ANSI 상태나 과거 전체 터미널 화면의 완전한 복원은 보장하지 않는다. 출력은 브리지 재시작 후 유지하지 않는다.
@@ -190,6 +190,8 @@ Android `ResponseNotificationService`는 UI와 별개 `LocalBridge`/TokenStore�
 
 프로세스의 `state`와 응답의 `turn_state`(준비·전송·응답·사용자 대기·실패)를 분리한다. `turn/interrupt`는 응답만 중단한다. 명령·파일 승인은 한 번 승인 또는 거절만 지원하며, 질문에는 단일·복수 선택과 요청이 허용한 자유 입력을 제공한다. 미지원 서버 요청은 오류로 응답하고 승인하지 않는다. 종료·해결된 요청에 대한 늦은 응답을 거부하고 재전송 ID로 중복을 막는다. 프로젝트 전환·언어 변경 시 복수 선택 초안도 유지한다.
 
+
+Settings의 `responseDelivery: queue | steer`는 Android `InputPreferences.response_delivery`와 iOS UserDefaults에 공통 저장한다. 저장된 선택이 없거나 값이 잘못되면 `queue`다. 일반 보내기 버튼과 전송 단축키는 응답 중 지원되는 Codex/Claude의 현재 턴이 있을 때 `steer` 선택을 적용한다. 기본 버튼과 보조 버튼에 방향 수정/대기열을 실제 수행하는 동작대로 표시해 반대 동작도 직접 고를 수 있다. 미지원·실행 턴 없음·네이티브 슬래시 명령은 기존 대기열을 사용한다. 응답하지 않을 때는 기존 전송 경로를 유지한다. 실패 시 입력을 보존하고 다른 전송 방식으로 자동 재시도하지 않는다. 현재 턴 ID와 세션 ID를 기존 API로 전달하며 승인·대기열 항목을 임의로 변경하지 않는다. PTY 직접 입력과 특수 키는 이 설정을 사용하지 않는다.
 
 응답 중 입력은 `chat_queue`·`queue_batch`·`codex_steer`·`claude_steer` 기능 플래그로 알린다(소스 반영, 배포 대기). 새 앱은 Chat 입력을 `queue`의 `action: add` 동작으로 전송하고, 비어 있는 준비 상태에서는 곧바로 실행한다. 대기열은 세션별 최대 16건·건당 UTF-8 16KiB이며 `events.queue`와 queue API 응답으로만 내용을 전달한다. snapshot에는 건수·일시정지 상태·현재 턴 ID만 넣는다. 정상 완료 후 현재 대기 중인 일반 메시지를 순서대로 줄바꿈 두 개로 연결해 하나의 입력으로 보낸다. 전송할 ID 묶음을 고정하고 네이티브 수락 후 해당 묶음만 함께 제거한다. 그 사이 추가된 메시지는 다음 묶음으로 남긴다. 시작 거절/전달 여부 불명은 묶음 전체를 보존하고 일시정지한다. Codex 스킬의 텍스트와 구조화된 첨부는 함께 유지하며 Claude·OpenCode의 네이티브 슬래시 명령은 단독 전송해 명령 실행을 보존한다. 중단/실패 시 후속 입력을 일시정지한다. 시작이 거절된 항목은 실패 상태로 남겨 취소·명시적 재개를 지원한다. 실제 전송 시점의 세션 권한·Fast를 적용한다.
 

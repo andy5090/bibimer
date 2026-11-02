@@ -44,15 +44,23 @@ class ContextPreferencesTests(unittest.TestCase):
                     public static void main(String[] args) {
                         Context context=new Context(); InputPreferences original=new InputPreferences(context);
                         check(original.getContextDisplay().equals("used"));
+                        check(original.getResponseDelivery().equals("queue"));
+                        check(original.setResponseDelivery("steer"));
                         check(original.setEnterBehavior("send"));
                         check(original.setContextDisplay("remaining"));
                         InputPreferences reopened=new InputPreferences(context);
                         check(reopened.getContextDisplay().equals("remaining"));
                         check(reopened.getEnterBehavior().equals("send"));
+                        check(reopened.getResponseDelivery().equals("steer"));
+                        for(String invalid:new String[]{null,"","both","STEER","other"})check(!reopened.setResponseDelivery(invalid));
+                        check(reopened.getResponseDelivery().equals("steer"));
                         for(String invalid:new String[]{null,"","both","USED","other"})check(!reopened.setContextDisplay(invalid));
                         check(reopened.getContextDisplay().equals("remaining"));
                         context.stores.get("input").fail=true;
                         check(!reopened.setContextDisplay("used"));
+                        check(!reopened.setResponseDelivery("queue"));
+                        check(reopened.getResponseDelivery().equals("steer"));
+                        check(new InputPreferences(context).getResponseDelivery().equals("steer"));
                         check(reopened.getContextDisplay().equals("remaining"));
                         check(new InputPreferences(context).getContextDisplay().equals("remaining"));
                         context.stores.get("input").fail=false;
@@ -62,8 +70,14 @@ class ContextPreferencesTests(unittest.TestCase):
                         DemoMode.demo=true;
                         InputPreferences demo=new InputPreferences(context);
                         check(demo.getContextDisplay().equals("used"));check(demo.setContextDisplay("used"));
+                        check(demo.getResponseDelivery().equals("queue"));check(demo.setResponseDelivery("queue"));
                         DemoMode.demo=false;
                         check(new InputPreferences(context).getContextDisplay().equals("remaining"));
+                        check(new InputPreferences(context).getResponseDelivery().equals("steer"));
+                        check(new InputPreferences(context).setResponseDelivery("queue"));
+                        check(new InputPreferences(context).getResponseDelivery().equals("queue"));
+                        context.stores.get("input").data.put("response_delivery","invalid");
+                        check(new InputPreferences(context).getResponseDelivery().equals("queue"));
                         context.stores.get("input").data.put("context_display","invalid");
                         check(new InputPreferences(context).getContextDisplay().equals("used"));
                         System.out.println("Context preferences: default, persistence, atomic failed save, validation and demo isolation passed");

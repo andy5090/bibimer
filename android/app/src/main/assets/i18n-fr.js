@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "response_delivery_save_failed": "Impossible d’enregistrer le mode d’envoi pendant une réponse.",
+  "response_delivery_hint": "Choisissez l’action par défaut du bouton et du raccourci d’envoi pendant une réponse. Si Steer est indisponible, le message est mis en attente. Les commandes natives avec barre oblique utilisent la file.",
+  "response_delivery_label": "Envoi pendant une réponse",
+  "terminal_fullscreen_enter": "Agrandir le terminal",
+  "terminal_fullscreen_exit": "Rétablir la taille du terminal",
+  "page_up": "Page précédente",
+  "page_down": "Page suivante",
+
   "connections_title": "Comptes et fournisseurs des agents",
   "connections_hint": "Consultez les connexions et versions, choisissez un fournisseur et saisissez les clés API compatibles ici.",
   "connections_manage": "Gérer les connexions",
@@ -392,9 +400,9 @@ window.BibimerTranslations.fr = {
   "enter_behavior_label": "Touche Entrée",
   "enter_newline": "Nouvelle ligne",
   "enter_send": "Envoyer",
-  "enter_newline_hint": "Entrée insère une nouvelle ligne par défaut. Utilisez Envoyer ou Mettre en attente pour transmettre votre message.",
-  "enter_send_hint": "Entrée envoie votre message ou le met en attente si l’agent répond.",
-  "enter_modifiers_hint": "Si Entrée est réglée sur Nouvelle ligne, Ctrl+Entrée envoie le message ou le met en attente ; si elle est réglée sur Envoyer, Ctrl+Entrée insère une nouvelle ligne. Maj+Entrée insère toujours une nouvelle ligne. S’applique au champ de message dans Chat et Terminal.",
+  "enter_newline_hint": "Entrée insère un saut de ligne par défaut. Utilisez le bouton ou le raccourci d’envoi pour envoyer.",
+  "enter_send_hint": "Entrée envoie le message avec l’action choisie pendant une réponse.",
+  "enter_modifiers_hint": "Si Entrée est réglée sur Saut de ligne, Ctrl+Entrée envoie ; si elle est réglée sur Envoyer, Ctrl+Entrée insère un saut de ligne. Maj+Entrée insère toujours un saut de ligne. La saisie directe du terminal conserve son comportement.",
   "enter_save_failed": "Impossible d’enregistrer le comportement d’Entrée. Votre choix précédent reste actif. Réessayez.",
   "agent_settings": "Réglages de la session",
   "settings_done": "Terminé",

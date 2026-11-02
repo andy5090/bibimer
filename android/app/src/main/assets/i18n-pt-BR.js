@@ -1,6 +1,14 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["pt-BR"] = {
+  "response_delivery_save_failed": "Não foi possível salvar a ação de envio durante a resposta.",
+  "response_delivery_hint": "Escolha a ação padrão do botão e do atalho de envio durante uma resposta. Se Steer não estiver disponível, a mensagem entra na fila. Comandos de barra nativos usam a fila.",
+  "response_delivery_label": "Envio durante a resposta",
+  "terminal_fullscreen_enter": "Expandir terminal",
+  "terminal_fullscreen_exit": "Restaurar tamanho do terminal",
+  "page_up": "Página anterior",
+  "page_down": "Próxima página",
+
   "connections_title": "Contas e provedores dos agentes",
   "connections_hint": "Consulte conexões e versões, escolha provedores e informe chaves de API compatíveis aqui.",
   "connections_manage": "Gerenciar conexões",
@@ -392,9 +400,9 @@ window.BibimerTranslations["pt-BR"] = {
   enter_behavior_label: "Tecla Enter",
   enter_newline: "Nova linha",
   enter_send: "Enviar",
-  enter_newline_hint: "Por padrão, Enter insere uma nova linha. Use Enviar ou Adicionar à fila para enviar sua mensagem.",
-  enter_send_hint: "Enter envia sua mensagem ou a adiciona à fila enquanto o agente responde.",
-  enter_modifiers_hint: "Com Enter em Nova linha, Ctrl+Enter envia ou coloca a mensagem na fila; com Enter em Enviar, insere uma nova linha. Shift+Enter sempre insere uma nova linha. Aplica-se ao campo de mensagem do Chat e do Terminal.",
+  "enter_newline_hint": "Enter insere uma nova linha por padrão. Use o botão ou o atalho de envio para enviar.",
+  "enter_send_hint": "Enter envia a mensagem usando a ação selecionada durante uma resposta.",
+  "enter_modifiers_hint": "Com Enter em Nova linha, Ctrl+Enter envia; com Enter em Enviar, Ctrl+Enter insere uma nova linha. Shift+Enter sempre insere uma nova linha. A entrada direta do terminal mantém o comportamento original.",
   enter_save_failed: "Não foi possível salvar o comportamento da tecla Enter. Sua escolha anterior continua ativa. Tente novamente.",
   agent_settings: "Configurações da sessão",
   settings_done: "Concluído",
