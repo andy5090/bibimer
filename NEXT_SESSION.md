@@ -1,5 +1,44 @@
 # Bibimer 다음 세션 시작점
 
+## Android0.33.0(55) 내부 테스트 배포 완료 (2026-11-03)
+
+- **00:59 Asia/Seoul**, 사용자요청으로기존Play내부테스트에 **0.33.0(55)**를게시했다. 사용자로그인/명시적제어허용을받은Bibimer관리Termux:X11·Firefox에서파일업로드·검토·최종확인을수행했고, 새로고침후 **활성 / 내부 테스터에게 제공됨**을확인했다. 새55만포함·54제외·버전코드1개·한/영노트2/2·오류0·기존가독화매핑경고1·7개기기유형지원변화0이다. 기존테스터/트랙과프로덕션을유지했다.
+- 알림심볼·터미널전체화면/복귀·PgUp/PgDn·응답중일반전송의대기열/방향수정기본값설정을포함한다. 브리지 **0.23.1 유지**로이번앱기능만을위한새브리지업데이트는필요없다. 소스 `7a07426`의기존업로드키서명AAB는3,360,635bytes·SHA-256 `a09dc770a68132ec0981fb5579a1176caa9d627fce42a07f32295bb1c8cd0527`다. 검증과준비경위는아래기록을참조한다.
+- 증빙 `dist/play-0.33.0/{review-warning.png,device-support.png,review-bundle.png,review-notes.png,review.png,confirmation.png,published.png,published-refreshed.png,published.json}`. 320/393px공유UI의실제가시적Firefox합성미리보기도확인했다(`terminal-*.png`). **Play업데이트수신/실제Android설치·WebView·IME·새설정저장/실제네이티브Steer수락은별도검증**이다. APK자동설치·운영브리지/사용자세션재시작·TestFlight/프로덕션게시·추가웹사이트배포없음.
+
+## Android0.33.0(55) 내부 테스트 배포 준비 (2026-11-03)
+
+- 사용자Play내부테스트배포요청으로누적알림심볼·터미널전체화면/PgUp/PgDn·응답중전송기본동작설정을포함해Android0.33.0/code55를준비했다. 브리지0.23.1유지로이번앱기능만을위한브리지업데이트는필요없다. 웹사이트90일정리소스 `351cb6f`와공유앱/UI `7a07426`을main에커밋/push했다. iOS소스는보존하되TestFlight빌드/배포는요청범위밖이다.
+- 기존업로드키·기존로컬심사코드로서명AAB를빌드했다. `dist/play/bibimer-0.33.0-55-release.aab`,3,360,635bytes·SHA-256 `a09dc770a68132ec0981fb5579a1176caa9d627fce42a07f32295bb1c8cd0527`. 전체리소스/Java/D8·bundletool·서명/기존인증서·55assets원본·언어split비활성·네이티브responseDelivery연결·패키징된심볼/전체화면/페이지키·심사digest/비밀원문미포함·브리지유지보수6payload/격리설치0700검증통과. `.tools/aab-0.33.0-55-{build.log,verification.json}`.
+- scriptsPython39개·응답중전송/전체화면/특수키·812키×10언어회귀통과. 이전브라우저오류는X11 display70–89의죽은소켓이슬롯을점유한것을확인했다. socketECONNREFUSED·프로세스부재·전용잠금해제를확인한71번소켓/임시PID파일만정리한뒤Bibimer관리Firefox시작에성공했다. 다른디스플레이·사용자프로세스는건드리지않았다. 사용자Play로그인과명시적제어허용후기존내부54상태를확인했다. 실제Firefox의320/393px합성기기미리보기에서기본2줄PgUp/↑/PgDn·전체화면확대·복귀·Settings새설정의가시성/줄바꿈을확인했다(`dist/play-0.33.0/terminal-*.png`). 네이티브저장과실제WebView검증을대체하지않는다. 파일선택창의이전32선택이처음제출돼Console이기존코드로거절했으며이를제거하고55의절대경로를직접입력해올바른번들을선택했다. **아직게시완료확인전**이다. 프로덕션변경·앱설치·운영브리지/에이전트재시작없음.
+
+## 응답 중 전송 기본 동작: 대기열·방향 수정 선택 (2026-11-03, 미빌드)
+
+- 사용자 요청으로 Settings의Enter설정아래에 **응답 중 전송 동작** 선택을추가했다. Android `InputPreferences.response_delivery`/네이티브 `responseDelivery`와iOS UserDefaults/JS브리지에 `queue|steer`를저장한다. 미설정/잘못된값은기존대기열이며Android저장실패시기존선택을유지하고데모설정은분리한다. 공통설정으로다음입력부터적용하며기존초안/대기열/작업을변경하지않는다.
+- 보내기버튼과Enter/Ctrl+Enter의전송경로가같은선택을사용한다. 지원하는Codex/Claude응답중 `steer`이면기본버튼이방향수정·보조버튼이대기열로바뀌어반대동작도선택할수있다. 대기열기본값에서는기존기본대기열·보조방향수정을유지한다. 미지원에이전트/실행턴없음/네이티브슬래시명령은대기열을유지한다. 방향수정실패·전달불명시자동대기열재시도없음·초안유지·현재세션/턴ID고정이며승인/다른세션초안을변경하지않는다. IME·Shift+Enter/반복Enter·PTY직접입력/특수키는기존규칙을유지한다.
+- 새설정3문구와기존Enter안내3문구를10언어로반영하고기존프로젝트자체선택기를사용한다. AGENTS.md/architecture도선택가능한동작을반영했다.
+- 검증: 실제공유UI함수기반 `test_response_delivery.cjs`(Codex/Claude양방향기본·명시적반대동작·지원/턴/슬래시fallback·실패초안유지·중복전송차단·다른세션초안보존·Enter/Ctrl+Enter/IME·설정저장실패),Java실제InputPreferences격리검사(기본/재실행/잘못된값/저장실패/데모분리),iOS실제native.js의설정전달/검증, iOS Python20개통과. 812키×10언어및기존언어UI검사·JS구문·diff검사도통과했다. 새APK/AAB/TestFlight빌드·실제Android/iOS화면·실제에이전트네이티브수락은미검증이다. 기존브라우저시작오류로headless우회없이소스/격리검증만수행했다. 운영브리지·프로세스·서버배포는변경하지않았다.
+
+## Doppler 문의 웹훅 등록·정리 Worker 배포 완료 (2026-11-03)
+
+- 사용자Doppler조회요청으로 `bibimer`의dev/dev_personal/stg/prd와공용andineering설정의비밀이름을확인했다. 기존 `bibimer/prd`에는앱서명/심사비밀만있었으며공용문의웹훅은다른것이었다. 사용자가제공한Bibimer문의웹훅을 **Doppler `bibimer/prd`의 `DISCORD_WEBHOOK_URL`**에저장하고, Pages production과 `bibimer-contact-retention` Worker의같은이름비밀설정에연결했다. 비밀값은출력하거나소스/문서/로컬파일에저장하지않았다. CLI에는stdin으로전달했다. Doppler의TermuxDNS/CA문제는내장DNS옵션과기존CA파일지정으로해결했고TLS검증을끄지않았다.
+- 웹훅GET유효성HTTP200·정리회귀통과후Worker배포/트리거등록성공을확인했다. 버전 `c0d25793-5306-4114-b1c1-3b733582f41a`, cron **`17 * * * *`**(매시17분). Pages도동일웹훅으로재배포해 **https://b3723536.bibimer.pages.dev**에서Functions bundle배포완료를확인했다. 앞선D1마이그레이션/API배포와합쳐새문의알림의90일후자동정리설정이완료됐다. 직전기록의웹훅대기상태는해결됐다.
+- 실제문의/Discord테스트메시지를전송하거나기존메시지를임의로삭제하지않았다. 다음정기실행/실제만료메시지삭제확인은아직이며, ID없는이전메시지·다른웹훅메시지는별도정리범위다. 공개정책/동의문구와미빌드터미널UI/알림아이콘소스는이배포에서변경하지않았다. APK빌드·운영브리지/사용자세션변경없음.
+
+## 문의 API 서버 반영·터미널 전체 화면/Page 키 구현 (2026-11-02)
+
+- 사용자 요청으로 원격D1의 `0002_discord_retention.sql`을실행해삭제ID테이블/인덱스를생성하고새문의API를Pages프로덕션에배포했다. 배포 `https://d8af2e77.bibimer.pages.dev`·Functions bundle 컴파일/업로드성공·정적파일69개기존캐시재사용. 공개 `bibimer.app` HTTP200과문의API GET405를확인했다. 실제문의/Discord테스트메시지는전송하지않았다.
+- **Discord 자동 삭제 Worker 배포는 아직 대기다.** 기존 `bibimer-contact-retention` Worker의비밀설정목록이비어있어기존웹훅을연결할수없다. Pages에저장된비밀값은다시조회되지않으며사용자에게기존웹훅이저장된로컬파일경로를요청했다(주소를채팅에보낼필요없음). 기존Worker는그대로유지한다. 새Worker의dry-run·D1바인딩/번들검증은통과했으나서버의Discord자동삭제가활성화됐다고표시하지않는다. 비밀값연결후Worker배포와cron확인이남았다. 미리공개정책을자동삭제완료로수정하지않았다.
+- Android/iOS공유터미널의세션상태줄에전체화면전환/복귀아이콘을추가했다. 기존xterm/세션을유지하면서상단·프로젝트요약·하단탐색영역을숨기고터미널과특수키를넓힌다. 복귀버튼과Android뒤로가기로원래배치에돌아온다. 세션/프로젝트/브리지인스턴스/탭변경시해제하고종료된출력도확대할수있다. 화면전환만으로입력이나프로세스실행을요청하지않는다.
+- 방향키윗줄을 `PgUp / ↑ / PgDn`,아랫줄을 `← / ↓ / →`로배치했다. 기존2줄68px를유지하며각각PTY `ESC[5~`/`ESC[6~`를보낸다. Ctrl/Alt/Shift조합도기존인코더를사용한다. 단순스크롤버튼이아니라실행중인터미널프로그램이해석하는키다. 전체화면/페이지키의접근성라벨을10언어로추가했다.
+- 검증: `test_terminal_fullscreen.cjs`(전환/복귀·resize·종료출력·컨텍스트초기화·AndroidBack·세션보존), `test_terminal_keys.cjs`(페이지키/보조키포함), `test_i18n.cjs`(809키×10언어),웹사이트Python2개·JS구문·diff검사통과. Bibimer가관리하는가시적Firefox를열려했으나 `error_browser_start`로실패해브라우저화면검증은미수행이다. 우회headless브라우저는사용하지않았다. 실제Android/iOS화면배치·키보드표시·TUI의페이지키반응은후속검증이다. APK/AAB/TestFlight빌드·브리지재시작·사용자세션종료없음.
+
+## 문의 Discord 알림 90일 자동 정리 구현 (2026-11-02, 미배포)
+
+- 사용자 요청으로 새 알림의 메시지ID·웹훅ID·접수시각을 별도 삭제 테이블에 저장하고, 접수 후90일 지난 메시지를 매시간 최대20개씩 웹훅 DELETE로 삭제한다. 문의 DB는 별도로90일 정리하며 삭제 실패/호출 제한/권한·웹훅 변경은 식별자만 유지해 재시도한다. 삭제 성공204와 이미 삭제됨10008만 완료로 처리한다. 토큰/문의 본문/이메일을 정리 테이블이나 로그에 추가하지 않는다.
+- 검증: 실제 임시SQLite 기반 문의API 회귀와 정기정리 회귀 통과. ID저장·정상삭제·이미삭제·새문의보존·네트워크/권한/호출제한/잘못된웹훅/저장실패·재시도·20개일괄제한·중복전송방지를 확인했다. 실제 Discord 메시지를 보내거나 삭제하지 않았다.
+- 운영 반영은 `0002_discord_retention.sql` 적용, 유지보수Worker의 `DISCORD_WEBHOOK_URL` 비밀 설정, Pages/Worker 배포가 필요하다. 기존 알림은ID를저장하지않았으므로별도정리대상이다. 전송결과불명/ID저장실패·웹훅교체·채널의다른메시지도자동삭제보장범위밖이다. 상세는 `release/website/README.md`. 공개정책/문의동의는실제적용전수정하지않았다. APK빌드·운영세션변경없음.
+
 ## Android 알림 아이콘을 Bibimer 심볼로 변경 (2026-11-02, 미빌드)
 
 - 사용자 요청으로 `ic_notification.xml`의 터미널 `>_` 모양을 기존 런처의 Bibimer 심볼과 동일한 경로로 교체했다. 배경·그라데이션 없이 단색 흰색 마스크를 사용하고 24dp 안에 중앙 배치했다. 해당 리소스를 공유하는 응답 확인 지속 알림과 응답 완료 알림에 함께 적용된다.

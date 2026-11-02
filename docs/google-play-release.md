@@ -1,5 +1,11 @@
 # Google Play 출시 준비
 
+## Android0.33.0(55) 내부 테스트 배포 완료 (2026-11-03)
+
+- **00:59 Asia/Seoul**, 사용자요청으로기존Play내부테스트에 **0.33.0(55)**를게시했다. 사용자로그인/명시적제어허용을받은Bibimer관리Termux:X11·Firefox에서파일업로드·검토·최종확인을수행했고, 새로고침후 **활성 / 내부 테스터에게 제공됨**을확인했다. 새55만포함·54제외·버전코드1개·한/영노트2/2·오류0·기존가독화매핑경고1·7개기기유형지원변화0이다. 기존테스터/트랙과프로덕션을유지했다.
+- 알림심볼·터미널전체화면/복귀·PgUp/PgDn·응답중일반전송의대기열/방향수정기본값설정을포함한다. 브리지 **0.23.1 유지**로이번앱기능만을위한새브리지업데이트는필요없다. 소스 `7a07426`의기존업로드키서명AAB는3,360,635bytes·SHA-256 `a09dc770a68132ec0981fb5579a1176caa9d627fce42a07f32295bb1c8cd0527`다. 검증과준비경위는아래기록을참조한다.
+- 증빙 `dist/play-0.33.0/{review-warning.png,device-support.png,review-bundle.png,review-notes.png,review.png,confirmation.png,published.png,published-refreshed.png,published.json}`. 320/393px공유UI의실제가시적Firefox합성미리보기도확인했다(`terminal-*.png`). **Play업데이트수신/실제Android설치·WebView·IME·새설정저장/실제네이티브Steer수락은별도검증**이다. APK자동설치·운영브리지/사용자세션재시작·TestFlight/프로덕션게시·추가웹사이트배포없음.
+
 ## 0.32.0(54) 정식 배포 심사 제출 (2026-10-28)
 
 기존 Chrome의 프로덕션 트랙에서 **0.28.1(50)이2026-10-23 12:16 Asia/Seoul에 Google Play에 제공됨**을 확인했다(출시8). 마지막 공개 기록43을50으로 갱신하며43의 과거 배포 이력은 유지한다.
