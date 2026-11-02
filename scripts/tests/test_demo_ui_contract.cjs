@@ -5,7 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const app = fs.readFileSync(path.join(__dirname, "../../android/app/src/main/assets/app.js"), "utf8");
-const match = app.match(/  async function submitInput\(steer\) \{[\s\S]*?\n  \}/);
+const match = app.match(/  async function submitInput\(steer, source = "send"\) \{[\s\S]*?\n  \}/);
 assert.ok(match, "Actual input controller found");
 let captured, raw;
 const elements = {input:{value:"Fictional contract input"}, send:{disabled:false}, steer:{disabled:false, hidden:false}};

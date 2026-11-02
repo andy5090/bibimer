@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "browser_consent_title": "ブラウザーの操作許可",
+  "browser_consent_body": "Termux:X11でログインを済ませてから、ここで操作を許可してください。このプロジェクトに接続したエージェントが、開いているFirefoxウィンドウを表示・操作できるようになります。",
+  "browser_login_guide": "Termux:X11でログインした後、Bibimerの作業画面に戻り、「ブラウザーの操作許可」カードの「ログイン完了 · エージェント操作を許可」を押してください。カードがない場合は、下部の設定 → Firefox · Termux:X11 → ログインとエージェント制御から同じボタンを押してください。",
+
   "response_delivery_save_failed": "応答中の送信設定を保存できませんでした。",
   "response_delivery_hint": "応答中の送信ボタンと送信ショートカットの既定の動作を選びます。方向修正が利用できない場合はキューに追加します。ネイティブのスラッシュコマンドはキューで処理します。",
   "response_delivery_label": "応答中の送信方法",
@@ -52,7 +56,7 @@ window.BibimerTranslations.ja = {
   "error_maintenance_recovery": "セッションを開き直せませんでした。設定で復旧状態を確認してください。",
   "error_browser_permission": "このセッションの権限ではブラウザー入力を許可していません。",
   "error_browser_control": "ブラウザーを操作できませんでした。Termux:X11を開いて再試行してください。",
-  "error_browser_manual": "Bibimerで手動ログインを完了してから操作を許可してください。",
+  "error_browser_manual": "Termux:X11でログインした後、Bibimerの作業画面に戻り、「ブラウザーの操作許可」カードの「ログイン完了 · エージェント操作を許可」を押してください。カードがない場合は、下部の設定 → Firefox · Termux:X11 → ログインとエージェント制御から同じボタンを押してください。",
   "browser_install_sent": "Termuxで準備を開始しました。完了後に戻って更新してください。",
   "browser_default_hint": "必要なときにFirefoxを開き、プロジェクトのワークツリー間でプロファイルを共有します。新しいエージェントセッションは既定で接続します。オフにすると既存のツールアクセスも停止します。",
   "browser_control_status": "エージェント操作を許可しています。認証情報の入力前に手動ログインを選んでください。",

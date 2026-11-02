@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "browser_consent_title": "Demande de contrôle du navigateur",
+  "browser_consent_body": "Terminez la connexion dans Termux:X11, puis autorisez le contrôle ici. Les agents connectés à ce projet pourront voir et utiliser la fenêtre Firefox ouverte.",
+  "browser_login_guide": "Après la connexion dans Termux:X11, revenez à l’écran de travail de Bibimer et touchez « Connexion terminée · autoriser les agents » dans la carte « Demande de contrôle du navigateur ». Si elle n’apparaît pas, ouvrez l’onglet inférieur Réglages → Firefox · Termux:X11 → Connexion et contrôle de l’agent, puis touchez le même bouton.",
+
   "response_delivery_save_failed": "Impossible d’enregistrer le mode d’envoi pendant une réponse.",
   "response_delivery_hint": "Choisissez l’action par défaut du bouton et du raccourci d’envoi pendant une réponse. Si Steer est indisponible, le message est mis en attente. Les commandes natives avec barre oblique utilisent la file.",
   "response_delivery_label": "Envoi pendant une réponse",
@@ -52,7 +56,7 @@ window.BibimerTranslations.fr = {
   "error_maintenance_recovery": "Impossible de rouvrir les sessions. Consultez la récupération dans les paramètres.",
   "error_browser_permission": "Les autorisations de cette session ne permettent pas la saisie dans le navigateur.",
   "error_browser_control": "Impossible de contrôler le navigateur. Ouvrez Termux:X11 et réessayez.",
-  "error_browser_manual": "Terminez la connexion manuelle dans Bibimer avant d’autoriser le contrôle.",
+  "error_browser_manual": "Après la connexion dans Termux:X11, revenez à l’écran de travail de Bibimer et touchez « Connexion terminée · autoriser les agents » dans la carte « Demande de contrôle du navigateur ». Si elle n’apparaît pas, ouvrez l’onglet inférieur Réglages → Firefox · Termux:X11 → Connexion et contrôle de l’agent, puis touchez le même bouton.",
   "browser_install_sent": "Préparation ouverte dans Termux. Revenez actualiser une fois terminée.",
   "browser_default_hint": "Firefox s’ouvre au besoin et partage le profil du projet entre les worktrees. Les nouvelles sessions sont connectées par défaut. La désactivation bloque aussi les accès existants.",
   "browser_control_status": "Contrôle des agents autorisé. Choisissez la connexion manuelle avant de saisir vos identifiants.",

@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "browser_consent_title": "Anfrage zur Browsersteuerung",
+  "browser_consent_body": "Melde dich in Termux:X11 an und erlaube dann hier die Steuerung. Mit diesem Projekt verbundene Agenten können anschließend das offene Firefox-Fenster sehen und bedienen.",
+  "browser_login_guide": "Kehre nach der Anmeldung in Termux:X11 zum Arbeitsbildschirm von Bibimer zurück und tippe auf „Angemeldet · Agent-Steuerung erlauben“ in der Karte „Anfrage zur Browsersteuerung“. Wird die Karte nicht angezeigt, öffne unten Einstellungen → Firefox · Termux:X11 → Anmeldung und Agentensteuerung und tippe auf dieselbe Schaltfläche.",
+
   "response_delivery_save_failed": "Die Sendeeinstellung während einer Antwort konnte nicht gespeichert werden.",
   "response_delivery_hint": "Wähle die Standardaktion der Sendetaste und des Sendekürzels während einer Antwort. Ist Steer nicht verfügbar, wird die Nachricht eingereiht. Native Slash-Befehle verwenden die Warteschlange.",
   "response_delivery_label": "Senden während einer Antwort",
@@ -52,7 +56,7 @@ window.BibimerTranslations.de = {
   "error_maintenance_recovery": "Sitzungen konnten nicht geöffnet werden. Prüfe die Wiederherstellung in den Einstellungen.",
   "error_browser_permission": "Der Berechtigungsmodus dieser Sitzung erlaubt keine Browser-Eingaben.",
   "error_browser_control": "Browser konnte nicht gesteuert werden. Termux:X11 öffnen und erneut versuchen.",
-  "error_browser_manual": "Manuelle Anmeldung in Bibimer abschließen und dann die Steuerung erlauben.",
+  "error_browser_manual": "Kehre nach der Anmeldung in Termux:X11 zum Arbeitsbildschirm von Bibimer zurück und tippe auf „Angemeldet · Agent-Steuerung erlauben“ in der Karte „Anfrage zur Browsersteuerung“. Wird die Karte nicht angezeigt, öffne unten Einstellungen → Firefox · Termux:X11 → Anmeldung und Agentensteuerung und tippe auf dieselbe Schaltfläche.",
   "browser_install_sent": "Vorbereitung in Termux geöffnet. Danach zurückkehren und aktualisieren.",
   "browser_default_hint": "Firefox öffnet sich bei Bedarf und nutzt das Projektprofil in allen Worktrees. Neue Agent-Sitzungen werden standardmäßig verbunden. Ausschalten sperrt auch bestehende Tool-Zugriffe.",
   "browser_control_status": "Agent-Steuerung erlaubt. Vor der Eingabe von Zugangsdaten die manuelle Anmeldung wählen.",

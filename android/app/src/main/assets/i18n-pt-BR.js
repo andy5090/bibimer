@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["pt-BR"] = {
+  "browser_consent_title": "Solicitação de controle do navegador",
+  "browser_consent_body": "Conclua o login no Termux:X11 e autorize o controle aqui. Os agentes conectados a este projeto poderão ver e operar a janela aberta do Firefox.",
+  "browser_login_guide": "Após entrar no Termux:X11, volte à tela de trabalho do Bibimer e toque em “Login concluído · permitir controle do agente” no cartão “Solicitação de controle do navegador”. Se o cartão não aparecer, abra a aba inferior Configurações → Firefox · Termux:X11 → Login e controle do agente e toque no mesmo botão.",
+
   "response_delivery_save_failed": "Não foi possível salvar a ação de envio durante a resposta.",
   "response_delivery_hint": "Escolha a ação padrão do botão e do atalho de envio durante uma resposta. Se Steer não estiver disponível, a mensagem entra na fila. Comandos de barra nativos usam a fila.",
   "response_delivery_label": "Envio durante a resposta",
@@ -52,7 +56,7 @@ window.BibimerTranslations["pt-BR"] = {
   "error_maintenance_recovery": "Não foi possível reabrir as sessões. Confira a recuperação nas configurações.",
   "error_browser_permission": "As permissões desta sessão não permitem entrada no navegador.",
   "error_browser_control": "Não foi possível controlar o navegador. Abra o Termux:X11 e tente novamente.",
-  "error_browser_manual": "Conclua o login manual no Bibimer antes de permitir o controle do agente.",
+  "error_browser_manual": "Após entrar no Termux:X11, volte à tela de trabalho do Bibimer e toque em “Login concluído · permitir controle do agente” no cartão “Solicitação de controle do navegador”. Se o cartão não aparecer, abra a aba inferior Configurações → Firefox · Termux:X11 → Login e controle do agente e toque no mesmo botão.",
   "browser_install_sent": "Preparação aberta no Termux. Ao terminar, volte e atualize.",
   "browser_default_hint": "O Firefox abre quando necessário e reutiliza o perfil do projeto nas worktrees. Novas sessões do agente são conectadas por padrão. Desativar também bloqueia o acesso das sessões existentes.",
   "browser_control_status": "Controle do agente permitido. Escolha login manual antes de inserir credenciais.",

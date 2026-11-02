@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.es = {
+  "browser_consent_title": "Solicitud de control del navegador",
+  "browser_consent_body": "Termina de iniciar sesión en Termux:X11 y permite el control aquí. Los agentes conectados a este proyecto podrán ver y manejar la ventana abierta de Firefox.",
+  "browser_login_guide": "Tras iniciar sesión en Termux:X11, vuelve a la pantalla de trabajo de Bibimer y pulsa “Sesión iniciada · permitir control del agente” en la tarjeta “Solicitud de control del navegador”. Si no aparece, abre la pestaña inferior Ajustes → Firefox · Termux:X11 → Inicio de sesión y control del agente y pulsa el mismo botón.",
+
   "response_delivery_save_failed": "No se pudo guardar la acción de envío durante la respuesta.",
   "response_delivery_hint": "Elige la acción predeterminada del botón y del atajo de envío durante una respuesta. Si Steer no está disponible, se usa la cola. Los comandos nativos con barra usan la cola.",
   "response_delivery_label": "Envío durante la respuesta",
@@ -52,7 +56,7 @@ window.BibimerTranslations.es = {
   "error_maintenance_recovery": "No se pudieron reabrir las sesiones. Revisa la recuperación en Ajustes.",
   "error_browser_permission": "Los permisos de esta sesión no permiten entradas en el navegador.",
   "error_browser_control": "No se pudo controlar el navegador. Abre Termux:X11 y vuelve a intentarlo.",
-  "error_browser_manual": "Completa el inicio de sesión manual en Bibimer antes de permitir el control.",
+  "error_browser_manual": "Tras iniciar sesión en Termux:X11, vuelve a la pantalla de trabajo de Bibimer y pulsa “Sesión iniciada · permitir control del agente” en la tarjeta “Solicitud de control del navegador”. Si no aparece, abre la pestaña inferior Ajustes → Firefox · Termux:X11 → Inicio de sesión y control del agente y pulsa el mismo botón.",
   "browser_install_sent": "Preparación abierta en Termux. Cuando termine, vuelve y actualiza.",
   "browser_default_hint": "Firefox se abre cuando hace falta y reutiliza el perfil del proyecto entre worktrees. Las sesiones nuevas se conectan por defecto. Desactivarlo también bloquea el acceso existente.",
   "browser_control_status": "Control del agente permitido. Elige el inicio manual antes de introducir credenciales.",

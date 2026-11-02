@@ -42,7 +42,7 @@ _recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_rec
 maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
 _recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.23.1"
+VERSION = "0.23.2"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -54,7 +54,7 @@ ERROR_MESSAGES = {
     "error_connection_expired": "This connection request has expired. Start again.",
     "error_connection_unsupported": "Use this agent’s native setup for this authentication method.",
     "error_maintenance_recovery": "Could not reopen these sessions. Check the recovery status in Settings.",
-    "error_browser_manual": "Finish manual login in Bibimer before allowing agent control.",
+    "error_browser_manual": browser_tools.MANUAL_LOGIN_GUIDE,
     "error_browser_control": "Could not control this browser. Open Termux:X11 and try again.",
     "error_browser_permission": "This session permission mode does not allow browser input.",
     "error_browser_url": "Enter an HTTP or HTTPS address without embedded credentials.",
@@ -3343,7 +3343,7 @@ class Bridge:
                 if not isinstance(current, BrowserSession) or current.project["id"] != project["id"] or current.state != "running":
                     raise Problem(409, "error_browser_start")
             with current.browser_control_lock:
-                if current.process.poll() is not None:
+                if current.process.poll() is not None or (data.get("launch_id") is not None and data["launch_id"] != current.launch_id):
                     raise Problem(409, "error_browser_start")
                 current.browser_manual = action == "manual"
                 current.browser_owner = None
@@ -3494,7 +3494,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11", "browser_tools_x11", "maintenance_recovery", "agent_connections"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "maintenance_recovery", "agent_connections"], "active_sessions": self.active_count(),
                     "agents": self.agents(), "maintenance_recovery": self.recovery.snapshot(),
                     "session": self.snapshot_for(self.active_project_id)}
 

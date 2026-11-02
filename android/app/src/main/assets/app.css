@@ -598,7 +598,13 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 #app.terminal-fullscreen>#demo-banner,#app.terminal-fullscreen>#sidebar.docked,#app.terminal-fullscreen>#inspector.docked{display:none}
 #app.terminal-fullscreen #work{position:fixed;inset:0;z-index:10;padding:6px 8px;background:var(--bg);overflow:hidden}
 #app.terminal-fullscreen #workspace{overflow:hidden}
-#app.terminal-fullscreen #workspace>:not(.session-bar):not(#terminal-area):not(#terminal-keys){display:none!important}
+#app.terminal-fullscreen #workspace>:not(.session-bar):not(#terminal-area):not(#terminal-keys):not(#browser-consent){display:none!important}
 #app.terminal-fullscreen .session-bar{margin-bottom:4px}
 #app.terminal-fullscreen #terminal-area{min-height:0}
 #app.terminal-fullscreen #terminal-keys{align-self:center}
+
+.browser-consent{flex:none;min-width:0;padding:10px;margin:4px 0 8px;border:1px solid var(--green);border-radius:10px;background:var(--card)}
+.browser-consent h3{margin:0;font-size:13px}
+.browser-consent p{margin:6px 0;font-size:11px;line-height:1.5;overflow-wrap:break-word}
+.browser-consent .button-row{display:flex;flex-wrap:wrap;gap:6px}
+.browser-consent .button-row button{flex:1 1 125px;min-width:0;white-space:normal;font-size:11px;line-height:1.4}

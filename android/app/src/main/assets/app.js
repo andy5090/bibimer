@@ -33,7 +33,7 @@
   let canDragProjects = false, canOrderProjects = false, canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   let canInspect = false, canOpenFiles = false, openingFile = false;
   let canConnections = false;
-  let canBrowser = false, browserState = null, browserEnabled = true;
+  let canBrowser = false, canBrowserConsent = false, browserState = null, browserEnabled = true;
   const worktrees = {};
   const worktreeChecks = new Map();
   let workspaceDetails = null;
@@ -97,6 +97,16 @@
     supported:canInspect, filesSupported:canOpenFiles, demo});
   const fileViewer = new BibimerFileViewer(t, fileContext, data => api("POST", "/v1/inspect", data), openAndroidFile);
   const inspector = new BibimerInspector(t, fileContext, data => api("POST", "/v1/inspect", data), path => fileViewer.open(path));
+
+  const browserConsent = new BibimerBrowserConsent(t, () => ({
+    instance, project:projectKey(), path:fileContext().path, tab:currentTab, online,
+    enabled:canBrowserConsent && browserEnabled && !demo && !!native.openBrowserWindow, paused, switching:switchingProject,
+    sessions:knownProjects.find(row => row.id === projectKey())?.sessions || []
+  }), data => api("POST", "/v1/browser", data), row => {
+    cacheSession(row);
+    if (browserState?.session?.id === row.id) browserState.session = row;
+    renderBrowser();
+  }, tag => native.openBrowserWindow(tag));
 
   const agentConnections = new BibimerAgentConnections(t,
     () => ({online:online && !switchingProject, supported:canConnections, paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
@@ -886,6 +896,7 @@
     pickers.close();
     sidebar.close();
     currentTab = name;
+    browserConsent.render();
     updateTerminalFullscreen();
     updateTerminalKeys();
     updateBackState();
@@ -903,6 +914,7 @@
     return [ctx.instance, ctx.project, ctx.path].join("/");
   }
   function renderBrowser() {
+    browserConsent.render();
     const supported = canBrowser && !demo && !!native.openBrowserWindow;
     $("browser-preference").hidden = demo || !native.openBrowserWindow;
     $("browser-agent-tools").disabled = !supported || !online || paused || !project;
@@ -975,7 +987,7 @@
     if (!state || state.key !== browserKey() || state.busy || !state.session) return;
     state.busy = true; state.error = null; renderBrowser();
     try {
-      const result = await api("POST", "/v1/browser", {action, project_id:state.project, worktree_path:state.path, session_id:state.session.id});
+      const result = await api("POST", "/v1/browser", {action, project_id:state.project, worktree_path:state.path, session_id:state.session.id, launch_id:state.session.launch_id});
       if (browserState !== state) return;
       state.session = result.session; cacheSession(result.session);
       if (action === "manual" && state.key === browserKey() && online && !paused && $("browser-dialog").open) native.openBrowserWindow(result.session.browser_tag);
@@ -1333,6 +1345,7 @@
       canConnections = health.features?.includes("agent_connections") === true;
       agentConnections.update();
       canBrowser = health.features?.includes("browser_tools_x11") === true;
+      canBrowserConsent = health.features?.includes("browser_control_consent") === true;
       browserEnabled = health.browser_enabled !== false;
       canOpenFiles = health.features?.includes("file_links") === true;
       canResponseNotifications = health.features?.includes("response_notifications") === true;
@@ -1426,13 +1439,14 @@
       if (ticket !== generation || paused || switchingProject) return;
       if (health.instance !== instance) { await connect(); return; }
       knownProjects = health.projects || [];
+      browserEnabled = health.browser_enabled !== false;
       const entry = knownProjects.find(item => item.id === selectedProjectId);
       if (entry && (entry.session?.id || null) !== (session?.id || null)) {
         ++generation;
         if (native.cancelPoll) native.cancelPoll();
       }
       if (entry) { if (canSwitchAgents && !canLibrary) adoptAgent(entry.agent); setSession(entry.session); }
-      renderProjects(); startPoll(); refreshSessionTitles();
+      renderProjects(); renderBrowser(); startPoll(); refreshSessionTitles();
     } catch (_) { /* The session poll handles connection loss and reconnects. */ }
     finally { catalogRequest = false; }
   }
@@ -2223,7 +2237,7 @@
     $("terminal-functions-toggle").setAttribute("aria-expanded", String(!panel.hidden));
     if (!panel.hidden) $("terminal-keys").scrollIntoView({block: "nearest"});
   });
-  window.BibimerPause = () => { agentConnections.pause(); pickers.close(); paused = true; updateTerminalKeys(); ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
+  window.BibimerPause = () => { agentConnections.pause(); pickers.close(); paused = true; browserConsent.render(); updateTerminalKeys(); ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
   $("language").addEventListener("change", () => {
     try {
       if (!native.setLanguage($("language").value)) throw new Error();

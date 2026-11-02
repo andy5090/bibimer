@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "browser_consent_title": "瀏覽器控制請求",
+  "browser_consent_body": "在 Termux:X11 完成登入後，在此允許控制。連接至此專案的代理程式便可查看並操作已開啟的 Firefox 視窗。",
+  "browser_login_guide": "在 Termux:X11 登入後，返回 Bibimer 工作畫面，在「瀏覽器控制請求」卡片點選「登入完成 · 允許代理程式控制」。若未顯示卡片，請開啟底部的設定 → Firefox · Termux:X11 → 登入與代理控制，再點選相同按鈕。",
+
   "response_delivery_save_failed": "無法儲存回覆期間的傳送設定。",
   "response_delivery_hint": "選擇回覆期間傳送按鈕與傳送快捷鍵的預設動作。無法使用方向調整時加入佇列。原生斜線指令使用佇列。",
   "response_delivery_label": "回覆期間的傳送動作",
@@ -52,7 +56,7 @@ window.BibimerTranslations["zh-Hant"] = {
   "error_maintenance_recovery": "無法重新開啟工作階段。請在設定中查看復原狀態。",
   "error_browser_permission": "此工作階段的權限模式不允許瀏覽器輸入。",
   "error_browser_control": "無法控制瀏覽器。請開啟 Termux:X11 後重試。",
-  "error_browser_manual": "請在 Bibimer 中完成手動登入後允許代理程式控制。",
+  "error_browser_manual": "在 Termux:X11 登入後，返回 Bibimer 工作畫面，在「瀏覽器控制請求」卡片點選「登入完成 · 允許代理程式控制」。若未顯示卡片，請開啟底部的設定 → Firefox · Termux:X11 → 登入與代理控制，再點選相同按鈕。",
   "browser_install_sent": "已在 Termux 中開始準備。完成後返回並重新整理。",
   "browser_default_hint": "需要時開啟 Firefox，並在專案的各個工作樹共用同一設定檔。新代理程式工作階段預設連線。關閉後也會封鎖現有工具存取。",
   "browser_control_status": "已允許代理程式控制。輸入憑證前請選擇手動登入。",

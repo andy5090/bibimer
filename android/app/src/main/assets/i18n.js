@@ -47,7 +47,7 @@
 
     error_browser_permission: ["This session permission mode does not allow browser input.", "이 세션의 권한 모드에서는 브라우저 입력을 허용하지 않습니다."],
     error_browser_control: ["Could not control this browser. Open Termux:X11 and try again.", "브라우저를 조작하지 못했습니다. Termux:X11을 열고 다시 시도하세요."],
-    error_browser_manual: ["Finish manual login in Bibimer before allowing agent control.", "Bibimer에서 직접 로그인을 마친 뒤 에이전트 제어를 허용하세요."],
+    error_browser_manual: ["After signing in in Termux:X11, return to Bibimer Work and tap “Login complete · allow agent control” on the “Browser control request” card. If no card is shown, open the bottom Settings tab → Firefox · Termux:X11 → Login and agent control, then tap the same button.", "Termux:X11에서 로그인한 뒤 Bibimer 작업 화면으로 돌아와 ‘브라우저 제어 요청’ 카드의 ‘로그인 완료 · 에이전트 제어 허용’을 누르세요. 카드가 없으면 하단 설정 → Firefox · Termux:X11 → 로그인 및 에이전트 제어에서 같은 버튼을 누르세요."],
     browser_install_sent: ["Preparation opened in Termux. After it finishes, return here and refresh.", "Termux에서 준비를 시작했습니다. 완료 후 돌아와 새로고침하세요."],
     browser_default_hint: ["Firefox opens when needed and reuses the project’s profile across worktrees. Connection is enabled by default for new agent sessions. Turning it off blocks existing tool access.", "필요할 때 Firefox를 열고 프로젝트의 워크트리에서 같은 프로필을 사용합니다. 새 에이전트 세션은 기본으로 연결됩니다. 사용 안 함을 선택하면 기존 도구 접근도 차단됩니다."],
     browser_control_status: ["Agent control is allowed. Choose manual login before entering credentials.", "에이전트 제어가 허용되어 있습니다. 인증 정보를 입력하기 전에 직접 로그인을 선택하세요."],
@@ -60,6 +60,9 @@
     browser_tools_on: ["Automatic", "자동 연결"],
     browser_tools_label: ["Agent connection", "에이전트 연결"],
     browser_title: ["Firefox · Termux:X11", "Firefox · Termux:X11"],
+    browser_consent_title: ["Browser control request", "브라우저 제어 요청"],
+    browser_consent_body: ["Finish signing in in Termux:X11, then allow control here. Connected agents in this project can then view and operate the open Firefox window.", "Termux:X11에서 로그인을 마친 뒤 여기서 제어를 허용하세요. 이 프로젝트에 연결된 에이전트가 열린 Firefox 창을 보고 조작할 수 있게 됩니다."],
+    browser_login_guide: ["After signing in in Termux:X11, return to Bibimer Work and tap “Login complete · allow agent control” on the “Browser control request” card. If no card is shown, open the bottom Settings tab → Firefox · Termux:X11 → Login and agent control, then tap the same button.", "Termux:X11에서 로그인한 뒤 Bibimer 작업 화면으로 돌아와 ‘브라우저 제어 요청’ 카드의 ‘로그인 완료 · 에이전트 제어 허용’을 누르세요. 카드가 없으면 하단 설정 → Firefox · Termux:X11 → 로그인 및 에이전트 제어에서 같은 버튼을 누르세요."],
     browser_intro: ["Open Firefox in Termux:X11 and sign in yourself. No VNC or ADB is needed.", "Termux:X11에서 Firefox를 열고 직접 로그인합니다. VNC나 ADB는 필요하지 않습니다."],
     browser_address: ["Website address (optional)", "웹사이트 주소 (선택)"],
     browser_start: ["Start browser", "브라우저 시작"],

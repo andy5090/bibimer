@@ -241,12 +241,24 @@ class BrowserTests(BridgeTestCase):
         agent=self.agent()
         result=self.tool(agent,'open')
         self.assertTrue(result['manual_login'])
+        self.assertIn('Work screen',result['instructions'])
+        self.assertIn('Settings tab',result['instructions'])
+        self.assertIn('Login and agent control',result['instructions'])
         browser=next(row for row in self.bridge.sessions.values() if isinstance(row,module.BrowserSession))
+        self.assertIn('browser_control_consent',self.bridge.health()['features'])
+        env={**os.environ,**self.bridge.browser_tools.child_environment(agent.browser_key)}
+        blocked=subprocess.run([str(self.bridge.browser_tools.bin/'bibimer-browser'),'screenshot'],input='',text=True,
+                               capture_output=True,env=env,timeout=3)
+        self.assertEqual(1,blocked.returncode)
+        self.assertEqual('error_browser_manual',json.loads(blocked.stdout)['error'])
+        self.assertIn('Work screen',json.loads(blocked.stdout)['instructions'])
         for action in ('screenshot','click','type','key','scroll','allow','manual'):
             with self.assertRaises(ValueError): self.tool(agent,action,text='PRIVATE_INPUT',x=1,y=1,key='ctrl+l')
         body=dict(project_id=agent.project['id'],session_id=browser.id)
         self.assertEqual(401,self.api('POST','/v1/browser',dict(body,action='allow'),auth=False)[0])
-        self.assertEqual(200,self.api('POST','/v1/browser',dict(body,action='allow'))[0])
+        self.assertEqual(409,self.api('POST','/v1/browser',dict(body,action='allow',launch_id='stale-launch'))[0])
+        self.assertTrue(browser.browser_manual)
+        self.assertEqual(200,self.api('POST','/v1/browser',dict(body,action='allow',launch_id=browser.launch_id))[0])
         with patch.object(module.browser_tools,'control',return_value={'ok':True}) as control:
             self.assertTrue(self.tool(agent,'click',x=1,y=2)['ok'])
             control.assert_called_once()

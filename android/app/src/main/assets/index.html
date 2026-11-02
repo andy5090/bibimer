@@ -32,6 +32,7 @@
   <script src="github.js" defer></script>
   <script src="worktree-create.js" defer></script>
   <script src="bridge-maintenance.js" defer></script>
+  <script src="browser-consent.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -67,6 +68,12 @@
       </div>
       <button id="project-update" class="quiet" data-i18n="projects_update" hidden>Update the bridge to use multiple projects</button>
       <div class="session-bar"><span id="session-title"></span><span id="process" class="badge">Not started</span><button id="terminal-fullscreen-toggle" class="icon-button" type="button" aria-label="Expand terminal" data-i18n-aria-label="terminal_fullscreen_enter" aria-pressed="false" aria-controls="workspace" hidden><svg class="fullscreen-enter-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg><svg class="fullscreen-exit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h5V3M16 3v5h5M8 21v-5H3M21 16h-5v5"/></svg></button></div>
+      <section id="browser-consent" class="browser-consent" aria-labelledby="browser-consent-title" hidden>
+        <h3 id="browser-consent-title" data-i18n="browser_consent_title">Browser control request</h3>
+        <p data-i18n="browser_consent_body">Finish signing in in Termux:X11, then allow control here. This lets connected agents in this project view and operate the open Firefox window.</p>
+        <div class="button-row"><button id="browser-consent-view" type="button" class="secondary" data-i18n="browser_view">Open browser window</button><button id="browser-consent-allow" type="button" class="primary" data-i18n="browser_allow">Login complete · allow agent control</button></div>
+        <p id="browser-consent-error" class="hint danger-text" role="alert" hidden></p>
+      </section>
       <button id="handoff-source" class="quiet" type="button" hidden></button>
       <div id="launch-controls" class="launch-controls">
         <label for="agent" data-i18n="program_label">Agent to run</label>
@@ -291,6 +298,7 @@
     <section id="browser-preference" class="card preference-card" hidden>
       <h2 data-i18n="browser_title">Firefox · Termux:X11</h2>
       <div class="preference-row"><label for="browser-agent-tools" data-i18n="browser_tools_label">Agent connection</label><select id="browser-agent-tools" aria-describedby="browser-default-hint"><option value="on" data-i18n="browser_tools_on">Automatic</option><option value="off" data-i18n="browser_tools_off">Off</option></select></div>
+      <p class="hint" data-i18n="browser_login_guide"></p>
       <p id="browser-default-hint" class="hint" data-i18n="browser_default_hint"></p>
       <div class="button-row"><button type="button" data-agent="browser" data-agent-action="install" class="secondary" data-i18n="browser_prepare">Prepare in Termux</button><button id="browser-settings-open" type="button" class="primary" data-i18n="browser_login_settings" aria-haspopup="dialog" aria-controls="browser-dialog">Login and agent control</button></div>
       <button type="button" data-browser-guide class="quiet" data-i18n="browser_get_x11">Termux:X11 releases</button>
@@ -355,6 +363,7 @@
   <dialog id="browser-dialog" class="settings-dialog" aria-labelledby="browser-title">
     <div class="sidebar-heading"><h2 id="browser-title" data-i18n="browser_title">Browser · experiment</h2><button id="browser-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
     <p class="hint" data-i18n="browser_intro">Open Firefox in Termux:X11 and sign in yourself. No VNC or ADB is needed.</p>
+    <p class="hint" data-i18n="browser_login_guide"></p>
     <p id="browser-workspace" class="hint" dir="auto"></p>
     <p id="browser-status" class="hint" role="status"></p>
     <form id="browser-form"><label for="browser-url" data-i18n="browser_address">Website address (optional)</label><input id="browser-url" type="url" inputmode="url" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://…"><button id="browser-start" class="primary full" type="submit" data-i18n="browser_start">Start browser</button></form>

@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "browser_consent_title": "浏览器控制请求",
+  "browser_consent_body": "在 Termux:X11 中完成登录后，在此允许控制。连接到此项目的代理随后可查看并操作已打开的 Firefox 窗口。",
+  "browser_login_guide": "在 Termux:X11 中登录后，返回 Bibimer 工作界面，在“浏览器控制请求”卡片上点击“登录完成 · 允许智能体控制”。如未显示卡片，请打开底部的设置 → Firefox · Termux:X11 → 登录与智能体控制，再点击同一按钮。",
+
   "response_delivery_save_failed": "无法保存回复期间的发送设置。",
   "response_delivery_hint": "选择回复期间发送按钮和发送快捷键的默认操作。无法使用方向调整时加入队列。原生斜杠命令使用队列。",
   "response_delivery_label": "回复期间的发送操作",
@@ -52,7 +56,7 @@ window.BibimerTranslations["zh-Hans"] = {
   "error_maintenance_recovery": "无法重新打开会话。请在设置中查看恢复状态。",
   "error_browser_permission": "此会话的权限模式不允许浏览器输入。",
   "error_browser_control": "无法控制浏览器。请打开 Termux:X11 后重试。",
-  "error_browser_manual": "请在 Bibimer 中完成手动登录后允许智能体控制。",
+  "error_browser_manual": "在 Termux:X11 中登录后，返回 Bibimer 工作界面，在“浏览器控制请求”卡片上点击“登录完成 · 允许智能体控制”。如未显示卡片，请打开底部的设置 → Firefox · Termux:X11 → 登录与智能体控制，再点击同一按钮。",
   "browser_install_sent": "已在 Termux 中开始准备。完成后返回并刷新。",
   "browser_default_hint": "需要时打开 Firefox，并在项目的各个工作树中复用同一配置。新智能体会话默认连接。关闭后也会阻止现有工具访问。",
   "browser_control_status": "已允许智能体控制。输入凭据前请选择手动登录。",

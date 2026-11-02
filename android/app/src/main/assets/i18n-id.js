@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "browser_consent_title": "Permintaan kontrol browser",
+  "browser_consent_body": "Selesaikan login di Termux:X11, lalu izinkan kontrol di sini. Agen yang terhubung ke proyek ini dapat melihat dan mengoperasikan jendela Firefox yang terbuka.",
+  "browser_login_guide": "Setelah login di Termux:X11, kembali ke layar kerja Bibimer dan ketuk “Login selesai · izinkan kontrol agen” pada kartu “Permintaan kontrol browser”. Jika kartu tidak muncul, buka tab bawah Pengaturan → Firefox · Termux:X11 → Login dan kontrol agen, lalu ketuk tombol yang sama.",
+
   "response_delivery_save_failed": "Pengaturan pengiriman saat respons berlangsung tidak dapat disimpan.",
   "response_delivery_hint": "Pilih tindakan bawaan tombol dan pintasan kirim saat respons berlangsung. Jika Steer tidak tersedia, pesan masuk antrean. Perintah garis miring bawaan menggunakan antrean.",
   "response_delivery_label": "Pengiriman saat respons berlangsung",
@@ -52,7 +56,7 @@ window.BibimerTranslations.id = {
   "error_maintenance_recovery": "Sesi tidak dapat dibuka kembali. Periksa pemulihan di Pengaturan.",
   "error_browser_permission": "Mode izin sesi ini tidak mengizinkan input browser.",
   "error_browser_control": "Browser tidak dapat dikontrol. Buka Termux:X11 dan coba lagi.",
-  "error_browser_manual": "Selesaikan login manual di Bibimer sebelum mengizinkan kontrol agen.",
+  "error_browser_manual": "Setelah login di Termux:X11, kembali ke layar kerja Bibimer dan ketuk “Login selesai · izinkan kontrol agen” pada kartu “Permintaan kontrol browser”. Jika kartu tidak muncul, buka tab bawah Pengaturan → Firefox · Termux:X11 → Login dan kontrol agen, lalu ketuk tombol yang sama.",
   "browser_install_sent": "Persiapan dibuka di Termux. Setelah selesai, kembali dan segarkan.",
   "browser_default_hint": "Firefox dibuka saat diperlukan dan menggunakan kembali profil proyek di seluruh worktree. Sesi agen baru terhubung secara default. Menonaktifkan juga memblokir akses alat yang sudah ada.",
   "browser_control_status": "Kontrol agen diizinkan. Pilih login manual sebelum memasukkan kredensial.",
