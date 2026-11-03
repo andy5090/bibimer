@@ -83,6 +83,18 @@ class BrowserTests(BridgeTestCase):
         while time.monotonic()<end and self.bridge.sessions[row['id']].state!='exited': time.sleep(.02)
         self.assertEqual('exited', self.bridge.sessions[row['id']].state)
 
+    def test_notice_requires_matching_explicit_consent_request(self):
+        row=self.start(); browser=self.bridge.sessions[row['id']]
+        request_id=str(uuid.uuid4())
+        browser.browser_consent_request={'id':request_id,'session_id':'requester','agent':'codex','delivery':'waiting'}
+        body=dict(action='allow',project_id=row['project']['id'],session_id=row['id'],launch_id=row['launch_id'],notify=True,consent_request_id='wrong',notification_text='Allowed')
+        self.assertEqual(409,self.api('POST','/v1/browser',body)[0])
+        self.assertTrue(browser.browser_manual)
+        with patch.object(self.bridge,'browser_allowed_notice',return_value={'state':'steered'}) as deliver:
+            status,result=self.api('POST','/v1/browser',{**body,'consent_request_id':request_id})
+            self.assertEqual(200,status);self.assertFalse(result['session']['browser_manual'])
+            self.assertEqual('steered',result['notification']['state']);self.assertEqual(1,deliver.call_count)
+
     def test_explicit_maintenance_reopens_same_profile_and_id_in_manual_mode(self):
         row=self.start()
         session=self.bridge.get_session(row['id'])

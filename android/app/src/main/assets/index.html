@@ -71,6 +71,7 @@
       <section id="browser-consent" class="browser-consent" aria-labelledby="browser-consent-title" hidden>
         <h3 id="browser-consent-title" data-i18n="browser_consent_title">Browser control request</h3>
         <p data-i18n="browser_consent_body">Finish signing in in Termux:X11, then allow control here. This lets connected agents in this project view and operate the open Firefox window.</p>
+        <p id="browser-consent-notify" class="hint" hidden></p>
         <div class="button-row"><button id="browser-consent-view" type="button" class="secondary" data-i18n="browser_view">Open browser window</button><button id="browser-consent-allow" type="button" class="primary" data-i18n="browser_allow">Login complete · allow agent control</button></div>
         <p id="browser-consent-error" class="hint danger-text" role="alert" hidden></p>
       </section>
@@ -369,6 +370,7 @@
     <form id="browser-form"><label for="browser-url" data-i18n="browser_address">Website address (optional)</label><input id="browser-url" type="url" inputmode="url" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://…"><button id="browser-start" class="primary full" type="submit" data-i18n="browser_start">Start browser</button></form>
     <button id="browser-view" class="secondary full" type="button" data-i18n="browser_view" hidden>Open browser window</button>
     <button id="browser-manual" class="secondary full" type="button" data-i18n="browser_manual" hidden>Sign in yourself</button>
+    <p id="browser-notify-hint" class="hint" hidden></p>
     <button id="browser-allow" class="primary full" type="button" data-i18n="browser_allow" hidden>Login complete · allow agent control</button>
     <button id="browser-refresh" class="quiet full" type="button" data-i18n="commands_refresh">Refresh</button>
     <details id="browser-setup"><summary data-i18n="browser_setup">Install browser tools</summary><p class="hint" data-i18n="browser_install_hint">Install the latest Termux:X11 Android app from its official releases, then run this command in Termux. Installation is manual.</p><button class="secondary full" type="button" data-agent="browser" data-agent-action="install" data-i18n="browser_prepare">Prepare in Termux</button><p id="agent-action-status-browser" class="hint" role="status" hidden></p><code class="browser-command">pkg install -y x11-repo &amp;&amp; pkg install -y termux-x11-nightly firefox openbox xdotool xclip imagemagick libc++</code><button id="browser-copy" class="secondary full" type="button" data-i18n="copy">Copy</button><button id="browser-guide" class="quiet full" type="button" data-i18n="browser_get_x11">Termux:X11 releases</button></details>

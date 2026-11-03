@@ -1,6 +1,16 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "browser_consent_notify": "允許控制時，也會通知提出請求的 {agent} 工作階段。",
+  "browser_allowed_message": "已在 Bibimer 中允許瀏覽器控制。準備好後可繼續瀏覽器工作。這不代表核准其他工具操作。",
+  "browser_notice_steered": "已允許控制；代理已透過 Steer 接收通知。",
+  "browser_notice_sent": "已允許控制；已向請求工作階段傳送後續訊息。",
+  "browser_notice_queued": "已允許控制；通知已加入請求工作階段的佇列。",
+  "browser_notice_unavailable": "已允許控制，但請求工作階段或回合已變更。請傳送訊息讓代理繼續。",
+  "browser_notice_uncertain": "已允許控制，但無法確認通知是否送達。再次傳送前請檢查對話。",
+  "browser_notice_failed": "已允許控制，但通知傳送失敗。請傳送訊息讓代理繼續。",
+  "browser_notice_sending": "已允許控制；正在確認代理是否收到通知。",
+
   "inspect_workspace": "本機工作區",
   "git_commit": "提交",
   "git_push": "推送",

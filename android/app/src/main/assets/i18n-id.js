@@ -1,6 +1,16 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "browser_consent_notify": "Mengizinkan kontrol juga memberi tahu sesi {agent} yang memintanya.",
+  "browser_allowed_message": "Kontrol browser telah diizinkan di Bibimer. Lanjutkan tugas browser saat siap. Ini tidak menyetujui tindakan alat lainnya.",
+  "browser_notice_steered": "Kontrol diizinkan; agen menerima pemberitahuan melalui Steer.",
+  "browser_notice_sent": "Kontrol diizinkan; pesan lanjutan dikirim ke sesi peminta.",
+  "browser_notice_queued": "Kontrol diizinkan; pemberitahuan ditambahkan ke antrean sesi peminta.",
+  "browser_notice_unavailable": "Kontrol diizinkan, tetapi sesi atau giliran telah berubah. Kirim pesan ke agen untuk melanjutkan.",
+  "browser_notice_uncertain": "Kontrol diizinkan; pengiriman pemberitahuan belum pasti. Periksa percakapan sebelum mengirim lagi.",
+  "browser_notice_failed": "Kontrol diizinkan, tetapi pemberitahuan gagal. Kirim pesan ke agen untuk melanjutkan.",
+  "browser_notice_sending": "Kontrol diizinkan; memeriksa pengiriman ke agen.",
+
   "inspect_workspace": "Ruang kerja lokal",
   "git_commit": "Commit",
   "git_push": "Push",

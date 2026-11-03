@@ -1,6 +1,16 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "browser_consent_notify": "Die Freigabe benachrichtigt auch die anfragende {agent}-Sitzung.",
+  "browser_allowed_message": "Die Browsersteuerung ist in Bibimer erlaubt. Setze die Browseraufgabe fort, wenn du bereit bist. Andere Werkzeugaktionen sind damit nicht genehmigt.",
+  "browser_notice_steered": "Steuerung erlaubt; der Agent hat die Nachricht per Steer angenommen.",
+  "browser_notice_sent": "Steuerung erlaubt; eine Folgenachricht wurde an die anfragende Sitzung gesendet.",
+  "browser_notice_queued": "Steuerung erlaubt; die Nachricht wurde in die Warteschlange der anfragenden Sitzung eingereiht.",
+  "browser_notice_unavailable": "Steuerung erlaubt, aber Sitzung oder Durchlauf hat sich geändert. Sende dem Agenten eine Nachricht zum Fortsetzen.",
+  "browser_notice_uncertain": "Steuerung erlaubt; Zustellung nicht bestätigt. Prüfe das Gespräch vor erneutem Senden.",
+  "browser_notice_failed": "Steuerung erlaubt, aber Nachricht fehlgeschlagen. Sende dem Agenten eine Nachricht zum Fortsetzen.",
+  "browser_notice_sending": "Steuerung erlaubt; Zustellung an den Agenten wird geprüft.",
+
   "inspect_workspace": "Lokaler Arbeitsordner",
   "git_commit": "Commit",
   "git_push": "Push",

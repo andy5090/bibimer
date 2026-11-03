@@ -42,7 +42,7 @@ _recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_rec
 maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
 _recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.24.0"
+VERSION = "0.24.1"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -1017,6 +1017,7 @@ class BrowserSession(Session):
     def __init__(self, project, root, url, launch_id, changed):
         self.browser_manual = True
         self.browser_owner = None
+        self.browser_consent_request = None
         self.browser_control_lock = threading.Lock()
         self.browser_digest = hashlib.sha256(url.encode()).hexdigest()
         self.browser_tag = "bibimer-" + launch_id
@@ -1073,7 +1074,7 @@ class BrowserSession(Session):
 
     def snapshot(self):
         return dict(super().snapshot(), kind="browser", browser_tag=self.browser_tag, browser_manual=self.browser_manual,
-                    browser_digest=self.browser_digest, display_title="Firefox · Termux:X11")
+                    browser_digest=self.browser_digest, browser_consent_request=({key:value for key,value in self.browser_consent_request.items() if not key.startswith("_")} if self.browser_consent_request else None), display_title="Firefox · Termux:X11")
 
     def _read(self):
         try:
@@ -3491,6 +3492,64 @@ class Bridge:
             if not current or current['state'] != 'exited' or current.get('launch_id') != launch_id:
                 raise Problem(409, "error_maintenance_recovery")
 
+    def browser_requested(self, browser_id, agent):
+        # Only a real Chat requester is a notification target; never inject text into a PTY.
+        if not isinstance(agent, ChatSession) or agent.state != "running": return
+        with self.lock:
+            browser = self.sessions.get(browser_id)
+        if not isinstance(browser, BrowserSession) or browser.project["id"] != agent.project["id"]: return
+        with browser.browser_control_lock, agent.condition:
+            if not browser.browser_manual or browser.state != "running": return
+            previous = browser.browser_consent_request
+            if previous and previous["session_id"] != agent.id:
+                old = self.sessions.get(previous["session_id"])
+                if old and old.state == "running": return
+            if previous and previous["session_id"] == agent.id and previous["_turn"] == agent.turn_id: return
+            browser.browser_consent_request = {"id":str(uuid.uuid4()), "session_id":agent.id, "agent":agent.agent,
+                "delivery":"waiting", "_turn":agent.turn_id, "_launch":agent.launch_id,
+                "_path":agent.project["path"], "_inputs":frozenset(agent.inputs)}
+
+    def browser_allowed_notice(self, browser, data):
+        if data.get("notify") is not True: return None
+        with browser.browser_control_lock:
+            request = browser.browser_consent_request
+            if not request or request["id"] != data.get("consent_request_id") or browser.browser_manual:
+                return {"state":"unavailable"}
+            if request["delivery"] != "waiting": return {"state":request["delivery"]}
+            request["delivery"] = "sending"
+        outcome = "unavailable"
+        try:
+            with self.lock: target = self.sessions.get(request["session_id"])
+            if not isinstance(target, ChatSession): return {"state":outcome}
+            with target.condition:
+                if (target.state != "running" or target.launch_id != request["_launch"] or
+                    target.project["id"] != browser.project["id"] or target.project["path"] != request["_path"]):
+                    return {"state":outcome}
+                active = target.turn_state in {"running", "waiting"}
+                idle = target.turn_state == "ready"
+                if active and target.turn_id != request["_turn"]: return {"state":outcome}
+                if idle and frozenset(target.inputs) != request["_inputs"]: return {"state":outcome}
+                if not active and not idle: return {"state":outcome}
+                payload = {"request_id":request["id"], "text":data["notification_text"]}
+                if active and target.can_steer:
+                    target.steer({**payload, "turn_id":request["_turn"]})
+                    outcome = "steered"
+                elif target.queue_paused:
+                    return {"state":outcome}
+                elif idle and not target.queue and not target.queue_paused:
+                    target.message(payload)
+                    outcome = "sent"
+                else:
+                    target.queue_action({**payload, "action":"add"})
+                    outcome = "queued"
+        except Problem as error:
+            outcome = "uncertain" if error.code == "error_input_uncertain" else "failed"
+        except Exception:
+            outcome = "failed"
+        finally:
+            with browser.browser_control_lock: request["delivery"] = outcome
+        return {"state":outcome}
+
     def browser(self, data, restore_id=None):
         project = self.working_project(data)
         action = data.get("action")
@@ -3520,12 +3579,20 @@ class Bridge:
             with current.browser_control_lock:
                 if current.process.poll() is not None or (data.get("launch_id") is not None and data["launch_id"] != current.launch_id):
                     raise Problem(409, "error_browser_start")
+                if action == "allow" and data.get("notify") is True:
+                    request = current.browser_consent_request
+                    text = data.get("notification_text")
+                    if (not request or request["id"] != data.get("consent_request_id") or
+                        not isinstance(text, str) or not text.strip() or len(text.encode()) > 2048):
+                        raise Problem(409, "error_browser_control")
                 current.browser_manual = action == "manual"
+                if action == "manual": current.browser_consent_request = None
                 current.browser_owner = None
                 browser_tools.clear_clipboard(current)
                 if self.browser_tools:
                     self.browser_tools.clear_screens()
-                return {"session": current.snapshot()}
+            notification = self.browser_allowed_notice(current, data) if action == "allow" else None
+            return {"session": current.snapshot(), "notification":notification}
         if action == "status":
             with self.lock:
                 current = next((row for row in self.snapshots(project["id"]) if row.get("kind") == "browser"
@@ -3669,7 +3736,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "maintenance_recovery", "agent_connections"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "browser_consent_notify", "maintenance_recovery", "agent_connections"], "active_sessions": self.active_count(),
                     "agents": self.agents(), "maintenance_recovery": self.recovery.snapshot(),
                     "session": self.snapshot_for(self.active_project_id)}
 

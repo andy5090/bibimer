@@ -1,6 +1,16 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "browser_consent_notify": "允许控制时，也会通知请求控制的 {agent} 会话。",
+  "browser_allowed_message": "已在 Bibimer 中允许浏览器控制。准备好后可继续浏览器任务。这不代表批准其他工具操作。",
+  "browser_notice_steered": "已允许控制；代理已通过 Steer 接收通知。",
+  "browser_notice_sent": "已允许控制；已向请求会话发送后续消息。",
+  "browser_notice_queued": "已允许控制；通知已加入请求会话的队列。",
+  "browser_notice_unavailable": "已允许控制，但请求会话或轮次已更改。请发送消息让代理继续。",
+  "browser_notice_uncertain": "已允许控制，但无法确认通知是否送达。再次发送前请检查对话。",
+  "browser_notice_failed": "已允许控制，但通知发送失败。请发送消息让代理继续。",
+  "browser_notice_sending": "已允许控制；正在确认代理是否收到通知。",
+
   "inspect_workspace": "本地工作区",
   "git_commit": "提交",
   "git_push": "推送",

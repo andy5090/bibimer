@@ -1,6 +1,16 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "browser_consent_notify": "許可すると、要求した {agent} セッションにも完了を通知します。",
+  "browser_allowed_message": "Bibimer でブラウザー制御を許可しました。準備ができたらブラウザー作業を続けてください。他のツール操作への承認ではありません。",
+  "browser_notice_steered": "制御を許可し、エージェントが Steer 通知を受け付けました。",
+  "browser_notice_sent": "制御を許可し、要求したセッションに後続メッセージを送りました。",
+  "browser_notice_queued": "制御を許可し、要求したセッションのキューに通知を追加しました。",
+  "browser_notice_unavailable": "制御は許可しましたが、セッションまたはターンが変わりました。続けるにはエージェントにメッセージを送ってください。",
+  "browser_notice_uncertain": "制御は許可しましたが、通知の到達を確認できません。再送前に会話を確認してください。",
+  "browser_notice_failed": "制御は許可しましたが通知の送信に失敗しました。続けるにはエージェントにメッセージを送ってください。",
+  "browser_notice_sending": "制御を許可しました。エージェントへの通知を確認中です。",
+
   "inspect_workspace": "ローカル作業フォルダー",
   "git_commit": "コミット",
   "git_push": "プッシュ",

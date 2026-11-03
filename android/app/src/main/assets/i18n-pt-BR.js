@@ -1,6 +1,16 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["pt-BR"] = {
+  "browser_consent_notify": "Ao permitir o controle, a sessão de {agent} que solicitou também será avisada.",
+  "browser_allowed_message": "O controle do navegador foi permitido no Bibimer. Continue a tarefa quando estiver pronto. Isso não aprova outras ações de ferramentas.",
+  "browser_notice_steered": "Controle permitido; o agente aceitou o aviso via Steer.",
+  "browser_notice_sent": "Controle permitido; uma mensagem foi enviada à sessão solicitante.",
+  "browser_notice_queued": "Controle permitido; aviso adicionado à fila da sessão solicitante.",
+  "browser_notice_unavailable": "Controle permitido, mas a sessão ou turno mudou. Envie uma mensagem ao agente para continuar.",
+  "browser_notice_uncertain": "Controle permitido; não foi possível confirmar o aviso. Confira a conversa antes de reenviar.",
+  "browser_notice_failed": "Controle permitido, mas o aviso falhou. Envie uma mensagem ao agente para continuar.",
+  "browser_notice_sending": "Controle permitido; verificando a entrega ao agente.",
+
   "inspect_workspace": "Espaço de trabalho local",
   "git_commit": "Commit",
   "git_push": "Push",

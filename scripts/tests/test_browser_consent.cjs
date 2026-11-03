@@ -33,5 +33,12 @@ function setup(){ctx={instance:'bridge-one',project:'p1',path:'/project',tab:'wo
  assert.equal(elements.get('browser-consent').hidden,true,'A status response from before explicit consent cannot restore manual mode');
  ui=setup();ctx.sessions=[];ui.observe(browser());assert.equal(elements.get('browser-consent').hidden,false,'Opening the browser settings refreshes the card without catalog polling');
  for(const change of [()=>ctx.enabled=false,()=>ctx.online=false,()=>ctx.paused=true,()=>ctx.switching=true,()=>ctx.tab='settings']){ui=setup();change();await ui.refresh();assert.equal(calls.length,0);}
+ ui=setup();ctx.notifyEnabled=true;ctx.sessions[0].browser_consent_request={id:'notice-one',agent:'codex',session_id:'requester'};
+ const delivered=[];ui.notified=result=>delivered.push(result.state);
+ ui.request=async data=>{calls.push(data);return {session:{...ctx.sessions[0],browser_manual:false},notification:{state:'steered'}};};
+ ui.render();await ui.act('allow');assert.equal(calls[0].notify,true);assert.equal(calls[0].consent_request_id,'notice-one');assert.equal(calls[0].notification_text,'browser_allowed_message');assert.deepEqual(delivered,['steered']);
+ ui=setup();ctx.sessions[0].browser_consent_request={id:'notice-one',agent:'codex'};ui.render();await ui.act('allow');assert.equal(calls[0].notify,undefined,'Old bridge does not receive notification fields');
+ ui=setup();ctx.notifyEnabled=true;ctx.sessions[0].browser_consent_request={id:'old-notice',agent:'codex'};ui.render();
+ ctx.sessions[0].browser_consent_request={id:'new-notice',agent:'claude'};await ui.act('allow');assert.equal(calls.length,0,'A stale card cannot notify a different requester');
  console.log('PASS browser consent: dedicated status discovery, stale/racing reads, explicit-only grant, view-only action, project/run/bridge guards, duplicate suppression, failure retention and no cross-project approval');
 })().catch(e=>{console.error(e);process.exitCode=1;});

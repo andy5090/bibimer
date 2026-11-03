@@ -33,7 +33,7 @@
   let canDragProjects = false, canOrderProjects = false, canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   let canGitActions = false, canInspect = false, canOpenFiles = false, openingFile = false;
   let canConnections = false;
-  let canBrowser = false, canBrowserConsent = false, browserState = null, browserEnabled = true;
+  let canBrowser = false, canBrowserConsent = false, canBrowserNotify = false, browserState = null, browserEnabled = true;
   const worktrees = {};
   const worktreeChecks = new Map();
   let workspaceDetails = null;
@@ -101,14 +101,21 @@
 
   const browserConsent = new BibimerBrowserConsent(t, () => ({
     instance, project:projectKey(), path:fileContext().path, tab:currentTab, online,
-    enabled:canBrowserConsent && browserEnabled && !demo && !!native.openBrowserWindow, paused, switching:switchingProject,
+    notifyEnabled:canBrowserNotify, enabled:canBrowserConsent && browserEnabled && !demo && !!native.openBrowserWindow, paused, switching:switchingProject,
     sessions:knownProjects.find(row => row.id === projectKey())?.sessions || []
   }), data => api("POST", "/v1/browser", data), row => {
     cacheSession(row);
     if (browserState?.session?.id === row.id) browserState.session = row;
     renderBrowser();
-  }, tag => native.openBrowserWindow(tag));
+  }, tag => native.openBrowserWindow(tag), browserNotice);
 
+  function browserNotice(result) {
+    if (["steered", "sent", "queued", "unavailable", "uncertain", "failed", "sending"].includes(result?.state)) notice("browser_notice_" + result.state);
+  }
+  function browserNotification(row) {
+    return canBrowserNotify && row?.browser_consent_request ? {notify:true,
+      consent_request_id:row.browser_consent_request.id, notification_text:t("browser_allowed_message")} : {};
+  }
   setInterval(() => void browserConsent.refresh(), 2000);
 
   const agentConnections = new BibimerAgentConnections(t,
@@ -932,6 +939,8 @@
     const valid = state.key === browserKey() && online && !paused && !switchingProject;
     const installed = environment().termuxX11Installed === true && state.installed && Object.values(state.installed).every(Boolean);
     const running = state.session && ["running", "stopping"].includes(state.session.state);
+    $("browser-notify-hint").hidden = !canBrowserNotify || !state.session?.browser_consent_request || state.session.browser_manual === false;
+    $("browser-notify-hint").textContent = t("browser_consent_notify", {agent:t("agent_" + (state.session?.browser_consent_request?.agent || "codex"))});
     $("browser-workspace").textContent = state.path;
     $("browser-status").textContent = t(state.busy ? "browser_starting" : state.loading ? "inspect_loading" : running ? (state.session.browser_manual !== false ? "browser_manual_status" : browserEnabled ? "browser_control_status" : "browser_tools_off") : installed ? "browser_ready" : "error_browser_setup");
     $("browser-start").disabled = !valid || !installed || state.busy || state.loading || !!running;
@@ -993,9 +1002,12 @@
     if (!state || state.key !== browserKey() || state.busy || !state.session) return;
     state.busy = true; state.error = null; renderBrowser();
     try {
-      const result = await api("POST", "/v1/browser", {action, project_id:state.project, worktree_path:state.path, session_id:state.session.id, launch_id:state.session.launch_id});
+      const result = await api("POST", "/v1/browser", {action, project_id:state.project, worktree_path:state.path, session_id:state.session.id, launch_id:state.session.launch_id,
+        ...(action === "allow" ? browserNotification(state.session) : {})});
       if (browserState !== state) return;
       state.session = result.session; cacheSession(result.session);
+      browserConsent.observe(result.session);
+      if (result.notification) browserNotice(result.notification);
       if (action === "manual" && state.key === browserKey() && online && !paused && $("browser-dialog").open) native.openBrowserWindow(result.session.browser_tag);
     } catch (error) { if (browserState === state) state.error = error.key || "error_browser_control"; }
     finally { if (browserState === state) { state.busy = false; renderBrowser(); } }
@@ -1353,6 +1365,7 @@
       agentConnections.update();
       canBrowser = health.features?.includes("browser_tools_x11") === true;
       canBrowserConsent = health.features?.includes("browser_control_consent") === true;
+      canBrowserNotify = health.features?.includes("browser_consent_notify") === true;
       browserEnabled = health.browser_enabled !== false;
       canOpenFiles = health.features?.includes("file_links") === true;
       canResponseNotifications = health.features?.includes("response_notifications") === true;

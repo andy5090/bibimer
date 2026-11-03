@@ -1,6 +1,16 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "browser_consent_notify": "L’autorisation avertit aussi la session {agent} qui l’a demandée.",
+  "browser_allowed_message": "Le contrôle du navigateur est autorisé dans Bibimer. Reprenez la tâche lorsque vous êtes prêt. Cela n’approuve pas les autres actions d’outils.",
+  "browser_notice_steered": "Contrôle autorisé ; l’agent a accepté la notification via Steer.",
+  "browser_notice_sent": "Contrôle autorisé ; un message a été envoyé à la session demandeuse.",
+  "browser_notice_queued": "Contrôle autorisé ; la notification a été ajoutée à la file de la session demandeuse.",
+  "browser_notice_unavailable": "Contrôle autorisé, mais la session ou le tour a changé. Envoyez un message à l’agent pour continuer.",
+  "browser_notice_uncertain": "Contrôle autorisé ; la réception n’a pas pu être confirmée. Vérifiez la conversation avant de renvoyer.",
+  "browser_notice_failed": "Contrôle autorisé, mais l’envoi a échoué. Envoyez un message à l’agent pour continuer.",
+  "browser_notice_sending": "Contrôle autorisé ; vérification de l’envoi à l’agent.",
+
   "inspect_workspace": "Dossier local",
   "git_commit": "Commit",
   "git_push": "Push",

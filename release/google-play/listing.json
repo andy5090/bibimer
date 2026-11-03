@@ -251,7 +251,7 @@
     "errors": [],
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed Console rows: phone, tablet, TV, wearable, car, Chromebook, Android XR; min/target SDK unchanged",
-    "preReviewChecksCompleted": false,
+    "preReviewChecksCompleted": true,
     "releaseNotesFile": "release/google-play/release-notes/0.35.1-production.txt",
     "releaseNotesLocales": [
       "en-US",
@@ -278,7 +278,7 @@
     "submittedAtLocal": "2026-11-04 01:37 Asia/Seoul",
     "refreshedStatusVerified": true,
     "submissionVerifiedAtLocal": "2026-11-04 01:38 Asia/Seoul",
-    "note": "Visible Firefox final submission accepted and persisted after refresh under changes in review. Pre-review quick checks are still running. Managed publishing is disabled; approval publishes automatically. Public availability of 59 is not confirmed."
+    "note": "Visible Firefox final submission accepted and persisted after refresh under changes in review. Pre-review quick checks completed; Console shows the changes are being reviewed. Managed publishing is disabled; approval publishes automatically. Public availability of 59 is not confirmed."
   },
   "internalTesterParticipation": {
     "consoleRegistration": "saved_one_tester",

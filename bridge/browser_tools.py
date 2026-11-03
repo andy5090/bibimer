@@ -198,6 +198,7 @@ class Service:
                                      'request_id': uuid.uuid4().hex})
             session = result.get('session')
             if not session: return {'running': False, 'installed': result['installed']}
+            if session.get('browser_manual', True): bridge.browser_requested(session['id'], agent)
             if action == 'open':
                 # Foreground only our tagged Android window; never an arbitrary intent.
                 with contextlib.suppress(ValueError):
@@ -209,6 +210,7 @@ class Service:
             session = next((row for row in bridge.sessions.values() if hasattr(row, 'browser_display')
                             and row.project['id'] == project['id'] and row.state == 'running'), None)
         if not session: raise ValueError('error_browser_start')
+        if session.browser_manual: bridge.browser_requested(session.id, agent)
         if not session.browser_control_lock.acquire(False): raise ValueError('error_browser_busy')
         try:
             if not bridge.browser_enabled or agent.state != 'running' or session.process.poll() is not None: raise ValueError('error_browser_start')
