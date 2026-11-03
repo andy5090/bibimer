@@ -13,7 +13,7 @@ function fixture(session) {
 (async()=>{
   {
     const {ctx,dialog,opened}=fixture({state:"running",browser_tag:"owned",browser_manual:true});
-    await ctx.openBrowser(true);assert.deepEqual(opened,["owned"]);assert.equal(dialog.open,false);
+    await ctx.openBrowser(true);assert.deepEqual(opened,[]);assert.equal(dialog.open,true);
     assert.equal(ctx.browserState.session.browser_manual,true,"Opening the window never grants agent control");
   }
   {
@@ -32,8 +32,21 @@ function fixture(session) {
     const {ctx,dialog,opened}=fixture(null);ctx.online=false;await ctx.openBrowser(true);
     assert.equal(dialog.open,false);assert.equal(opened.length,0);
   }
+  {
+    const {ctx,dialog,opened}=fixture({state:"running",browser_tag:"owned",browser_manual:false});
+    await ctx.openBrowser(true);assert.deepEqual(opened,["owned"]);assert.equal(dialog.open,false);
+  }
+  {
+    const row={id:"browser",kind:"browser",project:{id:"project"},state:"running",browser_manual:true};
+    const state={key:"current",project:"project",path:"/worktree"},cached=[],observed=[];
+    const ctx=vm.createContext({browserState:state,browserKey:()=>"current",api:async()=>({session:row,enabled:true,installed:{firefox:true}}),
+      renderBrowser(){},cacheSession:value=>cached.push(value),browserConsent:{observe:value=>observed.push(value)},browserEnabled:true});
+    const status=source.match(/  async function browserStatus\([^\n]*\) \{[\s\S]*?\n  \}/)[0];
+    vm.runInContext(status,ctx);await ctx.browserStatus(state);
+    assert.equal(cached[0],row);assert.equal(observed[0],row,"Direct browser status feeds the work-screen card");
+  }
   const html=fs.readFileSync(path.join(root,"android/app/src/main/assets/index.html"),"utf8");
   assert.match(html,/<button id="browser-settings-open"[^>]+data-i18n="browser_login_settings"/);
   assert.match(html,/<button id="browser-open"[^>]+data-i18n-aria-label="browser_view"/);
-  console.log("Browser entry: settings exposes login/control; globe opens only the owned window; no automatic permission changes, startup fallback and stale/offline guards passed");
+  console.log("Browser entry: settings exposes login/control; globe exposes consent while manual and opens the allowed owned window; no automatic permission changes, startup fallback and stale/offline guards passed");
 })().catch(error=>{console.error(error);process.exitCode=1;});

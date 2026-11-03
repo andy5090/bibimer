@@ -109,6 +109,8 @@
     renderBrowser();
   }, tag => native.openBrowserWindow(tag));
 
+  setInterval(() => void browserConsent.refresh(), 2000);
+
   const agentConnections = new BibimerAgentConnections(t,
     () => ({online:online && !switchingProject, supported:canConnections, paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
     data => api("POST", "/v1/agent-connections", data),
@@ -898,6 +900,7 @@
     sidebar.close();
     currentTab = name;
     browserConsent.render();
+    if (name === "work") void browserConsent.refresh();
     updateTerminalFullscreen();
     updateTerminalKeys();
     updateBackState();
@@ -950,6 +953,8 @@
       const result = await api("POST", "/v1/browser", {action:"status", project_id:state.project, worktree_path:state.path});
       if (browserState !== state || state.key !== browserKey()) return;
       state.installed = result.installed; state.session = result.session;
+      if (result.session) cacheSession(result.session);
+      browserConsent.observe(result.session);
       browserEnabled = result.enabled !== false;
     } catch (error) { if (browserState === state) state.error = error.key || "error_request_failed"; }
     finally { if (browserState === state) { state.loading = false; renderBrowser(); } }
@@ -966,7 +971,7 @@
     if (!windowOnly && !$("browser-dialog").open) $("browser-dialog").showModal();
     if (!state.busy) await browserStatus(state);
     if (browserState !== state || state.key !== browserKey() || !online || paused || switchingProject) return;
-    if (windowOnly && state.session?.state === "running") native.openBrowserWindow(state.session.browser_tag);
+    if (windowOnly && state.session?.state === "running" && state.session.browser_manual === false) native.openBrowserWindow(state.session.browser_tag);
     else if (windowOnly && !$("browser-dialog").open) $("browser-dialog").showModal();
   }
   $("browser-settings-open").addEventListener("click", () => void openBrowser());

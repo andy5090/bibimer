@@ -20,5 +20,18 @@ function setup(){ctx={instance:'bridge-one',project:'p1',path:'/project',tab:'wo
  ui=setup();ui.render();pending=Promise.reject({key:'error_browser_start'});await ui.act('allow');assert.equal(calls.length,1);assert.equal(ctx.sessions[0].browser_manual,true);assert.equal(elements.get('browser-consent-error').textContent,'error_browser_start');assert.equal(elements.get('browser-consent-allow').disabled,false);
  ui=setup();ui.render();pending=Promise.resolve({session:{...browser(),launch_id:'other',browser_manual:false}});await ui.act('allow');assert.equal(changed.length,0,'Mismatched response must not mark current browser allowed');assert.equal(elements.get('browser-consent').hidden,false);
  ui=setup();ui.render();pending=Promise.resolve({session:{...browser(),browser_manual:false}});ctx.instance='new-bridge';await ui.act('allow');assert.equal(calls.length,0,'Stale bridge card requires a new click');
- console.log('PASS browser consent: explicit-only grant, view-only action, project/run/bridge guards, duplicate suppression, failure retention and no cross-project approval');
+ ui=setup();ctx.sessions=[];ui.render();assert.equal(elements.get('browser-consent').hidden,true);
+ ui.request=async data=>{calls.push(data);return {session:browser()};};
+ await ui.refresh();assert.equal(elements.get('browser-consent').hidden,false,'Dedicated status read discovers a browser absent from the project catalog');assert.equal(calls[0].action,'status');
+ ui.request=async()=>({session:null});await ui.refresh();assert.equal(elements.get('browser-consent').hidden,true,'Fresh no-browser status overrides stale catalog');
+ ui=setup();let resolveStatus;ui.request=()=>new Promise(resolve=>resolveStatus=resolve);const read=ui.refresh();
+ ctx.project='p2';ctx.sessions=[browser('b2','p2')];ui.render();resolveStatus({session:browser()});await read;
+ assert.equal(ui.target().session.id,'b2','Stale project status is ignored');
+ ui=setup();ui.render();let finishStatus;
+ ui.request=data=>data.action==='status'?new Promise(resolve=>finishStatus=resolve):Promise.resolve({session:{...browser(),browser_manual:false}});
+ const oldStatus=ui.refresh();await ui.act('allow');finishStatus({session:browser()});await oldStatus;
+ assert.equal(elements.get('browser-consent').hidden,true,'A status response from before explicit consent cannot restore manual mode');
+ ui=setup();ctx.sessions=[];ui.observe(browser());assert.equal(elements.get('browser-consent').hidden,false,'Opening the browser settings refreshes the card without catalog polling');
+ for(const change of [()=>ctx.enabled=false,()=>ctx.online=false,()=>ctx.paused=true,()=>ctx.switching=true,()=>ctx.tab='settings']){ui=setup();change();await ui.refresh();assert.equal(calls.length,0);}
+ console.log('PASS browser consent: dedicated status discovery, stale/racing reads, explicit-only grant, view-only action, project/run/bridge guards, duplicate suppression, failure retention and no cross-project approval');
 })().catch(e=>{console.error(e);process.exitCode=1;});
