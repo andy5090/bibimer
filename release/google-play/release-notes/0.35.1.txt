@@ -1,0 +1,6 @@
+<en-US>
+Browser control requests now refresh independently of the project list, so the consent card can appear when a browser opens during work. While control is waiting for your permission, the globe button opens the login and consent screen inside Bibimer. Once allowed, it opens Firefox directly. Viewing status or opening a screen never grants control automatically.
+</en-US>
+<ko-KR>
+작업 중 브라우저를 열면 허용 카드가 표시되도록 프로젝트 목록과 별도로 브라우저 상태를 갱신합니다. 제어 허용 대기 중에는 지구본 버튼에서도 Bibimer 안의 로그인·허용 화면을 열 수 있습니다. 이미 허용한 창은 Firefox로 바로 엽니다. 상태 조회나 화면 열기만으로 제어를 자동 허용하지 않습니다.
+</ko-KR>
