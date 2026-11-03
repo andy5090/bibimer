@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## Android0.35.1(59) 정식 배포 심사 제출 (2026-11-04)
+
+- **01:37 Asia/Seoul**, 사용자 허용 뒤 기존 내부59의 동일 번들을 프로덕션으로 승급·최종 제출했다. 게시 개요에서59가 **검토 중인 변경사항**으로 표시되고 새로고침 후 유지됨을 확인했다. 사전 빠른 검사는 아직 진행 중이며, 관리형 게시OFF로 승인 후 자동 공개된다. **59의 승인/공개 제공은 아직 미확인**이다. 승급 전 현재 프로덕션은 활성0.32.0(54), 기존178개 국가/지역임을 실제 Firefox에서 확인했다.
+- 59만 포함·54제외·기존 전체 대상 국가/지역·100% 전체 출시, 누적 한/영 노트2/2(431/266자), 오류0·기존 가독화 매핑 경고1·7개 기기 유형 지원 변화0이다. 새 빌드·AAB 업로드·업로드 키 변경 없이 검증된 SHA-256 `7bacdccbf48857ca8c914728c47ff0b5463ee69dff6aa7342299aafcfadfd561`를 재확인했다. 기존 내부59와 사용자 브리지/세션을 유지했다.
+- 증빙 `dist/production-0.35.1/{review-warning,device-support,review-bundle,review-notes,rollout,overview,confirmation,submitted,submitted-refreshed}.png` 및 `submitted.json`. 누적 노트는 `release/google-play/release-notes/0.35.1-production.txt`이며 Git 동작용 브리지0.24.0 업데이트를 안내한다. 실제 새 Android 설치/업데이트 수신 검증은 별도다.
+- 사용자가 후속으로 요청한 ‘브라우저 허용 클릭 시 요청한 에이전트에 완료 알림을 Steer 등으로 전달’ 개선은 이번59에 포함하지 않고 다음 빌드 소스로 별도 진행한다. 정식 제출본은 검증된59 그대로 유지한다.
+
 ## Android0.35.1(59) 정식 배포 준비 (2026-11-04)
 
 - 사용자 정식 배포 요청으로 기존 내부 테스트59의 동일 서명 AAB SHA-256 `7bacdccbf48857ca8c914728c47ff0b5463ee69dff6aa7342299aafcfadfd561`/3,377,843bytes를 재확인했다. 새 빌드/업로드키/버전 변경 없이 승급할 계획이며 누적 한/영 출시노트 `release/google-play/release-notes/0.35.1-production.txt`를 준비했다. Git 작업용 브리지0.24.0 업데이트를 안내한다. 실제 설치/WebView/사용자 권한 클릭 검증 미완료 제약은 유지한다.

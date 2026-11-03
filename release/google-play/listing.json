@@ -231,11 +231,11 @@
   },
   "consoleScreenshotsStatus": "published",
   "productionRelease": {
-    "versionName": "0.32.0",
-    "versionCode": 54,
-    "releaseName": "0.32.0 (54) - Compact terminals and agent accounts",
+    "versionName": "0.35.1",
+    "versionCode": 59,
+    "releaseName": "0.35.1 (59) - Mobile Git and browser consent",
     "consoleStatus": "in_review",
-    "promotionPreparedOn": "2026-10-28",
+    "promotionPreparedOn": "2026-11-04",
     "changeCount": 1,
     "rolloutPercent": 100,
     "allExistingTargetCountries": true,
@@ -245,43 +245,40 @@
     "publicAvailabilityConfirmed": false,
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582",
     "publishingOverviewUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
-    "consoleReleaseNumber": 9,
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
     "errors": [],
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed Console rows: phone, tablet, TV, wearable, car, Chromebook, Android XR; min/target SDK unchanged",
-    "preReviewChecksCompleted": true,
-    "releaseNotesFile": "release/google-play/release-notes/0.32.0-production.txt",
+    "preReviewChecksCompleted": false,
+    "releaseNotesFile": "release/google-play/release-notes/0.35.1-production.txt",
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 344,
-      "ko-KR": 220
+      "en-US": 431,
+      "ko-KR": 266
     },
     "reusedValidatedInternalTestBundle": true,
-    "previousPublicVersionName": "0.28.1",
-    "previousPublicVersionCode": 50,
-    "sourceBridgeVersion": "0.23.1",
-    "bundleSha256": "53c2238d8922a206ae4bed4199746c04588e416b239841f94f3a674ebd9d1b08",
+    "previousPublicVersionName": "0.32.0",
+    "previousPublicVersionCode": 54,
+    "sourceBridgeVersion": "0.24.0",
+    "bundleSha256": "7bacdccbf48857ca8c914728c47ff0b5463ee69dff6aa7342299aafcfadfd561",
     "includedVersionCodes": [
-      54
+      59
     ],
     "excludedPreviousVersionCodes": [
-      50
+      54
     ],
-    "evidence": "dist/production-0.32.0/submitted.json",
+    "evidence": "dist/production-0.35.1/submitted.json",
     "physicalDeviceVerified": false,
-    "note": "Final native Chrome submission accepted; after reload at 02:28 Asia/Seoul, publishing overview lists version 54 under changes in review and pre-review checks completed with no active error notice. Managed publishing remains disabled, so approval publishes automatically. Version 54 public availability and device installation are unverified.",
-    "submittedOn": "2026-10-28",
-    "submittedAtLocal": "2026-10-28 02:27 Asia/Seoul",
+    "submittedOn": "2026-11-04",
+    "submittedAtLocal": "2026-11-04 01:37 Asia/Seoul",
     "refreshedStatusVerified": true,
-    "submissionVerifiedAtLocal": "2026-10-28 02:28 Asia/Seoul",
-    "transientSubmissionError": "UnexpectedError (4E69A2E2) was briefly displayed; in-review state persisted and the error notice was absent after reload.",
-    "transientSubmissionErrorEvidence": "dist/production-0.32.0/accepted-with-transient-error.png"
+    "submissionVerifiedAtLocal": "2026-11-04 01:38 Asia/Seoul",
+    "note": "Visible Firefox final submission accepted and persisted after refresh under changes in review. Pre-review quick checks are still running. Managed publishing is disabled; approval publishes automatically. Public availability of 59 is not confirmed."
   },
   "internalTesterParticipation": {
     "consoleRegistration": "saved_one_tester",
@@ -332,12 +329,11 @@
     "evidence": "dist/play-0.35.1/published.json"
   },
   "previousProductionRelease": {
-    "versionName": "0.28.1",
-    "versionCode": 50,
-    "releaseName": "0.28.1 (50) - Browser and session recovery",
+    "versionName": "0.32.0",
+    "versionCode": 54,
+    "releaseName": "0.32.0 (54) - Compact terminals and agent accounts",
     "consoleStatus": "available_on_google_play",
-    "submittedOn": "2026-10-23",
-    "submittedAtLocal": "2026-10-23 12:06 Asia/Seoul",
+    "promotionPreparedOn": "2026-10-28",
     "changeCount": 1,
     "rolloutPercent": 100,
     "allExistingTargetCountries": true,
@@ -345,47 +341,55 @@
     "managedPublishing": false,
     "publishAfterApproval": true,
     "publicAvailabilityConfirmed": true,
-    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582/releases/8/details",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582",
     "publishingOverviewUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
+    "consoleReleaseNumber": 9,
     "warnings": [
       "no_deobfuscation_mapping_file"
     ],
     "errors": [],
     "supportedDeviceChanges": 0,
+    "supportedDeviceChangesScope": "observed Console rows: phone, tablet, TV, wearable, car, Chromebook, Android XR; min/target SDK unchanged",
     "preReviewChecksCompleted": true,
-    "releaseNotesFile": "release/google-play/release-notes/0.28.1-production.txt",
+    "releaseNotesFile": "release/google-play/release-notes/0.32.0-production.txt",
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
+    "releaseNotesCharacters": {
+      "en-US": 344,
+      "ko-KR": 220
+    },
     "reusedValidatedInternalTestBundle": true,
-    "previousPublicVersionName": "0.25.0",
-    "previousPublicVersionCode": 43,
-    "sourceBridgeVersion": "0.21.0",
-    "bundleSha256": "c532b23e457ec85241f119e86d9e55250154b1c5c3d4a1c2bb001974191f1939",
+    "previousPublicVersionName": "0.28.1",
+    "previousPublicVersionCode": 50,
+    "sourceBridgeVersion": "0.23.1",
+    "bundleSha256": "53c2238d8922a206ae4bed4199746c04588e416b239841f94f3a674ebd9d1b08",
     "includedVersionCodes": [
-      50
+      54
     ],
     "excludedPreviousVersionCodes": [
-      43
+      50
     ],
-    "evidence": "dist/production-0.32.0/previous-release.png",
+    "evidence": "dist/production-0.32.0/submitted.json",
     "physicalDeviceVerified": false,
-    "note": "Production release 8 confirmed available on Google Play, published 2026-10-23 12:16 Asia/Seoul. Verified on 2026-10-28 before promoting internal version 54.",
-    "publishedOn": "2026-10-23",
-    "publishedAtLocal": "2026-10-23 12:16 Asia/Seoul",
-    "availabilityVerifiedOn": "2026-10-28",
-    "consoleReleaseNumber": 8
+    "note": "Final native Chrome submission accepted; after reload at 02:28 Asia/Seoul, publishing overview lists version 54 under changes in review and pre-review checks completed with no active error notice. Managed publishing remains disabled, so approval publishes automatically. Version 54 public availability and device installation are unverified.",
+    "submittedOn": "2026-10-28",
+    "submittedAtLocal": "2026-10-28 02:27 Asia/Seoul",
+    "refreshedStatusVerified": true,
+    "submissionVerifiedAtLocal": "2026-10-28 02:28 Asia/Seoul",
+    "transientSubmissionError": "UnexpectedError (4E69A2E2) was briefly displayed; in-review state persisted and the error notice was absent after reload.",
+    "transientSubmissionErrorEvidence": "dist/production-0.32.0/accepted-with-transient-error.png",
+    "availabilityVerifiedOn": "2026-11-04"
   },
   "publicStoreUrl": "https://play.google.com/store/apps/details?id=app.bibimer",
   "currentPublicVersion": {
-    "versionName": "0.28.1",
-    "versionCode": 50,
-    "verifiedOn": "2026-10-28",
+    "versionName": "0.32.0",
+    "versionCode": 54,
+    "verifiedOn": "2026-11-04",
     "consoleProductionAvailabilityVerified": true,
     "devicePublicUpdateVerified": false,
-    "verificationEvidence": "Console production release 8 confirms 0.28.1 (50) available on Google Play, published 2026-10-23 12:16 Asia/Seoul. Device installation was not checked.",
-    "evidence": "dist/production-0.32.0/previous-release.png"
+    "verificationEvidence": "Visible Firefox production dashboard showed active latest production 0.32.0(54), existing 178 target countries before promotion. 59 remains submitted for review."
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
@@ -685,6 +689,60 @@
       "publishedAtLocal": "2026-10-23 12:16 Asia/Seoul",
       "availabilityVerifiedOn": "2026-10-28",
       "consoleReleaseNumber": 8
+    },
+    {
+      "versionName": "0.32.0",
+      "versionCode": 54,
+      "releaseName": "0.32.0 (54) - Compact terminals and agent accounts",
+      "consoleStatus": "available_on_google_play",
+      "promotionPreparedOn": "2026-10-28",
+      "changeCount": 1,
+      "rolloutPercent": 100,
+      "allExistingTargetCountries": true,
+      "targetCountryCount": 178,
+      "managedPublishing": false,
+      "publishAfterApproval": true,
+      "publicAvailabilityConfirmed": true,
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582",
+      "publishingOverviewUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
+      "consoleReleaseNumber": 9,
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "errors": [],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed Console rows: phone, tablet, TV, wearable, car, Chromebook, Android XR; min/target SDK unchanged",
+      "preReviewChecksCompleted": true,
+      "releaseNotesFile": "release/google-play/release-notes/0.32.0-production.txt",
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "releaseNotesCharacters": {
+        "en-US": 344,
+        "ko-KR": 220
+      },
+      "reusedValidatedInternalTestBundle": true,
+      "previousPublicVersionName": "0.28.1",
+      "previousPublicVersionCode": 50,
+      "sourceBridgeVersion": "0.23.1",
+      "bundleSha256": "53c2238d8922a206ae4bed4199746c04588e416b239841f94f3a674ebd9d1b08",
+      "includedVersionCodes": [
+        54
+      ],
+      "excludedPreviousVersionCodes": [
+        50
+      ],
+      "evidence": "dist/production-0.32.0/submitted.json",
+      "physicalDeviceVerified": false,
+      "note": "Final native Chrome submission accepted; after reload at 02:28 Asia/Seoul, publishing overview lists version 54 under changes in review and pre-review checks completed with no active error notice. Managed publishing remains disabled, so approval publishes automatically. Version 54 public availability and device installation are unverified.",
+      "submittedOn": "2026-10-28",
+      "submittedAtLocal": "2026-10-28 02:27 Asia/Seoul",
+      "refreshedStatusVerified": true,
+      "submissionVerifiedAtLocal": "2026-10-28 02:28 Asia/Seoul",
+      "transientSubmissionError": "UnexpectedError (4E69A2E2) was briefly displayed; in-review state persisted and the error notice was absent after reload.",
+      "transientSubmissionErrorEvidence": "dist/production-0.32.0/accepted-with-transient-error.png",
+      "availabilityVerifiedOn": "2026-11-04"
     }
   ],
   "screenshotsExampleData": {
