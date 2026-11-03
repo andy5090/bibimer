@@ -76,13 +76,14 @@
       await api("POST", `/v1/sessions/${id}/respond`, data);
     } catch (error) { if (session?.id === id) notice(error.key || "error_request_failed"); }
   });
-  const term = new Terminal({fontSize:13, fontFamily:"monospace", cursorBlink:true,
+  const term = new Terminal({fontSize:13, fontFamily:"monospace", cursorBlink:false, disableStdin:true,
     scrollback:2000, drawBoldTextInBrightColors:true, theme:{background:"#0e1215", foreground:"#e3e9db", cursor:"#d7e8aa",
       black:"#1c211d", red:"#ed7777", green:"#a8d18d", yellow:"#e3c878", blue:"#80aeee", magenta:"#c999e5", cyan:"#79cbd2", white:"#d5decf",
       brightBlack:"#778373", brightRed:"#ff9b91", brightGreen:"#d7e8aa", brightYellow:"#ffdfa0", brightBlue:"#aac9ff", brightMagenta:"#ebbcff", brightCyan:"#a1edf0", brightWhite:"#ffffff"}});
   const fit = new FitAddon.FitAddon();
   term.loadAddon(fit);
   term.open($("terminal"));
+  term.textarea.disabled = true;
   let terminalCtrl = false, terminalAlt = false, terminalShift = false, terminalKeysContext = "";
   let terminalFullscreen = false, terminalFullscreenContext = "";
   const sidebar = new BibimerSidebar(t, {
@@ -1469,7 +1470,7 @@
     if (bytes.length > 16384) { notice("paste_too_large"); return Promise.resolve(false); }
     const request = {data:btoa(String.fromCharCode(...bytes)), request_id:uuid()};
     const job = inputQueue.then(async () => {
-      if (!online || !session || session.id !== id) return false;
+      if (!terminalKeysEnabled() || session.id !== id) return false;
       try {
         await api("POST", `/v1/sessions/${id}/input`, request);
         return true;
@@ -2177,6 +2178,11 @@
     return online && !paused && !switchingProject && currentTab === "work" && session?.state === "running" && !isChat() && session.kind !== "browser";
   }
   function updateTerminalKeys() {
+    const enabled = terminalKeysEnabled();
+    term.options.disableStdin = !enabled;
+    term.options.cursorBlink = enabled;
+    if (!enabled && document.activeElement === term.textarea) term.blur();
+    term.textarea.disabled = !enabled;
     const context = JSON.stringify([instance, projectKey(), session?.id, session?.state, session?.mode, session?.kind, currentTab, online, paused, switchingProject]);
     if (context !== terminalKeysContext) {
       terminalKeysContext = context; terminalCtrl = terminalAlt = terminalShift = false;
@@ -2184,7 +2190,7 @@
       $("terminal-functions-toggle").setAttribute("aria-expanded", "false");
     }
     for (const button of document.querySelectorAll("#terminal-keys button")) {
-      button.disabled = !terminalKeysEnabled();
+      button.disabled = !enabled;
       if (button.dataset.modifier) button.setAttribute("aria-pressed", String(button.dataset.modifier === "ctrl" ? terminalCtrl : button.dataset.modifier === "alt" ? terminalAlt : terminalShift));
     }
   }

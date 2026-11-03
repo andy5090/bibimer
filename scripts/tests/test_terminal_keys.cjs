@@ -18,7 +18,7 @@ const ctx = vm.createContext({$: id => nodes.get(id), online: true, paused: fals
   session: {id: "one", state: "running", mode: "terminal", kind: "terminal"}, isChat: () => ctx.session?.mode === "chat",
   terminalCtrl: false, terminalAlt: false, terminalShift: false, terminalKeysContext: "", sent: [],
   sendRaw: text => { ctx.sent.push(text); return Promise.resolve(true); },
-  term: {modes: {applicationCursorKeysMode: false}, focus() {}},
+  term: {options: {}, textarea: {}, modes: {applicationCursorKeysMode: false}, focus() {}, blur() {ctx.blurred = (ctx.blurred || 0) + 1; ctx.document.activeElement = null;}},
   document: {querySelectorAll: selector => selector.includes("[data-key]") ? buttons.filter(button => button.dataset.key)
     : selector.includes("[data-modifier]") ? buttons.filter(button => button.dataset.modifier) : buttons},
 });
@@ -74,7 +74,40 @@ for (const [property, value] of [["currentTab", "settings"], ["online", false], 
 for (const next of [{id: "two", state: "running", mode: "terminal"}, {id: "one", state: "exited", mode: "terminal"}, {id: "one", state: "running", mode: "chat"}, {id: "browser", state: "running", kind: "browser"}]) {
   nodes.get("ctrl").listeners.click(); nodes.get("shift").listeners.click(); ctx.session = next; ctx.updateTerminalKeys();
   assert.equal(ctx.terminalCtrl, false); assert.equal(ctx.terminalShift,false);
+  assert.equal(ctx.term.options.disableStdin, !ctx.terminalKeysEnabled());
+  assert.equal(ctx.term.textarea.disabled, !ctx.terminalKeysEnabled());
   if (!ctx.terminalKeysEnabled()) { ctx.sendTerminalData("x"); nodes.get("enter").listeners.click(); assert.equal(ctx.sent.length, 0, "Inactive contexts cannot send"); }
   ctx.session = {id: "one", state: "running", mode: "terminal"}; ctx.updateTerminalKeys();
 }
-console.log("PASS terminal key encoding, held modifier toggles, application mode and context guards");
+// Closing the shell removes keyboard focus; reopening only enables input, without stealing focus.
+for (const state of ["stopping", "exited", "lost"]) {
+  ctx.document.activeElement = ctx.term.textarea;
+  const before = ctx.blurred || 0;
+  ctx.session.state = state; ctx.updateTerminalKeys();
+  assert.equal(ctx.term.options.disableStdin, true, state);
+  assert.equal(ctx.term.textarea.disabled, true, state);
+  assert.equal(ctx.term.options.cursorBlink, false, state);
+  assert.equal(ctx.blurred, before + 1, state);
+  for (const button of buttons) assert.equal(button.disabled, true, state);
+  ctx.session.state = "running"; ctx.updateTerminalKeys();
+  assert.equal(ctx.term.options.disableStdin, false);
+  assert.equal(ctx.term.textarea.disabled, false);
+  assert.equal(ctx.term.options.cursorBlink, true);
+  assert.equal(ctx.document.activeElement, null);
+}
+console.log("PASS terminal input disabling on termination, key encoding, held modifier toggles, application mode and context guards");
+
+(async () => {
+  let release;
+  const raw = vm.createContext({online:true, session:{id:"shell",state:"running"}, isChat:()=>false,
+    terminalKeysEnabled:()=>raw.online && raw.session?.state === "running",
+    TextEncoder, btoa:value=>Buffer.from(value,"binary").toString("base64"), uuid:()=>"request",
+    inputQueue:new Promise(resolve=>{release=resolve;}), api:async()=>{raw.calls++;}, calls:0, notice() {}});
+  vm.runInContext(source.slice(source.indexOf("  function sendRaw(text) {"), source.indexOf("  term.onData(sendTerminalData);")),raw);
+  const pending=raw.sendRaw("pending input");
+  raw.session.state="exited"; release();
+  assert.equal(await pending,false);assert.equal(raw.calls,0,"Queued PTY input must not be sent after exit");
+  raw.session.state="running";
+  assert.equal(await raw.sendRaw("active input"),true);assert.equal(raw.calls,1);
+  console.log("PASS queued PTY input is rechecked after shell termination");
+})().catch(error=>{console.error(error);process.exitCode=1;});
