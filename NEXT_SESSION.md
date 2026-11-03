@@ -1,5 +1,13 @@
 # Bibimer 다음 세션 시작점
 
+## Android 0.35.0(58) 내부 테스트 배포 완료 (2026-11-03)
+
+- **20:12 Asia/Seoul**, 사용자 제어 허용 후 Bibimer관리 Termux:X11/Firefox에서 0.35.0(58)을 기존 내부 테스트에 게시하고 새로고침 후 활성·내부 테스터에게 제공됨을 확인했다. 최종58만 포함·기존56제외·미게시57제거·한/영 출시노트2/2·오류0·기존 가독화 매핑 경고1·7개 기기 유형 지원 변화0을 검토했다. 기존 테스터/프로덕션을 유지했다.
+- Commit/Push/Pull/Sync·터미널 셸 종료 입력 비활성화와 취소 버튼 번역 수정을 포함한다. **Git 버튼 사용에는 설정에서 Termux 브리지0.24.0 업데이트가 필요하다.** 실행 중 브리지와 사용자 세션을 대신 종료/업데이트하지 않았다. 사용자 앱에서 종료 대상을 확인하는 기존 유지보수 흐름을 따른다.
+- 최종 소스 `c76b9a2`, AAB `dist/play/bibimer-0.35.0-58-release.aab`,3,377,468bytes·SHA-256 `10a7308f7670eda5050f5b3ab65cbb6e43daa36309dd07ce79c8b39b229acbc6`. 기존 검증된57에 취소 문구만 수정해58을 다시 컴파일/서명/56assets·브리지0.24.0/6payload/격리 설치/언어 split/심사 digest·원문 미포함을 확인했다. HTML 정적 번역 키 검사도 추가·통과했다.
+- 실제 Firefox의320/393px 합성 메뉴와 커밋 폼에서 버튼 배치·입력·선택 옵션·한국어 취소 표시를 확인했다. 증빙 `dist/play-0.35.0/{git-menu-320-393,git-commit-form-320-393,only-58,review-warning,device-support,review-bundle,review-notes,confirmation,published,published-refreshed}.png` 및 `published.json`. 실제 Android 설치/WebView/IME·원격 계정으로의 Git 작업·Play 업데이트 수신은 미검증이다. 사용자 프로젝트 Git 변경·앱 자동 설치·운영 브리지 재시작·TestFlight/프로덕션/웹 재배포는 없다.
+- 초기 업로드 목록의 휴지통만으로57이 번들 선택에서 빠지지 않아 첫 검토에57 대체 오류가 나타났다. 편집 화면의57행 ⋮ → app bundle 삭제 → 확인으로 실제 제외하고58만 남긴 후 오류0을 확인해 게시했다.57은 사용자에게 배포하지 않았다.
+
 ## Android 0.35.0(58) 모바일 확인·교체 번들 준비 (2026-11-03)
 
 - 사용자 제어 허용 후 가시적 Bibimer Firefox에서320/393px 합성 Git 메뉴·커밋 폼을 확인했다. 취소 버튼에 존재하지 않는 `cancel` 키를 사용한 번역 누락을 발견해 공통 `cancel_project`로 수정하고 모든 HTML의 정적 data-i18n 키 존재 검사도 추가했다. 번역/동작 검사를 통과했고 한국어 취소 버튼 표시를 확인했다(`dist/play-0.35.0/git-{menu,commit-form}-320-393.png`). 실제 Android WebView 검증을 대체하지 않는다.
