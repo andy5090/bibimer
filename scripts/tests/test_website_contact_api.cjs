@@ -135,7 +135,7 @@ async function main() {
   }
 
   // Bad fields, bounds, unsupported locale, consent, honeypot, and null inputs.
-  const invalid = [null, [], { category: "unsupported" }, { locale: "ko-KR" },
+  const invalid = [null, [], { category: "unsupported" }, { category: "privacy" }, { locale: "ko-KR" },
     { requestId: "not-a-uuid" }, { requestId: "a".repeat(36) }, { consent: false }, { consent: "true" },
     { website: "https://spam.example" }, { website: undefined }, { subject: "a".repeat(121) },
     { message: "short" }, { message: "a".repeat(5001) }, { message: "a\0".repeat(10) },
@@ -150,7 +150,7 @@ async function main() {
     assert.equal(answer.result.status, 400, JSON.stringify(bad));
   }
   assert.equal((await send({}, { env })).result.status, 400);
-  for (const category of ["setup", "feature", "privacy", "other"]) {
+  for (const category of ["setup", "feature", "other"]) {
     answer = await send(payload({ category, customCategory: category === "other" ? "Partnership" : "" }),
       { env: environment() });
     assert.equal(answer.result.status, 202, category);

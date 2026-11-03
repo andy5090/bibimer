@@ -53,8 +53,8 @@ const server = http.createServer(async (req, res) => {
       await page.locator('[name="message"]').fill("A sufficiently detailed question for testing.");
       await page.locator('[name="consent"]').check();
     };
-    await goto("en", "?category=privacy");
-    assert.equal(await page.locator('[name="category"]').inputValue(), "privacy");
+    await goto("en", "?category=setup");
+    assert.equal(await page.locator('[name="category"]').inputValue(), "setup");
     assert.equal(await page.locator("select").count(), 0);
     assert.equal(await page.locator('[name="website"]').getAttribute("tabindex"), "-1");
     const trigger = page.locator("#category-trigger");

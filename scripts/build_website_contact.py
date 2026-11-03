@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LOCALES = json.loads((ROOT / "release/website/contact-locales.json").read_text())
 PUBLIC = ROOT / "release/website/public"
-CATEGORIES = ["bug", "setup", "feature", "privacy", "other"]
+CATEGORIES = ["bug", "setup", "feature", "other"]
 
 
 def esc(value):

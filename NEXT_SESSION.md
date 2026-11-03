@@ -1,5 +1,9 @@
 # Bibimer 다음 세션 시작점
 
+## 문의 유형의 개인정보·데이터 항목 제거 (2026-11-03)
+
+사용자 요청으로 10개 언어 문의 유형에서 개인정보·데이터를 제거했다. 오류 제보·설치/연결 도움·기능 제안·기타만 제공하고 공개 정책의 문의 링크도 일반 문의로 변경했다. API의 새 접수 허용 목록에서도 제거했으며 기존 문의 기록과 DB 스키마는 유지한다. 웹사이트 구조·언어·실제 SQLite 기반 문의 API 검사를 통과했다. 브라우저 smoke의 사전 선택 fixture를 설치/연결로 바꿨으며 해당 headless 검사는 실행하지 않았다. Pages `https://9a281176.bibimer.pages.dev` 배포 후 공개 방침/문의 20개 페이지 원본 일치·유형 4개·이전 유형 링크 제거를 확인했다(`dist/privacy-category-removal/public-verification.json`). 실제 문의 전송·앱 빌드는 하지 않았다.
+
 ## 개인정보처리방침·문의 양식 공개 반영 (2026-11-03)
 
 - 앞선 배포가 웹 가이드만 갱신해 정책은 10-19 문구로 남아 있던 점을 확인하고, 이번에 10개 언어 정책과 문의 양식을 갱신했다. 시행일은 2026-11-03이며 Pages `https://7a39fe77.bibimer.pages.dev` 배포 완료. 공개 https://bibimer.app/ko/privacy/ 와 모든 20개 방침/문의 페이지 원본 일치를 확인했다(`dist/privacy-inquiry-policy/public-verification.json`).

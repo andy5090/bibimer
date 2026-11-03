@@ -13,7 +13,6 @@
       "Bug report",
       "Setup and connection",
       "Feature request",
-      "Privacy and data",
       "Other"
     ],
     "custom": "Your category",
@@ -52,7 +51,6 @@
       "오류 제보",
       "설치·연결 도움",
       "기능 제안",
-      "개인정보·데이터",
       "기타"
     ],
     "custom": "직접 입력할 문의 유형",
@@ -91,7 +89,6 @@
       "Informar de un error",
       "Instalación y conexión",
       "Sugerir una función",
-      "Privacidad y datos",
       "Otra"
     ],
     "custom": "Tu categoría",
@@ -130,7 +127,6 @@
       "Relatar um erro",
       "Instalação e conexão",
       "Sugestão de recurso",
-      "Privacidade e dados",
       "Outra"
     ],
     "custom": "Sua categoria",
@@ -169,7 +165,6 @@
       "Laporan bug",
       "Pemasangan dan koneksi",
       "Usulan fitur",
-      "Privasi dan data",
       "Lainnya"
     ],
     "custom": "Kategori Anda",
@@ -208,7 +203,6 @@
       "错误报告",
       "安装与连接",
       "功能建议",
-      "隐私与数据",
       "其他"
     ],
     "custom": "自定义类别",
@@ -247,7 +241,6 @@
       "不具合の報告",
       "インストール・接続",
       "機能の提案",
-      "プライバシー・データ",
       "その他"
     ],
     "custom": "種類を入力",
@@ -286,7 +279,6 @@
       "錯誤回報",
       "安裝與連線",
       "功能建議",
-      "隱私與資料",
       "其他"
     ],
     "custom": "自訂類別",
@@ -325,7 +317,6 @@
       "Signaler un bug",
       "Installation et connexion",
       "Proposer une fonction",
-      "Confidentialité et données",
       "Autre"
     ],
     "custom": "Votre catégorie",
@@ -364,7 +355,6 @@
       "Fehler melden",
       "Einrichtung und Verbindung",
       "Funktionswunsch",
-      "Datenschutz und Daten",
       "Sonstiges"
     ],
     "custom": "Eigene Kategorie",

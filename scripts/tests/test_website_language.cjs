@@ -70,7 +70,7 @@ assert.equal(fixture({ languages: ["ko"], saved: "unsupported" }).redirected, "h
 assert.equal(fixture({ pathname: "/es/", languages: ["ko"], saved: "id", pageLanguage: "es" }).redirected, undefined);
 assert.equal(fixture({ pathname: "/index.html", languages: ["en"] }).redirected, undefined);
 assert.equal(fixture({ languages: ["ko"], blocked: true }).redirected, "https://bibimer.app/ko/");
-assert.equal(fixture({ pathname: "/contact/", languages: ["ko-KR"], query: "?category=privacy" }).redirected, "https://bibimer.app/ko/contact/?category=privacy");
+assert.equal(fixture({ pathname: "/contact/", languages: ["ko-KR"], query: "?category=setup" }).redirected, "https://bibimer.app/ko/contact/?category=setup");
 assert.equal(fixture({ pathname: "/contact/index.html", languages: ["en"], saved: "de" }).redirected, "https://bibimer.app/de/contact/");
 assert.equal(fixture({ pathname: "/ko/contact/", languages: ["en"], pageLanguage: "ko" }).redirected, undefined);
 const f = fixture();

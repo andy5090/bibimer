@@ -1,5 +1,9 @@
 # Bibimer 웹사이트
 
+## 문의 유형의 개인정보·데이터 항목 제거 (2026-11-03)
+
+사용자 요청으로 10개 언어 문의 유형에서 개인정보·데이터를 제거했다. 오류 제보·설치/연결 도움·기능 제안·기타만 제공하고 공개 정책의 문의 링크도 일반 문의로 변경했다. API의 새 접수 허용 목록에서도 제거했으며 기존 문의 기록과 DB 스키마는 유지한다. 웹사이트 구조·언어·실제 SQLite 기반 문의 API 검사를 통과했다. 브라우저 smoke의 사전 선택 fixture를 설치/연결로 바꿨으며 해당 headless 검사는 실행하지 않았다. Pages `https://9a281176.bibimer.pages.dev` 배포 후 공개 방침/문의 20개 페이지 원본 일치·유형 4개·이전 유형 링크 제거를 확인했다(`dist/privacy-category-removal/public-verification.json`). 실제 문의 전송·앱 빌드는 하지 않았다.
+
 ## 개인정보처리방침·문의 안내 배포 (2026-11-03)
 
 Pages `https://7a39fe77.bibimer.pages.dev`에 10개 언어 방침과 문의 양식을 배포했다. 시행일은 2026-11-03이다. 본문 개인정보 입력 금지, 답변용 선택 이메일, 문의 DB 접수 후 90일 정기 삭제를 명시했다. 지원 알림의 11-03 이후 접수분 정리·실패 재시도·이전/미추적 알림의 별도 정리 한계와 직접 이메일의 필요 기간 보관을 구분한다. 큰 데이터 삭제 요청 절차는 기기별 삭제 방법과 문의 정보 보관 안내로 간소화했다. 표시 문구의 Discord 브랜드는 제거했으며 외부 처리 고지와 해당 서비스 정책 링크는 유지한다.
@@ -19,7 +23,7 @@ Pages `https://7a39fe77.bibimer.pages.dev`에 10개 언어 방침과 문의 양�
 
 ## 자체 문의·D1·Discord (2026-10-19)
 
-공개 [문의 양식](https://bibimer.app/ko/contact/)을10개언어로 제공한다. 오류·설치/연결·기능제안·개인정보·기타 직접입력, 내용·선택이메일과명시적동의를 받는다. 일반 문의 버튼과README는 양식으로 연결하고 정책의 이메일 대체 경로는 유지한다. 홈·가이드에는현재10언어지원과0.25.0기능을반영했으며0.25.0정식심사중/현재공개0.23.0을구분한다.
+공개 [문의 양식](https://bibimer.app/ko/contact/)을10개언어로 제공한다. 오류·설치/연결·기능제안·기타 직접입력, 내용·선택이메일과명시적동의를 받는다. 일반 문의 버튼과README는 양식으로 연결하고 정책의 이메일 대체 경로는 유지한다. 홈·가이드에는현재10언어지원과0.25.0기능을반영했으며0.25.0정식심사중/현재공개0.23.0을구분한다.
 
 `contact-locales.json`과 `python3 scripts/build_website_contact.py`로10개정적문의페이지를 생성한다. 공통 `assets/contact.js`/`contact.css`와자체접근성선택기를 사용한다. 별도 제목 입력은 받지 않으며 기존 DB의 제목 칸은 본문 앞부분으로 자동 채운다. 이전 클라이언트가 보낸 제목도 받아 기존 재시도와 호환한다. 서버는 `functions/api/contact.js`, D1스키마는 `migrations/0001_contact_inquiries.sql`, Pages설정은 `wrangler.toml`이다. DB binding은 `CONTACT_DB`이고 DB는 `bibimer-contact`다. 웹훅/남용방지키는 암호화된 Pages비밀설정 `DISCORD_WEBHOOK_URL`/`CONTACT_RATE_KEY`로만 주입한다. 값은 소스에 넣지 않는다.
 
@@ -56,7 +60,7 @@ SELECT request_id, category, created_at, notification_status,
 FROM contact_inquiries ORDER BY created_at DESC LIMIT 20;
 ```
 
-개인정보삭제요청은접수번호로대상과요청자를확인하고D1행과해당Discord알림을각각정리한다. 공개조회/관리API는없다. 웹훅을바꾸면Pages비밀을갱신하고다시배포한다. 자동재전송관리화면은제공하지않으므로실패/pending은운영자가확인한다.
+제출한문의관련요청은접수번호로대상과요청자를확인하고D1행과해당Discord알림을각각정리한다. 공개조회/관리API는없다. 웹훅을바꾸면Pages비밀을갱신하고다시배포한다. 자동재전송관리화면은제공하지않으므로실패/pending은운영자가확인한다.
 
 최종배포 **https://0824d178.bibimer.pages.dev**.44공개리소스원본·보안헤더/404·API거절조건,실제공개양식의D1저장/Discord전송·동일UUID재전송중복없음을확인했다. 초기Workers미지원redirect옵션은수정·회귀검사·재배포후실제전송으로확인했다. 증빙 `dist/website-contact/`, 상세검증/한계는NEXT_SESSION.md를따른다. 시각판정94/pass. 아래는이전시점의변경기록이며‘문의폼없음’등은이번구성으로대체됐다.
 

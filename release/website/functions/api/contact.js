@@ -1,7 +1,7 @@
 const BODY_LIMIT = 16 * 1024;
 const HOUR = 60 * 60 * 1000;
 const RETENTION = 90 * 24 * HOUR;
-const CATEGORIES = new Set(["bug", "setup", "feature", "privacy", "other"]);
+const CATEGORIES = new Set(["bug", "setup", "feature", "other"]);
 const LOCALES = new Set(["en", "ko", "pt-BR", "es", "id", "zh-Hans", "ja", "zh-Hant", "fr", "de"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
