@@ -2450,7 +2450,7 @@
     }
     if (document.querySelector(".context-usage[open]")) { closeUsageDetails(); return true; }
     if (!$("commands").hidden && currentTab === "work") { commands.dismiss(); return true; }
-    if (terminalFullscreen) { setTerminalFullscreen(false); return true; }
+    if (terminalFullscreen) return true;
     if (currentTab !== "work") { tab("work"); return true; }
     return false;
   };

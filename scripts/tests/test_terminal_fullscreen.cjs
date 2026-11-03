@@ -20,5 +20,12 @@ ctx.currentTab='work';ctx.session={id:'one',mode:'terminal',state:'exited'};ctx.
 assert.equal(toggle.attributes['data-i18n-aria-label'],'terminal_fullscreen_exit');
 const back=source.slice(source.indexOf('  window.BibimerBack = () => {'),source.indexOf('  const backObserver ='));
 ctx.window={};ctx.document={querySelectorAll:()=>[],querySelector:()=>null};ctx.commands={dismiss(){}};nodes.set('commands',{hidden:true});ctx.native={setBackHandling:value=>ctx.backEnabled=value};
-vm.runInContext(back,ctx);ctx.updateBackState();assert.equal(ctx.backEnabled,true);assert.equal(ctx.window.BibimerBack(),true);assert.equal(ctx.terminalFullscreen,false);assert.equal(ctx.backEnabled,false);assert.equal(ctx.window.BibimerBack(),false);
-console.log('PASS fullscreen toggle/restore, resize, ended output, context reset, Android Back and session preservation');
+vm.runInContext(back,ctx);ctx.updateBackState();assert.equal(ctx.backEnabled,true);
+for(let i=0;i<2;i++) { assert.equal(ctx.window.BibimerBack(),true);assert.equal(ctx.terminalFullscreen,true);assert.equal(ctx.backEnabled,true); }
+let closed=false;ctx.document.querySelectorAll=()=>[{id:'test-dialog',close(){closed=true;}}];
+assert.equal(ctx.window.BibimerBack(),true);assert.equal(closed,true);assert.equal(ctx.terminalFullscreen,true);
+ctx.document.querySelectorAll=()=>[];
+nodes.get('commands').hidden=false;ctx.commands.dismiss=()=>{nodes.get('commands').hidden=true;};
+assert.equal(ctx.window.BibimerBack(),true);assert.equal(nodes.get('commands').hidden,true);assert.equal(ctx.terminalFullscreen,true);
+toggle.listeners.click();assert.equal(ctx.terminalFullscreen,false);assert.equal(ctx.backEnabled,false);assert.equal(ctx.window.BibimerBack(),false);
+console.log('PASS fullscreen toggle/restore, resize, ended output, context reset, Android Back preserves fullscreen while dismissing overlays, and session preservation');
