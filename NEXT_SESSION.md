@@ -1,5 +1,10 @@
 # Bibimer 다음 세션 시작점
 
+## Android 0.35.0(58) 모바일 확인·교체 번들 준비 (2026-11-03)
+
+- 사용자 제어 허용 후 가시적 Bibimer Firefox에서320/393px 합성 Git 메뉴·커밋 폼을 확인했다. 취소 버튼에 존재하지 않는 `cancel` 키를 사용한 번역 누락을 발견해 공통 `cancel_project`로 수정하고 모든 HTML의 정적 data-i18n 키 존재 검사도 추가했다. 번역/동작 검사를 통과했고 한국어 취소 버튼 표시를 확인했다(`dist/play-0.35.0/git-{menu,commit-form}-320-393.png`). 실제 Android WebView 검증을 대체하지 않는다.
+- 기존57번 번들은 초안에서 제거하고 **0.35.0/code58**로 재빌드했다. `dist/play/bibimer-0.35.0-58-release.aab`,3,377,468bytes·SHA-256 `10a7308f7670eda5050f5b3ab65cbb6e43daa36309dd07ce79c8b39b229acbc6`. `.tools/aab-0.35.0-58-{build.log,verification.json}`에서 기존 서명·실제 컴파일·56assets·Git/터미널 변경·브리지0.24.0·6payload·격리 설치·언어 split/심사 digest와 원문 미포함 검증을 다시 통과했다. 58번 업로드·게시 진행 중이며 최종 완료는 후속 기록 참조.
+
 ## Android 0.35.0(57) 내부 테스트 준비 (2026-11-03)
 
 - 사용자 내부 배포 요청으로 종료된 터미널 입력 비활성화와 사이드바 Commit/Push/Pull/Sync를 묶어 0.35.0/code57 서명 AAB를 빌드했다. 새 Git 작업은 브리지0.24.0 업데이트가 필요하며 한/영 출시 노트에 명시했다. 기존 사용자 브리지·세션은 재시작하지 않았다.

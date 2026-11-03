@@ -14,6 +14,9 @@ assert.ok(Object.keys(base).length > 500, "Read the complete base catalog");
 const locales = ["pt-BR", "es", "id", "zh-Hans", "ja", "zh-Hant", "fr", "de"];
 const placeholders = text => [...text.matchAll(/\{(\w+)\}/g)].map(match => match[1]).sort();
 const html = fs.readFileSync(path.join(assets, "index.html"), "utf8");
+for (const match of html.matchAll(/data-i18n(?:-placeholder|-aria-label)?="([^"]+)"/g)) {
+  assert.ok(Object.hasOwn(base, match[1]), `HTML translation key exists: ${match[1]}`);
+}
 const native = fs.readFileSync(path.join(root, "android/app/src/main/java/app/bibimer/MainActivity.java"), "utf8");
 assert.ok(html.includes('value="system" data-i18n="language_system"'), "System choice is localized");
 const context = vm.createContext({window:{}, navigator:{language:"es"}});
