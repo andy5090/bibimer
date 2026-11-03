@@ -608,3 +608,10 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .browser-consent p{margin:6px 0;font-size:11px;line-height:1.5;overflow-wrap:break-word}
 .browser-consent .button-row{display:flex;flex-wrap:wrap;gap:6px}
 .browser-consent .button-row button{flex:1 1 125px;min-width:0;white-space:normal;font-size:11px;line-height:1.4}
+
+.git-actions { flex:none; border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:12px; }
+.git-action-buttons { display:flex; flex-wrap:wrap; gap:6px; }
+.git-action-buttons button { min-height:40px; padding:6px 10px; border:1px solid var(--line); }
+.git-actions .hint { overflow-wrap:anywhere; margin:8px 0; }
+#git-message { width:100%; min-height:72px; resize:vertical; margin:6px 0; }
+#git-action-form .check { align-items:flex-start; }

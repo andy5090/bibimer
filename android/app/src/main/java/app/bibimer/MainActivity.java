@@ -440,7 +440,7 @@ public final class MainActivity extends Activity {
                 } catch (RejectedExecutionException ignored) { error(id, "error_file_busy", R.string.error_file_open, demoEpoch); }
                 return;
             }
-            ExecutorService executor = path.contains("/events?") ? events : path.endsWith("/title") ? titles : path.equals("/v1/inspect") ? inspections : path.equals("/v1/commands") ? commands : actions;
+            ExecutorService executor = path.contains("/events?") ? events : path.endsWith("/title") ? titles : (path.equals("/v1/inspect") || path.equals("/v1/git")) ? inspections : path.equals("/v1/commands") ? commands : actions;
             try {
                 executor.execute(() -> {
                     try {

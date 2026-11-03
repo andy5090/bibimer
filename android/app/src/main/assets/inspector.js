@@ -1,8 +1,9 @@
 "use strict";
 window.BibimerInspector = class BibimerInspector {
-  constructor(t, context, request, openFile) {
+  constructor(t, context, request, openFile, gitRequest) {
     this.t = t; this.context = context; this.request = request;
     this.openFile = openFile;
+    this.git = new BibimerGitActions(t, context, gitRequest, () => { if (this.dialog.open) void this.load(); });
     this.dialog = document.getElementById("inspector");
     this.opener = document.getElementById("inspector-open");
     this.content = document.getElementById("inspect-content");
@@ -94,6 +95,7 @@ window.BibimerInspector = class BibimerInspector {
       if (!previous || previous.project !== ctx.project || previous.path !== ctx.path) this.path = "";
       if (this.dialog.open) this.load();
     } else this.ctx = ctx;
+    this.git.update(this.dialog.open && !this.detail && ["history", "status"].includes(this.view));
     // Do not rebuild content on each streaming event; language changes still apply.
     if (this.language !== document.documentElement.lang) {
       this.language = document.documentElement.lang; this.render();
@@ -148,6 +150,7 @@ window.BibimerInspector = class BibimerInspector {
   render(keepScroll = false) {
     const t = this.t, blocked = this.unavailable(), result = this.result;
     this.syncOpener();
+    this.git.update(this.dialog.open && !blocked && !this.detail && ["history", "status"].includes(this.view));
     const scroll = document.getElementById("inspect-panel").scrollTop;
     for (const tab of this.tabs) {
       const active = tab.dataset.view === this.view;
@@ -231,3 +234,106 @@ window.BibimerInspector = class BibimerInspector {
     if (keepScroll) document.getElementById("inspect-panel").scrollTop = scroll;
   }
 };
+
+class BibimerGitActions {
+  constructor(t, context, request, refresh) {
+    Object.assign(this, {t, context, request, refresh});
+    this.entries = new Map();
+    this.root = document.getElementById("git-actions");
+    this.form = document.getElementById("git-action-form");
+    this.message = document.getElementById("git-message");
+    this.all = document.getElementById("git-all");
+    this.status = document.getElementById("git-action-status");
+    for (const button of this.root.querySelectorAll("[data-git-action]")) button.addEventListener("click", () => {
+      const entry = this.entry;
+      if (!entry?.state || entry.busy || entry.loading) return;
+      entry.action = button.dataset.gitAction; entry.error = null; this.render();
+      if (entry.action === "commit") this.message.focus();
+    });
+    document.getElementById("git-action-cancel").addEventListener("click", () => { if (!this.entry?.busy) { this.entry.action = null; this.render(); } });
+    this.message.addEventListener("input", () => { if (this.entry) this.entry.message = this.message.value; });
+    this.all.addEventListener("change", () => { if (this.entry) this.entry.all = this.all.checked; });
+    this.form.addEventListener("submit", event => { event.preventDefault(); void this.start(); });
+    document.getElementById("git-state-refresh").addEventListener("click", () => void this.load());
+  }
+  update(visible) {
+    const ctx = this.context(), key = JSON.stringify([ctx.instance, ctx.project, ctx.path]);
+    if (key !== this.key) {
+      this.key = key;
+      if (!this.entries.has(key)) this.entries.set(key, {ctx:{...ctx}, message:"", all:false});
+      this.entry = this.entries.get(key);
+      this.message.value = this.entry.message; this.all.checked = this.entry.all;
+    }
+    this.visible = visible; this.ctx = ctx;
+    this.root.hidden = !visible;
+    if (!visible) return;
+    this.render();
+    if (ctx.gitSupported && ctx.online && !ctx.demo && !this.entry.state && !this.entry.loading && !this.entry.busy) void this.load();
+  }
+  same(entry) { return entry === this.entry && this.key === JSON.stringify([this.context().instance, this.context().project, this.context().path]); }
+  body(entry, extra) { return {project_id:entry.ctx.project, worktree_path:entry.ctx.path, ...extra}; }
+  async load(preserveError = false) {
+    const entry = this.entry;
+    if (!entry || entry.loading || entry.busy || !this.ctx.online || !this.ctx.gitSupported || this.ctx.demo) return;
+    entry.loading = true; if (!preserveError) entry.error = null; this.render();
+    try { entry.state = await this.request(this.body(entry, {action:"state"})); }
+    catch (error) { entry.state = null; entry.error = error.key || "git_failed"; }
+    finally { entry.loading = false; if (this.same(entry)) this.render(); }
+  }
+  async start() {
+    const entry = this.entry;
+    if (!entry?.action || !entry.state || entry.busy || entry.loading || !this.ctx.online || !this.ctx.gitSupported || this.ctx.demo || !this.same(entry)) return;
+    if (entry.action === "commit" && !entry.message.trim()) { this.message.focus(); return; }
+    const body = this.body(entry, {action:entry.action, request_id:crypto.randomUUID(), message:entry.action === "commit" ? entry.message : "",
+      all_changes:entry.action === "commit" && entry.all, expected_head:entry.state.head, expected_branch:entry.state.branch});
+    entry.busy = true; entry.error = null; entry.job = null; this.render();
+    try {
+      entry.job = await this.request(body);
+    } catch (error) {
+      // A lost response may follow a successful write. Query the same ID; never resubmit it.
+      if (!error.status) {
+        try { entry.job = await this.request(this.body(entry, {action:"job", request_id:body.request_id})); }
+        catch (_) { entry.error = "git_unknown"; }
+      } else { entry.error = error.key || "git_failed"; entry.busy = false; }
+    }
+    if (entry.job?.state === "running") {
+      const poll = async () => {
+        try { entry.job = await this.request(this.body(entry, {action:"job", request_id:body.request_id})); }
+        catch (_) { entry.error = "git_unknown"; if (this.same(entry)) this.render(); return; }
+        if (entry.job.state === "running") { if (this.same(entry)) this.render(); setTimeout(poll, 1000); }
+        else this.finish(entry);
+      };
+      setTimeout(poll, 500);
+    } else if (entry.job) this.finish(entry);
+    if (this.same(entry)) this.render();
+  }
+  finish(entry) {
+    entry.busy = false;
+    entry.error = entry.job.state === "failed" ? entry.job.error || "git_failed" : null;
+    if (entry.job.state === "succeeded") {
+      if (entry.job.action === "commit") { entry.message = ""; if (this.same(entry)) this.message.value = ""; }
+      entry.action = null;
+    }
+    entry.state = null;
+    if (this.same(entry)) { void this.load(true); this.refresh(); this.render(); }
+  }
+  render() {
+    if (!this.visible || !this.entry) return;
+    const entry = this.entry, state = entry.state, t = this.t;
+    const unavailable = !this.ctx.gitSupported || this.ctx.demo;
+    const disabled = unavailable || !this.ctx.online || entry.loading || entry.busy || !state || state.busy;
+    for (const button of this.root.querySelectorAll("[data-git-action]")) button.disabled = !!disabled;
+    this.form.hidden = !entry.action;
+    document.getElementById("git-commit-fields").hidden = entry.action !== "commit";
+    document.getElementById("git-action-target").textContent = [this.ctx.path, state?.branch, state?.upstream].filter(Boolean).join(" · ");
+    document.getElementById("git-action-explanation").textContent = t(entry.action === "commit" ? "git_commit_hint" : "git_remote_hint");
+    document.getElementById("git-action-confirm").textContent = t("git_" + (entry.action || "commit"));
+    document.getElementById("git-action-confirm").disabled = !!disabled;
+    document.getElementById("git-action-cancel").disabled = !!entry.busy;
+    document.getElementById("git-state-refresh").disabled = unavailable || !this.ctx.online || entry.busy || entry.loading;
+    this.message.disabled = this.all.disabled = !!entry.busy;
+    this.message.required = entry.action === "commit";
+    this.status.textContent = t(this.ctx.demo ? "error_demo_request" : unavailable ? "git_update" : entry.error || (entry.busy ? "git_running" : entry.loading ? "inspect_loading" : entry.job?.state === "succeeded" ? "git_succeeded" : ""));
+    if ((entry.busy || entry.error) && entry.job?.phase) this.status.textContent += " · " + t("git_" + entry.job.phase);
+  }
+}

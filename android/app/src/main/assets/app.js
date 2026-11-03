@@ -31,7 +31,7 @@
   let actionTarget = null, deleteTarget = null, libraryBusy = false, worktreeLoading = false, worktreeError = null;
   let canResponseNotifications = false, notificationNavigating = false, notificationRetry, pendingNotification;
   let canDragProjects = false, canOrderProjects = false, canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
-  let canInspect = false, canOpenFiles = false, openingFile = false;
+  let canGitActions = false, canInspect = false, canOpenFiles = false, openingFile = false;
   let canConnections = false;
   let canBrowser = false, canBrowserConsent = false, browserState = null, browserEnabled = true;
   const worktrees = {};
@@ -95,9 +95,9 @@
   });
   const fileContext = () => ({instance, project:projectKey(),
     path:session?.project?.path || draftPath || project?.path, online:online && !paused && !switchingProject,
-    supported:canInspect, filesSupported:canOpenFiles, demo});
+    gitSupported:canGitActions, supported:canInspect, filesSupported:canOpenFiles, demo});
   const fileViewer = new BibimerFileViewer(t, fileContext, data => api("POST", "/v1/inspect", data), openAndroidFile);
-  const inspector = new BibimerInspector(t, fileContext, data => api("POST", "/v1/inspect", data), path => fileViewer.open(path));
+  const inspector = new BibimerInspector(t, fileContext, data => api("POST", "/v1/inspect", data), path => fileViewer.open(path), data => api("POST", "/v1/git", data));
 
   const browserConsent = new BibimerBrowserConsent(t, () => ({
     instance, project:projectKey(), path:fileContext().path, tab:currentTab, online,
@@ -1343,6 +1343,7 @@
       canOrderProjects = health.features?.includes("project_ordering") === true;
       canDragProjects = health.features?.includes("project_drag_ordering") === true;
       canInspect = health.features?.includes("workspace_inspector") === true;
+      canGitActions = health.features?.includes("git_actions") === true;
       canConnections = health.features?.includes("agent_connections") === true;
       agentConnections.update();
       canBrowser = health.features?.includes("browser_tools_x11") === true;

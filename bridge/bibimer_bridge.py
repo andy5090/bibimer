@@ -42,7 +42,7 @@ _recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_rec
 maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
 _recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.23.2"
+VERSION = "0.24.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -169,6 +169,19 @@ ERROR_MESSAGES = {
     "error_worktree_create": "Could not create the worktree. Check the branch and available storage in Termux.",
     "error_worktree_interrupted": "Creation was interrupted. Refresh to check whether the Git worktree exists before trying again.",
     "error_worktree": "This working folder is no longer available in the project's Git worktrees.",
+    "git_failed": "Git failed. Check identity, authentication, remote and repository state in Termux before retrying. Earlier steps may have completed.",
+    "git_timeout": "Git timed out. Check its result in Termux before retrying.",
+    "git_root": "Register the Git root folder to run Git actions.",
+    "git_branch": "Select a local branch in Termux first.",
+    "git_invalid": "Invalid Git operation. Refresh and try again.",
+    "git_unknown": "Could not verify the result. Check Git in Termux; this operation will not be retried automatically.",
+    "git_capacity": "Git action history is full for this bridge run.",
+    "git_busy": "Another Git action is running. Refresh after it finishes.",
+    "git_changed": "The branch or HEAD changed. Refresh before continuing.",
+    "git_conflict": "Resolve the conflict or ongoing merge/rebase in Termux first.",
+    "git_no_staged": "No staged changes. Stage changes in Termux or select the all-changes option.",
+    "git_upstream": "Configure an upstream branch in Termux before Push, Pull or Sync.",
+    "git_dirty": "Commit or handle local changes in Termux before Pull or Sync.",
     "error_inspect_request": "Choose a valid file, commit or workspace view.",
     "error_inspect_access": "This path is unavailable or cannot be previewed inside this workspace.",
     "error_inspect_git": "Could not read Git information. Check the repository and Git installation in Termux.",
@@ -2321,6 +2334,167 @@ class WorkspaceInspector:
         return {"project_id": self.project["id"], "root": str(self.root), **result}
 
 
+class GitActions:
+    """Explicit, non-interactive Git writes, scoped to a registered worktree."""
+    def __init__(self, bridge):
+        self.bridge = bridge
+        self.lock = threading.RLock()
+        self.jobs = {}
+        self.busy = set()
+
+    @staticmethod
+    def run(root, args, content=None, timeout=120):
+        env = {k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
+        env.update(GIT_TERMINAL_PROMPT='0', GCM_INTERACTIVE='never', GIT_SSH_COMMAND='ssh -oBatchMode=yes', LC_ALL='C')
+        command = ['git', '--no-pager', '-C', str(root), '-c', 'core.fsmonitor=false',
+                   '-c', 'core.askPass=', '-c', 'credential.interactive=false', *args]
+        process = None
+        try:
+            process = subprocess.Popen(command, stdin=subprocess.PIPE if content is not None else subprocess.DEVNULL,
+                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env, start_new_session=True)
+            if content is not None:
+                process.stdin.write(content)
+                process.stdin.close()
+            output = bytearray()
+            deadline = time.monotonic() + timeout
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or not select.select([process.stdout], [], [], remaining)[0]:
+                    raise Problem(408, 'git_timeout')
+                block = os.read(process.stdout.fileno(), 16384)
+                if not block: break
+                # Drain output while retaining a bounded amount; never return it to the UI/logs.
+                output.extend(block[:max(0, 65536 - len(output))])
+            process.wait(timeout=max(.01, deadline - time.monotonic()))
+            return process.returncode, bytes(output)
+        except subprocess.TimeoutExpired:
+            raise Problem(408, 'git_timeout') from None
+        except OSError:
+            raise Problem(503, 'git_failed') from None
+        finally:
+            if process:
+                # Hooks/transports can outlive their Git parent and keep the output pipe open.
+                with contextlib.suppress(ProcessLookupError): os.killpg(process.pid, signal.SIGKILL)
+                process.wait()
+                if process.stdout: process.stdout.close()
+                if process.stdin: process.stdin.close()
+
+    def checked(self, root, args, **kwargs):
+        code, output = self.run(root, args, **kwargs)
+        if code: raise Problem(400, 'git_failed')
+        return output.decode('utf-8', 'replace').strip()
+
+    def snapshot(self, project):
+        root = Path(project['path']).resolve()
+        top = self.checked(root, ['rev-parse', '--show-toplevel'], timeout=10)
+        if Path(top).resolve() != root: raise Problem(400, 'git_root')
+        common = self.checked(root, ['rev-parse', '--git-common-dir'], timeout=10)
+        common = str((root / common).resolve())
+        code, branch = self.run(root, ['symbolic-ref', '--quiet', '--short', 'HEAD'], timeout=10)
+        if code: raise Problem(400, 'git_branch')
+        head_code, head = self.run(root, ['rev-parse', '--verify', 'HEAD'], timeout=10)
+        upstream_code, upstream = self.run(root, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'], timeout=10)
+        dirty = bool(self.checked(root, ['status', '--porcelain', '--untracked-files=normal'], timeout=10))
+        staged_code, _ = self.run(root, ['diff', '--cached', '--quiet', '--exit-code'], timeout=10)
+        conflicts = bool(self.checked(root, ['ls-files', '--unmerged'], timeout=10))
+        gitdir = Path(self.checked(root, ['rev-parse', '--absolute-git-dir'], timeout=10))
+        conflicts = conflicts or any((gitdir / name).exists() for name in ['MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'rebase-merge', 'rebase-apply'])
+        if head_code not in (0, 128) or staged_code not in (0, 1): raise Problem(400, 'git_failed')
+        return {'branch':branch.decode().strip(), 'head':head.decode().strip() if not head_code else '',
+                'upstream':upstream.decode().strip() if not upstream_code else '', 'dirty':dirty,
+                'staged':staged_code == 1, 'conflicts':conflicts, '_common':common}
+
+    @staticmethod
+    def public(job):
+        return {k:v for k,v in job.items() if not k.startswith('_')}
+
+    def handle(self, data):
+        if not isinstance(data.get('project_id'), str): raise Problem(400, 'git_invalid')
+        project = self.bridge.working_project(data)
+        action = data.get('action')
+        if action == 'state':
+            state = self.snapshot(project)
+            with self.lock: state['busy'] = state['_common'] in self.busy
+            return {k:v for k,v in state.items() if not k.startswith('_')}
+        ident = request_id(data.get('request_id'))
+        scope = [project['id'], project['path']]
+        if action == 'job':
+            with self.lock:
+                job = self.jobs.get(ident)
+                if not job or job['_scope'] != scope: raise Problem(404, 'git_unknown')
+                return self.public(job)
+        if action not in {'commit', 'push', 'pull', 'sync'}: raise Problem(400, 'git_invalid')
+        message = data.get('message', '')
+        all_changes = data.get('all_changes', False)
+        if (not isinstance(message, str) or '\0' in message or len(message) > 2000 or
+                not isinstance(all_changes, bool) or (action == 'commit' and not message.strip()) or
+                not isinstance(data.get('expected_head'), str) or not isinstance(data.get('expected_branch'), str)):
+            raise Problem(400, 'git_invalid')
+        signature = [scope, action, message, all_changes, data['expected_head'], data['expected_branch']]
+        with self.lock:
+            if ident in self.jobs:
+                job = self.jobs[ident]
+                if job['_signature'] != signature: raise Problem(409, 'git_invalid')
+                return self.public(job)
+        state = self.snapshot(project)
+        with self.bridge.lock, self.lock:
+            if self.bridge.closing: raise Problem(409, 'error_bridge_stopping')
+            if ident in self.jobs:
+                job = self.jobs[ident]
+                if job['_signature'] != signature: raise Problem(409, 'git_invalid')
+                return self.public(job)
+            if len(self.jobs) >= 128: raise Problem(409, 'git_capacity')
+            common = state['_common']
+            if common in self.busy: raise Problem(409, 'git_busy')
+            if [state['head'], state['branch']] != signature[-2:]: raise Problem(409, 'git_changed')
+            job = {'request_id':ident, 'action':action, 'state':'running', 'phase':action,
+                   '_scope':scope, '_signature':signature, '_common':common}
+            self.jobs[ident] = job
+            self.busy.add(common)
+            threading.Thread(target=self.worker, args=(project, job, message, all_changes, state), daemon=True).start()
+            return self.public(job)
+
+    def worker(self, project, job, message, all_changes, initial):
+        root = project['path']
+        try:
+            # Recheck after scheduling; external Git/agent activity is never forcibly overwritten.
+            state = self.snapshot(project)
+            if (state['head'], state['branch']) != (initial['head'], initial['branch']): raise Problem(409, 'git_changed')
+            if state['conflicts']: raise Problem(409, 'git_conflict')
+            action = job['action']
+            if action == 'commit':
+                if all_changes:
+                    self.checked(root, ['add', '--all', '--', '.'])
+                elif not state['staged']: raise Problem(409, 'git_no_staged')
+                self.checked(root, ['commit', '-F', '-'], content=message.strip().encode())
+            else:
+                if not state['upstream']: raise Problem(409, 'git_upstream')
+                if action in {'pull', 'sync'}:
+                    if state['dirty']: raise Problem(409, 'git_dirty')
+                    with self.lock: job['phase'] = 'pull'
+                    # Sync stops on pull failure; no auto-stash, merge/rebase or force push.
+                    self.checked(root, ['-c', 'merge.autoStash=false', '-c', 'rebase.autoStash=false', 'pull', '--ff-only', '--no-rebase', '--no-autostash'])
+                if action in {'push', 'sync'}:
+                    with self.lock: job['phase'] = 'push'
+                    # Explicit upstream destination avoids user push.default/mirror/force refspecs.
+                    remote = self.checked(root, ['config', '--get', 'branch.' + state['branch'] + '.remote'])
+                    target = self.checked(root, ['config', '--get', 'branch.' + state['branch'] + '.merge'])
+                    if not re.fullmatch(r'refs/heads/[^\s:]+', target) or remote.startswith('-') or remote == '.': raise Problem(400, 'git_upstream')
+                    mirror_code, mirror = self.run(root, ['config', '--bool', '--get', 'remote.' + remote + '.mirror'])
+                    if not mirror_code and mirror.strip() == b'true': raise Problem(400, 'git_upstream')
+                    self.checked(root, ['push', '--no-follow-tags', '--', remote, 'HEAD:' + target])
+            with self.lock: job.update(state='succeeded')
+        except Problem as error:
+            with self.lock: job.update(state='failed', error=error.code)
+        except Exception:
+            with self.lock: job.update(state='failed', error='git_failed')
+        finally:
+            with self.lock: self.busy.discard(job['_common'])
+
+    def active(self):
+        with self.lock: return bool(self.busy)
+
+
 class LinkedFiles:
     """Read-only, bounded transfers from a workspace or the phone's Downloads folder."""
     LIMIT = 64 * 1024 * 1024
@@ -3081,6 +3255,7 @@ class Bridge:
             self.selected_sessions.setdefault(project_id, {}).setdefault(agent, snapshot["id"])
             self.selected_agents.setdefault(project_id, agent)
         self.closing = False
+        self.git_actions = GitActions(self)
         self.github = GitHubImport(self)
         self.worktree_creation = WorktreeCreation(self)
         self.linked_files = LinkedFiles(self)
@@ -3494,7 +3669,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "maintenance_recovery", "agent_connections"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "maintenance_recovery", "agent_connections"], "active_sessions": self.active_count(),
                     "agents": self.agents(), "maintenance_recovery": self.recovery.snapshot(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -4014,6 +4189,8 @@ class Bridge:
 
     def begin_shutdown(self):
         with self.lock:
+            if self.git_actions.active():
+                raise Problem(409, "git_busy")
             if self.worktree_creation.active():
                 raise Problem(409, "error_worktree_busy")
             if self.active_count():
@@ -4160,6 +4337,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = bridge.folders(data)
         elif method == "POST" and parsed.path == "/v1/inspect":
             result = bridge.inspect_workspace(data)
+        elif method == "POST" and parsed.path == "/v1/git":
+            result = bridge.git_actions.handle(data)
         elif method == "POST" and parsed.path == "/v1/browser":
             result = bridge.browser(data)
         elif method == "POST" and parsed.path == "/v1/session-history":

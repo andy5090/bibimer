@@ -329,3 +329,11 @@ Android `AgentPreferences`는 에이전트별 마지막 선택만 `SharedPrefere
 로그인은 에이전트당 메모리 작업 하나와10분 만료, UUID/입력 digest로 중복을 구분한다. OpenCode OAuth는 같은 서버 인스턴스에서 authorize/callback을 이어가며 임의 입력 양식이 필요한 플러그인을 지원한다고 표시하지 않는다. Codex 완료는 일치하는 네이티브 login ID의 완료 이벤트로 확인한다. 이미 설정된 다른 계정이 조회됐다는 이유로 새 로그인 성공을 판정하지 않는다. 취소/만료/종료는 소유한 로그인 프로세스만 정리하며 기존 세션은 유지한다. 입력/키/인증 URL·원본 상태·진행 작업은 메타데이터에 저장하지 않고 성공 뒤 모델 캐시만 비운다.
 
 근거: [Codex App Server 계정 API](https://learn.chatgpt.com/docs/app-server), [OpenCode 로컬 서버](https://opencode.ai/docs/server/), [Claude CLI 상태 API](https://code.claude.com/docs/en/cli-reference). 실제 자격 증명을 사용하는 새 연결 전체 흐름은 설치본에서 후속 검증한다.
+
+## 사이드바 Git 쓰기 작업 (2026-11-03, 소스)
+
+Git 현황·커밋 이력에서 Commit/Push/Pull/Sync를 제공한다. 실행은 에이전트 세션과 분리된 Termux 브리지 `GitActions`에서 처리하며 `POST /v1/git`의 state·job 조회와 네 가지 실행 액션으로 구분한다. 프로젝트/실제 워크트리 루트 검증, 명시적 메시지·대상 확인, 저장소 공통 경로별 직렬화, 요청 ID 멱등성과 HEAD/브랜치 확인을 적용한다. 기존 inspector 조회는 읽기 전용으로 유지하고 새 엔드포인트만 쓰기를 수행한다.
+
+Commit은 기본 staged-only이며 전체 변경 스테이징은 명시적으로 선택한다. Pull은 clean worktree와 ff-only 조건으로 실행하고 Sync는 Pull 성공 뒤에만 명시적 upstream 대상 Push를 실행한다. 강제 Push·자동 stash/rebase·충돌 해결·원격 브랜치 최초 설정은 제공하지 않는다. Git의 사용자 설정/자격 증명을 사용하고 인증 입력창을 임의 실행하지 않는다. 명령당120초, 메모리 출력64KiB, 현재 브리지당128개 작업 이력 제한이 있으며 원문 출력/메시지를 일반 로그나 메타데이터에 기록하지 않는다. 일부 단계 이후 실패/통신 결과 불명은 전체 롤백으로 표시하지 않고 재실행 전에 Termux에서 확인하도록 안내한다.
+
+새 앱과 브리지0.24.0의 `git_actions` 플래그가 필요하다. 기존 브리지/데모는 실행을 비활성화한다. 구현·검증과 미빌드/실기기 제약은 NEXT_SESSION.md를 따른다.

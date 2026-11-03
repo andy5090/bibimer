@@ -386,12 +386,22 @@
     </div>
     <p id="inspect-root" dir="auto"></p>
     <section id="inspect-panel" role="tabpanel" aria-labelledby="inspect-files-tab" tabindex="0">
+      <section id="git-actions" class="git-actions" hidden>
+        <div class="git-action-buttons"><button type="button" data-git-action="commit" data-i18n="git_commit">Commit</button><button type="button" data-git-action="push" data-i18n="git_push">Push</button><button type="button" data-git-action="pull" data-i18n="git_pull">Pull</button><button type="button" data-git-action="sync" data-i18n="git_sync">Sync</button><button id="git-state-refresh" type="button" data-i18n="inspect_refresh">Refresh</button></div>
+        <p id="git-action-target" class="hint" dir="auto"></p>
+        <p id="git-action-status" class="hint" role="status"></p>
+        <form id="git-action-form" hidden>
+          <div id="git-commit-fields"><label for="git-message" data-i18n="git_message">Commit message</label><textarea id="git-message" maxlength="2000" rows="3" spellcheck="false"></textarea><label class="check"><input id="git-all" type="checkbox"><span data-i18n="git_all">Stage all changes, including new files</span></label></div>
+          <p id="git-action-explanation" class="hint"></p>
+          <div class="git-action-buttons"><button id="git-action-confirm" type="submit" class="primary">Commit</button><button id="git-action-cancel" type="button" data-i18n="cancel">Cancel</button></div>
+        </form>
+      </section>
       <div id="inspect-toolbar"></div>
       <p id="inspect-status" class="hint" role="status"></p>
       <div id="inspect-content"></div>
       <button id="inspect-more" class="secondary full" type="button" data-i18n="inspect_more" hidden>Load more</button>
     </section>
-    <p class="inspect-footer" data-i18n="inspect_readonly">Read-only · local workspace</p>
+    <p class="inspect-footer" data-i18n="inspect_workspace">Local workspace</p>
   </dialog>
   <dialog id="sidebar" class="sidebar" aria-labelledby="sidebar-title">
     <div class="sidebar-heading"><h2 id="sidebar-title" data-i18n="sidebar_title">Projects and sessions</h2><button id="sidebar-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close sidebar">×</button></div>

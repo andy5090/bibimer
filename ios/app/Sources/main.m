@@ -409,7 +409,7 @@ static void guestExit(int status) {
         return [route rangeOfString:@"^/v1/sessions/[a-f0-9-]{36}/(events|title)$" options:NSRegularExpressionSearch].location != NSNotFound;
     }
     if (![method isEqual:@"POST"] || components.query) return NO;
-    if ([@[@"/v1/project",@"/v1/project/manage",@"/v1/github",@"/v1/inspect",@"/v1/folders",@"/v1/session-history",@"/v1/commands",@"/v1/models",@"/v1/project-agent",@"/v1/project-session",@"/v1/worktrees/manage",@"/v1/worktrees",@"/v1/sessions",@"/v1/agent-connections",@"/v1/ios/agents"] containsObject:route]) return YES;
+    if ([@[@"/v1/project",@"/v1/project/manage",@"/v1/github",@"/v1/inspect",@"/v1/git",@"/v1/folders",@"/v1/session-history",@"/v1/commands",@"/v1/models",@"/v1/project-agent",@"/v1/project-session",@"/v1/worktrees/manage",@"/v1/worktrees",@"/v1/sessions",@"/v1/agent-connections",@"/v1/ios/agents"] containsObject:route]) return YES;
     return [route rangeOfString:@"^/v1/sessions/[a-f0-9-]{36}/(manage|handoff|input|resize|stop|message|respond|interrupt|options|queue|steer)$" options:NSRegularExpressionSearch].location != NSNotFound;
 }
 
