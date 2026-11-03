@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## Android 0.35.0(57) 내부 테스트 준비 (2026-11-03)
+
+- 사용자 내부 배포 요청으로 종료된 터미널 입력 비활성화와 사이드바 Commit/Push/Pull/Sync를 묶어 0.35.0/code57 서명 AAB를 빌드했다. 새 Git 작업은 브리지0.24.0 업데이트가 필요하며 한/영 출시 노트에 명시했다. 기존 사용자 브리지·세션은 재시작하지 않았다.
+- `dist/play/bibimer-0.35.0-57-release.aab`,3,377,464bytes·SHA-256 `31446ad7714987b2ce0d480942e652b8921fd13862395d75c3d252bde27a20f6`. 실제 리소스/Java/D8·bundletool·기존 업로드 서명·56assets 원본·브리지0.24.0/유지보수6payload/격리 설치·언어 split 비활성·심사 digest/비밀 원문 미포함·Git 작업/종료 입력 비활성 패키징을 검증했다. `.tools/aab-0.35.0-57-{build.log,verification.json}`.
+- 실제 로컬 bare remote 기반 Git6개, Git UI·터미널 입력/키·전체 화면·840키×10언어 검사를 통과했다. scripts Python39개도 통과했다(`.tools/release-0.35.0-python.log`). 실제 Android 설치/WebView/키보드/원격 계정 Git 동작은 미검증이다.
+- 예전 X11 소켓이 표시 슬롯을 점유해 시작이 실패했다. 전용flock 획득·소켓 ECONNREFUSED·PID 부재를 확인한71번 소켓/lock만 정리한 뒤 Bibimer관리 Firefox를 열었다. 현재 새 브라우저는 직접 로그인 모드다. 사용자에게 Termux:X11 로그인 뒤 작업 화면의 브라우저 제어 요청 카드 또는 하단 설정 → Firefox · Termux:X11 → 로그인 및 에이전트 제어에서 명시적 허용을 요청했다. 에이전트가 허용을 대신하지 않았다. **아직 Play 업로드/게시 전**이며 완료 여부는 후속 기록을 따른다.
+
 ## 사이드바 Git 작업 버튼 (2026-11-03, 미빌드)
 
 - 사용자 요청으로 작업 폴더 사이드바의 Git 현황/커밋 이력 메뉴에 **Commit·Push·Pull·Sync**와 상태 새로고침을 추가했다. 버튼 선택 후 대상 경로·브랜치·업스트림과 설명을 확인하고 실행한다. Commit은 메시지 입력과 기본 스테이징된 변경만 대상으로 하며, 사용자가 선택하면 새 파일을 포함한 전체 변경을 먼저 스테이징한다. 커밋 실패 시 스테이징은 유지됨을 안내한다. Pull은 변경 없는 작업 폴더에서 fast-forward만 허용하고 Sync는 Pull 성공 후 Push한다. 충돌·병합/리베이스 진행 중·detached HEAD·업스트림 미설정은 거절하고 Termux에서 해결하도록 안내한다. 첫 원격 브랜치/인증 설정은 Termux에서 필요하다.
