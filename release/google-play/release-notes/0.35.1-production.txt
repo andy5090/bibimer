@@ -1,0 +1,6 @@
+<en-US>
+Start chats with a message and manage agent accounts in Settings. Use Commit, Push, Pull and Sync in the sidebar. Expand the terminal, use PgUp/PgDn, and choose Queue or Steer for sends during responses. Terminal input disables when the shell exits; Back keeps fullscreen. Browser consent refreshes in the work view, and the globe opens login and consent while permission is pending. Update the Termux bridge to 0.24.0 in Settings.
+</en-US>
+<ko-KR>
+새 메시지로 대화를 시작하고 설정에서 에이전트 계정 연결을 관리하세요. 사이드바에서 Commit·Push·Pull·Sync를 사용하세요. 터미널 전체 화면과 PgUp·PgDn, 응답 중 대기열·방향 수정 기본 전송 설정을 제공합니다. 셸 종료 시 입력을 비활성화하고 뒤로가기를 눌러도 전체 화면을 유지합니다. 작업 화면의 브라우저 허용 카드를 갱신하며 허용 대기 중 지구본으로 로그인·허용 화면을 열 수 있습니다. 설정에서 Termux 브리지를 0.24.0으로 업데이트하세요.
+</ko-KR>
