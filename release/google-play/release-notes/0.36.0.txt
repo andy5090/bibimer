@@ -1,0 +1,6 @@
+<en-US>
+Use the microphone button on the left of the prompt to dictate with your device’s speech recognition app. Recognized text goes into your draft; sending remains manual. Speech processing may use your provider’s network service. Browser control consent can now notify the requesting agent so it can continue. Update the Termux bridge to 0.24.1 for this notification.
+</en-US>
+<ko-KR>
+입력창 왼쪽 마이크 버튼으로 기기의 음성 인식 앱을 사용해 지시문을 작성할 수 있습니다. 인식 결과는 초안에 넣고 전송은 직접 실행합니다. 음성 인식 제공 앱이 네트워크를 사용할 수 있습니다. 브라우저 제어 허용 후 요청한 에이전트에 완료 알림을 전달합니다. 이 알림 기능에는 설정에서 Termux 브리지0.24.1 업데이트가 필요합니다.
+</ko-KR>

@@ -169,26 +169,26 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.35.1",
-    "versionCode": 59,
+    "versionName": "0.36.0",
+    "versionCode": 60,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "7bacdccbf48857ca8c914728c47ff0b5463ee69dff6aa7342299aafcfadfd561",
-    "file": "bibimer-0.35.1-59-release.aab",
-    "bytes": 3377843,
+    "sha256": "9f798e3cef9344044a8ca6f8bcf75012ce7f2a8ef5bcf61b48a8f0208387c3ce",
+    "file": "bibimer-0.36.0-60-release.aab",
+    "bytes": 3386776,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
     "packagedAssetsMatchSource": true,
-    "packagedAssetCount": 56,
+    "packagedAssetCount": 57,
     "languageSplitsDisabled": true,
     "reviewDigestPackaged": true,
     "privateReviewCodeIncluded": false,
     "privatePasswordIncluded": false,
-    "embeddedBridgeVersion": "0.24.0",
+    "embeddedBridgeVersion": "0.24.1",
     "maintenanceSixPayloadsMatch": true,
     "installerIsolatedExtractionVerified": true,
     "notificationSymbolPackaged": true,
@@ -201,13 +201,15 @@
     "consoleUploaded": true,
     "released": true,
     "physicalDeviceVerified": false,
+    "nativeSpeechInputPackaged": true,
+    "browserConsentNotifyPackaged": true,
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
-    "builtOn": "2026-11-03",
-    "sourceCommit": "8dfd876beef5b4d4e557dd561d6861ab4d967ac6",
-    "releaseName": "0.35.1 (59) - Browser consent discovery",
-    "releaseNotesFile": "release/google-play/release-notes/0.35.1.txt",
-    "bridgeUpdateRequiredForNewFeatures": false
+    "builtOn": "2026-11-04",
+    "sourceCommit": "0b7645848e9ee5f194cfe7eea6336a3b1a9062dd",
+    "releaseName": "0.36.0 (60) - Voice input",
+    "releaseNotesFile": "release/google-play/release-notes/0.36.0.txt",
+    "bridgeUpdateRequiredForNewFeatures": true
   },
   "consoleScreenshotsUpdatedOn": "2026-10-15",
   "playAppSigning": {
@@ -320,16 +322,17 @@
     "retainedInLatestSubmittedVersionCode": 33
   },
   "pendingUpdate": {
-    "versionName": "0.35.1",
-    "versionCode": 59,
+    "versionName": "0.36.0",
+    "versionCode": 60,
     "status": "published_internal_test",
-    "sourceCommit": "8dfd876beef5b4d4e557dd561d6861ab4d967ac6",
-    "releaseNotesFile": "release/google-play/release-notes/0.35.1.txt",
-    "sourceBridgeVersion": "0.24.0",
-    "bridgeUpdateRequiredForNewFeatures": false,
-    "verificationFile": ".tools/aab-0.35.1-59-verification.json",
-    "publishedOn": "2026-11-03",
-    "evidence": "dist/play-0.35.1/published.json"
+    "sourceCommit": "0b7645848e9ee5f194cfe7eea6336a3b1a9062dd",
+    "releaseNotesFile": "release/google-play/release-notes/0.36.0.txt",
+    "sourceBridgeVersion": "0.24.1",
+    "bridgeUpdateRequiredForNewFeatures": true,
+    "bridgeUpdateRequiredForSpeechInput": false,
+    "verificationFile": ".tools/aab-0.36.0-60-verification.json",
+    "publishedOn": "2026-11-04",
+    "evidence": "dist/play-0.36.0/published.json"
   },
   "previousProductionRelease": {
     "versionName": "0.32.0",
@@ -396,16 +399,16 @@
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.35.0",
-    "versionCode": 58,
+    "versionName": "0.35.1",
+    "versionCode": 59,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "10a7308f7670eda5050f5b3ab65cbb6e43daa36309dd07ce79c8b39b229acbc6",
-    "file": "bibimer-0.35.0-58-release.aab",
-    "bytes": 3377468,
+    "sha256": "7bacdccbf48857ca8c914728c47ff0b5463ee69dff6aa7342299aafcfadfd561",
+    "file": "bibimer-0.35.1-59-release.aab",
+    "bytes": 3377843,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
@@ -423,42 +426,44 @@
     "responseDeliveryNativeAndWebPackaged": true,
     "gitActionsPackaged": true,
     "terminalExitInputDisabledPackaged": true,
+    "browserConsentStatusRefreshPackaged": true,
+    "manualGlobeConsentDialogPackaged": true,
     "consoleUploaded": true,
     "released": true,
     "physicalDeviceVerified": false,
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
     "builtOn": "2026-11-03",
-    "sourceCommit": "c76b9a2f942fd32e821fc80786c1573cbeafbb42",
-    "releaseName": "0.35.0 (58) - Git actions and terminal input",
-    "releaseNotesFile": "release/google-play/release-notes/0.35.0.txt",
-    "bridgeUpdateRequiredForNewFeatures": true
+    "sourceCommit": "8dfd876beef5b4d4e557dd561d6861ab4d967ac6",
+    "releaseName": "0.35.1 (59) - Browser consent discovery",
+    "releaseNotesFile": "release/google-play/release-notes/0.35.1.txt",
+    "bridgeUpdateRequiredForNewFeatures": false
   },
   "previousUpdate": {
-    "versionName": "0.35.0",
-    "versionCode": 58,
-    "status": "published_internal_test",
-    "sourceCommit": "c76b9a2f942fd32e821fc80786c1573cbeafbb42",
-    "releaseNotesFile": "release/google-play/release-notes/0.35.0.txt",
-    "sourceBridgeVersion": "0.24.0",
-    "bridgeUpdateRequiredForNewFeatures": true,
-    "verificationFile": ".tools/aab-0.35.0-58-verification.json",
-    "publishedOn": "2026-11-03",
-    "evidence": "dist/play-0.35.0/published.json"
-  },
-  "internalTestRelease": {
     "versionName": "0.35.1",
     "versionCode": 59,
-    "releaseName": "0.35.1 (59) - Browser consent discovery",
-    "consoleStatus": "active_available_to_existing_testers",
+    "status": "published_internal_test",
+    "sourceCommit": "8dfd876beef5b4d4e557dd561d6861ab4d967ac6",
+    "releaseNotesFile": "release/google-play/release-notes/0.35.1.txt",
+    "sourceBridgeVersion": "0.24.0",
+    "bridgeUpdateRequiredForNewFeatures": false,
+    "verificationFile": ".tools/aab-0.35.1-59-verification.json",
     "publishedOn": "2026-11-03",
-    "publishedAtLocal": "2026-11-03 22:23 Asia/Seoul",
+    "evidence": "dist/play-0.35.1/published.json"
+  },
+  "internalTestRelease": {
+    "versionName": "0.36.0",
+    "versionCode": 60,
+    "releaseName": "0.36.0 (60) - Voice input",
+    "consoleStatus": "active_available_to_existing_testers",
+    "publishedOn": "2026-11-04",
+    "publishedAtLocal": "2026-11-04 19:43 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      59
+      60
     ],
     "excludedPreviousVersionCodes": [
-      58
+      59
     ],
     "releaseNotesLocales": [
       "en-US",
@@ -473,31 +478,24 @@
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "8dfd876beef5b4d4e557dd561d6861ab4d967ac6",
-    "releaseNotesFile": "release/google-play/release-notes/0.35.1.txt",
-    "evidence": "dist/play-0.35.1/published.json",
-    "sourceBridgeVersion": "0.24.0",
-    "bridgeUpdateRequiredForNewFeatures": false,
-    "packagedAssetCount": 56,
-    "scriptTestsPassed": 39,
-    "sourceLanguageKeys": 840,
+    "sourceCommit": "0b7645848e9ee5f194cfe7eea6336a3b1a9062dd",
+    "releaseNotesFile": "release/google-play/release-notes/0.36.0.txt",
+    "evidence": "dist/play-0.36.0/published.json",
+    "sourceBridgeVersion": "0.24.1",
+    "bridgeUpdateRequiredForNewFeatures": true,
+    "bridgeUpdateRequiredForSpeechInput": false,
+    "minimumBridgeForBrowserConsentNotification": "0.24.1",
+    "packagedAssetCount": 57,
+    "releaseBuildTestsPassed": 11,
+    "sourceLanguageKeys": 855,
     "sourceLanguageCount": 10,
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "bundleSha256": "7bacdccbf48857ca8c914728c47ff0b5463ee69dff6aa7342299aafcfadfd561",
-    "bundleBytes": 3377843,
-    "browserConsentPackaged": true,
-    "terminalFullscreenPreservedOnBack": true,
-    "existingTestersUnchanged": true,
-    "gitActionsPackaged": true,
-    "terminalExitInputDisabledPackaged": true,
-    "visibleGitMenuWidthsVerified": [
-      320,
-      393
-    ],
-    "minimumBridgeForBrowserConsent": "0.23.2",
-    "browserConsentStatusRefreshPackaged": true,
-    "manualGlobeConsentDialogPackaged": true
+    "bundleSha256": "9f798e3cef9344044a8ca6f8bcf75012ce7f2a8ef5bcf61b48a8f0208387c3ce",
+    "bundleBytes": 3386776,
+    "nativeSpeechInputPackaged": true,
+    "browserConsentNotifyPackaged": true,
+    "existingTestersUnchanged": true
   },
   "productionReleaseHistory": [
     {
@@ -755,18 +753,18 @@
     "submission": "English and Korean phone screenshots only; existing app version unchanged"
   },
   "previousInternalTestRelease": {
-    "versionName": "0.35.0",
-    "versionCode": 58,
-    "releaseName": "0.35.0 (58) - Git actions and terminal input",
+    "versionName": "0.35.1",
+    "versionCode": 59,
+    "releaseName": "0.35.1 (59) - Browser consent discovery",
     "consoleStatus": "active_available_to_existing_testers",
     "publishedOn": "2026-11-03",
-    "publishedAtLocal": "2026-11-03 20:12 Asia/Seoul",
+    "publishedAtLocal": "2026-11-03 22:23 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      58
+      59
     ],
     "excludedPreviousVersionCodes": [
-      56
+      58
     ],
     "releaseNotesLocales": [
       "en-US",
@@ -781,32 +779,31 @@
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "c76b9a2f942fd32e821fc80786c1573cbeafbb42",
-    "releaseNotesFile": "release/google-play/release-notes/0.35.0.txt",
-    "evidence": "dist/play-0.35.0/published.json",
+    "sourceCommit": "8dfd876beef5b4d4e557dd561d6861ab4d967ac6",
+    "releaseNotesFile": "release/google-play/release-notes/0.35.1.txt",
+    "evidence": "dist/play-0.35.1/published.json",
     "sourceBridgeVersion": "0.24.0",
-    "bridgeUpdateRequiredForNewFeatures": true,
+    "bridgeUpdateRequiredForNewFeatures": false,
     "packagedAssetCount": 56,
     "scriptTestsPassed": 39,
     "sourceLanguageKeys": 840,
     "sourceLanguageCount": 10,
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "bundleSha256": "10a7308f7670eda5050f5b3ab65cbb6e43daa36309dd07ce79c8b39b229acbc6",
-    "bundleBytes": 3377468,
+    "bundleSha256": "7bacdccbf48857ca8c914728c47ff0b5463ee69dff6aa7342299aafcfadfd561",
+    "bundleBytes": 3377843,
     "browserConsentPackaged": true,
     "terminalFullscreenPreservedOnBack": true,
     "existingTestersUnchanged": true,
-    "excludedUnpublishedVersionCodes": [
-      57
-    ],
-    "gitActionsTestsPassed": 6,
     "gitActionsPackaged": true,
     "terminalExitInputDisabledPackaged": true,
     "visibleGitMenuWidthsVerified": [
       320,
       393
-    ]
+    ],
+    "minimumBridgeForBrowserConsent": "0.23.2",
+    "browserConsentStatusRefreshPackaged": true,
+    "manualGlobeConsentDialogPackaged": true
   },
   "consoleScreenshotsVerifiedOn": "2026-10-15",
   "sourceLanguages": [
@@ -1694,6 +1691,59 @@
         320,
         393
       ]
+    },
+    {
+      "versionName": "0.35.1",
+      "versionCode": 59,
+      "releaseName": "0.35.1 (59) - Browser consent discovery",
+      "consoleStatus": "active_available_to_existing_testers",
+      "publishedOn": "2026-11-03",
+      "publishedAtLocal": "2026-11-03 22:23 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+      "includedVersionCodes": [
+        59
+      ],
+      "excludedPreviousVersionCodes": [
+        58
+      ],
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "errors": [],
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed seven Console device type rows",
+      "refreshedStatusVerified": true,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "sourceCommit": "8dfd876beef5b4d4e557dd561d6861ab4d967ac6",
+      "releaseNotesFile": "release/google-play/release-notes/0.35.1.txt",
+      "evidence": "dist/play-0.35.1/published.json",
+      "sourceBridgeVersion": "0.24.0",
+      "bridgeUpdateRequiredForNewFeatures": false,
+      "packagedAssetCount": 56,
+      "scriptTestsPassed": 39,
+      "sourceLanguageKeys": 840,
+      "sourceLanguageCount": 10,
+      "physicalDeviceVerified": false,
+      "deviceInstallVerified": false,
+      "bundleSha256": "7bacdccbf48857ca8c914728c47ff0b5463ee69dff6aa7342299aafcfadfd561",
+      "bundleBytes": 3377843,
+      "browserConsentPackaged": true,
+      "terminalFullscreenPreservedOnBack": true,
+      "existingTestersUnchanged": true,
+      "gitActionsPackaged": true,
+      "terminalExitInputDisabledPackaged": true,
+      "visibleGitMenuWidthsVerified": [
+        320,
+        393
+      ],
+      "minimumBridgeForBrowserConsent": "0.23.2",
+      "browserConsentStatusRefreshPackaged": true,
+      "manualGlobeConsentDialogPackaged": true
     }
   ]
 }
