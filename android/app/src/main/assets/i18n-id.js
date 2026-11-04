@@ -1,6 +1,8 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "page_back": "Kembali",
+  "initial_setup_guide": "Panduan penyiapan awal",
   "tts_title": "Bacakan jawaban",
   "tts_enable": "Pembacaan otomatis",
   "tts_hint": "Default mati. Suara sintetis membaca jawaban baru yang selesai di Chat terbuka. Berhenti saat keluar aplikasi atau berganti sesi.",

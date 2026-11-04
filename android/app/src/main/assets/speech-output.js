@@ -6,22 +6,25 @@ class BibimerSpeechOutput {
     this.$=id=>document.getElementById(id);this.seen=new Set();this.latest="";this.context="";this.status="";
     for(const [id,key] of [["tts-enabled","enabled"],["tts-provider","provider"],["tts-mode","mode"],["tts-engine","engine"],["tts-voice","voice"]]) {
       this.$(id).addEventListener("change",()=>{
+        if(key!=="enabled"&&!this.environment().speechOutput?.enabled)return;
         const value=key==="enabled"?this.$(id).checked:this.$(id).value;
         try {if(!native.configureSpeechOutput(JSON.stringify({[key]:value})))this.status="tts_failed";else this.status="";}
         catch(_){this.status="tts_failed";}
         this.render();this.sync();
-        if(["provider","engine"].includes(key))native.refreshSpeechVoices?.(false);
+        if(["provider","engine"].includes(key)&&this.environment().speechOutput?.enabled)native.refreshSpeechVoices?.(false);
       });
     }
-    this.$("tts-refresh").addEventListener("click",()=>native.refreshSpeechVoices?.(false));
-    this.$("tts-more").addEventListener("click",()=>native.refreshSpeechVoices?.(true));
+    this.$("tts-refresh").addEventListener("click",()=>{if(!this.$("tts-refresh").disabled)native.refreshSpeechVoices?.(false);});
+    this.$("tts-more").addEventListener("click",()=>{if(!this.$("tts-more").disabled)native.refreshSpeechVoices?.(true);});
     this.$("tts-preview").addEventListener("click",()=>{
+      if(this.$("tts-preview").disabled)return;
       this.syncContext();native.readSpeechOutput?.(this.context,t("tts_sample"),true);
     });
     for(const id of ["tts-stop","tts-stop-settings"])this.$(id).addEventListener("click",()=>native.stopSpeechOutput?.());
     this.$("tts-read-latest").addEventListener("click",()=>{this.syncContext();if(this.latest)native.readSpeechOutput?.(this.context,this.latest,false);});
-    for(const [id,action] of [["tts-key-edit","edit"],["tts-key-remove","remove"]])this.$(id).addEventListener("click",()=>
-      native.speechKeyAction?.(this.environment().speechOutput?.provider,action,bibimerVoiceLabels(t)));
+    for(const [id,action] of [["tts-key-edit","edit"],["tts-key-remove","remove"]])this.$(id).addEventListener("click",()=>{
+      if(!this.$(id).disabled)native.speechKeyAction?.(this.environment().speechOutput?.provider,action,bibimerVoiceLabels(t));
+    });
   }
   syncContext(){
     const now=this.current(),context=now.context;
@@ -70,6 +73,8 @@ class BibimerSpeechOutput {
     const env=this.environment(),s=env.speechOutput||{},supported=!!this.native.configureSpeechOutput&&!env.demo;
     this.$("tts-preference").hidden=!supported;if(!supported)return;
     this.$("tts-enabled").checked=!!s.enabled;
+    this.$("tts-settings").disabled=!s.enabled;
+    for(const id of ["tts-provider","tts-mode"])this.$(id).disabled=!s.enabled;
     this.$("tts-provider").value=s.provider||"android";this.$("tts-mode").value=s.mode||"full";
     this.$("tts-engine-row").hidden=s.provider!=="android";
     const engineRows=[{id:"",label:this.t("voice_device")},...(s.engines||[])];
@@ -82,14 +87,14 @@ class BibimerSpeechOutput {
     const external=s.provider==="elevenlabs",hasKey=!!s[s.provider+"Key"];
     this.$("tts-api-controls").hidden=!external;
     this.$("tts-key-state").textContent=this.t(hasKey?"voice_key_saved":"voice_key_required");
-    this.$("tts-key-remove").disabled=!hasKey||s.busy||s.reading;
-    this.$("tts-key-edit").disabled=!!s.busy||!!s.reading;
+    this.$("tts-key-remove").disabled=!s.enabled||!hasKey||s.busy||s.reading;
+    this.$("tts-key-edit").disabled=!s.enabled||!!s.busy||!!s.reading;
     this.$("tts-more").hidden=s.provider!=="elevenlabs"||!s.more;
     this.$("tts-provider-hint").textContent=this.t(external?"tts_external_hint":"tts_android_hint");
     this.$("tts-status").textContent=this.status?this.t(this.status):s.status?this.t(s.status):"";
-    for(const id of ["tts-refresh","tts-more","tts-engine","tts-voice"])this.$(id).disabled=!!s.busy||!!s.reading;
-    this.$("tts-preview").disabled=!!s.busy||!!s.reading||(external&&(!hasKey||!s.voice));
-    this.$("tts-stop-settings").disabled=!s.reading;
+    for(const id of ["tts-refresh","tts-more","tts-engine","tts-voice"])this.$(id).disabled=!s.enabled||!!s.busy||!!s.reading;
+    this.$("tts-preview").disabled=!s.enabled||!!s.busy||!!s.reading||(external&&(!hasKey||!s.voice));
+    this.$("tts-stop-settings").disabled=!s.enabled||!s.reading;
     this.syncContext();
   }
 }

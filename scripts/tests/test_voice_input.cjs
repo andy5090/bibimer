@@ -26,6 +26,8 @@ function setup(native) {
 let x = setup();
 x.input.selectionStart = 3; x.input.selectionEnd = 5;
 x.voice.start(); x.voice.start(); assert.equal(x.calls.length,1, "Double click opens once");
+assert.equal(x.status.hidden,true,"No redundant opening notice while the native voice UI is active");
+assert.equal(x.button.disabled,true);
 x.voice.result("wrong-id","ok","stale"); assert.ok(x.voice.pending);
 x.voice.result(x.calls[0],"ok","음성 결과"); assert.equal(x.input.value,"기존 음성 결과");
 assert.equal(x.input.selectionStart,8); assert.ok(x.input.focused); assert.equal(x.voice.revision,1);

@@ -1,3 +1,4 @@
+const {openPage}=require("./ui-navigation.cjs");
 /* Quick setup UI with a native lifecycle stand-in; no device permission or model changes. */
 const fs=require('node:fs'), path=require('node:path'), http=require('node:http'), assert=require('node:assert/strict');
 if(process.platform==='android') Object.defineProperty(process,'platform',{value:'linux'});
@@ -49,7 +50,7 @@ async function main(){
     };
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
-  await page.locator('#go-setup').click();
+  await openPage(page,'setup');
   assert.equal(await page.locator('#quick-connect').isDisabled(),true);
   assert.match(await page.locator('#quick-status').innerText(),/Install Termux/);
   await page.evaluate(()=>{localStorage.setItem('termux','yes');window.BibimerResume();});
@@ -66,7 +67,7 @@ async function main(){
   await page.waitForFunction(()=>document.querySelector('#quick-status').textContent.includes('Preparing Termux'));
   assert.equal(await page.locator('#quick-connect').isDisabled(),true);
   assert.equal(await page.evaluate(()=>window.setupCalls.filter(item=>item==='start').length),1);
-  await page.reload();await page.locator('#tab-setup').click();
+  await page.reload();await openPage(page,'setup');
   assert.equal(await page.locator('#quick-connect').isDisabled(),true);
   assert.match(await page.locator('#quick-status').innerText(),/Preparing Termux/);
   for(const phase of ['quick_python_failed','quick_install_failed','quick_bridge_failed','quick_pair_failed','quick_timeout','quick_busy']){
@@ -77,9 +78,9 @@ async function main(){
   await page.locator('#manual-setup > summary').click();
   assert.equal(await page.locator('#pair-code').isVisible(),true);
   await page.locator('#manual-setup > summary').click();
-  await page.locator('#tab-settings').click();
+  await openPage(page,'settings');
   await page.locator('#language-trigger').click();await page.locator('#select-options [data-value=ko]').click();
-  await page.locator('#tab-setup').click();
+  await openPage(page,'setup');
   await page.evaluate(()=>window.setupResult('quick_external'));
   assert.match(await page.locator('#quick-status').innerText(),/외부 앱 연동/);
   for(const width of [320,360]){
@@ -95,7 +96,7 @@ async function main(){
   assert.equal(await page.locator('#pair-code').inputValue(),'');
   await page.reload();await page.waitForFunction(()=>!document.querySelector('#workspace').hidden);
   if(await page.locator('#sidebar').evaluate(node=>node.open))await page.locator('#sidebar-close').click();
-  await page.locator('#tab-setup').click();
+  await openPage(page,'setup');
   assert.equal(await page.locator('#setup-connection-complete').isVisible(),true);
   assert.equal(await page.locator('#setup-connection-steps').isVisible(),false);
   assert.match(await page.locator('#setup-connected-heading').innerText(),/Termux 연결 완료/);
@@ -105,7 +106,7 @@ async function main(){
   assert.equal(await page.locator('#setup').isVisible(),true);
   // A saved setup error cannot reactivate initial setup while health is good.
   await page.evaluate(()=>window.setupResult('quick_external'));
-  await page.locator('#tab-setup').click();
+  await openPage(page,'setup');
   assert.equal(await page.locator('#setup-connection-complete').isVisible(),true);
   assert.equal(await page.locator('#quick-permissions').evaluate(node=>node.open),false);
   await page.evaluate(()=>{
@@ -121,7 +122,7 @@ async function main(){
   assert.equal(await page.locator('#pair-code').inputValue(),'12345678');
   await page.locator('#setup-open-work').click();
   assert.equal(await page.locator('#work').isVisible(),true);
-  await page.locator('#tab-setup').click();
+  await openPage(page,'setup');
   await page.locator('#setup-open-termux').click();
   assert.equal(await page.evaluate(()=>window.setupCalls.at(-1)),'termux');
   // A cached offline status can recover using the saved token, without setup.
@@ -135,7 +136,7 @@ async function main(){
   for(const status of [0,401]) {
     await page.evaluate(value=>{window.setupHealthStatus=value;window.BibimerResume();},status);
     await page.waitForFunction(()=>!document.querySelector('#setup-connection-steps').hidden && !document.querySelector('#quick-connect').disabled);
-    await page.locator('#tab-setup').click();
+    await openPage(page,'setup');
     assert.equal(await page.locator('#setup-connection-complete').isVisible(),false);
     assert.equal(await page.locator('#pair-code').isDisabled(),false);
     const before=await page.evaluate(()=>window.setupCalls.filter(item=>item==='start').length);
@@ -146,7 +147,7 @@ async function main(){
     await page.waitForFunction(()=>!document.querySelector('#setup-connection-complete').hidden);
     assert.equal(await page.locator('#quick-connect').isDisabled(),true);
   }
-  await page.locator('#tab-setup').click();
+  await openPage(page,'setup');
   await page.evaluate(()=>{window.setupHealthStatus=0;window.setupHealthDelay=300;window.setupCalls=[];window.BibimerResume();});
   await page.waitForFunction(()=>!document.querySelector('#setup-connection-steps').hidden && !document.querySelector('#quick-connect').disabled);
   await page.locator('#quick-connect').click();
@@ -154,7 +155,7 @@ async function main(){
   await page.waitForTimeout(900);
   assert.deepEqual(await page.evaluate(()=>window.setupCalls),[]);
   await page.evaluate(()=>{window.setupHealthStatus=200;window.setupHealthDelay=0;window.BibimerResume();});
-  await page.locator('#tab-setup').click();
+  await openPage(page,'setup');
   // Viewing/copying installation guidance must never start a setup job or agent.
   const setupBeforeGuides=await page.evaluate(()=>window.setupCalls.slice());
   for(const id of ['codex-install','claude-install','opencode-install','gemini-install']) {
@@ -166,7 +167,7 @@ async function main(){
   assert.deepEqual(await page.evaluate(()=>window.claudeCopies),['claude-repair','claude-adapter']);
   assert.equal(commands,12);
   assert.deepEqual(await page.evaluate(()=>window.agentActions),[]);
-  for(const action of ['repair','adapter','login','status','version']) {
+  for(const action of ['repair','adapter']) {
     await page.locator(`#claude-install [data-agent-action="${action}"]`).click();
     assert.deepEqual(await page.evaluate(()=>window.agentActions.at(-1)),["claude",action]);
     assert.match(await page.locator('#agent-action-status-claude').innerText(),/설치·로그인 완료를 뜻하지/);
@@ -176,23 +177,18 @@ async function main(){
   const actionStatus=await page.locator('#agent-action-status-claude').innerText();
   await page.evaluate(()=>window.BibimerAgentActionStatus("claude",'unsafe arbitrary output'));
   assert.equal(await page.locator('#agent-action-status-claude').innerText(),actionStatus);
-  await page.evaluate(()=>{window.BibimerPause();document.querySelector('#claude-install [data-agent-action="login"]').click();});
-  assert.equal(await page.evaluate(()=>window.agentActions.length),5);
+  await page.evaluate(()=>{window.BibimerPause();document.querySelector('#claude-install [data-agent-action="repair"]').click();});
+  assert.equal(await page.evaluate(()=>window.agentActions.length),2);
   await page.evaluate(()=>window.BibimerResume());
-  const claudeStatus=await page.locator('#agent-action-status-claude').innerText();
-  const expectedActions=['repair','adapter','login','status','version'].map(action=>['claude',action]);
-  for(const agent of ['codex','opencode','gemini']) {
-    for(const action of agent==='gemini'?['login','version']:['login','status','version']) {
-      await page.locator(`#${agent}-install [data-agent-action="${action}"]`).click();
-      expectedActions.push([agent,action]);
-      assert.deepEqual(await page.evaluate(()=>window.agentActions.at(-1)),[agent,action]);
-      assert.match(await page.locator(`#agent-action-status-${agent}`).innerText(),agent==='opencode'?/제공자 설정·명령 결과/:/설치·로그인 완료를 뜻하지/);
-    }
+  const expectedActions=['repair','adapter'].map(action=>['claude',action]);
+  for(const agent of ['codex','claude','opencode','gemini']) {
+    await page.locator(`[data-agent-connection="${agent}"]`).click();
+    assert.equal(await page.locator('#agent-connection-dialog').isVisible(),true);
+    assert.equal(await page.locator('#agent-connection-agent').inputValue(),agent);
+    await page.locator('#agent-connection-close').click();
   }
-  assert.equal(await page.locator('#agent-action-status-claude').innerText(),claudeStatus);
-  await page.evaluate(()=>window.BibimerAgentActionStatus('shell','quick_permission'));
-  assert.equal(await page.locator('[data-agent-action]').count(),13);
-  assert.equal(await page.locator('#gemini-install [data-agent-action="status"]').count(),0);
+  assert.deepEqual(await page.evaluate(()=>window.agentActions),expectedActions,'Opening shared account UI does not execute a Termux command');
+  assert.equal(await page.locator('[data-agent-connection]').count(),4);
   for(let index=0;index<commands;index++) {
     const button=page.locator('[data-agent-copy]').nth(index);
     const command=await button.evaluate(node=>document.getElementById(node.dataset.agentCopy).textContent);
@@ -237,10 +233,11 @@ async function main(){
   assert.deepEqual(await page.evaluate(()=>window.agentActions),expectedActions);
   for(const id of ['codex-install','claude-install','opencode-install','gemini-install']) assert.equal(await page.locator(`#${id}`).evaluate(node=>node.open),true);
   assert.deepEqual(await page.evaluate(()=>window.setupCalls),setupBeforeGuides);
+  await openPage(page,'settings');
   await page.locator('#forget').click();
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).paired),false);
   assert.equal(await page.evaluate(()=>JSON.parse(window.Bibimer.environment()).quickSetup.phase),'idle');
-  await page.locator('#tab-setup').click();
+  await openPage(page,'setup');
   assert.equal(await page.locator('#setup-connection-complete').isVisible(),false);
   assert.equal(await page.locator('#setup-connection-steps').isVisible(),true);
   assert.equal(await page.locator('#quick-connect').isDisabled(),false);

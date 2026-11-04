@@ -1,6 +1,8 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "page_back": "返回",
+  "initial_setup_guide": "初始设置指南",
   "tts_title": "朗读回答",
   "tts_enable": "自动朗读",
   "tts_hint": "默认关闭。合成语音朗读当前聊天中新完成的回答。离开应用或切换会话时停止。",

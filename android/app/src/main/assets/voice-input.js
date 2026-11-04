@@ -36,7 +36,7 @@ class BibimerVoiceInput {
     const id = this.prefix + "-" + (++this.serial);
     this.pending = {id, context:this.context(), value:this.input.value, revision:this.revision,
       start:this.input.selectionStart, end:this.input.selectionEnd};
-    this.message("voice_opening");
+    this.message(null);
     this.update();
     try { this.native.startVoiceInput(id, bibimerVoiceLabels(this.t)); }
     catch (_) { this.result(id, "failed", ""); }

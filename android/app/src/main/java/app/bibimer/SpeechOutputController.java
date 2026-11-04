@@ -32,7 +32,7 @@ final class SpeechOutputController {
     private boolean androidReady,initializing,focusHeld;
     private MediaPlayer player;
     private volatile File audio;
-    private AlertDialog keyDialog;
+    private BibimerDialog keyDialog;
     private final AudioManager audioManager;
     private AudioFocusRequest focus;
     private List<String> parts=Collections.emptyList();
@@ -220,16 +220,17 @@ final class SpeechOutputController {
         try{
             JSONObject l=new JSONObject(labels);final long epoch=DemoMode.epoch();EditText input=new EditText(activity);
             input.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);input.setSingleLine(true);input.setSaveEnabled(false);
+            input.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI | android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING);
             input.setImportantForAutofill(android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
             input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(512)});
-            AlertDialog d=new AlertDialog.Builder(activity).setTitle(VoiceTranscription.name(p)+" · TTS · "+l.optString("voice_key"))
+            BibimerDialog d=new BibimerDialog.Builder(activity).setTitle(VoiceTranscription.name(p)+" · TTS · "+l.optString("voice_key"))
                 .setMessage(l.optString("voice_key_hint")).setView(input).setNegativeButton(l.optString("voice_cancel"),null).setPositiveButton(l.optString("voice_save"),null).create();keyDialog=d;
             d.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
-            d.setOnDismissListener(x->{input.setText("");keyDialog=null;});
-            d.setOnShowListener(x->d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+            d.setOnDismissListener(x->{input.setText("");if(keyDialog==d)keyDialog=null;});
+            d.setOnShowListener(x->d.getButton(BibimerDialog.BUTTON_POSITIVE).setOnClickListener(v->{
                 if(!listener.current(epoch)){d.dismiss();return;}String secret=input.getText().toString().trim();
-                if(!secret.matches("[\\x21-\\x7e]{1,512}")){input.setError(l.optString("voice_key_required"));return;}
-                try{eleven.save(secret);if("elevenlabs".equals(p)){elevenVoices=new JSONArray();elevenLoaded=false;more=false;nextPage="";}d.dismiss();signal("voice_saved");}catch(Exception ignored){input.setError(l.optString("voice_failed"));}
+                if(!secret.matches("[\\x21-\\x7e]{1,512}")){d.showError(l.optString("voice_key_required"));return;}
+                try{eleven.save(secret);if("elevenlabs".equals(p)){elevenVoices=new JSONArray();elevenLoaded=false;more=false;nextPage="";}d.dismiss();signal("voice_saved");}catch(Exception ignored){d.showError(l.optString("voice_failed"));}
             }));d.show();
         }catch(Exception ignored){signal("tts_failed");}
     }

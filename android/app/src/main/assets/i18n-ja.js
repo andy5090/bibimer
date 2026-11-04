@@ -1,6 +1,8 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "page_back": "戻る",
+  "initial_setup_guide": "初期設定ガイド",
   "tts_title": "回答の読み上げ",
   "tts_enable": "自動読み上げ",
   "tts_hint": "既定ではオフです。表示中の Chat で新しく正常完了した回答を合成音声で読み上げます。アプリを離れるかセッションを変えると停止します。",

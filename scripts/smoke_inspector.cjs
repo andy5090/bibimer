@@ -1,3 +1,4 @@
+const {openPage}=require("./ui-navigation.cjs");
 /* Real isolated Git/bridge + browser native adapter; no user repositories or models. */
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http');
 const {spawn,execFileSync}=require('node:child_process'),assert=require('node:assert/strict');
@@ -180,7 +181,7 @@ async function main(){
   assert.ok(await row('tree-only.txt').evaluate(node=>node===document.activeElement));
   assert.equal(await page.evaluate(()=>window.BibimerBack()),true);
   assert.equal(await page.locator('#inspector').isVisible(),false);
-  await page.locator('#tab-settings').click();await page.locator('#language-trigger').click();await page.locator('[data-value=ko]').click();
+  await openPage(page,'settings');await page.locator('#language-trigger').click();await page.locator('[data-value=ko]').click();
   await page.locator('#inspector-open').click();assert.equal(await page.locator('#inspector-title').innerText(),'작업 폴더 탐색');
   await row('tree-only.txt').click();await page.locator('#file-raw').getByText('원본 보기',{exact:true}).waitFor();
   await page.screenshot({path:path.join(root,'dist/screenshots/file-viewer-phone-ko.png')});await closeFile();

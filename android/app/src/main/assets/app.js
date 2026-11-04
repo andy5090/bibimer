@@ -9,6 +9,7 @@
   let instance = null, activePoll = false, retryTimer = null, generation = 0, busy = false;
   let bridgeVersion = "";
   let project = null, inputQueue = Promise.resolve(), currentTab = "work";
+  const pageHistory = [];
   let quickTimer = null, quickHandled = environment().quickSetup?.phase === "connected" ? environment().quickSetup.id : null, quickSubmitting = false;
   let projectInitialized = false, connectionError = null;
   let noticeData = null, knownAgents = [];
@@ -405,6 +406,7 @@
     $("termux-status").className = "badge" + (env.termuxInstalled ? " connected" : "");
     $("reconnect-welcome").hidden = !env.paired;
     for (const button of document.querySelectorAll("[data-agent-action]")) button.disabled = demo;
+    for (const button of document.querySelectorAll("[data-agent-connection]")) button.disabled = demo;
     renderQuickSetup(env);
   }
   function renderSetupConnection() {
@@ -918,11 +920,21 @@
     renderImport(true);
     setTimeout(resize, 30);
   }
-  function tab(name) {
+  function tab(name, {replace = false} = {}) {
+    if (!["work", "setup", "settings"].includes(name)) return;
+    const previous = currentTab;
+    if (name === "work") pageHistory.length = 0;
+    else if (!replace && name !== previous) pageHistory.push({page:previous, scroll:$(previous).scrollTop});
     closeUsageDetails();
     pickers.close();
     sidebar.close();
     currentTab = name;
+    $("app").classList.toggle("auxiliary-page", name !== "work");
+    $("sidebar-open").hidden = name !== "work";
+    $("inspector-open").hidden = name !== "work";
+    $("page-back").hidden = name === "work";
+    $("app-settings-open").hidden = name === "settings";
+    $("app-settings-open").setAttribute("aria-expanded", String(name === "settings"));
     if (name === "settings") { voiceSettings.render(); speechOutput.render(); pickers.sync(); }
     speechOutput.syncContext();
     voiceInput.update();
@@ -933,12 +945,30 @@
     updateBackState();
     for (const page of ["work", "setup", "settings"]) {
       $(page).hidden = name !== page;
-      $("tab-" + page).classList.toggle("selected", name === page);
-      if (name === page) $("tab-" + page).setAttribute("aria-current", "page");
-      else $("tab-" + page).removeAttribute("aria-current");
     }
     if (name === "work") setTimeout(resize, 30);
     else updateEnvironment();
+    if (name !== previous) {
+      if (name === "work") $("app-settings-open").focus({preventScroll:true});
+      else $(name + "-heading").focus({preventScroll:true});
+    }
+  }
+  function closePage() {
+    const target = pageHistory.pop();
+    tab(target?.page || "work", {replace:true});
+    if (target) $(target.page).scrollTop = target.scroll;
+    if (currentTab === "settings") $("setup-guide-open").focus({preventScroll:true});
+  }
+  function openSetupGuide(agent = null) {
+    tab("setup");
+    if (agent) {
+      const details = $(agent + "-install");
+      if (details) { details.open = true; details.scrollIntoView({block:"start"}); }
+    }
+  }
+  function openInitialPage() {
+    // Pairing survives a temporary outage. An existing installation stays in Work.
+    tab(environment().paired || demo ? "work" : "setup", {replace:true});
   }
   function browserKey() {
     const ctx = fileContext();
@@ -2109,9 +2139,14 @@
     worktreeChecks.clear(); workspaceDetails = null;
     activeViewKey = null; draftPath = null; sidebar.close(); $("session-dialog").close();
     notice("connection_forgotten");
+    pageHistory.length = 0;
+    tab("setup", {replace:true});
   });
-  for (const name of ["work", "setup", "settings"]) $("tab-" + name).addEventListener("click", () => tab(name));
-  $("go-setup").addEventListener("click", () => tab("setup"));
+  $("app-settings-open").addEventListener("click", () => tab("settings"));
+  $("page-back").addEventListener("click", closePage);
+  $("setup-guide-open").addEventListener("click", () => openSetupGuide());
+  $("agent-install-guide").addEventListener("click", () => openSetupGuide(selectedAgent === "shell" ? "codex" : selectedAgent));
+  $("go-setup").addEventListener("click", () => openSetupGuide());
   for (const id of ["demo-settings-exit", "demo-exit-banner"]) $(id).addEventListener("click", () => {
     ++generation; paused = true; clearTimeout(retryTimer); native.cancelPoll?.(); native.setDemoMode?.(false);
   });
@@ -2146,7 +2181,7 @@
   });
   $("cancel-project").addEventListener("click", () => { projectForm(false); $("edit-project").focus(); });
   $("project-update").addEventListener("click", () => tab("setup"));
-  for (const id of ["reconnect", "reconnect-welcome"]) $(id).addEventListener("click", () => { notice(""); connect(); });
+  for (const id of ["reconnect", "reconnect-welcome", "reconnect-settings"]) $(id).addEventListener("click", () => { notice(""); connect(); });
   $("open-termux").addEventListener("click", () => native.openTermux());
   $("setup-open-termux").addEventListener("click", () => native.openTermux());
   $("setup-open-work").addEventListener("click", () => tab("work"));
@@ -2184,6 +2219,9 @@
     const status = $("agent-action-status-" + agent);
     status.dataset.i18n = code; status.textContent = t(code); status.hidden = false;
   };
+  for (const button of document.querySelectorAll("[data-agent-connection]")) button.addEventListener("click", () => {
+    if (!demo && !paused && !button.disabled) void agentConnections.open(button.dataset.agentConnection);
+  });
   for (const button of document.querySelectorAll("[data-agent-action]")) button.addEventListener("click", () => {
     if (demo || paused || button.disabled) return;
     try {
@@ -2299,6 +2337,8 @@
     const env = environment(), settings = env.notifications;
     $("response-notifications").checked = settings?.enabled !== false;
     $("response-notifications").disabled = !native.setResponseNotifications;
+    $("notification-settings").disabled = !settings?.enabled || !native.setResponseNotifications;
+    $("notification-permission").disabled = $("notification-settings").disabled;
     let key = !settings ? "notifications_app_update" : !settings.enabled ? "notifications_off" :
       !env.paired && !demo ? "notifications_connect" : !online ? "notifications_reconnecting" :
       !canResponseNotifications ? "notifications_update" : !settings.allowed ? "notifications_permission" :
@@ -2475,7 +2515,10 @@
     if (!event.target.closest?.(".usage-indicators")) closeUsageDetails();
   });
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && document.querySelector(".context-usage[open]") && !document.querySelector("dialog[open]")) {
+    if (event.defaultPrevented || event.isComposing || event.keyCode === 229) return;
+    if (event.key === "Escape" && currentTab !== "work" && !document.querySelector("dialog[open]:not(.docked)")) {
+      closePage(); event.preventDefault();
+    } else if (event.key === "Escape" && document.querySelector(".context-usage[open]") && !document.querySelector("dialog[open]")) {
       closeUsageDetails(); event.preventDefault(); event.stopPropagation();
     }
   });
@@ -2498,7 +2541,7 @@
     if (document.querySelector(".context-usage[open]")) { closeUsageDetails(); return true; }
     if (!$("commands").hidden && currentTab === "work") { commands.dismiss(); return true; }
     if (terminalFullscreen) return true;
-    if (currentTab !== "work") { tab("work"); return true; }
+    if (currentTab !== "work") { closePage(); return true; }
     return false;
   };
   function updateBackState() { native.setBackHandling?.(terminalFullscreen || currentTab !== "work" || !$("commands").hidden || !!document.querySelector("dialog[open]:not(.docked), .context-usage[open]")); }
@@ -2510,5 +2553,6 @@
   for (const id of ["workspace", "input-form", "agent-settings"]) usageObserver.observe($(id));
   window.visualViewport?.addEventListener("resize", positionUsageDetails);
   refreshLanguage(true);
+  openInitialPage();
   if (environment().paired || demo) connect();
 })();

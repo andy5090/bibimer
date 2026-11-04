@@ -1,3 +1,4 @@
+const {openPage}=require("./ui-navigation.cjs");
 /* Browser/native adapter + isolated bridge, gh fixture and real local Git clones.
  * Does not authenticate, clone a user's remote repository or change their gh config. */
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http');
@@ -228,7 +229,7 @@ os.execv(${JSON.stringify(git)},[${JSON.stringify(git)},*args])
   assert.equal(await page.locator('#github-parent').inputValue(),otherParent,'opening existing folder also updates clone default');
   await page.locator('#github-browse').click();await page.waitForFunction(folder=>document.querySelector('#folder-path').textContent===folder&&!document.querySelector('#folder-select').disabled,otherParent);
   await page.locator('#folder-cancel').click();await page.locator('#github-close').click();await page.locator('#sidebar-close').click();
-  await page.locator('#tab-settings').click();
+  await openPage(page,'settings');
   await page.locator('#sidebar-open').click();if(!await page.locator('#path').isVisible())await page.locator('#edit-project').click();
   assert.equal(await page.locator('#path').inputValue(),otherParent+'/');
   const created=path.join(otherParent,'typed new project');await page.locator('#path').fill(created);

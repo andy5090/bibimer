@@ -114,12 +114,13 @@ let browser,server;
     const geometry=await keyboard.evaluate(n=>{
      const rect=node=>{const r=node.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom,right:r.right};};
      const container=document.querySelector("#work");
-     return {nav:rect(document.querySelector(".bottom-nav")),bodyHeight:document.body.scrollHeight,appCount:document.querySelectorAll("#app").length,toolbar:rect(n),panel:rect(n.querySelector("#terminal-function-keys")),base:rect(n.querySelector(".terminal-keyboard")),
+     return {nav:document.querySelector(".bottom-nav")!==null,bodyHeight:document.body.scrollHeight,appCount:document.querySelectorAll("#app").length,toolbar:rect(n),panel:rect(n.querySelector("#terminal-function-keys")),base:rect(n.querySelector(".terminal-keyboard")),
       workWidth:container.clientWidth-parseFloat(getComputedStyle(container).paddingLeft)-parseFloat(getComputedStyle(container).paddingRight),
       keys:[...n.querySelectorAll("button")].map(node=>({key:node.dataset.key||node.dataset.modifier||node.id,...rect(node),label:node.getAttribute("aria-label")})),
       arrows:Object.fromEntries(["up","down","left","right"].map(key=>[key,rect(n.querySelector('[data-key="'+key+'"]'))])),
       f:[...n.querySelectorAll("#terminal-function-keys button")].map(rect),scroll:document.documentElement.scrollWidth};
     });
+    assert.equal(geometry.nav,false,"No bottom navigation reserves workspace height: "+where);
     assert.ok(geometry.panel.bottom<=geometry.base.y,"F-key collection must be above the base keyboard: "+where);
     assert.ok(geometry.toolbar.height<=104.1,"Expanded keys add only one compact row: "+where);
     assert.ok(Math.abs(geometry.toolbar.height-collapsed.height-36)<0.1,"F panel adds 32px plus a 4px gap: "+where);
@@ -129,7 +130,7 @@ let browser,server;
     for(const key of geometry.keys){
      assert.ok(key.width>=31.9&&key.height>=31.9&&key.height<=32.1,"Every key stays usable and compact: "+where+" "+key.key);
      if(!/^f\d+$/.test(key.key))assert.ok(key.x>=-0.1&&key.right<=viewport.width+0.1,"Base key remains within viewport: "+where+" "+key.key);
-     assert.ok(key.bottom<=geometry.nav.y+0.1,"Key remains above navigation: "+where+" "+key.key+" "+JSON.stringify(geometry));
+     assert.ok(key.bottom<=viewport.height+0.1,"Key remains within the full workspace: "+where+" "+key.key+" "+JSON.stringify(geometry));
     }
     assert.ok(geometry.scroll<=viewport.width,"No horizontal page overflow: "+where);
     const {up,down,left,right}=geometry.arrows;

@@ -1,3 +1,4 @@
+const {openPage}=require("./ui-navigation.cjs");
 /* Settings maintenance UI. Native commands and health are controlled; no phone sessions are touched. */
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 if(process.platform==='android')Object.defineProperty(process,'platform',{value:'linux'});
@@ -42,7 +43,7 @@ let server,browser;
   };
  });
  await page.goto(`http://127.0.0.1:${server.address().port}`);
- await page.locator('#tab-settings').click();
+ await openPage(page,'settings');
  await page.waitForFunction(()=>!document.querySelector('#bridge-update-install').disabled);
  assert.equal(await page.locator('#bridge-restart').isDisabled(),false);
  assert.equal(await page.locator('#bridge-update-guide').isHidden(),true);

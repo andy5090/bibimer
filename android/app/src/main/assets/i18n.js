@@ -3,6 +3,8 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    page_back: ["Back", "뒤로"],
+    initial_setup_guide: ["Initial setup guide", "초기 설정 가이드"],
     tts_title: ["Read answers aloud", "답변 음성 읽기"],
     tts_enable: ["Automatic reading", "자동 읽기"],
     tts_hint: ["Off by default. Synthesized speech reads new completed answers in the Chat you are viewing. Stops when you leave the app or switch sessions.", "기본은 꺼짐입니다. 현재 보고 있는 Chat의 새 정상 완료 답변을 합성 음성으로 읽습니다. 앱을 벗어나거나 세션을 바꾸면 멈춥니다."],

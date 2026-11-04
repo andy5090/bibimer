@@ -1,3 +1,4 @@
+const {openPage}=require("./ui-navigation.cjs");
 /* Real temporary bridge, owned sessions and bundled update; never touches the installed bridge. */
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http');
 const {spawn,execFile,execFileSync}=require('node:child_process'),assert=require('node:assert/strict');
@@ -63,7 +64,7 @@ async function main(){
   await page.addInitScript(({bundledVersion,modern})=>{window.phase='';window.Bibimer={environment:()=>JSON.stringify({paired:true,language:'en',version:'test',bundledBridgeVersion:bundledVersion}),
     bridgeMaintenanceStatus:()=>window.phase,maintainBridge:action=>{window.phase='bridge_maintenance_running';void window.nativeMaintain(action);},request:(...args)=>window.nativeRequest(...args),cancelPoll:()=>{},setEnterBehavior:()=>true,setAgentOptions:()=>true,setBackHandling:()=>{}};if(modern)window.Bibimer.maintainBridgeWithRecovery=(action,request)=>{window.phase='bridge_maintenance_running';void window.nativeMaintain(action,JSON.parse(request));};},{bundledVersion,modern});
   await page.goto('http://127.0.0.1:'+assets.address().port);await page.waitForFunction(()=>document.querySelector('#connection').textContent==='Connected');
-  await page.locator('#input').fill('Keep this draft');await page.locator('#tab-settings').click();
+  await page.locator('#input').fill('Keep this draft');await openPage(page,'settings');
   await page.locator('#bridge-update-install').click();await page.waitForFunction(()=>!document.querySelector('#bridge-maintenance-confirm').disabled);
   assert.equal(await page.locator('#bridge-maintenance-sessions li').count(),3);
   assert.equal(await page.locator('#bridge-maintenance-reopen-option').isVisible(),modern);
@@ -81,7 +82,7 @@ async function main(){
   assert.equal(saved.find(row=>row.id===terminal.id).archived,true);assert.equal(saved.find(row=>row.id===terminal.id).project.path,worktree);
   assert.ok(saved.every(row=>row.state===(reopen?'running':'exited')));assert.equal(fs.readFileSync(path.join(state,'token.json'),'utf8'),tokenBefore);
   assert.equal(fs.readFileSync(path.join(installed,'bibimer_bridge.py'),'utf8'),source);
-  await page.locator('#tab-work').click();assert.equal(await page.locator('#input').inputValue(),'Keep this draft');
+  await openPage(page,'work');assert.equal(await page.locator('#input').inputValue(),'Keep this draft');
   if(reopen){
     assert.equal(after.maintenance_recovery.restored,3);
     assert.equal(after.session.id,first.id,'selection survives reopening');
@@ -92,7 +93,7 @@ async function main(){
     assert.equal(fs.readFileSync(path.join(projectPath,'turn-count'),'utf8'),'1');
     assert.equal(fs.readFileSync(path.join(otherPath,'turn-count'),'utf8'),'1');
     assert.equal(fs.existsSync(path.join(otherPath,'approved')),false);
-    await page.locator('#tab-settings').click();
+    await openPage(page,'settings');
     await page.waitForFunction(()=>document.querySelector('#bridge-recovery-status').textContent.includes('3/3'));
   }else{
     const resumed=(await call('POST','/v1/sessions',{project_id:project.id,agent:'codex',mode:'chat',source_thread_id:saved.find(row=>row.id===first.id).external_thread_id,import_mode:'resume',new_session:true,request_id:crypto.randomUUID()})).session;

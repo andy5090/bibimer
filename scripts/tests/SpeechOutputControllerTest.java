@@ -27,6 +27,16 @@ public final class SpeechOutputControllerTest{
    c.read("settings","interrupt",true);AudioManager.listener.onAudioFocusChange(-1);check(!c.state().getBoolean("reading"));
    check(c.configure("{\"engine\":\"missing.engine\"}"));int creations=TextToSpeech.creates;c.refresh(false);check(TextToSpeech.creates==creations&&sink.status.equals("tts_unavailable"));
    check(!c.configure("{\"provider\":\"openai\"}"));check(c.configure("{\"provider\":\"elevenlabs\"}"));c.read("settings","missing-key",true);check(sink.status.equals("voice_key_required")&&requests==0);
+   c.keyAction("elevenlabs","edit","{}");BibimerDialog key=BibimerDialog.last;
+   check((key.getWindow().flags&8192)!=0);android.widget.EditText input=android.widget.EditText.last;
+   input.setText("");key.yes();check(key.shown&&input.error!=null&&!c.state().getBoolean("elevenlabsKey"));
+   input.setText("test-only");key.yes();check(!key.shown&&input.getText().length()==0&&c.state().getBoolean("elevenlabsKey"));
+   c.keyAction("elevenlabs","edit","{}");input=android.widget.EditText.last;check(input.getText().length()==0);
+   input.setText("cancelled-replacement");BibimerDialog.last.no();check(input.getText().length()==0&&TokenStore.keys.get("tts_elevenlabs").equals("test-only"));
+   c.keyAction("elevenlabs","edit","{}");input=android.widget.EditText.last;input.setText("stale-replacement");DemoMode.serial++;BibimerDialog.last.yes();
+   check(input.getText().length()==0&&TokenStore.keys.get("tts_elevenlabs").equals("test-only"));
+   c.keyAction("elevenlabs","edit","{}");input=android.widget.EditText.last;input.setText("hidden-replacement");c.pause();
+   check(input.getText().length()==0&&TokenStore.keys.get("tts_elevenlabs").equals("test-only"));
    TokenStore.keys.put("tts_elevenlabs","test-only");c.refresh(false);for(int i=0;i<100&&c.state().getBoolean("busy");i++)Thread.sleep(10);check(c.configure("{\"voice\":\"voice123\"}"));c.read("settings","external",true);await(c);check(requests==1);check(a.cache.list().length==1);MediaPlayer.last.done();check(a.cache.list().length==0&&!c.state().getBoolean("reading"));
    c.read("settings","cancel external",true);c.pause();Thread.sleep(100);check(a.cache.list().length==0&&!c.state().getBoolean("reading"));
    DemoMode.demo=true;check(!c.configure("{\"enabled\":true}"));c.read("settings","demo",true);check(!c.state().getBoolean("reading"));DemoMode.demo=false;

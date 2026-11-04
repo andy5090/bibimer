@@ -12,6 +12,7 @@ const nodes = new Map(), handlers = new Map();
 let env = {version:'0.19.1',appUpdate:{state:'available',showNotice:true},bundledBridgeVersion:'0.16.0'};
 let checks=0,stores=0,dismisses=0,tab;
 const context = vm.createContext({window:{},knownProjects:[],session:null,maintenancePhase:"",maintenanceRefresh:"",paused:false,online:true,bridgeVersion:'0.15.0',demo:false,
+  bridgeMaintenance:{busy:false,render(){}},canMaintainBridge:()=>false,
   environment:()=>env,t:(key,values)=>key+(values?JSON.stringify(values):''),tab:value=>{tab=value;},
   native:{checkAppUpdate:()=>checks++,dismissAppUpdate:()=>dismisses++,openAppStore:()=>stores++},
   $:id=>{if(!nodes.has(id))nodes.set(id,{addEventListener:(type,callback)=>handlers.set(id+'/'+type,callback)});return nodes.get(id);}

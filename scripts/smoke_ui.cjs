@@ -1,3 +1,4 @@
+const {openPage}=require("./ui-navigation.cjs");
 /* Browser UI + real Termux PTY integration. Android native APIs are an explicit
  * test adapter here; installing the APK and exercising WebView is a separate check.
  * Run: npm install --prefix .tools/ui --ignore-scripts playwright-core@1.55.1
@@ -211,19 +212,20 @@ async function main() {
   assert.equal(await page.locator('html').getAttribute('lang'),'en');
   assert.equal(await page.locator('#go-setup [data-i18n]').innerText(),'Set up for development');
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
-  await closeSidebar(); await page.locator('#tab-settings').click();
+  await closeSidebar(); await openPage(page,'settings');
   assert.equal(await page.locator('#settings').isVisible(),true);
   assert.equal(await page.locator('#work').isVisible(),false);
   assert.equal(await page.locator('#setup').isVisible(),false);
-  assert.equal(await page.locator('#tab-settings').getAttribute('aria-current'),'page');
+  assert.equal(await page.locator('#page-back').isVisible(),true);
+  assert.equal(await page.locator('.bottom-nav').count(),0);
   assert.equal(await page.locator('#enter-behavior').inputValue(),'newline');
   assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
   assert.equal(await page.locator('#context-display').inputValue(),'used');
   await choose('context-display','remaining');
-  await page.reload(); await page.locator('#tab-settings').click();
+  await page.reload(); await openPage(page,'settings');
   assert.equal(await page.locator('#context-display').inputValue(),'remaining');
   await choose('context-display','used');
-  await page.reload(); await page.locator('#tab-settings').click();
+  await page.reload(); await openPage(page,'settings');
   assert.equal(await page.locator('#context-display').inputValue(),'used');
   assert.equal(await page.locator('select:visible').count(),0);
   assert.equal(await page.locator('.select-trigger').count(),await page.locator('select').count());
@@ -300,7 +302,7 @@ async function main() {
   await page.evaluate(()=>{window.failEnterSave=false;});
   await choose('enter-behavior','send');
   await page.reload();
-  await closeSidebar(); await page.locator('#tab-settings').click();
+  await closeSidebar(); await openPage(page,'settings');
   assert.equal(await page.locator('#enter-behavior').inputValue(),'send');
   assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'send');
   await choose('enter-behavior','newline');
@@ -308,7 +310,7 @@ async function main() {
   assert.equal(await page.locator('#enter-behavior').inputValue(),'newline');
   assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'enter');
   console.log('PASS: separate Settings page before pairing, New line default, both saved choices restored, save failure rollback, localized copy and compact navigation');
-  await page.locator('#go-setup').click();
+  await openPage(page,'setup');
   assert.equal(await page.locator('#termux-status').innerText(),'Not installed');
   await page.locator('[data-guide="termux"]').click();
   await page.locator('#export-installer').click();
@@ -316,18 +318,18 @@ async function main() {
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
   await page.locator('#setup').evaluate(node=>{node.scrollTop=0;});
   await page.screenshot({path:path.join(root,'dist/screenshots/setup-en.png')});
-  await closeSidebar(); await page.locator('#tab-settings').click();
+  await closeSidebar(); await openPage(page,'settings');
   await choose('language','ko');
   assert.equal(await page.locator('html').getAttribute('lang'),'ko');
   assert.equal(await page.locator('#termux-status').innerText(),'설치 필요');
   assert.ok((await page.locator('#install-command').innerText()).startsWith('BIBIMER_LANGUAGE=ko '));
-  await page.locator('#tab-setup').click();
+  await openPage(page,'setup');
   await page.screenshot({path:path.join(root,'dist/screenshots/setup-ko.png')});
   await page.reload();
   assert.equal(await page.locator('html').getAttribute('lang'),'ko');
-  await closeSidebar(); await page.locator('#tab-settings').click();
+  await closeSidebar(); await openPage(page,'settings');
   await choose('language','en');
-  await page.locator('#tab-setup').click();
+  await openPage(page,'setup');
   await page.locator('#pair-code').fill(code);
   await page.locator('#pair').click();
   await page.locator('#project-form').waitFor({state:'visible'});
@@ -339,12 +341,12 @@ async function main() {
   legacyProjectError = true;
   await page.locator('#project-form button[type=submit]').click();
   await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Choose a project folder with read and write access.');
-  await closeSidebar(); await page.locator('#tab-settings').click();
+  await closeSidebar(); await openPage(page,'settings');
   await choose('language','ko');
   assert.equal(await page.locator('#notice').innerText(),'읽고 쓸 수 있는 프로젝트 폴더가 필요합니다.');
   assert.equal(await page.locator('#path').inputValue(),'relative/project');
   await choose('language','en');
-  await page.locator('#tab-work').click();
+  await openPage(page,'work');
   legacyProjectError = false; await openSidebar();
   // Clear the error before measuring the ordinary project form.
   await page.evaluate(()=>document.querySelector('#reconnect').click());
@@ -438,9 +440,9 @@ async function main() {
   await openSidebar(); await page.locator('#browse-project').click();
   await page.locator('#setup').waitFor({state:'visible'});
   assert.ok((await page.locator('#notice').innerText()).includes('Update the bridge to browse folders'));
-  await closeSidebar(); await page.locator('#tab-settings').click();
+  await closeSidebar(); await openPage(page,'settings');
   await choose('language','ko');
-  await page.locator('#tab-work').click();
+  await openPage(page,'work');
   legacyFolders = false;
   await page.locator('#reconnect').evaluate(node=>node.click());
   await delay(150);
@@ -450,9 +452,9 @@ async function main() {
   assert.equal(await page.locator('#folder-status').innerText(),'표시할 하위 폴더가 없습니다. 현재 폴더를 선택할 수 있습니다.');
   await page.screenshot({path:path.join(root,'dist/screenshots/folders-ko.png')});
   await page.locator('#folder-cancel').click();
-  await closeSidebar(); await page.locator('#tab-settings').click();
+  await closeSidebar(); await openPage(page,'settings');
   await choose('language','en');
-  await page.locator('#tab-work').click();
+  await openPage(page,'work');
   // A canceled listing must not overwrite a newly opened browser.
   let releaseFolders, foldersAccepted;
   const folderAccepted = new Promise(resolve=>{foldersAccepted=resolve;});
@@ -479,9 +481,9 @@ async function main() {
   assert.equal(await page.locator('#input-form').isVisible(),false);
   await terminalText('# Draft B');
   await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('# Draft B'));
-  await closeSidebar(); await page.locator('#tab-settings').click();
+  await closeSidebar(); await openPage(page,'settings');
   await choose('enter-behavior','send');
-  await page.locator('#tab-work').click();
+  await openPage(page,'work');
   assert.ok((await page.locator('#terminal').innerText()).includes('# Draft B'));
   assert.equal((await call('GET','/v1/health')).data.session.id,secondSession);
   // Changing Chat Enter behavior does not alter the terminal's direct Enter key.
@@ -556,9 +558,9 @@ async function main() {
   }
   await resizeMarker.dispose();
   console.log('PASS: desktop/window/phone viewport changes preserve live PTY session, connection and draft (browser adapter)');
-  await closeSidebar(); await page.locator('#tab-settings').click();
+  await closeSidebar(); await openPage(page,'settings');
   await choose('language','ko');
-  await page.locator('#tab-work').click();
+  await openPage(page,'work');
   assert.ok((await page.locator('#terminal').innerText()).includes(draft));
   assert.equal(await page.locator('#process').innerText(),'실행 중');
   assert.equal((await call('GET','/v1/health')).data.session.id,initial);
@@ -578,9 +580,9 @@ async function main() {
   assert.ok(sendBox.y>=0 && sendBox.y+sendBox.height<=460);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:path.join(root,'dist/screenshots/keyboard-ko.png')});
-  await closeSidebar(); await page.locator('#tab-settings').click();
+  await closeSidebar(); await openPage(page,'settings');
   await choose('language','en');
-  await page.locator('#tab-work').click();
+  await openPage(page,'work');
   const englishSendBox = await page.locator('#terminal-keys [data-key="enter"]').boundingBox();
   assert.ok(englishSendBox.y>=0 && englishSendBox.y+englishSendBox.height<=460);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -772,7 +774,7 @@ async function main() {
     await page.setViewportSize({width:393,height:780});
     await page.screenshot({path:path.join(root,'dist/screenshots/quick-settings-en.png')});
     assert.equal(await page.locator('#terminal-area').isVisible(),false);
-    await closeSidebar(); await page.locator('#tab-settings').click();
+    await closeSidebar(); await openPage(page,'settings');
     await choose('enter-behavior','newline');
     await page.reload();
     await page.waitForFunction(()=>!document.querySelector('#send').disabled);
@@ -805,9 +807,9 @@ async function main() {
     await page.waitForFunction(before=>window.messageRequests===before+1 && document.querySelector('#input').value==='' && document.querySelector('#turn-status').textContent==='Ready for your message',chatRequests);
     assert.deepEqual((await call('GET',`/v1/sessions/${chatId}/events?cursor=0&wait=0`)).data.items.filter(item=>item.kind==='user').map(item=>item.text),['Ctrl+Enter chat']);
     await page.locator('#input').fill('Chat draft\n');
-    await closeSidebar(); await page.locator('#tab-settings').click();
+    await closeSidebar(); await openPage(page,'settings');
     await choose('enter-behavior','send');
-    await page.locator('#tab-work').click();
+    await openPage(page,'work');
     assert.equal(await page.locator('#input').inputValue(),'Chat draft\n');
     assert.equal((await call('GET','/v1/health')).data.session.id,chatId);
     assert.equal(await page.locator('#input').getAttribute('enterkeyhint'),'send');
@@ -877,15 +879,15 @@ async function main() {
     await page.evaluate(()=>{localStorage.setItem('testLanguage','en');window.BibimerRefreshLanguage();});
     // The preference changes only presentation, preserving the live session/draft.
     const contextRequests = await page.evaluate(()=>window.messageRequests);
-    await page.locator('#tab-settings').click();
+    await openPage(page,'settings');
     await page.evaluate(()=>{window.failContextSave=true;});
     await choose('context-display','remaining');
     assert.equal(await page.locator('#context-display').inputValue(),'used');
-    await page.locator('#tab-work').click();
+    await openPage(page,'work');
     assert.equal(await page.locator('#context-summary').textContent(),'38% used');
     await page.evaluate(()=>{window.failContextSave=false;});
-    await page.locator('#tab-settings').click(); await choose('context-display','remaining');
-    await page.locator('#tab-work').click();
+    await openPage(page,'settings'); await choose('context-display','remaining');
+    await openPage(page,'work');
     assert.equal(await page.locator('#context-summary').textContent(),'62% left');
     assert.equal(await page.locator('#context-detail').textContent(),'124,000 / 200,000 tokens left');
     assert.equal(await page.locator('#context-meter').evaluate(node=>node.value),62);
@@ -900,10 +902,10 @@ async function main() {
       if (['en','ko'].includes(lang)) await page.screenshot({path:path.join(root,`dist/screenshots/context-remaining-320-${lang}.png`)});
     }
     await page.evaluate(()=>{localStorage.setItem('testLanguage','en');window.BibimerRefreshLanguage();});
-    await page.locator('#tab-settings').click();
+    await openPage(page,'settings');
     await page.locator('#context-display-trigger').scrollIntoViewIfNeeded();
     await page.screenshot({path:path.join(root,'dist/screenshots/context-display-settings-320-en.png')});
-    await choose('context-display','used'); await page.locator('#tab-work').click();
+    await choose('context-display','used'); await openPage(page,'work');
     await page.locator('#context-usage summary').click();
     await page.setViewportSize({width:393,height:780});
     await reconnect();
@@ -912,7 +914,7 @@ async function main() {
     await page.locator('#subscription-usage summary').click();
     const quotaRequests=await page.evaluate(()=>window.messageRequests);
     for (const mode of ['used','remaining']) {
-      await page.locator('#tab-settings').click();await choose('context-display',mode);await page.locator('#tab-work').click();
+      await openPage(page,'settings');await choose('context-display',mode);await openPage(page,'work');
       assert.equal(await page.locator('#subscription-meter').evaluate(node=>node.value),mode==='used'?35:65);
       for (const lang of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
         await page.evaluate(lang=>{localStorage.setItem('testLanguage',lang);window.BibimerRefreshLanguage();},lang);
@@ -928,13 +930,13 @@ async function main() {
       }
       await page.evaluate(()=>{localStorage.setItem('testLanguage','en');window.BibimerRefreshLanguage();});
     }
-    await page.locator('#tab-settings').click();await choose('context-display','used');await page.locator('#tab-work').click();
+    await openPage(page,'settings');await choose('context-display','used');await openPage(page,'work');
     await page.locator('#subscription-usage summary').click();await page.setViewportSize({width:393,height:780});
     assert.equal(await page.evaluate(()=>window.messageRequests),quotaRequests);
     assert.equal((await call('GET','/v1/health')).data.session.id,chatId);
     console.log('PASS: account subscription quotas, reset times, both display modes, 10 locales/320px and no extra model turn');
     const beforeBrowserRequests=await page.evaluate(()=>window.messageRequests);
-    await page.locator('#tab-settings').click();
+    await openPage(page,'settings');
     assert.equal(await page.locator('#browser-preference').isVisible(),true);
     await choose('browser-agent-tools','off');
     await page.waitForFunction(()=>!document.querySelector('#browser-agent-tools').disabled);
@@ -951,7 +953,7 @@ async function main() {
     }
     await page.evaluate(()=>{localStorage.setItem('testLanguage','en');window.BibimerRefreshLanguage();});
     await page.setViewportSize({width:393,height:780});
-    await page.locator('#tab-work').click();
+    await openPage(page,'work');
     await page.evaluate(()=>{window.x11Installed=false;});
     await page.locator('#browser-open').click();
     await page.waitForFunction(()=>!document.querySelector('#browser-refresh').disabled);
@@ -1029,7 +1031,7 @@ async function main() {
     await page.waitForFunction(()=>!document.querySelector('.context-usage[open]'));
     assert.equal(await page.locator('#input').inputValue(),'Context display draft');
     for(const mode of ['used','remaining']) {
-      await page.locator('#tab-settings').click();await choose('context-display',mode);await page.locator('#tab-work').click();
+      await openPage(page,'settings');await choose('context-display',mode);await openPage(page,'work');
       for(const lang of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']) {
         await page.evaluate(lang=>{localStorage.setItem('testLanguage',lang);window.BibimerRefreshLanguage();},lang);
         await verifyUsageRow();
@@ -1047,7 +1049,7 @@ async function main() {
       }
     }
     await page.evaluate(()=>{localStorage.setItem('testLanguage','en');window.BibimerRefreshLanguage();});
-    await page.locator('#tab-settings').click();await choose('context-display','used');await page.locator('#tab-work').click();
+    await openPage(page,'settings');await choose('context-display','used');await openPage(page,'work');
     await page.setViewportSize({width:393,height:780});
     assert.equal(await page.evaluate(()=>window.messageRequests),quotaRequests);
     console.log('PASS: compact circular usage indicators share the permission row, both modes/10 locales at 320px, overlay details, keyboard/Android Back/outside dismissal and preserved draft without sending');
@@ -1080,7 +1082,7 @@ async function main() {
     await page.waitForFunction(()=>document.querySelector('#project-path').title.endsWith('/second-project'));
     await choose('project-switch',projectA);
     await page.waitForFunction(()=>document.querySelector('.request-card input')?.value==='한국어 · draft');
-    await closeSidebar(); await page.locator('#tab-settings').click(); await choose('language','ko'); await page.locator('#tab-work').click();
+    await closeSidebar(); await openPage(page,'settings'); await choose('language','ko'); await openPage(page,'work');
     assert.equal(await page.locator('.request-card input').inputValue(),'한국어 · draft');
     await page.setViewportSize({width:360,height:460});
     await page.locator('[data-request-action="chat_answer"]').scrollIntoViewIfNeeded();
@@ -1106,9 +1108,9 @@ async function main() {
     await reconnect();
     await page.waitForFunction(()=>!document.querySelector('#send').disabled && !document.querySelector('#steer').hidden);
     const activeTurn = (await call('GET','/v1/health')).data.session.active_turn_id;
-    await closeSidebar(); await page.locator('#tab-settings').click();
+    await closeSidebar(); await openPage(page,'settings');
     await choose('enter-behavior','newline');
-    await page.locator('#tab-work').click();
+    await openPage(page,'work');
     const queueRequests = await page.evaluate(()=>window.messageRequests);
     await page.locator('#input').fill('Still writing');
     await page.locator('#input').press('Enter');
@@ -1122,9 +1124,9 @@ async function main() {
     assert.equal((await call('GET','/v1/health')).data.session.active_turn_id,activeTurn);
     await page.locator('.queue-entry [data-queue-action=remove]').click();
     await page.waitForFunction(()=>document.querySelectorAll('.queue-entry').length===0);
-    await closeSidebar(); await page.locator('#tab-settings').click();
+    await closeSidebar(); await openPage(page,'settings');
     await choose('enter-behavior','send');
-    await page.locator('#tab-work').click();
+    await openPage(page,'work');
     await page.locator('#input').fill('Queued follow-up · 다음 작업');
     await page.locator('#input').press('Enter');
     await page.waitForFunction(()=>document.querySelector('#input').value==='' && document.querySelectorAll('.queue-entry').length===1);
@@ -1276,7 +1278,7 @@ async function main() {
     await page.waitForFunction(()=>!document.querySelector('#send').disabled);
     await sessionAction('stop'); await page.locator('#confirm-stop').click();
     await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
-    await closeSidebar(); await page.locator('#tab-settings').click(); await choose('language','en'); await page.locator('#tab-work').click();
+    await closeSidebar(); await openPage(page,'settings'); await choose('language','en'); await openPage(page,'work');
     await page.locator('#import-session').click();
     await page.locator('.import-entry').waitFor();
     await page.screenshot({path:path.join(root,'dist/screenshots/import-en.png')});
@@ -1358,7 +1360,7 @@ async function main() {
       await page.waitForFunction(()=>document.querySelector('#project-path').title.endsWith('/second-project'));
       await choose('project-switch',projectA);
       await page.waitForFunction(()=>document.querySelectorAll('.question-options [aria-pressed="true"]').length===2);
-      await closeSidebar(); await page.locator('#tab-settings').click(); await choose('language','ko'); await page.locator('#tab-work').click();
+      await closeSidebar(); await openPage(page,'settings'); await choose('language','ko'); await openPage(page,'work');
       await page.setViewportSize({width:360,height:460});
       await page.locator('[data-request-action="chat_answer"]').scrollIntoViewIfNeeded();
       await page.screenshot({path:path.join(root,`dist/screenshots/${agent}-question-ko.png`)});
@@ -1383,7 +1385,7 @@ async function main() {
       await page.screenshot({path:path.join(root,`dist/screenshots/${agent}-chat-ko.png`)});
       await sessionAction('stop'); await page.locator('#confirm-stop').click();
       await page.waitForFunction(()=>document.querySelector('#process').dataset.state==='exited',{},{timeout:15000});
-      await closeSidebar(); await page.locator('#tab-settings').click(); await choose('language','en'); await page.locator('#tab-work').click();
+      await closeSidebar(); await openPage(page,'settings'); await choose('language','en'); await openPage(page,'work');
     }
     await choose('agent','opencode'); await choose('mode','terminal');
     await page.locator('#launch').click();

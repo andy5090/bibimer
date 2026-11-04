@@ -1,0 +1,10 @@
+<ko-KR>
+하단 탭을 없애고 작업을 기본 화면으로 바꿨습니다. 상단 설정 버튼과 뒤로 가기로 이동하며, 첫 연결 전에는 준비 안내를 표시합니다. 설정에서 초기 가이드와 계정·프로바이더·연결을 관리합니다.
+음성 API 키 입력·녹음·전송 확인을 앱 자체 UI로 통일했습니다. 자동 읽기·응답 알림은 토글 스위치로 제공하며, 꺼진 기능의 하위 설정은 비활성화합니다. 저장된 선택과 키는 유지합니다.
+이번 UI 개선에는 브리지 업데이트가 필요 없습니다.
+</ko-KR>
+<en-US>
+Work is the default screen, with Settings in the top bar instead of bottom tabs. Back returns to the previous screen. Initial setup opens before the first connection and remains available in Settings, alongside account and provider management.
+Voice API key entry, recording and upload confirmation use app-styled dialogs. Read-aloud and response alerts use toggle switches; switching off disables related controls and keeps saved choices and keys.
+No bridge update is needed for these UI changes.
+</en-US>

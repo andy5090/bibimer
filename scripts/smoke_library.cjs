@@ -1,3 +1,4 @@
+const {openPage}=require("./ui-navigation.cjs");
 /* Real isolated bridge + Git worktrees; browser native adapter, no external model calls. */
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http');
 const {spawn,execFileSync}=require('node:child_process'),assert=require('node:assert/strict');
@@ -77,13 +78,13 @@ async function main(){
   await page.screenshot({path:path.join(root,'dist/screenshots/responsive-projects-1440.png')});
   await page.locator('[data-session='+JSON.stringify(second)+'] .sidebar-session-open').click();
   await page.waitForFunction(()=>document.querySelector('#input').value==='Second draft');
-  await page.locator('#tab-settings').click();
+  await openPage(page,'settings');
   assert.equal(await page.locator('#sidebar').isVisible(),true);
   await page.locator('#language-trigger').click();
   assert.equal(await page.evaluate(()=>window.BibimerBack()),true);
   assert.equal(await page.locator('#select-dialog').isVisible(),false);
   assert.equal(await page.locator('#sidebar').isVisible(),true);
-  await page.locator('#tab-work').click();
+  await openPage(page,'work');
   await page.locator('#sidebar-close').click();
   assert.equal(await page.locator('#sidebar').isVisible(),false);
   await page.locator('#sidebar-open').click();
@@ -184,7 +185,7 @@ async function main(){
   await page.getByText('This session is no longer in BIBIMER.',{exact:true}).waitFor();
   assert.equal(await page.locator('#input').inputValue(),'Other project draft');
   assert.equal((await call('GET','/v1/health')).data.active_sessions,activeBeforeNotification);
-  await page.locator('#tab-settings').click();
+  await openPage(page,'settings');
   assert.equal(await page.locator('#response-notifications').isChecked(),true);
   await page.locator('#response-notifications').uncheck();
   assert.equal(await page.locator('#notifications-status').innerText(),'Off. Agent sessions keep running.');
@@ -207,27 +208,27 @@ async function main(){
   assert.match(await page.locator('#notifications-status').innerText(),/Update the bridge/);
   hideNotifications=false;await page.evaluate(()=>window.BibimerResume());await page.waitForFunction(()=>window.notificationsSupported===true);
   console.log('PASS: response notification settings; disabled/denied/allowed and old bridge; English/Korean 320px; notification session navigation; pause/resume target; missing session; drafts and running agents preserved');
-  await page.setViewportSize({width:393,height:780});await page.locator('#tab-work').click();
+  await page.setViewportSize({width:393,height:780});await openPage(page,'work');
   await sidebar();await openGroup(project.id);
   const summary=page.locator('[data-project='+JSON.stringify(project.id)+'] > summary');await summary.focus();await delay(5500);assert.equal(await summary.evaluate(node=>node===document.activeElement),true);
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
   for(const width of [320,360,393]){await page.setViewportSize({width,height:460});await page.screenshot({path:path.join(root,'dist/screenshots/sidebar-'+width+'-en.png')});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));const box=await page.locator('#edit-project').boundingBox();assert.ok(box.y>=0&&box.y+box.height<=460);}
   assert.equal(await page.evaluate(()=>window.backHandled),true);assert.equal(await page.evaluate(()=>window.BibimerBack()),true);await page.locator('#sidebar').waitFor({state:'hidden'});
   assert.equal(await page.evaluate(()=>window.backHandled),false);
-  await page.locator('#tab-settings').click();await choose('language','ko');await page.locator('#tab-work').click();await sidebar();await page.screenshot({path:path.join(root,'dist/screenshots/sidebar-393-ko.png')});
+  await openPage(page,'settings');await choose('language','ko');await openPage(page,'work');await sidebar();await page.screenshot({path:path.join(root,'dist/screenshots/sidebar-393-ko.png')});
   await page.keyboard.press('Escape');await page.locator('#sidebar').waitFor({state:'hidden'});
   await sidebar();await page.mouse.click(page.viewportSize().width-4,100);await page.locator('#sidebar').waitFor({state:'hidden'});
-  await page.locator('#tab-settings').click();await page.locator('#response-notifications').uncheck();
+  await openPage(page,'settings');await page.locator('#response-notifications').uncheck();
   await page.evaluate(target=>localStorage.notificationTarget=JSON.stringify(target),{project_id:project.id,session_id:third});
   await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');
   await page.waitForFunction(expected=>document.querySelector('#project-path').title.endsWith(expected),worktreePath);
-  await page.locator('#tab-settings').click();assert.equal(await page.locator('#response-notifications').isChecked(),false);
-  await page.locator('#response-notifications').check();await page.locator('#tab-work').click();
+  await openPage(page,'settings');assert.equal(await page.locator('#response-notifications').isChecked(),false);
+  await page.locator('#response-notifications').check();await openPage(page,'work');
   console.log('PASS: notification target consumed on fresh page connection; stored disabled preference restored');
   assert.equal((await call('GET','/v1/health')).data.active_sessions,3);await sidebar();assert.ok(await page.locator('.sidebar-session').count()>=3);
   await page.setViewportSize({width:320,height:460});
   const projectSettings=async id=>{await sidebar();await page.locator('[data-project='+JSON.stringify(id)+'] .sidebar-project-more').click();await page.locator('#project-settings-dialog').waitFor({state:'visible'});};
-  await closeSidebar();await page.locator('#tab-settings').click();await choose('language','en');await page.locator('#tab-work').click();
+  await closeSidebar();await openPage(page,'settings');await choose('language','en');await openPage(page,'work');
   await page.locator('#input').fill('Keep current project draft');
   const projectIds=()=>page.locator('.sidebar-project').evaluateAll(nodes=>nodes.map(node=>node.dataset.project));
   await projectSettings(other.id);
@@ -296,7 +297,7 @@ async function main(){
   await projectSettings(project.id);await page.setViewportSize({width:320,height:460});await page.screenshot({path:path.join(root,'dist/screenshots/project-settings-320-en.png')});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   assert.equal(await page.evaluate(()=>window.BibimerBack()),true);await page.locator('#project-settings-dialog').waitFor({state:'hidden'});assert.equal(await page.locator('#sidebar').isVisible(),true);
-  await closeSidebar();await page.locator('#tab-settings').click();await choose('language','ko');await page.locator('#tab-work').click();await projectSettings(project.id);
+  await closeSidebar();await openPage(page,'settings');await choose('language','ko');await openPage(page,'work');await projectSettings(project.id);
   await page.screenshot({path:path.join(root,'dist/screenshots/project-settings-320-ko.png')});assert.equal(await page.locator('#project-settings-title').innerText(),'프로젝트 설정');
   await page.keyboard.press('Escape');await closeSidebar();
   hideOrdering=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent==='기기 연결됨');await projectSettings(other.id);

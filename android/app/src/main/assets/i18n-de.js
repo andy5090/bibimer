@@ -1,6 +1,8 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "page_back": "Zurück",
+  "initial_setup_guide": "Anleitung zur Ersteinrichtung",
   "tts_title": "Antworten vorlesen",
   "tts_enable": "Automatisch vorlesen",
   "tts_hint": "Standardmäßig aus. Synthetische Sprache liest neue abgeschlossene Antworten im geöffneten Chat. Stoppt beim Verlassen der App oder Sitzungswechsel.",

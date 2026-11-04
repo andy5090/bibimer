@@ -1,6 +1,8 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "page_back": "Retour",
+  "initial_setup_guide": "Guide de configuration initiale",
   "tts_title": "Lire les réponses à voix haute",
   "tts_enable": "Lecture automatique",
   "tts_hint": "Désactivé par défaut. La voix synthétique lit les nouvelles réponses terminées du chat affiché. S’arrête en quittant l’app ou en changeant de session.",

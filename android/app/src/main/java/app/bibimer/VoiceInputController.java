@@ -2,7 +2,6 @@ package app.bibimer;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -43,7 +42,7 @@ final class VoiceInputController {
     private JSONObject labels = new JSONObject();
     private MediaRecorder recorder;
     private File audio, uploadAudio;
-    private volatile AlertDialog dialog;
+    private volatile BibimerDialog dialog;
     private volatile String deviceRequest;
     private long deviceEpoch;
     private final Runnable limit = () -> finishRecording(true);
@@ -105,20 +104,21 @@ final class VoiceInputController {
         EditText field = new EditText(activity);
         field.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         field.setSingleLine(true); field.setSaveEnabled(false);
+        field.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI | android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING);
         field.setImportantForAutofill(android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
         field.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(512)});
-        AlertDialog keyDialog = new AlertDialog.Builder(activity).setTitle(VoiceTranscription.name(selected) + " · " + text("voice_key"))
+        BibimerDialog keyDialog = new BibimerDialog.Builder(activity).setTitle(VoiceTranscription.name(selected) + " · " + text("voice_key"))
             .setMessage(text("voice_key_hint")).setView(field)
             .setNegativeButton(text("voice_cancel"), null).setPositiveButton(text("voice_save"), null).create();
         dialog = keyDialog;
         keyDialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         keyDialog.setOnDismissListener(d -> { field.setText(""); if (dialog == keyDialog) dialog = null; });
-        keyDialog.setOnShowListener(d -> keyDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+        keyDialog.setOnShowListener(d -> keyDialog.getButton(BibimerDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             if (!listener.current(operationEpoch)) { keyDialog.dismiss(); return; }
             String value = field.getText().toString().trim();
-            if (!value.matches("[\\x21-\\x7e]{1,512}")) { field.setError(text("voice_key_required")); return; }
+            if (!value.matches("[\\x21-\\x7e]{1,512}")) { keyDialog.showError(text("voice_key_required")); return; }
             try { key(selected).save(value); keyDialog.dismiss(); listener.changed("voice_saved"); }
-            catch (Exception ignored) { field.setError(text("voice_failed")); }
+            catch (Exception ignored) { keyDialog.showError(text("voice_failed")); }
         }));
         keyDialog.show();
     }
@@ -188,7 +188,7 @@ final class VoiceInputController {
                 if (r == recorder && (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED || what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED)) finishRecording(true);
             });
             recorder.prepare(); recorder.start();
-            AlertDialog capture = new AlertDialog.Builder(activity).setTitle(text("voice_recording"))
+            BibimerDialog capture = new BibimerDialog.Builder(activity).setTitle(text("voice_recording"))
                 .setMessage(text("voice_record_hint").replace("{provider}", VoiceTranscription.name(provider())))
                 .setNegativeButton(text("voice_cancel"), (d,w) -> cancel())
                 .setPositiveButton(text("voice_stop_recording"), (d,w) -> finishRecording()).create();
@@ -196,7 +196,7 @@ final class VoiceInputController {
             handler.postDelayed(limit, 60500);
         } catch (Exception ignored) { complete("voice_failed", ""); }
     }
-    private void dismiss() { AlertDialog old = dialog; dialog = null; if (old != null) old.dismiss(); }
+    private void dismiss() { BibimerDialog old = dialog; dialog = null; if (old != null) old.dismiss(); }
     private void finishRecording() { finishRecording(false); }
     private void finishRecording(boolean limited) {
         if (recorder == null || request == null) return;
@@ -207,7 +207,7 @@ final class VoiceInputController {
         }
         recorder.release(); recorder = null; dismiss();
         if (!listener.current(epoch)) { cancel(); return; }
-        AlertDialog confirm = new AlertDialog.Builder(activity).setTitle(text("voice_upload"))
+        BibimerDialog confirm = new BibimerDialog.Builder(activity).setTitle(text("voice_upload"))
             .setMessage(text("voice_upload_hint").replace("{provider}", VoiceTranscription.name(provider())))
             .setNegativeButton(text("voice_cancel"), (d,w) -> cancel()).setPositiveButton(text("voice_upload"), (d,w) -> upload()).create();
         dialog = confirm; confirm.setCanceledOnTouchOutside(false); confirm.setOnCancelListener(d -> cancel()); confirm.show();
@@ -218,7 +218,7 @@ final class VoiceInputController {
         final String selected = provider(), secret = key(selected).get(), lang = language();
         final File capturedAudio = audio; audio = null; uploadAudio = capturedAudio;
         final long serial = generation, capturedEpoch = epoch;
-        AlertDialog progress = new AlertDialog.Builder(activity).setTitle(text("voice_transcribing"))
+        BibimerDialog progress = new BibimerDialog.Builder(activity).setTitle(text("voice_transcribing"))
             .setMessage(VoiceTranscription.name(selected)).setNegativeButton(text("voice_cancel"), (d,w) -> cancel()).create();
         dialog = progress; progress.setCanceledOnTouchOutside(false); progress.setOnCancelListener(d -> cancel()); progress.show();
         network.execute(() -> {

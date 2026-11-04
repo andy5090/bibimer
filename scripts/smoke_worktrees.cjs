@@ -1,3 +1,4 @@
+const {openPage}=require("./ui-navigation.cjs");
 /* Real isolated bridge + Git worktrees; browser native adapter, no external model calls. */
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http');
 const {spawn,execFileSync}=require('node:child_process'),assert=require('node:assert/strict');
@@ -139,7 +140,7 @@ async function main(){
   assert.equal(await page.locator('[data-create-worktree='+JSON.stringify(other.id)+']').isDisabled(),true);
   fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
   for(const language of ['en','ko','pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']){
-    await closeSidebar();await page.locator('#tab-settings').click();await choose('language',language);await page.locator('#tab-work').click();
+    await closeSidebar();await openPage(page,'settings');await choose('language',language);await openPage(page,'work');
     await openCreate();if(await page.locator('#worktree-create-reset').isVisible())await page.locator('#worktree-create-reset').click();
     await page.waitForFunction(()=>!document.querySelector('#worktree-agent').disabled);
     await page.locator('#worktree-branch').fill('feature/mobile-layout');
