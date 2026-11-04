@@ -1,6 +1,12 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.es = {
+  "voice_input": "Entrada de voz",
+  "voice_opening": "Abriendo la entrada de voz del dispositivo. El proveedor de voz puede usar la red.",
+  "voice_unavailable": "La entrada de voz no está disponible. Activa una app de reconocimiento de voz en este dispositivo.",
+  "voice_empty": "No se reconoció ninguna voz. Inténtalo de nuevo.",
+  "voice_failed": "Error en la entrada de voz. Revisa el proveedor de voz y el acceso al micrófono e inténtalo de nuevo.",
+  "voice_changed": "El borrador o la sesión cambió. No se insertó la entrada de voz.",
   "browser_consent_notify": "Al permitir el control, también se avisa a la sesión de {agent} que lo solicitó.",
   "browser_allowed_message": "Bibimer ya permite controlar el navegador. Continúa la tarea cuando estés listo. Esto no autoriza otras acciones de herramientas.",
   "browser_notice_steered": "Control permitido; el agente aceptó el aviso por Steer.",

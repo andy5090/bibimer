@@ -3,6 +3,13 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    voice_input: ["Voice input", "음성 입력"],
+    voice_opening: ["Opening device voice input. Your speech provider may use a network connection.", "기기의 음성 입력을 여는 중입니다. 음성 인식 제공 앱이 네트워크를 사용할 수 있습니다."],
+    voice_unavailable: ["Voice input is unavailable. Enable a speech recognition app on this device.", "음성 입력을 사용할 수 없습니다. 기기의 음성 인식 앱을 활성화하세요."],
+    voice_empty: ["No speech was recognized. Try again.", "음성이 인식되지 않았습니다. 다시 시도하세요."],
+    voice_failed: ["Voice input failed. Check your speech provider and microphone access, then try again.", "음성 입력에 실패했습니다. 음성 인식 앱과 마이크 접근 권한을 확인한 뒤 다시 시도하세요."],
+    voice_changed: ["The draft or session changed. Voice input was not inserted.", "초안 또는 세션이 변경되어 음성 입력을 삽입하지 않았습니다."],
+
     connections_title: ["Agent accounts and providers", "에이전트 계정 및 프로바이더"],
     connections_hint: ["View connections and versions, choose providers, and enter supported API keys here.", "연결 상태·버전을 조회하고 프로바이더 선택과 지원되는 API 키 입력을 여기서 진행합니다."],
     connections_manage: ["Manage connections", "연결 관리"],

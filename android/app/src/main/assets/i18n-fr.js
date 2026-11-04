@@ -1,6 +1,12 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "voice_input": "Saisie vocale",
+  "voice_opening": "Ouverture de la saisie vocale de l’appareil. Le fournisseur vocal peut utiliser le réseau.",
+  "voice_unavailable": "Saisie vocale indisponible. Activez une application de reconnaissance vocale sur cet appareil.",
+  "voice_empty": "Aucune parole reconnue. Réessayez.",
+  "voice_failed": "Échec de la saisie vocale. Vérifiez le fournisseur vocal et l’accès au microphone, puis réessayez.",
+  "voice_changed": "Le brouillon ou la session a changé. La saisie vocale n’a pas été insérée.",
   "browser_consent_notify": "L’autorisation avertit aussi la session {agent} qui l’a demandée.",
   "browser_allowed_message": "Le contrôle du navigateur est autorisé dans Bibimer. Reprenez la tâche lorsque vous êtes prêt. Cela n’approuve pas les autres actions d’outils.",
   "browser_notice_steered": "Contrôle autorisé ; l’agent a accepté la notification via Steer.",

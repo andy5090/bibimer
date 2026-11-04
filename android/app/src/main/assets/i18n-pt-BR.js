@@ -1,6 +1,12 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["pt-BR"] = {
+  "voice_input": "Entrada por voz",
+  "voice_opening": "Abrindo a entrada por voz do dispositivo. O provedor de voz pode usar a rede.",
+  "voice_unavailable": "Entrada por voz indisponível. Ative um app de reconhecimento de voz neste dispositivo.",
+  "voice_empty": "Nenhuma fala reconhecida. Tente novamente.",
+  "voice_failed": "Falha na entrada por voz. Verifique o provedor de voz e o acesso ao microfone e tente novamente.",
+  "voice_changed": "O rascunho ou a sessão mudou. A entrada por voz não foi inserida.",
   "browser_consent_notify": "Ao permitir o controle, a sessão de {agent} que solicitou também será avisada.",
   "browser_allowed_message": "O controle do navegador foi permitido no Bibimer. Continue a tarefa quando estiver pronto. Isso não aprova outras ações de ferramentas.",
   "browser_notice_steered": "Controle permitido; o agente aceitou o aviso via Steer.",

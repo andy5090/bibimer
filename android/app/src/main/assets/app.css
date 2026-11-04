@@ -615,3 +615,10 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 .git-actions .hint { overflow-wrap:anywhere; margin:8px 0; }
 #git-message { width:100%; min-height:72px; resize:vertical; margin:6px 0; }
 #git-action-form .check { align-items:flex-start; }
+
+/* Voice input stays inside the left edge of the composer. */
+.composer .voice-input{flex:none;display:flex;align-items:center;justify-content:center;width:44px;min-height:44px;padding:8px;border:0;border-radius:8px;color:var(--muted);background:transparent}
+.composer .voice-input:focus-visible{outline:2px solid var(--green);outline-offset:-2px}
+.composer .voice-input[aria-busy="true"]{color:var(--green);background:#1d2a27}
+.composer textarea{min-width:0}
+.voice-status{flex:none;margin:0 4px 6px;font-size:11px;color:var(--muted);overflow-wrap:anywhere}

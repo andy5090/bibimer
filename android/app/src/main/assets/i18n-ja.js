@@ -1,6 +1,12 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "voice_input": "音声入力",
+  "voice_opening": "端末の音声入力を開いています。音声認識サービスがネットワークを使用する場合があります。",
+  "voice_unavailable": "音声入力を利用できません。端末の音声認識アプリを有効にしてください。",
+  "voice_empty": "音声を認識できませんでした。もう一度お試しください。",
+  "voice_failed": "音声入力に失敗しました。音声認識サービスとマイクのアクセス権を確認して、もう一度お試しください。",
+  "voice_changed": "下書きまたはセッションが変更されたため、音声入力を挿入しませんでした。",
   "browser_consent_notify": "許可すると、要求した {agent} セッションにも完了を通知します。",
   "browser_allowed_message": "Bibimer でブラウザー制御を許可しました。準備ができたらブラウザー作業を続けてください。他のツール操作への承認ではありません。",
   "browser_notice_steered": "制御を許可し、エージェントが Steer 通知を受け付けました。",

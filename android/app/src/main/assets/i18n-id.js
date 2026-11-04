@@ -1,6 +1,12 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "voice_input": "Input suara",
+  "voice_opening": "Membuka input suara perangkat. Penyedia pengenalan suara dapat menggunakan jaringan.",
+  "voice_unavailable": "Input suara tidak tersedia. Aktifkan aplikasi pengenalan suara di perangkat ini.",
+  "voice_empty": "Tidak ada ucapan yang dikenali. Coba lagi.",
+  "voice_failed": "Input suara gagal. Periksa penyedia pengenalan suara dan akses mikrofon, lalu coba lagi.",
+  "voice_changed": "Draf atau sesi berubah. Input suara tidak disisipkan.",
   "browser_consent_notify": "Mengizinkan kontrol juga memberi tahu sesi {agent} yang memintanya.",
   "browser_allowed_message": "Kontrol browser telah diizinkan di Bibimer. Lanjutkan tugas browser saat siap. Ini tidak menyetujui tindakan alat lainnya.",
   "browser_notice_steered": "Kontrol diizinkan; agen menerima pemberitahuan melalui Steer.",

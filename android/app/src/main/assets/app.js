@@ -150,6 +150,12 @@
       mode:session?.mode || $("mode").value, supported:canCommands, enabled:!$("input").disabled && ["codex", "claude", "opencode"].includes(agent)};
   }, data => api("POST", "/v1/commands", data));
 
+  const voiceInput = new BibimerVoiceInput($("input"), $("voice-input"), $("voice-status"), t,
+    () => JSON.stringify([instance, projectKey(), viewKey(), selectedAgent,
+      session?.project?.path || draftPath || project?.path, session?.mode || $("mode").value, currentTab]),
+    native);
+  window.BibimerVoiceResult = (id, status, text) => voiceInput.result(id, status, text);
+
   function environment() {
     try { return JSON.parse(native.environment()); }
     catch (_) { return {paired:false, termuxInstalled:false}; }
@@ -906,6 +912,7 @@
     pickers.close();
     sidebar.close();
     currentTab = name;
+    voiceInput.update();
     browserConsent.render();
     if (name === "work") void browserConsent.refresh();
     updateTerminalFullscreen();
@@ -1230,6 +1237,7 @@
     $("input").disabled = newChat ? !online || !project || busy || switchingProject :
       !online || !session || session.kind === "browser" || session.state !== "running" || (isChat() && !session.ready);
     $("input-form").hidden = !chatDisplay;
+    voiceInput.update();
     const responding = isChat() && !["ready", "failed"].includes(session.turn_state);
     renderSendAction();
     $("delivery-warning").hidden = !isChat() || !responding || canQueue;

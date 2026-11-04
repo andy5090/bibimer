@@ -1,6 +1,12 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "voice_input": "Spracheingabe",
+  "voice_opening": "Spracheingabe des Geräts wird geöffnet. Der Sprachanbieter kann eine Netzwerkverbindung nutzen.",
+  "voice_unavailable": "Spracheingabe nicht verfügbar. Aktiviere eine Spracherkennungs-App auf diesem Gerät.",
+  "voice_empty": "Keine Sprache erkannt. Versuche es erneut.",
+  "voice_failed": "Spracheingabe fehlgeschlagen. Prüfe den Sprachanbieter und den Mikrofonzugriff und versuche es erneut.",
+  "voice_changed": "Entwurf oder Sitzung geändert. Die Spracheingabe wurde nicht eingefügt.",
   "browser_consent_notify": "Die Freigabe benachrichtigt auch die anfragende {agent}-Sitzung.",
   "browser_allowed_message": "Die Browsersteuerung ist in Bibimer erlaubt. Setze die Browseraufgabe fort, wenn du bereit bist. Andere Werkzeugaktionen sind damit nicht genehmigt.",
   "browser_notice_steered": "Steuerung erlaubt; der Agent hat die Nachricht per Steer angenommen.",

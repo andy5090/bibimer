@@ -2,7 +2,7 @@
 // Exercise the actual new-session controller with delayed native replies.
 const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict"),path=require("node:path");
 const source=fs.readFileSync(path.resolve(__dirname,"../../android/app/src/main/assets/app.js"),"utf8");
-const functions=["newSessionAgent", "launchSession", "submitInput", "changeAgent"].map(name=>{
+const functions=["newSessionAgent", "launchSession", "submitInput", "changeAgent", "renderSendAction"].map(name=>{
   const match=source.match(new RegExp("  (?:async )?function "+name+"\\([^\\n]*\\) \\{[\\s\\S]*?\\n  \\}"));
   assert.ok(match,name);return match[0];
 }).join("\n");
@@ -14,7 +14,7 @@ function fixture() {
     selectedProjectId:"project",draftPath:"/worktree",instance:"bridge-a",online:true,busy:false,settingsBusy:false,switchingProject:false,paused:false,
     generation:1,retryTimer:null,term:{cols:80,rows:24},native:{cancelPoll(){}},knownAgents:[],canLibrary:true,canOptions:true,canModels:true,
     canInitialMessage:true,multipleProjects:true,canSwitchAgents:true,demo:false,canQueue:true,views:new Map(),launchAttempts:new Map(),sending:new Set(),
-    commands:{invocation:async()=>({})},lastNotice:null,noticeData:null,requests:[],selection:null,
+    preferredInputSteer:()=>false,commands:{invocation:async()=>({})},lastNotice:null,noticeData:null,requests:[],selection:null,
     key:draft,viewKey:()=>ctx.key,projectKey:()=>ctx.project.id,uuid:()=>"request-"+(++identity),clearTimeout(){},
     savedOptions:()=>({permission:"read-only",model:"native-model",effort:"high"}),
     rememberView:()=>ctx.views.set(ctx.key,{text:fields.input.value,start:0,end:fields.input.value.length}),
@@ -37,11 +37,11 @@ function fixture() {
     ctx.document={querySelectorAll:()=>[]};ctx.t=key=>key;ctx.knownProjects=[];
     Object.assign(ctx,{canSwitchAgents:true,persistentCodex:true,canImport:true,multiImport:true,canQueue:true,canOptions:true,
       libraryBusy:false,multipleProjects:true,queued:[],canBatchQueue:true,conversation:{items:new Map(),requests:new Map(),enable(){}},
-      worktreeCreator:{render(){}},github:{render(){}},inspector:{update(){}},fileViewer:{update(){}},commands:{render(){},invocation:async()=>({})},
+      voiceInput:{update(){}},worktreeCreator:{render(){}},github:{render(){}},inspector:{update(){}},fileViewer:{update(){}},commands:{render(){},invocation:async()=>({})},
       importable:()=>false,findSession:()=>null,supportsSteer:()=>false,isResponding:()=>false,sessionTitle:()=>"Existing session",supportsChat:()=>fields.agent.value!=="shell"});
     for(const name of ["renderBrowser","renderContextUsage","renderSubscriptionUsage","renderBridgeUpdate","renderSettings","renderModels","renderImport",
       "renderFolderBrowser","renderQueue","renderHandoff","renderWorkspaceSummary","renderWorkspaceDetails","refreshProjectWorktrees","renderSessionActions",
-      "renderProjectSettings","renderSidebar","positionUsageDetails","updateTerminalKeys"])ctx[name]=()=>{};
+      "renderProjectSettings","renderSidebar","positionUsageDetails","updateTerminalKeys","updateTerminalFullscreen"])ctx[name]=()=>{};
     ctx.pickers={sync(){}};
     vm.runInContext(source.match(/  function renderSession\(\) \{[\s\S]*?\n  \}/)[0],ctx);
     ctx.renderSession();assert.equal(fields.input.disabled,false);assert.equal(fields.send.disabled,false);

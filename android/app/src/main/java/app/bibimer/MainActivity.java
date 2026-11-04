@@ -38,8 +38,11 @@ public final class MainActivity extends Activity {
     private static final String ASSET_HOST = "appassets.androidplatform.net";
     private static final String PAGE = "https://" + ASSET_HOST + "/index.html";
     private static final int EXPORT_INSTALLER = 10;
+    private static final int VOICE_INPUT = 11;
+    private String voiceRequest;
+    private long voiceEpoch;
     private static final Set<String> ASSETS = new HashSet<>(Arrays.asList(
-        "index.html", "app.js", "browser-consent.js", "commands.js", "select.js", "sidebar.js", "inspector.js", "file-viewer.js", "github.js", "agent-connections.js", "worktree-create.js", "bridge-maintenance.js", "app.css", "i18n.js", "i18n-pt-BR.js", "i18n-es.js", "i18n-id.js", "i18n-zh-Hans.js", "i18n-ja.js", "i18n-zh-Hant.js", "i18n-fr.js", "i18n-de.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/mermaid.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
+        "index.html", "app.js", "voice-input.js", "browser-consent.js", "commands.js", "select.js", "sidebar.js", "inspector.js", "file-viewer.js", "github.js", "agent-connections.js", "worktree-create.js", "bridge-maintenance.js", "app.css", "i18n.js", "i18n-pt-BR.js", "i18n-es.js", "i18n-id.js", "i18n-zh-Hans.js", "i18n-ja.js", "i18n-zh-Hant.js", "i18n-fr.js", "i18n-de.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/mermaid.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
     private final ExecutorService actions = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<Runnable>(128));
     private final ExecutorService events = Executors.newSingleThreadExecutor();
@@ -241,6 +244,26 @@ public final class MainActivity extends Activity {
     private final class NativeApi {
         private boolean requestCurrent(boolean demo, long epoch) {
             return !destroyed && demo == DemoMode.enabled(MainActivity.this) && epoch == DemoMode.epoch();
+        }
+        @JavascriptInterface public void startVoiceInput(String id) {
+            if (id == null || !id.matches("[a-zA-Z0-9-]{1,100}")) return;
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> {
+                if (destroyed || epoch != DemoMode.epoch()) return;
+                if (!resumed || voiceRequest != null) { voiceResult(id, "failed", "", epoch); return; }
+                voiceRequest = id; voiceEpoch = epoch;
+                Intent intent = new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                    .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    .putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+                // The installed recognizer owns the speech language and offline/network choice.
+                // No audio, transcript, credentials or request is sent to Termux.
+                try { startActivityForResult(intent, VOICE_INPUT); }
+                catch (android.content.ActivityNotFoundException unavailable) {
+                    voiceRequest = null; voiceResult(id, "unavailable", "", epoch);
+                } catch (Exception failure) {
+                    voiceRequest = null; voiceResult(id, "failed", "", epoch);
+                }
+            });
         }
         @JavascriptInterface public void setBackHandling(boolean enabled) {
             runOnUiThread(() -> backHandling(enabled));
@@ -638,8 +661,28 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private void voiceResult(String id, String status, String text, long epoch) {
+        if (destroyed || epoch != DemoMode.epoch()) return;
+        script("window.BibimerVoiceResult && window.BibimerVoiceResult(" + JSONObject.quote(id) + "," +
+            JSONObject.quote(status) + "," + JSONObject.quote(text) + ");");
+    }
+
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
+        if (request == VOICE_INPUT) {
+            String id = voiceRequest; voiceRequest = null;
+            if (id == null) return;
+            String text = "", status = result == RESULT_CANCELED ? "cancelled" : "failed";
+            try {
+                if (result == RESULT_OK && data != null) {
+                    java.util.ArrayList<String> results = data.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS);
+                    if (results != null && !results.isEmpty() && results.get(0) != null) text = results.get(0).trim();
+                    status = text.isEmpty() ? "empty" : text.length() > 65536 ? "failed" : "ok";
+                }
+            } catch (Exception invalidResult) { status = "failed"; }
+            voiceResult(id, status, "ok".equals(status) ? text : "", voiceEpoch);
+            return;
+        }
         if (request == EXPORT_INSTALLER && result == RESULT_OK && data != null && data.getData() != null) {
             if (DemoMode.enabled(this)) return;
             Uri target = data.getData();

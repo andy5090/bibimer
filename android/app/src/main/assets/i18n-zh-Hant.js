@@ -1,6 +1,12 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "voice_input": "語音輸入",
+  "voice_opening": "正在開啟裝置語音輸入。語音辨識服務可能使用網路。",
+  "voice_unavailable": "無法使用語音輸入。請啟用此裝置上的語音辨識應用程式。",
+  "voice_empty": "未辨識到語音。請再試一次。",
+  "voice_failed": "語音輸入失敗。請檢查語音辨識服務和麥克風存取權限後再試一次。",
+  "voice_changed": "草稿或工作階段已變更，未插入語音輸入。",
   "browser_consent_notify": "允許控制時，也會通知提出請求的 {agent} 工作階段。",
   "browser_allowed_message": "已在 Bibimer 中允許瀏覽器控制。準備好後可繼續瀏覽器工作。這不代表核准其他工具操作。",
   "browser_notice_steered": "已允許控制；代理已透過 Steer 接收通知。",

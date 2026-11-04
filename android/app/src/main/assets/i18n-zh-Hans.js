@@ -1,6 +1,12 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "voice_input": "语音输入",
+  "voice_opening": "正在打开设备语音输入。语音识别服务可能使用网络。",
+  "voice_unavailable": "语音输入不可用。请启用此设备上的语音识别应用。",
+  "voice_empty": "未识别到语音。请重试。",
+  "voice_failed": "语音输入失败。请检查语音识别服务和麦克风访问权限，然后重试。",
+  "voice_changed": "草稿或会话已更改，未插入语音输入。",
   "browser_consent_notify": "允许控制时，也会通知请求控制的 {agent} 会话。",
   "browser_allowed_message": "已在 Bibimer 中允许浏览器控制。准备好后可继续浏览器任务。这不代表批准其他工具操作。",
   "browser_notice_steered": "已允许控制；代理已通过 Steer 接收通知。",
