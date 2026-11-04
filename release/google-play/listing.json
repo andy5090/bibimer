@@ -176,16 +176,16 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.37.0",
-    "versionCode": 61,
+    "versionName": "0.38.0",
+    "versionCode": 62,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "9032bb8d3e0d4a1efa683c4f5dc8dcf1528b2f1df0ad1a330df5eb6a43b19f3b",
-    "file": "bibimer-0.37.0-61-release.aab",
-    "bytes": 3427243,
+    "sha256": "30d7b08fca41acb790e1706de8513a7ac919df078cc70a68a0cf73a4ea6571e6",
+    "file": "bibimer-0.38.0-62-release.aab",
+    "bytes": 3431034,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
@@ -214,12 +214,15 @@
     "ttsDefaultsOff": true,
     "localExtractiveSummaryPackaged": true,
     "browserConsentNotifyPackaged": true,
+    "workFirstNavigationPackaged": true,
+    "customNativeDialogsPackaged": true,
+    "settingsSwitchesAndDisabledGroupsPackaged": true,
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
-    "builtOn": "2026-11-04",
-    "sourceCommit": "036596289f719906f3012d06d1314e1ef7a03d38",
-    "releaseName": "0.37.0 (61) - Voice settings and read-aloud",
-    "releaseNotesFile": "release/google-play/release-notes/0.37.0.txt",
+    "builtOn": "2026-11-05",
+    "sourceCommit": "b21a5675728303d55f4c2e3e5213812b5ae07b80",
+    "releaseName": "0.38.0 (62) - Work-first navigation and settings",
+    "releaseNotesFile": "release/google-play/release-notes/0.38.0.txt",
     "bridgeUpdateRequiredForNewFeatures": false
   },
   "consoleScreenshotsUpdatedOn": "2026-10-15",
@@ -333,26 +336,26 @@
     "retainedInLatestSubmittedVersionCode": 33
   },
   "pendingUpdate": {
-    "versionName": "0.37.0",
-    "versionCode": 61,
-    "releaseName": "0.37.0 (61) - Voice settings and read-aloud",
+    "versionName": "0.38.0",
+    "versionCode": 62,
+    "releaseName": "0.38.0 (62) - Work-first navigation and settings",
     "consoleStatus": "active_available_to_existing_testers",
-    "publishedOn": "2026-11-04",
-    "publishedAtLocal": "2026-11-04 23:32 Asia/Seoul",
+    "publishedOn": "2026-11-05",
+    "publishedAtLocal": "2026-11-05 01:32 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      61
+      62
     ],
     "excludedPreviousVersionCodes": [
-      60
+      61
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "ko-KR": 305,
-      "en-US": 448
+      "ko-KR": 244,
+      "en-US": 497
     },
     "errors": [],
     "warnings": [
@@ -360,31 +363,40 @@
     ],
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed seven Console device type rows",
+    "supportedDevices": {
+      "phone": 11609,
+      "tablet": 6504,
+      "tv": 5,
+      "wear": 0,
+      "car": 29,
+      "chromebook": 77,
+      "androidXR": 2
+    },
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "036596289f719906f3012d06d1314e1ef7a03d38",
-    "releaseNotesFile": "release/google-play/release-notes/0.37.0.txt",
-    "evidence": "dist/play-0.37.0/published.json",
+    "sourceCommit": "b21a5675728303d55f4c2e3e5213812b5ae07b80",
+    "releaseNotesFile": "release/google-play/release-notes/0.38.0.txt",
+    "evidence": "dist/play-0.38.0/published.json",
     "sourceBridgeVersion": "0.24.1",
     "bridgeUpdateRequiredForNewFeatures": false,
     "packagedAssetCount": 58,
     "buildAndPlaySdkTestsPassed": 17,
-    "sourceLanguageKeys": 912,
+    "sourceNodeChecksPassed": 14,
+    "sourceSpeechPythonChecksPassed": 4,
+    "sourceLanguageKeys": 914,
     "sourceLanguageCount": 10,
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "bundleSha256": "9032bb8d3e0d4a1efa683c4f5dc8dcf1528b2f1df0ad1a330df5eb6a43b19f3b",
-    "bundleBytes": 3427243,
-    "speechProviderSelectionPackaged": true,
-    "ttsAndroidAndElevenLabsOnly": true,
-    "ttsDefaultsOff": true,
-    "localExtractiveSummaryPackaged": true,
+    "bundleSha256": "30d7b08fca41acb790e1706de8513a7ac919df078cc70a68a0cf73a4ea6571e6",
+    "bundleBytes": 3431034,
     "existingTestersUnchanged": true,
-    "policyDeployment": "https://acdb8851.bibimer.pages.dev",
-    "policyEvidence": "dist/play-0.37.0/policy-verification.json",
+    "workFirstNavigationPackaged": true,
+    "customNativeDialogsPackaged": true,
+    "settingsSwitchesAndDisabledGroupsPackaged": true,
     "dataSafetyProductionFormChanged": false,
-    "internalDataSafetyExemptionSource": "https://support.google.com/googleplay/android-developer/answer/10787469?hl=en",
+    "privacyPolicyChanged": false,
+    "websiteDeploymentPerformed": false,
     "status": "published_internal_test",
     "released": true,
     "consoleUploaded": true
@@ -454,21 +466,21 @@
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.36.0",
-    "versionCode": 60,
+    "versionName": "0.37.0",
+    "versionCode": 61,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "9f798e3cef9344044a8ca6f8bcf75012ce7f2a8ef5bcf61b48a8f0208387c3ce",
-    "file": "bibimer-0.36.0-60-release.aab",
-    "bytes": 3386776,
+    "sha256": "9032bb8d3e0d4a1efa683c4f5dc8dcf1528b2f1df0ad1a330df5eb6a43b19f3b",
+    "file": "bibimer-0.37.0-61-release.aab",
+    "bytes": 3427243,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
     "packagedAssetsMatchSource": true,
-    "packagedAssetCount": 57,
+    "packagedAssetCount": 58,
     "languageSplitsDisabled": true,
     "reviewDigestPackaged": true,
     "privateReviewCodeIncluded": false,
@@ -487,29 +499,20 @@
     "released": true,
     "physicalDeviceVerified": false,
     "nativeSpeechInputPackaged": true,
+    "speechProviderSelectionPackaged": true,
+    "ttsAndroidAndElevenLabsOnly": true,
+    "ttsDefaultsOff": true,
+    "localExtractiveSummaryPackaged": true,
     "browserConsentNotifyPackaged": true,
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
     "builtOn": "2026-11-04",
-    "sourceCommit": "0b7645848e9ee5f194cfe7eea6336a3b1a9062dd",
-    "releaseName": "0.36.0 (60) - Voice input",
-    "releaseNotesFile": "release/google-play/release-notes/0.36.0.txt",
-    "bridgeUpdateRequiredForNewFeatures": true
+    "sourceCommit": "036596289f719906f3012d06d1314e1ef7a03d38",
+    "releaseName": "0.37.0 (61) - Voice settings and read-aloud",
+    "releaseNotesFile": "release/google-play/release-notes/0.37.0.txt",
+    "bridgeUpdateRequiredForNewFeatures": false
   },
   "previousUpdate": {
-    "versionName": "0.36.0",
-    "versionCode": 60,
-    "status": "published_internal_test",
-    "sourceCommit": "0b7645848e9ee5f194cfe7eea6336a3b1a9062dd",
-    "releaseNotesFile": "release/google-play/release-notes/0.36.0.txt",
-    "sourceBridgeVersion": "0.24.1",
-    "bridgeUpdateRequiredForNewFeatures": true,
-    "bridgeUpdateRequiredForSpeechInput": false,
-    "verificationFile": ".tools/aab-0.36.0-60-verification.json",
-    "publishedOn": "2026-11-04",
-    "evidence": "dist/play-0.36.0/published.json"
-  },
-  "internalTestRelease": {
     "versionName": "0.37.0",
     "versionCode": 61,
     "releaseName": "0.37.0 (61) - Voice settings and read-aloud",
@@ -561,7 +564,73 @@
     "policyDeployment": "https://acdb8851.bibimer.pages.dev",
     "policyEvidence": "dist/play-0.37.0/policy-verification.json",
     "dataSafetyProductionFormChanged": false,
-    "internalDataSafetyExemptionSource": "https://support.google.com/googleplay/android-developer/answer/10787469?hl=en"
+    "internalDataSafetyExemptionSource": "https://support.google.com/googleplay/android-developer/answer/10787469?hl=en",
+    "status": "published_internal_test",
+    "released": true,
+    "consoleUploaded": true
+  },
+  "internalTestRelease": {
+    "versionName": "0.38.0",
+    "versionCode": 62,
+    "releaseName": "0.38.0 (62) - Work-first navigation and settings",
+    "consoleStatus": "active_available_to_existing_testers",
+    "publishedOn": "2026-11-05",
+    "publishedAtLocal": "2026-11-05 01:32 Asia/Seoul",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+    "includedVersionCodes": [
+      62
+    ],
+    "excludedPreviousVersionCodes": [
+      61
+    ],
+    "releaseNotesLocales": [
+      "en-US",
+      "ko-KR"
+    ],
+    "releaseNotesCharacters": {
+      "ko-KR": 244,
+      "en-US": 497
+    },
+    "errors": [],
+    "warnings": [
+      "no_deobfuscation_mapping_file"
+    ],
+    "supportedDeviceChanges": 0,
+    "supportedDeviceChangesScope": "observed seven Console device type rows",
+    "supportedDevices": {
+      "phone": 11609,
+      "tablet": 6504,
+      "tv": 5,
+      "wear": 0,
+      "car": 29,
+      "chromebook": 77,
+      "androidXR": 2
+    },
+    "refreshedStatusVerified": true,
+    "productionSubmitted": false,
+    "productionReleased": false,
+    "sourceCommit": "b21a5675728303d55f4c2e3e5213812b5ae07b80",
+    "releaseNotesFile": "release/google-play/release-notes/0.38.0.txt",
+    "evidence": "dist/play-0.38.0/published.json",
+    "sourceBridgeVersion": "0.24.1",
+    "bridgeUpdateRequiredForNewFeatures": false,
+    "packagedAssetCount": 58,
+    "buildAndPlaySdkTestsPassed": 17,
+    "sourceNodeChecksPassed": 14,
+    "sourceSpeechPythonChecksPassed": 4,
+    "sourceLanguageKeys": 914,
+    "sourceLanguageCount": 10,
+    "physicalDeviceVerified": false,
+    "deviceInstallVerified": false,
+    "bundleSha256": "30d7b08fca41acb790e1706de8513a7ac919df078cc70a68a0cf73a4ea6571e6",
+    "bundleBytes": 3431034,
+    "existingTestersUnchanged": true,
+    "workFirstNavigationPackaged": true,
+    "customNativeDialogsPackaged": true,
+    "settingsSwitchesAndDisabledGroupsPackaged": true,
+    "dataSafetyProductionFormChanged": false,
+    "privacyPolicyChanged": false,
+    "websiteDeploymentPerformed": false
   },
   "productionReleaseHistory": [
     {
@@ -819,23 +888,27 @@
     "submission": "English and Korean phone screenshots only; existing app version unchanged"
   },
   "previousInternalTestRelease": {
-    "versionName": "0.36.0",
-    "versionCode": 60,
-    "releaseName": "0.36.0 (60) - Voice input",
+    "versionName": "0.37.0",
+    "versionCode": 61,
+    "releaseName": "0.37.0 (61) - Voice settings and read-aloud",
     "consoleStatus": "active_available_to_existing_testers",
     "publishedOn": "2026-11-04",
-    "publishedAtLocal": "2026-11-04 19:43 Asia/Seoul",
+    "publishedAtLocal": "2026-11-04 23:32 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      60
+      61
     ],
     "excludedPreviousVersionCodes": [
-      59
+      60
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
+    "releaseNotesCharacters": {
+      "ko-KR": 305,
+      "en-US": 448
+    },
     "errors": [],
     "warnings": [
       "no_deobfuscation_mapping_file"
@@ -845,24 +918,28 @@
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "0b7645848e9ee5f194cfe7eea6336a3b1a9062dd",
-    "releaseNotesFile": "release/google-play/release-notes/0.36.0.txt",
-    "evidence": "dist/play-0.36.0/published.json",
+    "sourceCommit": "036596289f719906f3012d06d1314e1ef7a03d38",
+    "releaseNotesFile": "release/google-play/release-notes/0.37.0.txt",
+    "evidence": "dist/play-0.37.0/published.json",
     "sourceBridgeVersion": "0.24.1",
-    "bridgeUpdateRequiredForNewFeatures": true,
-    "bridgeUpdateRequiredForSpeechInput": false,
-    "minimumBridgeForBrowserConsentNotification": "0.24.1",
-    "packagedAssetCount": 57,
-    "releaseBuildTestsPassed": 11,
-    "sourceLanguageKeys": 855,
+    "bridgeUpdateRequiredForNewFeatures": false,
+    "packagedAssetCount": 58,
+    "buildAndPlaySdkTestsPassed": 17,
+    "sourceLanguageKeys": 912,
     "sourceLanguageCount": 10,
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "bundleSha256": "9f798e3cef9344044a8ca6f8bcf75012ce7f2a8ef5bcf61b48a8f0208387c3ce",
-    "bundleBytes": 3386776,
-    "nativeSpeechInputPackaged": true,
-    "browserConsentNotifyPackaged": true,
-    "existingTestersUnchanged": true
+    "bundleSha256": "9032bb8d3e0d4a1efa683c4f5dc8dcf1528b2f1df0ad1a330df5eb6a43b19f3b",
+    "bundleBytes": 3427243,
+    "speechProviderSelectionPackaged": true,
+    "ttsAndroidAndElevenLabsOnly": true,
+    "ttsDefaultsOff": true,
+    "localExtractiveSummaryPackaged": true,
+    "existingTestersUnchanged": true,
+    "policyDeployment": "https://acdb8851.bibimer.pages.dev",
+    "policyEvidence": "dist/play-0.37.0/policy-verification.json",
+    "dataSafetyProductionFormChanged": false,
+    "internalDataSafetyExemptionSource": "https://support.google.com/googleplay/android-developer/answer/10787469?hl=en"
   },
   "consoleScreenshotsVerifiedOn": "2026-10-15",
   "sourceLanguages": [
@@ -1849,6 +1926,60 @@
       "nativeSpeechInputPackaged": true,
       "browserConsentNotifyPackaged": true,
       "existingTestersUnchanged": true
+    },
+    {
+      "versionName": "0.37.0",
+      "versionCode": 61,
+      "releaseName": "0.37.0 (61) - Voice settings and read-aloud",
+      "consoleStatus": "active_available_to_existing_testers",
+      "publishedOn": "2026-11-04",
+      "publishedAtLocal": "2026-11-04 23:32 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+      "includedVersionCodes": [
+        61
+      ],
+      "excludedPreviousVersionCodes": [
+        60
+      ],
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "releaseNotesCharacters": {
+        "ko-KR": 305,
+        "en-US": 448
+      },
+      "errors": [],
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed seven Console device type rows",
+      "refreshedStatusVerified": true,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "sourceCommit": "036596289f719906f3012d06d1314e1ef7a03d38",
+      "releaseNotesFile": "release/google-play/release-notes/0.37.0.txt",
+      "evidence": "dist/play-0.37.0/published.json",
+      "sourceBridgeVersion": "0.24.1",
+      "bridgeUpdateRequiredForNewFeatures": false,
+      "packagedAssetCount": 58,
+      "buildAndPlaySdkTestsPassed": 17,
+      "sourceLanguageKeys": 912,
+      "sourceLanguageCount": 10,
+      "physicalDeviceVerified": false,
+      "deviceInstallVerified": false,
+      "bundleSha256": "9032bb8d3e0d4a1efa683c4f5dc8dcf1528b2f1df0ad1a330df5eb6a43b19f3b",
+      "bundleBytes": 3427243,
+      "speechProviderSelectionPackaged": true,
+      "ttsAndroidAndElevenLabsOnly": true,
+      "ttsDefaultsOff": true,
+      "localExtractiveSummaryPackaged": true,
+      "existingTestersUnchanged": true,
+      "policyDeployment": "https://acdb8851.bibimer.pages.dev",
+      "policyEvidence": "dist/play-0.37.0/policy-verification.json",
+      "dataSafetyProductionFormChanged": false,
+      "internalDataSafetyExemptionSource": "https://support.google.com/googleplay/android-developer/answer/10787469?hl=en"
     }
   ]
 }

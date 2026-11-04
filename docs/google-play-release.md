@@ -1,5 +1,14 @@
 # Google Play 출시 준비
 
+## Android0.38.0(62) 내부 테스트 배포 완료 (2026-11-05)
+
+- **01:32 Asia/Seoul**, 요청받은0.38.0(62)을 기존 Play 내부 트랙에 게시했다. 관리 Firefox에서62만 포함·61제외·한/영 노트2/2(244/497자)·오류0·기존 가독화 파일 경고1·7개 기기 유형의 지원 변화0을 검토하고 최종 확인 뒤 **새로고침 후 활성 / 내부 테스터에게 제공됨**을 확인했다. 기존 테스터·프로덕션0.35.1(59)·사용자 브리지/세션·웹사이트는 변경하지 않았다.
+- 작업 기본/상단 설정/하단 탭 제거·초기 설정 가이드·설정/가이드 뒤로 복귀·계정 관리 통합, 자체 보안 API 키/녹음/확인 다이얼로그와 토글/꺼진 하위 설정 비활성화를 포함한다. **이번 UI 기능에는 브리지 업데이트가 필요 없으며 내장0.24.1을 유지한다.**
+- 소스 `b21a567`의 기존 업로드 키 서명 AAB `dist/play/bibimer-0.38.0-62-release.aab`, 3,431,034bytes·SHA-256 `30d7b08fca41acb790e1706de8513a7ac919df078cc70a68a0cf73a4ea6571e6`. 실제 Java/D8·bundletool·기존 인증서·58assets 원본·자체 Dialog DEX/AlertDialog 미포함·탭 제거/토글 포함·브리지6payload/격리 설치/0700·심사 digest 및 비밀 원문 미포함을 검증했다.14개 Node 검사·4개 STT/TTS 모의 네이티브/API 검사·빌드/SDK17개·914키×10언어가 통과했다.
+- 증빙 `dist/play-0.38.0/`의 notes/bundle-62/review-warning/device-support/review-bundle/only-62/review-notes/confirmation/published/published-refreshed.png와 published.json. 빌드/검증 `.tools/aab-0.38.0-62-{build.log,verify.log,verification.json}`, 검사 `.tools/release-0.38.0-checks.log`. 현재의 가이드 문서·README 한/영·listing 기록을 갱신했다.
+- **실제 Play 업데이트 수신/설치·Android WebView/IME/TalkBack·실제 음성/유료 API 검증은 남아 있다.** 별도 APK 자동 설치·운영 브리지 업데이트/재시작·프로덕션 제출은 하지 않았다. 아래 미빌드 항목은 이번 요청 이전 기록이다.
+
+
 ## Android0.37.0(61) 내부 테스트 배포 완료 (2026-11-04)
 
 - **23:32 Asia/Seoul**, 사용자 요청에 따라0.37.0(61)을 기존 Play 내부 테스트에 게시했다. 사용자 직접 허용을 받은 관리 Firefox에서 업로드·검토·최종 게시를 수행하고 **새로고침 뒤 활성 / 내부 테스터에게 제공됨**을 재확인했다.61만 포함·60제외·한/영 노트2/2(305/448자)·오류0·기존 가독화 매핑 경고1·확인한7개 기기 유형 지원 변화0이다. 기존 테스터와 프로덕션0.35.1(59)을 유지했다.
