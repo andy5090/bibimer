@@ -1,5 +1,14 @@
 # Bibimer 다음 세션 시작점
 
+## Android0.36.0(60) 로컬 설치 APK 빌드 (2026-11-04)
+
+- 사용자 설치 파일 빌드 요청으로 앱 버전을0.36.0/code60으로 올려 기존 개발용 키로 APK를 빌드했다. 프롬프트 왼쪽 음성 입력과 이전 브라우저 허용 후 요청 에이전트 알림 소스를 포함하며 내장 브리지는0.24.1이다. 음성 입력 자체에는 브리지 업데이트가 필요하지 않지만 브라우저 자동 알림에는0.24.1 적용이 필요하다.
+- 파일: `Download/Bibimer-0.36.0.apk` 및 `dist/Bibimer-0.36.0.apk`,3,404,273bytes·SHA-256 `d07b1df1fe3ce8f4ac9153b61a00a35c724df5d45fe337387f19b82776426db6`. 보조 `Download/bibimer-setup-0.36.0.sh`,119,478bytes·SHA-256 `1a1a1402ea62d82b5bd91cd797b50a5e81b2e421e3340a8cc97cda935d784f6c`. 기존 출력은 `dist/history/before-0.36.0/`에 보존했다.
+- AAPT2·전체 Java·D8 빌드와 APK v2/v3 서명, 이전 로컬 APK 인증서 일치, 패키지/버전/SDK26·36,57개assets 원본 일치, DEX의 네이티브 STT API·콜백·브리지 버전,6개 유지보수 payload 원본/해시, 설치 스크립트 구문과 격리된 임시 홈 추출/0700, 심사 digest 포함·원문 미포함, Download 복사본 일치를 검증했다. 빌드 검사11개와 음성 입력·새 Chat·Queue/Steer·855키×10언어 회귀도 통과했다. 로그 `.tools/build-apk-0.36.0-60.log`, 검증 `.tools/verify-apk-0.36.0-60.json`.
+- **현재 설치된 Play 앱59와 로컬 개발용 APK의 서명 인증서가 다르므로 이 APK를 Play 설치본 위에 덮어설치할 수 없다.** 설치본의 서명은 API36 범위로 검증했다(로컬 Java21의 ML-DSA 미지원으로 API37용 v3.2 검증은 별도). 이 제약을 사용자에게 사전 안내했고 기존 앱을 삭제하거나 설치·강제 종료하지 않았다. Play 설치본을 유지한 채 업데이트하려면 별도 Play 배포가 필요하다.
+- APK 빌드·파일 준비만 완료했다. AAB 생성·Play 업로드/게시·웹 배포·실행 중 브리지 업데이트/재시작·사용자 세션 종료는 하지 않았다. 실제 Android WebView의 마이크·음성 인식 제공 앱·권한 거절·Activity 복귀 검증은 설치 후 남아 있다. 공개 버전은 여전히0.35.1(59)이다. 아래 미빌드 기록은 이번 APK 이전 시점의 기록이다.
+
+
 ## 프롬프트 왼쪽 음성 입력 버튼 (2026-11-04, 다음 빌드 소스)
 
 - Chat 공통 프롬프트 내부 왼쪽에 44px 마이크 버튼을 추가했다. Android `RecognizerIntent.ACTION_RECOGNIZE_SPEECH`의 기기 음성 입력 화면을 사용하며 별도 STT API 키·서버·의존성은 추가하지 않았다. 음성 언어와 오프라인/네트워크 처리는 설치된 음성 인식 앱의 설정을 따른다. 기기 기본 API라고 완전한 온디바이스 인식으로 보장하지 않으며 화면 상태 안내에도 제공 앱의 네트워크 사용 가능성을 표시한다. 근거: https://developer.android.com/reference/android/speech/RecognizerIntent .
