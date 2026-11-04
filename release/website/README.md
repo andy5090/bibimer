@@ -1,5 +1,11 @@
 # Bibimer 웹사이트
 
+## 음성 기능 개인정보 안내 반영 (2026-11-04)
+
+Android0.37.0 내부 테스트 준비에 맞춰 공개10언어 정책에 선택적 STT 오디오 전송(OpenAI/ElevenLabs), TTS 텍스트 전송(ElevenLabs)/Android 엔진 네트워크 가능성, 기본 꺼짐, 별도 API 키의 Keystore 암호화·삭제, 앱 전용 녹음/재생 임시 파일 정리와 기기 내 핵심 문장 요약을 추가했다. 다른 정책·문의 API/DB/Worker는 변경하지 않았다. 정책 시행일은11월4일로 갱신했고 기존 문의 보관/정리 기준일11월3일은 유지했다.
+
+Pages `https://acdb8851.bibimer.pages.dev` 배포 완료. 공개10개 정책 페이지의 HTTP200·원본 바이트 일치·voice-privacy 고지를 확인했다(`dist/play-0.37.0/policy-verification.json`). 웹 구조2개·언어 선택·diff 검사가 통과했다. 사용자 음성·실제 문의 전송이나 DB 변경은 없다.
+
 ## 문의 유형의 개인정보·데이터 항목 제거 (2026-11-03)
 
 사용자 요청으로 10개 언어 문의 유형에서 개인정보·데이터를 제거했다. 오류 제보·설치/연결 도움·기능 제안·기타만 제공하고 공개 정책의 문의 링크도 일반 문의로 변경했다. API의 새 접수 허용 목록에서도 제거했으며 기존 문의 기록과 DB 스키마는 유지한다. 웹사이트 구조·언어·실제 SQLite 기반 문의 API 검사를 통과했다. 브라우저 smoke의 사전 선택 fixture를 설치/연결로 바꿨으며 해당 headless 검사는 실행하지 않았다. Pages `https://9a281176.bibimer.pages.dev` 배포 후 공개 방침/문의 20개 페이지 원본 일치·유형 4개·이전 유형 링크 제거를 확인했다(`dist/privacy-category-removal/public-verification.json`). 실제 문의 전송·앱 빌드는 하지 않았다.

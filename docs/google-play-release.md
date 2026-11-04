@@ -1,5 +1,13 @@
 # Google Play 출시 준비
 
+## Android0.37.0(61) 내부 테스트 배포 완료 (2026-11-04)
+
+- **23:32 Asia/Seoul**, 사용자 요청에 따라0.37.0(61)을 기존 Play 내부 테스트에 게시했다. 사용자 직접 허용을 받은 관리 Firefox에서 업로드·검토·최종 게시를 수행하고 **새로고침 뒤 활성 / 내부 테스터에게 제공됨**을 재확인했다.61만 포함·60제외·한/영 노트2/2(305/448자)·오류0·기존 가독화 매핑 경고1·확인한7개 기기 유형 지원 변화0이다. 기존 테스터와 프로덕션0.35.1(59)을 유지했다.
+- 입력창 마이크 크기 조정, 기기/OpenAI/ElevenLabs 음성 입력·언어/암호화 키·명시적 녹음 전송, 기본 꺼짐의 Android/ElevenLabs TTS·음성 선택·전체/기기 내 핵심 문장 요약·미리듣기/중지를 포함한다. **TTS에는 OpenAI가 없으며 이번 음성 기능은 브리지 업데이트가 필요 없다.** 내장 브리지는0.24.1을 유지하고 실행 중 브리지/사용자 세션은 변경하지 않았다.
+- 소스 `0365962`의 기존 업로드 키 서명 AAB `dist/play/bibimer-0.37.0-61-release.aab`, 3,427,243bytes·SHA-256 `9032bb8d3e0d4a1efa683c4f5dc8dcf1528b2f1df0ad1a330df5eb6a43b19f3b`. 전체 Java/D8·bundletool·기존 인증서·58assets 원본·마이크 권한/선택적 하드웨어·TTS OpenAI 경로 미포함·브리지6payload/격리 설치/0700·언어 split·심사 digest 및 비밀 원문 미포함을 검증했다. 빌드/SDK17검사와 TTS/STT/Chat·Queue/Steer·데모·912키×10언어가 통과했다.
+- 공개10언어 정책에 선택적 오디오/텍스트 전송·키·임시 파일·로컬 요약을 추가해 Pages **https://acdb8851.bibimer.pages.dev**에 배포하고 공개10페이지 원본 일치·고지를 확인했다. 기존 Cloudflare CLI가 저장된 OAuth를 정상 갱신했고 비밀 값을 출력하거나 새로 요청하지 않았다. 내부 테스트의 공식 데이터 보안 섹션 예외를 확인해 프로덕션 전역 신고는 변경하지 않았다. 공개/폐쇄/공개 테스트 승격 전 audio 항목 재검토는 남아 있다.
+- 증빙 `dist/play-0.37.0/`의 notes/review-warning/device-support/review-bundle/only-61/review-notes/confirmation/published/published-refreshed.png와 published.json·policy-verification.json. 빌드/검증 `.tools/aab-0.37.0-61-{build.log,verify.log,verification.json}`. **실제 Play 업데이트 수신·설치, Android WebView/음성 엔진·마이크/오디오·유료 API 검증은 남아 있다.** 자동 앱 설치·사용자 프로세스 종료·프로덕션 출시는 하지 않았다. 아래 미빌드 기록은 이번 요청 전 시점이다.
+
 ## Android0.36.0(60) 내부 테스트 배포 완료 (2026-11-04)
 
 - **19:43 Asia/Seoul**, 로컬 APK 설치 실패 뒤 사용자의 내부 테스트 배포 요청에 따라 기존 Play 내부 테스트 트랙에0.36.0(60)을 게시했다. 허용된 관리 Firefox에서 AAB 업로드·검토·최종 게시를 실행하고 새로고침 뒤 **활성 / 내부 테스터에게 제공됨**을 재확인했다.60만 포함·59제외·한/영 노트2/2(364/189자)·오류0·기존 가독화 매핑 경고1·확인한7개 기기 유형 지원 변화0이다. 기존 테스터와 프로덕션0.35.1(59)을 유지했다.
