@@ -234,7 +234,7 @@
     "versionName": "0.35.1",
     "versionCode": 59,
     "releaseName": "0.35.1 (59) - Mobile Git and browser consent",
-    "consoleStatus": "in_review",
+    "consoleStatus": "available_on_google_play",
     "promotionPreparedOn": "2026-11-04",
     "changeCount": 1,
     "rolloutPercent": 100,
@@ -242,7 +242,7 @@
     "targetCountryCount": 178,
     "managedPublishing": false,
     "publishAfterApproval": true,
-    "publicAvailabilityConfirmed": false,
+    "publicAvailabilityConfirmed": true,
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582",
     "publishingOverviewUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
     "warnings": [
@@ -272,13 +272,16 @@
     "excludedPreviousVersionCodes": [
       54
     ],
-    "evidence": "dist/production-0.35.1/submitted.json",
+    "evidence": "dist/production-0.35.1/available.json",
     "physicalDeviceVerified": false,
     "submittedOn": "2026-11-04",
     "submittedAtLocal": "2026-11-04 01:37 Asia/Seoul",
     "refreshedStatusVerified": true,
     "submissionVerifiedAtLocal": "2026-11-04 01:38 Asia/Seoul",
-    "note": "Visible Firefox final submission accepted and persisted after refresh under changes in review. Pre-review quick checks completed; Console shows the changes are being reviewed. Managed publishing is disabled; approval publishes automatically. Public availability of 59 is not confirmed."
+    "note": "Visible Firefox production dashboard shows active latest version 0.35.1(59), 178 target countries. Releases tab shows available on Google Play, published November 4 at 01:47. Device update receipt is not verified.",
+    "availabilityVerifiedOn": "2026-11-04",
+    "availabilityVerifiedAtLocal": "2026-11-04 15:32 Asia/Seoul",
+    "publishedAtConsoleLocal": "2026-11-04 01:47 Asia/Seoul"
   },
   "internalTesterParticipation": {
     "consoleRegistration": "saved_one_tester",
@@ -384,12 +387,12 @@
   },
   "publicStoreUrl": "https://play.google.com/store/apps/details?id=app.bibimer",
   "currentPublicVersion": {
-    "versionName": "0.32.0",
-    "versionCode": 54,
+    "versionName": "0.35.1",
+    "versionCode": 59,
     "verifiedOn": "2026-11-04",
     "consoleProductionAvailabilityVerified": true,
     "devicePublicUpdateVerified": false,
-    "verificationEvidence": "Visible Firefox production dashboard showed active latest production 0.32.0(54), existing 178 target countries before promotion. 59 remains submitted for review."
+    "verificationEvidence": "Visible Firefox production dashboard and Releases tab: active 0.35.1(59), available on Google Play, 178 target countries. dist/production-0.35.1/available-release.png"
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
