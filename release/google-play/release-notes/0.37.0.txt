@@ -1,0 +1,10 @@
+<ko-KR>
+음성 입력 제공자를 기기 기본 앱·OpenAI·ElevenLabs 중 선택할 수 있습니다. 인식 언어와 제공자별 API 키를 설정하고 녹음 후 확인해 변환합니다. 마이크 버튼을 입력창 높이에 맞췄습니다.
+답변 음성 읽기를 추가했습니다. 기본은 꺼짐이며 Android TTS·ElevenLabs의 음성, 답변 전체·기기 내 핵심 문장 요약을 선택할 수 있습니다. 미리듣기·최근 답변 읽기·중지를 제공합니다.
+외부 API는 본인 키가 필요하며 음성/텍스트 전송과 별도 요금이 발생할 수 있습니다. 이번 음성 기능에는 브리지 업데이트가 필요 없습니다.
+</ko-KR>
+<en-US>
+Choose device speech input, OpenAI or ElevenLabs, with language and API key settings. Review recordings before transcription. The microphone button now fits the input bar.
+Added answer read-aloud, off by default: Android TTS or ElevenLabs voices, full answers or a local key-sentence summary, voice preview and stop controls.
+External APIs require your own key, transmit audio/text and may incur charges. These voice features need no bridge update.
+</en-US>

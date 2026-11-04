@@ -14,12 +14,17 @@ import javax.crypto.spec.GCMParameterSpec;
 
 /** The token stays in native memory / encrypted app-private preferences. */
 final class TokenStore {
-    private static final String ALIAS = "bibimer.local.bridge";
+    private final String alias;
     private final SharedPreferences preferences;
     private volatile String token = "";
 
     TokenStore(Context context) {
-        preferences = context.getSharedPreferences("bridge", Context.MODE_PRIVATE);
+        this(context, "bridge", "bibimer.local.bridge");
+    }
+
+    TokenStore(Context context, String name, String alias) {
+        this.alias = alias;
+        preferences = context.getSharedPreferences(name, Context.MODE_PRIVATE);
         reload();
     }
 
@@ -41,15 +46,15 @@ final class TokenStore {
     private SecretKey key() throws Exception {
         KeyStore store = KeyStore.getInstance("AndroidKeyStore");
         store.load(null);
-        if (!store.containsAlias(ALIAS)) {
+        if (!store.containsAlias(alias)) {
             KeyGenerator generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
-            generator.init(new KeyGenParameterSpec.Builder(ALIAS,
+            generator.init(new KeyGenParameterSpec.Builder(alias,
                 KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build());
             generator.generateKey();
         }
-        return ((KeyStore.SecretKeyEntry) store.getEntry(ALIAS, null)).getSecretKey();
+        return ((KeyStore.SecretKeyEntry) store.getEntry(alias, null)).getSecretKey();
     }
 
     synchronized void save(String value) throws Exception {

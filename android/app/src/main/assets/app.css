@@ -617,8 +617,17 @@ dialog{background:var(--card);color:var(--text);border:1px solid #414e56;border-
 #git-action-form .check { align-items:flex-start; }
 
 /* Voice input stays inside the left edge of the composer. */
-.composer .voice-input{flex:none;display:flex;align-items:center;justify-content:center;width:44px;min-height:44px;padding:8px;border:0;border-radius:8px;color:var(--muted);background:transparent}
+.composer .voice-input{flex:none;display:flex;align-items:center;justify-content:center;width:28px;min-height:28px;padding:5px;border:0;border-radius:8px;color:var(--muted);background:transparent}
+.composer .voice-input svg{width:18px;height:18px}
 .composer .voice-input:focus-visible{outline:2px solid var(--green);outline-offset:-2px}
 .composer .voice-input[aria-busy="true"]{color:var(--green);background:#1d2a27}
 .composer textarea{min-width:0}
+@media (min-width:700px) and (min-height:650px){
+  .composer .voice-input{width:40px;min-height:40px;padding:10px}
+  .composer .voice-input svg{width:20px;height:20px}
+}
 .voice-status{flex:none;margin:0 4px 6px;font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+
+.speech-playback{display:flex;align-items:center;justify-content:flex-end;gap:4px;flex:none;margin-bottom:4px;flex-wrap:wrap;font-size:10px;color:var(--muted)}
+.speech-playback span{flex:1;min-width:0;overflow-wrap:anywhere}.speech-playback button{min-height:28px;padding:3px 7px;font-size:10px}
+#workspace.project-editing .speech-playback{display:none}#tts-preference .preference-row .select-control{flex:1 1 160px;min-width:0}

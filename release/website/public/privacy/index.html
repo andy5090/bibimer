@@ -81,7 +81,7 @@
       <dt>Application</dt><dd>Bibimer (app.bibimer)</dd>
       <dt>Operator</dt><dd>Andineering</dd>
       <dt>Contact</dt><dd><a href="mailto:andy@andineering.com">andy@andineering.com</a></dd>
-      <dt>Effective date</dt><dd>November 3, 2026</dd>
+      <dt>Effective date</dt><dd>November 4, 2026</dd>
     </dl>
     <h3>1. Purpose and information processed</h3>
     <p>Bibimer is a mobile agent development environment (ADE) for managing projects and coding-agent sessions in Termux on the same Android phone. It processes project names and folder paths, session identifiers and settings, instructions, responses, terminal and tool output, and files you choose to work with. This information is used to display your projects and sessions, send your instructions, show results, and provide the features you request.</p>
@@ -90,6 +90,10 @@
     <h3>2. Coding agents and external services</h3>
     <p>When you send an instruction, the agent you select may transmit prompts, code, files, conversation context, and tool requests to its configured AI providers and other services. Processing and retention depend on the agent, provider, account, permissions, and settings you use. A local bridge connection does not mean that AI processing stays on your device.</p>
     <p>If you choose to continue a conversation with another agent, the context you review and send is delivered to that agent and may be kept in its records. Termux, package repositories, development tools, and external websites also handle requests when you install tools or open their links. Check the policies of the services you select.</p>
+    <div id="voice-privacy">
+    <p>Optional voice features use the device speech app or your chosen API provider. For API speech input, you record audio and confirm before sending it to OpenAI or ElevenLabs for transcription. Read-aloud is off by default; if enabled, Android TTS or ElevenLabs reads the selected answer or summary. External read-aloud and voice previews send the text to ElevenLabs. Device speech apps and Android TTS may also use the network. Provider fees and data retention policies apply; Bibimer does not automatically switch providers after a failure.</p>
+    <p>Voice API keys are encrypted with Android Keystore on this phone and can be removed in Settings. Keys, recordings and synthesized audio are not sent to Termux or Bibimer servers or stored in ordinary logs. App-private temporary recording and playback files are deleted after completion, cancellation or failure; crash leftovers are cleaned on the next app start. Read-aloud summaries extract key sentences on the device without an additional model request. Transcripts enter your draft and are not sent as chat messages automatically; text you later send follows normal conversation storage rules.</p>
+    </div>
     <h3>3. GitHub and opening files</h3>
     <p>GitHub import uses GitHub CLI in Termux to authenticate, list repositories you can access, and clone the repository you select. GitHub CLI manages its credentials in Termux. Bibimer displays the account status, repository information, and a temporary sign-in code when needed; it does not send the authentication token to its WebView or ordinary logs. Cloned files remain in the folder you select.</p>
     <p>When you choose to open a project or Download file in another Android app, Bibimer creates a temporary copy in its private cache and grants the selected viewer temporary read access. The viewer then processes the file according to its own practices. Editing that copy does not change the original project file. Cached copies are subject to size limits and expiry and are cleaned on subsequent app use or disconnection.</p>

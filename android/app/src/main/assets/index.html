@@ -34,6 +34,7 @@
   <script src="bridge-maintenance.js" defer></script>
   <script src="browser-consent.js" defer></script>
   <script src="voice-input.js" defer></script>
+  <script src="speech-output.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -88,6 +89,7 @@
       <p id="mode-hint" class="mode-hint"></p>
       <div id="chat-panel" hidden><div id="chat-empty" data-i18n="chat_empty">Send a message to start working with Codex.</div><div id="conversation" role="log" aria-label="Conversation" data-i18n-aria-label="chat_conversation"></div><button id="chat-latest" class="secondary" data-i18n="chat_latest" hidden>Jump to latest ↓</button><div id="chat-requests"></div></div>
       <div id="chat-state" hidden><span id="turn-status" role="status"></span><div class="response-actions"><button id="delivery-help" class="quiet" type="button" aria-label="Message delivery help" data-i18n-aria-label="delivery_help_title" aria-haspopup="dialog" aria-controls="delivery-help-dialog" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg></button><button id="interrupt-turn" class="quiet" data-i18n="chat_interrupt">Interrupt response</button></div></div>
+      <div id="tts-playback" class="speech-playback" hidden><span id="tts-work-status" role="status"></span><button id="tts-read-latest" class="quiet" type="button" data-i18n="tts_read_latest">Read latest answer</button><button id="tts-stop" class="quiet" type="button" data-i18n="tts_stop">Stop reading</button></div>
       <div id="terminal-area">
         <div id="terminal" aria-label="Agent terminal output" data-i18n-aria-label="terminal_label"></div>
         <div id="terminal-empty"><span aria-hidden="true">›_</span><strong data-i18n="terminal_ready">Ready when you are</strong><p data-i18n="terminal_intro">Add a project and choose a program to run.</p></div>
@@ -297,6 +299,32 @@
         <select id="response-delivery" aria-describedby="response-delivery-hint"><option value="queue" data-i18n="queue_send">Queue</option><option value="steer" data-i18n="steer">Steer</option></select>
       </div>
       <p id="response-delivery-hint" class="hint" data-i18n="response_delivery_hint">Choose what Send and the send keyboard shortcut do during a response. Steer applies to supported agents and otherwise uses the queue. Native slash commands use the queue.</p>
+    </section>
+    <section id="voice-preference" class="card preference-card" hidden>
+      <h2 data-i18n="voice_input">Voice input</h2>
+      <div class="preference-row"><label for="voice-provider" data-i18n="voice_provider">Provider</label><select id="voice-provider" aria-describedby="voice-provider-hint"></select></div>
+      <p id="voice-provider-hint" class="hint"></p>
+      <div class="preference-row"><label for="voice-language" data-i18n="voice_language">Speech language</label><select id="voice-language"><option value="" data-i18n="voice_auto">Provider default / automatic</option><option value="en" lang="en">English</option><option value="ko" lang="ko">한국어</option><option value="pt" lang="pt-BR">Português</option><option value="es" lang="es">Español</option><option value="id" lang="id">Bahasa Indonesia</option><option value="zh" lang="zh">中文</option><option value="ja" lang="ja">日本語</option><option value="fr" lang="fr">Français</option><option value="de" lang="de">Deutsch</option></select></div>
+      <div id="voice-api-controls" hidden>
+        <p id="voice-key-state" class="hint"></p>
+        <div class="button-row"><button id="voice-key-edit" type="button" class="secondary" data-i18n="voice_key_edit">Set API key</button><button id="voice-key-remove" type="button" class="quiet" data-i18n="voice_key_remove">Remove key</button><button id="voice-check" type="button" class="secondary" data-i18n="voice_check">Check connection</button></div>
+      </div>
+      <p id="voice-settings-status" class="hint" role="status"></p>
+    </section>
+    <section id="tts-preference" class="card preference-card" hidden>
+      <h2 data-i18n="tts_title">Read answers aloud</h2>
+      <div class="preference-row"><label for="tts-enabled" data-i18n="tts_enable">Automatic reading</label><input id="tts-enabled" type="checkbox" role="switch" aria-describedby="tts-hint"></div>
+      <p id="tts-hint" class="hint" data-i18n="tts_hint"></p>
+      <div class="preference-row"><label for="tts-provider" data-i18n="voice_provider">Voice provider</label><select id="tts-provider"><option value="android">Android TTS</option><option value="elevenlabs">ElevenLabs · Multilingual v2</option></select></div>
+      <p id="tts-provider-hint" class="hint"></p>
+      <div class="preference-row"><label for="tts-mode" data-i18n="tts_read_mode">Read</label><select id="tts-mode"><option value="full" data-i18n="tts_full">Full answer</option><option value="summary" data-i18n="tts_summary">Key-sentence summary</option></select></div>
+      <p class="hint" data-i18n="tts_summary_hint"></p>
+      <div id="tts-engine-row" class="preference-row"><label for="tts-engine" data-i18n="tts_engine">Android engine</label><select id="tts-engine"></select></div>
+      <div class="preference-row"><label for="tts-voice" data-i18n="tts_voice">Voice</label><select id="tts-voice"></select></div>
+      <div class="button-row"><button id="tts-refresh" class="secondary" type="button" data-i18n="tts_refresh">Load voices</button><button id="tts-more" class="quiet" type="button" data-i18n="tts_more" hidden>More voices</button></div>
+      <div id="tts-api-controls" hidden><p class="hint" data-i18n="tts_key_hint"></p><p id="tts-key-state" class="hint"></p><div class="button-row"><button id="tts-key-edit" class="secondary" type="button" data-i18n="voice_key_edit">Set API key</button><button id="tts-key-remove" class="quiet" type="button" data-i18n="voice_key_remove">Remove key</button></div></div>
+      <div class="button-row"><button id="tts-preview" class="secondary" type="button" data-i18n="tts_preview">Preview voice</button><button id="tts-stop-settings" class="quiet" type="button" data-i18n="tts_stop">Stop reading</button></div>
+      <p id="tts-status" class="hint" role="status"></p>
     </section>
     <section class="card preference-card"><h2 data-i18n="connections_title">Agent accounts and providers</h2><p class="hint" data-i18n="connections_hint">View connections and versions, choose providers, and enter supported API keys here.</p><button id="agent-connections-open" type="button" class="secondary" data-i18n="connections_manage">Manage connections</button></section>
     <section id="browser-preference" class="card preference-card" hidden>

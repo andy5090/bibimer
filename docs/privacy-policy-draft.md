@@ -5,7 +5,7 @@
 - 앱: BIBIMER (`app.bibimer`)
 - 운영 주체: 앤디니어링 (Andineering)
 - 개인정보 문의: https://bibimer.app/ko/contact/ (대체 이메일: andy@andineering.com)
-- 시행일: 2026-11-03
+- 시행일: 2026-11-04
 
 2026-10-11 운영 주체·지원 이메일·13세 이상 대상 연령을 사용자에게 확인하고 [영어 웹 정책](../release/website/public/privacy/index.html)과 [한국어 웹 정책](../release/website/public/ko/privacy/index.html)을 Cloudflare Pages에 게시했다. 공개 주소는 영어 https://bibimer.app/privacy/, 한국어 https://bibimer.app/ko/privacy/ 이며 언어 전환으로 같은 정책의 다른 언어 페이지를 연다. 이 Markdown 파일은 작업 근거 문서이며 공개 정책은 웹 페이지를 기준으로 한다. `bibimer.app`은 사용자 구매 지시 후 Cloudflare에 1년 등록·연결했다. 앱 Settings의 정책 열기 버튼을 캡처용 APK에 포함했고 에뮬레이터에서 외부 Chrome 실행을 확인했다. Chrome 최초 실행 약관 단계 이후의 페이지 로드와 실기기 확인은 남았다.
 
@@ -22,6 +22,14 @@ BIBIMER는 같은 Android 휴대폰의 Termux에서 프로젝트와 사용자가
 다른 에이전트로 대화를 전달하는 경우 사용자가 미리보기를 확인·편집하고 전송한 맥락과 다음 지시가 대상 에이전트로 전달된다. 전달 본문은 대상 에이전트의 기록에 남을 수 있다.
 
 Termux 및 개발 도구 설치, 패키지 저장소 접속, 외부 안내 링크를 열 때 해당 배포처·웹사이트가 요청을 처리한다. 사용자는 외부 서비스의 개인정보처리방침과 설정을 확인할 수 있다.
+
+## 선택적 음성 입력·답변 읽기 (0.37.0 내부 테스트)
+
+사용자가 선택한 API 음성 입력은 녹음 전 권한을 요청하고 전송 확인 후 OpenAI/ElevenLabs에 오디오를 보낸다. TTS는 기본 꺼짐이며 Android TTS/ElevenLabs를 선택한다. 외부 TTS와 미리듣기는 읽을 텍스트만 ElevenLabs에 전송한다. 기기 음성 앱/Android TTS도 네트워크를 사용할 수 있다. 요약은 기기 내 핵심 문장 추출이며 별도 모델을 호출하지 않는다. 제공자 요금·보관 정책을 안내하고 실패 후 제공자를 자동 전환하지 않는다.
+
+제공자별 키는 Android Keystore 암호화 설정으로 보관하며 앱 설정에서 삭제한다. 키·오디오·요약은 브리지나 일반 로그에 저장하지 않는다. 앱 전용 임시 녹음/MP3는 완료·취소·실패 및 다음 시작의 잔여 정리로 삭제한다. 인식 결과는 초안에만 넣으며 사용자가 이후 보낸 텍스트는 기존 대화 저장을 따른다. 공개10언어 정책에 동일한 범위를 추가했다.
+
+Google 공식 Data safety 문서상 내부 테스트 트랙은 데이터 보안 섹션 포함에서 제외된다. 이번 내부 배포는 프로덕션 신고를 바꾸지 않으며 공개/폐쇄/공개테스트 승격 전에는 선택적 voice_or_sound_recordings 수집(기능 제공 목적, 제공자 보관을 고려해 ephemeral로 단정하지 않음)과 텍스트 처리를 재검토·신고해야 한다. 근거: https://support.google.com/googleplay/android-developer/answer/10787469?hl=en .
 
 ## GitHub 연결과 파일 열기
 

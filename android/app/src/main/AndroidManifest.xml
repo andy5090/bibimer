@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="app.bibimer" android:versionCode="60" android:versionName="0.36.0">
+    package="app.bibimer" android:versionCode="61" android:versionName="0.37.0">
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="com.termux.permission.RUN_COMMAND" />
-    <queries><package android:name="com.termux" /><package android:name="com.termux.x11" /><package android:name="com.android.vending" /></queries>
+    <queries><intent><action android:name="android.intent.action.TTS_SERVICE" /></intent><intent><action android:name="android.speech.action.RECOGNIZE_SPEECH" /></intent><package android:name="com.termux" /><package android:name="com.termux.x11" /><package android:name="com.android.vending" /></queries>
     <application android:label="BIBIMER" android:icon="@mipmap/ic_launcher"
         android:theme="@style/AppTheme" android:allowBackup="false"
         android:fullBackupContent="false" android:supportsRtl="true"

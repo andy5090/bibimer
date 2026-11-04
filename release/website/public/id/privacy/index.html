@@ -81,7 +81,7 @@
       <dt>Aplikasi</dt><dd>Bibimer (app.bibimer)</dd>
       <dt>Pengelola</dt><dd>Andineering</dd>
       <dt>Kontak</dt><dd><a href="mailto:andy@andineering.com">andy@andineering.com</a></dd>
-      <dt>Tanggal berlaku</dt><dd>3 November 2026</dd>
+      <dt>Tanggal berlaku</dt><dd>4 November 2026</dd>
     </dl>
     <h3>1. Tujuan dan informasi yang diproses</h3>
     <p>Bibimer adalah lingkungan pengembangan dengan agen (ADE) seluler untuk mengelola proyek dan sesi agen pemrograman di Termux pada ponsel Android yang sama. Bibimer memproses nama proyek dan jalur folder, pengenal dan pengaturan sesi, instruksi, respons, keluaran terminal dan alat, serta berkas yang Anda pilih untuk digunakan. Informasi ini digunakan untuk menampilkan proyek dan sesi Anda, mengirim instruksi Anda, menampilkan hasil, dan menyediakan fitur yang Anda minta.</p>
@@ -90,6 +90,10 @@
     <h3>2. Agen pemrograman dan layanan eksternal</h3>
     <p>Saat Anda mengirim instruksi, agen yang Anda pilih dapat mengirim prompt, kode, berkas, konteks percakapan, dan permintaan alat ke penyedia AI serta layanan lain yang dikonfigurasi. Pemrosesan dan penyimpanan bergantung pada agen, penyedia, akun, izin, dan pengaturan yang Anda gunakan. Koneksi bridge lokal tidak berarti pemrosesan AI tetap berada di perangkat Anda.</p>
     <p>Jika Anda memilih melanjutkan percakapan dengan agen lain, konteks yang Anda tinjau dan kirim akan diteruskan ke agen tersebut dan dapat disimpan dalam catatannya. Termux, repositori paket, alat pengembangan, dan situs web eksternal juga menangani permintaan saat Anda menginstal alat atau membuka tautannya. Periksa kebijakan layanan yang Anda pilih.</p>
+    <div id="voice-privacy">
+    <p>Fitur suara opsional memakai aplikasi perangkat atau penyedia API pilihan Anda. Untuk input API, Anda merekam lalu mengonfirmasi sebelum mengirim audio ke OpenAI atau ElevenLabs untuk transkripsi. Pembacaan default mati; jika diaktifkan, Android TTS atau ElevenLabs membacakan jawaban atau ringkasan terpilih. Pembacaan eksternal dan pratinjau mengirim teks ke ElevenLabs. Aplikasi suara perangkat dan Android TTS juga dapat memakai jaringan. Biaya dan kebijakan penyimpanan penyedia berlaku; tidak ada pergantian penyedia otomatis setelah gagal.</p>
+    <p>Kunci API suara dienkripsi dengan Android Keystore di ponsel ini dan dapat dihapus di Pengaturan. Kunci, rekaman, dan audio sintetis tidak dikirim ke Termux atau server Bibimer maupun disimpan di log umum. File sementara pribadi untuk rekaman dan pemutaran dihapus setelah selesai, dibatalkan, atau gagal; sisa akibat aplikasi berhenti mendadak dibersihkan saat dibuka kembali. Ringkasan mengekstrak kalimat inti di perangkat tanpa permintaan model tambahan. Transkrip masuk ke draf dan tidak dikirim otomatis ke chat; teks yang kemudian Anda kirim mengikuti aturan penyimpanan percakapan biasa.</p>
+    </div>
     <h3>3. GitHub dan membuka berkas</h3>
     <p>Impor GitHub menggunakan GitHub CLI di Termux untuk melakukan autentikasi, menampilkan daftar repositori yang dapat Anda akses, dan mengkloning repositori yang Anda pilih. GitHub CLI mengelola kredensialnya di Termux. Bibimer menampilkan status akun, informasi repositori, dan kode masuk sementara saat diperlukan; token autentikasi tidak dikirim ke WebView atau log biasa. Berkas hasil kloning tetap berada di folder yang Anda pilih.</p>
     <p>Saat Anda memilih membuka berkas proyek atau berkas dari folder Download di aplikasi Android lain, Bibimer membuat salinan sementara dalam cache pribadinya dan memberikan akses baca sementara kepada penampil yang dipilih. Penampil kemudian memproses berkas sesuai praktiknya sendiri. Mengedit salinan tersebut tidak mengubah berkas proyek asli. Salinan cache memiliki batas ukuran dan masa berlaku, serta dibersihkan saat aplikasi digunakan kembali atau koneksi diputus.</p>

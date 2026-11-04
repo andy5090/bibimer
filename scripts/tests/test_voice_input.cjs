@@ -58,3 +58,17 @@ assert.ok(html.indexOf('id="voice-input"')<html.indexOf('id="input"'));
 assert.ok(html.includes('id="voice-input" class="voice-input" type="button"'));
 assert.ok(html.indexOf('src="voice-input.js"')<html.indexOf('src="app.js"'));
 console.log("PASS voice input: insertion/selection, draft isolation, edit-and-revert, duplicate callbacks, cancellation, unavailable provider, native failure, disabled input, literal text and composer integration");
+
+// External recording/upload is canceled when its captured draft can no longer be used.
+for (const mutate of [x=>x.context("other"), x=>{x.input.disabled=true;}, x=>x.input.dispatchEvent({type:"input"})]) {
+  const cancelled=[];
+  x=setup({startVoiceInput:id=>{},cancelVoiceInput:id=>cancelled.push(id)});
+  x.voice.start();const id=x.voice.pending.id;mutate(x);x.voice.update();x.voice.update();
+  assert.deepEqual(cancelled,[id],"Cancel stale native capture exactly once");
+  x.voice.result(id,"ok","late text");assert.equal(x.input.value,"기존 초안");
+}
+for(const status of ["voice_key_required","voice_permission","voice_auth","voice_forbidden","voice_limit","voice_empty"]) {
+  x=setup();x.voice.start();x.voice.result(x.calls[0],status,"");assert.equal(x.status.textContent,status);
+  assert.equal(x.input.value,"기존 초안");
+}
+console.log("PASS voice input: external cancellation on edit/context/disabled input, late result isolation and specific API/permission errors");

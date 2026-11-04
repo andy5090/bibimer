@@ -38,11 +38,10 @@ public final class MainActivity extends Activity {
     private static final String ASSET_HOST = "appassets.androidplatform.net";
     private static final String PAGE = "https://" + ASSET_HOST + "/index.html";
     private static final int EXPORT_INSTALLER = 10;
-    private static final int VOICE_INPUT = 11;
-    private String voiceRequest;
-    private long voiceEpoch;
+    private VoiceInputController voice;
+    private SpeechOutputController speech;
     private static final Set<String> ASSETS = new HashSet<>(Arrays.asList(
-        "index.html", "app.js", "voice-input.js", "browser-consent.js", "commands.js", "select.js", "sidebar.js", "inspector.js", "file-viewer.js", "github.js", "agent-connections.js", "worktree-create.js", "bridge-maintenance.js", "app.css", "i18n.js", "i18n-pt-BR.js", "i18n-es.js", "i18n-id.js", "i18n-zh-Hans.js", "i18n-ja.js", "i18n-zh-Hant.js", "i18n-fr.js", "i18n-de.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/mermaid.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
+        "index.html", "app.js", "voice-input.js", "speech-output.js", "browser-consent.js", "commands.js", "select.js", "sidebar.js", "inspector.js", "file-viewer.js", "github.js", "agent-connections.js", "worktree-create.js", "bridge-maintenance.js", "app.css", "i18n.js", "i18n-pt-BR.js", "i18n-es.js", "i18n-id.js", "i18n-zh-Hans.js", "i18n-ja.js", "i18n-zh-Hant.js", "i18n-fr.js", "i18n-de.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/mermaid.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
     private final ExecutorService actions = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<Runnable>(128));
     private final ExecutorService events = Executors.newSingleThreadExecutor();
@@ -97,6 +96,8 @@ public final class MainActivity extends Activity {
     private synchronized boolean changeDemoMode(boolean enabled, String code) {
         if (enabled == DemoMode.enabled(this)) return true;
         if (enabled && (!normalDrafts.ready() || !ReviewAccess.verify(ReviewAccessConfig.DIGEST, code))) return false;
+        if (voice != null) voice.stop();
+        if (speech != null) speech.pause();
         if (appUpdates != null) appUpdates.invalidate();
         if (bridge != null) bridge.cancelPoll();
         fileEpoch.incrementAndGet(); ResponseNotifications.stop(this, false);
@@ -132,6 +133,15 @@ public final class MainActivity extends Activity {
         language = new AppLanguage(this);
         agentPreferences = new AgentPreferences(this);
         inputPreferences = new InputPreferences(this);
+        voice = new VoiceInputController(this, new VoiceInputController.Listener() {
+            public boolean current(long epoch) { return !destroyed && epoch == DemoMode.epoch() && !DemoMode.enabled(MainActivity.this); }
+            public void result(String id, String status, String text, long epoch) { voiceResult(id, status, text, epoch); }
+            public void changed(String status) { script("window.BibimerVoiceSettingsChanged && window.BibimerVoiceSettingsChanged(" + JSONObject.quote(status) + ");"); }
+        });
+        speech = new SpeechOutputController(this, new SpeechOutputController.Listener() {
+            public boolean current(long epoch) { return !destroyed && epoch == DemoMode.epoch() && !DemoMode.enabled(MainActivity.this); }
+            public void changed(String status) { script("window.BibimerSpeechOutputChanged && window.BibimerSpeechOutputChanged(" + JSONObject.quote(status) + ");"); }
+        });
         projectLocations = new ProjectLocations(this);
         appUpdates = new AppUpdates(this, () -> script("window.BibimerAppUpdateStatus && window.BibimerAppUpdateStatus();"));
         bridge = new LocalBridge(tokens);
@@ -245,25 +255,41 @@ public final class MainActivity extends Activity {
         private boolean requestCurrent(boolean demo, long epoch) {
             return !destroyed && demo == DemoMode.enabled(MainActivity.this) && epoch == DemoMode.epoch();
         }
-        @JavascriptInterface public void startVoiceInput(String id) {
+        @JavascriptInterface public void startVoiceInput(String id, String labels) {
             if (id == null || !id.matches("[a-zA-Z0-9-]{1,100}")) return;
             final long epoch = DemoMode.epoch();
             runOnUiThread(() -> {
                 if (destroyed || epoch != DemoMode.epoch()) return;
-                if (!resumed || voiceRequest != null) { voiceResult(id, "failed", "", epoch); return; }
-                voiceRequest = id; voiceEpoch = epoch;
-                Intent intent = new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-                    .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    .putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS, 1);
-                // The installed recognizer owns the speech language and offline/network choice.
-                // No audio, transcript, credentials or request is sent to Termux.
-                try { startActivityForResult(intent, VOICE_INPUT); }
-                catch (android.content.ActivityNotFoundException unavailable) {
-                    voiceRequest = null; voiceResult(id, "unavailable", "", epoch);
-                } catch (Exception failure) {
-                    voiceRequest = null; voiceResult(id, "failed", "", epoch);
-                }
+                if (!resumed) { voiceResult(id, "failed", "", epoch); return; }
+                speech.stop();
+                voice.start(id, labels);
             });
+        }
+        @JavascriptInterface public void cancelVoiceInput(String id) { runOnUiThread(() -> voice.cancelRequest(id)); }
+        @JavascriptInterface public boolean configureVoiceInput(String provider, String language) { return voice.configure(provider, language); }
+        @JavascriptInterface public void voiceKeyAction(String provider, String action, String labels) {
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> {
+                if (!requestCurrent(false, epoch) || !resumed) return;
+                if ("edit".equals(action)) voice.editKey(provider, labels);
+                else if ("remove".equals(action)) voice.removeKey(provider);
+                else if ("check".equals(action)) voice.check(provider);
+            });
+        }
+        @JavascriptInterface public boolean configureSpeechOutput(String json) { return speech.configure(json); }
+        @JavascriptInterface public void setSpeechContext(String context) { runOnUiThread(() -> { if (!destroyed) speech.context(context); }); }
+        @JavascriptInterface public void stopSpeechOutput() { runOnUiThread(() -> { if (!destroyed) speech.stop(); }); }
+        @JavascriptInterface public void readSpeechOutput(String source, String text, boolean preview) {
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> { if (requestCurrent(false, epoch) && resumed && source != null && !voice.active()) speech.read(source, text, preview); });
+        }
+        @JavascriptInterface public void refreshSpeechVoices(boolean more) {
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> { if (requestCurrent(false, epoch) && resumed) speech.refresh(more); });
+        }
+        @JavascriptInterface public void speechKeyAction(String provider, String action, String labels) {
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> { if (requestCurrent(false, epoch) && resumed) speech.keyAction(provider, action, labels); });
         }
         @JavascriptInterface public void setBackHandling(boolean enabled) {
             runOnUiThread(() -> backHandling(enabled));
@@ -285,6 +311,8 @@ public final class MainActivity extends Activity {
                     .put("enterBehavior", inputPreferences.getEnterBehavior())
                     .put("responseDelivery", inputPreferences.getResponseDelivery())
                     .put("contextDisplay", inputPreferences.getContextDisplay())
+                    .put("voiceInput", DemoMode.enabled(MainActivity.this) ? new JSONObject() : voice.state())
+                    .put("speechOutput", DemoMode.enabled(MainActivity.this) ? new JSONObject() : speech.state())
                     .put("lastProjectParent", projectLocations.parent())
                     .put("lastProjectFolder", projectLocations.folder())
                     .put("appUpdate", appUpdates.status())
@@ -651,6 +679,7 @@ public final class MainActivity extends Activity {
 
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
         super.onRequestPermissionsResult(request, permissions, grants);
+        if (request == VoiceInputController.PERMISSION_REQUEST) voice.permissionResult();
         if (request == ResponseNotifications.PERMISSION_REQUEST) ensureNotifications(false);
         if (request == BridgeMaintenance.REQUEST_PERMISSION) bridgeMaintenance.permissionResult(this);
         if (request == TermuxAgentActions.REQUEST_PERMISSION) agentActions.permissionResult();
@@ -669,20 +698,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
-        if (request == VOICE_INPUT) {
-            String id = voiceRequest; voiceRequest = null;
-            if (id == null) return;
-            String text = "", status = result == RESULT_CANCELED ? "cancelled" : "failed";
-            try {
-                if (result == RESULT_OK && data != null) {
-                    java.util.ArrayList<String> results = data.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS);
-                    if (results != null && !results.isEmpty() && results.get(0) != null) text = results.get(0).trim();
-                    status = text.isEmpty() ? "empty" : text.length() > 65536 ? "failed" : "ok";
-                }
-            } catch (Exception invalidResult) { status = "failed"; }
-            voiceResult(id, status, "ok".equals(status) ? text : "", voiceEpoch);
-            return;
-        }
+        if (request == VoiceInputController.DEVICE_REQUEST) { voice.activityResult(result, data); return; }
         if (request == EXPORT_INSTALLER && result == RESULT_OK && data != null && data.getData() != null) {
             if (DemoMode.enabled(this)) return;
             Uri target = data.getData();
@@ -708,6 +724,8 @@ public final class MainActivity extends Activity {
 
     @Override protected void onStop() {
         stopped = true;
+        if (voice != null) voice.stop();
+        if (speech != null) speech.pause();
         script("window.BibimerPause && window.BibimerPause();");
         bridge.cancelPoll();
         super.onStop();
@@ -752,6 +770,8 @@ public final class MainActivity extends Activity {
     @Override protected void onDestroy() {
         backHandling(false);
         destroyed = true;
+        if (voice != null) voice.close();
+        if (speech != null) speech.close();
         appUpdates.close();
         bridge.cancelPoll();
         actions.shutdownNow();

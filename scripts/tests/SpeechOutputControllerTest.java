@@ -1,0 +1,40 @@
+package app.bibimer;
+import android.app.*;import android.os.*;import android.media.*;import android.speech.tts.*;import java.io.*;import java.net.*;import java.nio.file.*;import java.nio.charset.StandardCharsets;import java.util.concurrent.*;import org.json.*;
+public final class SpeechOutputControllerTest{
+ static void check(boolean b){if(!b)throw new AssertionError();}
+ static class Sink implements SpeechOutputController.Listener{volatile String status;public boolean current(long e){return e==DemoMode.serial&&!DemoMode.demo;}public void changed(String s){status=s;}}
+ static int requests;
+ static class Connection extends HttpURLConnection{
+  Connection(URL u){super(u);}public void connect(){}public boolean usingProxy(){return false;}public void disconnect(){}public OutputStream getOutputStream(){requests++;return new ByteArrayOutputStream();}public int getResponseCode(){return 200;}public String getContentType(){return "audio/mpeg";}public InputStream getInputStream(){return new ByteArrayInputStream(getURL().getPath().equals("/v2/voices")?"{\"voices\":[{\"voice_id\":\"voice123\",\"name\":\"Test voice\"}]}".getBytes(StandardCharsets.UTF_8):new byte[]{'I','D','3',1});}
+ }
+ static void await(SpeechOutputController c)throws Exception{for(int i=0;i<100;i++){if(MediaPlayer.last!=null&&MediaPlayer.last.playing)return;Thread.sleep(10);}throw new AssertionError("Playback never started");}
+ public static void main(String[] args)throws Exception{
+  Activity a=new Activity();a.cache=Files.createTempDirectory("tts-native").toFile();Sink sink=new Sink();SpeechOutputController c=new SpeechOutputController(a,sink,new SpeechOutputApi(url->new Connection(url)));
+  try{
+   check(!c.state().getBoolean("enabled"));check(TextToSpeech.creates==0&&requests==0);
+   c.context("chat");c.read("chat","do not read",false);check(TextToSpeech.creates==0);
+   check(c.configure("{\"enabled\":true}"));check(TextToSpeech.creates==0);
+   c.read("chat","answer",false);Handler.drain();check(TextToSpeech.spoken.size()==1);check(c.state().getBoolean("reading"));
+   TextToSpeech.last.done();check(!c.state().getBoolean("reading"));check(AudioManager.requests==AudioManager.abandons);
+   int before=TextToSpeech.spoken.size();c.read("other","wrong context",false);check(TextToSpeech.spoken.size()==before);
+   check(c.configure("{\"mode\":\"summary\"}"));c.read("chat",String.join(" ",java.util.Collections.nCopies(50,"The project validation passed.")),false);
+   check(TextToSpeech.spoken.get(TextToSpeech.spoken.size()-1).length()<=700);c.context("settings");check(!c.state().getBoolean("reading"));
+   check(c.configure("{\"enabled\":false,\"mode\":\"full\"}"));c.read("settings","preview",true);check(c.state().getBoolean("reading"));c.pause();check(!c.state().getBoolean("reading"));
+   check(!c.configure("{\"voice\":\"not-real\"}"));check(c.configure("{\"voice\":\"local\"}"));
+   c.refresh(false);JSONArray voices=c.state().getJSONArray("voices");check(voices.length()==3);boolean missing=false;for(int i=0;i<voices.length();i++)if(voices.getJSONObject(i).getString("id").equals("missing"))missing=voices.getJSONObject(i).getBoolean("disabled");check(missing);
+   c.read("settings",String.join("",java.util.Collections.nCopies(4500,"x")),true);check(c.state().getBoolean("reading"));
+   int count=TextToSpeech.spoken.size();TextToSpeech.last.done();check(TextToSpeech.spoken.size()==count+1);TextToSpeech.last.done();TextToSpeech.last.done();check(!c.state().getBoolean("reading"));
+   c.read("settings","interrupt",true);AudioManager.listener.onAudioFocusChange(-1);check(!c.state().getBoolean("reading"));
+   check(c.configure("{\"engine\":\"missing.engine\"}"));int creations=TextToSpeech.creates;c.refresh(false);check(TextToSpeech.creates==creations&&sink.status.equals("tts_unavailable"));
+   check(!c.configure("{\"provider\":\"openai\"}"));check(c.configure("{\"provider\":\"elevenlabs\"}"));c.read("settings","missing-key",true);check(sink.status.equals("voice_key_required")&&requests==0);
+   TokenStore.keys.put("tts_elevenlabs","test-only");c.refresh(false);for(int i=0;i<100&&c.state().getBoolean("busy");i++)Thread.sleep(10);check(c.configure("{\"voice\":\"voice123\"}"));c.read("settings","external",true);await(c);check(requests==1);check(a.cache.list().length==1);MediaPlayer.last.done();check(a.cache.list().length==0&&!c.state().getBoolean("reading"));
+   c.read("settings","cancel external",true);c.pause();Thread.sleep(100);check(a.cache.list().length==0&&!c.state().getBoolean("reading"));
+   DemoMode.demo=true;check(!c.configure("{\"enabled\":true}"));c.read("settings","demo",true);check(!c.state().getBoolean("reading"));DemoMode.demo=false;
+   check(!c.state().toString().contains("test-only"));c.keyAction("elevenlabs","remove","{}");check(!c.state().getBoolean("elevenlabsKey"));
+   a.getSharedPreferences("speech_output",0).edit().putString("provider","openai").putBoolean("enabled",true).commit();
+   SpeechOutputController migrated=new SpeechOutputController(a,sink,new SpeechOutputApi(url->new Connection(url)));
+   check(!migrated.state().getBoolean("enabled")&&migrated.state().getString("provider").equals("android"));migrated.close();
+  }finally{c.close();for(File file:a.cache.listFiles())file.delete();a.cache.delete();}
+  System.out.println("PASS native TTS lifecycle: off/no startup calls, foreground context, local summary, engine/voice validation, chunk sequencing, focus loss, preview, external playback/cancellation cleanup and demo/key isolation");
+ }
+}

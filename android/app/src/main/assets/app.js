@@ -64,7 +64,7 @@
       select.id === "project-switch" ? knownProjects.find(item => item.id === option.value)?.path || "" :
       select.id === "enter-behavior" ? t("enter_" + option.value + "_hint") :
       select.id === "context-display" ? t("context_display_" + option.value + "_hint") : option.dataset.description || "",
-    context: select => ["language", "enter-behavior", "context-display", "browser-agent-tools"].includes(select.id) ? "app" :
+    context: select => ["language", "enter-behavior", "context-display", "browser-agent-tools", "voice-provider", "voice-language", "tts-provider", "tts-mode", "tts-engine", "tts-voice"].includes(select.id) ? "app" :
       select.id === "project-switch" ? "projects/" + projectKey() :
       select.id.startsWith("worktree-") ? [instance, select.dataset.context].join("/") :
       select.id.startsWith("import-") ? [projectKey(), importProject, $("import-agent").value].join("/") :
@@ -154,6 +154,15 @@
     () => JSON.stringify([instance, projectKey(), viewKey(), selectedAgent,
       session?.project?.path || draftPath || project?.path, session?.mode || $("mode").value, currentTab]),
     native);
+  const voiceSettings = new BibimerVoiceSettings(t, native, environment, () => pickers.sync());
+  window.BibimerVoiceSettingsChanged = status => voiceSettings.changed(status);
+  document.getElementById("voice-provider").addEventListener("focus", () => voiceSettings.render());
+  const speechOutput = new BibimerSpeechOutput(t, native, environment, () => ({
+    context:JSON.stringify([instance, projectKey(), session?.id, session?.mode, currentTab]),
+    completionKey:JSON.stringify([instance, projectKey(), session?.id]),
+    eligible:!demo && !paused && online && currentTab === "work" && session?.mode === "chat"
+  }), () => pickers.sync());
+  window.BibimerSpeechOutputChanged = status => speechOutput.changed(status);
   window.BibimerVoiceResult = (id, status, text) => voiceInput.result(id, status, text);
 
   function environment() {
@@ -893,6 +902,8 @@
   }
   function renderLanguage() {
     i18n.apply();
+    voiceSettings.render();
+    speechOutput.render();
     $("language").value = languagePreference;
     $("language-hint").textContent = t(languagePreference === "system" ? "language_system_hint" : "language_hint");
     renderInputPreferences();
@@ -912,6 +923,8 @@
     pickers.close();
     sidebar.close();
     currentTab = name;
+    if (name === "settings") { voiceSettings.render(); speechOutput.render(); pickers.sync(); }
+    speechOutput.syncContext();
     voiceInput.update();
     browserConsent.render();
     if (name === "work") void browserConsent.refresh();
@@ -1238,6 +1251,7 @@
       !online || !session || session.kind === "browser" || session.state !== "running" || (isChat() && !session.ready);
     $("input-form").hidden = !chatDisplay;
     voiceInput.update();
+    speechOutput.syncContext();
     const responding = isChat() && !["ready", "failed"].includes(session.turn_state);
     renderSendAction();
     $("delivery-warning").hidden = !isChat() || !responding || canQueue;
@@ -1432,7 +1446,7 @@
         conversation.clear(true);
         notice("output_gap");
       }
-      if (event.items) { rememberView(); conversation.update(event); restoreQuestions(event); }
+      if (event.items) { rememberView(); conversation.update(event); restoreQuestions(event); speechOutput.observe(event, conversation.items.values(), cursor === 0); }
       if (event.data) {
         const bytes = Uint8Array.from(atob(event.data), c => c.charCodeAt(0));
         await new Promise(resolve => term.write(bytes, resolve));
@@ -2270,7 +2284,7 @@
     $("terminal-functions-toggle").setAttribute("aria-expanded", String(!panel.hidden));
     if (!panel.hidden) $("terminal-keys").scrollIntoView({block: "nearest"});
   });
-  window.BibimerPause = () => { agentConnections.pause(); pickers.close(); paused = true; browserConsent.render(); updateTerminalKeys(); ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
+  window.BibimerPause = () => { native.stopSpeechOutput?.(); agentConnections.pause(); pickers.close(); paused = true; browserConsent.render(); updateTerminalKeys(); ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
   $("language").addEventListener("change", () => {
     try {
       if (!native.setLanguage($("language").value)) throw new Error();

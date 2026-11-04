@@ -18,7 +18,7 @@ function fixture() {
     key:draft,viewKey:()=>ctx.key,projectKey:()=>ctx.project.id,uuid:()=>"request-"+(++identity),clearTimeout(){},
     savedOptions:()=>({permission:"read-only",model:"native-model",effort:"high"}),
     rememberView:()=>ctx.views.set(ctx.key,{text:fields.input.value,start:0,end:fields.input.value.length}),
-    renderSession(){},resizeInput(){},resize(){},startPoll(){},cacheSession(){},agentConnections:{render(){}},
+    renderSession(){},resizeInput(){},resize(){},startPoll(){},cacheSession(){},agentConnections:{render(){}},speechOutput:{syncContext(){}},
     setSession:value=>{ctx.session=value;ctx.key="project/"+value.id;fields.input.value=ctx.views.get(ctx.key)?.text || "";},
     notice:(key,suffix)=>ctx.lastNotice={key,suffix},isChat:()=>ctx.session?.mode==="chat",supportsChat:()=>true,updateMode(){},
     selectSession:async(...args)=>ctx.selection=args,
