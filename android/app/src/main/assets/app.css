@@ -630,6 +630,8 @@ input.settings-switch:disabled { opacity:.4; cursor:default; }
 /* Voice input stays inside the left edge of the composer. */
 .composer .voice-input{flex:none;display:flex;align-items:center;justify-content:center;width:28px;min-height:28px;padding:5px;border:0;border-radius:8px;color:var(--muted);background:transparent}
 .composer .voice-input svg{width:18px;height:18px}
+.composer:has(>.voice-input:not([hidden])){column-gap:2px}
+.composer .voice-input:not([hidden])+textarea{padding-inline-start:2px}
 .composer .voice-input:focus-visible{outline:2px solid var(--green);outline-offset:-2px}
 .composer .voice-input[aria-busy="true"]{color:var(--green);background:#1d2a27}
 .composer textarea{min-width:0}
@@ -642,6 +644,10 @@ input.settings-switch:disabled { opacity:.4; cursor:default; }
 .speech-playback{display:flex;align-items:center;justify-content:flex-end;gap:4px;flex:none;margin-bottom:4px;flex-wrap:wrap;font-size:10px;color:var(--muted)}
 .speech-playback span{flex:1;min-width:0;overflow-wrap:anywhere}.speech-playback button{min-height:28px;padding:3px 7px;font-size:10px}
 #workspace.project-editing .speech-playback{display:none}#tts-preference .preference-row .select-control{flex:1 1 160px;min-width:0}
+#tts-settings,#tts-api-controls{display:flex;flex-direction:column;gap:8px}
+#tts-settings>*,#tts-api-controls>*{margin-block:0}
+#tts-settings .button-row{gap:8px}
+#voice-api-controls .button-row>button,#tts-settings .button-row>button{border:1px solid var(--line)}
 
 /* Settings and setup are secondary pages; Work owns the full remaining height. */
 #page-back { flex:none; }
