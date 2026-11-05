@@ -4,6 +4,7 @@ import android.app.*;
 import android.content.*;
 import android.media.*;
 import android.os.*;
+import android.provider.Settings;
 import android.speech.tts.*;
 import android.text.InputType;
 import android.view.WindowManager;
@@ -169,6 +170,12 @@ final class SpeechOutputController {
         next();
     }
     private boolean currentRead(){return reading&&readGeneration==generation&&listener.current(readEpoch)&&readContext.equals(context);}
+    private float systemSpeechValue(String key){
+        try{
+            int value=Settings.Secure.getInt(activity.getContentResolver(),key,100);
+            return value>0?value/100.0f:1.0f;
+        }catch(SecurityException unavailable){return 1.0f;}
+    }
     private AudioAttributes attributes(){return new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();}
     private boolean takeFocus(){
         if(focusHeld)return true;
@@ -186,6 +193,9 @@ final class SpeechOutputController {
             if(selected.isEmpty())set=androidTts.setLanguage(Locale.forLanguageTag(new AppLanguage(activity).get()))>=0;
             else{Set<Voice> list=androidTts.getVoices();if(list!=null)for(Voice v:list)if(v.getName().equals(selected)&&!(v.getFeatures()!=null&&v.getFeatures().contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED)))set=androidTts.setVoice(v)==TextToSpeech.SUCCESS;}
             if(!set){fail("tts_unavailable");return;}
+            // Refresh for each utterance, including previews and chunks after a settings change.
+            if(androidTts.setSpeechRate(systemSpeechValue(Settings.Secure.TTS_DEFAULT_RATE))==TextToSpeech.ERROR
+                    ||androidTts.setPitch(systemSpeechValue(Settings.Secure.TTS_DEFAULT_PITCH))==TextToSpeech.ERROR){fail("tts_failed");return;}
             signal("tts_playing");if(androidTts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"tts-"+serial+"-"+part)==TextToSpeech.ERROR)fail("tts_failed");return;
         }
         signal("tts_loading");final String p=provider(),secret=eleven.get(),v=voice();
