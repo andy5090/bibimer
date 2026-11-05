@@ -1,5 +1,11 @@
 # Bibimer 다음 세션 시작점
 
+## Android0.38.2(64) 내부 테스트 배포 완료 (2026-11-05)
+
+- **2026-11-05 12:55 Asia/Seoul**, 답변별 재생·정지 아이콘과 미리듣기 단일 버튼을 포함한64번을 기존 내부 트랙에 게시했다. 새로고침 후 **활성 / 내부 테스터에게 제공됨**,64만 포함·63제외를 확인했다. 한/영 노트2/2(492/267자)·오류0·기존 매핑 경고1·7개 기기 유형 지원 변화0이다. 정식 제출63·기존 테스터·데이터 보안/웹사이트·사용자 브리지/세션은 변경하지 않았다.
+- 소스 `32cea4b`의 기기 TTS 속도·피치 갱신을 함께 반영한 기존 업로드 키 서명 AAB `dist/play/bibimer-0.38.2-64-release.aab`, **3,432,071bytes**, SHA-256 `5b2fa5d20bad81a91d5c231e6fb65f937461866aec136f48f89de545437cd295`. 실제 Java/D8·bundletool·기존 인증서·58assets 원본·답변 아이콘/이전 버튼 제거·readSpeechMessage/답변ID/컨텍스트 DEX·TTS OpenAI 경로 제외·심사 digest/비밀 원문 미포함·내장 브리지0.24.1의6payload/격리 설치0700 검증.15개 Node·4개 STT/TTS 모의 네이티브/API·빌드/SDK17개·914키×10언어 검사 통과.
+- 증빙 `dist/play-0.38.2/`의 notes/review-warning/device-support/review-bundle/only-64/review-notes/confirmation/published/published-refreshed.png 및 published.json. 빌드/검증 `.tools/aab-0.38.2-64-{build.log,verify.log,verification.json}`, 검사 `.tools/release-0.38.2-checks.log`. 실제 Play 업데이트 수신/설치·Android WebView/IME/TalkBack·실제 음성/유료 API 검증은 남아 있다. 브리지 업데이트 없이 사용하며 사용자 앱을 자동 설치하거나 브리지/세션을 재시작하지 않았다. 아래 미빌드/내부63 기록은 이번 요청 이전 상태다.
+
 ## 내부64 배포 전 Android TTS 기기 속도·피치 반영 (2026-11-05)
 
 - 내부 배포 작업 중 사용자가 기기 TTS 속도·피치 미반영을 보고했다. 아직 AAB를 업로드하지 않은 상태에서 파일 선택을 취소하고 수정했다. 기존 코드는 엔진 기본 동작에 맡기고 매 발화의 시스템 설정을 명시적으로 갱신하지 않았다. Android 공식 Settings.Secure의 TTS_DEFAULT_RATE/PITCH(100=1.0)를 읽어 매 발화/미리듣기 직전에 적용한다. 다음 청크/재생에 설정 변경을 반영하며 없거나0/음수/권한 거절 시1.0을 사용한다. 시스템 값을 쓰거나 ElevenLabs 속도를 변경하지 않는다. 실제 기기/엔진별 반영은 미검증이다.
