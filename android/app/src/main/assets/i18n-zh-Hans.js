@@ -18,7 +18,7 @@ window.BibimerTranslations["zh-Hans"] = {
   "tts_preview": "试听声音",
   "tts_stop": "停止朗读",
   "tts_sample": "这是 Bibimer 合成语音的试听。",
-  "tts_read_latest": "朗读最新回答",
+  "tts_read_answer": "朗读此回答",
   "tts_android_hint": "使用已安装的 Android TTS 引擎。部分声音需要网络或下载语音数据。不支持的声音不可用。",
   "tts_external_hint": "朗读和试听会将文本发送给所选 API 提供方，可能产生费用，并适用其数据保留政策。不会自动切换提供方。",
   "tts_choose_voice": "请选择声音",

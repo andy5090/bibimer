@@ -91,7 +91,7 @@
       <p id="mode-hint" class="mode-hint"></p>
       <div id="chat-panel" hidden><div id="chat-empty" data-i18n="chat_empty">Send a message to start working with Codex.</div><div id="conversation" role="log" aria-label="Conversation" data-i18n-aria-label="chat_conversation"></div><button id="chat-latest" class="secondary" data-i18n="chat_latest" hidden>Jump to latest ↓</button><div id="chat-requests"></div></div>
       <div id="chat-state" hidden><span id="turn-status" role="status"></span><div class="response-actions"><button id="delivery-help" class="quiet" type="button" aria-label="Message delivery help" data-i18n-aria-label="delivery_help_title" aria-haspopup="dialog" aria-controls="delivery-help-dialog" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg></button><button id="interrupt-turn" class="quiet" data-i18n="chat_interrupt">Interrupt response</button></div></div>
-      <div id="tts-playback" class="speech-playback" hidden><span id="tts-work-status" role="status"></span><button id="tts-read-latest" class="quiet" type="button" data-i18n="tts_read_latest">Read latest answer</button><button id="tts-stop" class="quiet" type="button" data-i18n="tts_stop">Stop reading</button></div>
+      <div id="tts-playback" class="speech-playback" hidden><span id="tts-work-status" role="status"></span></div>
       <div id="terminal-area">
         <div id="terminal" aria-label="Agent terminal output" data-i18n-aria-label="terminal_label"></div>
         <div id="terminal-empty"><span aria-hidden="true">›_</span><strong data-i18n="terminal_ready">Ready when you are</strong><p data-i18n="terminal_intro">Add a project and choose a program to run.</p></div>
@@ -330,7 +330,7 @@
       <div class="preference-row"><label for="tts-voice" data-i18n="tts_voice">Voice</label><select id="tts-voice"></select></div>
       <div class="button-row"><button id="tts-refresh" class="secondary" type="button" data-i18n="tts_refresh">Load voices</button><button id="tts-more" class="quiet" type="button" data-i18n="tts_more" hidden>More voices</button></div>
       <div id="tts-api-controls" hidden><p class="hint" data-i18n="tts_key_hint"></p><p id="tts-key-state" class="hint"></p><div class="button-row"><button id="tts-key-edit" class="secondary" type="button" data-i18n="voice_key_edit">Set API key</button><button id="tts-key-remove" class="quiet" type="button" data-i18n="voice_key_remove">Remove key</button></div></div>
-      <div class="button-row"><button id="tts-preview" class="secondary" type="button" data-i18n="tts_preview">Preview voice</button><button id="tts-stop-settings" class="quiet" type="button" data-i18n="tts_stop">Stop reading</button></div>
+      <div class="button-row"><button id="tts-preview" class="secondary" type="button">Preview voice</button></div>
       </fieldset>
       <p id="tts-status" class="hint" role="status"></p>
     </section>

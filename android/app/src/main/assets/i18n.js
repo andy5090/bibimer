@@ -20,7 +20,7 @@
     tts_preview: ["Preview voice", "음성 미리듣기"],
     tts_stop: ["Stop reading", "읽기 중지"],
     tts_sample: ["This is a preview of Bibimer’s synthesized voice.", "비비머의 합성 음성 미리듣기입니다."],
-    tts_read_latest: ["Read latest answer", "최근 답변 읽기"],
+    tts_read_answer: ["Read this answer aloud", "이 답변 읽기"],
     tts_android_hint: ["Uses an installed Android TTS engine. Some voices need the network or voice data downloads. Unsupported voices are unavailable.", "설치된 Android TTS 엔진을 사용합니다. 일부 음성은 네트워크나 음성 데이터 설치가 필요합니다. 지원되지 않는 음성은 사용할 수 없습니다."],
     tts_external_hint: ["Reading and previews send text to the selected API provider and may incur charges. Its data retention policy applies. No automatic provider fallback.", "읽기와 미리듣기는 텍스트를 선택한 API 제공자에 보내며 요금이 발생할 수 있습니다. 제공자의 데이터 보관 정책이 적용됩니다. 다른 제공자로 자동 전환하지 않습니다."],
     tts_choose_voice: ["Choose a voice", "음성을 선택하세요"],

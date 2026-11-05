@@ -18,7 +18,7 @@ window.BibimerTranslations.de = {
   "tts_preview": "Stimme anhören",
   "tts_stop": "Vorlesen stoppen",
   "tts_sample": "Dies ist eine Vorschau der synthetischen Stimme von Bibimer.",
-  "tts_read_latest": "Letzte Antwort vorlesen",
+  "tts_read_answer": "Diese Antwort vorlesen",
   "tts_android_hint": "Nutzt eine installierte Android-TTS-Engine. Manche Stimmen benötigen Netzwerk oder Sprachdaten. Nicht unterstützte Stimmen sind nicht verfügbar.",
   "tts_external_hint": "Vorlesen und Vorschau senden Text an den gewählten API-Anbieter und können Kosten verursachen. Dessen Aufbewahrungsrichtlinie gilt. Kein automatischer Anbieterwechsel.",
   "tts_choose_voice": "Stimme auswählen",

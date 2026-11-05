@@ -6,6 +6,7 @@
       this.root = root; this.prompts = prompts; this.t = t; this.respond = respond;
       this.items = new Map(); this.cards = new Map(); this.requests = new Map();
       this.online = false;
+      this.speech = {enabled:false, readingId:""};
       this.latest = document.getElementById("chat-latest");
       this.root.addEventListener("scroll", () => this.scrollState());
       this.latest.onclick = () => { this.root.scrollTop = this.root.scrollHeight; this.scrollState(); };
@@ -37,6 +38,33 @@
       if (follow) this.root.scrollTop = this.root.scrollHeight;
       else if (anchor?.isConnected) this.root.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
       this.scrollState();
+    }
+    setSpeechControls(state, toggle) {
+      this.toggleSpeech = toggle;
+      if (this.speech.enabled === state.enabled && this.speech.readingId === state.readingId) return;
+      this.speech = state;
+      for (const [id, item] of this.items) {
+        const header = this.cards.get(id)?.querySelector(".message-heading");
+        if (header) this.speechButton(item, header);
+      }
+    }
+    speechButton(item, header) {
+      let button = header.querySelector(".message-speech");
+      if (!this.speech.enabled || item.kind !== "assistant" || item.status !== "completed" || !item.text?.trim()) {
+        button?.remove(); return;
+      }
+      if (!button) {
+        button = make("button", undefined, "message-speech quiet"); button.type = "button";
+        button.onclick = () => this.toggleSpeech?.(item.id);
+        header.insertBefore(button, header.querySelector(".copy-button"));
+      }
+      const playing = this.speech.readingId === item.id;
+      const label = this.t(playing ? "tts_stop" : "tts_read_answer");
+      button.title = label; button.setAttribute("aria-label", label);
+      button.setAttribute("aria-pressed", String(playing));
+      button.innerHTML = playing
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg>';
     }
     renderItem(item) {
       let card = this.cards.get(item.id);
@@ -129,6 +157,7 @@
         header.append(identity);
         if (item.status === "inProgress") header.append(status());
         if (item.text) header.append(copyButton(item.text, this.t, "copy_message"));
+        this.speechButton(item, header);
         card.append(header);
         if (item.kind === "assistant") card.append(markdown(item.text || "", this.t));
         else {

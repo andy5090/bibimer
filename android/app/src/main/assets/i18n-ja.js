@@ -18,7 +18,7 @@ window.BibimerTranslations.ja = {
   "tts_preview": "音声を試聴",
   "tts_stop": "読み上げを停止",
   "tts_sample": "Bibimer の合成音声の試聴です。",
-  "tts_read_latest": "最新の回答を読む",
+  "tts_read_answer": "この回答を読み上げる",
   "tts_android_hint": "インストール済みの Android TTS エンジンを使用します。一部の音声は通信や音声データの導入が必要です。非対応の音声は利用できません。",
   "tts_external_hint": "読み上げと試聴は選択した API 提供元にテキストを送信し、料金が発生する場合があります。提供元のデータ保持ポリシーが適用されます。別の提供元には自動で切り替えません。",
   "tts_choose_voice": "音声を選択してください",

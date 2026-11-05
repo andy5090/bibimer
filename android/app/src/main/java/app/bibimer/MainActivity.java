@@ -283,6 +283,10 @@ public final class MainActivity extends Activity {
             final long epoch = DemoMode.epoch();
             runOnUiThread(() -> { if (requestCurrent(false, epoch) && resumed && source != null && !voice.active()) speech.read(source, text, preview); });
         }
+        @JavascriptInterface public void readSpeechMessage(String source, String text, String messageId) {
+            final long epoch = DemoMode.epoch();
+            runOnUiThread(() -> { if (requestCurrent(false, epoch) && resumed && source != null && !voice.active()) speech.read(source, text, false, messageId); });
+        }
         @JavascriptInterface public void refreshSpeechVoices(boolean more) {
             final long epoch = DemoMode.epoch();
             runOnUiThread(() -> { if (requestCurrent(false, epoch) && resumed) speech.refresh(more); });

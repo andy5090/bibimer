@@ -14,12 +14,13 @@ public final class SpeechOutputControllerTest{
    check(!c.state().getBoolean("enabled"));check(TextToSpeech.creates==0&&requests==0);
    c.context("chat");c.read("chat","do not read",false);check(TextToSpeech.creates==0);
    check(c.configure("{\"enabled\":true}"));check(TextToSpeech.creates==0);
-   c.read("chat","answer",false);Handler.drain();check(TextToSpeech.spoken.size()==1);check(c.state().getBoolean("reading"));
-   TextToSpeech.last.done();check(!c.state().getBoolean("reading"));check(AudioManager.requests==AudioManager.abandons);
+   c.read("chat","answer",false,"turn:answer");check(c.state().getString("messageId").equals("turn:answer"));check(c.state().getString("readContext").equals("chat"));Handler.drain();check(TextToSpeech.spoken.size()==1);check(c.state().getBoolean("reading"));
+   TextToSpeech.last.done();check(!c.state().getBoolean("reading"));check(c.state().getString("messageId").isEmpty());check(c.state().getString("readContext").isEmpty());check(AudioManager.requests==AudioManager.abandons);
+   c.read("chat","first",false,"first");c.read("chat","second",false,"second");check(c.state().getString("messageId").equals("second"));c.stop();check(c.state().getString("messageId").isEmpty());
    int before=TextToSpeech.spoken.size();c.read("other","wrong context",false);check(TextToSpeech.spoken.size()==before);
    check(c.configure("{\"mode\":\"summary\"}"));c.read("chat",String.join(" ",java.util.Collections.nCopies(50,"The project validation passed.")),false);
    check(TextToSpeech.spoken.get(TextToSpeech.spoken.size()-1).length()<=700);c.context("settings");check(!c.state().getBoolean("reading"));
-   check(c.configure("{\"enabled\":false,\"mode\":\"full\"}"));c.read("settings","preview",true);check(c.state().getBoolean("reading"));c.pause();check(!c.state().getBoolean("reading"));
+   check(c.configure("{\"enabled\":false,\"mode\":\"full\"}"));c.read("settings","preview",true);check(c.state().getBoolean("reading"));check(c.state().getString("messageId").isEmpty());c.pause();check(!c.state().getBoolean("reading"));
    check(!c.configure("{\"voice\":\"not-real\"}"));check(c.configure("{\"voice\":\"local\"}"));
    c.refresh(false);JSONArray voices=c.state().getJSONArray("voices");check(voices.length()==3);boolean missing=false;for(int i=0;i<voices.length();i++)if(voices.getJSONObject(i).getString("id").equals("missing"))missing=voices.getJSONObject(i).getBoolean("disabled");check(missing);
    c.read("settings",String.join("",java.util.Collections.nCopies(4500,"x")),true);check(c.state().getBoolean("reading"));

@@ -24,7 +24,7 @@ final class SpeechOutputController {
     private final ExecutorService network=Executors.newSingleThreadExecutor();
     private volatile long generation;
     private volatile boolean busy,reading;
-    private volatile String context="",status="",engineLoaded="";
+    private volatile String context="",status="",engineLoaded="",messageId="";
     private volatile JSONArray voices=new JSONArray(),engines=new JSONArray(),elevenVoices=new JSONArray();
     private volatile String nextPage="";
     private volatile boolean more,elevenLoaded;
@@ -62,7 +62,7 @@ final class SpeechOutputController {
         else if(!engine().equals(engineLoaded))list=new JSONArray();
         return new JSONObject().put("enabled",enabled()).put("provider",provider()).put("mode",prefs.getString("mode","full"))
             .put("engine",engine()).put("voice",voice()).put("voices",list).put("engines",engines)
-            .put("busy",busy).put("reading",reading).put("status",status).put("more",more)
+            .put("busy",busy).put("reading",reading).put("messageId",messageId).put("readContext",reading?readContext:"").put("status",status).put("more",more)
             .put("voicesLoaded","elevenlabs".equals(provider())?elevenLoaded:"android".equals(provider())?androidReady:true)
             .put("elevenlabsKey",!eleven.get().isEmpty());
     }
@@ -151,11 +151,15 @@ final class SpeechOutputController {
     }
     private boolean validUtterance(String id){return reading&&currentRead()&&id.equals("tts-"+readGeneration+"-"+part);}
     void read(String source,String text,boolean preview){
+        read(source,text,preview,"");
+    }
+    void read(String source,String text,boolean preview,String itemId){
         if(DemoMode.enabled(activity)||text==null||text.length()>131072||(!preview&&!enabled())||!source.equals(context)||context.isEmpty())return;
+        if(itemId==null||itemId.length()>2048)return;
         stop();readEpoch=DemoMode.epoch();readContext=source;readGeneration=generation;
         String spoken="summary".equals(prefs.getString("mode","full"))&&!preview?SpeechText.summary(text):SpeechText.plain(text);
         if(spoken.isEmpty()){signal("tts_empty");return;}
-        parts=SpeechText.chunks(spoken,2000);part=0;reading=true;
+        parts=SpeechText.chunks(spoken,2000);part=0;messageId=preview?"":itemId;reading=true;
         if("android".equals(provider())){
             if(!androidReady||!engine().equals(engineLoaded)){initAndroid();return;}
         }else{
@@ -209,7 +213,7 @@ final class SpeechOutputController {
     private static String errorCode(Exception error){String s=error.getMessage();return Arrays.asList("voice_key_required","voice_auth","voice_forbidden","voice_limit","tts_unavailable").contains(s)?s:"tts_failed";}
     private void releasePlayer(){if(player!=null){try{player.release();}catch(Exception ignored){}player=null;}}
     private void shutdownAndroid(){androidReady=false;initializing=false;if(androidTts!=null){try{androidTts.shutdown();}catch(Exception ignored){}androidTts=null;}}
-    void stop(){++generation;reading=false;busy=false;api.cancel();releasePlayer();if(androidTts!=null)androidTts.stop();if(initializing)shutdownAndroid();if(audio!=null){audio.delete();audio=null;}parts=Collections.emptyList();if(focusHeld){audioManager.abandonAudioFocusRequest(focus);focusHeld=false;}signal("");}
+    void stop(){++generation;reading=false;messageId="";busy=false;api.cancel();releasePlayer();if(androidTts!=null)androidTts.stop();if(initializing)shutdownAndroid();if(audio!=null){audio.delete();audio=null;}parts=Collections.emptyList();if(focusHeld){audioManager.abandonAudioFocusRequest(focus);focusHeld=false;}signal("");}
     void pause(){stop();if(keyDialog!=null)keyDialog.dismiss();}
     void close(){pause();shutdownAndroid();network.shutdownNow();}
     void keyAction(String p,String action,String labels){

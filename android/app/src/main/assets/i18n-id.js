@@ -18,7 +18,7 @@ window.BibimerTranslations.id = {
   "tts_preview": "Pratinjau suara",
   "tts_stop": "Hentikan pembacaan",
   "tts_sample": "Ini pratinjau suara sintetis Bibimer.",
-  "tts_read_latest": "Baca jawaban terakhir",
+  "tts_read_answer": "Bacakan jawaban ini",
   "tts_android_hint": "Memakai mesin TTS Android terpasang. Sebagian suara perlu jaringan atau unduhan data. Suara yang tidak didukung tidak tersedia.",
   "tts_external_hint": "Pembacaan dan pratinjau mengirim teks ke penyedia API terpilih dan dapat dikenai biaya. Kebijakan penyimpanannya berlaku. Penyedia tidak berganti otomatis.",
   "tts_choose_voice": "Pilih suara",

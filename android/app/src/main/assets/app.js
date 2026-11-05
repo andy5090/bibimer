@@ -162,7 +162,7 @@
     context:JSON.stringify([instance, projectKey(), session?.id, session?.mode, currentTab]),
     completionKey:JSON.stringify([instance, projectKey(), session?.id]),
     eligible:!demo && !paused && online && currentTab === "work" && session?.mode === "chat"
-  }), () => pickers.sync());
+  }), () => pickers.sync(), state => conversation.setSpeechControls(state, id => speechOutput.toggleMessage(conversation.items.get(id))));
   window.BibimerSpeechOutputChanged = status => speechOutput.changed(status);
   window.BibimerVoiceResult = (id, status, text) => voiceInput.result(id, status, text);
 

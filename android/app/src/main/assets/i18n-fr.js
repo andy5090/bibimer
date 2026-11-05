@@ -18,7 +18,7 @@ window.BibimerTranslations.fr = {
   "tts_preview": "Écouter un aperçu",
   "tts_stop": "Arrêter la lecture",
   "tts_sample": "Voici un aperçu de la voix synthétique de Bibimer.",
-  "tts_read_latest": "Lire la dernière réponse",
+  "tts_read_answer": "Lire cette réponse à voix haute",
   "tts_android_hint": "Utilise un moteur TTS Android installé. Certaines voix nécessitent le réseau ou des données vocales. Les voix non prises en charge sont indisponibles.",
   "tts_external_hint": "Lecture et aperçu envoient le texte à l’API choisie et peuvent être facturés. Sa politique de conservation s’applique. Aucun changement automatique de fournisseur.",
   "tts_choose_voice": "Choisir une voix",

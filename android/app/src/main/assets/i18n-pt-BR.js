@@ -18,7 +18,7 @@ window.BibimerTranslations["pt-BR"] = {
   "tts_preview": "Ouvir prévia",
   "tts_stop": "Parar leitura",
   "tts_sample": "Esta é uma prévia da voz sintética do Bibimer.",
-  "tts_read_latest": "Ler última resposta",
+  "tts_read_answer": "Ler esta resposta em voz alta",
   "tts_android_hint": "Usa um mecanismo TTS Android instalado. Algumas vozes exigem rede ou download de dados. Vozes sem suporte ficam indisponíveis.",
   "tts_external_hint": "Leitura e prévia enviam texto à API escolhida e podem gerar custos. Aplica-se a política de retenção do provedor. Sem troca automática de provedor.",
   "tts_choose_voice": "Escolha uma voz",

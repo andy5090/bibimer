@@ -1,20 +1,21 @@
 "use strict";
 const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
-function element(){return {value:"",dataset:{},options:[],listeners:{},hidden:false,disabled:false,checked:false,textContent:"",addEventListener(k,fn){this.listeners[k]=fn;},replaceChildren(...rows){this.options=rows;},};}
+function element(){return {value:"",dataset:{},options:[],listeners:{},hidden:false,disabled:false,checked:false,textContent:"",attributes:{},setAttribute(k,v){this.attributes[k]=v;},addEventListener(k,fn){this.listeners[k]=fn;},replaceChildren(...rows){this.options=rows;},};}
 const elements=new Map(),document={getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:()=>element()};
 const ctx=vm.createContext({document,bibimerVoiceLabels:()=>"{}"});vm.runInContext(fs.readFileSync("android/app/src/main/assets/speech-output.js","utf8")+";globalThis.Output=BibimerSpeechOutput",ctx);
 let current={context:"bridge/project/session/chat/work",completionKey:"bridge/project/session",eligible:true};
 let env={speechOutput:{enabled:false,provider:"android",mode:"full",engine:"",voice:"",voices:[],engines:[]}},accept=true;
-const reads=[],contexts=[],configs=[],actions=[];
-const native={configureSpeechOutput(data){configs.push(JSON.parse(data));if(accept)Object.assign(env.speechOutput,JSON.parse(data));return accept;},readSpeechOutput(...args){reads.push(args);},setSpeechContext:v=>contexts.push(v),refreshSpeechVoices:v=>actions.push(["refresh",v]),stopSpeechOutput:()=>actions.push(["stop"]),speechKeyAction:(...args)=>actions.push(args)};
-const output=new ctx.Output(k=>k,native,()=>env,()=>current,()=>{}),$=id=>document.getElementById(id);
+const reads=[],messageIds=[],playback=[],contexts=[],configs=[],actions=[];
+const native={configureSpeechOutput(data){configs.push(JSON.parse(data));if(accept)Object.assign(env.speechOutput,JSON.parse(data));return accept;},readSpeechMessage(context,text,id){reads.push([context,text,false]);messageIds.push(id);},readSpeechOutput(...args){reads.push(args);},setSpeechContext:v=>contexts.push(v),refreshSpeechVoices:v=>actions.push(["refresh",v]),stopSpeechOutput:()=>actions.push(["stop"]),speechKeyAction:(...args)=>actions.push(args)};
+const output=new ctx.Output(k=>k,native,()=>env,()=>current,()=>{},state=>playback.push(state)),$=id=>document.getElementById(id);
 output.render();assert.equal($("tts-enabled").checked,false);assert.equal(reads.length,0);
 assert.equal($("tts-enabled").disabled,false,"Master switch remains available while the feature is off");
 assert.equal($("tts-settings").disabled,true);
-const settingsControls=["tts-provider","tts-mode","tts-engine","tts-voice","tts-refresh","tts-more","tts-key-edit","tts-key-remove","tts-preview","tts-stop-settings"];
+const settingsControls=["tts-provider","tts-mode","tts-engine","tts-voice","tts-refresh","tts-more","tts-key-edit","tts-key-remove","tts-preview"];
 for(const id of settingsControls)assert.equal($(id).disabled,true,id+" disabled while off");
 for(const id of ["tts-refresh","tts-more","tts-preview","tts-key-edit","tts-key-remove"])$(id).listeners.click();
 assert.equal(actions.length,0,"Disabled actions cannot reach native services");assert.equal(reads.length,0);
+output.toggleMessage({id:"old:answer",kind:"assistant",status:"completed",text:"old"});assert.equal(reads.length,0,"Disabled reading cannot be started from an answer");
 $("tts-provider").value="elevenlabs";$("tts-provider").listeners.change();assert.equal(configs.length,0);
 output.render();assert.equal($("tts-provider").value,"android");
 const message=(turn,text,phase)=>({id:turn+":answer",kind:"assistant",status:"completed",text,phase});
@@ -23,7 +24,7 @@ output.observe(event("old"),[message("old","old answer","final_answer")],true);a
 $("tts-enabled").checked=true;$("tts-enabled").listeners.change();assert.equal(env.speechOutput.enabled,true);assert.equal(reads.length,0,"Enabling never replays past answers");
 assert.equal($("tts-settings").disabled,false);assert.equal($("tts-provider").disabled,false);
 const items=[{id:"t1:tool",kind:"tool",status:"completed",text:"DO NOT SPEAK"},{id:"t1:plan",kind:"plan",status:"completed",text:"DO NOT SPEAK"},message("other","DO NOT SPEAK"),message("t1","commentary","commentary"),message("t1","final answer","final_answer")];
-output.observe(event("t1"),items,false);assert.deepEqual(reads.at(-1),[current.context,"final answer",false]);assert.equal(reads.length,1);
+output.observe(event("t1"),items,false);assert.deepEqual(reads.at(-1),[current.context,"final answer",false]);assert.equal(reads.length,1);assert.equal(messageIds.at(-1),"t1:answer");
 output.observe(event("t1"),items,false);assert.equal(reads.length,1);
 output.observe(event("failed","failed"),[message("failed","DO NOT SPEAK")],false);assert.equal(reads.length,1);
 output.observe({...event("gap"),gap:true},[message("gap","DO NOT SPEAK")],false);assert.equal(reads.length,1);
@@ -31,11 +32,19 @@ output.observe(event("unphased"),[message("unphased","first"),{...message("unpha
 current={...current,context:"bridge/project/session/chat/settings",eligible:false};output.syncContext();
 const count=reads.length;output.observe(event("hidden"),[message("hidden","hidden final","final_answer")],false);assert.equal(reads.length,count);
 current={...current,context:"bridge/project/session/chat/work",eligible:true};output.syncContext();output.observe(event("hidden"),[message("hidden","hidden final","final_answer")],false);assert.equal(reads.length,count);
-$("tts-read-latest").listeners.click();assert.equal(reads.at(-1)[1],"hidden final");
+output.toggleMessage(message("hidden","hidden final","final_answer"));assert.equal(reads.at(-1)[1],"hidden final");
+assert.equal(messageIds.at(-1),"hidden:answer");
+Object.assign(env.speechOutput,{reading:true,messageId:"hidden:answer",readContext:current.context,status:"tts_loading"});output.changed("tts_loading");
+assert.equal(playback.at(-1).readingId,"hidden:answer","Preparing synthesis is stoppable on that response");
+output.toggleMessage(message("hidden","hidden final","final_answer"));assert.deepEqual(actions.at(-1),["stop"]);
+const beforeOther=reads.length;output.toggleMessage(message("old","old answer","final_answer"));assert.equal(reads.length,beforeOther+1);assert.equal(messageIds.at(-1),"old:answer");
+const beforeInvalid=reads.length;for(const item of [{kind:"tool",status:"completed",text:"secret"},message("live","partial","final_answer"),message("empty","  ")]){if(item.id==="live:answer")item.status="inProgress";output.toggleMessage(item);}assert.equal(reads.length,beforeInvalid);
+Object.assign(env.speechOutput,{reading:false,messageId:"",status:""});output.changed("");assert.equal(playback.at(-1).readingId,"");
 $("tts-preview").listeners.click();assert.deepEqual(reads.at(-1),[current.context,"tts_sample",true]);
-$("tts-stop").listeners.click();assert.deepEqual(actions.at(-1),["stop"]);
-current={...current,context:"bridge/project/other/chat/work",completionKey:"bridge/project/other"};output.syncContext();assert.equal(output.latest,"");
-assert.equal($("tts-read-latest").disabled,true);
+Object.assign(env.speechOutput,{reading:true,messageId:"",readContext:current.context,busy:true});output.render();
+assert.equal($("tts-preview").disabled,false);assert.equal($("tts-preview").textContent,"tts_stop");$("tts-preview").listeners.click();assert.deepEqual(actions.at(-1),["stop"]);
+Object.assign(env.speechOutput,{reading:false,messageId:"",busy:false});output.changed("");
+current={...current,context:"bridge/project/other/chat/work",completionKey:"bridge/project/other"};output.syncContext();assert.equal(playback.at(-1).readingId,"");
 $("tts-mode").value="summary";$("tts-mode").listeners.change();assert.equal(env.speechOutput.mode,"summary");
 accept=false;$("tts-provider").value="elevenlabs";$("tts-provider").listeners.change();assert.equal($("tts-status").textContent,"tts_failed");assert.equal($("tts-provider").value,"android");
 Object.assign(env.speechOutput,{provider:"elevenlabs",voice:"saved_id",voicesLoaded:false,elevenlabsKey:true});output.render();
@@ -57,8 +66,11 @@ const batchBefore=reads.length;
 output.observe({session:{mode:"chat"},items:[...event("batch-a").items,...event("batch-b").items]},[message("batch-a","first batch","final_answer"),message("batch-b","latest batch","final_answer")].values(),false);
 assert.equal(reads.length,batchBefore+1);assert.equal(reads.at(-1)[1],"latest batch");
 env.demo=true;output.render();assert.equal($("tts-preference").hidden,true);
-console.log("PASS TTS UI/completions: default off, no history/gap/failure/tool/reasoning replay, final-answer selection, dedup across tabs, explicit latest/preview, context reset, settings and saved/missing voice states");
+console.log("PASS TTS UI/completions: default off, no history/gap/failure/tool/reasoning replay, final-answer selection, dedup across tabs, per-answer replay/stop and preview toggle, context reset, settings and saved/missing voice states");
 
 assert.ok(!fs.readFileSync("android/app/src/main/assets/speech-output.js","utf8").toLowerCase().includes("openai"));
 assert.ok(!fs.readFileSync("android/app/src/main/assets/index.html","utf8").match(/id="tts-provider"[\s\S]*?<\/select>/)[0].includes("openai"));
 assert.ok(fs.readFileSync("android/app/src/main/assets/voice-input.js","utf8").includes('label:"OpenAI · gpt-transcribe"'));
+
+const html=fs.readFileSync("android/app/src/main/assets/index.html","utf8");
+for(const id of ["tts-read-latest","tts-stop","tts-stop-settings"])assert.ok(!html.includes('id="'+id+'"'));
