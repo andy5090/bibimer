@@ -1,0 +1,6 @@
+<en-US>
+Android TTS now prepares the engine and applies device speech rate and pitch when enabled or when you return to the app. Device setting changes are detected while the app is open, without starting playback. Monitoring stops when TTS is off, the app is hidden, or an external provider is selected. Per-answer play/stop controls, full-answer and local summary modes, and default-off behavior are retained. No bridge update is needed.
+</en-US>
+<ko-KR>
+Android TTS를 켜거나 앱으로 돌아오면 엔진을 준비하고 기기의 음성 속도·피치를 미리 적용합니다. 앱이 열린 동안 기기 설정 변경도 감지해 재생 없이 반영합니다. TTS를 끄거나 앱을 숨기거나 외부 제공자를 선택하면 감지를 해제합니다. 답변별 재생·정지, 전체 답변·기기 내 요약과 기본 꺼짐은 유지합니다. 브리지 업데이트는 필요 없습니다.
+</ko-KR>

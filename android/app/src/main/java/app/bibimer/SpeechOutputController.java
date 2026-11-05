@@ -2,6 +2,7 @@ package app.bibimer;
 
 import android.app.*;
 import android.content.*;
+import android.database.ContentObserver;
 import android.media.*;
 import android.os.*;
 import android.provider.Settings;
@@ -40,6 +41,12 @@ final class SpeechOutputController {
     private int part;
     private long readEpoch,readGeneration;
     private String readContext="";
+    private boolean foreground,observing;
+    private final ContentObserver systemSpeechObserver=new ContentObserver(new Handler(Looper.getMainLooper())){
+        @Override public void onChange(boolean selfChange){
+            if(foreground&&enabled()&&"android".equals(provider())&&androidReady&&!applySystemSpeechSettings())fail("tts_failed");
+        }
+    };
 
     SpeechOutputController(Activity activity,Listener listener){this(activity,listener,new SpeechOutputApi());}
     SpeechOutputController(Activity activity,Listener listener,SpeechOutputApi api){
@@ -81,11 +88,27 @@ final class SpeechOutputController {
             boolean changedEngine=!p.equals(provider())||!e.equals(engine());
             if(!prefs.edit().putString("provider",p).putString("mode",mode).putString("engine",e).putString(vk,selected).putBoolean("enabled",on).commit())return false;
             ++generation;
-            activity.runOnUiThread(()->{stop();if(changedEngine)shutdownAndroid();signal("");});return true;
+            activity.runOnUiThread(()->{stop();if(changedEngine)shutdownAndroid();signal("");prepareAndroid();});return true;
         }catch(Exception ignored){return false;}
     }
     private boolean listed(String id,JSONArray list){for(int i=0;i<list.length();i++)if(id.equals(list.optJSONObject(i).optString("id")))return true;return false;}
-    void context(String value){if(value==null||value.length()>2000)return;if(!value.equals(context)){context=value;stop();}}
+    void context(String value){if(value==null||value.length()>2000)return;if(!value.equals(context)){context=value;stop();prepareAndroid();}}
+    void resume(){foreground=true;prepareAndroid();}
+    private void prepareAndroid(){
+        if(!foreground||!enabled()||DemoMode.enabled(activity)||!"android".equals(provider())){unobserveSystemSpeech();return;}
+        if(!observing)try{
+            activity.getContentResolver().registerContentObserver(Settings.Secure.getUriFor(Settings.Secure.TTS_DEFAULT_RATE),false,systemSpeechObserver);
+            activity.getContentResolver().registerContentObserver(Settings.Secure.getUriFor(Settings.Secure.TTS_DEFAULT_PITCH),false,systemSpeechObserver);
+            observing=true;
+        }catch(SecurityException unavailable){unobserveSystemSpeech();}
+        if(androidReady&&engine().equals(engineLoaded)){
+            if(!applySystemSpeechSettings())fail("tts_failed");
+        }else initAndroid();
+    }
+    private void unobserveSystemSpeech(){
+        try{activity.getContentResolver().unregisterContentObserver(systemSpeechObserver);}catch(SecurityException ignored){}
+        observing=false;
+    }
     void refresh(boolean append){
         if(DemoMode.enabled(activity)||reading||busy)return;
         if("android".equals(provider())){initAndroid();return;}
@@ -108,7 +131,7 @@ final class SpeechOutputController {
         });
     }
     private void initAndroid(){
-        if(androidReady&&engine().equals(engineLoaded)){loadAndroidVoices();signal("");return;}
+        if(androidReady&&engine().equals(engineLoaded)){if(!applySystemSpeechSettings()){fail("tts_failed");return;}loadAndroidVoices();signal("");return;}
         if(initializing)return;
         shutdownAndroid();initializing=true;busy=true;signal("tts_loading");
         final String selected=engine();final long serial=generation,epoch=DemoMode.epoch();
@@ -127,6 +150,7 @@ final class SpeechOutputController {
             initializing=false;busy=false;
             if(result!=TextToSpeech.SUCCESS){shutdownAndroid();signal("tts_unavailable");return;}
             androidReady=true;engineLoaded=selected;
+            if(!applySystemSpeechSettings()){shutdownAndroid();fail("tts_failed");return;}
             androidTts.setAudioAttributes(attributes());
             androidTts.setOnUtteranceProgressListener(new UtteranceProgressListener(){
                 public void onStart(String id){}
@@ -176,6 +200,10 @@ final class SpeechOutputController {
             return value>0?value/100.0f:1.0f;
         }catch(SecurityException unavailable){return 1.0f;}
     }
+    private boolean applySystemSpeechSettings(){
+        return androidTts.setSpeechRate(systemSpeechValue(Settings.Secure.TTS_DEFAULT_RATE))!=TextToSpeech.ERROR
+            &&androidTts.setPitch(systemSpeechValue(Settings.Secure.TTS_DEFAULT_PITCH))!=TextToSpeech.ERROR;
+    }
     private AudioAttributes attributes(){return new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();}
     private boolean takeFocus(){
         if(focusHeld)return true;
@@ -194,8 +222,7 @@ final class SpeechOutputController {
             else{Set<Voice> list=androidTts.getVoices();if(list!=null)for(Voice v:list)if(v.getName().equals(selected)&&!(v.getFeatures()!=null&&v.getFeatures().contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED)))set=androidTts.setVoice(v)==TextToSpeech.SUCCESS;}
             if(!set){fail("tts_unavailable");return;}
             // Refresh for each utterance, including previews and chunks after a settings change.
-            if(androidTts.setSpeechRate(systemSpeechValue(Settings.Secure.TTS_DEFAULT_RATE))==TextToSpeech.ERROR
-                    ||androidTts.setPitch(systemSpeechValue(Settings.Secure.TTS_DEFAULT_PITCH))==TextToSpeech.ERROR){fail("tts_failed");return;}
+            if(!applySystemSpeechSettings()){fail("tts_failed");return;}
             signal("tts_playing");if(androidTts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"tts-"+serial+"-"+part)==TextToSpeech.ERROR)fail("tts_failed");return;
         }
         signal("tts_loading");final String p=provider(),secret=eleven.get(),v=voice();
@@ -224,7 +251,7 @@ final class SpeechOutputController {
     private void releasePlayer(){if(player!=null){try{player.release();}catch(Exception ignored){}player=null;}}
     private void shutdownAndroid(){androidReady=false;initializing=false;if(androidTts!=null){try{androidTts.shutdown();}catch(Exception ignored){}androidTts=null;}}
     void stop(){++generation;reading=false;messageId="";busy=false;api.cancel();releasePlayer();if(androidTts!=null)androidTts.stop();if(initializing)shutdownAndroid();if(audio!=null){audio.delete();audio=null;}parts=Collections.emptyList();if(focusHeld){audioManager.abandonAudioFocusRequest(focus);focusHeld=false;}signal("");}
-    void pause(){stop();if(keyDialog!=null)keyDialog.dismiss();}
+    void pause(){foreground=false;unobserveSystemSpeech();stop();if(keyDialog!=null)keyDialog.dismiss();}
     void close(){pause();shutdownAndroid();network.shutdownNow();}
     void keyAction(String p,String action,String labels){
         if(DemoMode.enabled(activity)||!"elevenlabs".equals(p))return;

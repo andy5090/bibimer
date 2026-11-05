@@ -51,6 +51,20 @@ public final class SpeechOutputControllerTest{
    a.getSharedPreferences("speech_output",0).edit().putString("provider","openai").putBoolean("enabled",true).commit();
    SpeechOutputController migrated=new SpeechOutputController(a,sink,new SpeechOutputApi(url->new Connection(url)));
    check(!migrated.state().getBoolean("enabled")&&migrated.state().getString("provider").equals("android"));migrated.close();
+   Activity warmActivity=new Activity();warmActivity.cache=a.cache;SpeechOutputController warm=new SpeechOutputController(warmActivity,sink);
+   int createdBefore=TextToSpeech.creates,spokenBefore=TextToSpeech.spoken.size(),requestsBefore=requests;
+   warm.resume();check(TextToSpeech.creates==createdBefore&&android.content.ContentResolver.count()==0);
+   android.provider.Settings.Secure.values.put("tts_default_rate",180);android.provider.Settings.Secure.values.put("tts_default_pitch",75);
+   check(warm.configure("{\"enabled\":true}"));Handler.drain();check(TextToSpeech.creates==createdBefore+1);check(TextToSpeech.last.rate==1.8f&&TextToSpeech.last.pitch==0.75f);
+   check(TextToSpeech.spoken.size()==spokenBefore&&!warm.state().getBoolean("reading"));check(android.content.ContentResolver.count()==2);
+   android.provider.Settings.Secure.values.put("tts_default_rate",90);android.content.ContentResolver.notifyKey("tts_default_rate");check(TextToSpeech.last.rate==0.9f);check(TextToSpeech.spoken.size()==spokenBefore);
+   warm.pause();check(android.content.ContentResolver.count()==0);android.provider.Settings.Secure.values.put("tts_default_pitch",130);warm.resume();check(TextToSpeech.last.pitch==1.3f&&!warm.state().getBoolean("reading"));
+   check(warm.configure("{\"enabled\":false}"));check(android.content.ContentResolver.count()==0);
+   check(warm.configure("{\"enabled\":true,\"provider\":\"elevenlabs\"}"));check(android.content.ContentResolver.count()==0&&requests==requestsBefore);
+   warm.close();check(android.content.ContentResolver.count()==0);
+   Activity deniedActivity=new Activity();deniedActivity.cache=a.cache;SpeechOutputController denied=new SpeechOutputController(deniedActivity,sink);
+   android.content.ContentResolver.denied=true;denied.resume();check(denied.configure("{\"enabled\":true}"));Handler.drain();check(!denied.state().getBoolean("reading")&&android.content.ContentResolver.count()==0);denied.close();android.content.ContentResolver.denied=false;
+
   }finally{c.close();for(File file:a.cache.listFiles())file.delete();a.cache.delete();}
   System.out.println("PASS native TTS lifecycle: off/no startup calls, foreground context, local summary, engine/voice validation, chunk sequencing, focus loss, preview, external playback/cancellation cleanup and demo/key isolation");
  }

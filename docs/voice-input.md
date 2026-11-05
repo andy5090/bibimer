@@ -66,4 +66,6 @@ TTS가 켜진 Chat의 완료된 각 답변에 재생 아이콘을 제공한다. 
 - [ElevenLabs 음성 합성](https://elevenlabs.io/docs/api-reference/text-to-speech/convert)
 - [ElevenLabs 음성 목록](https://elevenlabs.io/docs/api-reference/voices/search)
 
-Android TTS는 각 발화·미리듣기 직전에 시스템의 텍스트 음성 변환 속도·피치 설정을 읽어 적용한다. 앱을 재시작하지 않아도 다음 발화부터 변경한 값을 사용한다. 설정값이 없거나 잘못되었거나 접근이 거절되면 기본1.0배를 사용하며 기기 설정을 변경하지 않는다. ElevenLabs에는 이 Android 시스템 설정을 적용하지 않는다. 기준: [Settings.Secure](https://developer.android.com/reference/android/provider/Settings.Secure).
+다음 빌드의 Android TTS는 기능을 켜거나 앱으로 복귀할 때 엔진을 준비하고 시스템의 텍스트 음성 변환 속도·피치를 미리 적용한다. 앱이 열린 동안 설정 변경도 감지해 준비된 엔진에 갱신한다. 앱이 숨겨지거나 기능을 끄거나 외부 제공자로 전환하면 감지를 해제한다. 누락된 변경 알림에 대비해 각 발화·미리듣기 직전에도 값을 재확인하며 이미 합성한 음성을 중간에 다시 합성하거나 읽기를 자동 재개하지 않는다. 내부64는 매 발화 직전 확인까지 반영한 이전 버전이다. 설정값이 없거나 잘못되었거나 접근이 거절되면 기본1.0배를 사용하며 기기 설정을 변경하지 않는다. ElevenLabs에는 이 Android 시스템 설정을 적용하지 않는다. 기준: [Settings.Secure](https://developer.android.com/reference/android/provider/Settings.Secure).
+
+설정 변경 감지: [Android ContentResolver](https://developer.android.com/reference/android/content/ContentResolver#registerContentObserver(android.net.Uri,boolean,android.database.ContentObserver)).

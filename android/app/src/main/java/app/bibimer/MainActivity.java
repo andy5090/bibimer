@@ -752,6 +752,7 @@ public final class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         resumed = true;
+        if (speech != null) speech.resume();
         refreshLanguage();
         appUpdates.check(false);
         if (notificationsSupported) {
