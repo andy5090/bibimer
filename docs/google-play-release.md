@@ -1,5 +1,11 @@
 # Google Play 출시 준비
 
+## Android0.38.3(65) 내부 테스트 배포 완료 (2026-11-05)
+
+- **2026-11-05 15:55 Asia/Seoul**, TTS 엔진 사전 준비·기기 속도/피치 미리 적용·설정 변경 감지를65번으로 기존 내부 트랙에 게시했다. 새로고침 후 **활성 / 내부 테스터에게 제공됨**,65만 포함·64제외를 확인했다. 한/영 노트2/2(431/194자)·오류0·기존 매핑 경고1·7개 기기 유형 지원 변화0. 정식 트랙·기존 테스터·데이터 보안·사용자 브리지/세션은 변경하지 않았다.
+- 소스 `a6706a2`의 기존 업로드 키 서명 AAB `dist/play/bibimer-0.38.3-65-release.aab`, **3,432,676bytes**, SHA-256 `5291934b66a5ec4e3973aaec65f2574b0e098002554432e2bf234aea02230cd6`. 실제 Java/D8·bundletool·기존 인증서·58assets 원본·prepareAndroid/ContentObserver 및 속도/피치 DEX·TTS OpenAI 경로 제외·심사 digest/비밀 원문 미포함·내장 브리지0.24.1의6payload/격리 설치0700 검증.15개 Node·4개 STT/TTS 모의 네이티브/API·빌드/SDK17개·914키×10언어 검사 통과. 기본 꺼짐·음성 미재생 준비·숨김/해제 시 관찰 종료·외부 제공자 무호출과 기존 답변별 재생/정지를 유지한다.
+- 증빙 `dist/play-0.38.3/`의 notes/review-warning/device-support/review-bundle/only-65/review-notes/confirmation/published/published-refreshed.png 및 published.json. 빌드/검증 `.tools/aab-0.38.3-65-{build.log,verify.log,verification.json}`, 검사 `.tools/release-0.38.3-checks.log`. 실제 Play 업데이트 수신/설치·Android WebView·실제 기기/제조사 TTS·음성/유료 API 검증은 남아 있다. 브리지 업데이트는 필요 없으며 사용자 앱을 자동 설치하거나 브리지/세션을 재시작하지 않았다. 아래 미빌드/내부64 기록은 이번 요청 이전 상태다.
+
 ## Android0.38.2(64) 내부 테스트 배포 완료 (2026-11-05)
 
 - **2026-11-05 12:55 Asia/Seoul**, 답변별 재생·정지 아이콘과 미리듣기 단일 버튼을 포함한64번을 기존 내부 트랙에 게시했다. 새로고침 후 **활성 / 내부 테스터에게 제공됨**,64만 포함·63제외를 확인했다. 한/영 노트2/2(492/267자)·오류0·기존 매핑 경고1·7개 기기 유형 지원 변화0이다. 정식 제출63·기존 테스터·데이터 보안/웹사이트·사용자 브리지/세션은 변경하지 않았다.

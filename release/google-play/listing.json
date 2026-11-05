@@ -211,16 +211,16 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.38.2",
-    "versionCode": 64,
+    "versionName": "0.38.3",
+    "versionCode": 65,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "5b2fa5d20bad81a91d5c231e6fb65f937461866aec136f48f89de545437cd295",
-    "file": "bibimer-0.38.2-64-release.aab",
-    "bytes": 3432071,
+    "sha256": "5291934b66a5ec4e3973aaec65f2574b0e098002554432e2bf234aea02230cd6",
+    "file": "bibimer-0.38.3-65-release.aab",
+    "bytes": 3432676,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
@@ -255,13 +255,15 @@
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
     "builtOn": "2026-11-05",
-    "sourceCommit": "32cea4bc26dc05b390c5c1b3c765b48ecdc027d8",
-    "releaseName": "0.38.2 (64) - Per-answer speech controls",
-    "releaseNotesFile": "release/google-play/release-notes/0.38.2.txt",
+    "sourceCommit": "a6706a2e5f188d6444678afe83005ef182e10cf4",
+    "releaseName": "0.38.3 (65) - Prepare device TTS settings",
+    "releaseNotesFile": "release/google-play/release-notes/0.38.3.txt",
     "bridgeUpdateRequiredForNewFeatures": false,
     "perAnswerSpeechControlsPackaged": true,
     "previewPlayStopTogglePackaged": true,
-    "systemTtsRatePitchPackaged": true
+    "systemTtsRatePitchPackaged": true,
+    "systemTtsSettingsPreloadPackaged": true,
+    "systemTtsSettingsObserverPackaged": true
   },
   "consoleScreenshotsUpdatedOn": "2026-10-15",
   "playAppSigning": {
@@ -378,26 +380,26 @@
     "retainedInLatestSubmittedVersionCode": 33
   },
   "pendingUpdate": {
-    "versionName": "0.38.2",
-    "versionCode": 64,
-    "releaseName": "0.38.2 (64) - Per-answer speech controls",
+    "versionName": "0.38.3",
+    "versionCode": 65,
+    "releaseName": "0.38.3 (65) - Prepare device TTS settings",
     "consoleStatus": "active_available_to_existing_testers",
     "publishedOn": "2026-11-05",
-    "publishedAtLocal": "2026-11-05 12:55 Asia/Seoul",
+    "publishedAtLocal": "2026-11-05 15:55 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      64
+      65
     ],
     "excludedPreviousVersionCodes": [
-      63
+      64
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 492,
-      "ko-KR": 267
+      "en-US": 431,
+      "ko-KR": 194
     },
     "errors": [],
     "warnings": [
@@ -417,9 +419,9 @@
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "32cea4bc26dc05b390c5c1b3c765b48ecdc027d8",
-    "releaseNotesFile": "release/google-play/release-notes/0.38.2.txt",
-    "evidence": "dist/play-0.38.2/published.json",
+    "sourceCommit": "a6706a2e5f188d6444678afe83005ef182e10cf4",
+    "releaseNotesFile": "release/google-play/release-notes/0.38.3.txt",
+    "evidence": "dist/play-0.38.3/published.json",
     "sourceBridgeVersion": "0.24.1",
     "bridgeUpdateRequiredForNewFeatures": false,
     "packagedAssetCount": 58,
@@ -431,8 +433,8 @@
     "sourceLanguageCount": 10,
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "bundleSha256": "5b2fa5d20bad81a91d5c231e6fb65f937461866aec136f48f89de545437cd295",
-    "bundleBytes": 3432071,
+    "bundleSha256": "5291934b66a5ec4e3973aaec65f2574b0e098002554432e2bf234aea02230cd6",
+    "bundleBytes": 3432676,
     "existingTestersUnchanged": true,
     "perAnswerSpeechControlsPackaged": true,
     "previewPlayStopTogglePackaged": true,
@@ -442,6 +444,8 @@
     "dataSafetyProductionFormChanged": false,
     "privacyPolicyChanged": false,
     "websiteDeploymentPerformed": false,
+    "systemTtsSettingsPreloadPackaged": true,
+    "systemTtsSettingsObserverPackaged": true,
     "status": "published_internal_test",
     "released": true,
     "consoleUploaded": true
@@ -510,16 +514,16 @@
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.38.1",
-    "versionCode": 63,
+    "versionName": "0.38.2",
+    "versionCode": 64,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "a0c06eed6c669b1aa1ee3e540cd89a169a4eab94e6cad49206c0e6dc31ab6b5f",
-    "file": "bibimer-0.38.1-63-release.aab",
-    "bytes": 3431129,
+    "sha256": "5b2fa5d20bad81a91d5c231e6fb65f937461866aec136f48f89de545437cd295",
+    "file": "bibimer-0.38.2-64-release.aab",
+    "bytes": 3432071,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
@@ -551,97 +555,18 @@
     "workFirstNavigationPackaged": true,
     "customNativeDialogsPackaged": true,
     "settingsSwitchesAndDisabledGroupsPackaged": true,
-    "status": "in_review",
-    "consoleUploadStatus": "submitted_production",
-    "productionSubmitted": true,
-    "productionReleased": false,
+    "status": "published_internal_test",
+    "consoleUploadStatus": "published_internal_test",
     "builtOn": "2026-11-05",
-    "sourceCommit": "a1c1c0d8b0bcac9f0c907b40eea835dbb4a93ac8",
-    "releaseName": "0.38.1 (63) - Voice and work-first settings",
-    "releaseNotesFile": "release/google-play/release-notes/0.38.1-production.txt",
-    "bridgeUpdateRequiredForVoiceAndUi": false,
-    "internalTestPublished": true,
-    "internalTestStatus": "active_available_to_existing_testers",
-    "internalTestEvidence": "dist/play-0.38.1/published.json"
+    "sourceCommit": "32cea4bc26dc05b390c5c1b3c765b48ecdc027d8",
+    "releaseName": "0.38.2 (64) - Per-answer speech controls",
+    "releaseNotesFile": "release/google-play/release-notes/0.38.2.txt",
+    "bridgeUpdateRequiredForNewFeatures": false,
+    "perAnswerSpeechControlsPackaged": true,
+    "previewPlayStopTogglePackaged": true,
+    "systemTtsRatePitchPackaged": true
   },
   "previousUpdate": {
-    "versionName": "0.38.1",
-    "versionCode": 63,
-    "releaseName": "0.38.1 (63) - Voice and work-first settings",
-    "consoleStatus": "in_review",
-    "submittedOn": "2026-11-05",
-    "submittedAtLocal": "2026-11-05 09:36 Asia/Seoul",
-    "submissionVerifiedAtLocal": "2026-11-05 10:28 Asia/Seoul",
-    "refreshedStatusVerified": true,
-    "changeCount": 2,
-    "rolloutPercent": 100,
-    "allExistingTargetCountries": true,
-    "targetCountryCount": 178,
-    "managedPublishing": false,
-    "publishAfterApproval": true,
-    "publicAvailabilityConfirmed": false,
-    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582",
-    "publishingOverviewUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
-    "warnings": [
-      "no_deobfuscation_mapping_file"
-    ],
-    "errors": [],
-    "supportedDeviceChanges": 0,
-    "supportedDeviceChangesScope": "observed seven device-type rows",
-    "preReviewChecksCompleted": true,
-    "releaseNotesFile": "release/google-play/release-notes/0.38.1-production.txt",
-    "releaseNotesLocales": [
-      "en-US",
-      "ko-KR"
-    ],
-    "releaseNotesCharacters": {
-      "en-US": 472,
-      "ko-KR": 304
-    },
-    "reusedValidatedInternalTestBundle": false,
-    "newSignedBundle": true,
-    "previousPublicVersionName": "0.35.1",
-    "previousPublicVersionCode": 59,
-    "sourceCommit": "a1c1c0d8b0bcac9f0c907b40eea835dbb4a93ac8",
-    "sourceBridgeVersion": "0.24.1",
-    "bundleSha256": "a0c06eed6c669b1aa1ee3e540cd89a169a4eab94e6cad49206c0e6dc31ab6b5f",
-    "bundleBytes": 3431129,
-    "includedVersionCodes": [
-      63
-    ],
-    "excludedPreviousVersionCodes": [
-      59
-    ],
-    "evidence": "dist/production-0.38.1/submitted.json",
-    "physicalDeviceVerified": false,
-    "deviceInstallVerified": false,
-    "dataSafetyProductionFormChanged": true,
-    "privacyPolicyChanged": false,
-    "websiteDeploymentPerformed": false,
-    "existingInternalTrackUnchanged": true,
-    "note": "Fresh signed production bundle includes internal62 plus TTS spacing, auxiliary button outlines and microphone/text spacing. Submitted release and optional audio Data Safety update. Google approval/public availability pending; current public59 preserved.",
-    "status": "in_review",
-    "consoleUploaded": true,
-    "released": false,
-    "productionSubmitted": true,
-    "productionReleased": false,
-    "sourceNodeChecksPassed": 14,
-    "sourceSpeechPythonChecksPassed": 4,
-    "buildAndPlaySdkTestsPassed": 17,
-    "sourceLanguageKeys": 914,
-    "sourceLanguageCount": 10,
-    "packagedAssetCount": 58,
-    "ttsAndroidAndElevenLabsOnly": true,
-    "ttsDefaultsOff": true,
-    "localExtractiveSummaryPackaged": true,
-    "customNativeDialogsPackaged": true,
-    "workFirstNavigationPackaged": true,
-    "settingsSwitchesAndDisabledGroupsPackaged": true,
-    "internalTestPublished": true,
-    "internalTestStatus": "active_available_to_existing_testers",
-    "internalTestEvidence": "dist/play-0.38.1/published.json"
-  },
-  "internalTestRelease": {
     "versionName": "0.38.2",
     "versionCode": 64,
     "releaseName": "0.38.2 (64) - Per-answer speech controls",
@@ -705,7 +630,78 @@
     "localExtractiveSummaryPackaged": true,
     "dataSafetyProductionFormChanged": false,
     "privacyPolicyChanged": false,
-    "websiteDeploymentPerformed": false
+    "websiteDeploymentPerformed": false,
+    "status": "published_internal_test",
+    "released": true,
+    "consoleUploaded": true
+  },
+  "internalTestRelease": {
+    "versionName": "0.38.3",
+    "versionCode": 65,
+    "releaseName": "0.38.3 (65) - Prepare device TTS settings",
+    "consoleStatus": "active_available_to_existing_testers",
+    "publishedOn": "2026-11-05",
+    "publishedAtLocal": "2026-11-05 15:55 Asia/Seoul",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+    "includedVersionCodes": [
+      65
+    ],
+    "excludedPreviousVersionCodes": [
+      64
+    ],
+    "releaseNotesLocales": [
+      "en-US",
+      "ko-KR"
+    ],
+    "releaseNotesCharacters": {
+      "en-US": 431,
+      "ko-KR": 194
+    },
+    "errors": [],
+    "warnings": [
+      "no_deobfuscation_mapping_file"
+    ],
+    "supportedDeviceChanges": 0,
+    "supportedDeviceChangesScope": "observed seven Console device-type rows",
+    "supportedDevices": {
+      "phone": 11612,
+      "tablet": 6506,
+      "tv": 5,
+      "wear": 0,
+      "car": 29,
+      "chromebook": 77,
+      "androidXR": 2
+    },
+    "refreshedStatusVerified": true,
+    "productionSubmitted": false,
+    "productionReleased": false,
+    "sourceCommit": "a6706a2e5f188d6444678afe83005ef182e10cf4",
+    "releaseNotesFile": "release/google-play/release-notes/0.38.3.txt",
+    "evidence": "dist/play-0.38.3/published.json",
+    "sourceBridgeVersion": "0.24.1",
+    "bridgeUpdateRequiredForNewFeatures": false,
+    "packagedAssetCount": 58,
+    "systemTtsRatePitchPackaged": true,
+    "sourceNodeChecksPassed": 15,
+    "sourceSpeechPythonChecksPassed": 4,
+    "buildAndPlaySdkTestsPassed": 17,
+    "sourceLanguageKeys": 914,
+    "sourceLanguageCount": 10,
+    "physicalDeviceVerified": false,
+    "deviceInstallVerified": false,
+    "bundleSha256": "5291934b66a5ec4e3973aaec65f2574b0e098002554432e2bf234aea02230cd6",
+    "bundleBytes": 3432676,
+    "existingTestersUnchanged": true,
+    "perAnswerSpeechControlsPackaged": true,
+    "previewPlayStopTogglePackaged": true,
+    "ttsAndroidAndElevenLabsOnly": true,
+    "ttsDefaultsOff": true,
+    "localExtractiveSummaryPackaged": true,
+    "dataSafetyProductionFormChanged": false,
+    "privacyPolicyChanged": false,
+    "websiteDeploymentPerformed": false,
+    "systemTtsSettingsPreloadPackaged": true,
+    "systemTtsSettingsObserverPackaged": true
   },
   "productionReleaseHistory": [
     {
@@ -1016,70 +1012,70 @@
     "submission": "English and Korean phone screenshots only; existing app version unchanged"
   },
   "previousInternalTestRelease": {
-    "versionName": "0.38.1",
-    "versionCode": 63,
-    "releaseName": "0.38.1 (63) - Voice and work-first settings",
+    "versionName": "0.38.2",
+    "versionCode": 64,
+    "releaseName": "0.38.2 (64) - Per-answer speech controls",
     "consoleStatus": "active_available_to_existing_testers",
-    "refreshedStatusVerified": true,
+    "publishedOn": "2026-11-05",
+    "publishedAtLocal": "2026-11-05 12:55 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
-    "warnings": [
-      "no_deobfuscation_mapping_file"
+    "includedVersionCodes": [
+      64
     ],
-    "errors": [],
-    "supportedDeviceChanges": 0,
-    "supportedDeviceChangesScope": "observed seven device-type rows",
-    "releaseNotesFile": "release/google-play/release-notes/0.38.1-production.txt",
+    "excludedPreviousVersionCodes": [
+      63
+    ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 472,
-      "ko-KR": 304
+      "en-US": 492,
+      "ko-KR": 267
     },
-    "reusedValidatedInternalTestBundle": false,
-    "sourceCommit": "a1c1c0d8b0bcac9f0c907b40eea835dbb4a93ac8",
-    "sourceBridgeVersion": "0.24.1",
-    "bundleSha256": "a0c06eed6c669b1aa1ee3e540cd89a169a4eab94e6cad49206c0e6dc31ab6b5f",
-    "bundleBytes": 3431129,
-    "includedVersionCodes": [
-      63
+    "errors": [],
+    "warnings": [
+      "no_deobfuscation_mapping_file"
     ],
-    "excludedPreviousVersionCodes": [
-      62
-    ],
-    "evidence": "dist/play-0.38.1/published.json",
-    "physicalDeviceVerified": false,
-    "deviceInstallVerified": false,
-    "privacyPolicyChanged": false,
-    "websiteDeploymentPerformed": false,
-    "existingInternalTrackUnchanged": true,
-    "note": "Same validated code63 production bundle reused from Play library for internal release; no rebuild or reupload. Internal63 active for existing testers after reload. Production63 remains in review.",
-    "status": "published_internal_test",
-    "consoleUploaded": true,
-    "released": true,
-    "productionSubmitted": true,
+    "supportedDeviceChanges": 0,
+    "supportedDeviceChangesScope": "observed seven Console device-type rows",
+    "supportedDevices": {
+      "phone": 11612,
+      "tablet": 6506,
+      "tv": 5,
+      "wear": 0,
+      "car": 29,
+      "chromebook": 77,
+      "androidXR": 2
+    },
+    "refreshedStatusVerified": true,
+    "productionSubmitted": false,
     "productionReleased": false,
-    "sourceNodeChecksPassed": 14,
+    "sourceCommit": "32cea4bc26dc05b390c5c1b3c765b48ecdc027d8",
+    "releaseNotesFile": "release/google-play/release-notes/0.38.2.txt",
+    "evidence": "dist/play-0.38.2/published.json",
+    "sourceBridgeVersion": "0.24.1",
+    "bridgeUpdateRequiredForNewFeatures": false,
+    "packagedAssetCount": 58,
+    "systemTtsRatePitchPackaged": true,
+    "sourceNodeChecksPassed": 15,
     "sourceSpeechPythonChecksPassed": 4,
     "buildAndPlaySdkTestsPassed": 17,
     "sourceLanguageKeys": 914,
     "sourceLanguageCount": 10,
-    "packagedAssetCount": 58,
+    "physicalDeviceVerified": false,
+    "deviceInstallVerified": false,
+    "bundleSha256": "5b2fa5d20bad81a91d5c231e6fb65f937461866aec136f48f89de545437cd295",
+    "bundleBytes": 3432071,
+    "existingTestersUnchanged": true,
+    "perAnswerSpeechControlsPackaged": true,
+    "previewPlayStopTogglePackaged": true,
     "ttsAndroidAndElevenLabsOnly": true,
     "ttsDefaultsOff": true,
     "localExtractiveSummaryPackaged": true,
-    "customNativeDialogsPackaged": true,
-    "workFirstNavigationPackaged": true,
-    "settingsSwitchesAndDisabledGroupsPackaged": true,
-    "publishedOn": "2026-11-05",
-    "publishedAtLocal": "2026-11-05 10:27 Asia/Seoul",
-    "reusedExistingProductionBundle": true,
-    "newBuild": false,
-    "reuploadedBundle": false,
-    "existingTestersUnchanged": true,
-    "productionStatusChangedByInternalRelease": false,
-    "productionSubmissionStatus": "in_review"
+    "dataSafetyProductionFormChanged": false,
+    "privacyPolicyChanged": false,
+    "websiteDeploymentPerformed": false
   },
   "consoleScreenshotsVerifiedOn": "2026-10-15",
   "sourceLanguages": [
@@ -2249,6 +2245,72 @@
       "existingTestersUnchanged": true,
       "productionStatusChangedByInternalRelease": false,
       "productionSubmissionStatus": "in_review"
+    },
+    {
+      "versionName": "0.38.2",
+      "versionCode": 64,
+      "releaseName": "0.38.2 (64) - Per-answer speech controls",
+      "consoleStatus": "active_available_to_existing_testers",
+      "publishedOn": "2026-11-05",
+      "publishedAtLocal": "2026-11-05 12:55 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+      "includedVersionCodes": [
+        64
+      ],
+      "excludedPreviousVersionCodes": [
+        63
+      ],
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "releaseNotesCharacters": {
+        "en-US": 492,
+        "ko-KR": 267
+      },
+      "errors": [],
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed seven Console device-type rows",
+      "supportedDevices": {
+        "phone": 11612,
+        "tablet": 6506,
+        "tv": 5,
+        "wear": 0,
+        "car": 29,
+        "chromebook": 77,
+        "androidXR": 2
+      },
+      "refreshedStatusVerified": true,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "sourceCommit": "32cea4bc26dc05b390c5c1b3c765b48ecdc027d8",
+      "releaseNotesFile": "release/google-play/release-notes/0.38.2.txt",
+      "evidence": "dist/play-0.38.2/published.json",
+      "sourceBridgeVersion": "0.24.1",
+      "bridgeUpdateRequiredForNewFeatures": false,
+      "packagedAssetCount": 58,
+      "systemTtsRatePitchPackaged": true,
+      "sourceNodeChecksPassed": 15,
+      "sourceSpeechPythonChecksPassed": 4,
+      "buildAndPlaySdkTestsPassed": 17,
+      "sourceLanguageKeys": 914,
+      "sourceLanguageCount": 10,
+      "physicalDeviceVerified": false,
+      "deviceInstallVerified": false,
+      "bundleSha256": "5b2fa5d20bad81a91d5c231e6fb65f937461866aec136f48f89de545437cd295",
+      "bundleBytes": 3432071,
+      "existingTestersUnchanged": true,
+      "perAnswerSpeechControlsPackaged": true,
+      "previewPlayStopTogglePackaged": true,
+      "ttsAndroidAndElevenLabsOnly": true,
+      "ttsDefaultsOff": true,
+      "localExtractiveSummaryPackaged": true,
+      "dataSafetyProductionFormChanged": false,
+      "privacyPolicyChanged": false,
+      "websiteDeploymentPerformed": false
     }
   ]
 }
