@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## Android0.38.1(63) 내부 테스트 배포 완료 (2026-11-05)
+
+- **10:27 Asia/Seoul**, 정식 제출과 동일한63번 번들을 Play 라이브러리에서 재사용해 기존 내부 트랙에 게시했다. 새로고침 후 **활성 / 내부 테스터에게 제공됨**,63만 포함·62제외를 확인했다. 기존 테스터·정식 제출·사용자 브리지/세션은 변경하지 않았다.
+- 정식 제출도 2026-11-05 10:28 Asia/Seoul 게시 개요에서 **사전 검사 완료 / in_review(변경사항을 검토 중입니다)**를 확인했다. 관리형 게시OFF·승인 후 자동 공개를 유지하며 정식 공개 완료는 아니다. 증빙 `dist/production-0.38.1/in-review.png`.
+- 새 빌드·AAB 재업로드 없이 소스 `a1c1c0d`의 기존 서명 번들(3,431,129bytes·SHA-256 `a0c06eed6c669b1aa1ee3e540cd89a169a4eab94e6cad49206c0e6dc31ab6b5f`)을 재사용했다. TTS 간격·보조 버튼 아웃라인·마이크/텍스트 간격까지 포함한다. 한/영 노트2/2(472/304자)·오류0·기존 매핑 경고1·7개 기기 유형 지원 변화0을 확인했다.
+- 증빙 `dist/play-0.38.1/`의 notes/review-warning/device-support/review-bundle/only-63/review-notes/confirmation/published/published-refreshed.png와 published.json. 실제 Play 업데이트 수신/설치·Android WebView/IME/TalkBack·음성/유료 API 동작 검증은 남아 있다. 사용자 앱을 자동 설치하거나 브리지·세션을 재시작하지 않았다. 아래 내부62/정식 제출 기록은 당시 상태다.
+
 ## Android0.38.1(63) 정식 배포 심사 제출 (2026-11-05)
 
 - **09:36 Asia/Seoul**, 새 서명 번들63과 데이터 보안 변경 **2건**을 Google에 전송했다. 새로고침 후 상태 **submitted_pending_pre_review_checks**를 확인했다(2026-11-05 09:37 Asia/Seoul). 기존178개 국가/지역 **100% 전체 출시**,63만 포함·59제외, 관리형 게시OFF이므로 **승인 후 자동 공개**한다. **63 공개 완료는 아니며 현재 확인한 공개 버전은0.35.1(59)**이다. 내부0.38.0(62)·테스터 설정은 유지한다.

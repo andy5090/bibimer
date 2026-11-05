@@ -105,7 +105,7 @@
     "currentVerificationNote": "Version63 access/source UI regressions pass. Existing Console short instructions Settings > Review access remain correct; credential and Console instructions were not changed. Physical version63 install not verified."
   },
   "dataSafety": {
-    "consoleStatus": "submitted_pending_pre_review_checks",
+    "consoleStatus": "in_review",
     "savedOn": "2026-11-05",
     "collectsOrSharesData": true,
     "allCollectedDataEncryptedInTransit": false,
@@ -241,7 +241,7 @@
     "browserConsentStatusRefreshPackaged": true,
     "manualGlobeConsentDialogPackaged": true,
     "consoleUploaded": true,
-    "released": false,
+    "released": true,
     "physicalDeviceVerified": false,
     "nativeSpeechInputPackaged": true,
     "speechProviderSelectionPackaged": true,
@@ -252,7 +252,7 @@
     "workFirstNavigationPackaged": true,
     "customNativeDialogsPackaged": true,
     "settingsSwitchesAndDisabledGroupsPackaged": true,
-    "status": "submitted_pending_pre_review_checks",
+    "status": "in_review",
     "consoleUploadStatus": "submitted_production",
     "productionSubmitted": true,
     "productionReleased": false,
@@ -260,7 +260,10 @@
     "sourceCommit": "a1c1c0d8b0bcac9f0c907b40eea835dbb4a93ac8",
     "releaseName": "0.38.1 (63) - Voice and work-first settings",
     "releaseNotesFile": "release/google-play/release-notes/0.38.1-production.txt",
-    "bridgeUpdateRequiredForVoiceAndUi": false
+    "bridgeUpdateRequiredForVoiceAndUi": false,
+    "internalTestPublished": true,
+    "internalTestStatus": "active_available_to_existing_testers",
+    "internalTestEvidence": "dist/play-0.38.1/published.json"
   },
   "consoleScreenshotsUpdatedOn": "2026-10-15",
   "playAppSigning": {
@@ -287,10 +290,10 @@
     "versionName": "0.38.1",
     "versionCode": 63,
     "releaseName": "0.38.1 (63) - Voice and work-first settings",
-    "consoleStatus": "submitted_pending_pre_review_checks",
+    "consoleStatus": "in_review",
     "submittedOn": "2026-11-05",
     "submittedAtLocal": "2026-11-05 09:36 Asia/Seoul",
-    "submissionVerifiedAtLocal": "2026-11-05 09:37 Asia/Seoul",
+    "submissionVerifiedAtLocal": "2026-11-05 10:28 Asia/Seoul",
     "refreshedStatusVerified": true,
     "changeCount": 2,
     "rolloutPercent": 100,
@@ -307,7 +310,7 @@
     "errors": [],
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed seven device-type rows",
-    "preReviewChecksCompleted": false,
+    "preReviewChecksCompleted": true,
     "releaseNotesFile": "release/google-play/release-notes/0.38.1-production.txt",
     "releaseNotesLocales": [
       "en-US",
@@ -380,10 +383,10 @@
     "versionName": "0.38.1",
     "versionCode": 63,
     "releaseName": "0.38.1 (63) - Voice and work-first settings",
-    "consoleStatus": "submitted_pending_pre_review_checks",
+    "consoleStatus": "in_review",
     "submittedOn": "2026-11-05",
     "submittedAtLocal": "2026-11-05 09:36 Asia/Seoul",
-    "submissionVerifiedAtLocal": "2026-11-05 09:37 Asia/Seoul",
+    "submissionVerifiedAtLocal": "2026-11-05 10:28 Asia/Seoul",
     "refreshedStatusVerified": true,
     "changeCount": 2,
     "rolloutPercent": 100,
@@ -400,7 +403,7 @@
     "errors": [],
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed seven device-type rows",
-    "preReviewChecksCompleted": false,
+    "preReviewChecksCompleted": true,
     "releaseNotesFile": "release/google-play/release-notes/0.38.1-production.txt",
     "releaseNotesLocales": [
       "en-US",
@@ -432,7 +435,7 @@
     "websiteDeploymentPerformed": false,
     "existingInternalTrackUnchanged": true,
     "note": "Fresh signed production bundle includes internal62 plus TTS spacing, auxiliary button outlines and microphone/text spacing. Submitted release and optional audio Data Safety update. Google approval/public availability pending; current public59 preserved.",
-    "status": "submitted_pending_pre_review_checks",
+    "status": "in_review",
     "consoleUploaded": true,
     "released": false,
     "productionSubmitted": true,
@@ -448,7 +451,10 @@
     "localExtractiveSummaryPackaged": true,
     "customNativeDialogsPackaged": true,
     "workFirstNavigationPackaged": true,
-    "settingsSwitchesAndDisabledGroupsPackaged": true
+    "settingsSwitchesAndDisabledGroupsPackaged": true,
+    "internalTestPublished": true,
+    "internalTestStatus": "active_available_to_existing_testers",
+    "internalTestEvidence": "dist/play-0.38.1/published.json"
   },
   "previousProductionRelease": {
     "versionName": "0.35.1",
@@ -630,67 +636,70 @@
     "consoleUploaded": true
   },
   "internalTestRelease": {
-    "versionName": "0.38.0",
-    "versionCode": 62,
-    "releaseName": "0.38.0 (62) - Work-first navigation and settings",
+    "versionName": "0.38.1",
+    "versionCode": 63,
+    "releaseName": "0.38.1 (63) - Voice and work-first settings",
     "consoleStatus": "active_available_to_existing_testers",
-    "publishedOn": "2026-11-05",
-    "publishedAtLocal": "2026-11-05 01:32 Asia/Seoul",
+    "refreshedStatusVerified": true,
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
-    "includedVersionCodes": [
-      62
+    "warnings": [
+      "no_deobfuscation_mapping_file"
     ],
-    "excludedPreviousVersionCodes": [
-      61
-    ],
+    "errors": [],
+    "supportedDeviceChanges": 0,
+    "supportedDeviceChangesScope": "observed seven device-type rows",
+    "releaseNotesFile": "release/google-play/release-notes/0.38.1-production.txt",
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "ko-KR": 244,
-      "en-US": 497
+      "en-US": 472,
+      "ko-KR": 304
     },
-    "errors": [],
-    "warnings": [
-      "no_deobfuscation_mapping_file"
-    ],
-    "supportedDeviceChanges": 0,
-    "supportedDeviceChangesScope": "observed seven Console device type rows",
-    "supportedDevices": {
-      "phone": 11609,
-      "tablet": 6504,
-      "tv": 5,
-      "wear": 0,
-      "car": 29,
-      "chromebook": 77,
-      "androidXR": 2
-    },
-    "refreshedStatusVerified": true,
-    "productionSubmitted": false,
-    "productionReleased": false,
-    "sourceCommit": "b21a5675728303d55f4c2e3e5213812b5ae07b80",
-    "releaseNotesFile": "release/google-play/release-notes/0.38.0.txt",
-    "evidence": "dist/play-0.38.0/published.json",
+    "reusedValidatedInternalTestBundle": false,
+    "sourceCommit": "a1c1c0d8b0bcac9f0c907b40eea835dbb4a93ac8",
     "sourceBridgeVersion": "0.24.1",
-    "bridgeUpdateRequiredForNewFeatures": false,
-    "packagedAssetCount": 58,
-    "buildAndPlaySdkTestsPassed": 17,
-    "sourceNodeChecksPassed": 14,
-    "sourceSpeechPythonChecksPassed": 4,
-    "sourceLanguageKeys": 914,
-    "sourceLanguageCount": 10,
+    "bundleSha256": "a0c06eed6c669b1aa1ee3e540cd89a169a4eab94e6cad49206c0e6dc31ab6b5f",
+    "bundleBytes": 3431129,
+    "includedVersionCodes": [
+      63
+    ],
+    "excludedPreviousVersionCodes": [
+      62
+    ],
+    "evidence": "dist/play-0.38.1/published.json",
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "bundleSha256": "30d7b08fca41acb790e1706de8513a7ac919df078cc70a68a0cf73a4ea6571e6",
-    "bundleBytes": 3431034,
-    "existingTestersUnchanged": true,
-    "workFirstNavigationPackaged": true,
-    "customNativeDialogsPackaged": true,
-    "settingsSwitchesAndDisabledGroupsPackaged": true,
-    "dataSafetyProductionFormChanged": false,
     "privacyPolicyChanged": false,
-    "websiteDeploymentPerformed": false
+    "websiteDeploymentPerformed": false,
+    "existingInternalTrackUnchanged": true,
+    "note": "Same validated code63 production bundle reused from Play library for internal release; no rebuild or reupload. Internal63 active for existing testers after reload. Production63 remains in review.",
+    "status": "published_internal_test",
+    "consoleUploaded": true,
+    "released": true,
+    "productionSubmitted": true,
+    "productionReleased": false,
+    "sourceNodeChecksPassed": 14,
+    "sourceSpeechPythonChecksPassed": 4,
+    "buildAndPlaySdkTestsPassed": 17,
+    "sourceLanguageKeys": 914,
+    "sourceLanguageCount": 10,
+    "packagedAssetCount": 58,
+    "ttsAndroidAndElevenLabsOnly": true,
+    "ttsDefaultsOff": true,
+    "localExtractiveSummaryPackaged": true,
+    "customNativeDialogsPackaged": true,
+    "workFirstNavigationPackaged": true,
+    "settingsSwitchesAndDisabledGroupsPackaged": true,
+    "publishedOn": "2026-11-05",
+    "publishedAtLocal": "2026-11-05 10:27 Asia/Seoul",
+    "reusedExistingProductionBundle": true,
+    "newBuild": false,
+    "reuploadedBundle": false,
+    "existingTestersUnchanged": true,
+    "productionStatusChangedByInternalRelease": false,
+    "productionSubmissionStatus": "in_review"
   },
   "productionReleaseHistory": [
     {
@@ -1001,26 +1010,26 @@
     "submission": "English and Korean phone screenshots only; existing app version unchanged"
   },
   "previousInternalTestRelease": {
-    "versionName": "0.37.0",
-    "versionCode": 61,
-    "releaseName": "0.37.0 (61) - Voice settings and read-aloud",
+    "versionName": "0.38.0",
+    "versionCode": 62,
+    "releaseName": "0.38.0 (62) - Work-first navigation and settings",
     "consoleStatus": "active_available_to_existing_testers",
-    "publishedOn": "2026-11-04",
-    "publishedAtLocal": "2026-11-04 23:32 Asia/Seoul",
+    "publishedOn": "2026-11-05",
+    "publishedAtLocal": "2026-11-05 01:32 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      61
+      62
     ],
     "excludedPreviousVersionCodes": [
-      60
+      61
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "ko-KR": 305,
-      "en-US": 448
+      "ko-KR": 244,
+      "en-US": 497
     },
     "errors": [],
     "warnings": [
@@ -1028,31 +1037,40 @@
     ],
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed seven Console device type rows",
+    "supportedDevices": {
+      "phone": 11609,
+      "tablet": 6504,
+      "tv": 5,
+      "wear": 0,
+      "car": 29,
+      "chromebook": 77,
+      "androidXR": 2
+    },
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "036596289f719906f3012d06d1314e1ef7a03d38",
-    "releaseNotesFile": "release/google-play/release-notes/0.37.0.txt",
-    "evidence": "dist/play-0.37.0/published.json",
+    "sourceCommit": "b21a5675728303d55f4c2e3e5213812b5ae07b80",
+    "releaseNotesFile": "release/google-play/release-notes/0.38.0.txt",
+    "evidence": "dist/play-0.38.0/published.json",
     "sourceBridgeVersion": "0.24.1",
     "bridgeUpdateRequiredForNewFeatures": false,
     "packagedAssetCount": 58,
     "buildAndPlaySdkTestsPassed": 17,
-    "sourceLanguageKeys": 912,
+    "sourceNodeChecksPassed": 14,
+    "sourceSpeechPythonChecksPassed": 4,
+    "sourceLanguageKeys": 914,
     "sourceLanguageCount": 10,
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "bundleSha256": "9032bb8d3e0d4a1efa683c4f5dc8dcf1528b2f1df0ad1a330df5eb6a43b19f3b",
-    "bundleBytes": 3427243,
-    "speechProviderSelectionPackaged": true,
-    "ttsAndroidAndElevenLabsOnly": true,
-    "ttsDefaultsOff": true,
-    "localExtractiveSummaryPackaged": true,
+    "bundleSha256": "30d7b08fca41acb790e1706de8513a7ac919df078cc70a68a0cf73a4ea6571e6",
+    "bundleBytes": 3431034,
     "existingTestersUnchanged": true,
-    "policyDeployment": "https://acdb8851.bibimer.pages.dev",
-    "policyEvidence": "dist/play-0.37.0/policy-verification.json",
+    "workFirstNavigationPackaged": true,
+    "customNativeDialogsPackaged": true,
+    "settingsSwitchesAndDisabledGroupsPackaged": true,
     "dataSafetyProductionFormChanged": false,
-    "internalDataSafetyExemptionSource": "https://support.google.com/googleplay/android-developer/answer/10787469?hl=en"
+    "privacyPolicyChanged": false,
+    "websiteDeploymentPerformed": false
   },
   "consoleScreenshotsVerifiedOn": "2026-10-15",
   "sourceLanguages": [
@@ -2093,6 +2111,69 @@
       "policyEvidence": "dist/play-0.37.0/policy-verification.json",
       "dataSafetyProductionFormChanged": false,
       "internalDataSafetyExemptionSource": "https://support.google.com/googleplay/android-developer/answer/10787469?hl=en"
+    },
+    {
+      "versionName": "0.38.0",
+      "versionCode": 62,
+      "releaseName": "0.38.0 (62) - Work-first navigation and settings",
+      "consoleStatus": "active_available_to_existing_testers",
+      "publishedOn": "2026-11-05",
+      "publishedAtLocal": "2026-11-05 01:32 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+      "includedVersionCodes": [
+        62
+      ],
+      "excludedPreviousVersionCodes": [
+        61
+      ],
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "releaseNotesCharacters": {
+        "ko-KR": 244,
+        "en-US": 497
+      },
+      "errors": [],
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed seven Console device type rows",
+      "supportedDevices": {
+        "phone": 11609,
+        "tablet": 6504,
+        "tv": 5,
+        "wear": 0,
+        "car": 29,
+        "chromebook": 77,
+        "androidXR": 2
+      },
+      "refreshedStatusVerified": true,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "sourceCommit": "b21a5675728303d55f4c2e3e5213812b5ae07b80",
+      "releaseNotesFile": "release/google-play/release-notes/0.38.0.txt",
+      "evidence": "dist/play-0.38.0/published.json",
+      "sourceBridgeVersion": "0.24.1",
+      "bridgeUpdateRequiredForNewFeatures": false,
+      "packagedAssetCount": 58,
+      "buildAndPlaySdkTestsPassed": 17,
+      "sourceNodeChecksPassed": 14,
+      "sourceSpeechPythonChecksPassed": 4,
+      "sourceLanguageKeys": 914,
+      "sourceLanguageCount": 10,
+      "physicalDeviceVerified": false,
+      "deviceInstallVerified": false,
+      "bundleSha256": "30d7b08fca41acb790e1706de8513a7ac919df078cc70a68a0cf73a4ea6571e6",
+      "bundleBytes": 3431034,
+      "existingTestersUnchanged": true,
+      "workFirstNavigationPackaged": true,
+      "customNativeDialogsPackaged": true,
+      "settingsSwitchesAndDisabledGroupsPackaged": true,
+      "dataSafetyProductionFormChanged": false,
+      "privacyPolicyChanged": false,
+      "websiteDeploymentPerformed": false
     }
   ]
 }
