@@ -82,10 +82,14 @@
     error_android_required:["The local iOS connection is unavailable.","앱의 내장 실행 환경에 연결할 수 없습니다."]
   };
   function t(key, values = {}) {
-    const pair = overrides[key];
+    const ios=window.BibimerIOSLocales?.[original.language()] || window.BibimerIOSLocales?.en;
+    const keys={browser_consent_body:4,browser_control_status:4,error_browser_manual:4,voice_device_hint:5,tts_android_hint:6,notifications_hint:7};
+    if(ios && key in keys)return ios[keys[key]];
+    if(key==="browser_title")return "WebKit · iOS";
+    const pair = ["notifications_off","notifications_app_update"].includes(key) ? null : overrides[key];
     const policy = policyLocales[original.language()]?.[policyKeys[key]];
     const text = pair ? (policy || pair[original.language() === "ko" ? 1 : 0]).replace(/\{(\w+)\}/g, (all, name) => values[name] ?? all) : original.t(key, values);
-    return text.replace(/Termux/g,"Linux").replace(/Android/g,"iOS");
+    return text.replace(/Termux/g,"Linux").replace(/Android/g,"iOS").replace(/Firefox/g,"WebKit").replace(/Linux:X11/g,"iOS");
   }
   window.BibimerI18n = {...original, t, errorKey:data=>overrides[data?.code] ? data.code : original.errorKey(data), apply() {
     original.apply();
@@ -111,5 +115,7 @@
   for (const selector of ["#manual-setup","#setup-connection-steps","#review-access-open","#app-update-banner","#app-update-card","#bridge-update-card","#forget","[data-command='restart']","[data-i18n='bridge_update_hint']","[data-i18n='agent_termux_return']"]) {
     const element = document.querySelector(selector); if (element) element.classList.add("ios-unavailable");
   }
+  for(const element of document.querySelectorAll("[data-agent='browser'][data-agent-action='install'],#browser-setup,#tts-engine-row"))element.classList.add("ios-unavailable");
+  const deviceTts=document.querySelector("#tts-provider option[value='android']");if(deviceTts)deviceTts.textContent="iOS TTS";
   const maintenance = document.getElementById("bridge-maintenance-open"); if (maintenance) maintenance.classList.add("ios-unavailable");
 })();

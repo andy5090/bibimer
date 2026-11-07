@@ -1,5 +1,8 @@
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
+#import "VoiceService.h"
+#import "CompletionNotifications.h"
+#import "BrowserService.h"
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <resolv.h>
@@ -43,6 +46,12 @@ static BOOL usesDesktopInput(void) {
 
 @interface BibimerController : UIViewController <WKScriptMessageHandler, WKNavigationDelegate, NSURLSessionTaskDelegate, UIScrollViewDelegate>
 @property WKWebView *web;
+@property BibimerVoiceService *voice;
+@property BibimerBrowserService *browser;
+@property BOOL browserPolling;
+@property NSUInteger browserEpoch;
+@property NSURLSessionDataTask *browserPoll;
+@property BibimerCompletionNotifications *completionNotifications;
 @property UILabel *status;
 @property UITextView *bootstrapOutput;
 @property NSString *token;
@@ -67,6 +76,10 @@ static BOOL usesDesktopInput(void) {
 @property NSString *exportRequest;
 @property unsigned long long exportSize;
 @property unsigned long long exportOffset;
+- (void)nativeEvent:(NSString *)callback arguments:(NSArray *)arguments;
+- (NSMutableURLRequest *)request:(NSString *)method path:(NSString *)path body:(NSString *)body;
+- (void)pollBrowser:(NSUInteger)epoch;
+- (void)startBrowserPolling;
 - (void)boot;
 - (void)checkHealth;
 - (void)fail:(NSString *)message;
@@ -182,16 +195,67 @@ static void guestExit(int status) {
         [NSFileManager.defaultManager removeItemAtURL:[self.documents URLByAppendingPathComponent:self.smokeResultName] error:nil];
         [NSFileManager.defaultManager removeItemAtURL:[self.documents URLByAppendingPathComponent:@"test-progress.json"] error:nil];
     }
+    self.voice=[BibimerVoiceService new];self.voice.presenter=self;
+    self.browser=[BibimerBrowserService new];self.browser.presenter=self;
+    self.completionNotifications=[BibimerCompletionNotifications new];
+    __weak typeof(self) weak=self;
+    self.browser.visibility=^(BOOL visible){
+        if(visible)[weak.voice pause];
+        [weak.web evaluateJavaScript:visible ? @"window.BibimerPause?.()" : @"window.BibimerResume?.()" completionHandler:nil];
+    };
+    self.voice.emit=^(NSString *callback,NSArray *arguments){[weak nativeEvent:callback arguments:arguments];};
+    self.completionNotifications.changed=^{[weak nativeEvent:@"BibimerNotificationStatus" arguments:@[]];};
+    self.completionNotifications.opened=^{[weak nativeEvent:@"BibimerOpenNotification" arguments:@[]];};
+    self.completionNotifications.fetch=^NSURLSessionDataTask *(NSString *path,void (^done)(NSDictionary *)){
+        if(!weak.ready || weak.exited){dispatch_async(dispatch_get_main_queue(),^{done(nil);});return nil;}
+        NSURLSessionDataTask *task=[weak.http dataTaskWithRequest:[weak request:@"GET" path:path body:@"{}"] completionHandler:^(NSData *data,NSURLResponse *response,NSError *error){
+            NSDictionary *json=!error && [(NSHTTPURLResponse *)response statusCode]==200 && data.length<4*1024*1024 ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+            dispatch_async(dispatch_get_main_queue(),^{done([json isKindOfClass:NSDictionary.class] ? json : nil);});
+        }];[task resume];return task;
+    };
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(enteredBackground) name:UIApplicationDidEnterBackgroundNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(becameActive) name:UIApplicationDidBecomeActiveNotification object:nil];
     dispatch_async(self.runtimeQueue, ^{ [self boot]; });
 }
 
+- (void)enteredBackground {
+    [self.voice pause];[self.completionNotifications pause];
+    self.browserEpoch++;self.browserPolling=NO;[self.browserPoll cancel];self.browserPoll=nil;
+    [self.web evaluateJavaScript:@"window.BibimerPause?.()" completionHandler:nil];
+}
+- (void)pollBrowser:(NSUInteger)epoch {
+    if(epoch!=self.browserEpoch || !self.browserPolling || self.exited || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive)return;
+    self.browserPoll=[self.http dataTaskWithRequest:[self request:@"GET" path:@"/v1/ios/browser/commands" body:@"{}"] completionHandler:^(NSData *data,NSURLResponse *response,NSError *error){
+        NSDictionary *json=!error && data.length<65536 ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+        dispatch_async(dispatch_get_main_queue(),^{
+            if(epoch!=self.browserEpoch || !self.browserPolling)return;self.browserPoll=nil;
+            NSDictionary *command=[json isKindOfClass:NSDictionary.class] ? json[@"command"] : nil;
+            void (^again)(void)=^{dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC/3),dispatch_get_main_queue(),^{[self pollBrowser:epoch];});};
+            if(![command isKindOfClass:NSDictionary.class]){again();return;}
+            [self.browser command:command completion:^(NSDictionary *result){
+                NSDictionary *body=@{@"id":command[@"id"] ?: @"",@"launch_id":command[@"launch_id"] ?: @"",@"result":result};
+                [[self.http dataTaskWithRequest:[self request:@"POST" path:@"/v1/ios/browser/results" body:jsonString(body)] completionHandler:^(NSData *bytes,NSURLResponse *reply,NSError *failure){dispatch_async(dispatch_get_main_queue(),again);}] resume];
+            }];
+        });
+    }];[self.browserPoll resume];
+}
+- (void)startBrowserPolling {
+    if(!self.ready || self.exited || self.browserPolling || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive)return;
+    self.browserPolling=YES;[self pollBrowser:self.browserEpoch];
+}
+- (void)nativeEvent:(NSString *)callback arguments:(NSArray *)arguments {
+    if(!self.web || self.exited)return;
+    NSString *script=[NSString stringWithFormat:@"Object.assign(window.__bibimerEnvironment,%@);window[%@]?.(...%@);",jsonString([self environment]),jsonString(callback),jsonString(arguments)];
+    [self.web evaluateJavaScript:script completionHandler:nil];
+}
 - (void)becameActive {
+    [self.completionNotifications resume];[self startBrowserPolling];
     if (self.ready && !self.exited) [self.web evaluateJavaScript:@"window.BibimerResume?.()" completionHandler:nil];
 }
 
 - (void)fail:(NSString *)message {
     dispatch_async(dispatch_get_main_queue(), ^{
+        [self.voice pause];[self.completionNotifications pause];[self.browser revokeAll];self.browserEpoch++;self.browserPolling=NO;[self.browserPoll cancel];self.browserPoll=nil;
         self.status.text = message; self.web.hidden = YES;
         self.bootstrapOutput.hidden = NO; self.status.hidden = NO;
         if (self.smokeScript) [self writeSmoke:@{@"ok":@NO,@"error":message,@"checks":@[]}];
@@ -304,7 +368,7 @@ static void guestExit(int status) {
 - (void)handleHealthJSON:(NSDictionary *)json response:(NSHTTPURLResponse *)response error:(NSError *)error {
     // A request started before init exited must never resurrect the workspace.
     if (self.exited) return;
-    if (!error && response.statusCode == 200 && [json isKindOfClass:NSDictionary.class] && [json[@"protocol"] integerValue] == 1) { self.ready = YES; [self loadWorkspace]; }
+    if (!error && response.statusCode == 200 && [json isKindOfClass:NSDictionary.class] && [json[@"protocol"] integerValue] == 1) { self.ready = YES; [self loadWorkspace]; [self startBrowserPolling]; }
     else if (self.healthAttempts < 600) {
         if (self.healthAttempts > 5) self.status.text = [NSString stringWithFormat:@"BIBIMER · Waiting for local Linux…\n%@ (HTTP %ld)",error.localizedDescription ?: @"Starting bridge",(long)response.statusCode];
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(), ^{ [self checkHealth]; });
@@ -315,7 +379,12 @@ static void guestExit(int status) {
     NSUserDefaults *preferences = NSUserDefaults.standardUserDefaults;
     NSString *preference = [preferences stringForKey:@"languagePreference"] ?: @"system";
     NSString *language = [preference isEqual:@"system"] ? systemLanguage() : preference;
-    return @{@"selfTest":@(self.smokeScript != nil),@"paired":@YES,@"termuxInstalled":@YES,@"platform":@"ios",@"notifications":@{@"enabled":@NO,@"allowed":@NO,@"state":@"unsupported"},@"language":language,@"systemLanguage":systemLanguage(),@"languagePreference":preference,@"agentOptions":[preferences dictionaryForKey:@"agentOptions"] ?: @{},@"enterBehavior":[preferences stringForKey:@"enterBehavior"] ?: @"newline",@"responseDelivery":[[preferences stringForKey:@"responseDelivery"] isEqual:@"steer"] ? @"steer" : @"queue",@"contextDisplay":[[preferences stringForKey:@"contextDisplay"] isEqual:@"remaining"] ? @"remaining" : @"used",@"lastProjectParent":[preferences stringForKey:@"lastProjectParent"] ?: @"/root/projects",@"lastProjectFolder":[preferences stringForKey:@"lastProjectFolder"] ?: @"/root/projects",@"quickSetup":@{@"phase":@"connected",@"id":@"embedded"},@"bundledBridgeVersion":@"0.18.0",@"version":@"0.1.0-ios"};
+    NSMutableDictionary *environment=[@{@"selfTest":@(self.smokeScript != nil),@"paired":@YES,@"termuxInstalled":@YES,@"platform":@"ios",@"notifications":@{@"enabled":@NO,@"allowed":@NO,@"state":@"unsupported"},@"language":language,@"systemLanguage":systemLanguage(),@"languagePreference":preference,@"agentOptions":[preferences dictionaryForKey:@"agentOptions"] ?: @{},@"enterBehavior":[preferences stringForKey:@"enterBehavior"] ?: @"newline",@"responseDelivery":[[preferences stringForKey:@"responseDelivery"] isEqual:@"steer"] ? @"steer" : @"queue",@"contextDisplay":[[preferences stringForKey:@"contextDisplay"] isEqual:@"remaining"] ? @"remaining" : @"used",@"lastProjectParent":[preferences stringForKey:@"lastProjectParent"] ?: @"/root/projects",@"lastProjectFolder":[preferences stringForKey:@"lastProjectFolder"] ?: @"/root/projects",@"quickSetup":@{@"phase":@"connected",@"id":@"embedded"},@"bundledBridgeVersion":[NSBundle.mainBundle objectForInfoDictionaryKey:@"BibimerBridgeVersion"] ?: @"unknown",@"version":@"0.1.0-ios"} mutableCopy];
+    [environment addEntriesFromDictionary:[self.voice environment] ?: @{}];
+    environment[@"termuxX11Installed"]=@YES;
+    environment[@"notifications"]=[self.completionNotifications environment] ?: @{};
+    environment[@"notificationTarget"]=[NSJSONSerialization JSONObjectWithData:[[self.completionNotifications pendingTarget] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil] ?: @{};
+    return environment;
 }
 
 - (void)loadWorkspace {
@@ -409,7 +478,7 @@ static void guestExit(int status) {
         return [route rangeOfString:@"^/v1/sessions/[a-f0-9-]{36}/(events|title)$" options:NSRegularExpressionSearch].location != NSNotFound;
     }
     if (![method isEqual:@"POST"] || components.query) return NO;
-    if ([@[@"/v1/project",@"/v1/project/manage",@"/v1/github",@"/v1/inspect",@"/v1/git",@"/v1/folders",@"/v1/session-history",@"/v1/commands",@"/v1/models",@"/v1/project-agent",@"/v1/project-session",@"/v1/worktrees/manage",@"/v1/worktrees",@"/v1/sessions",@"/v1/agent-connections",@"/v1/ios/agents"] containsObject:route]) return YES;
+    if ([@[@"/v1/browser",@"/v1/project",@"/v1/project/manage",@"/v1/github",@"/v1/inspect",@"/v1/git",@"/v1/folders",@"/v1/session-history",@"/v1/commands",@"/v1/models",@"/v1/project-agent",@"/v1/project-session",@"/v1/worktrees/manage",@"/v1/worktrees",@"/v1/sessions",@"/v1/agent-connections",@"/v1/ios/agents"] containsObject:route]) return YES;
     return [route rangeOfString:@"^/v1/sessions/[a-f0-9-]{36}/(manage|handoff|input|resize|stop|message|respond|interrupt|options|queue|steer)$" options:NSRegularExpressionSearch].location != NSNotFound;
 }
 
@@ -542,7 +611,16 @@ static void guestExit(int status) {
     if (message.webView != self.web || !message.frameInfo.mainFrame || !source.isFileURL || ![source.URLByStandardizingPath.URLByResolvingSymlinksInPath.path isEqual:index.URLByResolvingSymlinksInPath.path] || ![message.body isKindOfClass:NSDictionary.class]) return;
     NSDictionary *body = message.body;
     NSString *action = body[@"action"];
-    if ([action isEqual:@"readClipboard"]) {
+    if ([@[@"voiceStart",@"voiceCancel",@"voiceConfigure",@"voiceKey",@"speechContext",@"speechStop",@"speechRead",@"speechVoices",@"speechConfigure"] containsObject:action]) {
+        if(!self.smokeScript)[self.voice handle:body];
+    } else if([action isEqual:@"browserWindow"] && [body[@"tag"] isKindOfClass:NSString.class]) { [self.browser showTag:body[@"tag"]];
+    } else if([action isEqual:@"notificationConfigure"] && [body[@"enabled"] isKindOfClass:NSNumber.class]) {
+        if(!self.smokeScript)[self.completionNotifications configure:[body[@"enabled"] boolValue]];
+    } else if([action isEqual:@"notificationConnected"]) {
+        if(!self.smokeScript)[self.completionNotifications connected:[body[@"supported"] boolValue]];
+    } else if([action isEqual:@"notificationSettings"]){if(!self.smokeScript)[self.completionNotifications openSettings];}
+    else if([action isEqual:@"notificationTaken"]){[self.completionNotifications takeTarget];}
+    else if ([action isEqual:@"readClipboard"]) {
         NSString *identifier = body[@"id"];
         if (![identifier isKindOfClass:NSString.class] || [identifier rangeOfString:@"^[a-f0-9]{32}:[0-9]{1,16}$" options:NSRegularExpressionSearch].location == NSNotFound) return;
         [self readClipboard:identifier webView:message.webView];

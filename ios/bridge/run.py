@@ -5,6 +5,7 @@ The stable Android bridge is loaded from its bundled source. Explicit agent
 allowlists are extended for Gemini; all existing implementations stay in that
 module, including its private PTY child entry point.
 """
+import importlib.util
 import hmac
 import json
 import os
@@ -298,7 +299,7 @@ def adapt(base, claude_provider=None, opencode_provider=None):
             result.update(platform="ios", runtime="embedded-arm64-linux")
             # OS notifications/file viewers are native capabilities, not a guest
             # guarantee. The app decides which native facilities are available.
-            result["features"] = [feature for feature in result["features"] if feature not in {"response_notifications", "claude_steer", "agent_connections"}]
+            result["features"] = [feature for feature in result["features"] if feature not in {"claude_steer", "agent_connections"}]
             result["features"].append("ios_agent_setup")
             return result
 
@@ -357,13 +358,17 @@ def adapt(base, claude_provider=None, opencode_provider=None):
     class Handler(base.Handler):
         def _route(self, method):
             parsed = urllib.parse.urlsplit(self.path)
-            if parsed.path != "/v1/ios/agents":
+            native_commands = parsed.path in {"/v1/ios/browser/commands", "/v1/ios/browser/results"}
+            if parsed.path != "/v1/ios/agents" and not native_commands:
                 return super()._route(method)
             if self.headers.get("Host") != f"127.0.0.1:{self.server.server_port}" or "Origin" in self.headers:
                 raise base.Problem(403, "error_local_only")
             auth = self.headers.get("Authorization", "")
             if not hmac.compare_digest(auth.encode(), ("Bearer " + self.server.bridge.token).encode()):
                 raise base.Problem(401, "error_pairing_required")
+            if parsed.path == "/v1/ios/browser/commands":
+                if method != "GET" or parsed.query:raise base.Problem(404,"error_route")
+                self.reply(200,self.server.bridge.native_browser_commands.take());return
             if method != "POST" or parsed.query:
                 raise base.Problem(404, "error_route")
             if self.headers.get("Transfer-Encoding") or len(self.headers.get_all("Content-Length", [])) != 1:
@@ -371,7 +376,7 @@ def adapt(base, claude_provider=None, opencode_provider=None):
             if self.headers.get_content_type() != "application/json":
                 raise base.Problem(415, "error_json_required")
             try:
-                length = base.integer(int(self.headers["Content-Length"]), 2, 65536)
+                length = base.integer(int(self.headers["Content-Length"]), 2, 24*1024*1024 if native_commands else 65536)
                 raw = self.rfile.read(length)
                 if len(raw) != length:
                     raise ValueError()
@@ -380,10 +385,16 @@ def adapt(base, claude_provider=None, opencode_provider=None):
                     raise ValueError()
             except (ValueError, UnicodeError):
                 raise base.Problem(400, "error_invalid_json") from None
-            self.reply(200, self.server.bridge.agent_action(data))
+            if native_commands:
+                try:result=self.server.bridge.native_browser_commands.finish(data)
+                except ValueError:raise base.Problem(409,"error_browser_control") from None
+                self.reply(200,result)
+            else:self.reply(200, self.server.bridge.agent_action(data))
 
     base.Bridge, base.Handler = Bridge, Handler
-    return base
+    spec=importlib.util.spec_from_file_location("bibimer_ios_browser_native",HERE / "browser_native.py")
+    native=importlib.util.module_from_spec(spec);spec.loader.exec_module(native)
+    return native.install(base)
 
 
 def main():

@@ -1,0 +1,102 @@
+{
+  "en": [
+    "Record speech when you tap the microphone to add text to your draft.",
+    "Convert speech into a draft. Apple speech recognition may use the network.",
+    "Chat response completed.",
+    "Browser",
+    "Finish signing in in the in-app browser, then return to Work and allow access here. Agents can capture the visible page and scroll. Clicks and keyboard input remain manual.",
+    "Uses iOS speech recognition, which may send audio to Apple. The result only edits your draft.",
+    "Uses iOS voices and available assistive speech settings. Voice availability depends on the device.",
+    "Shows a generic completion alert while the app is visible. Alerts missed while iOS suspends the app are not replayed."
+  ],
+  "ko": [
+    "마이크를 눌렀을 때 음성을 녹음해 입력 초안에 추가합니다.",
+    "음성을 입력 초안으로 변환합니다. Apple 음성 인식은 네트워크를 사용할 수 있습니다.",
+    "대화 응답이 완료되었습니다.",
+    "브라우저",
+    "앱 안의 브라우저에서 로그인한 뒤 작업 화면으로 돌아와 여기서 허용하세요. 에이전트는 보이는 페이지를 캡처하고 스크롤할 수 있습니다. 클릭과 키보드 입력은 직접 처리해야 합니다.",
+    "iOS 음성 인식을 사용하며 음성이 Apple로 전송될 수 있습니다. 결과는 초안에만 입력합니다.",
+    "iOS 음성과 사용 가능한 손쉬운 사용 음성 설정을 사용합니다. 음성 지원 여부는 기기에 따라 다릅니다.",
+    "앱 화면이 열려 있는 동안 일반 완료 알림을 표시합니다. iOS가 앱을 정지한 동안 놓친 알림은 다시 보내지 않습니다."
+  ],
+  "pt-BR": [
+    "Grava a fala ao tocar no microfone para adicionar texto ao rascunho.",
+    "Converte fala em rascunho. O reconhecimento da Apple pode usar a rede.",
+    "Resposta da conversa concluída.",
+    "Navegador",
+    "Entre no navegador do app, volte a Trabalho e permita o acesso aqui. Agentes podem capturar a página visível e rolar. Cliques e teclado continuam manuais.",
+    "Usa o reconhecimento do iOS, que pode enviar áudio à Apple. O resultado apenas edita o rascunho.",
+    "Usa vozes do iOS e ajustes de fala assistiva disponíveis. A disponibilidade depende do dispositivo.",
+    "Mostra um alerta genérico de conclusão enquanto o app está visível. Alertas perdidos durante a suspensão não são reenviados."
+  ],
+  "es": [
+    "Graba voz al tocar el micrófono para añadir texto al borrador.",
+    "Convierte voz en un borrador. El reconocimiento de Apple puede usar la red.",
+    "Respuesta del chat completada.",
+    "Navegador",
+    "Inicia sesión en el navegador de la app, vuelve a Trabajo y permite el acceso aquí. Los agentes pueden capturar la página visible y desplazarse. Los clics y el teclado son manuales.",
+    "Usa el reconocimiento de iOS, que puede enviar audio a Apple. El resultado solo edita el borrador.",
+    "Usa voces de iOS y los ajustes de voz asistida disponibles. La disponibilidad depende del dispositivo.",
+    "Muestra una alerta genérica mientras la app está visible. No se repiten alertas perdidas durante la suspensión."
+  ],
+  "id": [
+    "Merekam ucapan saat Anda mengetuk mikrofon untuk menambahkan teks ke draf.",
+    "Mengubah ucapan menjadi draf. Pengenalan Apple dapat memakai jaringan.",
+    "Respons percakapan selesai.",
+    "Browser",
+    "Masuk di browser aplikasi, kembali ke Kerja, lalu izinkan akses di sini. Agen dapat mengambil gambar halaman yang terlihat dan menggulir. Klik dan masukan keyboard tetap manual.",
+    "Menggunakan pengenalan iOS yang dapat mengirim audio ke Apple. Hasil hanya mengedit draf.",
+    "Menggunakan suara iOS dan pengaturan ucapan aksesibilitas yang tersedia. Dukungan bergantung pada perangkat.",
+    "Menampilkan pemberitahuan selesai umum saat aplikasi terlihat. Pemberitahuan yang terlewat saat ditangguhkan tidak diulang."
+  ],
+  "zh-Hans": [
+    "点按麦克风时录音，将文字添加到草稿。",
+    "将语音转换为草稿。Apple 语音识别可能使用网络。",
+    "对话回复已完成。",
+    "浏览器",
+    "在应用内浏览器登录后返回工作页面，在此允许访问。代理可以截取可见页面并滚动。点击和键盘输入仍需手动完成。",
+    "使用 iOS 语音识别，可能向 Apple 发送音频。结果仅修改草稿。",
+    "使用 iOS 语音和可用的辅助朗读设置。语音支持取决于设备。",
+    "应用画面显示期间提供通用完成通知。iOS 挂起应用期间错过的通知不会重发。"
+  ],
+  "ja": [
+    "マイクをタップしたときに録音し、下書きにテキストを追加します。",
+    "音声を下書きに変換します。Appleの音声認識はネットワークを使用する場合があります。",
+    "チャットの応答が完了しました。",
+    "ブラウザ",
+    "アプリ内ブラウザでログイン後、作業画面に戻ってここで許可してください。エージェントは表示ページの撮影とスクロールができます。クリックとキー入力は手動です。",
+    "iOS音声認識を使い、音声がAppleに送信される場合があります。結果は下書きのみを編集します。",
+    "iOSの音声と利用可能な読み上げ支援設定を使います。音声の対応状況は端末によります。",
+    "アプリ画面の表示中に一般的な完了通知を表示します。iOSによる停止中に見逃した通知は再送しません。"
+  ],
+  "zh-Hant": [
+    "點按麥克風時錄音，將文字加入草稿。",
+    "將語音轉換為草稿。Apple 語音辨識可能使用網路。",
+    "對話回覆已完成。",
+    "瀏覽器",
+    "在應用程式內瀏覽器登入後返回工作畫面，在此允許存取。代理可以擷取可見頁面並捲動。點擊與鍵盤輸入仍需手動完成。",
+    "使用 iOS 語音辨識，可能向 Apple 傳送音訊。結果僅修改草稿。",
+    "使用 iOS 語音及可用的輔助朗讀設定。語音支援取決於裝置。",
+    "應用程式畫面顯示期間提供一般完成通知。iOS 暫停期間錯過的通知不會重送。"
+  ],
+  "fr": [
+    "Enregistre la parole lorsque vous touchez le micro pour ajouter du texte au brouillon.",
+    "Convertit la parole en brouillon. La reconnaissance Apple peut utiliser le réseau.",
+    "Réponse de la conversation terminée.",
+    "Navigateur",
+    "Connectez-vous dans le navigateur de l’app, revenez à Travail et autorisez l’accès ici. Les agents peuvent capturer la page visible et la faire défiler. Clics et saisie restent manuels.",
+    "Utilise la reconnaissance iOS, qui peut envoyer l’audio à Apple. Le résultat modifie uniquement le brouillon.",
+    "Utilise les voix iOS et les réglages d’assistance vocale disponibles. Les voix dépendent de l’appareil.",
+    "Affiche une alerte générique lorsque l’app est visible. Les alertes manquées pendant la suspension ne sont pas renvoyées."
+  ],
+  "de": [
+    "Nimmt beim Tippen auf das Mikrofon Sprache auf und fügt Text zum Entwurf hinzu.",
+    "Wandelt Sprache in einen Entwurf um. Apples Spracherkennung kann das Netzwerk nutzen.",
+    "Chat-Antwort abgeschlossen.",
+    "Browser",
+    "Melde dich im App-Browser an, kehre zu Arbeit zurück und erlaube hier den Zugriff. Agenten können die sichtbare Seite aufnehmen und scrollen. Klicken und Tastatureingaben bleiben manuell.",
+    "Nutzt die iOS-Spracherkennung, die Audio an Apple senden kann. Das Ergebnis bearbeitet nur den Entwurf.",
+    "Nutzt iOS-Stimmen und verfügbare Einstellungen der Sprachassistenz. Stimmen hängen vom Gerät ab.",
+    "Zeigt eine allgemeine Abschlussmeldung, solange die App sichtbar ist. Während einer iOS-Pause verpasste Meldungen werden nicht erneut gesendet."
+  ]
+}

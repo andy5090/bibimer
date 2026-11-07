@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import re
 import shutil
 import subprocess
 import sys
@@ -30,10 +31,12 @@ def package_web(destination):
     if destination.exists():
         shutil.rmtree(destination)
     shutil.copytree(source, destination)
-    for name in ['platform.js', 'terminal-tools.js', 'terminal-tools.css']:
+    for name in ['platform.js', 'terminal-tools.js', 'terminal-tools.css', 'speech-text.js']:
         shutil.copy2(HERE / 'Resources' / name, destination / name)
+    locales=json.loads((HERE / 'Resources/ios-locales.json').read_text())
+    (destination / 'ios-locales.js').write_text('window.BibimerIOSLocales='+json.dumps(locales,ensure_ascii=False)+';\n')
     index = (destination / 'index.html').read_text()
-    index = index.replace('<script src="app.js" defer>', '<script src="platform.js" defer></script>\n  <script src="terminal-tools.js" defer></script>\n  <link rel="stylesheet" href="terminal-tools.css">\n  <script src="app.js" defer>')
+    index = index.replace('<script src="app.js" defer>', '<script src="ios-locales.js" defer></script>\n  <script src="speech-text.js" defer></script>\n  <script src="platform.js" defer></script>\n  <script src="terminal-tools.js" defer></script>\n  <link rel="stylesheet" href="terminal-tools.css">\n  <script src="app.js" defer>')
     # iOS zooms small text fields on focus. Keep the shared Android sizing intact.
     index = index.replace('</head>', '''<style>
 .ios-unavailable { display:none !important; }
@@ -72,7 +75,7 @@ def package_guest(destination):
         raise RuntimeError('Pinned runtime HTTP parser polyfill is missing.')
     (destination / 'runtime').mkdir()
     shutil.copy2(wasm, destination / 'runtime/wasm-polyfill.js')
-    for required in ['ios/bootstrap.sh', 'ios/run.py', 'ios/opencode_compat.py', 'ios/LICENSE.OPENCODE', 'bridge/bibimer_bridge.py']:
+    for required in ['ios/bootstrap.sh', 'ios/run.py', 'ios/opencode_compat.py', 'ios/browser_native.py', 'ios/LICENSE.OPENCODE', 'bridge/bibimer_bridge.py']:
         if not (destination / required).exists():
             raise RuntimeError(f'Missing guest resource: {required}')
 
@@ -102,7 +105,7 @@ def main():
     clang = output('xcrun', '--find', 'clang')
     target = 'arm64-apple-ios16.0' + ('-simulator' if args.sdk == 'iphonesimulator' else '')
     flags = ['-target', target, '-isysroot', sdk, '-DBIBIMER_EMBEDDED=1', '-DGUEST_ARM64=1']
-    sources = [HERE / 'Sources/main.m', HERE / 'Sources/AppSupport.c',
+    sources = [HERE / 'Sources/main.m', HERE / 'Sources/VoiceService.m', HERE / 'Sources/BrowserService.m', HERE / 'Sources/CompletionNotifications.m', HERE / 'Sources/AppSupport.c',
                REPO / 'ios/runtime-lab/Sources/RuntimeSupport.c', runtime / 'embed/ffi.c']
     objects = []
     for source in sources:
@@ -112,7 +115,7 @@ def main():
             '-I', REPO / 'ios/runtime-lab/Sources', *extra, '-c', source, '-o', obj)
         objects.append(obj)
     run(clang, *flags, *objects, engine / 'libish.a', engine / 'libish_emu.a', engine / 'libfakefs.a',
-        '-framework', 'UIKit', '-framework', 'Foundation', '-framework', 'CoreFoundation', '-framework', 'CoreGraphics', '-framework', 'WebKit',
+        '-framework', 'UIKit', '-framework', 'Foundation', '-framework', 'CoreFoundation', '-framework', 'CoreGraphics', '-framework', 'WebKit', '-framework', 'AVFoundation', '-framework', 'Speech', '-framework', 'Security', '-framework', 'UserNotifications',
         '-lsqlite3', '-lresolv', '-o', app / 'Bibimer')
     if (app / 'rootfs').exists():
         shutil.rmtree(app / 'rootfs')
@@ -122,14 +125,23 @@ def main():
     for resource in (HERE / 'Resources').iterdir():
         if resource.is_file():
             shutil.copy2(resource, app / resource.name)
+    for locale,strings in json.loads((HERE / 'Resources/ios-locales.json').read_text()).items():
+        folder=app/(locale+'.lproj');folder.mkdir(exist_ok=True)
+        info_strings={'NSMicrophoneUsageDescription':strings[0],'NSSpeechRecognitionUsageDescription':strings[1]}
+        native_strings={'Chat response completed.':strings[2],'Browser':strings[3]}
+        for name,values in [('InfoPlist.strings',info_strings),('Localizable.strings',native_strings)]:
+            (folder/name).write_text('\n'.join(json.dumps(k,ensure_ascii=False)+' = '+json.dumps(v,ensure_ascii=False)+';' for k,v in values.items())+'\n')
     for name in ['LICENSE.md', 'LICENSE.IOS']:
         shutil.copy2(runtime / name, app / ('Runtime-' + name))
-    info = dict(CFBundleIdentifier='app.bibimer.ios', CFBundleExecutable='Bibimer',
+    bridge_version=re.search(r'^VERSION = "([0-9.]+)"$',(REPO/'bridge/bibimer_bridge.py').read_text(),re.M).group(1)
+    info = dict(BibimerBridgeVersion=bridge_version,CFBundleIdentifier='app.bibimer.ios', CFBundleExecutable='Bibimer',
                 CFBundleName='Bibimer', CFBundleDisplayName='BIBIMER', CFBundlePackageType='APPL',
                 CFBundleVersion='1', CFBundleShortVersionString='0.1.0', MinimumOSVersion='16.0',
                 UIDeviceFamily=[1, 2], UILaunchScreen={},
                 UISupportedInterfaceOrientations=['UIInterfaceOrientationPortrait', 'UIInterfaceOrientationLandscapeLeft', 'UIInterfaceOrientationLandscapeRight'],
                 UIFileSharingEnabled=True, LSSupportsOpeningDocumentsInPlace=True,
+                NSMicrophoneUsageDescription='Record speech when you tap the microphone to add text to your draft.',
+                NSSpeechRecognitionUsageDescription='Convert speech into a draft. Apple speech recognition may use the network.',
                 NSAppTransportSecurity=dict(NSAllowsLocalNetworking=True))
     (app / 'Info.plist').write_bytes(plistlib.dumps(info))
     hashes = {}
@@ -138,8 +150,9 @@ def main():
                           for file in sorted((app / folder).rglob('*')) if file.is_file() or file.is_symlink()}
     hashes['Native'] = {resource.name: hashlib.sha256((app / resource.name).read_bytes()).hexdigest()
                         for resource in (HERE / 'Resources').iterdir() if resource.is_file()}
+    hashes['NativeLocalization']={str(file.relative_to(app)):hashlib.sha256(file.read_bytes()).hexdigest() for folder in app.glob('*.lproj') for file in folder.glob('*.strings')}
     manifest = dict(sdk=args.sdk, target=target, runtime=lab_manifest, resourceSHA256=hashes,
-                    appSourceSHA256={str(source.relative_to(REPO)): hashlib.sha256(source.read_bytes()).hexdigest() for source in sources if source.is_relative_to(REPO / 'ios')},
+                    appSourceSHA256={str(source.relative_to(REPO)): hashlib.sha256(source.read_bytes()).hexdigest() for source in [*sources,*sorted((HERE/'Sources').glob('*.h'))] if source.is_relative_to(REPO / 'ios')},
                     preSigningBinarySHA256=hashlib.sha256((app / 'Bibimer').read_bytes()).hexdigest())
     (app / 'build-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     if args.sdk == 'iphonesimulator':

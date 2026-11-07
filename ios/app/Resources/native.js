@@ -44,17 +44,45 @@
       try { message("readClipboard",{id}); }
       catch (_) { clearTimeout(timer); clipboardRequests.delete(id); reject(new Error("clipboard_failed")); }
     }),
+    openBrowserWindow: tag => message("browserWindow",{tag}),
     openLink: url => message("link", {url}),
     openGuide: guide => message("guide", {guide}),
     openTermux: () => window.BibimerOpenLocalTerminal?.(),
     startAgentAction: (agent, action) => window.BibimerIOSAgentAction?.(agent, action),
     startQuickSetup: () => window.BibimerResume?.(),
-    takeNotificationTarget: () => "{}",
+    takeNotificationTarget: () => { const target=defaults.notificationTarget || {};defaults.notificationTarget={};message("notificationTaken");return JSON.stringify(target); },
+    setResponseNotifications: enabled => { if(typeof enabled!=="boolean")return false; defaults.notifications={...defaults.notifications,enabled};message("notificationConfigure",{enabled});return true; },
+    openNotificationSettings: () => message("notificationSettings"),
+    startVoiceInput: (id, labels) => message("voiceStart",{id,labels}),
+    cancelVoiceInput: id => message("voiceCancel",{id}),
+    configureVoiceInput: (provider, language) => {
+      if(!["device","openai","elevenlabs"].includes(provider) || !["","en","ko","pt","es","id","zh","ja","fr","de"].includes(language))return false;
+      defaults.voiceInput={...defaults.voiceInput,provider,language};message("voiceConfigure",{provider,language});return true;
+    },
+    voiceKeyAction: (provider, operation, labels) => message("voiceKey",{purpose:"input",provider,operation,labels}),
+    speechKeyAction: (provider, operation, labels) => message("voiceKey",{purpose:"output",provider,operation,labels}),
+    configureSpeechOutput: value => {
+      let settings;try {settings=JSON.parse(value);}catch(_){return false;}
+      if(!settings || typeof settings!=="object" || Array.isArray(settings))return false;
+      for(const [key,value] of Object.entries(settings)){
+        if(key==="enabled" && typeof value==="boolean")continue;
+        if(key==="provider" && ["android","elevenlabs"].includes(value))continue;
+        if(key==="mode" && ["full","summary"].includes(value))continue;
+        if(key==="voice" && typeof value==="string" && value.length<=256)continue;
+        if(key==="engine" && value==="")continue;return false;
+      }
+      defaults.speechOutput={...defaults.speechOutput,...settings};message("speechConfigure",{settings});return true;
+    },
+    setSpeechContext: context => message("speechContext",{context}),
+    readSpeechMessage: (context,text,messageID) => message("speechRead",{context,text:window.BibimerSpeechText(text,defaults.speechOutput?.mode),messageID}),
+    readSpeechOutput: (context,text) => message("speechRead",{context,text:window.BibimerSpeechText(text,"full"),messageID:""}),
+    stopSpeechOutput: () => message("speechStop"),
+    refreshSpeechVoices: more => message("speechVoices",{more:more===true}),
     saveNormalDraftViews: value => { try { sessionStorage.setItem("bibimerDrafts", value); return true; } catch (_) { return false; } },
     takeNormalDraftViews: () => sessionStorage.getItem("bibimerDrafts") || "{}",
     cancelPoll: () => message("cancelPoll"),
     setBackHandling: () => {},
-    notificationsConnected: () => {},
+    notificationsConnected: supported => message("notificationConnected",{supported:supported===true}),
     checkAppUpdate: () => {},
     dismissAppUpdate: () => {},
     bridgeMaintenanceStatus: () => JSON.stringify({phase:"unsupported"})

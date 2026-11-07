@@ -16,7 +16,7 @@ class GuestPackagingTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         for relative in ['bridge/bibimer_bridge.py', 'ios/bridge/bootstrap.sh', 'ios/bridge/run.py',
-                         'ios/bridge/opencode_compat.py',
+                         'ios/bridge/opencode_compat.py', 'ios/bridge/browser_native.py',
                          'ios/bridge/LICENSE.OPENCODE',
                          'engine/ios-linuxkit/app/RootfsPatch.bundle/files/lib/wasm-polyfill.js']:
             source = self.root / relative
@@ -26,6 +26,21 @@ class GuestPackagingTests(unittest.TestCase):
     def package(self):
         with patch.object(build, 'REPO', self.root), patch.object(build, 'ENGINE_WORK', self.root / 'engine'):
             build.package_guest(self.root / 'Guest')
+
+    def test_missing_native_browser_transport_rejects_packaging(self):
+        (self.root/'ios/bridge/browser_native.py').unlink()
+        with self.assertRaisesRegex(RuntimeError,'Missing guest resource: ios/browser_native.py'):
+            self.package()
+
+    def test_current_shared_ui_and_ios_voice_catalog_are_packaged(self):
+        build.package_web(self.root/'Web')
+        index=(self.root/'Web/index.html').read_text()
+        self.assertIn('ios-locales.js',index)
+        self.assertIn('speech-text.js',index)
+        self.assertIn('speech-output.js',index)
+        for name in ('browser-consent.js','speech-output.js','voice-input.js'):
+            self.assertEqual((self.root/'Web'/name).read_bytes(),(build.REPO/'android/app/src/main/assets'/name).read_bytes())
+        self.assertIn('BibimerIOSLocales',(self.root/'Web/ios-locales.js').read_text())
 
     def test_missing_opencode_compatibility_patcher_rejects_packaging(self):
         (self.root / 'ios/bridge/opencode_compat.py').unlink()
