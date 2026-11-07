@@ -701,7 +701,9 @@
     "privacyPolicyChanged": false,
     "websiteDeploymentPerformed": false,
     "systemTtsSettingsPreloadPackaged": true,
-    "systemTtsSettingsObserverPackaged": true
+    "systemTtsSettingsObserverPackaged": true,
+    "availabilityReconfirmedAtLocal": "2026-11-07 14:40 Asia/Seoul",
+    "availabilityReconfirmationEvidence": "dist/play-0.38.3/reconfirmed-2026-11-07.png"
   },
   "productionReleaseHistory": [
     {
