@@ -1,5 +1,6 @@
 """Boundaries for packaging an independently compiled device app with Xcode."""
 import importlib.util
+import hashlib
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
@@ -11,6 +12,10 @@ from unittest.mock import patch
 spec = importlib.util.spec_from_file_location('distribution', Path(__file__).parents[1] / 'distribute.py')
 distribution = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(distribution)
+
+SCENES = {'UIApplicationSupportsMultipleScenes': False, 'UISceneConfigurations': {
+    'UIWindowSceneSessionRoleApplication': [{'UISceneConfigurationName': 'Bibimer',
+        'UISceneDelegateClassName': 'BibimerSceneDelegate'}]}}
 
 
 class DistributionTests(unittest.TestCase):
@@ -57,6 +62,22 @@ class DistributionTests(unittest.TestCase):
         self.assertFalse(options['manageAppVersionAndBuildNumber'])
         self.assertFalse(any('key' in key.lower() or 'password' in key.lower() for key in options))
 
+    def test_device_app_without_scene_lifecycle_rejected_before_xcode(self):
+        app = self.root / 'Bibimer.app'
+        app.mkdir()
+        (app / 'Bibimer').write_bytes(b'executable')
+        (app / 'build-manifest.json').write_text(json.dumps({'sdk': 'iphoneos',
+            'preSigningBinarySHA256': hashlib.sha256(b'executable').hexdigest()}))
+        for scenes in (None, {}, {'UISceneConfigurations': {'UIWindowSceneSessionRoleApplication': []}}):
+            info = {'CFBundleExecutable': 'Bibimer'}
+            if scenes is not None:
+                info['UIApplicationSceneManifest'] = scenes
+            (app / 'Info.plist').write_bytes(plistlib.dumps(info))
+            with self.subTest(scenes=scenes), patch.object(distribution, 'checked') as checked:
+                with self.assertRaisesRegex(distribution.DistributionError, 'scene'):
+                    distribution.validate_app(app)
+                checked.assert_not_called()
+
     def archive(self):
         archive = self.root / 'Bibimer.xcarchive'
         app = archive / 'Products/Applications/Bibimer.app'
@@ -64,7 +85,7 @@ class DistributionTests(unittest.TestCase):
         (archive / 'Info.plist').write_bytes(plistlib.dumps({'ApplicationProperties': {'ApplicationPath': 'Applications/Bibimer.app'}}))
         (app / 'Info.plist').write_bytes(plistlib.dumps(dict(CFBundleIdentifier='app.bibimer.ios',
             CFBundleVersion='1', CFBundleShortVersionString='0.1.0', CFBundleSupportedPlatforms=['iPhoneOS'],
-            DTSDKName='iphoneos27.1', CFBundleExecutable='Bibimer')))
+            DTSDKName='iphoneos27.1', CFBundleExecutable='Bibimer', UIApplicationSceneManifest=SCENES)))
         (app / 'Bibimer').write_bytes(b'binary')
         (archive / 'dSYMs/Bibimer.app.dSYM').mkdir(parents=True)
         return archive, app
@@ -84,6 +105,16 @@ class DistributionTests(unittest.TestCase):
         with patch.object(distribution, 'checked', side_effect=['UUID: ABCD-1234 (arm64) binary', 'UUID: DEFA-4567 (arm64) dsym']):
             with self.assertRaisesRegex(distribution.DistributionError, 'UUID'):
                 self.verify(archive)
+
+    def test_archive_without_scene_lifecycle_rejected_before_symbol_checks(self):
+        archive, app = self.archive()
+        info = plistlib.loads((app / 'Info.plist').read_bytes())
+        del info['UIApplicationSceneManifest']
+        (app / 'Info.plist').write_bytes(plistlib.dumps(info))
+        with patch.object(distribution, 'checked') as checked:
+            with self.assertRaisesRegex(distribution.DistributionError, 'scene'):
+                self.verify(archive)
+            checked.assert_not_called()
 
     def test_wrong_build_rejected_before_signature_check(self):
         archive, app = self.archive()

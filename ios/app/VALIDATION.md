@@ -1,5 +1,14 @@
 # iOS 앱 검증 기록
 
+## iOS 0.1.0(4) TestFlight 빌드 준비 (2026-11-09)
+
+- Mac에서 기존 Xcode27.2/Apple SDK로 최신 기능을 컴파일했다. Xcode 업데이트로 남은27.1 SDK 경로의 Meson 캐시는 별도 보존 후 재생성했다. 사용자가 Xcode 필수 구성 요소 설치와 기존 Chrome의 Apple 로그인을 직접 완료했다. Console의 최신 iOS 빌드가3임을 확인하고4를 후보로 사용한다.
+- Xcode Organizer가 받은0.1.0(3)/iPhone13/iOS27.0.1의 충돌5개는 모두 `___UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption_block_invoke`에서 SIGTRAP이다. 기존3번 dSYM의 UUID `B4D12620-2BFC-3393-AFB4-C1CA16A8239C`도 충돌 바이너리와 일치한다. Apple의 iOS27 Scene 필수화에 맞춰 `UIApplicationSceneManifest`·단일 `BibimerSceneDelegate`·`UIWindow(windowScene:)`로 전환했다. Scene 재연결은 기존 컨트롤러/런타임을 재사용하고 전경/배경 처리를 유지한다. 상세 원본 충돌은 Xcode의 비공개 캐시에만 두며 저장소에 복사하지 않는다.
+- 최신 브라우저 서비스를 시작할 때 Simulator의 긴 호스트 소켓 경로가 Darwin104바이트 제한에 걸려 Linux가 exit1하던 별도 오류도 재현/수정했다. Simulator는 매 실행0700 전용 임시 폴더, 기기는 앱 컨테이너의 짧은 절대 경로를 사용한다. `/private/var` 별칭은 inode/device 일치를 확인하고, PID/소켓ID 최대 길이까지 검사한다. 프로세스 CWD 변경·기기 공용 `/tmp`·런타임 패치 변경으로 우회하지 않는다.
+- 앱 Python25개(기존22+Scene 배포 거절2+실제 Darwin 소켓 회귀1), iOS 브리지55개, 런타임 판정32개, 관련 Node8개·917키×10언어·구문/diff 검사 통과. 두 SDK 컴파일 성공이며 새 main의 Clang 정적 분석 진단0개다. 소켓 검사는0700/고유 경로·긴 기기 경로 거절·최대 식별자·CWD 변경 후 실제 bind/connect를 확인한다. 배포 도구는 Scene 설정 없는 앱/아카이브를 거절한다.
+- 기존 사용자 Simulator와 분리한 `Bibimer TestFlight QA`(iOS26.5)의 실제 WKWebView/내장 Linux21개가14.00초에 성공했다. JS오류0·fatal0·진단실패0, 기존 syscall151/152 경고4개만 보존한 PASS_WITH_WARNINGS다. `dist/ios-app/testflight-smoke/`, `.tools/ios-testflight-nov09-{qa,simulator-scene-build,device-scene-build,main-analysis}.log`. 화면 검사의 옛 하단 탭 선택자는 현재 상단 설정/뒤로 가기로 갱신했다.
+- 수정본 아카이브 `dist/ios-testflight/0.1.0-4-unsigned-nov09-scene/Bibimer.xcarchive`, 배포 export `dist/ios-testflight/0.1.0-4-export-nov09-scene/`를 사용한다. 앞선 Scene 미수정 후보는 로컬 이력으로만 보존하며 업로드하지 않는다. **업로드/Apple 처리/내부 그룹 제공 확인 전**이다. 실제 iOS27 iPhone 콜드 실행·마이크/알림 권한·음성·브라우저 로그인·백그라운드 복귀/장시간 실행은 별도 검증이며 Simulator 성공으로 해결 완료를 보장하지 않는다. Android/운영 브리지·사용자 세션은 변경하지 않았다.
+
 검증 환경은 전용 `Bibimer Runtime Lab` 시뮬레이터의 iPhone 17 Pro / iOS 26.5 / ARM64다. 기기용 SDK는 iPhoneOS 27.1이며 실제 iPhone의 설치·실행 결과와 구분한다.
 
 ## 2026-10-21 입력창·Codex HTTPS 수정 반영

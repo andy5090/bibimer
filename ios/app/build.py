@@ -138,6 +138,9 @@ def main():
                 CFBundleName='Bibimer', CFBundleDisplayName='BIBIMER', CFBundlePackageType='APPL',
                 CFBundleVersion='1', CFBundleShortVersionString='0.1.0', MinimumOSVersion='16.0',
                 UIDeviceFamily=[1, 2], UILaunchScreen={},
+                UIApplicationSceneManifest=dict(UIApplicationSupportsMultipleScenes=False,
+                    UISceneConfigurations={'UIWindowSceneSessionRoleApplication': [dict(
+                        UISceneConfigurationName='Bibimer', UISceneDelegateClassName='BibimerSceneDelegate')]}),
                 UISupportedInterfaceOrientations=['UIInterfaceOrientationPortrait', 'UIInterfaceOrientationLandscapeLeft', 'UIInterfaceOrientationLandscapeRight'],
                 UIFileSharingEnabled=True, LSSupportsOpeningDocumentsInPlace=True,
                 NSMicrophoneUsageDescription='Record speech when you tap the microphone to add text to your draft.',

@@ -25,7 +25,7 @@
     if (!lateHealth.ignoredLateHealth || !lateHealth.preservedFailure) throw new Error("Late health/navigation callbacks revived a stopped runtime");
     passed("native_late_health_preserves_failure");
     const preferences = JSON.parse(window.Bibimer.environment());
-    $("tab-settings").click(); await wait(() => !$("settings").hidden,"settings page");
+    $("app-settings-open").click(); await wait(() => !$("settings").hidden,"settings page");
     $("language-trigger").click(); await wait(() => $("select-dialog").open,"custom language sheet");
     document.querySelector('#select-options [data-value="ko"]').click();
     await wait(() => document.documentElement.lang === "ko","Korean language");
@@ -37,7 +37,7 @@
     await wait(() => JSON.parse(window.Bibimer.environment()).contextDisplay === "remaining","context display preference");
     $("context-display").value = preferences.contextDisplay || "used"; $("context-display").dispatchEvent(new Event("change"));
     passed("settings_language_input_custom_sheet");
-    $("tab-work").click();
+    $("page-back").click(); await wait(() => !$("work").hidden,"work page");
     const path = "/root/projects/ios-ui-smoke-" + Date.now();
     $("path").value = path; $("create-folder").checked = true; $("project-form").requestSubmit();
     await wait(() => snapshot()?.project?.path === path,"project creation");

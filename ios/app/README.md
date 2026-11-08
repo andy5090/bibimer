@@ -1,6 +1,6 @@
 # Bibimer iOS 앱
 
-2026-11-07: 최신 공통 기능과 iOS 음성·완료 알림·WebKit 연결을 소스에 추가했다. **네이티브 빌드·실기기 검증·TestFlight 배포 전**이다. 지원 범위와 제한은 [기능 반영 현황](FEATURE_PARITY.md)을 먼저 확인한다.
+2026-11-09: 최신 공통 기능과 iOS 음성·완료 알림·WebKit 연결, iOS27 Scene 시작 충돌·게스트 소켓 경로 수정을 양 SDK로 컴파일하고 전용 Simulator UI21개를 검증했다. **실기기 기능 검증·새 TestFlight 제공 확인 전**이다. 지원 범위와 제한은 [기능 반영 현황](FEATURE_PARITY.md)을 먼저 확인한다.
 
 Android 앱과 같은 프로젝트·워크트리·세션·Chat·PTY 터미널 UI를 iOS `WKWebView`에서 사용한다. 명령과 에이전트는 **앱에 내장한 ARM64 Linux 해석기** 안에서 실행한다. 별도 Termux 앱이나 SSH 개발 서버는 필요하지 않다.
 

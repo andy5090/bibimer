@@ -49,6 +49,16 @@ def validate_values(team, bundle, version, build):
         raise DistributionError('Build must be a positive numeric build number.')
 
 
+def validate_scene_manifest(info):
+    manifest = info.get('UIApplicationSceneManifest', {})
+    configurations = manifest.get('UISceneConfigurations', {}) if isinstance(manifest, dict) else {}
+    scenes = configurations.get('UIWindowSceneSessionRoleApplication', []) if isinstance(configurations, dict) else []
+    if (not isinstance(manifest, dict) or manifest.get('UIApplicationSupportsMultipleScenes') is not False or
+            not isinstance(scenes, list) or len(scenes) != 1 or not isinstance(scenes[0], dict) or
+            scenes[0].get('UISceneDelegateClassName') != 'BibimerSceneDelegate'):
+        raise DistributionError('The single-window scene lifecycle configuration is missing or invalid.')
+
+
 def validate_app(app):
     if not app.is_dir() or app.suffix != '.app':
         raise DistributionError('Input must be an existing device .app directory.')
@@ -66,6 +76,7 @@ def validate_app(app):
     digest = hashlib.sha256(binary.read_bytes()).hexdigest()
     if digest != manifest.get('preSigningBinarySHA256'):
         raise DistributionError('Executable differs from the verified pre-signing build manifest.')
+    validate_scene_manifest(info)
     architecture = checked('xcrun', 'lipo', '-archs', binary)
     if architecture != 'arm64':
         raise DistributionError('Only the verified arm64 iPhone device binary is supported.')
@@ -160,6 +171,7 @@ def verify_archive(archive, bundle, version, build, signed):
             raise DistributionError(f'Archive {key} does not match requested value.')
     if info.get('CFBundleSupportedPlatforms') != ['iPhoneOS'] or not info.get('DTSDKName', '').startswith('iphoneos'):
         raise DistributionError('Archive is missing iPhoneOS SDK metadata.')
+    validate_scene_manifest(info)
     binary = app / info['CFBundleExecutable']
     dsym = archive / 'dSYMs' / (app.name + '.dSYM')
     if not dsym.is_dir():

@@ -3,6 +3,7 @@
 #import "VoiceService.h"
 #import "CompletionNotifications.h"
 #import "BrowserService.h"
+#import "SocketSupport.h"
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <resolv.h>
@@ -213,8 +214,6 @@ static void guestExit(int status) {
             dispatch_async(dispatch_get_main_queue(),^{done([json isKindOfClass:NSDictionary.class] ? json : nil);});
         }];[task resume];return task;
     };
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(enteredBackground) name:UIApplicationDidEnterBackgroundNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(becameActive) name:UIApplicationDidBecomeActiveNotification object:nil];
     dispatch_async(self.runtimeQueue, ^{ [self boot]; });
 }
 
@@ -282,7 +281,9 @@ static void guestExit(int status) {
         if (rc == 0) rc = ish_ffi_mount_devpts();
         if (rc < 0) { [self fail:[NSString stringWithFormat:@"Linux initialization failed: %d",rc]]; return; }
         extern const char *sock_tmp_prefix;
-        sock_tmp_prefix = strdup([NSTemporaryDirectory() stringByAppendingPathComponent:@"linux-socket"].UTF8String);
+        NSString *socketPrefix = BibimerSocketPrefix(NSTemporaryDirectory(), TARGET_OS_SIMULATOR, &error);
+        if (!socketPrefix) { [self fail:@"Could not prepare private Linux socket paths."]; return; }
+        sock_tmp_prefix = strdup(socketPrefix.UTF8String);
         for (NSString *directory in @[@"/opt",@"/opt/bibimer",@"/opt/bibimer/bridge",@"/opt/bibimer/ios"]) {
             rc = bibimer_create_directory(directory.UTF8String);
             if (rc < 0) { [self fail:[NSString stringWithFormat:@"Could not prepare %@ (code %d).",directory,rc]]; return; }
@@ -694,16 +695,29 @@ static void guestExit(int status) {
 }
 @end
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate>
+@interface BibimerSceneDelegate : UIResponder <UIWindowSceneDelegate>
 @property(nonatomic,strong) UIWindow *window;
 @end
-@implementation AppDelegate
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {
-    self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
-    activeController = [BibimerController new];
+@implementation BibimerSceneDelegate
+- (void)scene:(UIScene *)scene willConnectToSession:(UISceneSession *)session options:(UISceneConnectionOptions *)options {
+    if (![scene isKindOfClass:UIWindowScene.class]) return;
+    self.window = [[UIWindow alloc] initWithWindowScene:(UIWindowScene *)scene];
+    // Reconnecting the single scene must not start a second Linux runtime.
+    if (!activeController) activeController = [BibimerController new];
     self.window.rootViewController = activeController;
     [self.window makeKeyAndVisible];
-    return YES;
+}
+- (void)sceneDidEnterBackground:(UIScene *)scene { [activeController enteredBackground]; }
+- (void)sceneDidBecomeActive:(UIScene *)scene { [activeController becameActive]; }
+@end
+
+@interface AppDelegate : UIResponder <UIApplicationDelegate>
+@end
+@implementation AppDelegate
+- (UISceneConfiguration *)application:(UIApplication *)application configurationForConnectingSceneSession:(UISceneSession *)session options:(UISceneConnectionOptions *)options {
+    UISceneConfiguration *configuration = [[UISceneConfiguration alloc] initWithName:@"Bibimer" sessionRole:session.role];
+    configuration.delegateClass = BibimerSceneDelegate.class;
+    return configuration;
 }
 @end
 
