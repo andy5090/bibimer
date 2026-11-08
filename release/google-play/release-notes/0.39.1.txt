@@ -1,0 +1,6 @@
+<en-US>
+Reduced padding around prompt and answer copy icons for a more compact layout. Copy confirmation check marks and the latest stopped question editing remain available. No bridge update is needed.
+</en-US>
+<ko-KR>
+프롬프트·응답 복사 아이콘 버튼의 여백과 크기를 줄였습니다. 복사 완료 체크 표시와 중지한 마지막 질문 수정 기능은 그대로 제공됩니다. 이번 변경에는 브리지 업데이트가 필요 없습니다.
+</ko-KR>
