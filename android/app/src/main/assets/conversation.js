@@ -7,6 +7,7 @@
       this.items = new Map(); this.cards = new Map(); this.requests = new Map();
       this.online = false;
       this.speech = {enabled:false, readingId:""};
+      this.retry = {enabled:false};
       this.latest = document.getElementById("chat-latest");
       this.root.addEventListener("scroll", () => this.scrollState());
       this.latest.onclick = () => { this.root.scrollTop = this.root.scrollHeight; this.scrollState(); };
@@ -35,9 +36,41 @@
       }
       for (const request of event.requests || []) if (!this.requests.has(request.id)) this.renderRequest(request);
       this.enable(this.online);
+      this.refreshRetryButtons();
       if (follow) this.root.scrollTop = this.root.scrollHeight;
       else if (anchor?.isConnected) this.root.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
       this.scrollState();
+    }
+    static interruptedQuestion(items) {
+      const rows=[...items];
+      const turn=rows.filter(row=>row.kind==="turn").at(-1);
+      const question=rows.filter(row=>row.kind==="user").at(-1);
+      if(turn?.status!=="interrupted" || !turn.id?.startsWith("turn-") || !question?.id?.startsWith(turn.id.slice(5)+":") ||
+        typeof question.text!=="string" || !question.text.trim() || new TextEncoder().encode(question.text).length>16384)return null;
+      return question;
+    }
+    setRetryControls(enabled, edit) {
+      this.editQuestion=edit;
+      if(this.retry.enabled===enabled)return;
+      this.retry={enabled};this.refreshRetryButtons();
+    }
+    refreshRetryButtons() {
+      const target=this.retry.enabled ? Conversation.interruptedQuestion(this.items.values()) : null;
+      for(const [id,card] of this.cards){
+        const header=card.querySelector(".message-heading");if(!header)continue;
+        let button=header.querySelector(".message-retry");
+        if(id!==target?.id){button?.remove();continue;}
+        if(!button){
+          button=make("button",undefined,"message-retry quiet");button.type="button";
+          button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6zM14 5l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+          button.onclick=()=>{
+            const latest=this.retry.enabled ? Conversation.interruptedQuestion(this.items.values()) : null;
+            if(latest?.id===id)this.editQuestion?.(latest);
+          };
+          header.insertBefore(button,header.querySelector(".copy-button"));
+        }
+        const label=this.t("chat_edit_interrupted");button.title=label;button.setAttribute("aria-label",label);
+      }
     }
     setSpeechControls(state, toggle) {
       this.toggleSpeech = toggle;
@@ -256,6 +289,7 @@
     }
     localize() {
       for (const item of this.items.values()) this.renderItem(item);
+      this.refreshRetryButtons();
       for (const value of this.requests.values()) {
         value.node.querySelector("h2").textContent = this.t(value.request.kind === "questions" ? "chat_questions" : "chat_approval");
         for (const button of value.node.querySelectorAll("[data-request-action]")) button.textContent = this.t(button.dataset.requestAction);

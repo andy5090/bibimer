@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["pt-BR"] = {
+  "chat_edit_interrupted": "Editar pergunta interrompida",
+  "chat_edit_draft_busy": "Envie ou limpe o rascunho atual antes de carregar esta pergunta.",
+  "chat_edit_interrupted_loaded": "Pergunta carregada. Edite e toque em Enviar para criar uma nova mensagem. A conversa anterior é mantida.",
+
   "page_back": "Voltar",
   "initial_setup_guide": "Guia de configuração inicial",
   "tts_title": "Ler respostas em voz alta",

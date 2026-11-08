@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "chat_edit_interrupted": "编辑已停止的提问",
+  "chat_edit_draft_busy": "请先发送或清空当前草稿，再载入此提问。",
+  "chat_edit_interrupted_loaded": "已载入提问。编辑后按发送，将作为新消息发送，并保留之前的对话。",
+
   "page_back": "返回",
   "initial_setup_guide": "初始设置指南",
   "tts_title": "朗读回答",

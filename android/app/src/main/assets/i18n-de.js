@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "chat_edit_interrupted": "Gestoppte Frage bearbeiten",
+  "chat_edit_draft_busy": "Sende oder leere deinen aktuellen Entwurf, bevor du diese Frage lädst.",
+  "chat_edit_interrupted_loaded": "Frage geladen. Bearbeite sie und tippe auf Senden, um eine neue Nachricht zu erstellen. Der bisherige Verlauf bleibt erhalten.",
+
   "page_back": "Zurück",
   "initial_setup_guide": "Anleitung zur Ersteinrichtung",
   "tts_title": "Antworten vorlesen",

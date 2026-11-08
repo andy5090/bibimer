@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "chat_edit_interrupted": "Edit pertanyaan yang dihentikan",
+  "chat_edit_draft_busy": "Kirim atau kosongkan draf saat ini sebelum memuat pertanyaan ini.",
+  "chat_edit_interrupted_loaded": "Pertanyaan dimuat. Edit lalu tekan Kirim untuk membuat pesan baru. Percakapan sebelumnya tetap disimpan.",
+
   "page_back": "Kembali",
   "initial_setup_guide": "Panduan penyiapan awal",
   "tts_title": "Bacakan jawaban",

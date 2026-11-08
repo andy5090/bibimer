@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "chat_edit_interrupted": "Modifier la question interrompue",
+  "chat_edit_draft_busy": "Envoyez ou effacez le brouillon actuel avant de charger cette question.",
+  "chat_edit_interrupted_loaded": "Question chargée. Modifiez-la et appuyez sur Envoyer pour créer un nouveau message. La conversation précédente est conservée.",
+
   "page_back": "Retour",
   "initial_setup_guide": "Guide de configuration initiale",
   "tts_title": "Lire les réponses à voix haute",

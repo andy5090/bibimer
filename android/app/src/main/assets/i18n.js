@@ -3,6 +3,10 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    chat_edit_interrupted: ["Edit stopped question", "중지한 질문 수정"],
+    chat_edit_draft_busy: ["Send or clear your current draft before loading this question.", "작성 중인 입력을 먼저 보내거나 비운 뒤 질문을 불러오세요."],
+    chat_edit_interrupted_loaded: ["Question loaded. Edit it and press Send to create a new message. Earlier conversation stays in place.", "질문을 불러왔습니다. 수정 후 보내기를 누르면 새 메시지로 전송하며 이전 대화는 유지합니다."],
+
     page_back: ["Back", "뒤로"],
     initial_setup_guide: ["Initial setup guide", "초기 설정 가이드"],
     tts_title: ["Read answers aloud", "답변 음성 읽기"],

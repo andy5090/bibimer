@@ -663,3 +663,6 @@ input.settings-switch:disabled { opacity:.4; cursor:default; }
 .message-heading .message-speech{display:grid;place-items:center;flex:none;width:44px;height:44px;min-height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;color:var(--muted)}
 .message-speech svg{width:18px;height:18px;fill:currentColor}
 .message-heading .message-speech[aria-pressed="true"]{color:var(--green);background:#2a3b34}
+
+.message-heading .message-retry{display:grid;place-items:center;flex:none;width:44px;height:44px;min-height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;color:var(--muted)}
+.message-retry svg{width:18px;height:18px}

@@ -1284,6 +1284,7 @@
     speechOutput.syncContext();
     const responding = isChat() && !["ready", "failed"].includes(session.turn_state);
     renderSendAction();
+    conversation.setRetryControls(canEditInterruptedQuestion(), editInterruptedQuestion);
     $("delivery-warning").hidden = !isChat() || !responding || canQueue;
     $("delivery-hint").textContent = t(!canQueue ? "delivery_update" : (supportsSteer() ? "delivery_steer" : "delivery_queue") + (canBatchQueue ? "_batch" : ""));
     renderQueue(); commands.render(); renderHandoff();
@@ -1618,6 +1619,23 @@
     finally { sending.delete(id); renderSession(); }
   }
   $("queue-resume").addEventListener("click", () => changeQueue(session?.id, "resume"));
+  function canEditInterruptedQuestion() {
+    return isChat() && online && !paused && !busy && !settingsBusy && !switchingProject && currentTab === "work" &&
+      !sending.has(session?.id) && !$("input").disabled && session.state === "running" && session.ready &&
+      session.turn_state === "ready" && !session.active_turn_id;
+  }
+  function editInterruptedQuestion(item) {
+    if (!canEditInterruptedQuestion()) return;
+    const latest = BibimerConversation.interruptedQuestion(conversation.items.values());
+    if (!latest || latest.id !== item.id || latest.text !== item.text) return;
+    const input = $("input");
+    if (input.value && input.value !== latest.text) { notice("chat_edit_draft_busy"); return; }
+    input.value = latest.text;
+    input.setSelectionRange(input.value.length, input.value.length);
+    input.dispatchEvent(new Event("input", {bubbles:true}));
+    input.focus();
+    notice("chat_edit_interrupted_loaded");
+  }
   function preferredInputSteer() {
     return responseDelivery === "steer" && isChat() && supportsSteer() && !!session.active_turn_id &&
       ["running", "waiting"].includes(session.turn_state) && !$("input").value.trimStart().startsWith("/");

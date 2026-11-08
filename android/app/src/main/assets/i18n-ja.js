@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "chat_edit_interrupted": "停止した質問を編集",
+  "chat_edit_draft_busy": "この質問を読み込む前に、入力中の下書きを送信するか消去してください。",
+  "chat_edit_interrupted_loaded": "質問を読み込みました。編集して送信すると新しいメッセージとして送ります。以前の会話は保持されます。",
+
   "page_back": "戻る",
   "initial_setup_guide": "初期設定ガイド",
   "tts_title": "回答の読み上げ",
