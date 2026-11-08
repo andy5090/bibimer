@@ -1,5 +1,7 @@
 # Bibimer iOS 개발
 
+2026-11-09: 최신 기능과 iOS27 Scene/Unix 소켓 시작 수정을 포함한 **0.1.0(4)를 기존 TestFlight 내부 그룹에 제공**했다. 양 SDK 빌드와 전용 Simulator UI21개를 검증했으며, 실제 iPhone의 콜드 실행·음성·알림·브라우저는 별도 확인이 필요하다. [배포 기록](app/TESTFLIGHT.md).
+
 Android와 같은 프로젝트·워크트리·세션·Chat·터미널 UI를 iOS 앱과 내장 Linux 실행 환경에 연결하는 작업이다. 별도의 터미널 앱이나 원격 개발 호스트를 기본 사용 흐름으로 요구하지 않는다.
 
 - `app/`: 기존 Bibimer 웹 UI를 재사용하는 WKWebView 앱, 네이티브 연결·설정·파일 내보내기, Simulator 빌더와 실제 화면 검사.

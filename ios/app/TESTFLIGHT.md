@@ -1,5 +1,12 @@
 # iOS TestFlight 배포
 
+## iOS 0.1.0(4) TestFlight 내부 배포 완료 (2026-11-09)
+
+- **02:52 Asia/Seoul**, Apple 처리·기존 암호화 응답(Apple OS 외/병행 표준 암호화·프랑스 미배포)과 en-US의 한/영 테스트 안내900자 저장을 완료했다. 기존 **Bibimer Internal** 그룹에서 **0.1.0(4)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드4개를 직접 확인했다. 기존1/2/3번·그룹/테스터·자동 배포OFF를 유지했고 새 초대·외부 베타·정식 App Store 제출은 하지 않았다.
+- 빌드 ID `24b30dd1-a175-4619-8297-e23c3713a197`, 업로드 소스 `6dfb78d783b258c18ec07691117c3ac7a4b53bff`. 수정본 IPA `dist/ios-testflight/0.1.0-4-export-nov09-scene/export/Bibimer.ipa`, **8,486,753 bytes**, SHA-256 **`a839a9fa94dbf69fe6099c99718638971c9595ac204eb958be693e4747e95761`**. 업로드 로그의 EXPORT SUCCEEDED/exit0와 Console 접수02:48을 확인했다. 비공개 증빙은 `dist/ios-testflight/upload-0.1.0-4-nov09/{upload-receipt.json,xcode-upload.log,test-notes.txt}`이며 바이너리·서명/계정 자료는 커밋하지 않는다.
+- iOS27 Scene 시작 충돌과 게스트 Unix 소켓 경로 수정·최신 공통 기능을 포함한다. 양 SDK 컴파일·아카이브/dSYM·배포 서명·공유63자산·네이티브11소스 manifest 검증, 실제 QA WKWebView/Linux21개/14.00초/JS0, 앱Python25·브리지55·런타임판정32·Node8·917키×10언어·정적분석0을 확인했다. 준비 항목의 **제공 확인 전** 상태는 해결됐다. 테스트의 긴 경로 fixture는 해당 테스트 전용 TemporaryDirectory 안으로 한정해 재검증했다(제품 바이너리 변경 없음).
+- **TestFlight에서0.1.0(4)로 업데이트한 뒤 iPhone에서 완전히 닫고 다시 열어 확인한다.** iOS26.5 Simulator 성공은 iOS27 실기기 콜드 실행·실제 마이크/음성/알림/브라우저·잠금/장시간 실행의 증거가 아니다. Xcode 충돌을 실기기 확인 없이 Resolved로 표시하지 않았으며, 사용자 설치본·운영 브리지/세션을 임의 재시작하지 않았다. Android/웹사이트 배포도 없다.
+
 ## 0.1.0(4) 빌드 검증 (2026-11-09, 제공 확인 전)
 
 최신 공통 UI/음성/알림/브라우저와 iOS27 Scene 시작 충돌·게스트 Unix 소켓 경로 수정을 양 SDK로 컴파일했다. 전용 QA Simulator의 WKWebView/내장 Linux21개·JS오류0·14.00초, 기존 syscall 경고4개를 보존했다. Python25개와 배포 Scene 거절/Darwin 실제 소켓 회귀도 통과했다. 수정본 `0.1.0-4-unsigned-nov09-scene` 아카이브와 `0.1.0-4-export-nov09-scene` 경로를 사용하며 앞선 미수정 후보는 업로드하지 않는다. 최신 실제 내부 제공 버전은 아직3이며, 업로드/처리/기존 그룹 제공과 iOS27 실기기 콜드 실행은 각각 확인해야 한다. 상세 근거와 제약은 `VALIDATION.md`와 루트 `NEXT_SESSION.md`를 따른다.

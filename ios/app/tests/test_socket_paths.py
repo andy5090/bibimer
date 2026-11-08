@@ -19,7 +19,7 @@ class SocketPathTests(unittest.TestCase):
 #include <unistd.h>
 int main(void) { @autoreleasepool {
     NSError *error = nil;
-    NSString *longPath = [NSTemporaryDirectory() stringByAppendingPathComponent:[@"x" stringByPaddingToLength:180 withString:@"x" startingAtIndex:0]];
+    NSString *longPath = [NSProcessInfo.processInfo.arguments[1] stringByAppendingPathComponent:[@"x" stringByPaddingToLength:180 withString:@"x" startingAtIndex:0]];
     assert([NSFileManager.defaultManager createDirectoryAtPath:longPath withIntermediateDirectories:YES attributes:nil error:&error]);
     assert(BibimerSocketPrefix(longPath, NO, &error) == nil);
     assert(error.code == ENAMETOOLONG);
@@ -53,4 +53,4 @@ int main(void) { @autoreleasepool {
             subprocess.run(['clang', '-fobjc-arc', '-framework', 'Foundation',
                 '-I', str(Path(__file__).parents[1] / 'Sources'), str(source), '-o', str(binary)],
                 check=True, capture_output=True)
-            subprocess.run([str(binary)], check=True, capture_output=True)
+            subprocess.run([str(binary), str(root)], check=True, capture_output=True)

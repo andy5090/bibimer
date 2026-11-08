@@ -1,6 +1,6 @@
 # iOS 기능 반영 현황
 
-2026-11-09 소스 기준이다. TestFlight의 마지막 확인 배포는 0.1.0(3), 2026-10-28이며 아래 추가 구현은 아직 빌드·배포하지 않았다.
+2026-11-09 소스와 TestFlight 0.1.0(4) 기준이다. 양 SDK 네이티브 컴파일·실제 Simulator의 공통 UI/Linux21개 검사 후 기존 내부 그룹에 제공했다. iOS27 Scene 시작 충돌·소켓 경로 수정도 포함한다. 아래 음성/알림/브라우저 등 실제 기기·계정 기능 검증은 각각 남아 있으며 빌드·제공 성공과 구분한다.
 
 | 기능 | 현재 소스 | 남은 확인 |
 | --- | --- | --- |
@@ -10,7 +10,7 @@
 | 응답 중 대기열/Steer 기본 설정 | iOS 저장과 공통 전송 경로 유지 | Codex 네이티브 접수·세션 왕복. Claude/Gemini의 미검증 Steer는 계속 비활성 |
 | Git Commit·Push·Pull·Sync | 공통 Git UI/API 및 iOS 프록시 허용 목록 | 내장 Linux에서 실제 저장소·원격 인증 |
 | 작업 화면 기본·상단 설정·선택 UI | 최신 공통 웹 자산 | 실제 화면·접근성 |
-| 음성 입력 | Apple Speech 또는 OpenAI gpt-transcribe/ElevenLabs scribe_v2 | Xcode·실기기 권한·마이크·실제 API |
+| 음성 입력 | Apple Speech 또는 OpenAI gpt-transcribe/ElevenLabs scribe_v2 | 실기기 권한·마이크·실제 API |
 | 답변 읽기·답변별 재생/정지 | AVSpeechSynthesizer 또는 ElevenLabs, 로컬 추출 요약 | 실제 음성·손쉬운 사용 설정·오디오 포커스 |
 | 완료 알림 | 네이티브 구조화된 완료 feed 구독과 세션 열기 | OS 권한·기기 알림·탭 이동 |
 | 브라우저 | 별도 WKWebView, 로그인 잠금, 허용 후 네이티브 캡처/스크롤, 허용 완료 알림 | 실제 로그인·캡처·프로필·Steer/Queue |
@@ -44,3 +44,5 @@
 기존 iOS 브리지 전체 검사는 Termux에서 고정 `/usr/bin/env python3` 및 Linux PATH를 사용하는 모의 실행 파일 때문에 실패했다. 원본 실패 로그 `.tools/ios-port-bridge.log`와 추가 경계 검사 `.tools/ios-native-browser-tests-final.log`를 구분한다. 고정 shebang을 임시 복사본에서 보정한 추가 실행도 fixture 경로/PATH 차이로4개 실패했다(`.tools/ios-port-bridge-portable.log`). 전체 성공으로 표시하지 않는다. Xcode/macOS에서 네이티브 컴파일·기존 전체 검사·Simulator WKWebView·iPhone 마이크/음성/알림/브라우저를 확인한 후 별도 배포한다. 유료 API·실제 계정·모델·사용자 세션은 호출/재시작하지 않았다.
 
 공식 근거: [Apple Speech](https://developer.apple.com/documentation/speech/sfspeechaudiobufferrecognitionrequest), [Speech 권한](https://developer.apple.com/documentation/speech/sfspeechrecognizer/requestauthorization(_:)), [음성 발화 설정](https://developer.apple.com/documentation/avfaudio/avspeechutterance), [WebKit 캡처](https://developer.apple.com/documentation/webkit/wkwebview/takesnapshot(with:completionhandler:)), [WebKit 프로필](https://developer.apple.com/documentation/webkit/wkwebsitedatastore/init(foridentifier:)), [알림](https://developer.apple.com/documentation/usernotifications/unusernotificationcenter), [OpenAI 녹음 파일 변환](https://developers.openai.com/api/docs/guides/speech-to-text).
+
+2026-11-09 Mac 후속 검증: 앱Python25개·기존 iOS 브리지55개·네이티브 양 SDK 컴파일과 실제 WKWebView/Linux21개가 통과했다. 위 Termux의 host fixture 제약과 구분하며, 실제 iPhone 기능 검증을 대체하지 않는다. 배포·충돌 근거는 `TESTFLIGHT.md`와 `VALIDATION.md`를 따른다.
