@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## iOS TestFlight 실행 직후 충돌 조사 (2026-11-08, 미해결)
+
+- 사용자가 iOS TestFlight 앱이 실행 직후 충돌한다고 제보했다. 설치된 정확한 버전/빌드·기기·iOS 버전은 미확인이다. 최신 배포 기록은 0.1.0(3), 소스 `a11b52ea2e2f00e73fd7910c180c6d715a2a9c03`이며 최근 음성/알림/브라우저·공통 UI 수정은 해당 빌드에 포함되지 않았다.
+- 배포 소스의 UIViewController 초기 화면·내장 Linux boot 경로를 확인했다. 시뮬레이터 성공 기록은 실제 iPhone 실행 검증을 대신하지 않으며 아직 원인은 확정하지 않았다. 현재 Termux에는 Apple SDK/Xcode·당시 IPA/dSYM·실기기 충돌 로그가 없다. 추측에 따른 코드 수정이나 새 TestFlight 빌드/배포는 하지 않았다.
+- 관리 Firefox로 App Store Connect의 충돌 보고를 열려 했으나 Apple 로그인이 필요해 중단하고 제어 lease를 반환했다. 사용자에게 Termux:X11 직접 로그인 후 Bibimer 작업 화면의 브라우저 제어 요청 카드에서 로그인 완료/에이전트 제어 허용을 안내했다. 로그인 후 보고서를 확인하거나 기기의 Bibimer `.ips` 파일을 받아 종료 사유·충돌 스레드·UUID를 해당 빌드 dSYM과 대조해야 한다. Apple 공식 수집 안내: https://developer.apple.com/documentation/xcode/acquiring-crash-reports-and-diagnostic-logs
+
+
 ## Android 0.39.1(67) 내부 테스트 배포 완료 (2026-11-08)
 
 - **2026-11-08 16:42 Asia/Seoul**, 복사 아이콘 버튼 32px/패딩 6px 수정을 기존 내부 트랙에 게시했다. 게시 후 새로고침에서 **활성 / 내부 테스터에게 제공됨**을 확인했다. 67만 포함·66 제외, 한/영 노트 2/2(194/102자), 오류 0·매핑 파일 미첨부 경고 1건. Console 7개 기기 유형 지원 변화는 0이다. 브리지 0.24.1 업데이트는 필요 없다.
