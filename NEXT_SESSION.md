@@ -1,5 +1,14 @@
 # Bibimer 다음 세션 시작점
 
+## iOS 최신 기능 재빌드 — Mac 인계 (2026-11-09)
+
+- 사용자는 최신 기능을 포함한 재빌드·TestFlight 배포를 요청한 뒤 **레포 싱크 후 Mac에서 진행**하기로 했다. 현재 Termux에는 Xcode/Apple SDK·이전 IPA/dSYM·연결된 Mac 빌드 환경이 없어 iOS 바이너리 빌드/서명/업로드는 수행하지 않았다. 실제 마지막 배포는 계속 **0.1.0(3)**이다.
+- 사용자 직접 로그인/브라우저 제어 허용 뒤 App Store Connect의 Crash Feedback 1건을 실제 Firefox에서 확인했다: **0.1.0(3), iPhone 13, iOS 27.0.1, Nov 8 2026 4:12 PM 표시, 사용자 코멘트 Test**. 사용자 증상은 실행 직후 충돌이다. 웹은 Open in Xcode만 제공했고 Termux에서는 상세 스택을 열 수 없어 원인은 미확정이다. 브라우저 제어는 반환했다. 새 기능 반영만으로 충돌이 해결됐다고 표시하지 않는다.
+- 최신 소스에는 터미널 전체 화면/PgUp·PgDn/셸 종료 입력 차단, Git Commit·Push·Pull·Sync, 응답 중 기본 전송 설정, 작업 화면 브라우저 동의, 음성 입력/답변 읽기, 전경 완료 알림, 중지 질문 수정, 복사 아이콘 32px/패딩 6px와 Mac 입력 영역 보완을 포함한다. iOS 알림은 전경만, WebKit 에이전트 제어는 캡처/스크롤만 지원한다. 상세 제약은 `ios/app/FEATURE_PARITY.md`를 따른다.
+- 이번 사전 검사: `python -m unittest discover -s ios/app/tests -p 'test_*.py'` **22개 통과**(`.tools/ios-rebuild-preflight-2026-11-09-python.log`), Node의 `test_native_features.cjs`, `test_terminal_tools.cjs`, `test_clipboard_bridge.cjs`, `test_context_preferences.cjs` 통과. Apple SDK 컴파일/실기기 검증을 대신하지 않는다.
+- Mac에서 원격 main을 동기화한 뒤 Xcode Organizer의 Crashes/App Store Connect의 Open in Xcode로 위 충돌 스택과 기존 3번 dSYM을 먼저 확보한다. 최신 소스를 Simulator와 iphoneos로 컴파일하고 기존 QA WKWebView/내장 Linux 검사를 통과한 뒤 새 버전/빌드 번호를 Console과 대조하여 정한다(마지막 확인 번호는 3). 기존 팀 `ZA9HMYAJT7`·번들 `app.bibimer.ios`·Bibimer Internal 범위를 유지한다. `ios/app/TESTFLIGHT.md`의 unsigned archive → 기존 팀 서명/export → 업로드 → Apple 처리/암호화/내부 그룹 제공 확인 절차를 따른다. 사용자는 이 최신 기능 재빌드/내부 배포를 요청했으며 정식 App Store·새 테스터 초대는 범위에 없다. 실제 iPhone 콜드 실행·마이크/알림·백그라운드 복귀를 확인하고 충돌 미해결 여부를 구분한다.
+
+
 ## 관리 Firefox 시작 복구 (2026-11-09)
 
 - iOS 충돌 로그 조회를 위한 로그인 중 `error_browser_start`가 반복됐다. 관리 X11의 70~89번 화면에 종료된 서버의 소켓/잠금 파일이 남아 번호 할당이 막혀 있었다. 70번은 관리 flock 획득·PID 부재·Unix 소켓 접속 거절을 모두 확인한 뒤 해당 소켓/잠금만 Termux tmp의 비공개 `bibimer-stale-x11-*` 폴더로 옮겨 보존했다. 기존 프로필·로그인 정보·다른 세션/프로세스는 변경하지 않았다.
