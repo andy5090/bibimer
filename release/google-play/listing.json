@@ -211,16 +211,16 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.39.0",
-    "versionCode": 66,
+    "versionName": "0.39.1",
+    "versionCode": 67,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "591c249910072eabfc952b76448ba0f8680b0bcf3a5a9055f335e2e6bf32b19b",
-    "file": "bibimer-0.39.0-66-release.aab",
-    "bytes": 3434811,
+    "sha256": "cc7abb00a5cdf3414eb845812a12ac04e2492a43678e232a997f9554f399e0f4",
+    "file": "bibimer-0.39.1-67-release.aab",
+    "bytes": 3434823,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
@@ -255,12 +255,13 @@
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
     "builtOn": "2026-11-08",
-    "sourceCommit": "eea10e4ef3a587fa7df6450ba31908f8fb6cf53c",
-    "releaseName": "0.39.0 (66) - Edit stopped questions, copy icons",
-    "releaseNotesFile": "release/google-play/release-notes/0.39.0.txt",
+    "sourceCommit": "d37e26b5890ab9778c12c74cefb37635ec060e8d",
+    "releaseName": "0.39.1 (67) - Compact copy buttons",
+    "releaseNotesFile": "release/google-play/release-notes/0.39.1.txt",
     "bridgeUpdateRequiredForNewFeatures": false,
     "interruptedQuestionEditingPackaged": true,
-    "messageCopyIconsPackaged": true
+    "messageCopyIconsPackaged": true,
+    "compactCopyButtonsPackaged": true
   },
   "consoleScreenshotsUpdatedOn": "2026-10-15",
   "playAppSigning": {
@@ -511,16 +512,16 @@
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.38.3",
-    "versionCode": 65,
+    "versionName": "0.39.0",
+    "versionCode": 66,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "5291934b66a5ec4e3973aaec65f2574b0e098002554432e2bf234aea02230cd6",
-    "file": "bibimer-0.38.3-65-release.aab",
-    "bytes": 3432676,
+    "sha256": "591c249910072eabfc952b76448ba0f8680b0bcf3a5a9055f335e2e6bf32b19b",
+    "file": "bibimer-0.39.0-66-release.aab",
+    "bytes": 3434811,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
@@ -554,16 +555,13 @@
     "settingsSwitchesAndDisabledGroupsPackaged": true,
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
-    "builtOn": "2026-11-05",
-    "sourceCommit": "a6706a2e5f188d6444678afe83005ef182e10cf4",
-    "releaseName": "0.38.3 (65) - Prepare device TTS settings",
-    "releaseNotesFile": "release/google-play/release-notes/0.38.3.txt",
+    "builtOn": "2026-11-08",
+    "sourceCommit": "eea10e4ef3a587fa7df6450ba31908f8fb6cf53c",
+    "releaseName": "0.39.0 (66) - Edit stopped questions, copy icons",
+    "releaseNotesFile": "release/google-play/release-notes/0.39.0.txt",
     "bridgeUpdateRequiredForNewFeatures": false,
-    "perAnswerSpeechControlsPackaged": true,
-    "previewPlayStopTogglePackaged": true,
-    "systemTtsRatePitchPackaged": true,
-    "systemTtsSettingsPreloadPackaged": true,
-    "systemTtsSettingsObserverPackaged": true
+    "interruptedQuestionEditingPackaged": true,
+    "messageCopyIconsPackaged": true
   },
   "previousUpdate": {
     "versionName": "0.38.2",
@@ -635,26 +633,26 @@
     "consoleUploaded": true
   },
   "internalTestRelease": {
-    "versionName": "0.39.0",
-    "versionCode": 66,
-    "releaseName": "0.39.0 (66) - Edit stopped questions, copy icons",
+    "versionName": "0.39.1",
+    "versionCode": 67,
+    "releaseName": "0.39.1 (67) - Compact copy buttons",
     "consoleStatus": "active_available_to_existing_testers",
     "publishedOn": "2026-11-08",
-    "publishedAtLocal": "2026-11-08 12:07 Asia/Seoul",
+    "publishedAtLocal": "2026-11-08 16:42 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      66
+      67
     ],
     "excludedPreviousVersionCodes": [
-      65
+      66
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 411,
-      "ko-KR": 194
+      "en-US": 194,
+      "ko-KR": 102
     },
     "errors": [],
     "warnings": [
@@ -674,26 +672,27 @@
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "eea10e4ef3a587fa7df6450ba31908f8fb6cf53c",
-    "releaseNotesFile": "release/google-play/release-notes/0.39.0.txt",
-    "evidence": "dist/play-0.39.0/published.json",
+    "sourceCommit": "d37e26b5890ab9778c12c74cefb37635ec060e8d",
+    "releaseNotesFile": "release/google-play/release-notes/0.39.1.txt",
+    "evidence": "dist/play-0.39.1/published.json",
     "sourceBridgeVersion": "0.24.1",
     "bridgeUpdateRequiredForNewFeatures": false,
     "packagedAssetCount": 58,
-    "sourceNodeChecksPassed": 7,
-    "sourcePythonChecksPassed": 39,
     "sourceLanguageKeys": 917,
     "sourceLanguageCount": 10,
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "bundleSha256": "591c249910072eabfc952b76448ba0f8680b0bcf3a5a9055f335e2e6bf32b19b",
-    "bundleBytes": 3434811,
+    "bundleSha256": "cc7abb00a5cdf3414eb845812a12ac04e2492a43678e232a997f9554f399e0f4",
+    "bundleBytes": 3434823,
     "existingTestersUnchanged": true,
     "interruptedQuestionEditingPackaged": true,
     "messageCopyIconsPackaged": true,
     "dataSafetyProductionFormChanged": false,
     "privacyPolicyChanged": false,
-    "websiteDeploymentPerformed": false
+    "websiteDeploymentPerformed": false,
+    "compactCopyButtonsPackaged": true,
+    "sourceNodeChecksPassed": 2,
+    "fullSourceSuiteRepeated": false
   },
   "productionReleaseHistory": [
     {
@@ -1004,25 +1003,25 @@
     "submission": "English and Korean phone screenshots only; existing app version unchanged"
   },
   "previousInternalTestRelease": {
-    "versionName": "0.38.3",
-    "versionCode": 65,
-    "releaseName": "0.38.3 (65) - Prepare device TTS settings",
+    "versionName": "0.39.0",
+    "versionCode": 66,
+    "releaseName": "0.39.0 (66) - Edit stopped questions, copy icons",
     "consoleStatus": "active_available_to_existing_testers",
-    "publishedOn": "2026-11-05",
-    "publishedAtLocal": "2026-11-05 15:55 Asia/Seoul",
+    "publishedOn": "2026-11-08",
+    "publishedAtLocal": "2026-11-08 12:07 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      65
+      66
     ],
     "excludedPreviousVersionCodes": [
-      64
+      65
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 431,
+      "en-US": 411,
       "ko-KR": 194
     },
     "errors": [],
@@ -1032,8 +1031,8 @@
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed seven Console device-type rows",
     "supportedDevices": {
-      "phone": 11612,
-      "tablet": 6506,
+      "phone": 11610,
+      "tablet": 6502,
       "tv": 5,
       "wear": 0,
       "car": 29,
@@ -1043,35 +1042,26 @@
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "a6706a2e5f188d6444678afe83005ef182e10cf4",
-    "releaseNotesFile": "release/google-play/release-notes/0.38.3.txt",
-    "evidence": "dist/play-0.38.3/published.json",
+    "sourceCommit": "eea10e4ef3a587fa7df6450ba31908f8fb6cf53c",
+    "releaseNotesFile": "release/google-play/release-notes/0.39.0.txt",
+    "evidence": "dist/play-0.39.0/published.json",
     "sourceBridgeVersion": "0.24.1",
     "bridgeUpdateRequiredForNewFeatures": false,
     "packagedAssetCount": 58,
-    "systemTtsRatePitchPackaged": true,
-    "sourceNodeChecksPassed": 15,
-    "sourceSpeechPythonChecksPassed": 4,
-    "buildAndPlaySdkTestsPassed": 17,
-    "sourceLanguageKeys": 914,
+    "sourceNodeChecksPassed": 7,
+    "sourcePythonChecksPassed": 39,
+    "sourceLanguageKeys": 917,
     "sourceLanguageCount": 10,
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "bundleSha256": "5291934b66a5ec4e3973aaec65f2574b0e098002554432e2bf234aea02230cd6",
-    "bundleBytes": 3432676,
+    "bundleSha256": "591c249910072eabfc952b76448ba0f8680b0bcf3a5a9055f335e2e6bf32b19b",
+    "bundleBytes": 3434811,
     "existingTestersUnchanged": true,
-    "perAnswerSpeechControlsPackaged": true,
-    "previewPlayStopTogglePackaged": true,
-    "ttsAndroidAndElevenLabsOnly": true,
-    "ttsDefaultsOff": true,
-    "localExtractiveSummaryPackaged": true,
+    "interruptedQuestionEditingPackaged": true,
+    "messageCopyIconsPackaged": true,
     "dataSafetyProductionFormChanged": false,
     "privacyPolicyChanged": false,
-    "websiteDeploymentPerformed": false,
-    "systemTtsSettingsPreloadPackaged": true,
-    "systemTtsSettingsObserverPackaged": true,
-    "availabilityReconfirmedAtLocal": "2026-11-07 14:40 Asia/Seoul",
-    "availabilityReconfirmationEvidence": "dist/play-0.38.3/reconfirmed-2026-11-07.png"
+    "websiteDeploymentPerformed": false
   },
   "consoleScreenshotsVerifiedOn": "2026-10-15",
   "sourceLanguages": [
@@ -2377,6 +2367,67 @@
       "systemTtsSettingsObserverPackaged": true,
       "availabilityReconfirmedAtLocal": "2026-11-07 14:40 Asia/Seoul",
       "availabilityReconfirmationEvidence": "dist/play-0.38.3/reconfirmed-2026-11-07.png"
+    },
+    {
+      "versionName": "0.39.0",
+      "versionCode": 66,
+      "releaseName": "0.39.0 (66) - Edit stopped questions, copy icons",
+      "consoleStatus": "active_available_to_existing_testers",
+      "publishedOn": "2026-11-08",
+      "publishedAtLocal": "2026-11-08 12:07 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+      "includedVersionCodes": [
+        66
+      ],
+      "excludedPreviousVersionCodes": [
+        65
+      ],
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "releaseNotesCharacters": {
+        "en-US": 411,
+        "ko-KR": 194
+      },
+      "errors": [],
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed seven Console device-type rows",
+      "supportedDevices": {
+        "phone": 11610,
+        "tablet": 6502,
+        "tv": 5,
+        "wear": 0,
+        "car": 29,
+        "chromebook": 77,
+        "androidXR": 2
+      },
+      "refreshedStatusVerified": true,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "sourceCommit": "eea10e4ef3a587fa7df6450ba31908f8fb6cf53c",
+      "releaseNotesFile": "release/google-play/release-notes/0.39.0.txt",
+      "evidence": "dist/play-0.39.0/published.json",
+      "sourceBridgeVersion": "0.24.1",
+      "bridgeUpdateRequiredForNewFeatures": false,
+      "packagedAssetCount": 58,
+      "sourceNodeChecksPassed": 7,
+      "sourcePythonChecksPassed": 39,
+      "sourceLanguageKeys": 917,
+      "sourceLanguageCount": 10,
+      "physicalDeviceVerified": false,
+      "deviceInstallVerified": false,
+      "bundleSha256": "591c249910072eabfc952b76448ba0f8680b0bcf3a5a9055f335e2e6bf32b19b",
+      "bundleBytes": 3434811,
+      "existingTestersUnchanged": true,
+      "interruptedQuestionEditingPackaged": true,
+      "messageCopyIconsPackaged": true,
+      "dataSafetyProductionFormChanged": false,
+      "privacyPolicyChanged": false,
+      "websiteDeploymentPerformed": false
     }
   ]
 }
