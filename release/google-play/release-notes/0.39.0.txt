@@ -1,0 +1,10 @@
+<en-US>
+Edit the latest stopped question from its pencil button, revise it in the composer, and send it as a new message. Existing conversation and other drafts are preserved.
+Prompt and answer copy buttons now use icons with a brief check mark after copying and larger touch targets.
+Includes the existing voice controls, device TTS settings, terminal and Git features. No bridge update is needed for these UI changes.
+</en-US>
+<ko-KR>
+중지한 마지막 질문의 연필 버튼으로 입력창에 불러와 수정 후 새 메시지로 보낼 수 있습니다. 이전 대화와 작성 중인 다른 초안은 보존합니다.
+프롬프트·응답 복사를 아이콘으로 바꾸고 복사 후 체크 표시와 넓은 터치 영역을 제공합니다.
+기존 음성·기기 TTS 설정·터미널·Git 기능을 포함합니다. 이번 UI 변경에는 브리지 업데이트가 필요 없습니다.
+</ko-KR>
