@@ -666,3 +666,7 @@ input.settings-switch:disabled { opacity:.4; cursor:default; }
 
 .message-heading .message-retry{display:grid;place-items:center;flex:none;width:44px;height:44px;min-height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;color:var(--muted)}
 .message-retry svg{width:18px;height:18px}
+
+.message-heading .message-copy{display:grid;place-items:center;flex:none;width:44px;height:44px;min-height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;color:var(--muted)}
+.message-copy svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.message-heading .message-copy.is-copied{color:var(--green)}

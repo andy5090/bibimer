@@ -13,15 +13,27 @@
     return decoder.value;
   });
   function copyButton(text, t, label = "copy") {
-    const button = make("button", t(label), "copy-button");
+    const icon = label === "copy_message";
+    const button = make("button", undefined, "copy-button" + (icon ? " message-copy" : ""));
     button.type = "button";
     button.dataset.labelKey = label;
-    button.setAttribute("aria-label", t(label));
+    const paint = copied => {
+      const name = t(copied ? "copied" : label);
+      button.setAttribute("aria-label", name);
+      if (icon) {
+        button.title = name;
+        button.classList.toggle("is-copied", copied);
+        button.innerHTML = copied
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>'
+          : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>';
+      } else button.textContent = name;
+    };
+    paint(false);
     button.onclick = () => {
       window.Bibimer.copyText(text);
-      button.textContent = t("copied");
+      paint(true);
       clearTimeout(button.copyTimer);
-      button.copyTimer = setTimeout(() => { button.textContent = t(label); }, 1500);
+      button.copyTimer = setTimeout(() => paint(false), 1500);
     };
     return button;
   }
