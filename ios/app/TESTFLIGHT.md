@@ -1,5 +1,12 @@
 # iOS TestFlight 배포
 
+## iOS 0.1.0(5) TestFlight 내부 배포 완료 (2026-11-09)
+
+- **22:59 Asia/Seoul**, 기존 **Bibimer Internal** 그룹에서 **0.1.0(5)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드5개를 확인했다. 한/영 테스트 안내737자와 기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답을 저장했다.
+- 빌드 ID `097f861a-fae5-4c8c-9b18-b913e556f820`, 소스 `0bcbbd4c19bb46dd9551f01da7127940facdcfb9`, IPA **8,499,702 bytes**, SHA-256 `e9afeb9bd3d7b8f9c19af532565ec16d811adf4a63b34bc3afb0ba149acb6013`. 기기용 컴파일·아카이브/dSYM·배포 서명·IPA의 자산과 현재 소스 일치(웹64·게스트17·네이티브11자산/11소스)를 검증했다. **22:54:18 Asia/Seoul** Xcode 업로드 성공/exit0/EXPORT SUCCEEDED다. 비공개 증빙은 `dist/ios-testflight/upload-0.1.0-5-nov09/`이며 바이너리/서명/계정 자료는 커밋하지 않는다.
+- 연결 끊김 시 상단 탐색·Settings Back, 기존 WKWebView 재연결, 종료된 Linux의 완전 종료/재실행 안내와 Chat/터미널별 두 손가락 글자 크기 조절을 포함한다. 앱 전체 더블 탭/핀치 확대·좌우 밀림을 제한한다. 공통 전체 화면 판정도 단순히 연결 상태를 포함하도록 수정했다.
+- 전용 QA Simulator의 실제 WKWebView/Linux25개·14.02초·JS오류0·fatal0·진단실패0, 기존 syscall 경고4개를 보존했다. Python25·Node11파일·917키×10언어·Chromium20배치·Clang 정적분석0을 확인했다. 실제 iPhone 손가락 제스처/장시간 네트워크 단절·실제 Linux 종료 후 재실행은 별도 확인이다. 기존 그룹/테스터·자동 배포OFF·이전 빌드는 유지했다.
+
 ## iOS 0.1.0(4) TestFlight 내부 배포 완료 (2026-11-09)
 
 - **02:52 Asia/Seoul**, Apple 처리·기존 암호화 응답(Apple OS 외/병행 표준 암호화·프랑스 미배포)과 en-US의 한/영 테스트 안내900자 저장을 완료했다. 기존 **Bibimer Internal** 그룹에서 **0.1.0(4)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드4개를 직접 확인했다. 기존1/2/3번·그룹/테스터·자동 배포OFF를 유지했고 새 초대·외부 베타·정식 App Store 제출은 하지 않았다.
