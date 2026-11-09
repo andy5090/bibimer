@@ -33,6 +33,11 @@
       defaults.screenBehavior = {...defaults.screenBehavior, [key]:value};
       message("screenPreference", {key, value}); return true;
     },
+    setBackgroundWork: enabled => {
+      if (typeof enabled !== "boolean") return false;
+      defaults.backgroundWork = {...defaults.backgroundWork, enabled};
+      message("backgroundConfigure", {enabled}); return true;
+    },
     setProjectLocation: (parent, folder) => {
       if (![parent, folder].every(path => typeof path === "string" && path.startsWith("/") && !/[\x00-\x1f]/.test(path))) return false;
       store("lastProjectParent", parent); return store("lastProjectFolder", folder);

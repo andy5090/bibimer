@@ -5,7 +5,7 @@ const repo=path.resolve(__dirname,"../../.."), {chromium}=require(path.join(repo
 const web=path.resolve(process.argv[2] || path.join(repo,".tools/ios-app/iphonesimulator/Bibimer.app/Web"));
 const output=path.join(repo,"dist/ios-app/terminal-tools-browser");fs.mkdirSync(output,{recursive:true});
 const fixture=()=>{
-  window.__bibimerEnvironment={paired:true,selfTest:true,platform:"ios",language:"ko",systemLanguage:"ko",languagePreference:"ko",agentOptions:{},enterBehavior:"newline",quickSetup:{phase:"connected",id:"fixture"}};
+  window.__bibimerEnvironment={paired:true,selfTest:true,platform:"ios",language:"ko",systemLanguage:"ko",languagePreference:"ko",agentOptions:{},enterBehavior:"newline",backgroundWork:{enabled:true,supported:true,state:"ready"},quickSetup:{phase:"connected",id:"fixture"}};
   const project={id:"fixture-project",name:"Terminal selection fixture",path:"/fixture",agent:"shell"};
   const session={id:"00000000-0000-4000-8000-000000000001",agent:"shell",mode:"terminal",state:"running",name:"Local Bash",project,options:{permission:"inherit"},output_end:1};
   const content="\x1b[32mconst greeting = '한글 😀';\x1b[0m\r\nhttps://example.invalid/auth?code=sample&next=%2Fcallback\r\n  indented output  \r\n\r\n";
@@ -52,6 +52,10 @@ const fixture=()=>{
         assert(screenSettings.labels.every(label=>label.trim()),"Screen switches need translated labels");
         assert(screenSettings.switches.every(control=>control.role==="switch"&&control.height>=44&&control.appearance==="none"));
         await screenCard.screenshot({path:path.join(output,`screen-settings-${width}-${language}.png`)});
+        const backgroundCard=page.locator("#ios-background-settings");await backgroundCard.scrollIntoViewIfNeeded();
+        const backgroundSettings=await backgroundCard.evaluate(card=>({width:card.clientWidth,scrollWidth:card.scrollWidth,label:card.querySelector("label").textContent,status:card.querySelector('[role="status"]').textContent,checked:card.querySelector("input").checked,height:card.querySelector("input").getBoundingClientRect().height}));
+        assert(backgroundSettings.scrollWidth<=backgroundSettings.width && backgroundSettings.height>=44 && backgroundSettings.checked && backgroundSettings.label.trim() && backgroundSettings.status.trim());
+        await backgroundCard.screenshot({path:path.join(output,`background-settings-${width}-${language}.png`)});
         await page.locator("#page-back").tap();
         const select=page.locator("#ios-terminal-select");await select.waitFor({state:"visible"});
         await page.screenshot({path:path.join(output,`terminal-${width}-${language}.png`)});
@@ -67,7 +71,7 @@ const fixture=()=>{
         await page.locator("#ios-terminal-copy-selection").tap();
         assert.equal(await page.evaluate(()=>window.fixtureBoard.text),"https://example.invalid/auth?code=sample&next=%2Fcallback");
         await page.locator("#ios-terminal-close").tap();assert.equal(await page.locator("#ios-terminal-text").inputValue(),"");
-        results.push({width,language,dialog:metrics,screenSettings,partialTouchCopy:true,cleanup:true});
+        results.push({width,language,dialog:metrics,screenSettings,backgroundSettings,partialTouchCopy:true,cleanup:true});
       }
       await page.evaluate(()=>{const input=document.getElementById("input");input.value="앞😀뒤";input.focus();input.setSelectionRange(1,3);input.dispatchEvent(new Event("input",{bubbles:true}));window.fixtureBoard.text="A\r\nB\rC";});
       await page.locator("#ios-terminal-paste").tap();await page.locator("#ios-terminal-dialog[open]").waitFor();

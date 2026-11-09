@@ -49,6 +49,12 @@ def package_web(destination):
       <p id="ios-defer-home-hint" class="hint" data-i18n="ios_defer_home_hint"></p>
       <p class="hint" data-i18n="ios_screen_background_hint"></p>
     </section>
+    <section id="ios-background-settings" class="card preference-card">
+      <h2 data-i18n="ios_background_title">Background work</h2>
+      <div class="preference-row"><label for="ios-background-enabled" data-i18n="ios_background_enable">Continue active work</label><input id="ios-background-enabled" class="settings-switch" type="checkbox" role="switch" aria-describedby="ios-background-hint ios-background-status"></div>
+      <p id="ios-background-hint" class="hint" data-i18n="ios_background_hint"></p>
+      <p id="ios-background-status" class="hint" role="status" aria-live="polite"></p>
+    </section>
     <section id="connection-settings"''')
     # iOS zooms small text fields on focus. Keep the shared Android sizing intact.
     index = index.replace('</head>', '''<style>
@@ -126,7 +132,7 @@ def main():
     clang = output('xcrun', '--find', 'clang')
     target = 'arm64-apple-ios16.0' + ('-simulator' if args.sdk == 'iphonesimulator' else '')
     flags = ['-target', target, '-isysroot', sdk, '-DBIBIMER_EMBEDDED=1', '-DGUEST_ARM64=1']
-    sources = [HERE / 'Sources/main.m', HERE / 'Sources/VoiceService.m', HERE / 'Sources/BrowserService.m', HERE / 'Sources/CompletionNotifications.m', HERE / 'Sources/AppSupport.c',
+    sources = [HERE / 'Sources/main.m', HERE / 'Sources/VoiceService.m', HERE / 'Sources/BrowserService.m', HERE / 'Sources/CompletionNotifications.m', HERE / 'Sources/BackgroundExecution.m', HERE / 'Sources/AppSupport.c',
                REPO / 'ios/runtime-lab/Sources/RuntimeSupport.c', runtime / 'embed/ffi.c']
     objects = []
     for source in sources:
@@ -137,7 +143,7 @@ def main():
         objects.append(obj)
     run(clang, *flags, *objects, engine / 'libish.a', engine / 'libish_emu.a', engine / 'libfakefs.a',
         '-framework', 'UIKit', '-framework', 'Foundation', '-framework', 'CoreFoundation', '-framework', 'CoreGraphics', '-framework', 'WebKit', '-framework', 'AVFoundation', '-framework', 'Speech', '-framework', 'Security', '-framework', 'UserNotifications',
-        '-lsqlite3', '-lresolv', '-o', app / 'Bibimer')
+        '-framework', 'BackgroundTasks', '-lsqlite3', '-lresolv', '-o', app / 'Bibimer')
     if (app / 'rootfs').exists():
         shutil.rmtree(app / 'rootfs')
     shutil.copytree(ENGINE_WORK / 'base-rootfs', app / 'rootfs', symlinks=True)
@@ -149,7 +155,7 @@ def main():
     for locale,strings in json.loads((HERE / 'Resources/ios-locales.json').read_text()).items():
         folder=app/(locale+'.lproj');folder.mkdir(exist_ok=True)
         info_strings={'NSMicrophoneUsageDescription':strings[0],'NSSpeechRecognitionUsageDescription':strings[1]}
-        native_strings={'Chat response completed.':strings[2],'Browser':strings[3]}
+        native_strings={'Chat response completed.':strings[2],'Browser':strings[3],'Background work':strings[16]}
         for name,values in [('InfoPlist.strings',info_strings),('Localizable.strings',native_strings)]:
             (folder/name).write_text('\n'.join(json.dumps(k,ensure_ascii=False)+' = '+json.dumps(v,ensure_ascii=False)+';' for k,v in values.items())+'\n')
     for name in ['LICENSE.md', 'LICENSE.IOS']:
@@ -164,6 +170,7 @@ def main():
                         UISceneConfigurationName='Bibimer', UISceneDelegateClassName='BibimerSceneDelegate')]}),
                 UISupportedInterfaceOrientations=['UIInterfaceOrientationPortrait', 'UIInterfaceOrientationLandscapeLeft', 'UIInterfaceOrientationLandscapeRight'],
                 UIFileSharingEnabled=True, LSSupportsOpeningDocumentsInPlace=True,
+                BGTaskSchedulerPermittedIdentifiers=['app.bibimer.ios.work.*'], UIBackgroundModes=['processing'],
                 NSMicrophoneUsageDescription='Record speech when you tap the microphone to add text to your draft.',
                 NSSpeechRecognitionUsageDescription='Convert speech into a draft. Apple speech recognition may use the network.',
                 NSAppTransportSecurity=dict(NSAllowsLocalNetworking=True))

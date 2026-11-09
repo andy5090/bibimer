@@ -14,6 +14,9 @@
   try {
     await wait(() => snapshot()?.online,"bridge connection",60000);
     passed("shared_ui_connected");
+    const backgroundPolicy = await window.BibimerIOSTestAPI("GET","/native/test-background-work");
+    if (!backgroundPolicy.ok || !backgroundPolicy.requestBoundary) throw new Error("Native background work policy failed: " + JSON.stringify(backgroundPolicy));
+    passed("background_execution_policy",{checks:backgroundPolicy.checks});
     const scrolling = await window.BibimerIOSTestAPI("GET","/native/test-scroll-lock");
     const viewport = document.querySelector('meta[name="viewport"]').content;
     if (getComputedStyle(document.documentElement).touchAction !== "pan-x pan-y" || !scrolling.horizontalLocked || !scrolling.historyGesturesDisabled || scrolling.pinchEnabled || !viewport.includes("user-scalable=no")) throw new Error("Workspace gesture policy changed");
@@ -42,6 +45,16 @@
     await wait(() => JSON.parse(window.Bibimer.environment()).contextDisplay === "remaining","context display preference");
     $("context-display").value = preferences.contextDisplay || "used"; $("context-display").dispatchEvent(new Event("change"));
     passed("settings_language_input_custom_sheet");
+    const backgroundPreference = preferences.backgroundWork || {};
+    if (backgroundPreference.supported) {
+      const toggle = $("ios-background-enabled");
+      toggle.checked = false; toggle.dispatchEvent(new Event("change",{bubbles:true}));
+      await wait(() => JSON.parse(window.Bibimer.environment()).backgroundWork.state === "off","native background preference disabled");
+      toggle.checked = true; toggle.dispatchEvent(new Event("change",{bubbles:true}));
+      await wait(() => JSON.parse(window.Bibimer.environment()).backgroundWork.enabled === true,"native background preference enabled");
+      toggle.checked = backgroundPreference.enabled === true; toggle.dispatchEvent(new Event("change",{bubbles:true}));
+    } else if (!$("ios-background-enabled").disabled) throw new Error("Unsupported background switch remained enabled");
+    passed("background_execution_preferences");
     const screenPreferences = preferences.screenBehavior || {};
     const screenSetting = (id,value) => { $(id).checked = value; $(id).dispatchEvent(new Event("change",{bubbles:true})); };
     screenSetting("ios-keep-awake",true); screenSetting("ios-defer-home",true);

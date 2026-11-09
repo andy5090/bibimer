@@ -28,6 +28,8 @@ EXPECTED_CHECKS = {
     'scoped_text_pinch',
     'background_foreground_connection_recovery',
     'screen_behavior_preferences',
+    'background_execution_policy',
+    'background_execution_preferences',
 }
 AGENT_CHECKS = {'agents_shared_ui_connected', 'four_agents_available'} | {
     agent + '_' + action + '_ui' for agent in ['codex', 'claude', 'opencode', 'gemini'] for action in ['install', 'version']

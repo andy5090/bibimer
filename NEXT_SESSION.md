@@ -1,5 +1,15 @@
 # Bibimer 다음 세션 시작점
 
+## iOS 백그라운드 작업 이어가기·TestFlight6 준비 (2026-11-10, 제공 확인 전)
+
+- 사용자가 레포 싱크 후 TestFlight 배포와 백그라운드 상시 실행 구현을 요청했다. 기존 잠금 복귀/화면 옵션을 dbb9435로 원격 main에 동기화했고, 그 과정에 원격75936f5의 답변 하단 재생·복사 변경도 보존했다. 이번 후보는 **0.1.0(6)**이며 기존 **Bibimer Internal** 그룹을 유지한다.
+- 새 BackgroundExecution은 iPhone/iPad iOS26+의 공식 BGContinuedProcessingTask를 사용한다(iOS27 비동기 제출/26 폴백). 지원 기기는 기본 켜짐이며 설정에서 저장/해제할 수 있다. 이전 iOS와 Mac 실행에서는 비활성화한다. launch당 한 번 wildcard handler를 등록하고 고유 요청 ID·즉시 실행 실패 전략을 사용한다. processing mode·허용 식별자·BackgroundTasks 링크와 네이티브/웹10언어를 포함한다. GPU나 무관한 오디오/위치 기능으로 상주하지 않는다.
+- 사용자가 명시적으로 시작한 CLI 설치/버전 확인과 진행 중인 Chat/실제 비정지 대기열만 유지한다. 같은 세션의 PID 존재만으로 유휴 터미널을 실행 중 작업으로 추측하지 않으며 로그인·단순 조회/화면 열기로 시작하지 않는다. **무기한 Linux 상주나 OS의 실행 허가·지속 시간은 보장하지 않는다.** 작업 완료/승인·질문 대기/시스템 만료·거절·사용자 설정 해제 시 권한을 끝낸다. 이 기능은 세션 종료·승인·명령/대기열 재전송을 실행하지 않는다. 실제 프로세스의 OS suspend/종료는 별개다.
+- 읽기 전용 worker가 기존 health/events에서 브리지 instance·세션/턴 ID·revision·완료 상태만 메모리에 보관한다. 느린 POST는 begin/end 토큰과 단조 시간 최대180초로 추적하고 이전 요청/만료 뒤 늦은 응답은 재개하지 않는다. 새 턴·새 요청·poll 사이에 끝난 실패/중단 턴을 구조화된 revision과 최종 health로 재확인한다. 실제 변화만 불확정 progress로 보고하며 가짜 퍼센트/남은 시간을 만들지 않는다. 시스템 작업 표시에는 BIBIMER와 번역한 일반 작업 문구만 사용하며 대화/프로젝트/명령/인증정보를 표시·저장하지 않는다.
+- 최종 양 SDK 컴파일, Python25개·iOS Node11파일·관련 공통 답변/음성/중단 질문3검사·구문/diff 검사 통과. main/BackgroundExecution Clang 분석 진단0개다. 전용 QA Simulator 실제 WKWebView/Linux **29개·15.96초·JS오류0·fatal0·진단실패0**, 기존 syscall151/152 경고4개만 남는 PASS_WITH_WARNINGS다. 내부20개 모의 정책 검사는 허가/거절·만료·설정 해제·유휴/로그인 제외·느린 요청/health 실패·인스턴스 변경·새 턴·미관측 실패/중단·늦은 응답·가짜 진행 없음 등을 확인했다. 모의 스케줄러만 제출했으며 **실제 iPhone OS 허가/Live Activity/잠금 후 장시간 실행은 미검증**이다.
+- Chromium20언어/폭 조합에서 화면/백그라운드 카드·자체 토글·번역/넘침·부분 복사/검토 후 붙여넣기를 검증했다. visual-verdict97/pass(.omx/state/ios-background-work/ralph-progress.json). 실제 native 증거 dist/ios-app/background-smoke/, .tools/ios-background-release-*; 백그라운드 정책 검사는 각 결과 JSON의 background_execution_policy 항목을 따른다. 제품 installer/고정 버전은 변경하지 않았고 Codex 폰 설치 성공은 사용자 확인, Claude 폰 결과는 아직 미확정이다.
+- 최종 아카이브는 dist/ios-testflight/0.1.0-6-unsigned-nov10-background-final/Bibimer.xcarchive, export는 0.1.0-6-export-nov10-background-final을 사용한다. 앞선 background 경로의 로컬 후보는 SUPERSEDED.json으로 표시했으며 업로드하지 않는다. **Apple 업로드·처리·암호화·내부 그룹 제공 확인 전**이며 실제 제공은 아직5번이다. Android/웹사이트 배포나 사용자 브리지/앱 재시작은 하지 않는다.
+
 ## iOS 잠금 복귀·화면 유지 옵션과 CLI 설치 재검증 (2026-11-10, 미배포)
 
 - 사용자가 iPhone 잠금 후 브리지가 끊기고 재연결되지 않으며 **앱 전환 화면에서 완전히 종료한 뒤 열면 연결됨**을 확인했다. 기기의 정확한 현재 빌드/실패 메시지는 아직 확인되지 않았다. 코드에서는 기존 ready일 때만 JS를 재개하고 이전 health task/HTTP 연결을 그대로 두던 복귀 경로를 확인했다. 이것이 실제 기기에서 유일한 원인이라고 단정하지 않는다.

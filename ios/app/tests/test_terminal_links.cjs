@@ -17,7 +17,7 @@ function linksFor(lines, requested) {
     return {length:cells.length,isWrapped:wrapped,getCell:index=>cells[index],translateToString:trim=>trim ? text.trimEnd() : text};
   });
   const context = {$:()=>({dataset:{},addEventListener(){}}),permissionModes:{codex:["inherit","read-only","workspace-write","yolo"]},renderModels:()=>{},renderSettings:()=>{},renderSession:()=>{},worktreeCreator:{render(){}},term:{buffer:{active:{length:rows.length,getLine:index=>rows[index]}},registerLinkProvider:value=>{provider=value;}},
-    native:{openLink:url=>opened.push(url)},window:{},environment:()=>({selfTest:false}),connect:async()=>{}};
+    native:{openLink:url=>opened.push(url)},window:{},environment:()=>({selfTest:false}),connect:async()=>{},t:key=>key};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,"../Resources/ui-hooks.js"),"utf8"),context);
   let links;
   provider.provideLinks(requested,result=>{links=result;});

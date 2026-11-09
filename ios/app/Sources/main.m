@@ -3,6 +3,7 @@
 #import "VoiceService.h"
 #import "CompletionNotifications.h"
 #import "BrowserService.h"
+#import "BackgroundExecution.h"
 #import "SocketSupport.h"
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -53,6 +54,7 @@ static BOOL usesDesktopInput(void) {
 @property NSUInteger browserEpoch;
 @property NSURLSessionDataTask *browserPoll;
 @property BibimerCompletionNotifications *completionNotifications;
+@property BibimerBackgroundExecution *backgroundExecution;
 @property UILabel *status;
 @property UITextView *bootstrapOutput;
 @property NSString *token;
@@ -114,6 +116,19 @@ static NSData *packedStrings(NSArray<NSString *> *strings) {
 static NSString *jsonString(id object) {
     NSData *data = [NSJSONSerialization dataWithJSONObject:object options:NSJSONWritingFragmentsAllowed error:nil];
     return data ? [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] : @"null";
+}
+
+static BOOL startsBackgroundWork(NSString *method, NSString *path, NSString *payload) {
+    if (![method isEqual:@"POST"]) return NO;
+    NSDictionary *body = [NSJSONSerialization JSONObjectWithData:[payload dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
+    if (![body isKindOfClass:NSDictionary.class]) return NO;
+    if ([path isEqual:@"/v1/ios/agents"])
+        return [@[@"install",@"version"] containsObject:body[@"action"] ?: @""];
+    if ([path isEqual:@"/v1/sessions"])
+        return [body[@"mode"] isEqual:@"chat"] && [body[@"initial_message"] isKindOfClass:NSDictionary.class] && [body[@"initial_message"][@"text"] isKindOfClass:NSString.class] && [body[@"initial_message"][@"text"] length] > 0;
+    if ([path rangeOfString:@"^/v1/sessions/[a-f0-9-]{36}/(message|steer|respond)$" options:NSRegularExpressionSearch].location != NSNotFound) return YES;
+    if ([path hasSuffix:@"/queue"]) return [@[@"add",@"resume",@"steer"] containsObject:body[@"action"] ?: @""];
+    return [path hasSuffix:@"/handoff"] && [body[@"action"] isEqual:@"start"];
 }
 
 static NSString *systemLanguage(void) {
@@ -208,6 +223,7 @@ static void guestExit(int status) {
     self.voice=[BibimerVoiceService new];self.voice.presenter=self;
     self.browser=[BibimerBrowserService new];self.browser.presenter=self;
     self.completionNotifications=[BibimerCompletionNotifications new];
+    self.backgroundExecution = BibimerBackgroundExecution.shared;
     __weak typeof(self) weak=self;
     self.browser.visibility=^(BOOL visible){
         if(visible)[weak.voice pause];
@@ -223,11 +239,24 @@ static void guestExit(int status) {
             dispatch_async(dispatch_get_main_queue(),^{done([json isKindOfClass:NSDictionary.class] ? json : nil);});
         }];[task resume];return task;
     };
+    self.backgroundExecution.changed = ^{
+        if (!weak.backgrounded) [weak nativeEvent:@"BibimerBackgroundChanged" arguments:@[]];
+    };
+    self.backgroundExecution.fetch = ^NSURLSessionDataTask *(NSString *path,void (^done)(NSDictionary *)) {
+        // The read-only worker remains usable while foreground UI is paused.
+        if (weak.exited || !weak.runtimeStarted) { dispatch_async(dispatch_get_main_queue(),^{ done(nil); }); return nil; }
+        NSMutableURLRequest *request = [weak request:@"GET" path:path body:nil]; request.timeoutInterval = 5;
+        NSURLSessionDataTask *task = [weak.http dataTaskWithRequest:request completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {
+            id value = !error && [(NSHTTPURLResponse *)response statusCode] == 200 && data.length < 4*1024*1024 ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+            dispatch_async(dispatch_get_main_queue(),^{ done([value isKindOfClass:NSDictionary.class] ? value : nil); });
+        }]; [task resume]; return task;
+    };
     dispatch_async(self.runtimeQueue, ^{ [self boot]; });
 }
 
 - (void)enteredBackground {
     self.backgrounded = YES; self.ready = NO; self.connectionEpoch++;
+    [self.backgroundExecution setForeground:NO];
     [self applyScreenBehavior];
     [self.healthTask cancel]; self.healthTask = nil;
     for (NSURLSessionDataTask *task in self.polls) [task cancel];
@@ -264,6 +293,8 @@ static void guestExit(int status) {
 - (void)becameActive {
     BOOL returning = self.backgrounded;
     self.backgrounded = NO;
+    [self.backgroundExecution setForeground:YES];
+    [self nativeEvent:@"BibimerBackgroundChanged" arguments:@[]];
     [self applyScreenBehavior];
     if (returning) {
         // Suspended loopback connections must not block the foreground probe.
@@ -305,6 +336,7 @@ static void guestExit(int status) {
         if (!self.runtimeStarted) self.startupFailed = YES;
         [self.healthTask cancel]; self.healthTask = nil;
         self.connectionEpoch++;
+        [self.backgroundExecution runtimeStopped];
         [self.voice pause];[self.completionNotifications pause];[self.browser revokeAll];self.browserEpoch++;self.browserPolling=NO;[self.browserPoll cancel];self.browserPoll=nil;
         self.status.text = message;
         // Keep navigation, Settings and drafts accessible after a runtime failure.
@@ -462,6 +494,7 @@ static void guestExit(int status) {
     [environment addEntriesFromDictionary:[self.voice environment] ?: @{}];
     environment[@"localRuntime"] = @{@"state":self.exited ? @"stopped" : self.startupFailed ? @"restart-required" : self.ready ? @"connected" : @"connecting"};
     environment[@"screenBehavior"] = @{@"keepAwake":@([preferences boolForKey:@"iosKeepAwake"]),@"deferHomeGesture":@([preferences boolForKey:@"iosDeferHomeGesture"]),@"supported":@(!usesDesktopInput())};
+    environment[@"backgroundWork"] = [self.backgroundExecution environment] ?: @{};
     environment[@"termuxX11Installed"]=@YES;
     environment[@"notifications"]=[self.completionNotifications environment] ?: @{};
     environment[@"notificationTarget"]=[NSJSONSerialization JSONObjectWithData:[[self.completionNotifications pendingTarget] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil] ?: @{};
@@ -698,7 +731,13 @@ static void guestExit(int status) {
     if (message.webView != self.web || !message.frameInfo.mainFrame || !source.isFileURL || ![source.URLByStandardizingPath.URLByResolvingSymlinksInPath.path isEqual:index.URLByResolvingSymlinksInPath.path] || ![message.body isKindOfClass:NSDictionary.class]) return;
     NSDictionary *body = message.body;
     NSString *action = body[@"action"];
-    if ([action isEqual:@"screenPreference"]) {
+    if ([action isEqual:@"backgroundConfigure"]) {
+        id value = body[@"enabled"];
+        if (![value isKindOfClass:NSNumber.class] || CFGetTypeID((__bridge CFTypeRef)value) != CFBooleanGetTypeID()) return;
+        [self.backgroundExecution configure:[value boolValue]];
+        if ([value boolValue] && !self.smokeScript) [self.backgroundExecution userInitiatedWork];
+    }
+    else if ([action isEqual:@"screenPreference"]) {
         NSDictionary *keys = @{@"keepAwake":@"iosKeepAwake",@"deferHomeGesture":@"iosDeferHomeGesture"};
         NSString *key = [body[@"key"] isKindOfClass:NSString.class] ? keys[body[@"key"]] : nil;
         id value = body[@"value"];
@@ -723,6 +762,21 @@ static void guestExit(int status) {
     } else if ([action isEqual:@"request"]) {
         NSString *identifier = body[@"id"], *method = body[@"method"], *path = body[@"path"], *payload = body[@"body"];
         if (![identifier isKindOfClass:NSString.class] || identifier.length > 80) return;
+        if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-background-work"]) {
+            [self.backgroundExecution runSelfTestsWithCompletion:^(NSDictionary *result) {
+                NSString *base = @"/v1/sessions/00000000-0000-4000-8000-000000000001/";
+                BOOL boundary = startsBackgroundWork(@"POST",@"/v1/ios/agents",@"{\"action\":\"install\"}") &&
+                    startsBackgroundWork(@"POST",[base stringByAppendingString:@"message"],@"{\"text\":\"test\"}") &&
+                    !startsBackgroundWork(@"GET",@"/v1/health",@"{}") &&
+                    !startsBackgroundWork(@"POST",@"/v1/ios/agents",@"{\"action\":\"login\"}") &&
+                    !startsBackgroundWork(@"POST",[base stringByAppendingString:@"input"],@"{\"data\":\"test\"}") &&
+                    !startsBackgroundWork(@"POST",[base stringByAppendingString:@"queue"],@"{\"action\":\"pause\"}") &&
+                    !startsBackgroundWork(@"POST",@"/v1/sessions",@"{\"mode\":\"terminal\"}");
+                NSMutableDictionary *checked = [result mutableCopy]; checked[@"requestBoundary"] = @(boundary);
+                checked[@"ok"] = @([result[@"ok"] boolValue] && boundary);
+                [self reply:identifier status:200 data:checked];
+            }]; return;
+        }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-screen"]) {
             [self reply:identifier status:200 data:@{@"idleTimerDisabled":@(UIApplication.sharedApplication.idleTimerDisabled),@"homeDeferred":@(self.preferredScreenEdgesDeferringSystemGestures == UIRectEdgeBottom),@"supported":@(!usesDesktopInput())}]; return;
         }
@@ -803,12 +857,16 @@ static void guestExit(int status) {
             [self reply:identifier status:400 data:@{@"code":@"error_invalid_json"}]; return;
         }
         if (self.exited || self.backgrounded || self.testConnectionOffline) { [self reply:identifier status:503 data:@{@"code":@"error_connection_failed"}]; return; }
+        BOOL workRequest = !self.smokeScript && startsBackgroundWork(method,path,payload);
+        NSString *backgroundToken = workRequest ? [self.backgroundExecution beginUserRequest] : nil;
         NSMutableURLRequest *request = [self request:method path:path body:payload];
         __block NSURLSessionDataTask *task;
         task = [self.http dataTaskWithRequest:request completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {
             dispatch_async(dispatch_get_main_queue(), ^{ [self.polls removeObject:task]; });
             NSDictionary *json = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
             NSInteger status = [(NSHTTPURLResponse *)response statusCode];
+            if (backgroundToken)
+                dispatch_async(dispatch_get_main_queue(),^{ [self.backgroundExecution endUserRequest:backgroundToken]; });
             [self reply:identifier status:error ? 503 : status data:json ?: @{@"code":@"error_connection_failed"}];
         }];
         if ([path containsString:@"/events?"]) [self.polls addObject:task];
@@ -860,6 +918,10 @@ static void guestExit(int status) {
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 @end
 @implementation AppDelegate
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {
+    [BibimerBackgroundExecution.shared registerAtLaunch];
+    return YES;
+}
 - (UISceneConfiguration *)application:(UIApplication *)application configurationForConnectingSceneSession:(UISceneSession *)session options:(UISceneConnectionOptions *)options {
     UISceneConfiguration *configuration = [[UISceneConfiguration alloc] initWithName:@"Bibimer" sessionRole:session.role];
     configuration.delegateClass = BibimerSceneDelegate.class;

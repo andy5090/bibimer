@@ -4,6 +4,7 @@
     iosPause(); native.cancelPoll?.(); connected(false);
   };
   window.BibimerIOSRuntimeChanged = () => {
+    window.BibimerBackgroundChanged?.();
     const state = environment().localRuntime?.state;
     if (["stopped", "restart-required"].includes(state)) {
       ++generation; clearTimeout(retryTimer); native.cancelPoll?.();
@@ -29,6 +30,17 @@
     control.addEventListener("change", () => native.setScreenBehavior(key,control.checked));
   }
   permissionModes.gemini = ["inherit"];
+  // Background settings only report native state; displaying them never starts work.
+  window.BibimerBackgroundChanged = () => {
+    const state = environment().backgroundWork || {};
+    const control = $("ios-background-enabled"), status = $("ios-background-status");
+    control.checked = state.enabled === true; control.disabled = state.supported !== true;
+    const names = ["off","unsupported","ready","pending","running","completed","waiting","ended","expired","unavailable","failed"];
+    const key = "ios_background_" + (names.includes(state.state) ? state.state : "unsupported");
+    status.dataset.i18n = key; status.textContent = t(key);
+  };
+  $("ios-background-enabled").addEventListener("change", () => native.setBackgroundWork($("ios-background-enabled").checked));
+  window.BibimerBackgroundChanged();
   if (!permissionModes.codex.includes("app-sandbox")) permissionModes.codex.push("app-sandbox");
   for (const id of ["permission","quick-permission","import-permission"]) delete $(id).dataset.agent;
   function iosPermissionIssue(agent,permission,mode) {
