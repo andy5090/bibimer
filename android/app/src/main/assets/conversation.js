@@ -77,19 +77,19 @@
       if (this.speech.enabled === state.enabled && this.speech.readingId === state.readingId) return;
       this.speech = state;
       for (const [id, item] of this.items) {
-        const header = this.cards.get(id)?.querySelector(".message-heading");
-        if (header) this.speechButton(item, header);
+        const actions = this.cards.get(id)?.querySelector(".message-actions");
+        if (actions) this.speechButton(item, actions);
       }
     }
-    speechButton(item, header) {
-      let button = header.querySelector(".message-speech");
+    speechButton(item, actions) {
+      let button = actions.querySelector(".message-speech");
       if (!this.speech.enabled || item.kind !== "assistant" || item.status !== "completed" || !item.text?.trim()) {
         button?.remove(); return;
       }
       if (!button) {
         button = make("button", undefined, "message-speech quiet"); button.type = "button";
         button.onclick = () => this.toggleSpeech?.(item.id);
-        header.insertBefore(button, header.querySelector(".copy-button"));
+        actions.insertBefore(button, actions.querySelector(".copy-button"));
       }
       const playing = this.speech.readingId === item.id;
       const label = this.t(playing ? "tts_stop" : "tts_read_answer");
@@ -189,10 +189,17 @@
         identity.append(make("span", item.kind === "assistant" ? "B" : item.kind === "user" ? "↑" : "!", "message-avatar"), make("span", this.t("chat_"+item.kind)));
         header.append(identity);
         if (item.status === "inProgress") header.append(status());
-        if (item.text) header.append(copyButton(item.text, this.t, "copy_message"));
-        this.speechButton(item, header);
+        if (item.text && item.kind !== "assistant") header.append(copyButton(item.text, this.t, "copy_message"));
         card.append(header);
-        if (item.kind === "assistant") card.append(markdown(item.text || "", this.t));
+        if (item.kind === "assistant") {
+          card.append(markdown(item.text || "", this.t));
+          if (item.text?.trim()) {
+            const actions = make("div", undefined, "message-actions");
+            actions.append(copyButton(item.text, this.t, "copy_message"));
+            this.speechButton(item, actions);
+            card.append(actions);
+          }
+        }
         else {
           if (item.code) card.append(make("p", this.t(item.code)));
           if (item.text) card.append(make("div", item.text, "plain-message"));

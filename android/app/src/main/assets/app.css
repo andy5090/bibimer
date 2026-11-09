@@ -660,13 +660,13 @@ input.settings-switch:disabled { opacity:.4; cursor:default; }
   .topbar .brand-mark { display:none; }
 }
 
-.message-heading .message-speech{display:grid;place-items:center;flex:none;width:44px;height:44px;min-height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;color:var(--muted)}
+.message-actions{display:flex;align-items:center;gap:6px;margin-top:6px}
 .message-speech svg{width:18px;height:18px;fill:currentColor}
-.message-heading .message-speech[aria-pressed="true"]{color:var(--green);background:#2a3b34}
+.message-actions .message-speech[aria-pressed="true"]{color:var(--green);background:#2a3b34}
 
 .message-heading .message-retry{display:grid;place-items:center;flex:none;width:44px;height:44px;min-height:44px;padding:10px;border:1px solid var(--line);border-radius:8px;color:var(--muted)}
 .message-retry svg{width:18px;height:18px}
 
-.message-heading .message-copy{display:grid;place-items:center;flex:none;width:32px;height:32px;min-height:32px;padding:6px;border:1px solid var(--line);border-radius:6px;color:var(--muted)}
+.message-heading .message-copy,.message-actions .message-copy,.message-actions .message-speech{display:grid;place-items:center;flex:none;width:32px;height:32px;min-height:32px;padding:6px;border:1px solid var(--line);border-radius:6px;color:var(--muted)}
 .message-copy svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.message-heading .message-copy.is-copied{color:var(--green)}
+.message-heading .message-copy.is-copied,.message-actions .message-copy.is-copied{color:var(--green)}
