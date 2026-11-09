@@ -1,6 +1,14 @@
 # iOS 앱 검증 기록
 
-## iOS 백그라운드 작업 이어가기·TestFlight6 준비 (2026-11-10, 제공 확인 전)
+## iOS 0.1.0(6) TestFlight 내부 배포 완료 (2026-11-10)
+
+- **02:13 Asia/Seoul**, Apple 처리·기존 암호화 응답(Apple OS 외/병행 표준 암호화·프랑스 미배포)과 한/영 테스트 안내1139자 저장을 완료했다. 기존 **Bibimer Internal** 그룹에서 **0.1.0(6)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드6개를 직접 확인했다. 기존1–5번·그룹/테스터·자동 배포OFF를 유지하고 새 초대·외부 베타·정식 App Store 제출은 하지 않았다.
+- 빌드 ID `bef07861-a51e-4284-a1d2-fd166de145ca`, 업로드 소스 `a80bf35be9d9b83927d641b833a879b3aa742533`. 검증한 로컬 export IPA **8,545,477 bytes**, SHA-256 `46c9119eec914ffa15c21847e699b62b88b000b00b8d292bc12c931ae4a9a7c8`. 최종 background-final 아카이브에서 **02:04:29 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**를 확인했다. 비공개 증빙은 dist/ios-testflight/upload-0.1.0-6-nov10/의 upload-receipt.json·xcode-upload.log·test-notes.txt다. 앞선 미수정 로컬 후보는 업로드하지 않았다.
+- 잠금 복귀 재연결·자동 잠금 방지/하단 홈 제스처 완화 설정과 원격75936f5의 답변 하단 재생/복사를 포함한다. 새 BackgroundExecution은 **iOS26+의 실제 설치/버전 확인과 진행 중 Chat/비정지 대기열**에 공식 백그라운드 API를 연결한다(지원 기기 기본 켜짐). 유휴 터미널·로그인·무기한 Linux 상주는 대상이 아니며 OS 허가/지속 시간은 보장하지 않는다. 만료·거절·설정 해제로 세션을 임의 종료하거나 명령/승인/대기열을 재전송하지 않는다. 화면 유지 두 옵션은 각각 기본 꺼짐이다.
+- 양 SDK 컴파일·아카이브/dSYM·배포 서명·현재 소스와 IPA 자산(웹64·게스트17·네이티브11자산/13소스·현지화20) 일치를 확인했다. 실제 QA WKWebView/Linux **29개·15.96초·JS오류0**, 네이티브 모의 정책20개·Python25·Node11파일·공통 답변/음성/중단 질문3검사·Chromium20배치·main/서비스 정적분석0을 통과했다. 기존 syscall151/152 경고4개는 보존했다.
+- **TestFlight에서0.1.0(6)로 업데이트한다. 실제 iPhone의 OS 백그라운드 허가·Live Activity·잠금 후 장시간 실행은 아직 미검증**이다. Simulator의 모의 스케줄러 성공을 실기기 상시 실행 성공으로 표시하지 않는다. Codex 폰 설치 성공은 사용자 확인이며 Claude 폰 설치 결과는 미확정이다. Android/웹사이트 배포나 사용자 브리지/앱 재시작은 수행하지 않았다. 아래 준비/미배포 기록은 당시 상태이며 이번6번에 포함됐다.
+
+## iOS 백그라운드 작업 이어가기·TestFlight6 준비 (2026-11-10, 당시 제공 확인 전)
 
 - 사용자가 레포 싱크 후 TestFlight 배포와 백그라운드 상시 실행 구현을 요청했다. 기존 잠금 복귀/화면 옵션을 dbb9435로 원격 main에 동기화했고, 그 과정에 원격75936f5의 답변 하단 재생·복사 변경도 보존했다. 이번 후보는 **0.1.0(6)**이며 기존 **Bibimer Internal** 그룹을 유지한다.
 - 새 BackgroundExecution은 iPhone/iPad iOS26+의 공식 BGContinuedProcessingTask를 사용한다(iOS27 비동기 제출/26 폴백). 지원 기기는 기본 켜짐이며 설정에서 저장/해제할 수 있다. 이전 iOS와 Mac 실행에서는 비활성화한다. launch당 한 번 wildcard handler를 등록하고 고유 요청 ID·즉시 실행 실패 전략을 사용한다. processing mode·허용 식별자·BackgroundTasks 링크와 네이티브/웹10언어를 포함한다. GPU나 무관한 오디오/위치 기능으로 상주하지 않는다.
@@ -10,7 +18,7 @@
 - Chromium20언어/폭 조합에서 화면/백그라운드 카드·자체 토글·번역/넘침·부분 복사/검토 후 붙여넣기를 검증했다. visual-verdict97/pass(.omx/state/ios-background-work/ralph-progress.json). 실제 native 증거 dist/ios-app/background-smoke/, .tools/ios-background-release-*; 백그라운드 정책 검사는 각 결과 JSON의 background_execution_policy 항목을 따른다. 제품 installer/고정 버전은 변경하지 않았고 Codex 폰 설치 성공은 사용자 확인, Claude 폰 결과는 아직 미확정이다.
 - 최종 아카이브는 dist/ios-testflight/0.1.0-6-unsigned-nov10-background-final/Bibimer.xcarchive, export는 0.1.0-6-export-nov10-background-final을 사용한다. 앞선 background 경로의 로컬 후보는 SUPERSEDED.json으로 표시했으며 업로드하지 않는다. **Apple 업로드·처리·암호화·내부 그룹 제공 확인 전**이며 실제 제공은 아직5번이다. Android/웹사이트 배포나 사용자 브리지/앱 재시작은 하지 않는다.
 
-## iOS 잠금 복귀·화면 유지 옵션과 CLI 설치 재검증 (2026-11-10, 미배포)
+## iOS 잠금 복귀·화면 유지 옵션과 CLI 설치 재검증 (2026-11-10, 구현 당시 미배포)
 
 - 사용자가 iPhone 잠금 후 브리지가 끊기고 재연결되지 않으며 **앱 전환 화면에서 완전히 종료한 뒤 열면 연결됨**을 확인했다. 기기의 정확한 현재 빌드/실패 메시지는 아직 확인되지 않았다. 코드에서는 기존 ready일 때만 JS를 재개하고 이전 health task/HTTP 연결을 그대로 두던 복귀 경로를 확인했다. 이것이 실제 기기에서 유일한 원인이라고 단정하지 않는다.
 - 백그라운드 진입 시 ready를 해제하고 health/event 조회를 취소한다. 복귀 시 새 ephemeral HTTP transport에서 네이티브 health → JS 연결을 순서대로 확인한다. 이전 transport의 GET만 취소하고 이미 보낸 POST는 완료를 기다려 전달 여부가 불명인 명령을 취소/자동 재전송하지 않는다. 수동 재연결도 이전 health task를 교체하며 task identity와 connection epoch로 늦은 응답·재시도 타이머를 거절한다. 기존 WKWebView·프로젝트/세션·초안은 유지하고 Linux boot를 다시 호출하거나 종료된 init을 되살리지 않는다.
