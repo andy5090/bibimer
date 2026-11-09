@@ -2199,7 +2199,11 @@
   });
   $("cancel-project").addEventListener("click", () => { projectForm(false); $("edit-project").focus(); });
   $("project-update").addEventListener("click", () => tab("setup"));
-  for (const id of ["reconnect", "reconnect-welcome", "reconnect-settings"]) $(id).addEventListener("click", () => { notice(""); connect(); });
+  for (const id of ["reconnect", "reconnect-welcome", "reconnect-settings"]) $(id).addEventListener("click", () => {
+    notice("");
+    if (typeof native.reconnect === "function") native.reconnect();
+    else connect();
+  });
   $("open-termux").addEventListener("click", () => native.openTermux());
   $("setup-open-termux").addEventListener("click", () => native.openTermux());
   $("setup-open-work").addEventListener("click", () => tab("work"));
@@ -2249,7 +2253,7 @@
     } catch (_) { window.BibimerAgentActionStatus(button.dataset.agent, "quick_start_failed"); }
   });
   function updateTerminalFullscreen() {
-    const eligible = currentTab === "work" && !!session && !isChat() && session.kind !== "browser";
+    const eligible = currentTab === "work" && online && !!session && !isChat() && session.kind !== "browser";
     const context = JSON.stringify([instance, projectKey(), session?.id]);
     if (!eligible || context !== terminalFullscreenContext) terminalFullscreen = false;
     terminalFullscreenContext = context;

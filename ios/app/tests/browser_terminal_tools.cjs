@@ -51,7 +51,7 @@ const fixture=()=>{
         const metrics=await page.evaluate(()=>{
           const dialog=document.getElementById("ios-terminal-dialog"),text=document.getElementById("ios-terminal-text");
           const bounds=dialog.getBoundingClientRect();
-          return {left:bounds.left,right:bounds.right,scrollWidth:dialog.scrollWidth,clientWidth:dialog.clientWidth,readonly:text.readOnly,font:getComputedStyle(text).fontSize,buttons:[...dialog.querySelectorAll("button")].map(button=>({width:button.getBoundingClientRect().width,height:button.getBoundingClientRect().height,text:button.textContent,wordBreak:getComputedStyle(button).wordBreak,overflow:button.scrollWidth>button.clientWidth})),toolbar:[...document.querySelectorAll("#ios-terminal-tools>button")].map(button=>button.getBoundingClientRect().height)};
+          return {left:bounds.left,right:bounds.right,scrollWidth:dialog.scrollWidth,clientWidth:dialog.clientWidth,readonly:text.readOnly,font:getComputedStyle(text).fontSize,buttons:[...dialog.querySelectorAll("button")].filter(button=>button.getClientRects().length).map(button=>({width:button.getBoundingClientRect().width,height:button.getBoundingClientRect().height,text:button.textContent,wordBreak:getComputedStyle(button).wordBreak,overflow:button.scrollWidth>button.clientWidth})),toolbar:[...document.querySelectorAll("#ios-terminal-tools>button")].map(button=>button.getBoundingClientRect().height)};
         });
         assert(metrics.left>=0 && metrics.right<=width && metrics.scrollWidth<=metrics.clientWidth,"Dialog must fit the mobile viewport");assert.equal(metrics.readonly,true);assert.equal(metrics.font,"16px");assert(metrics.buttons.every(button=>button.width>0&&button.height>=44&&!button.overflow&&button.wordBreak==="keep-all"));assert(metrics.toolbar.every(height=>height>=44));
         await page.screenshot({path:path.join(output,`selection-${width}-${language}.png`)});
@@ -62,9 +62,11 @@ const fixture=()=>{
         results.push({width,language,dialog:metrics,partialTouchCopy:true,cleanup:true});
       }
       await page.evaluate(()=>{const input=document.getElementById("input");input.value="앞😀뒤";input.focus();input.setSelectionRange(1,3);input.dispatchEvent(new Event("input",{bubbles:true}));window.fixtureBoard.text="A\r\nB\rC";});
-      await page.locator("#ios-terminal-paste").tap();await page.waitForFunction(()=>document.getElementById("input").value==="앞A\nB\nC뒤");
+      await page.locator("#ios-terminal-paste").tap();await page.locator("#ios-terminal-dialog[open]").waitFor();
+      assert.equal(await page.locator("#ios-terminal-text").inputValue(),"A\nB\nC");
       const pasted=await page.evaluate(()=>({value:document.getElementById("input").value,start:document.getElementById("input").selectionStart,end:document.getElementById("input").selectionEnd,sends:window.fixtureSends.length,errors:window.fixtureErrors}));
-      assert.equal(pasted.start,6);assert.equal(pasted.end,6);assert.equal(pasted.sends,0);assert.deepEqual(pasted.errors,[]);
+      assert.equal(pasted.value,"앞😀뒤");assert.equal(pasted.start,1);assert.equal(pasted.end,3);assert.equal(pasted.sends,0);assert.deepEqual(pasted.errors,[]);
+      await page.locator("#ios-terminal-close").tap();
       await page.evaluate(()=>{window.fixtureBoard.hold=true;window.fixtureBoard.text="late";});
       await page.locator("#ios-terminal-paste").tap();
       await page.evaluate(()=>{const input=document.getElementById("input");const previous=input.value;input.value="temporary";input.dispatchEvent(new Event("input",{bubbles:true}));input.value=previous;input.dispatchEvent(new Event("input",{bubbles:true}));window.fixtureBoard.replies.shift()();});
@@ -74,6 +76,6 @@ const fixture=()=>{
       await context.close();
     }
     fs.writeFileSync(path.join(output,"verification.json"),JSON.stringify(results,null,2)+"\n");
-    console.log("Packaged Chromium browser: 20 mobile/locale layouts, touch partial copy, real textarea CRLF/caret and draft-race tests passed; fake board only.");
+    console.log("Packaged Chromium browser: 20 mobile/locale layouts, touch partial copy, reviewed paste without draft mutation/send, CRLF and draft-race tests passed; fake board only.");
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -15,8 +15,8 @@ let metadataCalls = 0;
 for (const id of ["permission","quick-permission"]) field(id).options = [...modes,"app-sandbox"].map(value=>({value,disabled:false}));
 field("import-agent").value = "shell";
 const context = {
-  permissionModes:{codex:[...modes]},window:{},environment:()=>({selfTest:false}),native:{},
-  term:{registerLinkProvider(){}},worktreeCreator:{state:null,render(){}},session:null,online:false,$:field,
+  permissionModes:{codex:[...modes]},window:{},environment:()=>({selfTest:false}),native:{},connect:async()=>{},
+  term:{registerLinkProvider(){}},worktreeCreator:{state:null,render(){}},session:null,online:false,$:field,projectKey:()=>null,currentTab:"work",
   renderSettings() { for (const id of ["permission","quick-permission"]) for (const option of field(id).options) option.disabled = false; },
   renderModels() { metadataCalls++; },
   renderSession() { field("launch").disabled = false; field("send").disabled = false; },

@@ -23,6 +23,9 @@ EXPECTED_CHECKS = {
     'native_share_reentry_preserves_file',
     'native_late_health_preserves_failure',
     'terminal_text_copy_and_reviewed_paste',
+    'offline_navigation_retains_draft', 'native_reconnect_preserves_workspace',
+    'workspace_gesture_policy',
+    'scoped_text_pinch',
 }
 AGENT_CHECKS = {'agents_shared_ui_connected', 'four_agents_available'} | {
     agent + '_' + action + '_ui' for agent in ['codex', 'claude', 'opencode', 'gemini'] for action in ['install', 'version']

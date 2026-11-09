@@ -1,4 +1,22 @@
   // Appended inside the shared application's closure at packaging time.
+  window.BibimerIOSRuntimeChanged = () => {
+    const state = environment().localRuntime?.state;
+    if (["stopped", "restart-required"].includes(state)) {
+      ++generation; clearTimeout(retryTimer); native.cancelPoll?.();
+      connected(false);
+      connectionError = state === "stopped" ? "error_ios_runtime_stopped" : "error_ios_runtime_start";
+      notice(connectionError);
+    } else if (state === "connecting") {
+      connected(false); connectionError = "connection_initial"; notice(connectionError);
+    }
+  };
+  const iosConnect = connect;
+  connect = async function(...args) {
+    if (["stopped", "restart-required"].includes(environment().localRuntime?.state)) {
+      window.BibimerIOSRuntimeChanged(); return;
+    }
+    return iosConnect(...args);
+  };
   permissionModes.gemini = ["inherit"];
   if (!permissionModes.codex.includes("app-sandbox")) permissionModes.codex.push("app-sandbox");
   for (const id of ["permission","quick-permission","import-permission"]) delete $(id).dataset.agent;
@@ -33,6 +51,26 @@
     pickers.sync();
   };
   const iosRenderSession = renderSession;
+  let iosChatFontSize = 14, iosTextContext = "";
+  const iosTextGestures = [];
+  if (window.BibimerTextGestures) {
+    const chat = $("conversation");
+    iosTextGestures.push(window.BibimerTextGestures.attach(chat, {
+      getSize:() => iosChatFontSize,
+      setSize:size => {
+        const atBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 8;
+        iosChatFontSize = size; chat.style.setProperty("--ios-chat-text-scale", String(size / 14));
+        if (atBottom) chat.scrollTop = chat.scrollHeight;
+      },
+      enabled:() => currentTab === "work" && isChat()
+    }));
+    iosTextGestures.push(window.BibimerTextGestures.attach($("terminal-area"), {
+      getSize:() => term.options.fontSize,
+      setSize:size => { term.options.fontSize = size; requestAnimationFrame(resize); },
+      enabled:() => currentTab === "work" && !!session && !isChat() && session.kind !== "browser" && !$("workspace").classList.contains("project-editing")
+    }));
+    for (const event of ["blur", "pagehide"]) window.addEventListener(event, () => iosTextGestures.forEach(gesture => gesture.cancel()));
+  }
   const iosTerminalTools = window.BibimerTerminalTools?.create({terminal:term,input:$("input"),native,send:text=>sendRaw(text.replace(/\r?\n/g,"\r") + "\r"),language:()=>i18n.language(),context:()=>({
     generation,instance,project:projectKey(),session:session?.id || null,tab:currentTab,
     terminal:currentTab === "work" && !!session && !isChat() && !$("workspace").classList.contains("project-editing"),
@@ -40,7 +78,7 @@
   })});
   if (iosTerminalTools) {
     const iosTab = tab;
-    tab = function(name) { iosTab(name); iosTerminalTools.update(); };
+    tab = function(...args) { iosTextGestures.forEach(gesture => gesture.cancel()); iosTab(...args); iosTerminalTools.update(); };
   }
   const iosSetupRefreshed = new Set(), iosSetupRefreshing = new Set();
   async function iosRefreshSetupAgents(id) {
@@ -60,6 +98,8 @@
     finally { iosSetupRefreshing.delete(id); }
   }
   renderSession = function() {
+    const textContext = JSON.stringify([projectKey(),session?.id,currentTab]);
+    if (textContext !== iosTextContext) { iosTextGestures.forEach(gesture => gesture.cancel()); iosTextContext = textContext; }
     iosRenderSession();
     const context = modelContext();
     const selected = context.chat ? session.options?.permission || "inherit" : savedOptions(context.agent).permission;
@@ -133,6 +173,7 @@
     $("launch").click();
   };
   if (environment().selfTest) {
+    window.BibimerIOSTestFontState = () => ({chat:iosChatFontSize,terminal:term.options.fontSize});
     window.BibimerIOSSnapshot = () => ({online,project,session,knownProjects,knownAgents,busy,settingsBusy,switchingProject,sending:[...sending],
       terminal:Array.from({length:term.buffer.active.length},(_,index)=>term.buffer.active.getLine(index)?.translateToString(true) || "").join("\n")});
     window.BibimerIOSTestAPI = api;

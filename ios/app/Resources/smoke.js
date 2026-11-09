@@ -14,6 +14,10 @@
   try {
     await wait(() => snapshot()?.online,"bridge connection",60000);
     passed("shared_ui_connected");
+    const scrolling = await window.BibimerIOSTestAPI("GET","/native/test-scroll-lock");
+    const viewport = document.querySelector('meta[name="viewport"]').content;
+    if (getComputedStyle(document.documentElement).touchAction !== "pan-x pan-y" || !scrolling.horizontalLocked || !scrolling.historyGesturesDisabled || scrolling.pinchEnabled || !viewport.includes("user-scalable=no")) throw new Error("Workspace gesture policy changed");
+    passed("workspace_gesture_policy");
     for (const route of ["/v1/pair?ignored=1","/v1/../v1/pair","/v1/%2e%2e/v1/pair"]) {
       let rejected = false;
       try { await window.BibimerIOSTestAPI("POST",route,{code:"00000000"}); }
@@ -23,6 +27,7 @@
     passed("native_proxy_route_boundary");
     const lateHealth = await window.BibimerIOSTestAPI("GET","/native/test-late-health");
     if (!lateHealth.ignoredLateHealth || !lateHealth.preservedFailure) throw new Error("Late health/navigation callbacks revived a stopped runtime");
+    await wait(() => snapshot()?.online,"connection after late health fixture");
     passed("native_late_health_preserves_failure");
     const preferences = JSON.parse(window.Bibimer.environment());
     $("app-settings-open").click(); await wait(() => !$("settings").hidden,"settings page");
@@ -61,6 +66,28 @@
     await wait(() => /BIBIMER_UI_PTY_OK[\r\n]+/.test(snapshot()?.terminal || "") && /BIBIMER_GIT_OK[\r\n]+/.test(snapshot()?.terminal || ""),"PTY command output");
     terminalEvidence = snapshot().terminal;
     passed("pty_input_output");
+    const controls = ["app-settings-open","connection","input"].map(id => getComputedStyle($(id)).fontSize);
+    const pinchText = (panel, ratio) => {
+      const bounds = panel.getBoundingClientRect(), center = bounds.left + bounds.width / 2, y = bounds.top + bounds.height / 2;
+      const makeTouches = gap => [-1,1].map((side,index) => new Touch({identifier:1001 + index,target:panel,clientX:center + side * gap / 2,clientY:y}));
+      const initial = makeTouches(60), moved = makeTouches(60 * ratio);
+      panel.dispatchEvent(new TouchEvent("touchstart",{bubbles:true,cancelable:true,touches:initial,changedTouches:initial}));
+      panel.dispatchEvent(new TouchEvent("touchmove",{bubbles:true,cancelable:true,touches:moved,changedTouches:moved}));
+      panel.dispatchEvent(new TouchEvent("touchend",{bubbles:true,cancelable:true,touches:[],changedTouches:moved}));
+    };
+    const originalFont = window.BibimerIOSTestFontState().terminal;
+    pinchText($("terminal-area"),1.5);
+    const enlargedFont = Math.round(originalFont * 1.5);
+    await wait(() => window.BibimerIOSTestFontState().terminal === enlargedFont,"terminal text pinch");
+    pinchText($("terminal-area"),originalFont / enlargedFont);
+    await wait(() => window.BibimerIOSTestFontState().terminal === originalFont,"terminal text pinch reset");
+    const sample = document.createElement("div"); sample.className = "markdown"; sample.textContent = "Text scale fixture"; $("conversation").append(sample);
+    const normalText = parseFloat(getComputedStyle(sample).fontSize);
+    $("conversation").style.setProperty("--ios-chat-text-scale","1.5");
+    if (Math.abs(parseFloat(getComputedStyle(sample).fontSize) - normalText * 1.5) > 0.1) throw new Error("Chat body text scale was not applied");
+    $("conversation").style.removeProperty("--ios-chat-text-scale"); sample.remove();
+    if (controls.some((size,index) => getComputedStyle($(["app-settings-open","connection","input"][index])).fontSize !== size)) throw new Error("Text pinch resized app controls");
+    passed("scoped_text_pinch");
     $("ios-terminal-select").click();
     await wait(()=>$("ios-terminal-dialog").open,"terminal text dialog");
     const outputText = $("ios-terminal-text"), marker = "BIBIMER_UI_PTY_OK";
@@ -83,6 +110,31 @@
     $("input").value = previousDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
     await window.BibimerIOSTestAPI("POST","/native/test-clipboard",{text:""});
     passed("terminal_text_copy_and_reviewed_paste");
+    const recoveryDraft = "draft survives local connection recovery";
+    $("input").value = recoveryDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
+    $("terminal-fullscreen-toggle").click();
+    if (!$("app").classList.contains("terminal-fullscreen")) throw new Error("Fullscreen fixture did not expand");
+    await window.BibimerIOSTestAPI("POST","/native/test-connection",{mode:"offline"});
+    window.BibimerResume();
+    await wait(() => !snapshot()?.online,"offline connection state");
+    if ($("app").classList.contains("terminal-fullscreen") || getComputedStyle(document.querySelector(".topbar")).display === "none") throw new Error("Offline fullscreen hid navigation");
+    window.BibimerPause();
+    $("app-settings-open").click(); $("setup-guide-open").click();
+    $("page-back").click();
+    if ($("settings").hidden) throw new Error("Guide did not return to Settings");
+    $("page-back").click();
+    if ($("work").hidden || $("sidebar-open").hidden) throw new Error("Offline Settings trapped navigation");
+    if (snapshot().session.id !== sessionId || $("input").value !== recoveryDraft) throw new Error("Offline navigation lost session or draft");
+    passed("offline_navigation_retains_draft");
+    $("app-settings-open").click();
+    await window.BibimerIOSTestAPI("POST","/native/test-connection",{mode:"online"});
+    $("reconnect-settings").click();
+    await wait(() => snapshot()?.online,"native connection retry");
+    const recovered = await window.BibimerIOSTestAPI("POST","/native/test-connection",{mode:"observe"});
+    if (!recovered.sameWorkspace || !recovered.ready || !recovered.visible || snapshot().session.id !== sessionId || $("input").value !== recoveryDraft) throw new Error("Native reconnect replaced workspace, session or draft");
+    $("page-back").click();
+    $("input").value = previousDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
+    passed("native_reconnect_preserves_workspace");
     const health = await window.BibimerIOSTestAPI("GET","/v1/health");
     if (!["codex","claude","opencode","gemini"].every(id=>health.agents.some(agent=>agent.id===id))) throw new Error("Four agent choices are required");
     passed("agent_catalog",{agents:health.agents.map(agent=>({id:agent.id,installed:agent.installed,modes:agent.modes}))});

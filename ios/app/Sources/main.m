@@ -62,6 +62,11 @@ static BOOL usesDesktopInput(void) {
 @property BOOL exited;
 @property BOOL ready;
 @property NSUInteger healthAttempts;
+@property NSURLSessionDataTask *healthTask;
+@property BOOL runtimeStarted;
+@property BOOL startupFailed;
+@property BOOL testConnectionOffline;
+@property WKWebView *testRecoveryWorkspace;
 @property NSMutableData *utf8Pending;
 @property NSMutableArray<NSString *> *javascriptErrors;
 @property NSString *smokeScript;
@@ -83,6 +88,7 @@ static BOOL usesDesktopInput(void) {
 - (void)startBrowserPolling;
 - (void)boot;
 - (void)checkHealth;
+- (void)retryConnection;
 - (void)fail:(NSString *)message;
 @end
 
@@ -243,7 +249,7 @@ static void guestExit(int status) {
     self.browserPolling=YES;[self pollBrowser:self.browserEpoch];
 }
 - (void)nativeEvent:(NSString *)callback arguments:(NSArray *)arguments {
-    if(!self.web || self.exited)return;
+    if(!self.web || (self.exited && ![callback isEqual:@"BibimerIOSRuntimeChanged"]))return;
     NSString *script=[NSString stringWithFormat:@"Object.assign(window.__bibimerEnvironment,%@);window[%@]?.(...%@);",jsonString([self environment]),jsonString(callback),jsonString(arguments)];
     [self.web evaluateJavaScript:script completionHandler:nil];
 }
@@ -254,9 +260,16 @@ static void guestExit(int status) {
 
 - (void)fail:(NSString *)message {
     dispatch_async(dispatch_get_main_queue(), ^{
+        self.ready = NO;
+        if (!self.runtimeStarted) self.startupFailed = YES;
+        [self.healthTask cancel]; self.healthTask = nil;
         [self.voice pause];[self.completionNotifications pause];[self.browser revokeAll];self.browserEpoch++;self.browserPolling=NO;[self.browserPoll cancel];self.browserPoll=nil;
-        self.status.text = message; self.web.hidden = YES;
-        self.bootstrapOutput.hidden = NO; self.status.hidden = NO;
+        self.status.text = message;
+        // Keep navigation, Settings and drafts accessible after a runtime failure.
+        if (!self.web) [self loadWorkspace];
+        self.web.hidden = NO;
+        self.bootstrapOutput.hidden = YES; self.status.hidden = YES;
+        [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
         if (self.smokeScript) [self writeSmoke:@{@"ok":@NO,@"error":message,@"checks":@[]}];
     });
 }
@@ -337,7 +350,7 @@ static void guestExit(int status) {
             close(outputFD);
         });
         ish_ffi_task_start();
-        dispatch_async(dispatch_get_main_queue(), ^{ [self checkHealth]; });
+        dispatch_async(dispatch_get_main_queue(), ^{ self.runtimeStarted = YES; [self checkHealth]; });
     }
 }
 
@@ -355,21 +368,38 @@ static void guestExit(int status) {
 }
 
 - (void)checkHealth {
-    if (self.exited || self.ready) return;
+    if (self.exited || self.ready || self.healthTask) return;
     self.healthAttempts++;
     NSMutableURLRequest *request = [self request:@"GET" path:@"/v1/health" body:nil]; request.timeoutInterval = 2;
-    [[self.http dataTaskWithRequest:request completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {
+    __block NSURLSessionDataTask *task;
+    task = [self.http dataTaskWithRequest:request completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {
         NSDictionary *json = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
         dispatch_async(dispatch_get_main_queue(), ^{
+            if (self.healthTask != task) return;
+            self.healthTask = nil;
             [self handleHealthJSON:json response:(NSHTTPURLResponse *)response error:error];
         });
-    }] resume];
+    }];
+    self.healthTask = task; [task resume];
+}
+
+- (void)retryConnection {
+    if (self.exited || self.startupFailed) { [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
+    if (!self.runtimeStarted || self.healthTask) return;
+    self.ready = NO; self.healthAttempts = 0;
+    [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+    [self checkHealth];
 }
 
 - (void)handleHealthJSON:(NSDictionary *)json response:(NSHTTPURLResponse *)response error:(NSError *)error {
     // A request started before init exited must never resurrect the workspace.
     if (self.exited) return;
-    if (!error && response.statusCode == 200 && [json isKindOfClass:NSDictionary.class] && [json[@"protocol"] integerValue] == 1) { self.ready = YES; [self loadWorkspace]; [self startBrowserPolling]; }
+    if (!error && response.statusCode == 200 && [json isKindOfClass:NSDictionary.class] && [json[@"protocol"] integerValue] == 1) {
+        self.ready = YES;
+        if (!self.web) [self loadWorkspace];
+        else [self nativeEvent:@"BibimerResume" arguments:@[]];
+        [self startBrowserPolling];
+    }
     else if (self.healthAttempts < 600) {
         if (self.healthAttempts > 5) self.status.text = [NSString stringWithFormat:@"BIBIMER · Waiting for local Linux…\n%@ (HTTP %ld)",error.localizedDescription ?: @"Starting bridge",(long)response.statusCode];
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(), ^{ [self checkHealth]; });
@@ -382,6 +412,7 @@ static void guestExit(int status) {
     NSString *language = [preference isEqual:@"system"] ? systemLanguage() : preference;
     NSMutableDictionary *environment=[@{@"selfTest":@(self.smokeScript != nil),@"paired":@YES,@"termuxInstalled":@YES,@"platform":@"ios",@"notifications":@{@"enabled":@NO,@"allowed":@NO,@"state":@"unsupported"},@"language":language,@"systemLanguage":systemLanguage(),@"languagePreference":preference,@"agentOptions":[preferences dictionaryForKey:@"agentOptions"] ?: @{},@"enterBehavior":[preferences stringForKey:@"enterBehavior"] ?: @"newline",@"responseDelivery":[[preferences stringForKey:@"responseDelivery"] isEqual:@"steer"] ? @"steer" : @"queue",@"contextDisplay":[[preferences stringForKey:@"contextDisplay"] isEqual:@"remaining"] ? @"remaining" : @"used",@"lastProjectParent":[preferences stringForKey:@"lastProjectParent"] ?: @"/root/projects",@"lastProjectFolder":[preferences stringForKey:@"lastProjectFolder"] ?: @"/root/projects",@"quickSetup":@{@"phase":@"connected",@"id":@"embedded"},@"bundledBridgeVersion":[NSBundle.mainBundle objectForInfoDictionaryKey:@"BibimerBridgeVersion"] ?: @"unknown",@"version":@"0.1.0-ios"} mutableCopy];
     [environment addEntriesFromDictionary:[self.voice environment] ?: @{}];
+    environment[@"localRuntime"] = @{@"state":self.exited ? @"stopped" : self.startupFailed ? @"restart-required" : self.ready ? @"connected" : @"connecting"};
     environment[@"termuxX11Installed"]=@YES;
     environment[@"notifications"]=[self.completionNotifications environment] ?: @{};
     environment[@"notificationTarget"]=[NSJSONSerialization JSONObjectWithData:[[self.completionNotifications pendingTarget] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil] ?: @{};
@@ -389,18 +420,22 @@ static void guestExit(int status) {
 }
 
 - (void)loadWorkspace {
-    if (self.exited) return;
+    if (self.web) return;
     WKWebViewConfiguration *configuration = [WKWebViewConfiguration new];
+    configuration.ignoresViewportScaleLimits = NO;
     [configuration.userContentController addScriptMessageHandler:self name:@"bibimer"];
     NSString *shim = [NSString stringWithContentsOfURL:[NSBundle.mainBundle URLForResource:@"native" withExtension:@"js"] encoding:NSUTF8StringEncoding error:nil];
     NSString *source = [[@"window.__bibimerEnvironment=" stringByAppendingString:jsonString([self environment])] stringByAppendingFormat:@";\n%@",shim];
     [configuration.userContentController addUserScript:[[WKUserScript alloc] initWithSource:source injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES]];
     self.web = [[BibimerWorkspaceWebView alloc] initWithFrame:CGRectZero configuration:configuration];
     self.web.navigationDelegate = self; self.web.opaque = NO; self.web.backgroundColor = self.view.backgroundColor;
+    self.web.allowsBackForwardNavigationGestures = NO;
     self.web.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+    self.web.scrollView.delegate = self;
+    self.web.scrollView.bounces = NO;
+    self.web.scrollView.alwaysBounceHorizontal = NO;
+    self.web.scrollView.pinchGestureRecognizer.enabled = NO;
     if (usesDesktopInput()) {
-        self.web.scrollView.delegate = self;
-        self.web.scrollView.bounces = NO;
         self.web.scrollView.alwaysBounceVertical = NO;
     }
     self.web.accessibilityIdentifier = @"bibimerWorkspace"; self.web.translatesAutoresizingMaskIntoConstraints = NO;
@@ -420,33 +455,35 @@ static void guestExit(int status) {
     [self.web loadFileURL:[ui URLByAppendingPathComponent:@"index.html"] allowingReadAccessToURL:ui];
 }
 
-- (void)restoreDesktopWorkspaceOrigin {
-    if (!usesDesktopInput() || !self.web) return;
+- (void)restoreWorkspaceOrigin {
+    if (!self.web) return;
     UIScrollView *scroll = self.web.scrollView;
     CGFloat scale = scroll.zoomScale, minimum = scroll.minimumZoomScale;
-    // Leave zoom/panning and genuinely taller content alone. The fitted app
-    // shell scrolls its own panels; a keyboard inset must not pan the root.
-    if (scroll.isZooming || scale < minimum - 0.001 || scale > minimum + 0.001 ||
-        scroll.contentSize.height > scroll.bounds.size.height + 1) return;
+    // Keep the app shell fixed horizontally. DOM panels keep their own scroll;
+    // leave temporary native scale transitions alone while layout settles.
+    if (scroll.isZooming || scale < minimum - 0.001 || scale > minimum + 0.001) return;
     CGPoint origin = scroll.contentOffset;
-    CGFloat top = -scroll.adjustedContentInset.top;
-    if (origin.y >= top - 0.5 && origin.y <= top + 0.5) return;
-    origin.y = top;
+    origin.x = -scroll.adjustedContentInset.left;
+    if (usesDesktopInput() && scroll.contentSize.height <= scroll.bounds.size.height + 1)
+        origin.y = -scroll.adjustedContentInset.top;
+    if (fabs(origin.x - scroll.contentOffset.x) <= 0.5 && fabs(origin.y - scroll.contentOffset.y) <= 0.5) return;
     [scroll setContentOffset:origin animated:NO];
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    if (scrollView == self.web.scrollView) [self restoreDesktopWorkspaceOrigin];
+    if (scrollView == self.web.scrollView) [self restoreWorkspaceOrigin];
 }
 
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
-    [self restoreDesktopWorkspaceOrigin];
+    [self restoreWorkspaceOrigin];
 }
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
-    if (self.exited) { webView.hidden = YES; return; }
     self.status.hidden = YES; self.bootstrapOutput.hidden = YES;
+    webView.hidden = NO;
+    [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+    if (self.exited) return;
     if (self.smokeScript) [webView evaluateJavaScript:[self.smokeScript stringByAppendingString:@"\n;undefined;"] completionHandler:^(id result,NSError *error) {
         (void)result;
         if (error) [self writeSmoke:@{@"ok":@NO,@"error":error.localizedDescription}];
@@ -612,7 +649,8 @@ static void guestExit(int status) {
     if (message.webView != self.web || !message.frameInfo.mainFrame || !source.isFileURL || ![source.URLByStandardizingPath.URLByResolvingSymlinksInPath.path isEqual:index.URLByResolvingSymlinksInPath.path] || ![message.body isKindOfClass:NSDictionary.class]) return;
     NSDictionary *body = message.body;
     NSString *action = body[@"action"];
-    if ([@[@"voiceStart",@"voiceCancel",@"voiceConfigure",@"voiceKey",@"speechContext",@"speechStop",@"speechRead",@"speechVoices",@"speechConfigure"] containsObject:action]) {
+    if ([action isEqual:@"reconnect"]) { [self retryConnection]; }
+    else if ([@[@"voiceStart",@"voiceCancel",@"voiceConfigure",@"voiceKey",@"speechContext",@"speechStop",@"speechRead",@"speechVoices",@"speechConfigure"] containsObject:action]) {
         if(!self.smokeScript)[self.voice handle:body];
     } else if([action isEqual:@"browserWindow"] && [body[@"tag"] isKindOfClass:NSString.class]) { [self.browser showTag:body[@"tag"]];
     } else if([action isEqual:@"notificationConfigure"] && [body[@"enabled"] isKindOfClass:NSNumber.class]) {
@@ -628,6 +666,23 @@ static void guestExit(int status) {
     } else if ([action isEqual:@"request"]) {
         NSString *identifier = body[@"id"], *method = body[@"method"], *path = body[@"path"], *payload = body[@"body"];
         if (![identifier isKindOfClass:NSString.class] || identifier.length > 80) return;
+        if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-scroll-lock"]) {
+            UIScrollView *scroll = self.web.scrollView;
+            CGPoint original = scroll.contentOffset;
+            [scroll setContentOffset:CGPointMake(48, original.y) animated:NO];
+            [self restoreWorkspaceOrigin];
+            BOOL locked = fabs(scroll.contentOffset.x + scroll.adjustedContentInset.left) < 0.5;
+            [scroll setContentOffset:original animated:NO];
+            [self reply:identifier status:200 data:@{@"horizontalLocked":@(locked),@"historyGesturesDisabled":@(!self.web.allowsBackForwardNavigationGestures),@"pinchEnabled":@(scroll.pinchGestureRecognizer.enabled)}]; return;
+        }
+        if (self.smokeScript && [method isEqual:@"POST"] && [path isEqual:@"/native/test-connection"]) {
+            NSDictionary *fixture = [NSJSONSerialization JSONObjectWithData:[payload dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
+            NSString *mode = [fixture isKindOfClass:NSDictionary.class] ? fixture[@"mode"] : nil;
+            if ([mode isEqual:@"offline"]) { self.testRecoveryWorkspace = self.web; self.testConnectionOffline = YES; }
+            else if ([mode isEqual:@"online"]) self.testConnectionOffline = NO;
+            else if (![mode isEqual:@"observe"]) { [self reply:identifier status:400 data:@{}]; return; }
+            [self reply:identifier status:200 data:@{@"sameWorkspace":@(self.web == self.testRecoveryWorkspace),@"ready":@(self.ready),@"visible":@(!self.web.hidden)}]; return;
+        }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-late-health"]) {
             BOOL exited = self.exited, ready = self.ready, statusHidden = self.status.hidden, outputHidden = self.bootstrapOutput.hidden, webHidden = self.web.hidden;
             WKWebView *workspace = self.web;
@@ -636,8 +691,10 @@ static void guestExit(int status) {
             [self handleHealthJSON:@{@"protocol":@1} response:late error:nil];
             BOOL ignored = !self.ready && self.web == workspace;
             [self webView:workspace didFinishNavigation:nil];
-            BOOL failureVisible = !self.status.hidden && self.web.hidden;
+            BOOL failureVisible = self.exited && !self.ready && !self.web.hidden && self.web == workspace;
             self.exited = exited; self.ready = ready; self.status.hidden = statusHidden; self.bootstrapOutput.hidden = outputHidden; self.web.hidden = webHidden;
+            [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+            if (ready && !exited) [self nativeEvent:@"BibimerResume" arguments:@[]];
             [self reply:identifier status:200 data:@{@"ignoredLateHealth":@(ignored),@"preservedFailure":@(failureVisible)}]; return;
         }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/share-state"]) {
@@ -656,7 +713,7 @@ static void guestExit(int status) {
         if (![self allowedMethod:method path:path] || [path rangeOfCharacterFromSet:[NSCharacterSet characterSetWithCharactersInString:@"\r\n#\\"]].location != NSNotFound || ![payload isKindOfClass:NSString.class] || [payload lengthOfBytesUsingEncoding:NSUTF8StringEncoding] > 65536) {
             [self reply:identifier status:400 data:@{@"code":@"error_invalid_json"}]; return;
         }
-        if (self.exited) { [self reply:identifier status:503 data:@{@"code":@"error_connection_failed"}]; return; }
+        if (self.exited || self.testConnectionOffline) { [self reply:identifier status:503 data:@{@"code":@"error_connection_failed"}]; return; }
         NSMutableURLRequest *request = [self request:method path:path body:payload];
         __block NSURLSessionDataTask *task;
         task = [self.http dataTaskWithRequest:request completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {

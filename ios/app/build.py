@@ -31,19 +31,29 @@ def package_web(destination):
     if destination.exists():
         shutil.rmtree(destination)
     shutil.copytree(source, destination)
-    for name in ['platform.js', 'terminal-tools.js', 'terminal-tools.css', 'speech-text.js']:
+    for name in ['platform.js', 'terminal-tools.js', 'terminal-tools.css', 'speech-text.js', 'text-gestures.js']:
         shutil.copy2(HERE / 'Resources' / name, destination / name)
     locales=json.loads((HERE / 'Resources/ios-locales.json').read_text())
     (destination / 'ios-locales.js').write_text('window.BibimerIOSLocales='+json.dumps(locales,ensure_ascii=False)+';\n')
     index = (destination / 'index.html').read_text()
-    index = index.replace('<script src="app.js" defer>', '<script src="ios-locales.js" defer></script>\n  <script src="speech-text.js" defer></script>\n  <script src="platform.js" defer></script>\n  <script src="terminal-tools.js" defer></script>\n  <link rel="stylesheet" href="terminal-tools.css">\n  <script src="app.js" defer>')
+    index = index.replace('<script src="app.js" defer>', '<script src="ios-locales.js" defer></script>\n  <script src="speech-text.js" defer></script>\n  <script src="text-gestures.js" defer></script>\n  <script src="platform.js" defer></script>\n  <script src="terminal-tools.js" defer></script>\n  <link rel="stylesheet" href="terminal-tools.css">\n  <script src="app.js" defer>')
+    index = index.replace('width=device-width, initial-scale=1, viewport-fit=cover',
+                          'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover')
     # iOS zooms small text fields on focus. Keep the shared Android sizing intact.
     index = index.replace('</head>', '''<style>
 .ios-unavailable { display:none !important; }
 /* Native constraints size the WebView; keep navigation inside that height. */
-html, body { height:100%; overflow:hidden; }
+html, body { width:100%; max-width:100%; height:100%; overflow:hidden; touch-action:pan-x pan-y; overscroll-behavior-x:none; }
 :root #app { height:100%; }
 :root input:not([type="checkbox"]):not([type="radio"]), :root textarea, #handoff-context { font-size:16px !important; }
+#conversation .markdown { font-size:calc(15px * var(--ios-chat-text-scale, 1)); }
+#conversation .plain-message { font-size:calc(14px * var(--ios-chat-text-scale, 1)); }
+#conversation .markdown h1 { font-size:calc(30px * var(--ios-chat-text-scale, 1)); }
+#conversation .markdown h2 { font-size:calc(19px * var(--ios-chat-text-scale, 1)); }
+#conversation .markdown h3 { font-size:calc(17px * var(--ios-chat-text-scale, 1)); }
+#conversation .markdown h4, #conversation .markdown h5, #conversation .markdown h6 { font-size:calc(15px * var(--ios-chat-text-scale, 1)); }
+#conversation .code-block pre code, #conversation .markdown table { font-size:calc(13px * var(--ios-chat-text-scale, 1)); }
+#conversation .diff-viewport { font-size:calc(11px * var(--ios-chat-text-scale, 1)); }
 </style>
 </head>''')
     (destination / 'index.html').write_text(index)

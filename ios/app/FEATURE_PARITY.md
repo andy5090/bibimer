@@ -46,3 +46,7 @@
 공식 근거: [Apple Speech](https://developer.apple.com/documentation/speech/sfspeechaudiobufferrecognitionrequest), [Speech 권한](https://developer.apple.com/documentation/speech/sfspeechrecognizer/requestauthorization(_:)), [음성 발화 설정](https://developer.apple.com/documentation/avfaudio/avspeechutterance), [WebKit 캡처](https://developer.apple.com/documentation/webkit/wkwebview/takesnapshot(with:completionhandler:)), [WebKit 프로필](https://developer.apple.com/documentation/webkit/wkwebsitedatastore/init(foridentifier:)), [알림](https://developer.apple.com/documentation/usernotifications/unusernotificationcenter), [OpenAI 녹음 파일 변환](https://developers.openai.com/api/docs/guides/speech-to-text).
 
 2026-11-09 Mac 후속 검증: 앱Python25개·기존 iOS 브리지55개·네이티브 양 SDK 컴파일과 실제 WKWebView/Linux21개가 통과했다. 위 Termux의 host fixture 제약과 구분하며, 실제 iPhone 기능 검증을 대체하지 않는다. 배포·충돌 근거는 `TESTFLIGHT.md`와 `VALIDATION.md`를 따른다.
+
+## 2026-11-09 후속 소스 수정 (미배포)
+
+연결 끊김에서 상단 탐색과 Back을 유지하고 재연결이 기존 WebView·세션·초안을 보존한다. 실제 Linux 종료에는 앱 프로세스 재실행이 필요하다. 앱 전체 확대·좌우 화면 이동을 막고 Chat/터미널 안의 두 손가락 제스처는 해당 본문/xterm 글꼴만 조절한다. Simulator25개 검사·합성 터치/HTTP차단을 확인했으며 TestFlight4에는 아직 포함되지 않는다. 실제 기기 손가락/백그라운드 장애 검증은 남아 있다.

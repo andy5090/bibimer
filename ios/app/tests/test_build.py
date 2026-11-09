@@ -38,6 +38,10 @@ class GuestPackagingTests(unittest.TestCase):
         self.assertIn('ios-locales.js',index)
         self.assertIn('speech-text.js',index)
         self.assertIn('speech-output.js',index)
+        self.assertIn('text-gestures.js',index)
+        self.assertIn('maximum-scale=1, user-scalable=no',index)
+        self.assertIn('touch-action:pan-x pan-y',index)
+        self.assertIn('--ios-chat-text-scale',index)
         for name in ('browser-consent.js','speech-output.js','voice-input.js'):
             self.assertEqual((self.root/'Web'/name).read_bytes(),(build.REPO/'android/app/src/main/assets'/name).read_bytes())
         self.assertIn('BibimerIOSLocales',(self.root/'Web/ios-locales.js').read_text())

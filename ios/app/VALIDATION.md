@@ -1,5 +1,15 @@
 # iOS 앱 검증 기록
 
+## iOS 연결 끊김 탐색·재연결·영역별 글자 확대 수정 (2026-11-09, 미배포)
+
+- 사용자가 Linux 연결이 끊긴 뒤 상단 버튼이 가려지고 설정에서 Chat/프로젝트 화면으로 돌아가지 못하며, 재연결도 동작하지 않고 별도 메시지가 없다고 보고했다. 전체 화면의 자격 조건에 연결 상태가 없어 오프라인에도 상단/공지 영역을 숨기던 경로를 수정했다. 연결이 끊기면 전체 화면을 해제하고 탐색/오류 안내를 표시한다. iOS의 `tab` 래퍼가 `{replace:true}`를 누락해 설정↔설치 안내를 Back으로 반복하던 것도 모든 인자를 전달하도록 고쳤다. 세션/초안/대기열을 변경하지 않는다.
+- 네이티브 `fail`이 기존 WKWebView 전체를 숨기던 처리를 없애고 기존 화면을 유지한다(초기 실패도 같은 로컬 UI로 안내). 재연결/초기 연결 버튼은 네이티브에 상태 확인을 요청하며 health task 하나만 실행한다. 성공해도 WebView를 다시 만들지 않고 JS 연결만 재개한다. 취소된/오래된 health 작업은 객체 일치로 거절한다. 실제 init 종료/시작 불가를 연결 오류와 구분해10언어로 완전 종료 후 재실행을 안내한다. 현재 런타임은 프로세스당 init1회이고 종료 시 게스트 작업을 정리하므로, `exited`를 해제하거나 `boot`를 다시 호출해 복원한 척하지 않는다. 복구 이벤트에는 상태 코드만 전달하고 토큰/대화/출력을 추가하지 않는다.
+- 사용자 최종 지시에 따라 **더블 탭·두 손가락의 앱 전체 확대를 끄고, Chat·터미널 영역에서 두 손가락으로 해당 영역의 글자만 조절**한다. iOS 패키지에만 viewport scale1·루트 touch-action·네이티브 pinch 비활성·좌우 bounce/히스토리 이동 방지·기본 배율 X원점 고정을 적용했다. Settings/상단/입력창의 크기는 유지하고 Chat 본문/Markdown/코드의 상대 크기와 xterm fontSize만 바꾼다. 글자 크기는 현재 앱 실행 동안 Chat/터미널별로 유지한다. 새 전역 저장 설정은 추가하지 않았다.
+- `text-gestures.js`는 같은 패널 안에서 시작한 두 터치 ID만 처리하고10–26 기준 크기로 제한한다. 한 손가락 스크롤/텍스트 선택·내부 코드/표/터미널 가로 스크롤은 유지한다. 세 손가락·영역 밖 시작·터치 ID 소실·탭/프로젝트/세션 전환·숨김은 취소하며, 실제 핀치 뒤 같은 터치 위치의 잘못 생성된 클릭만 억제한다. API/모델/터미널 입력을 전송하지 않고 xterm의 창 크기만 맞춘다. 전체 화면 간 스와이프로 Settings/Chat을 전환하지 않으며 루트 화면을 고정하는 쪽을 선택했다.
+- 검증: 기존 사용자 환경과 분리된 `Bibimer TestFlight QA`의 실제 WKWebView/내장 Linux **25개·14.02초·JS오류0·fatal0·진단실패0**, 기존 syscall151/152 경고4개만 남는 PASS_WITH_WARNINGS다. 네이티브503 차단 뒤 전체 화면 해제·Settings→안내→Settings→Work 왕복·일시정지 후 네이티브 재연결·동일 WKWebView/세션/초안 보존과, 네이티브 가로 고정/페이지 확대 제한·합성 TouchEvent의 터미널 글자 확대/복원·Chat CSS 크기 및 고정 UI 폰트를 확인했다. 증거 `dist/ios-app/reconnection-smoke/`, `.tools/ios-reconnection-{qa,simulator-build,main-analysis}.log`.
+- 앱 Python25개·관련 Node11파일·917키×10언어·패키징/구문/diff 검사·Clang 정적 분석 진단0개 통과. 기존 Chromium terminal-tools 검사의 숨겨진 버튼 치수/과거 초안 삽입 기대를 현재의 검토 후 전송 양식으로 갱신했고20언어/너비 조합·부분 복사·CRLF/초안 race·자동 전송 없음 검사도 통과했다(`dist/ios-app/terminal-tools-browser/`). `visual-verdict`98/pass: 기존 기본 글꼴·상단/터미널 배치 유지(`.omx/state/ios-reconnection-gestures/ralph-progress.json`).
+- **검증용 Simulator만 새로 빌드했으며 TestFlight0.1.0(4)·기기용 IPA/Android APK·운영 브리지/사용자 세션은 변경하지 않았다.** 이번 수정은 다음 요청 빌드에 포함해야 한다. 실제 iPhone의 손가락 더블 탭/핀치·장시간/백그라운드 네트워크 단절과 실제 Linux 종료 후 재실행은 별도 확인이며 합성 터치/HTTP차단 검사가 이를 대신하지 않는다.
+
 ## iOS 0.1.0(4) TestFlight 빌드 준비 (2026-11-09)
 
 - Mac에서 기존 Xcode27.2/Apple SDK로 최신 기능을 컴파일했다. Xcode 업데이트로 남은27.1 SDK 경로의 Meson 캐시는 별도 보존 후 재생성했다. 사용자가 Xcode 필수 구성 요소 설치와 기존 Chrome의 Apple 로그인을 직접 완료했다. Console의 최신 iOS 빌드가3임을 확인하고4를 후보로 사용한다.

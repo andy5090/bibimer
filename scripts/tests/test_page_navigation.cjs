@@ -2,6 +2,7 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
 const source=fs.readFileSync("android/app/src/main/assets/app.js","utf8");
 const html=fs.readFileSync("android/app/src/main/assets/index.html","utf8");
+const iosHooks=fs.readFileSync("ios/app/Resources/ui-hooks.js","utf8");
 const functions=["tab","closePage","openSetupGuide","openInitialPage"].map(name=>{
   const match=source.match(new RegExp("  function "+name+"\\([^]*?\\n  \\}"));assert.ok(match,name);return match[0];
 }).join("\n");
@@ -56,6 +57,19 @@ for(const [paired,demo] of [[true,false],[false,true]]){
  keydown({key:"Escape",defaultPrevented:true,preventDefault(){prevented++;}});assert.equal(ctx.currentTab,"settings");
  keydown({key:"Escape",preventDefault(){prevented++;}});assert.equal(ctx.currentTab,"work");assert.equal(prevented,1);
 
+}
+{
+ const {ctx,$,session,draft}=fixture(true);
+ ctx.iosTerminalTools={update(){}};ctx.iosTextGestures=[];
+ const wrapper=iosHooks.match(/  if \(iosTerminalTools\) \{[^]*?\n  \}/);assert.ok(wrapper);
+ vm.runInContext(wrapper[0],ctx);
+ ctx.openInitialPage();assert.equal(ctx.pageHistory.length,0);
+ ctx.tab("settings");ctx.openSetupGuide();
+ ctx.closePage();assert.equal(ctx.currentTab,"settings");
+ assert.equal(ctx.pageHistory.length,1,"iOS must forward replace:true instead of pushing the guide again");
+ ctx.closePage();assert.equal(ctx.currentTab,"work");
+ assert.equal($("page-back").hidden,true);assert.equal($("sidebar-open").hidden,false);
+ assert.equal(ctx.pageHistory.length,0);assert.equal(ctx.session,session);assert.equal(ctx.draft,draft);
 }
 assert.ok(!html.includes('class="bottom-nav"'));assert.ok(!html.match(/id="tab-(work|setup|settings)"/));
 for(const id of ["app-settings-open","page-back","setup-guide-open","agent-install-guide"])assert.ok(html.includes('id="'+id+'"'));
