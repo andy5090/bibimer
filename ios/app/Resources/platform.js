@@ -83,7 +83,7 @@
   };
   function t(key, values = {}) {
     const ios=window.BibimerIOSLocales?.[original.language()] || window.BibimerIOSLocales?.en;
-    const keys={browser_consent_body:4,browser_control_status:4,error_browser_manual:4,voice_device_hint:5,tts_android_hint:6,notifications_hint:7,error_ios_runtime_stopped:8,error_ios_runtime_start:9};
+    const keys={browser_consent_body:4,browser_control_status:4,error_browser_manual:4,voice_device_hint:5,tts_android_hint:6,notifications_hint:7,error_ios_runtime_stopped:8,error_ios_runtime_start:9,ios_screen_title:10,ios_keep_awake:11,ios_keep_awake_hint:12,ios_defer_home:13,ios_defer_home_hint:14,ios_screen_background_hint:15};
     if(ios && key in keys)return ios[keys[key]];
     if(key==="browser_title")return "WebKit · iOS";
     const pair = ["notifications_off","notifications_app_update"].includes(key) ? null : overrides[key];

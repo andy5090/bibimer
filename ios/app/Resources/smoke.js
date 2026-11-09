@@ -42,6 +42,17 @@
     await wait(() => JSON.parse(window.Bibimer.environment()).contextDisplay === "remaining","context display preference");
     $("context-display").value = preferences.contextDisplay || "used"; $("context-display").dispatchEvent(new Event("change"));
     passed("settings_language_input_custom_sheet");
+    const screenPreferences = preferences.screenBehavior || {};
+    const screenSetting = (id,value) => { $(id).checked = value; $(id).dispatchEvent(new Event("change",{bubbles:true})); };
+    screenSetting("ios-keep-awake",true); screenSetting("ios-defer-home",true);
+    const enabledScreen = await window.BibimerIOSTestAPI("GET","/native/test-screen");
+    if (enabledScreen.supported && (!enabledScreen.idleTimerDisabled || !enabledScreen.homeDeferred)) throw new Error("Screen switches did not apply native behavior");
+    screenSetting("ios-keep-awake",false); screenSetting("ios-defer-home",false);
+    const disabledScreen = await window.BibimerIOSTestAPI("GET","/native/test-screen");
+    if (disabledScreen.idleTimerDisabled || disabledScreen.homeDeferred) throw new Error("Screen switches did not restore system behavior");
+    screenSetting("ios-keep-awake",screenPreferences.keepAwake === true);
+    screenSetting("ios-defer-home",screenPreferences.deferHomeGesture === true);
+    passed("screen_behavior_preferences");
     $("page-back").click(); await wait(() => !$("work").hidden,"work page");
     const path = "/root/projects/ios-ui-smoke-" + Date.now();
     $("path").value = path; $("create-folder").checked = true; $("project-form").requestSubmit();
@@ -135,6 +146,28 @@
     $("page-back").click();
     $("input").value = previousDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
     passed("native_reconnect_preserves_workspace");
+    const lifecycleDraft = "draft survives background and foreground";
+    $("input").value = lifecycleDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
+    const lifecycleInstance = snapshot().instance;
+    screenSetting("ios-keep-awake",true);
+    for (let cycle = 0; cycle < 2; cycle++) {
+      const background = await window.BibimerIOSTestAPI("POST","/native/test-lifecycle",{mode:"background"});
+      await wait(() => !snapshot()?.online,"background disables stale online state");
+      if (!background.pendingHealthCleared || background.ready) throw new Error("Background retained a stuck health probe or readiness");
+      const backgroundScreen = await window.BibimerIOSTestAPI("GET","/native/test-screen");
+      if (backgroundScreen.idleTimerDisabled) throw new Error("Background kept the screen awake");
+      const active = await window.BibimerIOSTestAPI("POST","/native/test-lifecycle",{mode:"active"});
+      if (!active.freshTransport || !active.sameWorkspace) throw new Error("Foreground reused suspended transport or replaced workspace");
+      await wait(() => snapshot()?.online,"foreground fresh native health and JavaScript reconnect");
+      const foregroundScreen = await window.BibimerIOSTestAPI("GET","/native/test-screen");
+      if (foregroundScreen.supported && !foregroundScreen.idleTimerDisabled) throw new Error("Foreground did not restore the saved keep-awake setting");
+      const state = await window.BibimerIOSTestAPI("POST","/native/test-lifecycle",{mode:"observe"});
+      if (!state.oldReadCancelled || !state.writeUnsent || !state.ready) throw new Error("Foreground did not retire the old read safely: " + JSON.stringify(state));
+      if (snapshot().instance !== lifecycleInstance || snapshot().session.id !== sessionId || $("input").value !== lifecycleDraft) throw new Error("Lifecycle replaced bridge, session, or draft");
+    }
+    $("input").value = previousDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
+    screenSetting("ios-keep-awake",screenPreferences.keepAwake === true);
+    passed("background_foreground_connection_recovery");
     const health = await window.BibimerIOSTestAPI("GET","/v1/health");
     if (!["codex","claude","opencode","gemini"].every(id=>health.agents.some(agent=>agent.id===id))) throw new Error("Four agent choices are required");
     passed("agent_catalog",{agents:health.agents.map(agent=>({id:agent.id,installed:agent.installed,modes:agent.modes}))});

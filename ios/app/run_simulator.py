@@ -26,6 +26,8 @@ EXPECTED_CHECKS = {
     'offline_navigation_retains_draft', 'native_reconnect_preserves_workspace',
     'workspace_gesture_policy',
     'scoped_text_pinch',
+    'background_foreground_connection_recovery',
+    'screen_behavior_preferences',
 }
 AGENT_CHECKS = {'agents_shared_ui_connected', 'four_agents_available'} | {
     agent + '_' + action + '_ui' for agent in ['codex', 'claude', 'opencode', 'gemini'] for action in ['install', 'version']

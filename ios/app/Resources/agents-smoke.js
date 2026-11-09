@@ -12,7 +12,7 @@
   }
   async function action(agent,action,timeout) {
     const previous = snapshot()?.session?.id;
-    $("tab-setup").click(); $(agent + "-install").open = true;
+    $("app-settings-open").click(); $("setup-guide-open").click(); $(agent + "-install").open = true;
     const button = document.querySelector(`[data-agent="${agent}"][data-agent-action="${action}"]`);
     await wait(() => button && !button.disabled,agent + " action ready");
     progress(agent + ":" + action); button.click();

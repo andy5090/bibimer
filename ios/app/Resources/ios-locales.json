@@ -9,7 +9,13 @@
     "Uses iOS voices and available assistive speech settings. Voice availability depends on the device.",
     "Shows a generic completion alert while the app is visible. Alerts missed while iOS suspends the app are not replayed.",
     "Local Linux stopped. Close Bibimer completely and reopen it. Files and saved conversations are kept; running processes and queued messages cannot be restored.",
-    "Local Linux could not start. Close Bibimer completely and reopen it. Your files and saved conversations are kept."
+    "Local Linux could not start. Close Bibimer completely and reopen it. Your files and saved conversations are kept.",
+    "App screen",
+    "Prevent automatic locking",
+    "Keeps the screen on while Bibimer is open. Uses more battery. You can still lock the screen or switch apps manually.",
+    "Reduce accidental Home gestures",
+    "Defers the bottom system gesture to reduce accidental exits. Swipe again to leave. Applies on iPhone and iPad.",
+    "iOS may suspend Linux in the background. These options do not enable background execution."
   ],
   "ko": [
     "마이크를 눌렀을 때 음성을 녹음해 입력 초안에 추가합니다.",
@@ -21,7 +27,13 @@
     "iOS 음성과 사용 가능한 손쉬운 사용 음성 설정을 사용합니다. 음성 지원 여부는 기기에 따라 다릅니다.",
     "앱 화면이 열려 있는 동안 일반 완료 알림을 표시합니다. iOS가 앱을 정지한 동안 놓친 알림은 다시 보내지 않습니다.",
     "내장 Linux가 종료됐습니다. Bibimer를 완전히 종료한 뒤 다시 열어 주세요. 파일과 저장된 대화는 유지되지만 실행 중이던 프로세스와 대기 메시지는 복원되지 않습니다.",
-    "내장 Linux를 시작하지 못했습니다. Bibimer를 완전히 종료한 뒤 다시 열어 주세요. 파일과 저장된 대화는 유지됩니다."
+    "내장 Linux를 시작하지 못했습니다. Bibimer를 완전히 종료한 뒤 다시 열어 주세요. 파일과 저장된 대화는 유지됩니다.",
+    "앱 사용 중 화면",
+    "자동 잠금 방지",
+    "Bibimer가 열려 있는 동안 화면을 켜 둡니다. 배터리를 더 사용하며 직접 화면을 잠그거나 다른 앱으로 이동하는 것은 막지 않습니다.",
+    "하단 홈 제스처 완화",
+    "하단 시스템 제스처를 지연해 실수로 나가는 일을 줄입니다. 다시 스와이프하면 나갈 수 있습니다. iPhone·iPad에서 적용됩니다.",
+    "백그라운드에서는 iOS가 Linux를 정지할 수 있습니다. 이 옵션은 백그라운드 실행을 허용하지 않습니다."
   ],
   "pt-BR": [
     "Grava a fala ao tocar no microfone para adicionar texto ao rascunho.",
@@ -33,7 +45,13 @@
     "Usa vozes do iOS e ajustes de fala assistiva disponíveis. A disponibilidade depende do dispositivo.",
     "Mostra um alerta genérico de conclusão enquanto o app está visível. Alertas perdidos durante a suspensão não são reenviados.",
     "O Linux local foi encerrado. Feche o Bibimer completamente e abra-o novamente. Os arquivos e as conversas salvas são mantidos; processos e mensagens na fila não podem ser restaurados.",
-    "Não foi possível iniciar o Linux local. Feche o Bibimer completamente e abra-o novamente. Seus arquivos e conversas salvas são mantidos."
+    "Não foi possível iniciar o Linux local. Feche o Bibimer completamente e abra-o novamente. Seus arquivos e conversas salvas são mantidos.",
+    "Tela do app",
+    "Impedir bloqueio automático",
+    "Mantém a tela ligada enquanto o Bibimer está aberto. Consome mais bateria. Você ainda pode bloquear a tela ou trocar de app manualmente.",
+    "Reduzir gestos acidentais de Início",
+    "Adia o gesto inferior do sistema para evitar saídas acidentais. Deslize novamente para sair. Aplica-se ao iPhone e iPad.",
+    "O iOS pode suspender o Linux em segundo plano. Estas opções não ativam a execução em segundo plano."
   ],
   "es": [
     "Graba voz al tocar el micrófono para añadir texto al borrador.",
@@ -45,7 +63,13 @@
     "Usa voces de iOS y los ajustes de voz asistida disponibles. La disponibilidad depende del dispositivo.",
     "Muestra una alerta genérica mientras la app está visible. No se repiten alertas perdidas durante la suspensión.",
     "El Linux local se detuvo. Cierra Bibimer por completo y vuelve a abrirlo. Se conservan los archivos y las conversaciones guardadas; los procesos y mensajes en cola no se pueden restaurar.",
-    "No se pudo iniciar el Linux local. Cierra Bibimer por completo y vuelve a abrirlo. Se conservan tus archivos y conversaciones guardadas."
+    "No se pudo iniciar el Linux local. Cierra Bibimer por completo y vuelve a abrirlo. Se conservan tus archivos y conversaciones guardadas.",
+    "Pantalla de la app",
+    "Evitar el bloqueo automático",
+    "Mantiene la pantalla encendida mientras Bibimer está abierto. Consume más batería. Aún puedes bloquear la pantalla o cambiar de app manualmente.",
+    "Reducir gestos de inicio accidentales",
+    "Retrasa el gesto inferior del sistema para evitar salidas accidentales. Desliza de nuevo para salir. Se aplica en iPhone y iPad.",
+    "iOS puede suspender Linux en segundo plano. Estas opciones no habilitan la ejecución en segundo plano."
   ],
   "id": [
     "Merekam ucapan saat Anda mengetuk mikrofon untuk menambahkan teks ke draf.",
@@ -57,7 +81,13 @@
     "Menggunakan suara iOS dan pengaturan ucapan aksesibilitas yang tersedia. Dukungan bergantung pada perangkat.",
     "Menampilkan pemberitahuan selesai umum saat aplikasi terlihat. Pemberitahuan yang terlewat saat ditangguhkan tidak diulang.",
     "Linux lokal berhenti. Tutup Bibimer sepenuhnya lalu buka kembali. File dan percakapan tersimpan tetap ada; proses dan pesan antrean tidak dapat dipulihkan.",
-    "Linux lokal tidak dapat dimulai. Tutup Bibimer sepenuhnya lalu buka kembali. File dan percakapan tersimpan tetap ada."
+    "Linux lokal tidak dapat dimulai. Tutup Bibimer sepenuhnya lalu buka kembali. File dan percakapan tersimpan tetap ada.",
+    "Layar aplikasi",
+    "Cegah penguncian otomatis",
+    "Menjaga layar menyala saat Bibimer terbuka. Menggunakan lebih banyak baterai. Anda tetap dapat mengunci layar atau beralih aplikasi secara manual.",
+    "Kurangi gestur Utama yang tidak sengaja",
+    "Menunda gestur sistem di bagian bawah untuk mengurangi keluar tanpa sengaja. Geser lagi untuk keluar. Berlaku pada iPhone dan iPad.",
+    "iOS dapat menangguhkan Linux di latar belakang. Opsi ini tidak mengaktifkan eksekusi di latar belakang."
   ],
   "zh-Hans": [
     "点按麦克风时录音，将文字添加到草稿。",
@@ -69,7 +99,13 @@
     "使用 iOS 语音和可用的辅助朗读设置。语音支持取决于设备。",
     "应用画面显示期间提供通用完成通知。iOS 挂起应用期间错过的通知不会重发。",
     "内置 Linux 已停止。请完全关闭 Bibimer 后重新打开。文件和已保存的对话会保留，但运行中的进程和排队消息无法恢复。",
-    "无法启动内置 Linux。请完全关闭 Bibimer 后重新打开。文件和已保存的对话会保留。"
+    "无法启动内置 Linux。请完全关闭 Bibimer 后重新打开。文件和已保存的对话会保留。",
+    "应用屏幕",
+    "防止自动锁屏",
+    "Bibimer 打开时保持屏幕常亮，会增加耗电。仍可手动锁屏或切换应用。",
+    "减少误触主屏幕手势",
+    "延迟底部系统手势以减少意外退出。再次滑动即可退出。适用于 iPhone 和 iPad。",
+    "iOS 可能在后台暂停 Linux。这些选项不会启用后台运行。"
   ],
   "ja": [
     "マイクをタップしたときに録音し、下書きにテキストを追加します。",
@@ -81,7 +117,13 @@
     "iOSの音声と利用可能な読み上げ支援設定を使います。音声の対応状況は端末によります。",
     "アプリ画面の表示中に一般的な完了通知を表示します。iOSによる停止中に見逃した通知は再送しません。",
     "内蔵 Linux が終了しました。Bibimer を完全に終了してから開き直してください。ファイルと保存済みの会話は残りますが、実行中のプロセスと待機メッセージは復元されません。",
-    "内蔵 Linux を起動できませんでした。Bibimer を完全に終了してから開き直してください。ファイルと保存済みの会話は残ります。"
+    "内蔵 Linux を起動できませんでした。Bibimer を完全に終了してから開き直してください。ファイルと保存済みの会話は残ります。",
+    "アプリの画面",
+    "自動ロックを防ぐ",
+    "Bibimerを開いている間、画面を点灯したままにします。バッテリー消費が増えます。手動での画面ロックやアプリ切り替えは可能です。",
+    "意図しないホーム操作を減らす",
+    "下端のシステムジェスチャを遅らせ、意図しない画面移動を減らします。もう一度スワイプすると移動できます。iPhoneとiPadで適用されます。",
+    "iOSはバックグラウンドでLinuxを一時停止する場合があります。これらの設定はバックグラウンド実行を有効にしません。"
   ],
   "zh-Hant": [
     "點按麥克風時錄音，將文字加入草稿。",
@@ -93,7 +135,13 @@
     "使用 iOS 語音及可用的輔助朗讀設定。語音支援取決於裝置。",
     "應用程式畫面顯示期間提供一般完成通知。iOS 暫停期間錯過的通知不會重送。",
     "內建 Linux 已停止。請完全關閉 Bibimer 後重新開啟。檔案與已儲存的對話會保留，但執行中的程序與佇列訊息無法還原。",
-    "無法啟動內建 Linux。請完全關閉 Bibimer 後重新開啟。檔案與已儲存的對話會保留。"
+    "無法啟動內建 Linux。請完全關閉 Bibimer 後重新開啟。檔案與已儲存的對話會保留。",
+    "應用程式畫面",
+    "防止自動鎖定",
+    "Bibimer 開啟時保持螢幕亮起，會增加耗電。仍可手動鎖定螢幕或切換應用程式。",
+    "減少誤觸主畫面手勢",
+    "延遲底部系統手勢以減少意外離開。再次滑動即可離開。適用於 iPhone 和 iPad。",
+    "iOS 可能在背景暫停 Linux。這些選項不會啟用背景執行。"
   ],
   "fr": [
     "Enregistre la parole lorsque vous touchez le micro pour ajouter du texte au brouillon.",
@@ -105,7 +153,13 @@
     "Utilise les voix iOS et les réglages d’assistance vocale disponibles. Les voix dépendent de l’appareil.",
     "Affiche une alerte générique lorsque l’app est visible. Les alertes manquées pendant la suspension ne sont pas renvoyées.",
     "Le Linux local s’est arrêté. Fermez complètement Bibimer, puis rouvrez-le. Les fichiers et conversations enregistrées sont conservés ; les processus et messages en attente ne peuvent pas être restaurés.",
-    "Impossible de démarrer le Linux local. Fermez complètement Bibimer, puis rouvrez-le. Vos fichiers et conversations enregistrées sont conservés."
+    "Impossible de démarrer le Linux local. Fermez complètement Bibimer, puis rouvrez-le. Vos fichiers et conversations enregistrées sont conservés.",
+    "Écran de l’app",
+    "Empêcher le verrouillage automatique",
+    "Garde l’écran allumé lorsque Bibimer est ouvert. Consomme plus de batterie. Vous pouvez toujours verrouiller l’écran ou changer d’app manuellement.",
+    "Réduire les gestes d’accueil involontaires",
+    "Diffère le geste système du bas pour éviter les sorties involontaires. Balayez à nouveau pour quitter. S’applique sur iPhone et iPad.",
+    "iOS peut suspendre Linux en arrière-plan. Ces options n’activent pas l’exécution en arrière-plan."
   ],
   "de": [
     "Nimmt beim Tippen auf das Mikrofon Sprache auf und fügt Text zum Entwurf hinzu.",
@@ -117,6 +171,12 @@
     "Nutzt iOS-Stimmen und verfügbare Einstellungen der Sprachassistenz. Stimmen hängen vom Gerät ab.",
     "Zeigt eine allgemeine Abschlussmeldung, solange die App sichtbar ist. Während einer iOS-Pause verpasste Meldungen werden nicht erneut gesendet.",
     "Das lokale Linux wurde beendet. Schließe Bibimer vollständig und öffne es erneut. Dateien und gespeicherte Gespräche bleiben erhalten; laufende Prozesse und Nachrichten in der Warteschlange lassen sich nicht wiederherstellen.",
-    "Das lokale Linux konnte nicht gestartet werden. Schließe Bibimer vollständig und öffne es erneut. Dateien und gespeicherte Gespräche bleiben erhalten."
+    "Das lokale Linux konnte nicht gestartet werden. Schließe Bibimer vollständig und öffne es erneut. Dateien und gespeicherte Gespräche bleiben erhalten.",
+    "App-Bildschirm",
+    "Automatische Sperre verhindern",
+    "Lässt den Bildschirm eingeschaltet, solange Bibimer geöffnet ist. Verbraucht mehr Akku. Manuelles Sperren und App-Wechsel bleiben möglich.",
+    "Versehentliche Home-Gesten reduzieren",
+    "Verzögert die untere Systemgeste, um versehentliches Verlassen zu reduzieren. Zum Verlassen erneut wischen. Gilt auf iPhone und iPad.",
+    "iOS kann Linux im Hintergrund anhalten. Diese Optionen aktivieren keine Ausführung im Hintergrund."
   ]
 }

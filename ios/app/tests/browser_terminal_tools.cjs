@@ -45,6 +45,14 @@ const fixture=()=>{
       assert.equal(await page.evaluate(()=>window.fixtureBoard.reads),0);
       for(const language of ["en","ko","pt-BR","es","id","zh-Hans","ja","zh-Hant","fr","de"]){
         await page.evaluate(language=>{const choice=document.getElementById("language");choice.value=language;choice.dispatchEvent(new Event("change"));},language);
+        await page.locator("#app-settings-open").tap();
+        const screenCard=page.locator("#ios-screen-settings");await screenCard.scrollIntoViewIfNeeded();
+        const screenSettings=await screenCard.evaluate(card=>({width:card.clientWidth,scrollWidth:card.scrollWidth,labels:[...card.querySelectorAll("label")].map(label=>label.textContent),switches:[...card.querySelectorAll("input")].map(control=>({role:control.getAttribute("role"),height:control.getBoundingClientRect().height,appearance:getComputedStyle(control).appearance}))}));
+        assert(screenSettings.scrollWidth<=screenSettings.width,"Screen preferences must fit the mobile viewport");
+        assert(screenSettings.labels.every(label=>label.trim()),"Screen switches need translated labels");
+        assert(screenSettings.switches.every(control=>control.role==="switch"&&control.height>=44&&control.appearance==="none"));
+        await screenCard.screenshot({path:path.join(output,`screen-settings-${width}-${language}.png`)});
+        await page.locator("#page-back").tap();
         const select=page.locator("#ios-terminal-select");await select.waitFor({state:"visible"});
         await page.screenshot({path:path.join(output,`terminal-${width}-${language}.png`)});
         await select.tap();await page.locator("#ios-terminal-dialog[open]").waitFor();
@@ -59,7 +67,7 @@ const fixture=()=>{
         await page.locator("#ios-terminal-copy-selection").tap();
         assert.equal(await page.evaluate(()=>window.fixtureBoard.text),"https://example.invalid/auth?code=sample&next=%2Fcallback");
         await page.locator("#ios-terminal-close").tap();assert.equal(await page.locator("#ios-terminal-text").inputValue(),"");
-        results.push({width,language,dialog:metrics,partialTouchCopy:true,cleanup:true});
+        results.push({width,language,dialog:metrics,screenSettings,partialTouchCopy:true,cleanup:true});
       }
       await page.evaluate(()=>{const input=document.getElementById("input");input.value="앞😀뒤";input.focus();input.setSelectionRange(1,3);input.dispatchEvent(new Event("input",{bubbles:true}));window.fixtureBoard.text="A\r\nB\rC";});
       await page.locator("#ios-terminal-paste").tap();await page.locator("#ios-terminal-dialog[open]").waitFor();

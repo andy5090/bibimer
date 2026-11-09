@@ -1,4 +1,8 @@
   // Appended inside the shared application's closure at packaging time.
+  const iosPause = window.BibimerPause;
+  window.BibimerPause = () => {
+    iosPause(); native.cancelPoll?.(); connected(false);
+  };
   window.BibimerIOSRuntimeChanged = () => {
     const state = environment().localRuntime?.state;
     if (["stopped", "restart-required"].includes(state)) {
@@ -7,6 +11,7 @@
       connectionError = state === "stopped" ? "error_ios_runtime_stopped" : "error_ios_runtime_start";
       notice(connectionError);
     } else if (state === "connecting") {
+      ++generation; clearTimeout(retryTimer); native.cancelPoll?.();
       connected(false); connectionError = "connection_initial"; notice(connectionError);
     }
   };
@@ -17,6 +22,12 @@
     }
     return iosConnect(...args);
   };
+  for (const [id,key] of [["ios-keep-awake","keepAwake"],["ios-defer-home","deferHomeGesture"]]) {
+    const control = $(id);
+    control.checked = environment().screenBehavior?.[key] === true;
+    control.disabled = environment().screenBehavior?.supported === false;
+    control.addEventListener("change", () => native.setScreenBehavior(key,control.checked));
+  }
   permissionModes.gemini = ["inherit"];
   if (!permissionModes.codex.includes("app-sandbox")) permissionModes.codex.push("app-sandbox");
   for (const id of ["permission","quick-permission","import-permission"]) delete $(id).dataset.agent;

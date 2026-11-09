@@ -65,8 +65,13 @@ static BOOL usesDesktopInput(void) {
 @property NSURLSessionDataTask *healthTask;
 @property BOOL runtimeStarted;
 @property BOOL startupFailed;
+@property BOOL backgrounded;
+@property NSUInteger connectionEpoch;
 @property BOOL testConnectionOffline;
 @property WKWebView *testRecoveryWorkspace;
+@property NSURLSession *testRecoveryTransport;
+@property NSURLSessionDataTask *testRecoveryRead;
+@property NSURLSessionDataTask *testRecoveryWrite;
 @property NSMutableData *utf8Pending;
 @property NSMutableArray<NSString *> *javascriptErrors;
 @property NSString *smokeScript;
@@ -89,6 +94,8 @@ static BOOL usesDesktopInput(void) {
 - (void)boot;
 - (void)checkHealth;
 - (void)retryConnection;
+- (NSURLSession *)newHTTPTransport;
+- (void)applyScreenBehavior;
 - (void)fail:(NSString *)message;
 @end
 
@@ -189,11 +196,7 @@ static void guestExit(int status) {
     NSMutableString *token = [NSMutableString new];
     for (NSUInteger i = 0; i < random.length; i++) [token appendFormat:@"%02x",((unsigned char *)random.bytes)[i]];
     self.token = token;
-    NSURLSessionConfiguration *configuration = NSURLSessionConfiguration.ephemeralSessionConfiguration;
-    configuration.timeoutIntervalForRequest = 33; configuration.timeoutIntervalForResource = 180;
-    configuration.HTTPMaximumConnectionsPerHost = 12;
-    configuration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
-    self.http = [NSURLSession sessionWithConfiguration:configuration delegate:self delegateQueue:nil];
+    self.http = [self newHTTPTransport];
     NSArray *args = NSProcessInfo.processInfo.arguments;
     BOOL agentTest = [args containsObject:@"--agent-self-test"];
     if (agentTest || [args containsObject:@"--self-test"]) {
@@ -224,9 +227,14 @@ static void guestExit(int status) {
 }
 
 - (void)enteredBackground {
+    self.backgrounded = YES; self.ready = NO; self.connectionEpoch++;
+    [self applyScreenBehavior];
+    [self.healthTask cancel]; self.healthTask = nil;
+    for (NSURLSessionDataTask *task in self.polls) [task cancel];
+    [self.polls removeAllObjects];
     [self.voice pause];[self.completionNotifications pause];
     self.browserEpoch++;self.browserPolling=NO;[self.browserPoll cancel];self.browserPoll=nil;
-    [self.web evaluateJavaScript:@"window.BibimerPause?.()" completionHandler:nil];
+    [self nativeEvent:@"BibimerPause" arguments:@[]];
 }
 - (void)pollBrowser:(NSUInteger)epoch {
     if(epoch!=self.browserEpoch || !self.browserPolling || self.exited || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive)return;
@@ -254,8 +262,41 @@ static void guestExit(int status) {
     [self.web evaluateJavaScript:script completionHandler:nil];
 }
 - (void)becameActive {
-    [self.completionNotifications resume];[self startBrowserPolling];
-    if (self.ready && !self.exited) [self.web evaluateJavaScript:@"window.BibimerResume?.()" completionHandler:nil];
+    BOOL returning = self.backgrounded;
+    self.backgrounded = NO;
+    [self applyScreenBehavior];
+    if (returning) {
+        // Suspended loopback connections must not block the foreground probe.
+        NSURLSession *previous = self.http;
+        self.http = [self newHTTPTransport];
+        [previous getAllTasksWithCompletionHandler:^(NSArray<NSURLSessionTask *> *tasks) {
+            // Reads can be repeated. Let already submitted writes finish without
+            // cancelling or replaying a command whose delivery may be unknown.
+            for (NSURLSessionTask *task in tasks)
+                if ([task.originalRequest.HTTPMethod isEqual:@"GET"]) [task cancel];
+            [previous finishTasksAndInvalidate];
+        }];
+    }
+    [self retryConnection];
+}
+
+- (NSURLSession *)newHTTPTransport {
+    NSURLSessionConfiguration *configuration = NSURLSessionConfiguration.ephemeralSessionConfiguration;
+    configuration.timeoutIntervalForRequest = 33; configuration.timeoutIntervalForResource = 180;
+    configuration.HTTPMaximumConnectionsPerHost = 12;
+    configuration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+    return [NSURLSession sessionWithConfiguration:configuration delegate:self delegateQueue:nil];
+}
+
+- (void)applyScreenBehavior {
+    UIApplication.sharedApplication.idleTimerDisabled = !usesDesktopInput() && !self.backgrounded &&
+        UIApplication.sharedApplication.applicationState == UIApplicationStateActive &&
+        [NSUserDefaults.standardUserDefaults boolForKey:@"iosKeepAwake"];
+    [self setNeedsUpdateOfScreenEdgesDeferringSystemGestures];
+}
+
+- (UIRectEdge)preferredScreenEdgesDeferringSystemGestures {
+    return !usesDesktopInput() && [NSUserDefaults.standardUserDefaults boolForKey:@"iosDeferHomeGesture"] ? UIRectEdgeBottom : UIRectEdgeNone;
 }
 
 - (void)fail:(NSString *)message {
@@ -263,6 +304,7 @@ static void guestExit(int status) {
         self.ready = NO;
         if (!self.runtimeStarted) self.startupFailed = YES;
         [self.healthTask cancel]; self.healthTask = nil;
+        self.connectionEpoch++;
         [self.voice pause];[self.completionNotifications pause];[self.browser revokeAll];self.browserEpoch++;self.browserPolling=NO;[self.browserPoll cancel];self.browserPoll=nil;
         self.status.text = message;
         // Keep navigation, Settings and drafts accessible after a runtime failure.
@@ -368,7 +410,7 @@ static void guestExit(int status) {
 }
 
 - (void)checkHealth {
-    if (self.exited || self.ready || self.healthTask) return;
+    if (self.exited || self.backgrounded || self.ready || self.healthTask) return;
     self.healthAttempts++;
     NSMutableURLRequest *request = [self request:@"GET" path:@"/v1/health" body:nil]; request.timeoutInterval = 2;
     __block NSURLSessionDataTask *task;
@@ -385,7 +427,9 @@ static void guestExit(int status) {
 
 - (void)retryConnection {
     if (self.exited || self.startupFailed) { [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
-    if (!self.runtimeStarted || self.healthTask) return;
+    if (!self.runtimeStarted || self.backgrounded) return;
+    self.connectionEpoch++;
+    [self.healthTask cancel]; self.healthTask = nil;
     self.ready = NO; self.healthAttempts = 0;
     [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
     [self checkHealth];
@@ -393,16 +437,20 @@ static void guestExit(int status) {
 
 - (void)handleHealthJSON:(NSDictionary *)json response:(NSHTTPURLResponse *)response error:(NSError *)error {
     // A request started before init exited must never resurrect the workspace.
-    if (self.exited) return;
+    if (self.exited || self.backgrounded) return;
     if (!error && response.statusCode == 200 && [json isKindOfClass:NSDictionary.class] && [json[@"protocol"] integerValue] == 1) {
         self.ready = YES;
         if (!self.web) [self loadWorkspace];
         else [self nativeEvent:@"BibimerResume" arguments:@[]];
+        [self.completionNotifications resume];
         [self startBrowserPolling];
     }
     else if (self.healthAttempts < 600) {
         if (self.healthAttempts > 5) self.status.text = [NSString stringWithFormat:@"BIBIMER · Waiting for local Linux…\n%@ (HTTP %ld)",error.localizedDescription ?: @"Starting bridge",(long)response.statusCode];
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(), ^{ [self checkHealth]; });
+        NSUInteger epoch = self.connectionEpoch;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(), ^{
+            if (epoch == self.connectionEpoch) [self checkHealth];
+        });
     } else [self fail:@"Local setup did not finish. Check the installation output, then reopen Bibimer to retry. Existing files are kept."];
 }
 
@@ -413,6 +461,7 @@ static void guestExit(int status) {
     NSMutableDictionary *environment=[@{@"selfTest":@(self.smokeScript != nil),@"paired":@YES,@"termuxInstalled":@YES,@"platform":@"ios",@"notifications":@{@"enabled":@NO,@"allowed":@NO,@"state":@"unsupported"},@"language":language,@"systemLanguage":systemLanguage(),@"languagePreference":preference,@"agentOptions":[preferences dictionaryForKey:@"agentOptions"] ?: @{},@"enterBehavior":[preferences stringForKey:@"enterBehavior"] ?: @"newline",@"responseDelivery":[[preferences stringForKey:@"responseDelivery"] isEqual:@"steer"] ? @"steer" : @"queue",@"contextDisplay":[[preferences stringForKey:@"contextDisplay"] isEqual:@"remaining"] ? @"remaining" : @"used",@"lastProjectParent":[preferences stringForKey:@"lastProjectParent"] ?: @"/root/projects",@"lastProjectFolder":[preferences stringForKey:@"lastProjectFolder"] ?: @"/root/projects",@"quickSetup":@{@"phase":@"connected",@"id":@"embedded"},@"bundledBridgeVersion":[NSBundle.mainBundle objectForInfoDictionaryKey:@"BibimerBridgeVersion"] ?: @"unknown",@"version":@"0.1.0-ios"} mutableCopy];
     [environment addEntriesFromDictionary:[self.voice environment] ?: @{}];
     environment[@"localRuntime"] = @{@"state":self.exited ? @"stopped" : self.startupFailed ? @"restart-required" : self.ready ? @"connected" : @"connecting"};
+    environment[@"screenBehavior"] = @{@"keepAwake":@([preferences boolForKey:@"iosKeepAwake"]),@"deferHomeGesture":@([preferences boolForKey:@"iosDeferHomeGesture"]),@"supported":@(!usesDesktopInput())};
     environment[@"termuxX11Installed"]=@YES;
     environment[@"notifications"]=[self.completionNotifications environment] ?: @{};
     environment[@"notificationTarget"]=[NSJSONSerialization JSONObjectWithData:[[self.completionNotifications pendingTarget] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil] ?: @{};
@@ -649,7 +698,15 @@ static void guestExit(int status) {
     if (message.webView != self.web || !message.frameInfo.mainFrame || !source.isFileURL || ![source.URLByStandardizingPath.URLByResolvingSymlinksInPath.path isEqual:index.URLByResolvingSymlinksInPath.path] || ![message.body isKindOfClass:NSDictionary.class]) return;
     NSDictionary *body = message.body;
     NSString *action = body[@"action"];
-    if ([action isEqual:@"reconnect"]) { [self retryConnection]; }
+    if ([action isEqual:@"screenPreference"]) {
+        NSDictionary *keys = @{@"keepAwake":@"iosKeepAwake",@"deferHomeGesture":@"iosDeferHomeGesture"};
+        NSString *key = [body[@"key"] isKindOfClass:NSString.class] ? keys[body[@"key"]] : nil;
+        id value = body[@"value"];
+        if (!key || ![value isKindOfClass:NSNumber.class] || CFGetTypeID((__bridge CFTypeRef)value) != CFBooleanGetTypeID()) return;
+        [NSUserDefaults.standardUserDefaults setBool:[value boolValue] forKey:key];
+        [self applyScreenBehavior];
+    }
+    else if ([action isEqual:@"reconnect"]) { [self retryConnection]; }
     else if ([@[@"voiceStart",@"voiceCancel",@"voiceConfigure",@"voiceKey",@"speechContext",@"speechStop",@"speechRead",@"speechVoices",@"speechConfigure"] containsObject:action]) {
         if(!self.smokeScript)[self.voice handle:body];
     } else if([action isEqual:@"browserWindow"] && [body[@"tag"] isKindOfClass:NSString.class]) { [self.browser showTag:body[@"tag"]];
@@ -666,6 +723,9 @@ static void guestExit(int status) {
     } else if ([action isEqual:@"request"]) {
         NSString *identifier = body[@"id"], *method = body[@"method"], *path = body[@"path"], *payload = body[@"body"];
         if (![identifier isKindOfClass:NSString.class] || identifier.length > 80) return;
+        if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-screen"]) {
+            [self reply:identifier status:200 data:@{@"idleTimerDisabled":@(UIApplication.sharedApplication.idleTimerDisabled),@"homeDeferred":@(self.preferredScreenEdgesDeferringSystemGestures == UIRectEdgeBottom),@"supported":@(!usesDesktopInput())}]; return;
+        }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-scroll-lock"]) {
             UIScrollView *scroll = self.web.scrollView;
             CGPoint original = scroll.contentOffset;
@@ -682,6 +742,35 @@ static void guestExit(int status) {
             else if ([mode isEqual:@"online"]) self.testConnectionOffline = NO;
             else if (![mode isEqual:@"observe"]) { [self reply:identifier status:400 data:@{}]; return; }
             [self reply:identifier status:200 data:@{@"sameWorkspace":@(self.web == self.testRecoveryWorkspace),@"ready":@(self.ready),@"visible":@(!self.web.hidden)}]; return;
+        }
+        if (self.smokeScript && [method isEqual:@"POST"] && [path isEqual:@"/native/test-lifecycle"]) {
+            NSDictionary *fixture = [NSJSONSerialization JSONObjectWithData:[payload dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
+            NSString *mode = [fixture isKindOfClass:NSDictionary.class] ? fixture[@"mode"] : nil;
+            if ([mode isEqual:@"background"]) {
+                self.testRecoveryWorkspace = self.web; self.testRecoveryTransport = self.http;
+                [self.healthTask cancel];
+                // Hold an unfinished probe, a paused read and an unsent write.
+                // No fixture write is ever resumed or delivered to the bridge.
+                self.healthTask = [self.http dataTaskWithRequest:[self request:@"GET" path:@"/v1/health" body:nil]];
+                self.testRecoveryRead = [self.http dataTaskWithRequest:[self request:@"GET" path:@"/v1/health" body:nil]];
+                [self.testRecoveryRead resume]; [self.testRecoveryRead suspend];
+                self.testRecoveryWrite = [self.http dataTaskWithRequest:[self request:@"POST" path:@"/v1/health" body:@"{}"]];
+                [self enteredBackground];
+                [self checkHealth];
+                [self reply:identifier status:200 data:@{@"pendingHealthCleared":@(self.healthTask == nil),@"ready":@(self.ready)}]; return;
+            }
+            if ([mode isEqual:@"active"]) {
+                [self becameActive];
+                [self reply:identifier status:200 data:@{@"freshTransport":@(self.http != self.testRecoveryTransport),@"sameWorkspace":@(self.web == self.testRecoveryWorkspace)}]; return;
+            }
+            if ([mode isEqual:@"observe"]) {
+                BOOL readCancelled = self.testRecoveryRead.state == NSURLSessionTaskStateCanceling || self.testRecoveryRead.state == NSURLSessionTaskStateCompleted;
+                BOOL writeUnsent = self.testRecoveryWrite.state == NSURLSessionTaskStateSuspended;
+                [self reply:identifier status:200 data:@{@"oldReadCancelled":@(readCancelled),@"writeUnsent":@(writeUnsent),@"ready":@(self.ready),@"readState":@(self.testRecoveryRead.state),@"writeState":@(self.testRecoveryWrite.state)}];
+                [self.testRecoveryWrite cancel]; self.testRecoveryWrite = nil; self.testRecoveryRead = nil; self.testRecoveryTransport = nil;
+                return;
+            }
+            [self reply:identifier status:400 data:@{}]; return;
         }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-late-health"]) {
             BOOL exited = self.exited, ready = self.ready, statusHidden = self.status.hidden, outputHidden = self.bootstrapOutput.hidden, webHidden = self.web.hidden;
@@ -713,7 +802,7 @@ static void guestExit(int status) {
         if (![self allowedMethod:method path:path] || [path rangeOfCharacterFromSet:[NSCharacterSet characterSetWithCharactersInString:@"\r\n#\\"]].location != NSNotFound || ![payload isKindOfClass:NSString.class] || [payload lengthOfBytesUsingEncoding:NSUTF8StringEncoding] > 65536) {
             [self reply:identifier status:400 data:@{@"code":@"error_invalid_json"}]; return;
         }
-        if (self.exited || self.testConnectionOffline) { [self reply:identifier status:503 data:@{@"code":@"error_connection_failed"}]; return; }
+        if (self.exited || self.backgrounded || self.testConnectionOffline) { [self reply:identifier status:503 data:@{@"code":@"error_connection_failed"}]; return; }
         NSMutableURLRequest *request = [self request:method path:path body:payload];
         __block NSURLSessionDataTask *task;
         task = [self.http dataTaskWithRequest:request completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {

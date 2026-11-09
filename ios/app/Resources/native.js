@@ -28,6 +28,11 @@
     setEnterBehavior: value => ["send", "newline"].includes(value) && store("enterBehavior", value),
     setResponseDelivery: value => ["queue", "steer"].includes(value) && store("responseDelivery", value),
     setContextDisplay: value => ["used", "remaining"].includes(value) && store("contextDisplay", value),
+    setScreenBehavior: (key, value) => {
+      if (!["keepAwake", "deferHomeGesture"].includes(key) || typeof value !== "boolean") return false;
+      defaults.screenBehavior = {...defaults.screenBehavior, [key]:value};
+      message("screenPreference", {key, value}); return true;
+    },
     setProjectLocation: (parent, folder) => {
       if (![parent, folder].every(path => typeof path === "string" && path.startsWith("/") && !/[\x00-\x1f]/.test(path))) return false;
       store("lastProjectParent", parent); return store("lastProjectFolder", folder);

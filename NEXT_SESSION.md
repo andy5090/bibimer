@@ -1,5 +1,16 @@
 # Bibimer 다음 세션 시작점
 
+## iOS 잠금 복귀·화면 유지 옵션과 CLI 설치 재검증 (2026-11-10, 미배포)
+
+- 사용자가 iPhone 잠금 후 브리지가 끊기고 재연결되지 않으며 **앱 전환 화면에서 완전히 종료한 뒤 열면 연결됨**을 확인했다. 기기의 정확한 현재 빌드/실패 메시지는 아직 확인되지 않았다. 코드에서는 기존 ready일 때만 JS를 재개하고 이전 health task/HTTP 연결을 그대로 두던 복귀 경로를 확인했다. 이것이 실제 기기에서 유일한 원인이라고 단정하지 않는다.
+- 백그라운드 진입 시 ready를 해제하고 health/event 조회를 취소한다. 복귀 시 새 ephemeral HTTP transport에서 네이티브 health → JS 연결을 순서대로 확인한다. 이전 transport의 GET만 취소하고 이미 보낸 POST는 완료를 기다려 전달 여부가 불명인 명령을 취소/자동 재전송하지 않는다. 수동 재연결도 이전 health task를 교체하며 task identity와 connection epoch로 늦은 응답·재시도 타이머를 거절한다. 기존 WKWebView·프로젝트/세션·초안은 유지하고 Linux boot를 다시 호출하거나 종료된 init을 되살리지 않는다.
+- 사용자가 선택한 **자동 잠금 방지 + 하단 홈 제스처 완화**를 iOS 설정의 **앱 사용 중 화면** 카드에 독립 토글로 추가했다. 둘 다 기본은 꺼짐이며 선택을 UserDefaults에 저장한다. 전자는 앱이 활성일 때만 idleTimerDisabled를 적용하고 백그라운드에서 해제·복귀 후 복원한다. 후자는 공개 preferredScreenEdgesDeferringSystemGestures의 bottom을 선택한다. 직접 잠금/앱 전환/반복 홈 스와이프를 막는 잠금 모드가 아니며 배터리 사용·동작 범위를 안내한다. Mac 실행에서는 두 토글을 비활성화한다. 기존 자체 settings-switch/44px·10언어를 재사용하고 네이티브 입력은 허용된 두 키와 실제 Boolean만 받는다.
+- 최종 전용 QA Simulator(iOS26.5)의 실제 WKWebView/내장 ARM64 Linux **27개·15.99초·JS오류0·fatal0·진단실패0**, 기존 syscall151/152 경고4개를 보존한 PASS_WITH_WARNINGS다. 미완료 health·일시정지 GET·미전송 POST를 둔 두 번의 background/active 복귀, 새 transport·동일 브리지/세션/초안·POST 미전송, 네이티브 화면 옵션 적용/해제·백그라운드 해제/복귀 복원까지 확인했다. 이는 lifecycle callback fixture이며 실제 기기의 잠금/장시간 OS suspend를 대신하지 않는다. 현재 환경에 Simulator GUI 앱이 없어 실제 잠금 UI 조작은 수행하지 못했다.
+- Python25개·Node10파일·Clang main 정적 분석 진단0·구문/diff 검사 통과. Chromium20언어/폭 조합에서 자체 토글·번역/넘침·부분 복사/검토 후 붙여넣기를 확인했다. visual-verdict97/pass이며 기존 알림 카드와 비교한 증거는 .omx/state/ios-lock-return/ralph-progress.json이다. native 검증은 dist/ios-app/lock-return-smoke/, 로그는 .tools/ios-lock-return-* 에 보존한다.
+- Codex0.163.0과 Claude Code2.1.112/SDK0.2.112의 실제 게스트 설치는 모두 exit0, 별도 버전 확인과 설치됨/사용 가능 목록까지 통과했다. Codex 설치6→111초, Claude141→279초, 두 에이전트 설치/버전과 초기 연결5검사를309초까지 확인했다. 기존 agents-smoke.js의 삭제된 tab-setup 선택자를 Settings→설치 안내로 갱신했다. 다른 두 에이전트의 전체 성공을 주장하지 않으며 검증 runner/QA 앱만 종료했다. 비공개 증거 dist/ios-app/install-diagnosis/codex-claude-proof.json 및 partial-progress.json. 사용자가 이후 **폰에서도 Codex 설치 성공**을 확인했다. Claude Code의 폰 설치 결과와 실패 시 마지막 문구는 아직 확인되지 않았다. Simulator에서는 두 CLI 모두 설치/버전 확인에 성공했으며 폰의 Claude 실패 원인을 단정하지 않는다. 제품 installer/고정 패키지 버전은 추측으로 변경하지 않았다.
+- 백그라운드 상시 Linux 실행은 구현하지 않았다. Apple의 [긴 작업 API](https://developer.apple.com/documentation/backgroundtasks/performing-long-running-tasks-on-ios-and-ipados)는 iOS26+에서 전경의 명시적 사용자 동작으로 시작한 유한 작업에 진행률/완료/취소·만료 처리를 연결해야 하며 무기한 브리지 유지를 보장하지 않는다. 별도 작업 수명 설계와 실기기 검증이 필요하다. 화면 옵션은 백그라운드 실행 권한을 부여하지 않는다. 완전한 단일 앱 사용 제한은 사용자가 iOS 사용법 유도를 직접 설정하는 영역이다.
+- **이번 변경은 Simulator 빌드/소스 검증 상태이며 TestFlight0.1.0(5)에 미포함**이다. 새 기기용 IPA·TestFlight/Android/웹사이트 배포나 사용자 앱/브리지 재시작은 수행하지 않았다. 다음 명시적 배포 요청에서 현재 소스를 새 빌드 번호로 검증/배포해야 한다. 실제 iPhone의 긴 잠금·메모리 압박·홈 제스처와 설치 실패 원인은 남은 확인 사항이다.
+
 ## 답변 하단 재생·복사 버튼 정렬 (2026-11-09, 미배포)
 
 - 사용자 요청으로 assistant 답변의 재생/중지·전체 복사 버튼을 상단 헤더에서 본문 다음의 공통 하단 행으로 이동했다. 두 버튼은 동일한 CSS 규칙으로32×32px·패딩6px·아이콘18px·모서리6px를 사용하고 간격은6px다. 사용자 질문의 복사/중단 질문 편집 버튼과 코드 블록 내부 복사는 기존 위치를 유지한다.

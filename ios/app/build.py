@@ -39,6 +39,17 @@ def package_web(destination):
     index = index.replace('<script src="app.js" defer>', '<script src="ios-locales.js" defer></script>\n  <script src="speech-text.js" defer></script>\n  <script src="text-gestures.js" defer></script>\n  <script src="platform.js" defer></script>\n  <script src="terminal-tools.js" defer></script>\n  <link rel="stylesheet" href="terminal-tools.css">\n  <script src="app.js" defer>')
     index = index.replace('width=device-width, initial-scale=1, viewport-fit=cover',
                           'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover')
+    if index.count('<section id="connection-settings"') != 1:
+        raise RuntimeError('Shared Settings markup changed; review the iOS screen controls.')
+    index = index.replace('<section id="connection-settings"', '''<section id="ios-screen-settings" class="card preference-card">
+      <h2 data-i18n="ios_screen_title">App screen</h2>
+      <div class="preference-row"><label for="ios-keep-awake" data-i18n="ios_keep_awake">Prevent automatic locking</label><input id="ios-keep-awake" class="settings-switch" type="checkbox" role="switch" aria-describedby="ios-keep-awake-hint"></div>
+      <p id="ios-keep-awake-hint" class="hint" data-i18n="ios_keep_awake_hint"></p>
+      <div class="preference-row"><label for="ios-defer-home" data-i18n="ios_defer_home">Reduce accidental Home gestures</label><input id="ios-defer-home" class="settings-switch" type="checkbox" role="switch" aria-describedby="ios-defer-home-hint"></div>
+      <p id="ios-defer-home-hint" class="hint" data-i18n="ios_defer_home_hint"></p>
+      <p class="hint" data-i18n="ios_screen_background_hint"></p>
+    </section>
+    <section id="connection-settings"''')
     # iOS zooms small text fields on focus. Keep the shared Android sizing intact.
     index = index.replace('</head>', '''<style>
 .ios-unavailable { display:none !important; }
