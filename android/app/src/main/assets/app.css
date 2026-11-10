@@ -1,4 +1,8 @@
 @font-face{font-family:"Space Grotesk";src:url("fonts/SpaceGrotesk-Bold.woff2") format("woff2");font-style:normal;font-weight:700;font-display:swap}
+/* App controls are not document text; keep authored content and fields selectable. */
+body{-webkit-user-select:none;user-select:none}
+input,textarea,[contenteditable="true"],.markdown,.plain-message,pre,code,.github-path,#workspace-branch,#workspace-path{-webkit-user-select:text;user-select:text}
+button,button *,label,summary,.message-heading,.code-heading,.diff-numbers{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 :root{color-scheme:dark;--bg:#111417;--card:#191e22;--raised:#22292e;--line:#2b343b;--text:#e6edf0;--muted:#8e9da7;--green:#8bdbbd;--accent:#8bdbbd;--red:#f29393;--blue:#90bafa;font-family:system-ui,-apple-system,sans-serif;font-size:14px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}button,input,select,textarea{font:inherit}button{min-height:44px;border:0;border-radius:8px;padding:8px 12px;font-weight:600;color:var(--text);background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}button:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible,pre:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--green);outline-offset:2px}button:active:not(:disabled){filter:brightness(.85)}[hidden]{display:none!important}#app{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 #setup-connection-steps{border:0;margin:0;padding:0;min-inline-size:0}
