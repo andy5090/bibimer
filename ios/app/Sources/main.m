@@ -96,6 +96,9 @@ static BOOL usesDesktopInput(void) {
 - (void)boot;
 - (void)checkHealth;
 - (void)retryConnection;
+- (void)becameInactive;
+- (void)replaceHTTPTransport;
+- (void)expireHealthTask:(NSURLSessionDataTask *)task epoch:(NSUInteger)epoch;
 - (NSURLSession *)newHTTPTransport;
 - (void)applyScreenBehavior;
 - (void)fail:(NSString *)message;
@@ -254,16 +257,21 @@ static void guestExit(int status) {
     dispatch_async(self.runtimeQueue, ^{ [self boot]; });
 }
 
-- (void)enteredBackground {
+- (void)becameInactive {
+    if (self.backgrounded) return;
     self.backgrounded = YES; self.ready = NO; self.connectionEpoch++;
-    [self.backgroundExecution setForeground:NO];
     [self applyScreenBehavior];
     [self.healthTask cancel]; self.healthTask = nil;
     for (NSURLSessionDataTask *task in self.polls) [task cancel];
     [self.polls removeAllObjects];
-    [self.voice pause];[self.completionNotifications pause];
+    [self.completionNotifications pause];
     self.browserEpoch++;self.browserPolling=NO;[self.browserPoll cancel];self.browserPoll=nil;
     [self nativeEvent:@"BibimerPause" arguments:@[]];
+}
+- (void)enteredBackground {
+    [self becameInactive];
+    [self.voice pause];
+    [self.backgroundExecution setForeground:NO];
 }
 - (void)pollBrowser:(NSUInteger)epoch {
     if(epoch!=self.browserEpoch || !self.browserPolling || self.exited || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive)return;
@@ -291,24 +299,24 @@ static void guestExit(int status) {
     [self.web evaluateJavaScript:script completionHandler:nil];
 }
 - (void)becameActive {
-    BOOL returning = self.backgrounded;
     self.backgrounded = NO;
     [self.backgroundExecution setForeground:YES];
     [self nativeEvent:@"BibimerBackgroundChanged" arguments:@[]];
     [self applyScreenBehavior];
-    if (returning) {
-        // Suspended loopback connections must not block the foreground probe.
-        NSURLSession *previous = self.http;
-        self.http = [self newHTTPTransport];
-        [previous getAllTasksWithCompletionHandler:^(NSArray<NSURLSessionTask *> *tasks) {
-            // Reads can be repeated. Let already submitted writes finish without
-            // cancelling or replaying a command whose delivery may be unknown.
-            for (NSURLSessionTask *task in tasks)
-                if ([task.originalRequest.HTTPMethod isEqual:@"GET"]) [task cancel];
-            [previous finishTasksAndInvalidate];
-        }];
-    }
     [self retryConnection];
+}
+
+- (void)replaceHTTPTransport {
+    // Manual retries and inactive-only transitions need fresh sockets too.
+    NSURLSession *previous = self.http;
+    self.http = [self newHTTPTransport];
+    [previous getAllTasksWithCompletionHandler:^(NSArray<NSURLSessionTask *> *tasks) {
+        // Reads can be repeated. Let already submitted writes finish without
+        // cancelling or replaying a command whose delivery may be unknown.
+        for (NSURLSessionTask *task in tasks)
+            if ([task.originalRequest.HTTPMethod isEqual:@"GET"]) [task cancel];
+        [previous finishTasksAndInvalidate];
+    }];
 }
 
 - (NSURLSession *)newHTTPTransport {
@@ -455,6 +463,19 @@ static void guestExit(int status) {
         });
     }];
     self.healthTask = task; [task resume];
+    // URLSession's request timeout alone may wait on a suspended connection.
+    // Bound each probe independently, without replaying any write requests.
+    NSUInteger epoch = self.connectionEpoch;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,5*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
+        [self expireHealthTask:task epoch:epoch];
+    });
+}
+
+- (void)expireHealthTask:(NSURLSessionDataTask *)task epoch:(NSUInteger)epoch {
+    if (!task || epoch != self.connectionEpoch || self.healthTask != task || self.backgrounded || self.exited || self.ready) return;
+    self.healthTask = nil; [task cancel];
+    [self replaceHTTPTransport];
+    [self handleHealthJSON:nil response:nil error:[NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorTimedOut userInfo:nil]];
 }
 
 - (void)retryConnection {
@@ -463,6 +484,9 @@ static void guestExit(int status) {
     self.connectionEpoch++;
     [self.healthTask cancel]; self.healthTask = nil;
     self.ready = NO; self.healthAttempts = 0;
+    self.browserEpoch++; self.browserPolling = NO;
+    [self.browserPoll cancel]; self.browserPoll = nil;
+    [self replaceHTTPTransport];
     [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
     [self checkHealth];
 }
@@ -800,18 +824,31 @@ static void guestExit(int status) {
         if (self.smokeScript && [method isEqual:@"POST"] && [path isEqual:@"/native/test-lifecycle"]) {
             NSDictionary *fixture = [NSJSONSerialization JSONObjectWithData:[payload dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
             NSString *mode = [fixture isKindOfClass:NSDictionary.class] ? fixture[@"mode"] : nil;
-            if ([mode isEqual:@"background"]) {
+            if ([@[@"background",@"inactive",@"manual",@"stalled-health"] containsObject:mode ?: @""]) {
                 self.testRecoveryWorkspace = self.web; self.testRecoveryTransport = self.http;
                 [self.healthTask cancel];
                 // Hold an unfinished probe, a paused read and an unsent write.
                 // No fixture write is ever resumed or delivered to the bridge.
                 self.healthTask = [self.http dataTaskWithRequest:[self request:@"GET" path:@"/v1/health" body:nil]];
+                NSURLSessionDataTask *heldHealth = self.healthTask;
                 self.testRecoveryRead = [self.http dataTaskWithRequest:[self request:@"GET" path:@"/v1/health" body:nil]];
                 [self.testRecoveryRead resume]; [self.testRecoveryRead suspend];
                 self.testRecoveryWrite = [self.http dataTaskWithRequest:[self request:@"POST" path:@"/v1/health" body:@"{}"]];
-                [self enteredBackground];
+                if ([mode isEqual:@"manual"]) [self retryConnection];
+                else if ([mode isEqual:@"stalled-health"]) {
+                    self.ready = NO;
+                    [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+                    [self expireHealthTask:self.healthTask epoch:self.connectionEpoch];
+                }
+                else if ([mode isEqual:@"inactive"]) [self becameInactive];
+                else [self enteredBackground];
+                BOOL cleared = self.healthTask != heldHealth;
                 [self checkHealth];
-                [self reply:identifier status:200 data:@{@"pendingHealthCleared":@(self.healthTask == nil),@"ready":@(self.ready)}]; return;
+                NSURLSessionDataTask *currentHealth = self.healthTask;
+                NSURLSession *currentTransport = self.http;
+                [self expireHealthTask:heldHealth epoch:self.connectionEpoch];
+                BOOL staleIgnored = self.healthTask == currentHealth && self.http == currentTransport;
+                [self reply:identifier status:200 data:@{@"pendingHealthCleared":@(cleared),@"staleWatchdogIgnored":@(staleIgnored),@"ready":@(self.ready),@"freshTransport":@(self.http != self.testRecoveryTransport),@"sameWorkspace":@(self.web == self.testRecoveryWorkspace)}]; return;
             }
             if ([mode isEqual:@"active"]) {
                 [self becameActive];
@@ -912,6 +949,7 @@ static void guestExit(int status) {
     [self.window makeKeyAndVisible];
 }
 - (void)sceneDidEnterBackground:(UIScene *)scene { [activeController enteredBackground]; }
+- (void)sceneWillResignActive:(UIScene *)scene { [activeController becameInactive]; }
 - (void)sceneDidBecomeActive:(UIScene *)scene { [activeController becameActive]; }
 @end
 

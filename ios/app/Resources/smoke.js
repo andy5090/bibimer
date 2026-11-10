@@ -163,10 +163,10 @@
     $("input").value = lifecycleDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
     const lifecycleInstance = snapshot().instance;
     screenSetting("ios-keep-awake",true);
-    for (let cycle = 0; cycle < 2; cycle++) {
-      const background = await window.BibimerIOSTestAPI("POST","/native/test-lifecycle",{mode:"background"});
+    for (const mode of ["background", "inactive", "background"]) {
+      const background = await window.BibimerIOSTestAPI("POST","/native/test-lifecycle",{mode});
       await wait(() => !snapshot()?.online,"background disables stale online state");
-      if (!background.pendingHealthCleared || background.ready) throw new Error("Background retained a stuck health probe or readiness");
+      if (!background.pendingHealthCleared || !background.staleWatchdogIgnored || background.ready) throw new Error("Background retained a stuck health probe or readiness");
       const backgroundScreen = await window.BibimerIOSTestAPI("GET","/native/test-screen");
       if (backgroundScreen.idleTimerDisabled) throw new Error("Background kept the screen awake");
       const active = await window.BibimerIOSTestAPI("POST","/native/test-lifecycle",{mode:"active"});
@@ -177,6 +177,14 @@
       const state = await window.BibimerIOSTestAPI("POST","/native/test-lifecycle",{mode:"observe"});
       if (!state.oldReadCancelled || !state.writeUnsent || !state.ready) throw new Error("Foreground did not retire the old read safely: " + JSON.stringify(state));
       if (snapshot().instance !== lifecycleInstance || snapshot().session.id !== sessionId || $("input").value !== lifecycleDraft) throw new Error("Lifecycle replaced bridge, session, or draft");
+    }
+    for (const mode of ["manual", "stalled-health"]) {
+      const recovery = await window.BibimerIOSTestAPI("POST","/native/test-lifecycle",{mode});
+      if (!recovery.pendingHealthCleared || !recovery.staleWatchdogIgnored || !recovery.freshTransport || !recovery.sameWorkspace) throw new Error(mode + " did not replace the stuck probe and transport");
+      await wait(() => snapshot()?.online,mode + " native health recovery");
+      const state = await window.BibimerIOSTestAPI("POST","/native/test-lifecycle",{mode:"observe"});
+      if (!state.oldReadCancelled || !state.writeUnsent || !state.ready) throw new Error(mode + " cancelled or replayed a write, or failed to recover");
+      if (snapshot().instance !== lifecycleInstance || snapshot().session.id !== sessionId || $("input").value !== lifecycleDraft) throw new Error(mode + " replaced bridge, session, or draft");
     }
     $("input").value = previousDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
     screenSetting("ios-keep-awake",screenPreferences.keepAwake === true);
