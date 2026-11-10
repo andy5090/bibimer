@@ -660,7 +660,7 @@ input.settings-switch:disabled { opacity:.4; cursor:default; }
   .topbar .brand-mark { display:none; }
 }
 
-.message-actions{display:flex;align-items:center;gap:6px;margin-top:6px}
+.message-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:6px}
 .message-speech svg{width:18px;height:18px;fill:currentColor}
 .message-actions .message-speech[aria-pressed="true"]{color:var(--green);background:#2a3b34}
 
