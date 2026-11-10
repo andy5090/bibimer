@@ -46,6 +46,13 @@ function fixture() {
     vm.runInContext(source.match(/  function renderSession\(\) \{[\s\S]*?\n  \}/)[0],ctx);
     ctx.renderSession();assert.equal(fields.input.disabled,false);assert.equal(fields.send.disabled,false);
     assert.equal(fields["chat-panel"].hidden,false);assert.equal(fields["terminal-keys"].hidden,true);
+    assert.equal(fields["session-loading"].hidden,true);
+    ctx.switchingProject=true;ctx.renderSession();assert.equal(fields["session-loading"].hidden,false);assert.equal(fields["chat-empty"].hidden,true);
+    ctx.switchingProject=false;ctx.conversation.loading=true;ctx.renderSession();assert.equal(fields["session-loading"].hidden,false);
+    ctx.paused=true;ctx.renderSession();assert.equal(fields["session-loading"].hidden,true);
+    ctx.paused=false;ctx.online=false;ctx.renderSession();assert.equal(fields["session-loading"].hidden,true);
+    ctx.online=true;ctx.conversation.loading=false;ctx.renderSession();assert.equal(fields["session-loading"].hidden,true);
+
     assert.equal(fields["input-form"].hidden,false,"A new Chat draft keeps its composer visible");
     assert.equal(fields["quick-agent"].hidden,false,"New Chat keeps its agent selector");
     ctx.canInitialMessage=false;ctx.renderSession();assert.equal(fields.input.disabled,false);assert.equal(fields.send.disabled,true);

@@ -672,7 +672,7 @@
   async function selectSession(projectId, id, path = null, draftAgent = null) {
     if (!online || busy || switchingProject || settingsBusy || libraryBusy) return;
     if (!canLibrary) { await changeProject({project_id:projectId}); sidebar.close(); tab("work"); return; }
-    switchingProject = true; ++generation; clearTimeout(retryTimer); native.cancelPoll?.(); renderSession();
+    switchingProject = true; ++generation; clearTimeout(retryTimer); native.cancelPoll?.(); sidebar.close(); tab("work"); renderSession();
     try {
       const entry = knownProjects.find(row => row.id === projectId);
       const preferred = projectId === projectKey() ? selectedAgent : entry?.agent || "shell";
@@ -1306,7 +1306,8 @@
     $("chat-panel").hidden = !chatDisplay;
     $("chat-empty").textContent = t(newChat ? canInitialMessage ? "new_chat_hint" : "new_chat_update" : "chat_empty");
     $("chat-state").hidden = !isChat();
-    $("chat-empty").hidden = conversation.items.size > 0;
+    $("chat-empty").hidden = conversation.items.size > 0 || conversation.loading || switchingProject;
+    $("session-loading").hidden = !online || paused || !(switchingProject || conversation.loading);
     $("workspace").classList.toggle("chat-mode", chatDisplay);
     $("workspace").classList.toggle("has-requests", isChat() && conversation.requests.size > 0);
     $("turn-status").textContent = isChat() ? (session.state === "running" ? t("chat_state_" + session.turn_state) : label) : "";
@@ -1351,6 +1352,7 @@
       cursor = 0;
       resetTerminal();
       conversation.clear();
+      conversation.loading = value?.mode === "chat" && value.state !== "lost";
       queued = []; queueRevision = -1; queueSignature = "";
     }
     session = value;
@@ -1477,6 +1479,7 @@
         conversation.clear(true);
         notice("output_gap");
       }
+      if (event.session.ready || event.session.state !== "running" || event.session.turn_state === "failed") conversation.loading = false;
       if (event.items) { rememberView(); conversation.update(event); restoreQuestions(event); speechOutput.observe(event, conversation.items.values(), cursor === 0); }
       if (event.data) {
         const bytes = Uint8Array.from(atob(event.data), c => c.charCodeAt(0));
@@ -1496,6 +1499,7 @@
       }
     } catch (error) {
       if (ticket !== generation || paused) return;
+      conversation.loading = false;
       connected(false); connectionError = error.key || "error_request_failed"; notice(connectionError);
       retryTimer = setTimeout(connect, 2000);
     } finally {
@@ -1995,7 +1999,9 @@
     $("import-more").hidden = !importCursor;
     $("import-more").disabled = disabled || !online;
     pickers.sync();
-    $("import-status").textContent = t(importError || (importLoading ? "import_loading" :
+    $("import-status").classList.toggle("response-progress", !importError && (importLoading || busy));
+    $("import-confirm").classList.toggle("response-progress", busy);
+    $("import-status").textContent = t(importError || (busy ? "import_starting" : importLoading ? "import_loading" :
       importEntries.length ? "import_count" : importSearch ? "import_no_results" : "import_empty"), {count:importEntries.length});
     if (rebuild) {
       $("import-entries").replaceChildren(...importEntries.map(entry => {

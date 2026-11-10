@@ -5,7 +5,7 @@
     constructor(root, prompts, t, respond) {
       this.root = root; this.prompts = prompts; this.t = t; this.respond = respond;
       this.items = new Map(); this.cards = new Map(); this.requests = new Map();
-      this.online = false;
+      this.online = false; this.loading = false;
       this.speech = {enabled:false, readingId:""};
       this.retry = {enabled:false};
       this.latest = document.getElementById("chat-latest");
