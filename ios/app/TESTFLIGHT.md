@@ -1,5 +1,13 @@
 # iOS TestFlight 배포
 
+## iOS 0.1.0(7) TestFlight 내부 배포 완료 (2026-11-11)
+
+- **01:55 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내951자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(7)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드7개를 직접 확인했다. 기존1–6번·그룹/테스터·자동 배포 설정을 유지했다.
+- 업로드 소스 `9358f8a409699e8ed4e9a93d46572be9bfbaf305`, 빌드 ID `9fd50bbc-5af0-4629-a41f-ac1c58ffd6e5`. IPA **8,547,418 bytes**, SHA-256 `8f2be311809f483e98cd060ce1132b9e6b7c2cc0c9accc76eaf15bb839990515`. **01:51:09 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**이며 Console 접수 시각은01:52다. 아카이브 `dist/ios-testflight/0.1.0-7-unsigned-nov11-reconnect/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-7-export-nov11-reconnect/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-7-nov11/`.
+- 비활성/백그라운드 복귀와 수동 다시 연결에서 새 HTTP transport를 사용하고 멈춘 health 요청을5초 감시로 폐기한다. 기존 WKWebView·bridge·session·draft를 유지하고 제출된 POST는 취소/재전송하지 않는다. 저장 세션 로딩·연결 끊김 옆 다시 연결·답변 우측 하단 재생/복사·조작 UI 선택 방지를 포함한다. 기존 공식 백그라운드 작업·화면 유지 설정도 포함한다.
+- 양 SDK 컴파일·아카이브/dSYM·배포 서명·현재 소스/IPA 자산(웹64·게스트17·네이티브11자산/13소스·현지화20·rootfs426) 일치를 확인했다. 실제 전용 QA WKWebView/Linux **29개·19.04초·JS오류0**와 모의 백그라운드 정책20개·Python25·Node16파일·Chromium20배치·Clang 정적분석0을 통과했다. 기존 syscall 경고4개와 미사용 매개변수 컴파일 경고16개는 남아 있다.
+- **TestFlight에서0.1.0(7)로 업데이트한다.** 실제 iPhone의 앱 전환/잠금 복귀·OS 백그라운드 허가/지속 시간은 별도 검증이다. 이번 검사는 살아 있는 Linux의 transport 복구이며 init 종료/교착 복구나 무기한 상주를 보장하지 않는다. 사용자 앱/브리지/세션 재시작·Android/웹사이트 배포·외부 베타·정식 App Store 제출은 수행하지 않았다. 아래 미빌드/이전 배포 기록은 당시 상태다.
+
 ## iOS 0.1.0(6) TestFlight 내부 배포 완료 (2026-11-10)
 
 - **02:13 Asia/Seoul**, Apple 처리·기존 암호화 응답(Apple OS 외/병행 표준 암호화·프랑스 미배포)과 한/영 테스트 안내1139자 저장을 완료했다. 기존 **Bibimer Internal** 그룹에서 **0.1.0(6)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드6개를 직접 확인했다. 기존1–5번·그룹/테스터·자동 배포OFF를 유지하고 새 초대·외부 베타·정식 App Store 제출은 하지 않았다.
