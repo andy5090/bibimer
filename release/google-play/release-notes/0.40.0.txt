@@ -1,0 +1,12 @@
+<en-US>
+Moved answer playback and copy buttons below the answer and reduced playback button padding.
+Added progress indicators while opening saved sessions and restoring conversation history.
+Reconnect now appears beside disconnected status instead of beside Add Project.
+Includes stopped-question editing and previous voice, terminal and Git features. No bridge update is needed for these UI changes.
+</en-US>
+<ko-KR>
+답변 재생·복사 버튼을 응답 하단으로 옮기고 재생 버튼 여백을 줄였습니다.
+저장 세션을 열고 대화 기록을 복원하는 동안 로딩 표시를 제공합니다.
+다시 연결 버튼은 프로젝트 추가 옆 대신 연결이 끊겼을 때 상태 안내와 함께 나타납니다.
+중지한 질문 수정과 기존 음성·터미널·Git 기능을 포함합니다. 이번 UI 변경에는 브리지 업데이트가 필요 없습니다.
+</ko-KR>
