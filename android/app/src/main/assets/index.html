@@ -53,6 +53,10 @@
       <p data-i18n="app_update_available" role="status">A new version is available.</p>
       <div><button type="button" class="quiet" id="app-update-later" data-i18n="app_update_later">Later</button><button type="button" class="secondary" id="app-update-open" data-i18n="app_update_open">Open Google Play</button></div>
     </aside>
+    <aside id="connection-recovery" class="connection-recovery" hidden>
+      <span role="status" data-i18n="connection_off">Disconnected</span>
+      <button id="reconnect" class="quiet action-with-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.55-1.65L20 8M4 16l2.35 2.65A7 7 0 0 0 17.9 17"/></svg><span data-i18n="reconnect">Reconnect</span></button>
+    </aside>
     <div id="notice" class="notice" role="status" hidden></div>
   </div>
   <main id="work" class="page">
@@ -458,7 +462,7 @@
     </form>
     <div id="sidebar-projects"></div>
     <p id="sidebar-status" class="hint" role="status"></p>
-    <div class="sidebar-footer"><button class="secondary action-with-icon" id="edit-project"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 11V7a2 2 0 0 0-2-2h-7L9 3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8M18 15v6m-3-3h6"/></svg><span id="edit-project-label" data-i18n="add_project">Project Add</span></button><button id="reconnect" class="quiet action-with-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.55-1.65L20 8M4 16l2.35 2.65A7 7 0 0 0 17.9 17"/></svg><span data-i18n="reconnect">Reconnect</span></button></div>
+    <div class="sidebar-footer"><button class="secondary action-with-icon" id="edit-project"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 11V7a2 2 0 0 0-2-2h-7L9 3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8M18 15v6m-3-3h6"/></svg><span id="edit-project-label" data-i18n="add_project">Project Add</span></button></div>
   </dialog>
   <dialog id="workspace-details-dialog" class="settings-dialog" aria-labelledby="workspace-details-title">
     <div class="sidebar-heading"><h2 id="workspace-details-title" data-i18n="workspace_details">Working folder details</h2><button id="workspace-details-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>

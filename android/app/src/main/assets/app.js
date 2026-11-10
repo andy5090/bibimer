@@ -333,7 +333,11 @@
     for (const field of ["model", "effort"]) $( (prefix || "quick-") + field).addEventListener("change", () => saveOptions(prefix, !prefix, field));
     $(prefix + "models-refresh").addEventListener("click", () => { void loadModels(prefix, true); renderSession(); });
   }
+  function renderConnectionRecovery() {
+    $("connection-recovery").hidden = online || paused || demo || !environment().paired || !(instance || connectionError);
+  }
   function renderNotice() {
+    renderConnectionRecovery();
     $("notice").textContent = noticeData ? t(noticeData.key) + (noticeData.suffix ? " " + t(noticeData.suffix) : "") : "";
     $("notice").hidden = !noticeData;
     const error = noticeData?.key?.startsWith("error_") ? $("notice").textContent : "";
@@ -1219,6 +1223,7 @@
     $("subscription-updated").textContent = observed > 0 && observed <= 253402300799 ? t("subscription_updated", {time:new Date(observed * 1000).toLocaleString(i18n.language())}) : "";
   }
   function renderSession() {
+    renderConnectionRecovery();
     renderBrowser();
     renderContextUsage();
     renderSubscriptionUsage();

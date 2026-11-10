@@ -39,7 +39,7 @@ function fixture() {
       libraryBusy:false,multipleProjects:true,queued:[],canBatchQueue:true,conversation:{items:new Map(),requests:new Map(),enable(){},setRetryControls(){}},
       voiceInput:{update(){}},worktreeCreator:{render(){}},github:{render(){}},inspector:{update(){}},fileViewer:{update(){}},commands:{render(){},invocation:async()=>({})},
       importable:()=>false,findSession:()=>null,supportsSteer:()=>false,isResponding:()=>false,sessionTitle:()=>"Existing session",supportsChat:()=>fields.agent.value!=="shell"});
-    for(const name of ["renderBrowser","renderContextUsage","renderSubscriptionUsage","renderBridgeUpdate","renderSettings","renderModels","renderImport",
+    for(const name of ["renderConnectionRecovery","renderBrowser","renderContextUsage","renderSubscriptionUsage","renderBridgeUpdate","renderSettings","renderModels","renderImport",
       "renderFolderBrowser","renderQueue","renderHandoff","renderWorkspaceSummary","renderWorkspaceDetails","refreshProjectWorktrees","renderSessionActions",
       "renderProjectSettings","renderSidebar","positionUsageDetails","updateTerminalKeys","updateTerminalFullscreen"])ctx[name]=()=>{};
     ctx.pickers={sync(){}};
