@@ -1,5 +1,13 @@
 # Bibimer 다음 세션 시작점
 
+## iOS 0.1.0(8) TestFlight 내부 배포 완료 (2026-11-12)
+
+- **02:36 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내1018자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(8)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드8개를 직접 확인했다. 기존1–7번·그룹/테스터·자동 배포 설정을 유지했다.
+- 업로드 소스 `23168f5f6ce26d9d005b1e979fb59e39f5dec6bb`, 빌드 ID `df6a60df-5432-41b3-8069-ea8faf1b8dc1`. IPA **8,555,777 bytes**, SHA-256 `95e2d0abb3a01e8310c45f9e7aa19f05c3fa165f3b72aa310fe8402e02c1cca1`.**02:31:11 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**다. 아카이브 `dist/ios-testflight/0.1.0-8-unsigned-nov12-recovery/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-8-export-nov12-recovery/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-8-nov12/`.
+- 복귀/명시적 다시 연결 후 health 실패가30초/5회 이상 지속되면 Linux 사용자 프로세스 종료를 확인하고 동일 rootfs에서 서비스를 다시 시작한다. PID1 supervisor·WKWebView·파일/저장 대화·세션 목록은 유지하며 이전 프로세스는 lost, PTY 출력/미저장 대기열은 유실로 처리한다. 메시지/명령/승인은 재전송하지 않고 브라우저 제어는 다시 허용해야 한다. Claude 설정 로그인은 대화형 `/login`과 수동 코드 입력 경로를 사용한다.
+- 양 SDK 컴파일·archive/dSYM·배포 서명·현재 소스/IPA 자산(웹64·게스트18·네이티브11자산/13소스·현지화20·rootfs426) 일치를 확인했다. 실제 전용 WKWebView/Linux **30개·26.83초·JS오류0**와 모의 백그라운드 정책20개·앱 Python29·iOS 브리지56·Node16파일·Chromium20배치·main/서비스/RuntimeSupport 정적분석0을 통과했다. 최초 검사의 누락된 self-test bridge ID와 필수 검사 목록을 보완했으며 실제 동작 경로 변경은 없다. 기존 syscall 경고4개·미사용 매개변수 컴파일 경고16개는 유지했다.
+- **TestFlight에서0.1.0(8)로 업데이트한다.** 실제 iPhone의 잠금/앱 전환 복구·복구 후 인증 유지·Claude 로그인 및 OS 백그라운드 허가/지속 시간은 별도 확인이다. PID1 종료/커널 교착 복구나 무기한 상주를 보장하지 않는다. 사용자 앱/Runtime Lab/브리지·세션 재시작·Android/웹사이트 배포·외부 베타·정식 App Store 제출은 수행하지 않았다. 아래 준비/미빌드 기록은 이번 배포 이전 상태다.
+
 ## iOS 서비스 재시작 복구 Mac 검증 (2026-11-12, TestFlight8 준비)
 
 - c648ec0의 RuntimeSupport C·Objective-C·supervisor를 Xcode27.2의 기기/Simulator SDK로 컴파일했다. 전용 **Bibimer TestFlight QA**의 실제 WKWebView/내장 Linux **30개·26.83초·JS오류0·fatal0·진단실패0**, 기존 syscall151/152 경고4개다. guest 사용자 프로세스2회 재시작·새 bridge instance·같은 WKWebView/프로젝트 파일·이전 세션 lost/PTY 출력 없음·자동 세션 재실행 없음 검사를 통과했다.

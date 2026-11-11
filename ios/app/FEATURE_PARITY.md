@@ -1,11 +1,11 @@
 # iOS 기능 반영 현황
 
-2026-11-11 미빌드 소스: 재연결 실패 후 Linux 사용자 프로세스를 종료 확인하고 같은 rootfs에서 브리지를 새로 시작하는 경로를 추가했다. PID1 supervisor를 유지하며 앱/커널을 중복 초기화하지 않는다. foreground 상태를 네이티브에서 전달해 실패 중에도 다시 연결 UI를 유지한다. 호스트 셸/PTY와 Python/JS 검증을 실제 iOS 엔진 검증과 구분하며, 새 native smoke의 두 차례 재시작·새 bridge instance·파일 유지·이전 세션 lost/출력 미복원·자동 실행 없음은 Mac에서 실행해야 한다. TestFlight7에는 포함되지 않는다.
-
-2026-11-11 소스9358f8a와 **TestFlight 0.1.0(7)** 기준이다. 양 SDK 컴파일·실제 전용 Simulator의 WKWebView/Linux29개·모의 백그라운드 정책20개를 확인하고 기존 내부 그룹의 테스트 중 상태를 검증했다. 비활성/잠금 복귀·수동 재연결·5초 health 감시와 최신 공통 UI를 포함한다. 실제 iPhone 잠금 후 복구·OS 백그라운드 허가/지속 시간과 아래 기기·계정 기능 검증은 각각 남아 있다.
+2026-11-12 소스23168f5와 **TestFlight 0.1.0(8)** 기준이다. 양 SDK 컴파일·실제 전용 Simulator WKWebView/Linux30개·모의 백그라운드 정책20개와 기존 내부 그룹의 테스트 중 상태를 확인했다. 사용자 프로세스를 두 차례 재시작해 새 bridge instance·파일/동일 화면 유지·이전 세션 lost/출력 미복원·자동 실행 없음을 검증했다. 실제 iPhone 잠금/앱 전환·인증 유지·Claude 대화형 로그인·OS 백그라운드 허가/지속 시간은 별도 확인이다.
 
 | 기능 | 현재 소스 | 남은 확인 |
 | --- | --- | --- |
+| Linux 서비스 재시작 복구 | 30초/5회 이상 health 실패 후 자식 종료 확인·동일 rootfs 재시작, PID1 유지·기존 작업 종료 | 실제 iPhone 복귀/잠금·인증 유지, PID1 종료/커널 교착은 별개 |
+| Claude 설정 로그인 | 대화형 `/login` PTY·수동 코드 입력 경로, 브리지 검사 통과 | 실제 계정의 수동 코드 로그인 |
 | 비활성/백그라운드 복귀·수동 다시 연결 | 새 transport·5초 health 감시, 기존 workspace/session/draft 및 POST 유지 검증 | 실제 iPhone 앱 전환·잠금 후 복구, 실제 init 종료/교착은 별개 |
 | 화면 유지·홈 제스처 완화 | 각각 기본 꺼짐, foreground에만 적용 | 실제 iPhone 손가락 조작/잠금 |
 | iOS26+ 백그라운드 작업 | 공식 Continued Processing API·기존 설정 포함, 모의 정책20개 검증 | 실제 OS 허가/Live Activity/지속 시간, 무기한 상주 아님 |

@@ -1,5 +1,13 @@
 # iOS 앱 검증 기록
 
+## 2026-11-12 — TestFlight 0.1.0(8) Linux 서비스 재시작 검증
+
+- 업로드 후보 소스 `23168f5f6ce26d9d005b1e979fb59e39f5dec6bb`는 c648ec0의 Linux supervisor/서비스 복구와 054527e의 Claude 대화형 `/login`을 포함한다. self-test snapshot에 누락된 bridge instance와 필수 smoke 검사 목록만 보완했다. 최초 검사에서 실제 복구는 됐지만 ID 비교가 timeout된 실패 증빙은 `dist/ios-app/history/`에 보존했다.
+- Xcode27.2 양 SDK 컴파일·기기용 arm64/Scene/archive/dSYM·기존 팀/번들 App Store 배포 서명을 확인했다. 실제 전용 **Bibimer TestFlight QA**의 WKWebView/내장 Linux **30개·26.83초·JS오류0·fatal0·진단실패0**이다. 사용자 프로세스2회 종료/재시작·새 bridge instance·동일 WKWebView/파일·이전 세션 lost/출력 없음·자동 재실행 없음과 기존 transport/초안 검사를 통과했다. 백그라운드 정책20개는 모의 scheduler 검사이며 기존 syscall151/152 경고4개는 유지했다. 증빙 `dist/ios-app/recovery-nov12-smoke/`.
+- 앱 Python29개·iOS 브리지56개·Node16파일·Chromium20개 모바일/언어 배치/터미널 부분 선택/검토 붙여넣기를 통과했다. self-test 수정 뒤 앱 Python29·Node 재연결/화면 설정을 재확인했다. main/BackgroundExecution/RuntimeSupport Clang 정적분석은0이며 기존 미사용 매개변수 컴파일 경고16개는 남아 있다.
+- IPA `dist/ios-testflight/0.1.0-8-export-nov12-recovery/export/Bibimer.ipa`, **8,555,777 bytes**, SHA-256 `95e2d0abb3a01e8310c45f9e7aa19f05c3fa165f3b72aa310fe8402e02c1cca1`. 현재 소스에서 재생성한 웹64·게스트18(supervisor 포함), 네이티브11자산/13소스·현지화20·rootfs426 manifest와 IPA 일치를 확인했다. BGTask 식별자·processing mode도 유지한다. 비공개 서명/업로드 증빙 `dist/ios-testflight/upload-0.1.0-8-nov12/`.
+- 실제 iPhone 잠금/앱 전환·복구 시 인증 유지·Claude 수동 코드 로그인과 OS 백그라운드 허가/지속 시간은 별도 확인이다. 서비스 재시작은 기존 실행 중 작업을 종료하며 미저장 대기열/PTY 출력은 복원하지 않는다. PID1 종료/커널 교착이나 무기한 상주를 보장하지 않는다. 사용자 Runtime Lab·앱/브리지/세션은 재시작하지 않았다. Apple 제공 결과는 [배포 기록](TESTFLIGHT.md)을 따른다.
+
 ## 2026-11-11 — TestFlight 0.1.0(7) 재연결 빌드 검증
 
 - 소스 `9358f8a409699e8ed4e9a93d46572be9bfbaf305`를 Xcode 27.2의 기기/Simulator SDK로 컴파일했다. 비활성 복귀·수동 다시 연결에서 새 ephemeral transport를 사용하고 health 조회에 5초 감시를 적용한다. iOS 27 Scene, 공식 백그라운드 작업 API와 최신 공통 UI를 함께 패키징했다.
