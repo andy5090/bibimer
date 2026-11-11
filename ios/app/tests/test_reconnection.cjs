@@ -1,6 +1,6 @@
 "use strict";
 const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict");
-const posts=[],defaults={localRuntime:{state:"connected"}};
+const posts=[],defaults={localRuntime:{state:"connected",foreground:true}};
 const context=vm.createContext({crypto:require("node:crypto").webcrypto,
  window:{__bibimerEnvironment:defaults,webkit:{messageHandlers:{bibimer:{postMessage:value=>posts.push(value)}}},addEventListener(){}}});
 vm.runInContext(fs.readFileSync("ios/app/Resources/native.js","utf8"),context);
@@ -10,7 +10,7 @@ context.window.Bibimer.startQuickSetup();assert.equal(posts.at(-1).action,"recon
 assert.equal(posts.length,2,"Retry actions ask native code; they never pretend to start Linux in JavaScript");
 const session={id:"same-session"},draft={text:"keep this draft",queue:["keep this queue"]};
 const events=[];
-Object.assign(context,{generation:7,retryTimer:13,session,draft,environment:()=>defaults,
+Object.assign(context,{generation:7,retryTimer:13,paused:true,session,draft,environment:()=>defaults,
  native:{cancelPoll:()=>events.push("cancel")},clearTimeout:()=>events.push("clear"),
  connected:value=>events.push(["connected",value]),notice:key=>events.push(["notice",key]),
  connect:async()=>events.push("health")});
@@ -22,9 +22,14 @@ vm.runInContext(hook,context);
  context.window.BibimerPause();
  assert.deepEqual(events,["pause","cancel",["connected",false]],"Backgrounding pauses JavaScript, cancels the old native event poll, and disables stale online controls");
  assert.equal(context.session,session);assert.equal(context.draft,draft);
- for(const [state,error] of [["stopped","error_ios_runtime_stopped"],["restart-required","error_ios_runtime_start"]]){
+ defaults.localRuntime.foreground=false;context.paused=true;
+ context.window.BibimerIOSRuntimeChanged();
+ assert.equal(context.paused,true,"A background runtime event must not reactivate the UI");
+ defaults.localRuntime.foreground=true;
+ for(const [state,error] of [["stopped","error_ios_runtime_stopped"],["restart-required","error_ios_runtime_start"],["recovery-failed","error_ios_runtime_recovery"],["restarting","ios_runtime_restarting"]]){
   events.length=0;defaults.localRuntime.state=state;await context.connect();
   assert.equal(events.includes("health"),false);assert.deepEqual(events.at(-1),["notice",error]);
+  assert.equal(context.paused,false,"Failed recovery must keep foreground reconnect controls usable");
   assert.equal(context.session,session);assert.equal(context.draft,draft);
  }
  defaults.localRuntime.state="connecting";events.length=0;

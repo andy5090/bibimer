@@ -5,20 +5,23 @@
   };
   window.BibimerIOSRuntimeChanged = () => {
     window.BibimerBackgroundChanged?.();
+    // Failure to reconnect must not leave the foreground UI in background mode
+    // with its recovery button hidden until native health eventually succeeds.
+    if (environment().localRuntime?.foreground === true) paused = false;
     const state = environment().localRuntime?.state;
-    if (["stopped", "restart-required"].includes(state)) {
+    if (["stopped", "restart-required", "recovery-failed"].includes(state)) {
       ++generation; clearTimeout(retryTimer); native.cancelPoll?.();
       connected(false);
-      connectionError = state === "stopped" ? "error_ios_runtime_stopped" : "error_ios_runtime_start";
+      connectionError = state === "stopped" ? "error_ios_runtime_stopped" : state === "recovery-failed" ? "error_ios_runtime_recovery" : "error_ios_runtime_start";
       notice(connectionError);
-    } else if (state === "connecting") {
+    } else if (["connecting", "restarting"].includes(state)) {
       ++generation; clearTimeout(retryTimer); native.cancelPoll?.();
-      connected(false); connectionError = "connection_initial"; notice(connectionError);
+      connected(false); connectionError = state === "restarting" ? "ios_runtime_restarting" : "connection_initial"; notice(connectionError);
     }
   };
   const iosConnect = connect;
   connect = async function(...args) {
-    if (["stopped", "restart-required"].includes(environment().localRuntime?.state)) {
+    if (["stopped", "restart-required", "recovery-failed", "restarting"].includes(environment().localRuntime?.state)) {
       window.BibimerIOSRuntimeChanged(); return;
     }
     return iosConnect(...args);

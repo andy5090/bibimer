@@ -15,7 +15,7 @@ class GuestPackagingTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
-        for relative in ['bridge/bibimer_bridge.py', 'ios/bridge/bootstrap.sh', 'ios/bridge/run.py',
+        for relative in ['bridge/bibimer_bridge.py', 'ios/bridge/bootstrap.sh', 'ios/bridge/supervisor.sh', 'ios/bridge/run.py',
                          'ios/bridge/opencode_compat.py', 'ios/bridge/browser_native.py',
                          'ios/bridge/LICENSE.OPENCODE',
                          'engine/ios-linuxkit/app/RootfsPatch.bundle/files/lib/wasm-polyfill.js']:
@@ -30,6 +30,11 @@ class GuestPackagingTests(unittest.TestCase):
     def test_missing_native_browser_transport_rejects_packaging(self):
         (self.root/'ios/bridge/browser_native.py').unlink()
         with self.assertRaisesRegex(RuntimeError,'Missing guest resource: ios/browser_native.py'):
+            self.package()
+
+    def test_missing_supervisor_rejects_packaging(self):
+        (self.root/'ios/bridge/supervisor.sh').unlink()
+        with self.assertRaisesRegex(RuntimeError, 'Missing guest resource: ios/supervisor.sh'):
             self.package()
 
     def test_current_shared_ui_and_ios_voice_catalog_are_packaged(self):

@@ -250,6 +250,20 @@
     await window.BibimerIOSTestSelectSession(sessionId);
     await wait(() => snapshot()?.session?.id === sessionId && snapshot().session.state === "running" && (snapshot().terminal || "").includes("BIBIMER_UI_PTY_OK"),"return to running original terminal");
     passed("session_switch_retains_process_output");
+    for (let recovery = 0; recovery < 2; recovery++) {
+      const previousInstance = snapshot().instance, previousProject = snapshot().project.id;
+      await window.BibimerIOSTestAPI("POST","/native/test-linux-recovery",{});
+      await wait(() => snapshot()?.online && snapshot().instance !== previousInstance,"new Linux services without app relaunch",60000);
+      const state = await window.BibimerIOSTestAPI("GET","/native/test-linux-recovery");
+      if (!state.sameWorkspace || !state.ready || state.failed) throw new Error("Linux recovery replaced the workspace or failed");
+      const saved = await window.BibimerIOSTestAPI("POST","/v1/inspect",{project_id:previousProject,worktree_path:path,action:"file",path:"share.txt"});
+      if (!saved.text.includes("Bibimer native file export")) throw new Error("Linux recovery lost project data");
+      const health = await window.BibimerIOSTestAPI("GET","/v1/health");
+      if (health.active_sessions !== 0) throw new Error("Linux recovery automatically reopened a process");
+      const old = await window.BibimerIOSTestAPI("GET","/v1/sessions/" + sessionId + "/events?cursor=0&wait=0");
+      if (old.session.state !== "lost" || old.data) throw new Error("Linux recovery pretended to restore the old process or output");
+    }
+    passed("linux_services_restart_without_app_relaunch");
     window.webkit.messageHandlers.bibimer.postMessage({action:"smokeResult",result:{ok:true,checks,terminal:terminalEvidence.slice(-12000)}});
   } catch (error) {
     window.webkit.messageHandlers.bibimer.postMessage({action:"smokeResult",result:{ok:false,checks,error:String(error.message || error),snapshot:snapshot()}});

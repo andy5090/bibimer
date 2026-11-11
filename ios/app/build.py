@@ -102,7 +102,7 @@ def package_guest(destination):
         raise RuntimeError('Pinned runtime HTTP parser polyfill is missing.')
     (destination / 'runtime').mkdir()
     shutil.copy2(wasm, destination / 'runtime/wasm-polyfill.js')
-    for required in ['ios/bootstrap.sh', 'ios/run.py', 'ios/opencode_compat.py', 'ios/browser_native.py', 'ios/LICENSE.OPENCODE', 'bridge/bibimer_bridge.py']:
+    for required in ['ios/bootstrap.sh', 'ios/supervisor.sh', 'ios/run.py', 'ios/opencode_compat.py', 'ios/browser_native.py', 'ios/LICENSE.OPENCODE', 'bridge/bibimer_bridge.py']:
         if not (destination / required).exists():
             raise RuntimeError(f'Missing guest resource: {required}')
 

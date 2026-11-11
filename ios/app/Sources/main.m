@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <TargetConditionals.h>
 #include "embed/ffi.h"
 #include "RuntimeSupport.h"
@@ -67,6 +68,15 @@ static BOOL usesDesktopInput(void) {
 @property NSURLSessionDataTask *healthTask;
 @property BOOL runtimeStarted;
 @property BOOL startupFailed;
+@property int runtimeControlFD;
+@property BOOL hasConnected;
+@property BOOL recoveryAttempted;
+@property BOOL recoveryAllowed;
+@property BOOL recovering;
+@property BOOL recoveryFailed;
+@property BOOL recoveryTimedOut;
+@property NSUInteger recoverySerial;
+@property NSTimeInterval connectionStartedAt;
 @property BOOL backgrounded;
 @property NSUInteger connectionEpoch;
 @property BOOL testConnectionOffline;
@@ -99,6 +109,8 @@ static BOOL usesDesktopInput(void) {
 - (void)becameInactive;
 - (void)replaceHTTPTransport;
 - (void)expireHealthTask:(NSURLSessionDataTask *)task epoch:(NSUInteger)epoch;
+- (void)recoverLinux;
+- (BOOL)startLinuxServices;
 - (NSURLSession *)newHTTPTransport;
 - (void)applyScreenBehavior;
 - (void)fail:(NSString *)message;
@@ -179,6 +191,8 @@ static void guestExit(int status) {
     int code = WIFEXITED(status) ? WEXITSTATUS(status) : 128 + WTERMSIG(status);
     dispatch_async(dispatch_get_main_queue(), ^{
         activeController.exited = YES;
+        if (activeController.runtimeControlFD >= 0) close(activeController.runtimeControlFD);
+        activeController.runtimeControlFD = -1;
         [activeController fail:[NSString stringWithFormat:@"Local Linux stopped (code %d). Reopen Bibimer to start it again. Saved project files are kept.",code]];
     });
 }
@@ -208,6 +222,7 @@ static void guestExit(int status) {
     self.polls = [NSMutableSet new]; self.javascriptErrors = [NSMutableArray new];
     self.utf8Pending = [NSMutableData new];
     self.runtimeQueue = dispatch_queue_create("app.bibimer.ios.runtime",DISPATCH_QUEUE_SERIAL);
+    self.runtimeControlFD = -1;
     self.port = availablePort();
     NSMutableData *random = [NSMutableData dataWithLength:32];
     arc4random_buf(random.mutableBytes,random.length);
@@ -303,6 +318,7 @@ static void guestExit(int status) {
     [self.backgroundExecution setForeground:YES];
     [self nativeEvent:@"BibimerBackgroundChanged" arguments:@[]];
     [self applyScreenBehavior];
+    self.recoveryAllowed = self.hasConnected && !self.recoveryAttempted;
     [self retryConnection];
 }
 
@@ -401,10 +417,13 @@ static void guestExit(int status) {
         int input[2], output[2];
         if (pipe(input) || pipe(output)) { [self fail:@"Could not prepare Linux I/O."]; return; }
         rc = ish_ffi_install_pipe_stdio(input[0],output[1],dup(output[1]));
-        close(input[1]);
+        // PID 1 keeps this private control pipe. It accepts only "start".
+        self.runtimeControlFD = input[1];
+        fcntl(self.runtimeControlFD, F_SETFL, O_NONBLOCK);
+        fcntl(self.runtimeControlFD, F_SETFD, FD_CLOEXEC);
         if (rc < 0) { [self fail:@"Could not install Linux I/O."]; return; }
         ish_ffi_chdir("/root");
-        NSArray *args = @[@"/bin/sh",@"/opt/bibimer/ios/bootstrap.sh"];
+        NSArray *args = @[@"/bin/sh",@"/opt/bibimer/ios/supervisor.sh"];
         NSArray *env = @[@"HOME=/root",@"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",@"TERM=xterm-256color",@"LANG=C.UTF-8",@"OPENSSL_armcap=0",@"PYTHONMALLOC=malloc",@"PYTHONDONTWRITEBYTECODE=1",@"GODEBUG=asyncpreemptoff=1",[@"BIBIMER_TOKEN=" stringByAppendingString:self.token],[@"BIBIMER_PORT=" stringByAppendingFormat:@"%ld",(long)self.port]];
         NSData *argv = packedStrings(args), *envp = packedStrings(env);
         rc = ish_ffi_execve("/bin/sh",args.count,argv.bytes,env.count,envp.bytes);
@@ -432,7 +451,11 @@ static void guestExit(int status) {
             close(outputFD);
         });
         ish_ffi_task_start();
-        dispatch_async(dispatch_get_main_queue(), ^{ self.runtimeStarted = YES; [self checkHealth]; });
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.runtimeStarted = YES;
+            if (![self startLinuxServices]) { [self fail:@"Could not start local Linux services."]; return; }
+            [self checkHealth];
+        });
     }
 }
 
@@ -450,7 +473,7 @@ static void guestExit(int status) {
 }
 
 - (void)checkHealth {
-    if (self.exited || self.backgrounded || self.ready || self.healthTask) return;
+    if (self.exited || self.backgrounded || self.ready || self.healthTask || self.recovering || self.recoveryFailed) return;
     self.healthAttempts++;
     NSMutableURLRequest *request = [self request:@"GET" path:@"/v1/health" body:nil]; request.timeoutInterval = 2;
     __block NSURLSessionDataTask *task;
@@ -479,11 +502,14 @@ static void guestExit(int status) {
 }
 
 - (void)retryConnection {
+    if (self.recovering) { [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
     if (self.exited || self.startupFailed) { [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
     if (!self.runtimeStarted || self.backgrounded) return;
     self.connectionEpoch++;
     [self.healthTask cancel]; self.healthTask = nil;
     self.ready = NO; self.healthAttempts = 0;
+    self.recoveryFailed = NO;
+    self.connectionStartedAt = NSProcessInfo.processInfo.systemUptime;
     self.browserEpoch++; self.browserPolling = NO;
     [self.browserPoll cancel]; self.browserPoll = nil;
     [self replaceHTTPTransport];
@@ -493,13 +519,20 @@ static void guestExit(int status) {
 
 - (void)handleHealthJSON:(NSDictionary *)json response:(NSHTTPURLResponse *)response error:(NSError *)error {
     // A request started before init exited must never resurrect the workspace.
-    if (self.exited || self.backgrounded) return;
+    if (self.exited || self.backgrounded || self.recovering || self.recoveryFailed) return;
     if (!error && response.statusCode == 200 && [json isKindOfClass:NSDictionary.class] && [json[@"protocol"] integerValue] == 1) {
         self.ready = YES;
+        self.hasConnected = YES;
+        self.recoveryAttempted = NO;
         if (!self.web) [self loadWorkspace];
         else [self nativeEvent:@"BibimerResume" arguments:@[]];
         [self.completionNotifications resume];
         [self startBrowserPolling];
+    }
+    else if (self.recoveryAllowed && self.healthAttempts >= 5 &&
+             NSProcessInfo.processInfo.systemUptime - self.connectionStartedAt >= 30 &&
+             !self.recoveryAttempted && !self.smokeScript) {
+        [self recoverLinux];
     }
     else if (self.healthAttempts < 600) {
         if (self.healthAttempts > 5) self.status.text = [NSString stringWithFormat:@"BIBIMER · Waiting for local Linux…\n%@ (HTTP %ld)",error.localizedDescription ?: @"Starting bridge",(long)response.statusCode];
@@ -510,13 +543,58 @@ static void guestExit(int status) {
     } else [self fail:@"Local setup did not finish. Check the installation output, then reopen Bibimer to retry. Existing files are kept."];
 }
 
+- (BOOL)startLinuxServices {
+    return self.runtimeControlFD >= 0 && write(self.runtimeControlFD,"start\n",6) == 6;
+}
+
+- (void)recoverLinux {
+    if (self.recovering || self.exited || !self.runtimeStarted || self.runtimeControlFD < 0) return;
+    self.recovering = YES; self.ready = NO; self.recoveryAttempted = YES;
+    self.recoveryFailed = NO; self.recoveryTimedOut = NO;
+    self.connectionEpoch++;
+    NSUInteger recovery = ++self.recoverySerial;
+    [self.healthTask cancel]; self.healthTask = nil;
+    [self.backgroundExecution runtimeStopped];
+    // This recovery abandons old executions. Unlike transport-only reconnect,
+    // cancel queued writes too, before a new server can accept them at this port.
+    [self.http invalidateAndCancel];
+    self.http = [self newHTTPTransport];
+    [self.completionNotifications pause]; [self.voice pause]; [self.browser revokeAll];
+    self.browserEpoch++; self.browserPolling = NO; [self.browserPoll cancel]; self.browserPoll = nil;
+    [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+    // Shutdown runs away from UIKit. A new bridge is started only after every
+    // old guest task except the fixed PID 1 supervisor is confirmed stopped.
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,15*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
+        if (!self.recovering || recovery != self.recoverySerial) return;
+        self.recoveryTimedOut = YES; self.recoveryFailed = YES;
+        [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+    });
+    dispatch_async(self.runtimeQueue, ^{
+        int result = bibimer_stop_guest_children();
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (recovery != self.recoverySerial) return;
+            self.recovering = NO;
+            if (result != 0 || self.recoveryTimedOut || self.exited) {
+                self.recoveryFailed = YES;
+                [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+                return;
+            }
+            self.hasConnected = NO; self.recoveryAllowed = NO; self.healthAttempts = 0;
+            self.recoveryFailed = ![self startLinuxServices];
+            [self replaceHTTPTransport];
+            [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+            [self checkHealth];
+        });
+    });
+}
+
 - (NSDictionary *)environment {
     NSUserDefaults *preferences = NSUserDefaults.standardUserDefaults;
     NSString *preference = [preferences stringForKey:@"languagePreference"] ?: @"system";
     NSString *language = [preference isEqual:@"system"] ? systemLanguage() : preference;
     NSMutableDictionary *environment=[@{@"selfTest":@(self.smokeScript != nil),@"paired":@YES,@"termuxInstalled":@YES,@"platform":@"ios",@"notifications":@{@"enabled":@NO,@"allowed":@NO,@"state":@"unsupported"},@"language":language,@"systemLanguage":systemLanguage(),@"languagePreference":preference,@"agentOptions":[preferences dictionaryForKey:@"agentOptions"] ?: @{},@"enterBehavior":[preferences stringForKey:@"enterBehavior"] ?: @"newline",@"responseDelivery":[[preferences stringForKey:@"responseDelivery"] isEqual:@"steer"] ? @"steer" : @"queue",@"contextDisplay":[[preferences stringForKey:@"contextDisplay"] isEqual:@"remaining"] ? @"remaining" : @"used",@"lastProjectParent":[preferences stringForKey:@"lastProjectParent"] ?: @"/root/projects",@"lastProjectFolder":[preferences stringForKey:@"lastProjectFolder"] ?: @"/root/projects",@"quickSetup":@{@"phase":@"connected",@"id":@"embedded"},@"bundledBridgeVersion":[NSBundle.mainBundle objectForInfoDictionaryKey:@"BibimerBridgeVersion"] ?: @"unknown",@"version":@"0.1.0-ios"} mutableCopy];
     [environment addEntriesFromDictionary:[self.voice environment] ?: @{}];
-    environment[@"localRuntime"] = @{@"state":self.exited ? @"stopped" : self.startupFailed ? @"restart-required" : self.ready ? @"connected" : @"connecting"};
+    environment[@"localRuntime"] = @{@"state":self.exited ? @"stopped" : self.startupFailed ? @"restart-required" : self.recoveryFailed ? @"recovery-failed" : (self.recovering || (self.recoveryAttempted && !self.hasConnected)) ? @"restarting" : self.ready ? @"connected" : @"connecting", @"foreground":@(!self.backgrounded)};
     environment[@"screenBehavior"] = @{@"keepAwake":@([preferences boolForKey:@"iosKeepAwake"]),@"deferHomeGesture":@([preferences boolForKey:@"iosDeferHomeGesture"]),@"supported":@(!usesDesktopInput())};
     environment[@"backgroundWork"] = [self.backgroundExecution environment] ?: @{};
     environment[@"termuxX11Installed"]=@YES;
@@ -769,7 +847,10 @@ static void guestExit(int status) {
         [NSUserDefaults.standardUserDefaults setBool:[value boolValue] forKey:key];
         [self applyScreenBehavior];
     }
-    else if ([action isEqual:@"reconnect"]) { [self retryConnection]; }
+    else if ([action isEqual:@"reconnect"]) {
+        if (!self.recovering) { self.recoveryAllowed = YES; self.recoveryAttempted = NO; }
+        [self retryConnection];
+    }
     else if ([@[@"voiceStart",@"voiceCancel",@"voiceConfigure",@"voiceKey",@"speechContext",@"speechStop",@"speechRead",@"speechVoices",@"speechConfigure"] containsObject:action]) {
         if(!self.smokeScript)[self.voice handle:body];
     } else if([action isEqual:@"browserWindow"] && [body[@"tag"] isKindOfClass:NSString.class]) { [self.browser showTag:body[@"tag"]];
@@ -863,6 +944,16 @@ static void guestExit(int status) {
             }
             [self reply:identifier status:400 data:@{}]; return;
         }
+        if (self.smokeScript && [method isEqual:@"POST"] && [path isEqual:@"/native/test-linux-recovery"]) {
+            self.testRecoveryWorkspace = self.web;
+            [self reply:identifier status:200 data:@{@"accepted":@YES}];
+            dispatch_async(dispatch_get_main_queue(), ^{ [self recoverLinux]; });
+            return;
+        }
+        if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-linux-recovery"]) {
+            [self reply:identifier status:200 data:@{@"sameWorkspace":@(self.testRecoveryWorkspace == self.web),@"ready":@(self.ready),@"failed":@(self.recoveryFailed)}];
+            return;
+        }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-late-health"]) {
             BOOL exited = self.exited, ready = self.ready, statusHidden = self.status.hidden, outputHidden = self.bootstrapOutput.hidden, webHidden = self.web.hidden;
             WKWebView *workspace = self.web;
@@ -893,7 +984,7 @@ static void guestExit(int status) {
         if (![self allowedMethod:method path:path] || [path rangeOfCharacterFromSet:[NSCharacterSet characterSetWithCharactersInString:@"\r\n#\\"]].location != NSNotFound || ![payload isKindOfClass:NSString.class] || [payload lengthOfBytesUsingEncoding:NSUTF8StringEncoding] > 65536) {
             [self reply:identifier status:400 data:@{@"code":@"error_invalid_json"}]; return;
         }
-        if (self.exited || self.backgrounded || self.testConnectionOffline) { [self reply:identifier status:503 data:@{@"code":@"error_connection_failed"}]; return; }
+        if (self.exited || self.backgrounded || self.recovering || self.recoveryFailed || self.testConnectionOffline) { [self reply:identifier status:503 data:@{@"code":@"error_connection_failed"}]; return; }
         BOOL workRequest = !self.smokeScript && startsBackgroundWork(method,path,payload);
         NSString *backgroundToken = workRequest ? [self.backgroundExecution beginUserRequest] : nil;
         NSMutableURLRequest *request = [self request:method path:path body:payload];
