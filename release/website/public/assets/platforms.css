@@ -1,0 +1,11 @@
+.platform-coming{display:inline-flex;align-items:center;padding:7px 11px;border:1px solid #bdcfb7;border-radius:999px;background:#edf4e6;color:#365c43;font-size:13px;font-weight:650;line-height:1.5;max-width:100%}
+.platforms{padding:12px 0 38px;border-bottom:1px solid #d3ded4}
+.platforms h2{font-size:clamp(23px,3vw,30px);line-height:1.4;margin:0 0 18px}
+.platform-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.platform-grid article{min-width:0;padding:24px;border:1px solid #d3ded4;border-radius:16px;background:#fff}
+.platform-grid h3{font-size:22px;line-height:1.4;margin:0 0 12px}
+.platform-grid p{margin:12px 0 0;color:#486052}
+.platform-grid .platform-requirements{font-size:13px;color:#5d705f}
+.platform-example{margin:0 0 16px;font-size:12px;line-height:1.7;color:#486052}
+.platform-guide{padding:14px 18px;border:1px solid #d3ded4;border-radius:12px;background:#edf4e6;line-height:1.8}
+@media(max-width:620px){.platform-grid{grid-template-columns:1fr;gap:12px}.platform-grid article{padding:20px}.platforms{padding-bottom:28px}}

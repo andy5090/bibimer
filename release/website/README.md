@@ -1,5 +1,12 @@
 # Bibimer 웹사이트
 
+## 웹사이트 iOS 출시 예정·플랫폼 설명 (2026-11-11, 배포 준비)
+
+- 사용자 요청으로 10개 언어 홈의 소개/SEO를 스마트폰 기반 ADE로 바꾸고 Android는 Google Play 제공 중, iOS는 곧 출시로 구분했다. Android는 같은 기기의 Termux, iOS는 앱 내장 Linux 환경이라는 차이를 별도 카드로 안내한다. 출시 날짜·App Store 링크·공개 TestFlight 초대는 임의로 추가하지 않았다.
+- 기존 Android 구성도·앱 스크린샷은 Android 예시임을 표시하고 공통 기능 소개에서 Android 전용 표현을 줄였다. Android 설치 조건·Termux 안내와 이름 유래는 유지한다. 10개 가이드에 Android/Termux용 안내임을 명시했고 문의 페이지 푸터/원본 JSON의 Android 전용 소개도 일반 모바일 소개로 바꿨다. 개인정보처리방침·문의 API/DB/정리 Worker·앱 빌드는 변경하지 않았다.
+- 웹사이트 구조 Python2개·언어 선택 Node·diff 검사 통과. 관리 Firefox의 한국어/영어 데스크톱과 320px 한국어/393px 영어 화면에서 새 안내/플랫폼 카드와 줄바꿈을 확인했다(`dist/website-ios-coming-soon/`). 기존 Cloudflare API 토큰은 유효하지 않아 사용하지 않았고 기존 Wrangler OAuth 로그인 갱신으로 인증을 확인했다. 기존 Pages 프로젝트/Functions/D1 binding을 유지해 게시한 뒤 공개 원본을 확인한다.
+
+
 ## 음성 기능 개인정보 안내 반영 (2026-11-04)
 
 Android0.37.0 내부 테스트 준비에 맞춰 공개10언어 정책에 선택적 STT 오디오 전송(OpenAI/ElevenLabs), TTS 텍스트 전송(ElevenLabs)/Android 엔진 네트워크 가능성, 기본 꺼짐, 별도 API 키의 Keystore 암호화·삭제, 앱 전용 녹음/재생 임시 파일 정리와 기기 내 핵심 문장 요약을 추가했다. 다른 정책·문의 API/DB/Worker는 변경하지 않았다. 정책 시행일은11월4일로 갱신했고 기존 문의 보관/정리 기준일11월3일은 유지했다.

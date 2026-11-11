@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Bibimer와 Termux로 Android 휴대폰에서 직접 개발하세요. 프로젝트·에이전트 세션·대화·터미널·파일 미리보기를 한곳에서 관리합니다. Google Play에서 무료로 설치하세요.">
+  <meta name="description" content="스마트폰 자체가 개발 환경이 됩니다. Bibimer는 프로젝트·코딩 에이전트 세션·대화·터미널을 휴대폰에서 관리하는 모바일 에이전트 개발 환경(ADE)입니다. iOS 곧 출시.">
   <title>Bibimer · 내 손안의 에이전트 개발 환경</title>
   <link rel="icon" href="/favicon.ico?v=20261014" sizes="16x16 32x32" type="image/x-icon">
   <link rel="icon" href="/assets/favicon.svg?v=20261014" sizes="any" type="image/svg+xml">
@@ -22,7 +22,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Bibimer">
   <meta property="og:title" content="Bibimer · 내 손안의 에이전트 개발 환경">
-  <meta property="og:description" content="Bibimer와 Termux로 Android 휴대폰에서 직접 개발하세요. 프로젝트·에이전트 세션·대화·터미널·파일 미리보기를 한곳에서 관리합니다. Google Play에서 무료로 설치하세요.">
+  <meta property="og:description" content="스마트폰 자체가 개발 환경이 됩니다. Bibimer는 프로젝트·코딩 에이전트 세션·대화·터미널을 휴대폰에서 관리하는 모바일 에이전트 개발 환경(ADE)입니다. iOS 곧 출시.">
   <meta property="og:url" content="https://bibimer.app/ko/">
   <meta property="og:locale" content="ko_KR">
   <meta property="og:image" content="https://bibimer.app/assets/social/ko.png">
@@ -31,7 +31,7 @@
   <meta property="og:image:type" content="image/png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Bibimer · 내 손안의 에이전트 개발 환경">
-  <meta name="twitter:description" content="Bibimer와 Termux로 Android 휴대폰에서 직접 개발하세요. 프로젝트·에이전트 세션·대화·터미널·파일 미리보기를 한곳에서 관리합니다. Google Play에서 무료로 설치하세요.">
+  <meta name="twitter:description" content="스마트폰 자체가 개발 환경이 됩니다. Bibimer는 프로젝트·코딩 에이전트 세션·대화·터미널을 휴대폰에서 관리하는 모바일 에이전트 개발 환경(ADE)입니다. iOS 곧 출시.">
   <meta name="twitter:image" content="https://bibimer.app/assets/social/ko.png">
   <style>
     @font-face { font-family: "Space Grotesk"; src: url("/assets/SpaceGrotesk-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
@@ -76,6 +76,7 @@
   <script src="/assets/language.js" defer></script>
   <link rel="stylesheet" href="/assets/hero.css">
   <link rel="stylesheet" href="/assets/typography.css">
+  <link rel="stylesheet" href="/assets/platforms.css">
 </head>
 <body>
 <div class="shell">
@@ -86,15 +87,16 @@
   <main>
     <section class="hero" aria-labelledby="headline">
       <div>
-        <div class="eyebrow">Android + Termux</div>
+        <div class="eyebrow">Android · iOS 곧 출시</div>
         <h1 id="headline">내 손안의<br>에이전트 개발 환경</h1>
-        <p class="lead">스마트폰 자체가 개발 환경이 됩니다. Bibimer는 같은 휴대폰의 Termux와 연결해 프로젝트·코딩 에이전트 세션·대화·터미널을 관리하는 모바일 에이전트 개발 환경(ADE)입니다.</p>
+        <p class="lead">스마트폰 자체가 개발 환경이 됩니다. Bibimer는 프로젝트·코딩 에이전트 세션·대화·터미널을 휴대폰에서 관리하는 모바일 에이전트 개발 환경(ADE)입니다.</p>
         <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=ko"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Google Play에서 설치</a><a class="guide-link" href="/ko/guide/">사용법 보기<span aria-hidden="true"> →</span></a></div>
-        <p class="status">무료 · Android 8.0 이상 · 같은 휴대폰의 Termux와 함께 사용</p>
+        <p class="status">Android · Google Play &nbsp; / &nbsp; iOS 곧 출시</p>
         <p class="status">앱과 웹사이트 모두 10개 언어를 지원합니다. 앱은 기기 언어를 기본으로 따르며 설정에서 직접 선택할 수 있습니다.</p>
       </div>
       <!-- hero-visual:start -->
       <div class="hero-demo">
+        <p class="platform-example">Android 구성 예시: Bibimer + Termux. 출시 예정인 iOS 앱은 앱에 내장된 Linux 환경을 사용합니다.</p>
         <fieldset class="hero-slider">
           <legend data-hero-copy="sliderTitle">폰 하나로 이어가는 개발</legend>
           <input class="scene-radio" type="radio" name="hero-scene" id="scene-local" checked>
@@ -123,7 +125,7 @@
             <section class="hero-scene scene-mobile" aria-labelledby="mobile-title">
               <div class="scene-heading"><span class="scene-kicker" data-hero-copy="mobileKicker">에이전트 출력에서 모바일 화면으로</span><h2 id="mobile-title" data-hero-copy="mobileTitle">작업 내용을 보기 편하게.</h2></div>
               <div class="diagram-stage mobile-stage">
-                <div class="event-source"><span class="event-symbol" aria-hidden="true">{ }</span><div><strong data-hero-copy="eventsTitle">에이전트의 구조화된 이벤트</strong><span data-hero-copy="eventsOrigin">Termux에서 실행하는 호환 에이전트</span></div></div>
+                <div class="event-source"><span class="event-symbol" aria-hidden="true">{ }</span><div><strong data-hero-copy="eventsTitle">에이전트의 구조화된 이벤트</strong><span data-hero-copy="eventsOrigin">기기에서 실행하는 호환 에이전트</span></div></div>
                 <div class="format-link"><span aria-hidden="true">↓</span><span data-hero-copy="formatLink">BIBIMER가 화면으로 정리</span></div>
                 <div class="mobile-format">
                   <div class="format-row"><span class="format-symbol" aria-hidden="true">≡</span><div><strong data-hero-copy="conversationTitle">읽기 편한 대화</strong><span data-hero-copy="conversationBody">서식을 살린 답변, 코드, 목록</span></div></div>
@@ -144,15 +146,19 @@
       </div>
       <!-- hero-visual:end -->
     </section>
-    <section class="product-gallery" aria-labelledby="gallery-title"><div class="eyebrow">화면으로 살펴보기</div><h2 id="gallery-title">대화부터 프로젝트와 파일까지</h2><div class="gallery-grid"><figure><a href="/assets/examples/ko/01-chat.jpg"><img src="/assets/examples/ko/01-chat.jpg" alt="서식 있는 대화" width="1080" height="1920" loading="lazy"></a><figcaption>서식 있는 대화</figcaption></figure><figure><a href="/assets/examples/ko/02-projects.jpg"><img src="/assets/examples/ko/02-projects.jpg" alt="프로젝트와 에이전트 세션" width="1080" height="1920" loading="lazy"></a><figcaption>프로젝트와 에이전트 세션</figcaption></figure><figure><a href="/assets/examples/ko/03-files.jpg"><img src="/assets/examples/ko/03-files.jpg" alt="프로젝트 파일 탐색" width="1080" height="1920" loading="lazy"></a><figcaption>프로젝트 파일 탐색</figcaption></figure><figure><a href="/assets/examples/ko/04-code.jpg"><img src="/assets/examples/ko/04-code.jpg" alt="구문을 강조한 코드 보기" width="1080" height="1920" loading="lazy"></a><figcaption>구문을 강조한 코드 보기</figcaption></figure></div></section>
+    <section class="platforms" aria-labelledby="platforms-title">
+      <h2 id="platforms-title">플랫폼에 맞게 시작하세요</h2>
+      <div class="platform-grid"><article><h3>Android</h3><p>Google Play에서 설치할 수 있습니다. 같은 Android 휴대폰의 Termux와 연결해 프로젝트 파일과 개발 도구를 사용합니다.</p><p class="platform-requirements">무료 · Android 8.0 이상 · 같은 휴대폰의 Termux와 함께 사용</p></article><article><h3>iOS</h3><span class="platform-coming">iOS 곧 출시</span><p>iOS 앱에 내장된 Linux 환경에서 프로젝트와 호환 코딩 에이전트를 사용합니다. App Store 출시 소식은 이곳에서 안내합니다.</p></article></div>
+    </section>
+    <section class="product-gallery" aria-labelledby="gallery-title"><div class="eyebrow">Android 앱 화면</div><h2 id="gallery-title">대화부터 프로젝트와 파일까지</h2><div class="gallery-grid"><figure><a href="/assets/examples/ko/01-chat.jpg"><img src="/assets/examples/ko/01-chat.jpg" alt="서식 있는 대화" width="1080" height="1920" loading="lazy"></a><figcaption>서식 있는 대화</figcaption></figure><figure><a href="/assets/examples/ko/02-projects.jpg"><img src="/assets/examples/ko/02-projects.jpg" alt="프로젝트와 에이전트 세션" width="1080" height="1920" loading="lazy"></a><figcaption>프로젝트와 에이전트 세션</figcaption></figure><figure><a href="/assets/examples/ko/03-files.jpg"><img src="/assets/examples/ko/03-files.jpg" alt="프로젝트 파일 탐색" width="1080" height="1920" loading="lazy"></a><figcaption>프로젝트 파일 탐색</figcaption></figure><figure><a href="/assets/examples/ko/04-code.jpg"><img src="/assets/examples/ko/04-code.jpg" alt="구문을 강조한 코드 보기" width="1080" height="1920" loading="lazy"></a><figcaption>구문을 강조한 코드 보기</figcaption></figure></div></section>
     <section class="features" aria-label="주요 기능">
-      <div><h3>휴대폰에서 이어가는 프로젝트</h3><p>프로젝트 파일과 Git, 호환되는 개발 도구를 휴대폰의 Termux에서 실행합니다. 별도의 개발 컴퓨터나 원격 호스트 없이 프로젝트와 기존 워크트리를 관리하세요.</p></div>
+      <div><h3>휴대폰에서 이어가는 프로젝트</h3><p>프로젝트 파일과 Git, 호환되는 개발 도구를 휴대폰에서 사용합니다. 어디서든 프로젝트와 기존 워크트리를 관리하세요.</p></div>
       <div><h3>대화와 터미널</h3><p>구조화된 대화와 도구 실행을 확인하세요. 지시를 보내고, 승인 요청에 응답하고, 후속 입력을 대기열에 추가할 수 있습니다.</p></div>
       <div><h3>직접 선택하는 에이전트</h3><p>호환되는 Codex·Claude·OpenCode 설치본을 연결하세요. 설치한 에이전트가 지원하는 모델과 옵션을 선택할 수 있습니다.</p></div>
-      <div><h3>파일과 Git 변경 사항 확인</h3><p>코드의 구문을 강조해 읽고 Git 변경 사항을 확인하세요. Markdown·정적 HTML·Mermaid 다이어그램을 미리 볼 수 있습니다. Office 문서·이미지·PDF는 호환되는 Android 앱으로 엽니다.</p></div>
+      <div><h3>파일과 Git 변경 사항 확인</h3><p>코드의 구문을 강조해 읽고 Git 변경 사항을 확인하세요. Markdown·정적 HTML·Mermaid 다이어그램을 미리 보고, 다른 문서는 기기의 파일 뷰어로 열 수 있습니다.</p></div>
     </section>
     <section class="setup" aria-labelledby="setup-title">
-      <h2 id="setup-title">Termux로 시작하세요</h2>
+      <h2 id="setup-title">Android는 Termux로 시작하세요</h2>
       <p>Termux는 Android에서 Linux 명령줄 환경을 제공하는 앱입니다. Git, Python, Node.js 등 다양한 도구를 쓸 수 있습니다. 같은 휴대폰에 설치하고 Bibimer의 설정 안내에 따라 터미널부터 사용해 보세요. 호환되는 에이전트 설치와 제공자 인증은 별도 단계입니다.</p>
       <p>에이전트는 입력·코드·파일을 설정된 제공자나 도구에 전송할 수 있습니다. 이용 요금과 연령 요건은 사용하는 서비스에 따라 달라집니다.</p>
       <a href="https://github.com/termux/termux-app#installation">Termux 설치 안내</a>

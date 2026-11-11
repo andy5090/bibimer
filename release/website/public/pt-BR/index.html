@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Desenvolva no seu celular Android com Bibimer e Termux. Gerencie projetos, sessões de agentes, conversas, terminais e visualizações de arquivos. Grátis no Google Play.">
+  <meta name="description" content="Seu celular se torna seu ambiente de desenvolvimento. O Bibimer é um ADE móvel para gerenciar projetos, sessões de agentes de programação, conversas e terminais no seu dispositivo. iOS em breve.">
   <title>Bibimer · Seu ambiente de desenvolvimento com agentes no celular</title>
   <link rel="icon" href="/favicon.ico?v=20261014" sizes="16x16 32x32" type="image/x-icon">
   <link rel="icon" href="/assets/favicon.svg?v=20261014" sizes="any" type="image/svg+xml">
@@ -22,7 +22,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Bibimer">
   <meta property="og:title" content="Bibimer · Seu ambiente de desenvolvimento com agentes no celular">
-  <meta property="og:description" content="Desenvolva no seu celular Android com Bibimer e Termux. Gerencie projetos, sessões de agentes, conversas, terminais e visualizações de arquivos. Grátis no Google Play.">
+  <meta property="og:description" content="Seu celular se torna seu ambiente de desenvolvimento. O Bibimer é um ADE móvel para gerenciar projetos, sessões de agentes de programação, conversas e terminais no seu dispositivo. iOS em breve.">
   <meta property="og:url" content="https://bibimer.app/pt-BR/">
   <meta property="og:locale" content="pt_BR">
   <meta property="og:image" content="https://bibimer.app/assets/social/en.png">
@@ -31,7 +31,7 @@
   <meta property="og:image:type" content="image/png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Bibimer · Seu ambiente de desenvolvimento com agentes no celular">
-  <meta name="twitter:description" content="Desenvolva no seu celular Android com Bibimer e Termux. Gerencie projetos, sessões de agentes, conversas, terminais e visualizações de arquivos. Grátis no Google Play.">
+  <meta name="twitter:description" content="Seu celular se torna seu ambiente de desenvolvimento. O Bibimer é um ADE móvel para gerenciar projetos, sessões de agentes de programação, conversas e terminais no seu dispositivo. iOS em breve.">
   <meta name="twitter:image" content="https://bibimer.app/assets/social/en.png">
   <style>
     @font-face { font-family: "Space Grotesk"; src: url("/assets/SpaceGrotesk-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
@@ -76,6 +76,7 @@
   <script src="/assets/language.js" defer></script>
   <link rel="stylesheet" href="/assets/hero.css">
   <link rel="stylesheet" href="/assets/typography.css">
+  <link rel="stylesheet" href="/assets/platforms.css">
 </head>
 <body>
 <div class="shell">
@@ -86,15 +87,16 @@
   <main>
     <section class="hero" aria-labelledby="headline">
       <div>
-        <div class="eyebrow">Android + Termux</div>
+        <div class="eyebrow">Android · iOS em breve</div>
         <h1 id="headline">Seu celular.<br>Seu ambiente de desenvolvimento.</h1>
-        <p class="lead">Transforme seu celular Android em um ambiente de desenvolvimento. Bibimer é um ADE móvel que reúne projetos, sessões de agentes de programação, conversas e terminais com o Termux no mesmo celular.</p>
+        <p class="lead">Seu celular se torna seu ambiente de desenvolvimento. O Bibimer é um ADE móvel para gerenciar projetos, sessões de agentes de programação, conversas e terminais no seu dispositivo.</p>
         <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=pt-BR"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Baixe o Bibimer no Google Play</a><a class="guide-link" href="/pt-BR/guide/">Como começar<span aria-hidden="true"> →</span></a></div>
-        <p class="status">Grátis · Android 8.0 ou posterior · Termux no mesmo celular</p>
+        <p class="status">Android · Google Play &nbsp; / &nbsp; iOS em breve</p>
         <p class="status">O app e o site oferecem dez idiomas. O app acompanha o idioma do aparelho e permite escolher outro nas configurações.</p>
       </div>
       <!-- hero-visual:start -->
       <div class="hero-demo">
+        <p class="platform-example">Exemplo no Android: Bibimer + Termux. O futuro app para iOS usa um ambiente Linux integrado.</p>
         <fieldset class="hero-slider">
           <legend data-hero-copy="sliderTitle">Um ambiente de desenvolvimento que vai com você</legend>
           <input class="scene-radio" type="radio" name="hero-scene" id="scene-local" checked>
@@ -123,7 +125,7 @@
             <section class="hero-scene scene-mobile" aria-labelledby="mobile-title">
               <div class="scene-heading"><span class="scene-kicker" data-hero-copy="mobileKicker">DOS EVENTOS DO AGENTE À INTERFACE MÓVEL</span><h2 id="mobile-title" data-hero-copy="mobileTitle">Uma visão mais clara do trabalho.</h2></div>
               <div class="diagram-stage mobile-stage">
-                <div class="event-source"><span class="event-symbol" aria-hidden="true">{ }</span><div><strong data-hero-copy="eventsTitle">Eventos estruturados do agente</strong><span data-hero-copy="eventsOrigin">De agentes compatíveis no Termux</span></div></div>
+                <div class="event-source"><span class="event-symbol" aria-hidden="true">{ }</span><div><strong data-hero-copy="eventsTitle">Eventos estruturados do agente</strong><span data-hero-copy="eventsOrigin">Agentes compatíveis no seu dispositivo</span></div></div>
                 <div class="format-link"><span aria-hidden="true">↓</span><span data-hero-copy="formatLink">Apresentados pelo BIBIMER</span></div>
                 <div class="mobile-format">
                   <div class="format-row"><span class="format-symbol" aria-hidden="true">≡</span><div><strong data-hero-copy="conversationTitle">Conversas fáceis de ler</strong><span data-hero-copy="conversationBody">Respostas, código e listas com formatação</span></div></div>
@@ -144,15 +146,19 @@
       </div>
       <!-- hero-visual:end -->
     </section>
-    <section class="product-gallery" aria-labelledby="gallery-title"><div class="eyebrow">Veja seu espaço de trabalho</div><h2 id="gallery-title">Conversas, projetos e arquivos</h2><div class="gallery-grid"><figure><a href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="Conversa formatada" width="1080" height="1920" loading="lazy"></a><figcaption>Conversa formatada</figcaption></figure><figure><a href="/assets/examples/en/02-projects.jpg"><img src="/assets/examples/en/02-projects.jpg" alt="Projetos e sessões de agentes" width="1080" height="1920" loading="lazy"></a><figcaption>Projetos e sessões de agentes</figcaption></figure><figure><a href="/assets/examples/en/03-files.jpg"><img src="/assets/examples/en/03-files.jpg" alt="Navegação de arquivos" width="1080" height="1920" loading="lazy"></a><figcaption>Navegação de arquivos</figcaption></figure><figure><a href="/assets/examples/en/04-code.jpg"><img src="/assets/examples/en/04-code.jpg" alt="Código com realce de sintaxe" width="1080" height="1920" loading="lazy"></a><figcaption>Código com realce de sintaxe</figcaption></figure></div></section>
+    <section class="platforms" aria-labelledby="platforms-title">
+      <h2 id="platforms-title">Escolha sua plataforma</h2>
+      <div class="platform-grid"><article><h3>Android</h3><p>Disponível no Google Play. Conecte o Bibimer ao Termux no mesmo celular Android para usar seus arquivos e ferramentas de desenvolvimento.</p><p class="platform-requirements">Grátis · Android 8.0 ou posterior · Termux no mesmo celular</p></article><article><h3>iOS</h3><span class="platform-coming">iOS em breve</span><p>O app para iOS inclui seu próprio ambiente Linux para projetos e agentes compatíveis. A disponibilidade na App Store será anunciada aqui.</p></article></div>
+    </section>
+    <section class="product-gallery" aria-labelledby="gallery-title"><div class="eyebrow">Telas do app para Android</div><h2 id="gallery-title">Conversas, projetos e arquivos</h2><div class="gallery-grid"><figure><a href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="Conversa formatada" width="1080" height="1920" loading="lazy"></a><figcaption>Conversa formatada</figcaption></figure><figure><a href="/assets/examples/en/02-projects.jpg"><img src="/assets/examples/en/02-projects.jpg" alt="Projetos e sessões de agentes" width="1080" height="1920" loading="lazy"></a><figcaption>Projetos e sessões de agentes</figcaption></figure><figure><a href="/assets/examples/en/03-files.jpg"><img src="/assets/examples/en/03-files.jpg" alt="Navegação de arquivos" width="1080" height="1920" loading="lazy"></a><figcaption>Navegação de arquivos</figcaption></figure><figure><a href="/assets/examples/en/04-code.jpg"><img src="/assets/examples/en/04-code.jpg" alt="Código com realce de sintaxe" width="1080" height="1920" loading="lazy"></a><figcaption>Código com realce de sintaxe</figcaption></figure></div></section>
     <section class="features" aria-label="Recursos">
-      <div><h3>Seus projetos, no seu celular</h3><p>Os arquivos dos seus projetos, o Git e as ferramentas de desenvolvimento compatíveis funcionam no Termux, no seu celular. Gerencie projetos e worktrees existentes sem precisar de um computador de desenvolvimento separado ou de um host remoto.</p></div>
+      <div><h3>Seus projetos, no seu celular</h3><p>Mantenha arquivos de projetos, Git e ferramentas compatíveis no celular. Gerencie projetos e worktrees existentes onde estiver.</p></div>
       <div><h3>Conversa e terminal</h3><p>Acompanhe conversas estruturadas e a atividade das ferramentas. Envie instruções, responda a pedidos de aprovação e coloque novas mensagens na fila.</p></div>
       <div><h3>Escolha seu agente</h3><p>Conecte instalações compatíveis do Codex, Claude e OpenCode. Escolha entre os modelos e as opções disponíveis no agente instalado.</p></div>
-      <div><h3>Leia arquivos e alterações no Git</h3><p>Leia código com destaque de sintaxe e confira as diferenças no Git. Visualize Markdown, HTML estático e diagramas Mermaid. Abra documentos do Office, imagens e PDFs em aplicativos Android compatíveis.</p></div>
+      <div><h3>Leia arquivos e alterações no Git</h3><p>Leia código com destaque de sintaxe, confira diferenças do Git e visualize Markdown, HTML estático e diagramas Mermaid. Abra outros documentos nos visualizadores do dispositivo.</p></div>
     </section>
     <section class="setup" aria-labelledby="setup-title">
-      <h2 id="setup-title">Comece pelo Termux</h2>
+      <h2 id="setup-title">Comece no Android com o Termux</h2>
       <p>O Termux traz um ambiente de linha de comando Linux para o Android, com Git, Python, Node.js e muitas outras ferramentas. Instale-o no mesmo celular e siga o guia de configuração do Bibimer. Comece pelo modo terminal; a instalação de agentes compatíveis e a autenticação nos provedores são etapas separadas.</p>
       <p>Os agentes podem enviar suas instruções, seu código e seus arquivos aos provedores e às ferramentas configurados. As tarifas e os requisitos de idade dos provedores dependem dos serviços que você usa.</p>
       <a href="https://github.com/termux/termux-app#installation">Guia de instalação do Termux</a>

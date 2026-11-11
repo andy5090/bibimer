@@ -34,7 +34,7 @@
     "noscript": "Enable JavaScript to use this form. You can also report a problem on GitHub.",
     "github": "Open GitHub issues",
     "required": "Required",
-    "footer": "An agent development environment on your Android phone.",
+    "footer": "Your mobile agent development environment.",
     "guide": "Guide"
   },
   "ko": {
@@ -110,7 +110,7 @@
     "noscript": "Activa JavaScript para usar el formulario. También puedes informar de problemas en GitHub.",
     "github": "Abrir incidencias de GitHub",
     "required": "Obligatorio",
-    "footer": "Un entorno de desarrollo con agentes en tu teléfono Android.",
+    "footer": "Tu entorno móvil de desarrollo con agentes.",
     "guide": "Guía"
   },
   "pt-BR": {
@@ -148,7 +148,7 @@
     "noscript": "Ative o JavaScript para usar o formulário. Você também pode relatar problemas no GitHub.",
     "github": "Abrir issues no GitHub",
     "required": "Obrigatório",
-    "footer": "Um ambiente de desenvolvimento com agentes no seu celular Android.",
+    "footer": "Seu ambiente móvel de desenvolvimento com agentes.",
     "guide": "Guia"
   },
   "id": {
@@ -186,7 +186,7 @@
     "noscript": "Aktifkan JavaScript untuk menggunakan formulir ini. Anda juga dapat melaporkan masalah di GitHub.",
     "github": "Buka isu GitHub",
     "required": "Wajib",
-    "footer": "Lingkungan pengembangan agen di ponsel Android Anda.",
+    "footer": "Lingkungan pengembangan dengan agen di ponsel Anda.",
     "guide": "Panduan"
   },
   "zh-Hans": {
@@ -224,7 +224,7 @@
     "noscript": "请启用 JavaScript 以使用此表单，也可在 GitHub 上报告问题。",
     "github": "打开 GitHub 问题页面",
     "required": "必填",
-    "footer": "您 Android 手机上的智能体开发环境。",
+    "footer": "口袋里的智能体开发环境。",
     "guide": "使用指南"
   },
   "ja": {
@@ -262,7 +262,7 @@
     "noscript": "フォームを使用するにはJavaScriptを有効にしてください。GitHubでも問題を報告できます。",
     "github": "GitHubのIssueを開く",
     "required": "必須",
-    "footer": "Androidスマートフォンで使うエージェント開発環境。",
+    "footer": "スマートフォンのエージェント開発環境。",
     "guide": "利用ガイド"
   },
   "zh-Hant": {
@@ -300,7 +300,7 @@
     "noscript": "請啟用 JavaScript 以使用此表單，也可在 GitHub 上回報問題。",
     "github": "開啟 GitHub 問題頁面",
     "required": "必填",
-    "footer": "您 Android 手機上的智慧體開發環境。",
+    "footer": "口袋裡的 AI 代理開發環境。",
     "guide": "使用指南"
   },
   "fr": {
@@ -338,7 +338,7 @@
     "noscript": "Activez JavaScript pour utiliser ce formulaire. Vous pouvez aussi signaler un problème sur GitHub.",
     "github": "Ouvrir les issues GitHub",
     "required": "Obligatoire",
-    "footer": "Un environnement de développement avec agents sur votre téléphone Android.",
+    "footer": "Votre environnement mobile de développement avec agents.",
     "guide": "Guide"
   },
   "de": {
@@ -376,7 +376,7 @@
     "noscript": "Aktiviere JavaScript für dieses Formular. Du kannst Probleme auch auf GitHub melden.",
     "github": "GitHub-Issues öffnen",
     "required": "Pflichtfeld",
-    "footer": "Eine Entwicklungsumgebung mit Agenten auf deinem Android-Handy.",
+    "footer": "Deine mobile Entwicklungsumgebung mit Agenten.",
     "guide": "Anleitung"
   }
 }

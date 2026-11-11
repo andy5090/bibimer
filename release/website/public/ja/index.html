@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Bibimer と Termux で Android スマートフォンを開発環境に。プロジェクト、エージェントのセッション、会話、ターミナル、ファイルをまとめて管理。Google Play で無料配信中。">
+  <meta name="description" content="スマートフォンを開発環境に。Bibimer は、手元の端末でプロジェクト、コーディングエージェントのセッション、会話、ターミナルを管理するモバイル ADE です。 iOS 近日公開.">
   <title>Bibimer · スマートフォンのエージェント開発環境</title>
   <link rel="icon" href="/favicon.ico?v=20261014" sizes="16x16 32x32" type="image/x-icon">
   <link rel="icon" href="/assets/favicon.svg?v=20261014" sizes="any" type="image/svg+xml">
@@ -22,7 +22,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Bibimer">
   <meta property="og:title" content="Bibimer · スマートフォンのエージェント開発環境">
-  <meta property="og:description" content="Bibimer と Termux で Android スマートフォンを開発環境に。プロジェクト、エージェントのセッション、会話、ターミナル、ファイルをまとめて管理。Google Play で無料配信中。">
+  <meta property="og:description" content="スマートフォンを開発環境に。Bibimer は、手元の端末でプロジェクト、コーディングエージェントのセッション、会話、ターミナルを管理するモバイル ADE です。 iOS 近日公開.">
   <meta property="og:url" content="https://bibimer.app/ja/">
   <meta property="og:locale" content="ja_JP">
   <meta property="og:image" content="https://bibimer.app/assets/social/en.png">
@@ -31,7 +31,7 @@
   <meta property="og:image:type" content="image/png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Bibimer · スマートフォンのエージェント開発環境">
-  <meta name="twitter:description" content="Bibimer と Termux で Android スマートフォンを開発環境に。プロジェクト、エージェントのセッション、会話、ターミナル、ファイルをまとめて管理。Google Play で無料配信中。">
+  <meta name="twitter:description" content="スマートフォンを開発環境に。Bibimer は、手元の端末でプロジェクト、コーディングエージェントのセッション、会話、ターミナルを管理するモバイル ADE です。 iOS 近日公開.">
   <meta name="twitter:image" content="https://bibimer.app/assets/social/en.png">
   <style>
     @font-face { font-family: "Space Grotesk"; src: url("/assets/SpaceGrotesk-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
@@ -76,6 +76,7 @@
   <script src="/assets/language.js" defer></script>
   <link rel="stylesheet" href="/assets/hero.css">
   <link rel="stylesheet" href="/assets/typography.css">
+  <link rel="stylesheet" href="/assets/platforms.css">
 </head>
 <body>
 <div class="shell">
@@ -86,15 +87,16 @@
   <main>
     <section class="hero" aria-labelledby="headline">
       <div>
-        <div class="eyebrow">Android + Termux</div>
+        <div class="eyebrow">Android · iOS 近日公開</div>
         <h1 id="headline">スマホが、<br>開発環境に。</h1>
-        <p class="lead">Android スマートフォンを開発環境に。Bibimer は、同じ端末の Termux と連携してプロジェクト、コーディングエージェントのセッション、会話、ターミナルをまとめるモバイル ADE です。</p>
+        <p class="lead">スマートフォンを開発環境に。Bibimer は、手元の端末でプロジェクト、コーディングエージェントのセッション、会話、ターミナルを管理するモバイル ADE です。</p>
         <div class="links"><a class="contact" href="https://play.google.com/store/apps/details?id=app.bibimer&amp;hl=ja"><img class="play-icon" src="/assets/google-play.svg" width="24" height="24" alt="">Google Play で入手</a><a class="guide-link" href="/ja/guide/">使い方を見る<span aria-hidden="true"> →</span></a></div>
-        <p class="status">無料 · Android 8.0 以降 · 同じ端末に Termux が必要</p>
+        <p class="status">Android · Google Play &nbsp; / &nbsp; iOS 近日公開</p>
         <p class="status">アプリとウェブサイトは 10 言語に対応しています。アプリは端末の言語に従い、設定で別の言語も選べます。</p>
       </div>
       <!-- hero-visual:start -->
       <div class="hero-demo">
+        <p class="platform-example">Android の構成例：Bibimer + Termux。近日公開の iOS アプリは内蔵 Linux 環境を使います。</p>
         <fieldset class="hero-slider">
           <legend data-hero-copy="sliderTitle">開発環境を、いつもそばに</legend>
           <input class="scene-radio" type="radio" name="hero-scene" id="scene-local" checked>
@@ -123,7 +125,7 @@
             <section class="hero-scene scene-mobile" aria-labelledby="mobile-title">
               <div class="scene-heading"><span class="scene-kicker" data-hero-copy="mobileKicker">エージェントのイベントをモバイル UI へ</span><h2 id="mobile-title" data-hero-copy="mobileTitle">作業の流れが、よく見える。</h2></div>
               <div class="diagram-stage mobile-stage">
-                <div class="event-source"><span class="event-symbol" aria-hidden="true">{ }</span><div><strong data-hero-copy="eventsTitle">構造化されたエージェントイベント</strong><span data-hero-copy="eventsOrigin">Termux 内の対応エージェントから</span></div></div>
+                <div class="event-source"><span class="event-symbol" aria-hidden="true">{ }</span><div><strong data-hero-copy="eventsTitle">構造化されたエージェントイベント</strong><span data-hero-copy="eventsOrigin">端末上で動く対応エージェント</span></div></div>
                 <div class="format-link"><span aria-hidden="true">↓</span><span data-hero-copy="formatLink">BIBIMER が表示</span></div>
                 <div class="mobile-format">
                   <div class="format-row"><span class="format-symbol" aria-hidden="true">≡</span><div><strong data-hero-copy="conversationTitle">読みやすい会話</strong><span data-hero-copy="conversationBody">書式付きの応答、コード、リスト</span></div></div>
@@ -144,15 +146,19 @@
       </div>
       <!-- hero-visual:end -->
     </section>
-    <section class="product-gallery" aria-labelledby="gallery-title"><div class="eyebrow">作業環境を見てみる</div><h2 id="gallery-title">会話、プロジェクト、ファイルをひとつに</h2><div class="gallery-grid"><figure><a href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="書式付きの会話" width="1080" height="1920" loading="lazy"></a><figcaption>書式付きの会話</figcaption></figure><figure><a href="/assets/examples/en/02-projects.jpg"><img src="/assets/examples/en/02-projects.jpg" alt="プロジェクトとエージェントのセッション" width="1080" height="1920" loading="lazy"></a><figcaption>プロジェクトとエージェントのセッション</figcaption></figure><figure><a href="/assets/examples/en/03-files.jpg"><img src="/assets/examples/en/03-files.jpg" alt="プロジェクトファイルの閲覧" width="1080" height="1920" loading="lazy"></a><figcaption>プロジェクトファイルの閲覧</figcaption></figure><figure><a href="/assets/examples/en/04-code.jpg"><img src="/assets/examples/en/04-code.jpg" alt="構文強調表示付きのコード" width="1080" height="1920" loading="lazy"></a><figcaption>構文強調表示付きのコード</figcaption></figure></div></section>
+    <section class="platforms" aria-labelledby="platforms-title">
+      <h2 id="platforms-title">プラットフォームを選ぶ</h2>
+      <div class="platform-grid"><article><h3>Android</h3><p>Google Play で公開中。同じ Android 端末の Termux と Bibimer を接続して、プロジェクトファイルや開発ツールを使えます。</p><p class="platform-requirements">無料 · Android 8.0 以降 · 同じ端末に Termux が必要</p></article><article><h3>iOS</h3><span class="platform-coming">iOS 近日公開</span><p>iOS アプリは、プロジェクトや対応するエージェントを使うための Linux 環境を内蔵しています。App Store での公開情報はこちらでお知らせします。</p></article></div>
+    </section>
+    <section class="product-gallery" aria-labelledby="gallery-title"><div class="eyebrow">Android アプリの画面</div><h2 id="gallery-title">会話、プロジェクト、ファイルをひとつに</h2><div class="gallery-grid"><figure><a href="/assets/examples/en/01-chat.jpg"><img src="/assets/examples/en/01-chat.jpg" alt="書式付きの会話" width="1080" height="1920" loading="lazy"></a><figcaption>書式付きの会話</figcaption></figure><figure><a href="/assets/examples/en/02-projects.jpg"><img src="/assets/examples/en/02-projects.jpg" alt="プロジェクトとエージェントのセッション" width="1080" height="1920" loading="lazy"></a><figcaption>プロジェクトとエージェントのセッション</figcaption></figure><figure><a href="/assets/examples/en/03-files.jpg"><img src="/assets/examples/en/03-files.jpg" alt="プロジェクトファイルの閲覧" width="1080" height="1920" loading="lazy"></a><figcaption>プロジェクトファイルの閲覧</figcaption></figure><figure><a href="/assets/examples/en/04-code.jpg"><img src="/assets/examples/en/04-code.jpg" alt="構文強調表示付きのコード" width="1080" height="1920" loading="lazy"></a><figcaption>構文強調表示付きのコード</figcaption></figure></div></section>
     <section class="features" aria-label="機能">
-      <div><h3>スマートフォンに、あなたのプロジェクト</h3><p>プロジェクトファイル、Git、対応する開発ツールをスマートフォンの Termux で扱えます。別の開発用パソコンやリモートホストを用意せず、プロジェクトと既存のワークツリーを管理できます。</p></div>
+      <div><h3>スマートフォンに、あなたのプロジェクト</h3><p>プロジェクトファイル、Git、対応する開発ツールをスマートフォンで使用。どこでもプロジェクトや既存のワークツリーを管理できます。</p></div>
       <div><h3>チャットとターミナル</h3><p>構造化された会話とツールの動作を確認できます。指示の送信、承認リクエストへの回答、追加メッセージのキュー登録に対応しています。</p></div>
       <div><h3>使いたいエージェントを選択</h3><p>対応する Codex、Claude、OpenCode を接続できます。インストールしたエージェントが対応するモデルやオプションから選択してください。</p></div>
-      <div><h3>ファイルと Git の変更を確認</h3><p>構文強調表示でコードを読み、Git の差分を確認できます。Markdown、静的 HTML、Mermaid 図のプレビューに対応。Office 文書、画像、PDF は対応する Android アプリで開けます。</p></div>
+      <div><h3>ファイルと Git の変更を確認</h3><p>構文強調付きのコードや Git の差分を確認し、Markdown、静的 HTML、Mermaid 図をプレビューできます。その他の文書は端末のビューアーで開けます。</p></div>
     </section>
     <section class="setup" aria-labelledby="setup-title">
-      <h2 id="setup-title">まずは Termux から</h2>
+      <h2 id="setup-title">Android は Termux から始めましょう</h2>
       <p>Termux を使うと、Android で Git、Python、Node.js などを備えた Linux コマンドライン環境を利用できます。同じ端末にインストールし、Bibimer の準備ガイドに従ってください。まずはターミナルモードから始めましょう。対応するエージェントのインストールとプロバイダーの認証は別途必要です。</p>
       <p>エージェントは、プロンプト、コード、ファイルを設定済みのプロバイダーやツールに送信する場合があります。料金や年齢要件は利用するサービスによって異なります。</p>
       <a href="https://github.com/termux/termux-app#installation">Termux インストールガイド</a>
