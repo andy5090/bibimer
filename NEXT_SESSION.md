@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## iOS 서비스 재시작 복구 Mac 검증 (2026-11-12, TestFlight8 준비)
+
+- c648ec0의 RuntimeSupport C·Objective-C·supervisor를 Xcode27.2의 기기/Simulator SDK로 컴파일했다. 전용 **Bibimer TestFlight QA**의 실제 WKWebView/내장 Linux **30개·26.83초·JS오류0·fatal0·진단실패0**, 기존 syscall151/152 경고4개다. guest 사용자 프로세스2회 재시작·새 bridge instance·같은 WKWebView/프로젝트 파일·이전 세션 lost/PTY 출력 없음·자동 세션 재실행 없음 검사를 통과했다.
+- 최초 검사는 브리지가 복구됐지만 self-test snapshot에 instance가 없어 ID 전환 판정이 timeout됐다. self-test 전용 snapshot에 instance를 노출하고 run_simulator.py의 필수 검사에도 새 복구 항목을 추가해 재검증했다. 실제 동작 경로는 바꾸지 않았다. 실패 증빙은 dist/ios-app/history/, 성공은 dist/ios-app/recovery-nov12-smoke/에 보존했다.
+- 앱 Python29개·iOS 브리지56개·Node16파일·Chromium20배치와 터미널 선택/붙여넣기·main/BackgroundExecution/RuntimeSupport 정적분석0을 통과했다. 테스트 보완 뒤 Python29·Node 재연결/화면 설정도 재확인했다. 사용자 Runtime Lab·앱/브리지·세션은 재시작하지 않았다.
+- 0.1.0(8) 아카이브/배포 서명과 현재 소스·IPA 자산 일치 검증 후 기존 내부 그룹에 제공한다. 이 항목은 업로드/제공 완료 기록이 아니다. 실제 iPhone 잠금·앱 전환 복구, Claude 대화형 로그인과 OS 백그라운드 허가는 별도 확인이다.
+
 ## iOS 연결 실패 후 Linux 서비스 재시작 복구 (2026-11-11, 미빌드)
 
 - 사용자가 TestFlight7의 transport 복구 이후에도 앱 복귀 시 Linux가 연결되지 않는다고 재보고했고, 필요하면 첫 실행처럼 Linux를 다시 시작해서라도 앱 강제 종료 없이 복구하라고 명시했다. 현재 설치 빌드/오류 문구와 실제 실패 지점은 미확인이다. 살아 있는 연결의 재조회만 하던 범위를 Linux 사용자 프로세스 재시작으로 확장했다.

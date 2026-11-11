@@ -200,7 +200,7 @@
   };
   if (environment().selfTest) {
     window.BibimerIOSTestFontState = () => ({chat:iosChatFontSize,terminal:term.options.fontSize});
-    window.BibimerIOSSnapshot = () => ({online,project,session,knownProjects,knownAgents,busy,settingsBusy,switchingProject,sending:[...sending],
+    window.BibimerIOSSnapshot = () => ({online,instance,project,session,knownProjects,knownAgents,busy,settingsBusy,switchingProject,sending:[...sending],
       terminal:Array.from({length:term.buffer.active.length},(_,index)=>term.buffer.active.getLine(index)?.translateToString(true) || "").join("\n")});
     window.BibimerIOSTestAPI = api;
     window.BibimerIOSTestOpenWorktree = () => worktreeCreator.open(projectKey());

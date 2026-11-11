@@ -30,6 +30,7 @@ EXPECTED_CHECKS = {
     'screen_behavior_preferences',
     'background_execution_policy',
     'background_execution_preferences',
+    'linux_services_restart_without_app_relaunch',
 }
 AGENT_CHECKS = {'agents_shared_ui_connected', 'four_agents_available'} | {
     agent + '_' + action + '_ui' for agent in ['codex', 'claude', 'opencode', 'gemini'] for action in ['install', 'version']
