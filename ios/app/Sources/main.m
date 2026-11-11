@@ -77,6 +77,12 @@ static BOOL usesDesktopInput(void) {
 @property BOOL recoveryTimedOut;
 @property NSUInteger recoverySerial;
 @property NSTimeInterval connectionStartedAt;
+@property NSInteger healthHTTPStatus;
+@property NSInteger healthNetworkError;
+@property NSInteger healthErrorCategory;
+@property NSMutableArray<NSDictionary *> *connectionLog;
+@property NSURL *connectionLogURL;
+@property(nonatomic,strong) dispatch_queue_t connectionLogQueue;
 @property BOOL backgrounded;
 @property NSUInteger connectionEpoch;
 @property BOOL testConnectionOffline;
@@ -111,6 +117,9 @@ static BOOL usesDesktopInput(void) {
 - (void)expireHealthTask:(NSURLSessionDataTask *)task epoch:(NSUInteger)epoch;
 - (void)recoverLinux;
 - (BOOL)startLinuxServices;
+- (void)recordConnection:(NSString *)event code:(NSInteger)code;
+- (void)loadConnectionLog;
+- (void)requestReconnect;
 - (NSURLSession *)newHTTPTransport;
 - (void)applyScreenBehavior;
 - (void)fail:(NSString *)message;
@@ -191,6 +200,7 @@ static void guestExit(int status) {
     int code = WIFEXITED(status) ? WEXITSTATUS(status) : 128 + WTERMSIG(status);
     dispatch_async(dispatch_get_main_queue(), ^{
         activeController.exited = YES;
+        [activeController recordConnection:@"runtime_exit" code:code];
         if (activeController.runtimeControlFD >= 0) close(activeController.runtimeControlFD);
         activeController.runtimeControlFD = -1;
         [activeController fail:[NSString stringWithFormat:@"Local Linux stopped (code %d). Reopen Bibimer to start it again. Saved project files are kept.",code]];
@@ -217,6 +227,7 @@ static void guestExit(int status) {
         [stack.trailingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.trailingAnchor constant:-20]
     ]];
     self.documents = [NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
+    [self loadConnectionLog];
     NSURL *staleExports = [[NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES] URLByAppendingPathComponent:@"bibimer-exports" isDirectory:YES];
     [NSFileManager.defaultManager removeItemAtURL:staleExports error:nil];
     self.polls = [NSMutableSet new]; self.javascriptErrors = [NSMutableArray new];
@@ -230,6 +241,7 @@ static void guestExit(int status) {
     for (NSUInteger i = 0; i < random.length; i++) [token appendFormat:@"%02x",((unsigned char *)random.bytes)[i]];
     self.token = token;
     self.http = [self newHTTPTransport];
+    [self recordConnection:@"launch" code:0];
     NSArray *args = NSProcessInfo.processInfo.arguments;
     BOOL agentTest = [args containsObject:@"--agent-self-test"];
     if (agentTest || [args containsObject:@"--self-test"]) {
@@ -272,9 +284,49 @@ static void guestExit(int status) {
     dispatch_async(self.runtimeQueue, ^{ [self boot]; });
 }
 
+- (void)loadConnectionLog {
+    self.connectionLog = [NSMutableArray new];
+    self.connectionLogQueue = dispatch_queue_create("app.bibimer.ios.connection-log",DISPATCH_QUEUE_SERIAL);
+    NSURL *cache = [NSFileManager.defaultManager URLsForDirectory:NSCachesDirectory inDomains:NSUserDomainMask].firstObject;
+    [NSFileManager.defaultManager createDirectoryAtURL:cache withIntermediateDirectories:YES attributes:nil error:nil];
+    self.connectionLogURL = [cache URLByAppendingPathComponent:@"connection-diagnostics.json"];
+    NSData *data = [NSData dataWithContentsOfURL:self.connectionLogURL];
+    id rows = data.length <= 65536 ? [NSJSONSerialization JSONObjectWithData:data ?: [NSData data] options:0 error:nil] : nil;
+    NSSet *events = [NSSet setWithArray:@[@"launch",@"inactive",@"background",@"active",@"probe_start",@"probe_ok",@"probe_failed",@"probe_watchdog",@"retry",@"retry_blocked_recovery",@"retry_blocked_runtime",@"retry_blocked_inactive",@"reconnect_button",@"service_start",@"recovery_start",@"recovery_watchdog",@"recovery_stopped",@"diagnostics_copy",@"js_delivery_failed",@"message_rejected",@"runtime_exit"]];
+    NSSet *numbers = [NSSet setWithArray:@[@"time",@"uptime",@"build",@"code",@"application",@"scene",@"backgrounded",@"ready",@"started",@"exited",@"startupFailed",@"recovering",@"timedOut",@"attempts",@"epoch",@"shutdownStage",@"observedChildren",@"httpStatus",@"networkError",@"errorCategory"]];
+    if (![rows isKindOfClass:NSArray.class]) return;
+    for (id row in rows) {
+        if (![row isKindOfClass:NSDictionary.class] || ![row[@"event"] isKindOfClass:NSString.class] || ![events containsObject:row[@"event"]]) continue;
+        NSMutableDictionary *safe = [NSMutableDictionary dictionaryWithObject:row[@"event"] forKey:@"event"];
+        for (NSString *key in numbers) if ([row[key] isKindOfClass:NSNumber.class]) safe[key] = row[key];
+        [self.connectionLog addObject:safe];
+        if (self.connectionLog.count > 64) [self.connectionLog removeObjectAtIndex:0];
+    }
+}
+
+- (void)recordConnection:(NSString *)event code:(NSInteger)code {
+    if (!self.connectionLog) return;
+    NSDictionary *row = @{@"event":event,@"time":@(NSDate.date.timeIntervalSince1970),@"uptime":@(NSProcessInfo.processInfo.systemUptime),
+        @"build":@([[NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleVersion"] integerValue]),@"code":@(code),
+        @"application":@(UIApplication.sharedApplication.applicationState),@"scene":@(self.view.window.windowScene ? self.view.window.windowScene.activationState : -1),
+        @"backgrounded":@(self.backgrounded),@"ready":@(self.ready),@"started":@(self.runtimeStarted),@"exited":@(self.exited),@"startupFailed":@(self.startupFailed),
+        @"recovering":@(self.recovering),@"timedOut":@(self.recoveryTimedOut),@"attempts":@(self.healthAttempts),@"epoch":@(self.connectionEpoch),
+        @"shutdownStage":@(bibimer_recovery_stage()),@"observedChildren":@(bibimer_recovery_remaining()),
+        @"httpStatus":@(self.healthHTTPStatus),@"networkError":@(self.healthNetworkError),@"errorCategory":@(self.healthErrorCategory)};
+    [self.connectionLog addObject:row];
+    if (self.connectionLog.count > 64) [self.connectionLog removeObjectAtIndex:0];
+    NSData *data = [NSJSONSerialization dataWithJSONObject:self.connectionLog options:0 error:nil];
+    NSURL *destination = self.connectionLogURL;
+    dispatch_async(self.connectionLogQueue, ^{
+        [data writeToURL:destination options:NSDataWritingAtomic | NSDataWritingFileProtectionCompleteUntilFirstUserAuthentication error:nil];
+        [NSFileManager.defaultManager setAttributes:@{NSFilePosixPermissions:@0600} ofItemAtPath:destination.path error:nil];
+    });
+}
+
 - (void)becameInactive {
     if (self.backgrounded) return;
     self.backgrounded = YES; self.ready = NO; self.connectionEpoch++;
+    [self recordConnection:@"inactive" code:0];
     [self applyScreenBehavior];
     [self.healthTask cancel]; self.healthTask = nil;
     for (NSURLSessionDataTask *task in self.polls) [task cancel];
@@ -287,6 +339,7 @@ static void guestExit(int status) {
     [self becameInactive];
     [self.voice pause];
     [self.backgroundExecution setForeground:NO];
+    [self recordConnection:@"background" code:0];
 }
 - (void)pollBrowser:(NSUInteger)epoch {
     if(epoch!=self.browserEpoch || !self.browserPolling || self.exited || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive)return;
@@ -309,12 +362,19 @@ static void guestExit(int status) {
     self.browserPolling=YES;[self pollBrowser:self.browserEpoch];
 }
 - (void)nativeEvent:(NSString *)callback arguments:(NSArray *)arguments {
-    if(!self.web || (self.exited && ![callback isEqual:@"BibimerIOSRuntimeChanged"]))return;
-    NSString *script=[NSString stringWithFormat:@"Object.assign(window.__bibimerEnvironment,%@);window[%@]?.(...%@);",jsonString([self environment]),jsonString(callback),jsonString(arguments)];
-    [self.web evaluateJavaScript:script completionHandler:nil];
+    if(!self.web || (self.exited && ![@[@"BibimerIOSRuntimeChanged",@"BibimerIOSDiagnosticsCopied"] containsObject:callback]))return;
+    NSString *script=[NSString stringWithFormat:@"(()=>{Object.assign(window.__bibimerEnvironment ||= {},%@);const callback=window[%@];if(typeof callback!=='function')return false;callback(...%@);return true;})()",jsonString([self environment]),jsonString(callback),jsonString(arguments)];
+    [self.web evaluateJavaScript:script completionHandler:^(id result,NSError *error) {
+        if ((error || ![result isKindOfClass:NSNumber.class] || ![result boolValue]) && [@[@"BibimerResume",@"BibimerPause",@"BibimerIOSRuntimeChanged"] containsObject:callback])
+            [self recordConnection:@"js_delivery_failed" code:error ? error.code : -1];
+    }];
 }
 - (void)becameActive {
     self.backgrounded = NO;
+    // This begins a new foreground probe window. Manual retries within it keep
+    // the original window so repeated taps cannot postpone recovery forever.
+    self.healthAttempts = 0; self.connectionStartedAt = NSProcessInfo.processInfo.systemUptime;
+    [self recordConnection:@"active" code:0];
     [self.backgroundExecution setForeground:YES];
     [self nativeEvent:@"BibimerBackgroundChanged" arguments:@[]];
     [self applyScreenBehavior];
@@ -475,6 +535,7 @@ static void guestExit(int status) {
 - (void)checkHealth {
     if (self.exited || self.backgrounded || self.ready || self.healthTask || self.recovering || self.recoveryFailed) return;
     self.healthAttempts++;
+    [self recordConnection:@"probe_start" code:0];
     NSMutableURLRequest *request = [self request:@"GET" path:@"/v1/health" body:nil]; request.timeoutInterval = 2;
     __block NSURLSessionDataTask *task;
     task = [self.http dataTaskWithRequest:request completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {
@@ -497,19 +558,21 @@ static void guestExit(int status) {
 - (void)expireHealthTask:(NSURLSessionDataTask *)task epoch:(NSUInteger)epoch {
     if (!task || epoch != self.connectionEpoch || self.healthTask != task || self.backgrounded || self.exited || self.ready) return;
     self.healthTask = nil; [task cancel];
+    [self recordConnection:@"probe_watchdog" code:NSURLErrorTimedOut];
     [self replaceHTTPTransport];
     [self handleHealthJSON:nil response:nil error:[NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorTimedOut userInfo:nil]];
 }
 
 - (void)retryConnection {
-    if (self.recovering) { [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
-    if (self.exited || self.startupFailed) { [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
-    if (!self.runtimeStarted || self.backgrounded) return;
+    if (self.recovering) { [self recordConnection:@"retry_blocked_recovery" code:0]; [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
+    if (self.exited || self.startupFailed) { [self recordConnection:@"retry_blocked_runtime" code:0]; [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
+    if (!self.runtimeStarted || self.backgrounded) { [self recordConnection:@"retry_blocked_inactive" code:0]; return; }
     self.connectionEpoch++;
     [self.healthTask cancel]; self.healthTask = nil;
-    self.ready = NO; self.healthAttempts = 0;
+    self.ready = NO;
     self.recoveryFailed = NO;
-    self.connectionStartedAt = NSProcessInfo.processInfo.systemUptime;
+    if (!self.connectionStartedAt) self.connectionStartedAt = NSProcessInfo.processInfo.systemUptime;
+    [self recordConnection:@"retry" code:0];
     self.browserEpoch++; self.browserPolling = NO;
     [self.browserPoll cancel]; self.browserPoll = nil;
     [self replaceHTTPTransport];
@@ -517,34 +580,58 @@ static void guestExit(int status) {
     [self checkHealth];
 }
 
+- (void)requestReconnect {
+    [self recordConnection:@"reconnect_button" code:0];
+    UIWindowScene *scene = self.view.window.windowScene;
+    if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive ||
+        (scene && scene.activationState == UISceneActivationStateForegroundActive)) self.backgrounded = NO;
+    if (!self.recovering) { self.recoveryAllowed = YES; self.recoveryAttempted = NO; }
+    if (!self.backgrounded && !self.ready && !self.recovering && !self.exited && !self.startupFailed &&
+        self.runtimeStarted && self.runtimeControlFD >= 0 && self.healthAttempts >= 5 && self.connectionStartedAt > 0 &&
+        NSProcessInfo.processInfo.systemUptime - self.connectionStartedAt >= 30 && !self.smokeScript) {
+        [self recoverLinux];
+        return;
+    }
+    [self retryConnection];
+}
+
 - (void)handleHealthJSON:(NSDictionary *)json response:(NSHTTPURLResponse *)response error:(NSError *)error {
     // A request started before init exited must never resurrect the workspace.
     if (self.exited || self.backgrounded || self.recovering || self.recoveryFailed) return;
+    self.healthHTTPStatus = response.statusCode; self.healthNetworkError = error.code;
+    self.healthErrorCategory = !error ? 0 : [error.domain isEqual:NSURLErrorDomain] ? 1 : [error.domain isEqual:NSPOSIXErrorDomain] ? 2 : 3;
     if (!error && response.statusCode == 200 && [json isKindOfClass:NSDictionary.class] && [json[@"protocol"] integerValue] == 1) {
         self.ready = YES;
         self.hasConnected = YES;
         self.recoveryAttempted = NO;
+        self.healthAttempts = 0; self.connectionStartedAt = 0;
+        [self recordConnection:@"probe_ok" code:response.statusCode];
         if (!self.web) [self loadWorkspace];
         else [self nativeEvent:@"BibimerResume" arguments:@[]];
         [self.completionNotifications resume];
         [self startBrowserPolling];
     }
-    else if (self.recoveryAllowed && self.healthAttempts >= 5 &&
-             NSProcessInfo.processInfo.systemUptime - self.connectionStartedAt >= 30 &&
-             !self.recoveryAttempted && !self.smokeScript) {
-        [self recoverLinux];
+    else {
+        [self recordConnection:@"probe_failed" code:error ? error.code : response.statusCode];
+        if (self.recoveryAllowed && self.healthAttempts >= 5 &&
+                 NSProcessInfo.processInfo.systemUptime - self.connectionStartedAt >= 30 &&
+                 !self.recoveryAttempted && !self.smokeScript) {
+            [self recoverLinux];
+        }
+        else if (self.healthAttempts < 600) {
+            if (self.healthAttempts > 5) self.status.text = [NSString stringWithFormat:@"BIBIMER · Waiting for local Linux…\n%@ (HTTP %ld)",error.localizedDescription ?: @"Starting bridge",(long)response.statusCode];
+            NSUInteger epoch = self.connectionEpoch;
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(), ^{
+                if (epoch == self.connectionEpoch) [self checkHealth];
+            });
+        } else [self fail:@"Local setup did not finish. Check the installation output, then reopen Bibimer to retry. Existing files are kept."];
     }
-    else if (self.healthAttempts < 600) {
-        if (self.healthAttempts > 5) self.status.text = [NSString stringWithFormat:@"BIBIMER · Waiting for local Linux…\n%@ (HTTP %ld)",error.localizedDescription ?: @"Starting bridge",(long)response.statusCode];
-        NSUInteger epoch = self.connectionEpoch;
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(), ^{
-            if (epoch == self.connectionEpoch) [self checkHealth];
-        });
-    } else [self fail:@"Local setup did not finish. Check the installation output, then reopen Bibimer to retry. Existing files are kept."];
 }
 
 - (BOOL)startLinuxServices {
-    return self.runtimeControlFD >= 0 && write(self.runtimeControlFD,"start\n",6) == 6;
+    BOOL started = self.runtimeControlFD >= 0 && write(self.runtimeControlFD,"start\n",6) == 6;
+    [self recordConnection:@"service_start" code:started ? 0 : self.runtimeControlFD < 0 ? EBADF : errno];
+    return started;
 }
 
 - (void)recoverLinux {
@@ -553,6 +640,7 @@ static void guestExit(int status) {
     self.recoveryFailed = NO; self.recoveryTimedOut = NO;
     self.connectionEpoch++;
     NSUInteger recovery = ++self.recoverySerial;
+    [self recordConnection:@"recovery_start" code:0];
     [self.healthTask cancel]; self.healthTask = nil;
     [self.backgroundExecution runtimeStopped];
     // This recovery abandons old executions. Unlike transport-only reconnect,
@@ -567,6 +655,7 @@ static void guestExit(int status) {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW,15*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
         if (!self.recovering || recovery != self.recoverySerial) return;
         self.recoveryTimedOut = YES; self.recoveryFailed = YES;
+        [self recordConnection:@"recovery_watchdog" code:0];
         [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
     });
     dispatch_async(self.runtimeQueue, ^{
@@ -574,6 +663,7 @@ static void guestExit(int status) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (recovery != self.recoverySerial) return;
             self.recovering = NO;
+            [self recordConnection:@"recovery_stopped" code:result];
             if (result != 0 || self.recoveryTimedOut || self.exited) {
                 self.recoveryFailed = YES;
                 [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
@@ -830,7 +920,10 @@ static void guestExit(int status) {
 - (void)userContentController:(WKUserContentController *)controller didReceiveScriptMessage:(WKScriptMessage *)message {
     NSURL *source = message.frameInfo.request.URL;
     NSURL *index = [[NSBundle.mainBundle URLForResource:@"Web" withExtension:nil] URLByAppendingPathComponent:@"index.html"];
-    if (message.webView != self.web || !message.frameInfo.mainFrame || !source.isFileURL || ![source.URLByStandardizingPath.URLByResolvingSymlinksInPath.path isEqual:index.URLByResolvingSymlinksInPath.path] || ![message.body isKindOfClass:NSDictionary.class]) return;
+    NSUInteger rejected = (message.webView != self.web ? 1 : 0) | (!message.frameInfo.mainFrame ? 2 : 0) |
+        (!source.isFileURL ? 4 : 0) | (![source.URLByStandardizingPath.URLByResolvingSymlinksInPath.path isEqual:index.URLByResolvingSymlinksInPath.path] ? 8 : 0) |
+        (![message.body isKindOfClass:NSDictionary.class] ? 16 : 0);
+    if (rejected) { [self recordConnection:@"message_rejected" code:rejected]; return; }
     NSDictionary *body = message.body;
     NSString *action = body[@"action"];
     if ([action isEqual:@"backgroundConfigure"]) {
@@ -848,8 +941,15 @@ static void guestExit(int status) {
         [self applyScreenBehavior];
     }
     else if ([action isEqual:@"reconnect"]) {
-        if (!self.recovering) { self.recoveryAllowed = YES; self.recoveryAttempted = NO; }
-        [self retryConnection];
+        [self requestReconnect];
+    }
+    else if ([action isEqual:@"connectionDiagnostics"]) {
+        [self recordConnection:@"diagnostics_copy" code:0];
+        NSData *data = [NSJSONSerialization dataWithJSONObject:@{@"schema":@1,@"events":self.connectionLog ?: @[]} options:NSJSONWritingPrettyPrinted error:nil];
+        NSString *text = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        if (self.smokeScript) self.testClipboard = text;
+        else UIPasteboard.generalPasteboard.string = text;
+        [self nativeEvent:@"BibimerIOSDiagnosticsCopied" arguments:@[]];
     }
     else if ([@[@"voiceStart",@"voiceCancel",@"voiceConfigure",@"voiceKey",@"speechContext",@"speechStop",@"speechRead",@"speechVoices",@"speechConfigure"] containsObject:action]) {
         if(!self.smokeScript)[self.voice handle:body];
@@ -943,6 +1043,14 @@ static void guestExit(int status) {
                 return;
             }
             [self reply:identifier status:400 data:@{}]; return;
+        }
+        if (self.smokeScript && [method isEqual:@"POST"] && [path isEqual:@"/native/test-retry-window"]) {
+            self.backgrounded = YES; self.ready = NO; self.healthAttempts = 6;
+            NSTimeInterval start = NSProcessInfo.processInfo.systemUptime - 35;
+            self.connectionStartedAt = start;
+            [self requestReconnect]; [self requestReconnect];
+            [self reply:identifier status:200 data:@{@"foregroundReconciled":@(!self.backgrounded),@"windowKept":@(self.connectionStartedAt == start),@"attemptsKept":@(self.healthAttempts >= 6)}];
+            return;
         }
         if (self.smokeScript && [method isEqual:@"POST"] && [path isEqual:@"/native/test-linux-recovery"]) {
             self.testRecoveryWorkspace = self.web;

@@ -159,6 +159,20 @@
     $("page-back").click();
     $("input").value = previousDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
     passed("native_reconnect_preserves_workspace");
+    const retryWindow = await window.BibimerIOSTestAPI("POST","/native/test-retry-window",{});
+    if (!retryWindow.foregroundReconciled || !retryWindow.windowKept || !retryWindow.attemptsKept) throw new Error("Manual retries reset the failure window or retained stale background state");
+    await wait(() => snapshot()?.online,"connection after retry-window fixture");
+    passed("manual_reconnect_failure_window");
+    $("ios-connection-diagnostics-copy").click();
+    await wait(() => $("ios-connection-diagnostics-copy").textContent === window.BibimerI18n.t("copied"),"native diagnostic clipboard");
+    const diagnosticClipboard = await window.BibimerIOSTestAPI("GET","/native/test-clipboard");
+    const diagnostic = JSON.parse(diagnosticClipboard.text);
+    if (diagnostic.schema !== 1 || !diagnostic.events.length || diagnostic.events.length > 64) throw new Error("Invalid bounded connection diagnostic");
+    for (const row of diagnostic.events) for (const [key,value] of Object.entries(row)) {
+      if (key !== "event" && typeof value !== "number" && typeof value !== "boolean") throw new Error("Diagnostic contains non-status text");
+    }
+    if (diagnosticClipboard.text.includes(path) || diagnosticClipboard.text.includes(sessionId) || diagnosticClipboard.text.includes(recoveryDraft)) throw new Error("Diagnostic leaked project/session/draft data");
+    passed("connection_diagnostics_status_only");
     const lifecycleDraft = "draft survives background and foreground";
     $("input").value = lifecycleDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
     const lifecycleInstance = snapshot().instance;

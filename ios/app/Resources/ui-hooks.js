@@ -20,6 +20,12 @@
     }
   };
   const iosConnect = connect;
+  $("ios-connection-diagnostics-copy").addEventListener("click", () => native.copyConnectionDiagnostics());
+  window.BibimerIOSDiagnosticsCopied = () => {
+    const button = $("ios-connection-diagnostics-copy");
+    button.textContent = t("copied");
+    setTimeout(() => { button.textContent = t("ios_connection_diagnostics_copy"); },1500);
+  };
   connect = async function(...args) {
     if (["stopped", "restart-required", "recovery-failed", "restarting"].includes(environment().localRuntime?.state)) {
       window.BibimerIOSRuntimeChanged(); return;

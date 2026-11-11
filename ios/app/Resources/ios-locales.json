@@ -31,7 +31,10 @@
     "Background execution is unavailable. Keep the app open.",
     "Work failed. Check the session in the app.",
     "Restarting local Linux. Running tasks will stop; project files and saved chats are kept. Commands, approvals and queued messages are not replayed.",
-    "Linux recovery could not confirm shutdown. A second runtime was not started. Try Reconnect again."
+    "Linux recovery could not confirm shutdown. A second runtime was not started. Try Reconnect again.",
+    "Connection diagnostics",
+    "Copy recent connection, app state and Linux recovery status codes. No credentials, project paths, conversations or terminal output are included.",
+    "Copy diagnostics"
   ],
   "ko": [
     "마이크를 눌렀을 때 음성을 녹음해 입력 초안에 추가합니다.",
@@ -65,7 +68,10 @@
     "백그라운드 실행을 사용할 수 없습니다. 앱을 열어 두세요.",
     "작업이 실패했습니다. 앱에서 세션을 확인하세요.",
     "내장 Linux를 다시 시작합니다. 실행 중인 작업은 중단되며 프로젝트 파일과 저장된 대화는 유지합니다. 명령·승인·대기 메시지는 재전송하지 않습니다.",
-    "Linux 작업의 종료를 확인하지 못해 복구하지 못했습니다. 중복 실행은 시작하지 않았습니다. 다시 연결을 재시도하세요."
+    "Linux 작업의 종료를 확인하지 못해 복구하지 못했습니다. 중복 실행은 시작하지 않았습니다. 다시 연결을 재시도하세요.",
+    "연결 진단",
+    "최근 연결·앱 상태·Linux 복구의 상태 코드를 복사합니다. 인증 정보·프로젝트 경로·대화·터미널 출력은 포함하지 않습니다.",
+    "진단 로그 복사"
   ],
   "pt-BR": [
     "Grava a fala ao tocar no microfone para adicionar texto ao rascunho.",
@@ -99,7 +105,10 @@
     "Execução em segundo plano indisponível. Mantenha o app aberto.",
     "O trabalho falhou. Confira a sessão no app.",
     "Reiniciando o Linux local. As tarefas em execução serão interrompidas; os arquivos e chats salvos serão mantidos. Comandos, aprovações e mensagens na fila não serão reenviados.",
-    "Não foi possível confirmar o encerramento do Linux. Uma segunda instância não foi iniciada. Tente reconectar novamente."
+    "Não foi possível confirmar o encerramento do Linux. Uma segunda instância não foi iniciada. Tente reconectar novamente.",
+    "Diagnóstico da conexão",
+    "Copie os códigos recentes de conexão, estado do app e recuperação do Linux. Não inclui credenciais, caminhos de projetos, conversas ou saída do terminal.",
+    "Copiar diagnóstico"
   ],
   "es": [
     "Graba voz al tocar el micrófono para añadir texto al borrador.",
@@ -133,7 +142,10 @@
     "Ejecución en segundo plano no disponible. Mantén la app abierta.",
     "El trabajo falló. Revisa la sesión en la app.",
     "Reiniciando Linux local. Las tareas en curso se detendrán; se conservarán los archivos y chats guardados. No se reenviarán comandos, aprobaciones ni mensajes en cola.",
-    "No se pudo confirmar la detención de Linux. No se inició una segunda instancia. Vuelve a intentar Reconectar."
+    "No se pudo confirmar la detención de Linux. No se inició una segunda instancia. Vuelve a intentar Reconectar.",
+    "Diagnóstico de conexión",
+    "Copia los códigos recientes de conexión, estado de la app y recuperación de Linux. No incluye credenciales, rutas de proyectos, conversaciones ni salida del terminal.",
+    "Copiar diagnóstico"
   ],
   "id": [
     "Merekam ucapan saat Anda mengetuk mikrofon untuk menambahkan teks ke draf.",
@@ -167,7 +179,10 @@
     "Eksekusi latar belakang tidak tersedia. Biarkan aplikasi terbuka.",
     "Pekerjaan gagal. Periksa sesi di aplikasi.",
     "Memulai ulang Linux lokal. Tugas yang berjalan akan berhenti; berkas proyek dan chat tersimpan tetap ada. Perintah, persetujuan, dan pesan antrean tidak dikirim ulang.",
-    "Pemulihan Linux tidak dapat memastikan penghentian. Runtime kedua tidak dimulai. Coba Hubungkan ulang lagi."
+    "Pemulihan Linux tidak dapat memastikan penghentian. Runtime kedua tidak dimulai. Coba Hubungkan ulang lagi.",
+    "Diagnostik koneksi",
+    "Salin kode status koneksi, aplikasi, dan pemulihan Linux terbaru. Tidak mencakup kredensial, jalur proyek, percakapan, atau keluaran terminal.",
+    "Salin diagnostik"
   ],
   "zh-Hans": [
     "点按麦克风时录音，将文字添加到草稿。",
@@ -201,7 +216,10 @@
     "后台运行不可用。请保持应用打开。",
     "任务失败。请在应用中检查会话。",
     "正在重启内置 Linux。正在运行的任务将停止；项目文件和已保存的对话会保留。不会重新发送命令、审批或排队消息。",
-    "无法确认 Linux 任务已停止，恢复失败。未启动第二个运行环境。请再次尝试重新连接。"
+    "无法确认 Linux 任务已停止，恢复失败。未启动第二个运行环境。请再次尝试重新连接。",
+    "连接诊断",
+    "复制最近的连接、应用状态和 Linux 恢复状态码。不包含凭据、项目路径、对话或终端输出。",
+    "复制诊断日志"
   ],
   "ja": [
     "マイクをタップしたときに録音し、下書きにテキストを追加します。",
@@ -235,7 +253,10 @@
     "バックグラウンド実行を利用できません。アプリを開いたままにしてください。",
     "作業に失敗しました。アプリでセッションを確認してください。",
     "内蔵 Linux を再起動しています。実行中のタスクは停止しますが、プロジェクトファイルと保存済みの会話は保持されます。コマンド・承認・待機メッセージは再送しません。",
-    "Linux タスクの停止を確認できず、復旧できませんでした。二重起動はしていません。再接続をもう一度試してください。"
+    "Linux タスクの停止を確認できず、復旧できませんでした。二重起動はしていません。再接続をもう一度試してください。",
+    "接続の診断",
+    "最近の接続・アプリ状態・Linux 復旧の状態コードをコピーします。認証情報・プロジェクトのパス・会話・ターミナル出力は含みません。",
+    "診断ログをコピー"
   ],
   "zh-Hant": [
     "點按麥克風時錄音，將文字加入草稿。",
@@ -269,7 +290,10 @@
     "無法使用背景執行。請保持應用程式開啟。",
     "工作失敗。請在應用程式中檢查工作階段。",
     "正在重新啟動內建 Linux。執行中的工作將停止；專案檔案與已儲存的對話會保留。不會重新傳送指令、核准或佇列訊息。",
-    "無法確認 Linux 工作已停止，復原失敗。未啟動第二個執行環境。請再次嘗試重新連線。"
+    "無法確認 Linux 工作已停止，復原失敗。未啟動第二個執行環境。請再次嘗試重新連線。",
+    "連線診斷",
+    "複製最近的連線、應用程式狀態與 Linux 復原狀態碼。不包含憑證、專案路徑、對話或終端輸出。",
+    "複製診斷記錄"
   ],
   "fr": [
     "Enregistre la parole lorsque vous touchez le micro pour ajouter du texte au brouillon.",
@@ -303,7 +327,10 @@
     "Exécution en arrière-plan indisponible. Gardez l’app ouverte.",
     "Le travail a échoué. Vérifiez la session dans l’app.",
     "Redémarrage de Linux local. Les tâches en cours seront arrêtées ; les fichiers et conversations enregistrées seront conservés. Les commandes, approbations et messages en attente ne seront pas renvoyés.",
-    "L’arrêt des tâches Linux n’a pas pu être confirmé. Aucune seconde instance n’a été lancée. Réessayez Reconnecter."
+    "L’arrêt des tâches Linux n’a pas pu être confirmé. Aucune seconde instance n’a été lancée. Réessayez Reconnecter.",
+    "Diagnostic de connexion",
+    "Copie les codes récents de connexion, d’état de l’app et de récupération Linux. Sans identifiants, chemins de projets, conversations ni sortie du terminal.",
+    "Copier le diagnostic"
   ],
   "de": [
     "Nimmt beim Tippen auf das Mikrofon Sprache auf und fügt Text zum Entwurf hinzu.",
@@ -337,6 +364,9 @@
     "Hintergrundausführung nicht verfügbar. Lass die App geöffnet.",
     "Arbeit fehlgeschlagen. Prüfe die Sitzung in der App.",
     "Lokales Linux wird neu gestartet. Laufende Aufgaben werden beendet; Projektdateien und gespeicherte Chats bleiben erhalten. Befehle, Freigaben und Nachrichten in der Warteschlange werden nicht erneut gesendet.",
-    "Das Beenden der Linux-Aufgaben konnte nicht bestätigt werden. Es wurde keine zweite Instanz gestartet. Versuche erneut zu verbinden."
+    "Das Beenden der Linux-Aufgaben konnte nicht bestätigt werden. Es wurde keine zweite Instanz gestartet. Versuche erneut zu verbinden.",
+    "Verbindungsdiagnose",
+    "Kopiert aktuelle Statuscodes zu Verbindung, App und Linux-Wiederherstellung. Enthält keine Zugangsdaten, Projektpfade, Gespräche oder Terminalausgaben.",
+    "Diagnose kopieren"
   ]
 }

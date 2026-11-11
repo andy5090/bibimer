@@ -1,5 +1,18 @@
 # Bibimer 다음 세션 시작점
 
+## iOS 다시 연결 무시·복구 대기 고착 분석 및 진단 수집 (후속 소스, 미배포)
+
+- 사용자 재보고: 앱 복귀 후 여전히 연결되지 않고 Settings의 다시 연결도 동작하지 않음. 원격1b21acc까지 동기화해 TestFlight8의 실제 Mac 컴파일/QA·배포 기록을 확인했다. 현재 guest는4.20.69-linuxkit/ARM64이며 설치된 supervisor.sh가 소스와 일치한다. 저장 메타데이터는 상태별 개수만 확인했고 인증 파일·대화/출력은 조회하지 않았다. **설치본8에는 네이티브 연결 진단 수집이 없어 과거 실제 iPhone의 실패 로그를 확보하지 못했다. 기기 원인을 확정했다고 표시하지 않는다.**
+- 코드에서 재현 가능한 실패 조건을 확인했다: retryConnection이 수동 재시도마다 healthAttempts/connectionStartedAt을 초기화해 버튼을 반복하면30초/5회 재시작 조건에 도달하지 못했다. 내부 backgrounded가 남으면 실제 활성 화면의 명시적 버튼도 무시했다. 실패 시간/횟수는 성공 또는 새 활성 주기에서만 초기화하고, 버튼은 실제 UIApplication/scene 활성 상태를 확인해 조정한다. 충분히 실패한 뒤의 명시적 버튼은 다시30초를 기다리지 않고 복구 단계로 간다. 백그라운드/종료된 init/기동 실패에서는 임의로 boot를 재호출하지 않는다.
+- 추가 고착 경로: 기존 종료 helper가 pids_lock을 잡은 채 send_signal 내부의 group/sighand/waiting_cond 잠금에서 무기한 대기하면15초 감시 뒤에도 recovering이 끝나지 않아 버튼이 계속 거절될 수 있었다. guest 종료 요청을 해당 잠금의 trylock과 제한된 재시도로 바꿨다. TERM/KILL의 task pending/queue·대기 조건 통지·SIGUSR1/CPU wake를 유지하고 PID1은 제외한다. 종료 확인 실패/잠금 경합은 실패로 반환하며 새 서비스를 중복 실행하지 않는다. native proxy는 임의 host 종료 대신 ENOTSUP로 실패한다. 실제 커널 잠금 교착을 해결했다고 단정하지 않는다.
+- 새 네이티브 진단은 최근64개 고정 event와 숫자/Boolean 상태만 보관한다. build·시각·UIKit/scene·backgrounded/ready/started/exited·health 횟수/세대·HTTP status·네트워크 error code/category·종료 단계/관찰 task 수를 기록한다. 네트워크 오류 본문/URL·토큰·프로젝트/세션 ID·경로·대화·PTY 출력은 제외한다. native Caches의0600/첫 잠금 해제 후 보호 파일에 직렬로 저장하고, 다시 읽을 때 허용 event/숫자 키만 복원한다. OS의 cache 제거까지 보존을 보장하지 않는다.
+- **설정 → 연결 진단 → 진단 로그 복사**는 사용자 클릭으로 native clipboard에 복사하며 bridge가 끊겨도 동작한다. JS로 원본 로그/인증 정보를 읽어들이거나 자동 외부 전송하지 않는다. 실제 버튼 요청 수신/거절 이유의 bit mask와 JS lifecycle 이벤트 전달 실패 코드도 남긴다. 새 빌드에서 재현 직후 또는 앱을 다시 연 뒤 이 로그로 버튼/화면 상태·HTTP 전송·종료 helper 중 실패 지점을 구분해야 한다.
+- 로그 schema1: event는 고정 이름, 나머지는 숫자/Boolean이다. errorCategory는0없음/1NSURLError/2POSIX/3기타, shutdownStage는0유휴/1PID잠금/2신호전달/3종료대기/4종료확인/5실패/6init없음이다. observedChildren은 마지막 스캔에서 관찰한 수이며 실제 작업 이름/ID를 기록하지 않는다.
+- 엔진의 fs/sockrestart.h/c(pinc8e9dcb9)에는 iOS 정지 후 listen/accept 복구의 필요성과 hook이 있지만 앱 연결은 이를 호출하지 않는다. upstream 복구 구현도 socket 재설정/자원 수명 검토가 필요해 이번에 무검증으로 연결하지 않았다. **이것을 실제 기기 원인으로 확정하거나 listen 복구 완료라고 표시하지 않는다.** 네이티브 진단으로 확인 후 별도 수정해야 한다.
+- 새 QA는 실제 활성 화면에 backgrounded가 남은 조건·반복 버튼의 실패 시간/횟수 유지·진단 clipboard의 상태 전용/64개 제한을 확인하도록 추가했고 runner 필수 항목에도 등록했다. 실제 C helper를 잠금 대역으로 컴파일하는 test_recovery_contention.py는 PID/sighand/group/waiting-cond 경합의 timeout·잠금 해제·재시도 성공·PID1 보존·native proxy 거절을 검사한다. 현재 환경에는 C/Apple 컴파일러가 없으므로 이 검사와 새 native smoke 실행은 Mac에서 필요하다.
+- 현재 검증 결과: 앱 Python30개 중28개 통과/Apple socket 및 C 경합2개 skip, Node 재연결·화면 설정(35문구×10언어)·native 기능 경계, native/platform/smoke JS 구문·diff 검사 통과. 새 native smoke와 Objective-C/C 컴파일을 통과한 것으로 표시하지 않는다.
+- **앱/브리지/사용자 프로세스는 재시작하지 않았으며 APK/IPA/TestFlight를 빌드·배포하지 않았다.** 구현/검증 결과는 원격 main에 동기화하되 실제 사용자 증상이 해결됐다고 표시하지 않는다. 다음 Mac 빌드에서는 새 C 검사·양 SDK 컴파일/정적 분석·실제 WKWebView/Linux32개 및 잠금/반복 재시도 실기기 확인이 필요하다.
+
 ## iOS 0.1.0(8) TestFlight 내부 배포 완료 (2026-11-12)
 
 - **02:36 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내1018자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(8)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드8개를 직접 확인했다. 기존1–7번·그룹/테스터·자동 배포 설정을 유지했다.

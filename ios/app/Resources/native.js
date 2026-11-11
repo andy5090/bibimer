@@ -60,6 +60,7 @@
     openTermux: () => window.BibimerOpenLocalTerminal?.(),
     startAgentAction: (agent, action) => window.BibimerIOSAgentAction?.(agent, action),
     reconnect: () => message("reconnect"),
+    copyConnectionDiagnostics: () => message("connectionDiagnostics"),
     startQuickSetup: () => message("reconnect"),
     takeNotificationTarget: () => { const target=defaults.notificationTarget || {};defaults.notificationTarget={};message("notificationTaken");return JSON.stringify(target); },
     setResponseNotifications: enabled => { if(typeof enabled!=="boolean")return false; defaults.notifications={...defaults.notifications,enabled};message("notificationConfigure",{enabled});return true; },

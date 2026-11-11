@@ -8,6 +8,8 @@ assert.equal(posts.length,0);
 context.window.Bibimer.reconnect();assert.equal(posts.at(-1).action,"reconnect");
 context.window.Bibimer.startQuickSetup();assert.equal(posts.at(-1).action,"reconnect");
 assert.equal(posts.length,2,"Retry actions ask native code; they never pretend to start Linux in JavaScript");
+context.window.Bibimer.copyConnectionDiagnostics();
+assert.deepEqual({...posts.at(-1)},{action:"connectionDiagnostics"},"Diagnostics need no backend request, credentials or session data");
 const session={id:"same-session"},draft={text:"keep this draft",queue:["keep this queue"]};
 const events=[];
 Object.assign(context,{generation:7,retryTimer:13,paused:true,session,draft,environment:()=>defaults,
