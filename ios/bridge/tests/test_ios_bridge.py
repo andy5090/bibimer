@@ -736,6 +736,30 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(result["session"]["project"]["path"], str((self.folder / "projects").resolve()))
         self.assertTrue((self.folder / "projects").is_dir())
 
+    def test_claude_login_uses_interactive_command_and_accepts_pty_input(self):
+        fixture = self.folder / "claude-login-fixture"
+        fixture.write_text("#!" + sys.executable + "\nimport sys\n"
+                           "assert sys.argv[1:] == ['/login'], sys.argv[1:]\n"
+                           "print('MANUAL-INPUT-READY', flush=True)\n"
+                           "assert sys.stdin.readline().strip() == 'fixture-response'\n"
+                           "print('FIXTURE-COMPLETE', flush=True)\n")
+        fixture.chmod(0o700)
+        data = {"agent": "claude", "action": "login", "project_id": self.project["id"], "request_id": str(uuid.uuid4())}
+        with patch.object(self.bridge, "agent_executable", return_value=str(fixture)):
+            result = self.bridge.agent_action(data)
+            duplicate = self.bridge.agent_action(data)
+        snapshot = result["session"]
+        self.assertEqual(snapshot["id"], duplicate["session"]["id"])
+        self.assertEqual(snapshot["mode"], "terminal")
+        self.assertEqual(snapshot["setup_action"], {"agent": "claude", "action": "login"})
+        session = self.bridge.get_session(snapshot["id"])
+        output = lambda: base64.b64decode(session.events(0, 0)["data"])
+        wait_for(lambda: b"MANUAL-INPUT-READY" in output())
+        session.write(b"fixture-response\n", str(uuid.uuid4()))
+        wait_for(lambda: b"FIXTURE-COMPLETE" in output())
+        wait_for(lambda: session.snapshot()["state"] == "exited")
+        self.assertEqual(session.snapshot()["exit_code"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

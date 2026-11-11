@@ -329,7 +329,11 @@ def adapt(base, claude_provider=None, opencode_provider=None):
                 executable = self.agent_executable(agent)
                 if not executable:
                     raise base.Problem(400, "error_program_missing")
-                args = {"codex": ["login", "--device-auth"], "claude": ["auth", "login"],
+                # The pinned Claude `auth login` prints the manual URL but only
+                # waits for a browser callback: it has no stdin code handler.
+                # /login opens the native interactive flow in this owned PTY,
+                # including its manual-code input when browser launch is absent.
+                args = {"codex": ["login", "--device-auth"], "claude": ["/login"],
                         "opencode": ["auth", "login"], "gemini": []}
                 argv = [executable, *(args[agent] if action == "login" else ["--version"])]
             with self.lock:
