@@ -1,0 +1,51 @@
+{
+  "capturedOn": "2026-11-11",
+  "appSourceCommit": "c0d1c829382e384bd8db5c014de48baaa65f538b",
+  "captureMethod": "visible_firefox_shared_android_ui",
+  "content": "fictional_projects_and_messages",
+  "physicalDeviceCapture": false,
+  "width": 405,
+  "height": 720,
+  "images": [
+    {
+      "file": "assets/examples/en/01-chat-20261111.jpg",
+      "bytes": 75033,
+      "sha256": "356e3fbaac14c80c0679ab4fa7e291d17174ac53957c28af59413cd4b35b54ad"
+    },
+    {
+      "file": "assets/examples/en/02-projects-20261111.jpg",
+      "bytes": 49618,
+      "sha256": "f009960d4f3e34670b2c45d98032a9bbdfdc62b11c084aece6ae78750cb2c503"
+    },
+    {
+      "file": "assets/examples/en/03-files-20261111.jpg",
+      "bytes": 33038,
+      "sha256": "740476b85c97d74ba871bf7bd75fb62b574395b975d6d76aec609607a380f71d"
+    },
+    {
+      "file": "assets/examples/en/04-code-20261111.jpg",
+      "bytes": 74530,
+      "sha256": "e9527678fcdebc5e2b34f2b9bd21bcb8e5c2f30cf86590bc212bfa4a1127e5e4"
+    },
+    {
+      "file": "assets/examples/ko/01-chat-20261111.jpg",
+      "bytes": 73272,
+      "sha256": "1ac26963abebef04cdb41bcc1a7f7c8e97b74469ac19072dde4f3d9c013a9a71"
+    },
+    {
+      "file": "assets/examples/ko/02-projects-20261111.jpg",
+      "bytes": 43151,
+      "sha256": "b30b1df218b5c2c65cade9b3fd38ed799b255533b3ba989f936fd90fb0ffa9c2"
+    },
+    {
+      "file": "assets/examples/ko/03-files-20261111.jpg",
+      "bytes": 31067,
+      "sha256": "daad1d4851bdf213b995e4861e2aa004d2bc519b0ee66aaab39510dd0158bb9f"
+    },
+    {
+      "file": "assets/examples/ko/04-code-20261111.jpg",
+      "bytes": 71920,
+      "sha256": "fab96ceacbb264a3e9159e4a354cffbbd085fcfa27f418b2ec58838ab2473cbb"
+    }
+  ]
+}
