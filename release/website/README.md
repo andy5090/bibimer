@@ -1,5 +1,13 @@
 # Bibimer 웹사이트
 
+## 웹사이트 iOS 곧 출시 안내 배포 완료 (2026-11-11)
+
+- Cloudflare Pages `https://39b61fee.bibimer.pages.dev`에 게시했다. 10언어 홈/가이드/문의 30개와 새 `platforms.css`까지 공개 `bibimer.app`의 31개 리소스 HTTP200·원본 바이트 일치를 확인했다. GET `/api/contact`의 기존 405 응답과 Functions 번들 업로드를 확인했으며 실제 문의는 전송하지 않았다. 공개 한국어 화면에서도 iOS 곧 출시와 Android/내장 Linux 차이를 확인했다.
+- 10언어 메인 소개·SEO를 스마트폰 기반 ADE로 바꾸고 Android는 현재 Google Play, iOS는 출시 예정으로 구분했다. Android의 같은 폰 Termux/Android8+ 조건과 이름 유래를 유지하고 iOS의 앱 내장 Linux 환경을 안내한다. 날짜/가상 App Store 링크/공개 TestFlight 초대는 추가하지 않았다. 현재 가이드/도식/스크린샷은 Android용임을 표시하고 문의 푸터의 Android 전용 소개도 중립화했다. 정책·문의 API/DB·정리 Worker·앱 버전은 변경하지 않았다.
+- Python 웹 구조2개·Node 언어 선택·diff 검사 통과. 실제 관리 Firefox에서 한국어/영어 데스크톱 및320px 한국어/393px 영어의 모바일 소개/플랫폼 카드 줄바꿈을 확인했다. 증빙 `dist/website-ios-coming-soon/`의 mobile-hero/mobile-platforms/public-ko-hero/public-ko-platforms.png와 public-verification.json, 배포 로그 `.tools/website-platforms-deploy.log`다. 기존 API 토큰 대신 갱신된 Wrangler OAuth와 설치된 Android esbuild를 사용했고 키·토큰을 소스/콘솔에 넣지 않았다.
+- 동기화 중 원격 iOS7 배포/재연결 수정2커밋(`42d063a`)을 발견해 모두 보존하고 웹사이트 변경을 그 위에 재적용했다. 게시 소스는 `f98cec6`이다. 아래 배포 준비 기록은 당시 상태이며 이번 게시로 완료됐다.
+
+
 ## 웹사이트 iOS 출시 예정·플랫폼 설명 (2026-11-11, 배포 준비)
 
 - 사용자 요청으로 10개 언어 홈의 소개/SEO를 스마트폰 기반 ADE로 바꾸고 Android는 Google Play 제공 중, iOS는 곧 출시로 구분했다. Android는 같은 기기의 Termux, iOS는 앱 내장 Linux 환경이라는 차이를 별도 카드로 안내한다. 출시 날짜·App Store 링크·공개 TestFlight 초대는 임의로 추가하지 않았다.
