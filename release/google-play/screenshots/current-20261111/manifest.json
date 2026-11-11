@@ -1,0 +1,53 @@
+{
+  "capturedOn": "2026-11-11",
+  "appSourceCommit": "5b2561e",
+  "captureMethod": "visible_firefox_responsive_design_mode_native_camera",
+  "physicalDeviceCapture": false,
+  "cssViewport": "405x720",
+  "devicePixelRatio": 3,
+  "dimensions": "1215x2160",
+  "content": "Current shared Android UI with fictional projects, conversations and files; no model execution or private session data",
+  "aiGeneratedPixels": false,
+  "assets": [
+    {
+      "path": "en-US/01-chat.jpg",
+      "bytes": 339245,
+      "sha256": "cec00e328f32dbcb14ac1cefa8573f24499683a1c6c960263ceab433e7d94fa1"
+    },
+    {
+      "path": "en-US/02-projects.jpg",
+      "bytes": 226345,
+      "sha256": "2a47fbf9806f451e9ef31f61bdfa717e826e191997664694452534ea39e96347"
+    },
+    {
+      "path": "en-US/03-files.jpg",
+      "bytes": 149291,
+      "sha256": "a145bb0c185671db94b9430490670fb6ce7a0affa8577e4fefcf7506c72db618"
+    },
+    {
+      "path": "en-US/04-code.jpg",
+      "bytes": 330011,
+      "sha256": "3754646cde33c40ab4156ce95967d4d8f7c73a04073c69575062de458d42c37e"
+    },
+    {
+      "path": "ko-KR/01-chat.jpg",
+      "bytes": 313447,
+      "sha256": "3f9e61b3ab71e4129f0ac9a16bcfe4f96c807e367cb73ba3d308cbd96c2b5a48"
+    },
+    {
+      "path": "ko-KR/02-projects.jpg",
+      "bytes": 192982,
+      "sha256": "5efecf09eebe222d9af6911752ea79484c0f6750615db06fc2a27209bf7628c7"
+    },
+    {
+      "path": "ko-KR/03-files.jpg",
+      "bytes": 143012,
+      "sha256": "4299e3cbacd863bdca3d16a9c3d2b09df9faf443a2562e58dad40b58ee26b7da"
+    },
+    {
+      "path": "ko-KR/04-code.jpg",
+      "bytes": 307903,
+      "sha256": "1ad187c393d1e4703b2cb52080886b03ec58095e5349a999564750c3928c8f85"
+    }
+  ]
+}
