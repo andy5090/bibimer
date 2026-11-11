@@ -1,5 +1,13 @@
 # Bibimer 다음 세션 시작점
 
+## iOS 0.1.0(9) TestFlight 내부 배포 완료 (2026-11-12)
+
+- **07:48 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내1133자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(9)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드9개를 직접 확인했다. 기존1–8번·그룹/테스터·자동 배포 설정을 유지했다.
+- 업로드 소스 `f1f905e13ee80cdbb4287043c4aff95b74231136`, 빌드 ID `3589005e-b210-4ca1-b929-7aa159cf8f14`. IPA **8,567,543 bytes**, SHA-256 `2717e25be3c9791933cb5d8c5457ea1ebd2c54312d0a02fead4e1442d5252347`. **07:42:07 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**다. 아카이브 `dist/ios-testflight/0.1.0-9-unsigned-nov12-diagnostics/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-9-export-nov12-diagnostics/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-9-nov12/`.
+- 반복 다시 연결의 실패 시간/횟수 보존·실제 활성 화면의 stale backgrounded 보정·guest 종료 잠금의 제한된 대기를 포함한다. **설정 → 연결 진단 → 진단 로그 복사**는 브리지 연결 없이 최근64개 고정 event와 숫자/Boolean 상태를 수동 복사한다. 토큰·URL·프로젝트/세션 ID·경로·대화·PTY 출력은 기록하지 않고 외부 자동 전송도 없다. 기존 서비스 재시작/파일·저장 대화 유지·작업 종료/미저장 대기열·PTY 출력 미복원·명령/승인 미재전송 동작을 유지한다.
+- 양 SDK 컴파일·archive/dSYM·배포 서명·현재 소스/IPA 자산(웹64·게스트18·네이티브11자산/13소스·현지화20·rootfs426) 일치를 확인했다. 실제 전용 WKWebView/Linux **32개·29.13초·JS오류0**와 모의 백그라운드 정책20개·앱 Python30(C 잠금 경합 포함)·iOS 브리지56·Node16파일·Chromium20배치·main/서비스/RuntimeSupport 정적분석0을 통과했다. 기존 syscall 경고4개·미사용 매개변수 컴파일 경고16개는 남아 있다. 제품 소스 추가 수정 없이 f1f905e를 배포했다.
+- **TestFlight에서0.1.0(9)로 업데이트한다.** 실제 iPhone 잠금/앱 전환·반복 재시도 및 과거 실패 원인은 아직 미확인이다. 문제가 계속되면 재현 직후 또는 앱 재실행 뒤 위 진단 로그를 복사한다. QA 성공으로 실제 기기 문제 해결이나 PID1 종료/커널 교착·무기한 백그라운드 실행을 보장하지 않는다. 사용자 앱/Runtime Lab/브리지·세션 재시작·Android/웹사이트 배포·외부 베타·정식 App Store 제출은 수행하지 않았다. 아래 미배포/이전 배포 기록은 당시 상태다.
+
 ## iOS 다시 연결 무시·복구 대기 고착 분석 및 진단 수집 (후속 소스, 미배포)
 
 - 사용자 재보고: 앱 복귀 후 여전히 연결되지 않고 Settings의 다시 연결도 동작하지 않음. 원격1b21acc까지 동기화해 TestFlight8의 실제 Mac 컴파일/QA·배포 기록을 확인했다. 현재 guest는4.20.69-linuxkit/ARM64이며 설치된 supervisor.sh가 소스와 일치한다. 저장 메타데이터는 상태별 개수만 확인했고 인증 파일·대화/출력은 조회하지 않았다. **설치본8에는 네이티브 연결 진단 수집이 없어 과거 실제 iPhone의 실패 로그를 확보하지 못했다. 기기 원인을 확정했다고 표시하지 않는다.**
