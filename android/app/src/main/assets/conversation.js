@@ -44,29 +44,44 @@
       this.root = root; this.prompts = prompts; this.t = t; this.respond = respond;
       this.items = new Map(); this.cards = new Map(); this.requests = new Map();
       this.optimisticIds = new Set();
+      this.scrollGeneration = 0;
       this.online = false; this.loading = false;
       this.speech = {enabled:false, readingId:""};
       this.retry = {enabled:false};
       this.latest = document.getElementById("chat-latest");
       this.root.addEventListener("scroll", () => this.scrollState());
-      this.latest.onclick = () => { this.root.scrollTop = this.root.scrollHeight; this.scrollState(); };
+      for (const name of ["wheel", "touchmove"]) this.root.addEventListener(name, () => { this.scrollGeneration++; }, {passive:true});
+      this.latest.onclick = () => this.scrollToLatest(true);
     }
     scrollState() {
       this.latest.hidden = this.root.scrollHeight - this.root.scrollTop - this.root.clientHeight < 80;
     }
+    scrollToLatest(afterLayout = false) {
+      this.root.scrollTop = this.root.scrollHeight;
+      this.scrollState();
+      if (!afterLayout || typeof requestAnimationFrame !== "function") return;
+      const generation = ++this.scrollGeneration;
+      requestAnimationFrame(() => {
+        if (generation !== this.scrollGeneration || this.root.isConnected === false) return;
+        this.root.scrollTop = this.root.scrollHeight;
+        this.scrollState();
+      });
+    }
     clear(keepRequests = false) {
+      this.scrollGeneration++;
       this.items.clear(); this.cards.clear(); this.root.replaceChildren();
       this.optimisticIds.clear();
       this.latest.hidden = true;
       if (!keepRequests) { this.requests.clear(); this.prompts.replaceChildren(); }
     }
     setOptimistic(rows) {
-      const follow = rows.some(row => row.follow) || this.root.scrollHeight - this.root.scrollTop - this.root.clientHeight < 80;
+      const force = rows.some(row => row.follow);
+      const follow = force || this.root.scrollHeight - this.root.scrollTop - this.root.clientHeight < 80;
       const keys = new Set(rows.map(row => "optimistic-" + row.id));
       for (const id of this.optimisticIds) if (!keys.has(id)) { this.cards.get(id)?.remove(); this.cards.delete(id); }
       for (const row of rows) this.renderItem({id:"optimistic-" + row.id,kind:"user",text:row.text,status:row.state,optimistic:true});
       this.optimisticIds = keys;
-      if (follow) this.root.scrollTop = this.root.scrollHeight;
+      if (follow) this.scrollToLatest(force);
       for (const row of rows) row.follow = false;
     }
     reconcileOptimistic(replacements) {

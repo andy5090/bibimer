@@ -44,15 +44,19 @@ class Element {
  replaceChildren(...nodes){for(const node of this.children)node.parent=null;this.children=[];this.append(...nodes);}
  querySelectorAll(selector){return this.children.flatMap(node=>[...(selector.startsWith(".")?node.className.split(" ").includes(selector.slice(1)):node.tag===selector)?[node]:[],...node.querySelectorAll(selector)]);}
  querySelector(selector){return this.querySelectorAll(selector)[0]||null;}
- addEventListener(){}getBoundingClientRect(){return {top:0,bottom:0};}
+ addEventListener(name,handler){this.handlers ||= {};this.handlers[name]=handler;}getBoundingClientRect(){return {top:0,bottom:0};}
 }
 const make=(...args)=>new Element(...args);
 const renderer={window:{BibimerRichText:{make,markdown:text=>make("div",text),copyButton:text=>make("button",text,"copy-button")}},document:{getElementById:()=>make()}};
+const frames=[];renderer.requestAnimationFrame=callback=>frames.push(callback);
 vm.runInNewContext(source,renderer);
 const root=make(),conversation=new renderer.window.BibimerConversation(root,make(),key=>key,()=>{}),preview=new Pending();
 root.scrollHeight=1000;root.clientHeight=100;root.scrollTop=0;
 preview.add("screen","question","<b>Literal input</b>");conversation.setOptimistic(preview.list("screen"));
 assert.equal(root.scrollTop,1000,"An explicit new question scrolls to its immediate bubble");
+root.scrollHeight=1500;frames.shift()();
+assert.equal(root.scrollTop,1500,"The first frame follows the bottom after composer and message layout changes");
+assert.equal(conversation.latest.hidden,true);
 assert.equal(root.children.length,1);
 assert.equal(root.children[0].querySelector(".plain-message").textContent,"<b>Literal input</b>");
 assert.equal(root.children[0].querySelector(".item-status").textContent,"queue_sending");
@@ -61,4 +65,10 @@ conversation.update({items:[native("question","<b>Literal input</b>",2)]});
 conversation.reconcileOptimistic(preview.reconcile("screen",conversation.items.values()));conversation.setOptimistic(preview.list("screen"));
 assert.equal(root.children.length,2,"Native confirmation removes the temporary bubble");
 assert.equal(root.children[0],conversation.cards.get("question"),"The question stays before an answer that arrived first");
+preview.add("screen","next","next question",3);conversation.setOptimistic(preview.list("screen"));
+root.scrollTop=123;root.handlers.wheel();root.scrollHeight=2000;frames.shift()();
+assert.equal(root.scrollTop,123,"Manual scrolling cancels the scheduled bottom adjustment");
+preview.add("screen","another","another question",3);conversation.setOptimistic(preview.list("screen"));
+conversation.clear();root.scrollTop=45;frames.shift()();
+assert.equal(root.scrollTop,45,"Switching sessions cancels the old view's deferred scroll");
 console.log("PASS optimistic messages: history/session isolation, repeated text, batching, uncertain delivery, failures, bounded memory");
