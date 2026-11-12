@@ -1,0 +1,6 @@
+<en-US>
+Fix Claude sign-in browser opening and terminal links. Select and copy terminal output in Bibimer. Review and end the selected agent’s sessions before updating or connecting an account, then reopen saved chats after success. Other agents keep running; overlapping installs wait their turn. Show sent questions immediately and keep new questions visible. Update the Termux bridge to 0.25.1 in Settings.
+</en-US>
+<ko-KR>
+Claude 인증 브라우저 열기와 터미널 링크를 수정하고 출력 선택·복사를 추가했습니다. 업데이트·계정 연결 시 해당 에이전트의 종료 대상을 확인한 뒤 처리하고 성공하면 저장 대화를 다시 엽니다. 다른 에이전트 작업은 유지하며 설치가 겹치면 순서를 기다립니다. 전송한 질문을 즉시 표시하고 새 질문 위치를 유지합니다. 설정에서 Termux 브리지를 0.25.1로 업데이트하세요.
+</ko-KR>
