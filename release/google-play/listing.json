@@ -211,16 +211,16 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.40.1",
-    "versionCode": 69,
+    "versionName": "0.41.0",
+    "versionCode": 70,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "00e7f2251fb1bbf809e0578f23899a31f2644f91b128aa9527e4471a2cead556",
-    "file": "bibimer-0.40.1-69-release.aab",
-    "bytes": 3435401,
+    "sha256": "6438cf150a8aa29d88b6ad034cfa01c5f2452ef57698850db9c35d34a7cbaaf5",
+    "file": "bibimer-0.41.0-70-release.aab",
+    "bytes": 3457568,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
@@ -230,7 +230,7 @@
     "reviewDigestPackaged": true,
     "privateReviewCodeIncluded": false,
     "privatePasswordIncluded": false,
-    "embeddedBridgeVersion": "0.24.1",
+    "embeddedBridgeVersion": "0.25.0",
     "maintenanceSixPayloadsMatch": true,
     "installerIsolatedExtractionVerified": true,
     "notificationSymbolPackaged": true,
@@ -254,11 +254,11 @@
     "settingsSwitchesAndDisabledGroupsPackaged": true,
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
-    "builtOn": "2026-11-11",
-    "sourceCommit": "81556d9e65df8b6a02c7a3a45a144a022059c59d",
-    "releaseName": "0.40.1 (69) - Right aligned answer controls",
-    "releaseNotesFile": "release/google-play/release-notes/0.40.1.txt",
-    "bridgeUpdateRequiredForNewFeatures": false,
+    "builtOn": "2026-11-12",
+    "sourceCommit": "6f66cb67c9d04d20f250f6fd2d0d61bacd4ad3fe",
+    "releaseName": "0.41.0 (70) - Agent accounts and updates",
+    "releaseNotesFile": "release/google-play/release-notes/0.41.0.txt",
+    "bridgeUpdateRequiredForNewFeatures": true,
     "interruptedQuestionEditingPackaged": true,
     "messageCopyIconsPackaged": true,
     "compactCopyButtonsPackaged": true,
@@ -266,7 +266,11 @@
     "sessionHistoryLoadingPackaged": true,
     "disconnectedReconnectActionPackaged": true,
     "rightAlignedAnswerControlsPackaged": true,
-    "controlTextSelectionDisabledPackaged": true
+    "controlTextSelectionDisabledPackaged": true,
+    "agentLoginUIPackaged": true,
+    "agentUpdatesPackaged": true,
+    "startupCoverPackaged": true,
+    "dismissibleNoticesPackaged": true
   },
   "consoleScreenshotsUpdatedOn": "2026-11-11",
   "playAppSigning": {
@@ -517,16 +521,16 @@
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.40.0",
-    "versionCode": 68,
+    "versionName": "0.40.1",
+    "versionCode": 69,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "47ed76a617b3515331f4f3cd815c90511a9165b33cc4afdd62fd4c1b5963c883",
-    "file": "bibimer-0.40.0-68-release.aab",
-    "bytes": 3435238,
+    "sha256": "00e7f2251fb1bbf809e0578f23899a31f2644f91b128aa9527e4471a2cead556",
+    "file": "bibimer-0.40.1-69-release.aab",
+    "bytes": 3435401,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
@@ -560,17 +564,19 @@
     "settingsSwitchesAndDisabledGroupsPackaged": true,
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
-    "builtOn": "2026-11-10",
-    "sourceCommit": "7aa323d3ec6d00c6362900be9fc05338a28e9544",
-    "releaseName": "0.40.0 (68) - Session loading and answer controls",
-    "releaseNotesFile": "release/google-play/release-notes/0.40.0.txt",
+    "builtOn": "2026-11-11",
+    "sourceCommit": "81556d9e65df8b6a02c7a3a45a144a022059c59d",
+    "releaseName": "0.40.1 (69) - Right aligned answer controls",
+    "releaseNotesFile": "release/google-play/release-notes/0.40.1.txt",
     "bridgeUpdateRequiredForNewFeatures": false,
     "interruptedQuestionEditingPackaged": true,
     "messageCopyIconsPackaged": true,
     "compactCopyButtonsPackaged": true,
     "answerFooterControlsPackaged": true,
     "sessionHistoryLoadingPackaged": true,
-    "disconnectedReconnectActionPackaged": true
+    "disconnectedReconnectActionPackaged": true,
+    "rightAlignedAnswerControlsPackaged": true,
+    "controlTextSelectionDisabledPackaged": true
   },
   "previousUpdate": {
     "versionName": "0.38.2",
@@ -642,26 +648,26 @@
     "consoleUploaded": true
   },
   "internalTestRelease": {
-    "versionName": "0.40.1",
-    "versionCode": 69,
-    "releaseName": "0.40.1 (69) - Right aligned answer controls",
+    "versionName": "0.41.0",
+    "versionCode": 70,
+    "releaseName": "0.41.0 (70) - Agent accounts and updates",
     "consoleStatus": "active_available_to_existing_testers",
-    "publishedOn": "2026-11-11",
-    "publishedAtLocal": "2026-11-11 01:15 Asia/Seoul",
+    "publishedOn": "2026-11-12",
+    "publishedAtLocal": "2026-11-12 21:43 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      69
+      70
     ],
     "excludedPreviousVersionCodes": [
-      68
+      69
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 342,
-      "ko-KR": 170
+      "en-US": 377,
+      "ko-KR": 210
     },
     "errors": [],
     "warnings": [
@@ -670,8 +676,8 @@
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed seven Console device-type rows",
     "supportedDevices": {
-      "phone": 11609,
-      "tablet": 6518,
+      "phone": 11607,
+      "tablet": 6517,
       "tv": 5,
       "wear": 0,
       "car": 29,
@@ -681,18 +687,18 @@
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "81556d9e65df8b6a02c7a3a45a144a022059c59d",
-    "releaseNotesFile": "release/google-play/release-notes/0.40.1.txt",
-    "evidence": "dist/play-0.40.1/published.json",
-    "sourceBridgeVersion": "0.24.1",
-    "bridgeUpdateRequiredForNewFeatures": false,
+    "sourceCommit": "6f66cb67c9d04d20f250f6fd2d0d61bacd4ad3fe",
+    "releaseNotesFile": "release/google-play/release-notes/0.41.0.txt",
+    "evidence": "dist/play-0.41.0/published.json",
+    "sourceBridgeVersion": "0.25.0",
+    "bridgeUpdateRequiredForNewFeatures": true,
     "packagedAssetCount": 58,
-    "sourceLanguageKeys": 917,
+    "sourceLanguageKeys": 937,
     "sourceLanguageCount": 10,
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "bundleSha256": "00e7f2251fb1bbf809e0578f23899a31f2644f91b128aa9527e4471a2cead556",
-    "bundleBytes": 3435401,
+    "bundleSha256": "6438cf150a8aa29d88b6ad034cfa01c5f2452ef57698850db9c35d34a7cbaaf5",
+    "bundleBytes": 3457568,
     "existingTestersUnchanged": true,
     "interruptedQuestionEditingPackaged": true,
     "messageCopyIconsPackaged": true,
@@ -700,14 +706,20 @@
     "privacyPolicyChanged": false,
     "websiteDeploymentPerformed": false,
     "compactCopyButtonsPackaged": true,
-    "sourceNodeChecksPassed": 5,
-    "fullSourceSuiteRepeated": true,
-    "sourcePythonChecksPassed": 39,
+    "sourceNodeChecksPassed": 4,
+    "fullSourceSuiteRepeated": false,
+    "sourcePythonChecksPassed": 71,
     "answerFooterControlsPackaged": true,
     "sessionHistoryLoadingPackaged": true,
     "disconnectedReconnectActionPackaged": true,
     "rightAlignedAnswerControlsPackaged": true,
-    "controlTextSelectionDisabledPackaged": true
+    "controlTextSelectionDisabledPackaged": true,
+    "agentLoginUIPackaged": true,
+    "agentUpdatesPackaged": true,
+    "startupCoverPackaged": true,
+    "dismissibleNoticesPackaged": true,
+    "operatingBridgeRestarted": false,
+    "installedAgentsUpdated": false
   },
   "productionReleaseHistory": [
     {
@@ -1020,26 +1032,26 @@
     "manifest": "screenshots/current-20261111/manifest.json"
   },
   "previousInternalTestRelease": {
-    "versionName": "0.40.0",
-    "versionCode": 68,
-    "releaseName": "0.40.0 (68) - Session loading and answer controls",
+    "versionName": "0.40.1",
+    "versionCode": 69,
+    "releaseName": "0.40.1 (69) - Right aligned answer controls",
     "consoleStatus": "active_available_to_existing_testers",
-    "publishedOn": "2026-11-10",
-    "publishedAtLocal": "2026-11-10 19:56 Asia/Seoul",
+    "publishedOn": "2026-11-11",
+    "publishedAtLocal": "2026-11-11 01:15 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      68
+      69
     ],
     "excludedPreviousVersionCodes": [
-      67
+      68
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 393,
-      "ko-KR": 196
+      "en-US": 342,
+      "ko-KR": 170
     },
     "errors": [],
     "warnings": [
@@ -1059,9 +1071,9 @@
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "7aa323d3ec6d00c6362900be9fc05338a28e9544",
-    "releaseNotesFile": "release/google-play/release-notes/0.40.0.txt",
-    "evidence": "dist/play-0.40.0/published.json",
+    "sourceCommit": "81556d9e65df8b6a02c7a3a45a144a022059c59d",
+    "releaseNotesFile": "release/google-play/release-notes/0.40.1.txt",
+    "evidence": "dist/play-0.40.1/published.json",
     "sourceBridgeVersion": "0.24.1",
     "bridgeUpdateRequiredForNewFeatures": false,
     "packagedAssetCount": 58,
@@ -1069,8 +1081,8 @@
     "sourceLanguageCount": 10,
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "bundleSha256": "47ed76a617b3515331f4f3cd815c90511a9165b33cc4afdd62fd4c1b5963c883",
-    "bundleBytes": 3435238,
+    "bundleSha256": "00e7f2251fb1bbf809e0578f23899a31f2644f91b128aa9527e4471a2cead556",
+    "bundleBytes": 3435401,
     "existingTestersUnchanged": true,
     "interruptedQuestionEditingPackaged": true,
     "messageCopyIconsPackaged": true,
@@ -1078,12 +1090,14 @@
     "privacyPolicyChanged": false,
     "websiteDeploymentPerformed": false,
     "compactCopyButtonsPackaged": true,
-    "sourceNodeChecksPassed": 7,
+    "sourceNodeChecksPassed": 5,
     "fullSourceSuiteRepeated": true,
     "sourcePythonChecksPassed": 39,
     "answerFooterControlsPackaged": true,
     "sessionHistoryLoadingPackaged": true,
-    "disconnectedReconnectActionPackaged": true
+    "disconnectedReconnectActionPackaged": true,
+    "rightAlignedAnswerControlsPackaged": true,
+    "controlTextSelectionDisabledPackaged": true
   },
   "consoleScreenshotsVerifiedOn": "2026-11-11",
   "sourceLanguages": [
@@ -1135,6 +1149,74 @@
     "de"
   ],
   "internalTestReleaseHistory": [
+    {
+      "versionName": "0.40.1",
+      "versionCode": 69,
+      "releaseName": "0.40.1 (69) - Right aligned answer controls",
+      "consoleStatus": "active_available_to_existing_testers",
+      "publishedOn": "2026-11-11",
+      "publishedAtLocal": "2026-11-11 01:15 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+      "includedVersionCodes": [
+        69
+      ],
+      "excludedPreviousVersionCodes": [
+        68
+      ],
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "releaseNotesCharacters": {
+        "en-US": 342,
+        "ko-KR": 170
+      },
+      "errors": [],
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed seven Console device-type rows",
+      "supportedDevices": {
+        "phone": 11609,
+        "tablet": 6518,
+        "tv": 5,
+        "wear": 0,
+        "car": 29,
+        "chromebook": 77,
+        "androidXR": 2
+      },
+      "refreshedStatusVerified": true,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "sourceCommit": "81556d9e65df8b6a02c7a3a45a144a022059c59d",
+      "releaseNotesFile": "release/google-play/release-notes/0.40.1.txt",
+      "evidence": "dist/play-0.40.1/published.json",
+      "sourceBridgeVersion": "0.24.1",
+      "bridgeUpdateRequiredForNewFeatures": false,
+      "packagedAssetCount": 58,
+      "sourceLanguageKeys": 917,
+      "sourceLanguageCount": 10,
+      "physicalDeviceVerified": false,
+      "deviceInstallVerified": false,
+      "bundleSha256": "00e7f2251fb1bbf809e0578f23899a31f2644f91b128aa9527e4471a2cead556",
+      "bundleBytes": 3435401,
+      "existingTestersUnchanged": true,
+      "interruptedQuestionEditingPackaged": true,
+      "messageCopyIconsPackaged": true,
+      "dataSafetyProductionFormChanged": false,
+      "privacyPolicyChanged": false,
+      "websiteDeploymentPerformed": false,
+      "compactCopyButtonsPackaged": true,
+      "sourceNodeChecksPassed": 5,
+      "fullSourceSuiteRepeated": true,
+      "sourcePythonChecksPassed": 39,
+      "answerFooterControlsPackaged": true,
+      "sessionHistoryLoadingPackaged": true,
+      "disconnectedReconnectActionPackaged": true,
+      "rightAlignedAnswerControlsPackaged": true,
+      "controlTextSelectionDisabledPackaged": true
+    },
     {
       "versionName": "0.20.0",
       "versionCode": 37,
