@@ -42,7 +42,10 @@
     "Recovering connection…",
     "Stopping Linux services…",
     "Starting Linux services and checking the connection…",
-    "Connection recovery failed"
+    "Connection recovery failed",
+    "This connection feature is unavailable in this iOS app. No separate bridge installation or update is needed.",
+    "Connect to the built-in Linux environment first. Use Reconnect in Settings.",
+    "iOS requires no separate bridge installation or update. Available account and provider controls depend on the features supported by this app."
   ],
   "ko": [
     "마이크를 눌렀을 때 음성을 녹음해 입력 초안에 추가합니다.",
@@ -87,7 +90,10 @@
     "연결 복구 중…",
     "Linux 서비스 종료 중…",
     "Linux 서비스를 다시 시작하고 연결을 확인하는 중…",
-    "연결 복구 실패"
+    "연결 복구 실패",
+    "현재 iOS 앱에서는 이 연결 기능을 사용할 수 없습니다. 별도 브리지 설치나 업데이트는 필요하지 않습니다.",
+    "먼저 내장 Linux에 연결하세요. 설정의 다시 연결을 사용할 수 있습니다.",
+    "iOS에서는 별도 브리지 설치나 업데이트가 필요하지 않습니다. 이 앱에서 지원하는 계정·프로바이더 설정을 확인할 수 있습니다."
   ],
   "pt-BR": [
     "Grava a fala ao tocar no microfone para adicionar texto ao rascunho.",
@@ -132,7 +138,10 @@
     "Recuperando conexão…",
     "Encerrando serviços Linux…",
     "Reiniciando serviços Linux e verificando a conexão…",
-    "Falha na recuperação da conexão"
+    "Falha na recuperação da conexão",
+    "Este recurso de conexão não está disponível neste app iOS. Não é necessário instalar nem atualizar uma ponte separada.",
+    "Conecte primeiro ao Linux integrado. Use Reconectar nos Ajustes.",
+    "No iOS, não é necessário instalar nem atualizar uma ponte separada. Os controles de contas e provedores dependem dos recursos compatíveis com este app."
   ],
   "es": [
     "Graba voz al tocar el micrófono para añadir texto al borrador.",
@@ -177,7 +186,10 @@
     "Recuperando conexión…",
     "Deteniendo servicios Linux…",
     "Reiniciando servicios Linux y comprobando la conexión…",
-    "Error al recuperar la conexión"
+    "Error al recuperar la conexión",
+    "Esta función de conexión no está disponible en esta app iOS. No es necesario instalar ni actualizar un puente por separado.",
+    "Conecta primero al Linux integrado. Usa Reconectar en Ajustes.",
+    "En iOS no es necesario instalar ni actualizar un puente por separado. Los controles de cuentas y proveedores dependen de las funciones compatibles con esta app."
   ],
   "id": [
     "Merekam ucapan saat Anda mengetuk mikrofon untuk menambahkan teks ke draf.",
@@ -222,7 +234,10 @@
     "Memulihkan koneksi…",
     "Menghentikan layanan Linux…",
     "Memulai ulang layanan Linux dan memeriksa koneksi…",
-    "Pemulihan koneksi gagal"
+    "Pemulihan koneksi gagal",
+    "Fitur koneksi ini belum tersedia di aplikasi iOS ini. Tidak perlu memasang atau memperbarui bridge terpisah.",
+    "Hubungkan Linux bawaan terlebih dahulu. Gunakan Hubungkan kembali di Pengaturan.",
+    "Di iOS, tidak perlu memasang atau memperbarui bridge terpisah. Kontrol akun dan penyedia bergantung pada fitur yang didukung aplikasi ini."
   ],
   "zh-Hans": [
     "点按麦克风时录音，将文字添加到草稿。",
@@ -267,7 +282,10 @@
     "正在恢复连接…",
     "正在停止 Linux 服务…",
     "正在重启 Linux 服务并检查连接…",
-    "连接恢复失败"
+    "连接恢复失败",
+    "当前 iOS 应用不支持此连接功能。不需要单独安装或更新桥接服务。",
+    "请先连接内置 Linux。可在设置中使用重新连接。",
+    "iOS 不需要单独安装或更新桥接服务。可用的账户和提供商设置取决于此应用支持的功能。"
   ],
   "ja": [
     "マイクをタップしたときに録音し、下書きにテキストを追加します。",
@@ -312,7 +330,10 @@
     "接続を復旧中…",
     "Linux サービスを停止中…",
     "Linux サービスを再起動して接続を確認中…",
-    "接続の復旧に失敗しました"
+    "接続の復旧に失敗しました",
+    "この iOS アプリではこの接続機能を利用できません。ブリッジの個別インストールや更新は不要です。",
+    "まず内蔵 Linux に接続してください。設定の再接続を利用できます。",
+    "iOS ではブリッジの個別インストールや更新は不要です。このアプリが対応するアカウントとプロバイダー設定を確認できます。"
   ],
   "zh-Hant": [
     "點按麥克風時錄音，將文字加入草稿。",
@@ -357,7 +378,10 @@
     "正在復原連線…",
     "正在停止 Linux 服務…",
     "正在重新啟動 Linux 服務並檢查連線…",
-    "連線復原失敗"
+    "連線復原失敗",
+    "目前 iOS 應用程式不支援此連線功能。不需要單獨安裝或更新橋接服務。",
+    "請先連線至內建 Linux。可在設定中使用重新連線。",
+    "iOS 不需要單獨安裝或更新橋接服務。可用的帳戶和供應商設定取決於此應用程式支援的功能。"
   ],
   "fr": [
     "Enregistre la parole lorsque vous touchez le micro pour ajouter du texte au brouillon.",
@@ -402,7 +426,10 @@
     "Récupération de la connexion…",
     "Arrêt des services Linux…",
     "Redémarrage des services Linux et vérification de la connexion…",
-    "Échec de la récupération de connexion"
+    "Échec de la récupération de connexion",
+    "Cette fonction de connexion est indisponible dans cette app iOS. Aucune installation ni mise à jour séparée du pont n’est nécessaire.",
+    "Connectez d’abord le Linux intégré. Utilisez Reconnecter dans Réglages.",
+    "Sur iOS, aucune installation ni mise à jour séparée du pont n’est nécessaire. Les réglages des comptes et fournisseurs dépendent des fonctions prises en charge par cette app."
   ],
   "de": [
     "Nimmt beim Tippen auf das Mikrofon Sprache auf und fügt Text zum Entwurf hinzu.",
@@ -447,6 +474,9 @@
     "Verbindung wird wiederhergestellt…",
     "Linux-Dienste werden beendet…",
     "Linux-Dienste werden neu gestartet und die Verbindung geprüft…",
-    "Wiederherstellung der Verbindung fehlgeschlagen"
+    "Wiederherstellung der Verbindung fehlgeschlagen",
+    "Diese Verbindungsfunktion ist in dieser iOS-App nicht verfügbar. Eine separate Installation oder Aktualisierung der Bridge ist nicht nötig.",
+    "Verbinde zuerst die integrierte Linux-Umgebung. Nutze Erneut verbinden in den Einstellungen.",
+    "Unter iOS ist keine separate Installation oder Aktualisierung der Bridge nötig. Die verfügbaren Konto- und Anbieter-Einstellungen hängen von den unterstützten Funktionen dieser App ab."
   ]
 }

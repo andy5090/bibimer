@@ -82,14 +82,14 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
   async load(action="status") {
     const s=this.state;if(!this.current(s)||s.busy||!this.available())return;
     if(s.job?.status==="pending")return this.poll();
-    s.busy=true;s.error=null;this.render();
+    s.busy=true;s.loading=action;s.error=null;this.render();
     try{
       const result=await this.request(this.payload({action}));
       if(!this.current(s))return;
       if(action==="version")s.version=result.version||"";
       else{s.report=result;this.providers();if(result.job)s.job=result.job;}
     }catch(e){if(this.current(s))s.error=e.key||"error_agent_connection";}
-    finally{if(this.current(s)){s.busy=false;this.render();}}
+    finally{if(this.current(s)){s.busy=false;s.loading=null;this.render();}}
   }
   providers(){
     const s=this.state,select=this.$("provider"),value=select.value;
@@ -146,8 +146,11 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
   render(){
     const s=this.state;if(!s)return;
     const usable=this.available()&&this.current(s),pending=s.job?.status==="pending",report=s.report,updating=this.updating(s);
-    this.$("status").textContent=!usable?this.t(this.context().online?"connection_update_bridge":"connection_need_bridge"):s.busy&&!report?this.t("connection_loading"):this.t("connection_"+(report?.state||"unknown"));
-    if(usable&&report?.method)this.$("status").textContent+=" · "+report.method;
+    const loading=usable&&!!(s.loading||(s.busy&&!report)||(s.updateBusy&&!report));
+    this.$("status").setAttribute("aria-busy",String(loading));
+    this.$("status").dataset.loading=String(loading);
+    this.$("status").textContent=!usable?this.t(this.context().online?"connection_update_bridge":"connection_need_bridge"):loading?this.t("connection_loading"):this.t("connection_"+(report?.state||"unknown"));
+    if(usable&&!loading&&report?.method)this.$("status").textContent+=" · "+report.method;
     this.$("version").textContent=s.version?this.t("connection_version",{version:s.version}):"";
     this.$("error").textContent=s.error?this.t(s.error):"";this.$("error").hidden=!s.error;
     this.$("provider-field").hidden=s.agent!=="opencode";
@@ -156,7 +159,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.$("private").hidden=m?.type!=="api";
     this.$("login-hint").hidden=m?.type!=="oauth";
     this.$("submit").textContent=this.t(m?.type==="oauth"?"agent_action_login":"connection_connect");
-    for(const id of ["agent","provider","method","key","submit","refresh","version-check"])this.$(id).disabled=s.busy||pending||(updating&&id!=="agent")||(id!=="agent"&&!usable)||(id==="submit"&&!m?.supported);
+    for(const id of ["agent","provider","method","key","submit","refresh","version-check"])this.$(id).disabled=s.busy||pending||(updating&&id!=="agent")||(id!=="agent"&&(!usable||loading))||(id==="submit"&&!m?.supported);
     this.$("key").required=m?.type==="api"&&!this.$("form").hidden;
     this.$("job").hidden=!s.job;
     this.$("job-status").textContent=s.job?this.t("connection_job_"+s.job.status):"";

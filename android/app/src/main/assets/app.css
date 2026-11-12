@@ -685,3 +685,7 @@ input.settings-switch:disabled { opacity:.4; cursor:default; }
 #notice-text{flex:1;min-width:0;max-height:78px;padding:8px 0;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap}
 #notice-dismiss{width:36px;min-height:36px;padding:8px;color:inherit}
 #notice-dismiss svg{width:16px;height:16px}
+
+#agent-connection-status[data-loading="true"]::before{content:"";display:inline-block;vertical-align:-2px;width:12px;height:12px;margin-right:7px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:account-loading-spin 1s linear infinite}
+@keyframes account-loading-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){#agent-connection-status[data-loading="true"]::before{animation:none}}
