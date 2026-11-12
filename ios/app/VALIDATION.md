@@ -1,5 +1,13 @@
 # iOS 앱 검증 기록
 
+## 2026-11-13 — TestFlight 0.1.0(10) 즉시 복구·진행 배너 검증
+
+- 업로드 소스 `2bdc74776e249943f7c9c54bc4bbc08d66e6c576`는39191c5의 즉시 재연결/공통 배너·실제 단계와 공통0.41.0을 포함한다. 최초 브리지 검사는 새 인증 allowlist2곳으로 구조화 변환 계약이6→8이 되어24건 중단됐다. 기존6개 Gemini 구조화 가드만 문맥별로 확장하고 새 인증 제한은 유지하도록 고쳤다. 실제 공통 소스 로딩·Gemini import/인증 거절·미검토 변경 거절 회귀3개를 추가했으며 전체 iOS 브리지59개를 독립 재실행해14.65초에 통과했다.
+- Xcode27.2 양 SDK 컴파일 후 전용 **Bibimer TestFlight QA**의 실제 WKWebView/내장 Linux **32개·32.57초·JS오류0·fatal0·진단실패0**이다. 버튼의 동기적 반응·진행 배너 시작/완료·즉시 복구 가능/진행 probe 공유/자동1회 제한·이전 transport의 대기 쓰기 취소·실제 서비스2회 재시작/파일 보존을 확인했다. 모의 백그라운드 정책20개와 기존 syscall151/152 경고4개를 구분한다. 증빙 `dist/ios-app/recovery-banner-nov13-smoke/`.
+- 앱 Python30개·iOS 브리지59개·공통 로그인14/업데이트7/언어2검사·Node18파일(앱11/공통7)·937키×10언어·Chromium20개 모바일/언어 배치와 터미널 부분 선택/검토 붙여넣기를 통과했다. main/BackgroundExecution/RuntimeSupport Clang 정적분석 진단0, 기존 미사용 매개변수 컴파일 경고16개는 남아 있다. 제품 변경은 Guest run.py 호환 보완이며 웹/네이티브 UI를 추가 수정하지 않았다.
+- archive의 arm64/Scene/SDK/dSYM·기존 팀/번들 App Store 배포 서명과 현재 소스·IPA 자산(웹64·게스트18·네이티브11자산/13소스·현지화20·rootfs426) 일치를 확인했다. BGTask 식별자/processing mode도 유지한다. IPA `dist/ios-testflight/0.1.0-10-export-nov13-recovery-banner/export/Bibimer.ipa`, **8,587,317 bytes**, SHA-256 `ee325122ed7678c947a81ab9bf090674d5e101b12fa4fb5abfbcea2b03d7161e`. 비공개 증빙 `dist/ios-testflight/upload-0.1.0-10-nov13/`.
+- 2초는 복구 전 health 감시이며 전체 서비스 복구 시간 보장이 아니다. 실제 iPhone 잠금·앱 전환/배너 시각·과거 실패 원인과 OS 백그라운드 허가는 별도 확인이다. 재현 후 설정의 진단 로그 복사를 사용한다. 사용자 Runtime Lab·앱/브리지/세션은 재시작하지 않았다. Apple 제공 결과는 [TestFlight 기록](TESTFLIGHT.md)을 따른다.
+
 ## 2026-11-12 — TestFlight 0.1.0(9) 재시도·연결 진단 검증
 
 - 소스 `f1f905e13ee80cdbb4287043c4aff95b74231136`를 Xcode27.2의 기기/Simulator SDK로 컴파일했다. 반복 재시도의 실패 시간/횟수 보존·실제 활성 화면의 stale backgrounded 조정, guest 종료 잠금의 제한된 대기, 연결 진단의 상태 전용64개 기록/수동 native 복사를 포함한다.
