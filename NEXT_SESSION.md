@@ -1,5 +1,14 @@
 # Bibimer 다음 세션 시작점
 
+## iOS 0.1.0(11) TestFlight 내부 배포 완료 (2026-11-13)
+
+- **03:40 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내1222자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(11)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드11개를 직접 확인했다. 기존1–10번·그룹/테스터·자동 배포 설정을 유지했다.
+- 업로드 소스 `653f2c5bca575231a6d20c93bc2ec8658a954f0b`, 빌드 ID `6ce47e98-04c9-4481-beb8-6f8be4472698`. IPA **8,614,141 bytes**, SHA-256 `24226d29ea2a87c20c15697f1ee2019b6d17b85986d2042f769995f765ee7f80`. **03:26:47 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**이며 Apple 처리 후 기존 그룹에 제공했다. 아카이브 `dist/ios-testflight/0.1.0-11-unsigned-nov13-chat-synced/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-11-export-nov13-chat-synced/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-11-nov13/`.
+- 즉시 Chat 질의 버블·전송/대기/실패/불명 구분·배치 뒤 최하단 이동/수동 스크롤 시 예약 취소, Chat 코드/강조/diff/줄 번호/명령·파일명의 글자 크기 상속, 계정 조회 로딩/iOS 내장 Linux 안내를 포함한다. 원격30754a5의 공통0.42.0/브리지0.25.1·터미널 링크/선택 변경도 병합·재검증했다. 실패/불명 입력은 유지하고 자동 재전송하지 않으며 실제 사용자 이벤트와 맞출 때 같은 버블로 합친다.
+- 배포 전 검사에서 이전 HTTP 쓰기 취소 문제도 보완했다. current/retired의 등록 task를 직접 취소한 장벽 뒤에 guest 종료를 시작하며, 시간 초과/재시도 중 미확인 transport를 유지하고 늦은 ack가 새 연결/복구를 건드리지 않게 한다. main.m·smoke.js·test_http_recovery.py 변경과 Foundation 회귀2개를 포함한다. 최초 미전송 fixture 실패 후보는REJECTED_QA, 병합 전chat-final 후보는SUPERSEDED로 제외했고 둘 다 업로드하지 않았다.
+- 양 SDK·archive/dSYM·배포 서명·현재 소스/IPA 자산(웹65·게스트18·네이티브11자산/13소스·현지화20·rootfs426)을 확인했다. 앱 Python32·iOS 브리지59·공통 로그인15/업데이트9/세션 유지보수10·Node23파일·965키×10언어·Chromium20배치·JS6구문·native3소스 정적분석0을 통과했다. 취소 보완본의 실제 WKWebView/Linux32개를28.86/29.96초로2회, **최종 병합본32개·29.04초·JS오류0·fatal0·진단실패0**를 통과했다. 모의 정책20개·각 실행의 기존 syscall 경고4개·미사용 매개변수 컴파일 경고16개는 구분한다. 상세 증빙/실패 경위는 VALIDATION.md를 따른다.
+- **TestFlight에서0.1.0(11)로 업데이트한다.** 실제 iPhone 키보드/스크롤·글자 크기 제스처·실제 계정 로그인·잠금/백그라운드 허가는 별도 확인이다. 네이티브 사용자 이벤트에 client request ID가 없어 본문+revision으로 대응하므로 에이전트가 본문을 변환하면 임시 버블이 남을 수 있다. 기존 복구의 작업 종료·파일/저장 대화 보존·PTY/미저장 대기열 비복원·명령/승인 미재전송 규칙을 유지한다. 이번 Mac 작업에서 사용자 Runtime Lab·앱/브리지/세션 재시작·Android/웹사이트 배포·외부 베타·정식 App Store 제출은 하지 않았다. 아래 준비/미배포 기록은 당시 상태다.
+
 ## iOS TestFlight11 Mac 검증·이전 HTTP 쓰기 취소 보완 (2026-11-13, 배포 준비)
 
 - 7776a99의 즉시 질의 표시/배치 뒤 최하단 이동·코드 글자 크기 상속·계정 연결 로딩/안내를 양 SDK로 컴파일했다. 최초 native QA는31개 뒤 Linux 복구의 이전 쓰기 취소 확인에서 실패했다. 미전송 suspended fixture가 실제 등록 task와 다르게 관리됨을 확인했고, 별도 Foundation 실험에서는 실제 resume된 POST도 graceful finish 뒤 invalidateAndCancel만으로 취소되지 않는 문제를 재현했다.
