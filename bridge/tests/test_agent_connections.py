@@ -103,6 +103,20 @@ class ConnectionTests(BridgeTestCase):
   self.assertEqual('saved',self.wait_job('claude',job,lambda j:j['status']!='pending')['status'])
   self.assertFalse(self.bridge.sessions)
   self.assertNotIn('fictional-code',json.dumps(self.bridge.agent_connections.snapshot(self.bridge.agent_connections.jobs['claude'])))
+ def test_current_claude_subscription_endpoint_is_captured_without_allowing_other_pages(self):
+  fake=self.bin/'claude'
+  lines=['https://claude.com/cai/oauth/authorize?state=fictional-current',
+         'https://claude.com.attacker.example/cai/oauth/authorize?secret=PRIVATE',
+         'https://claude.com/cai/oauth/authorize-untrusted?secret=PRIVATE',
+         'https://claude.com/unrelated?secret=PRIVATE',
+         'https://user:pass@claude.com/cai/oauth/authorize?secret=PRIVATE',
+         'https://claude.com:444/cai/oauth/authorize?secret=PRIVATE']
+  fake.write_text('#!'+sys.executable+'\nimport sys,json\nif sys.argv[1:]==["auth","status"]:print(json.dumps({"loggedIn":True}));sys.exit()\n'+
+   ''.join('print('+repr(line)+',flush=True)\n' for line in lines)+'print("Paste code here if prompted > ",flush=True)\nassert input()=="fictional-code"\n')
+  job=self.start('claude','claudeai');job=self.wait_job('claude',job,lambda j:j.get('code_required'))
+  self.assertEqual(lines[0],job['url']);self.assertNotIn('PRIVATE',json.dumps(job));self.assertFalse(self.bridge.sessions)
+  self.assertEqual(200,self.call('claude','code',id=job['id'],code='fictional-code')[0])
+  self.assertEqual('saved',self.wait_job('claude',job,lambda j:j['status']!='pending')['status'])
  def test_claude_exit_zero_without_native_login_is_failure_and_untrusted_url_is_hidden(self):
   fake=self.bin/'claude'
   fake.write_text('#!'+sys.executable+'\nimport sys,json\nif sys.argv[1:]==["auth","status"]:print(json.dumps({"loggedIn":False}));sys.exit()\nprint("https://claude.ai.attacker.example/oauth/authorize?secret=PRIVATE",flush=True)\n')

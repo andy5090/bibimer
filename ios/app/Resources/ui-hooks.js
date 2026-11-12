@@ -190,7 +190,7 @@
   };
   $("worktree-mode").addEventListener("change",()=>worktreeCreator.render());
   // CLI sign-in URLs stay terminal text; a deliberate tap opens the browser.
-  term.registerLinkProvider({provideLinks(number,callback) {
+  if (!window.BibimerTerminalOutput) term.registerLinkProvider({provideLinks(number,callback) {
     const buffer = term.buffer.active;
     let first = number - 1, last = first;
     if (!buffer.getLine(first)) { callback(undefined); return; }

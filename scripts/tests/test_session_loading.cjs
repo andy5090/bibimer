@@ -45,3 +45,22 @@ function fixture(){
   }
   console.log("PASS session loading: first and empty snapshots, stale session/generation, background and failure boundaries");
 })().catch(error=>{console.error(error);process.exitCode=1;});
+
+// Recovery keeps the logical ID and draft, but its new process owns a fresh stream.
+{
+ const elements=new Map(['input','agent','mode'].map(id=>[id,{value:id==='input'?'unsent draft':''}]));
+ const ctx=vm.createContext({session:{id:'saved',launch_id:'old',agent:'claude',mode:'chat',state:'exited',output_end:100},
+  findSession:()=>null,closeUsageDetails(){},isChat:()=>true,canLibrary:true,selectedAgent:'claude',
+  projectKey:()=> 'project',activeViewKey:'project/saved',rememberView(){throw Error('must preserve the existing draft');},
+  adoptAgent(){},generation:7,native:{cancelPoll(){ctx.cancelled++;}},cancelled:0,clearTimeout(){},retryTimer:1,activePoll:true,
+  cursor:100,resetTerminal(){ctx.resets++;},resets:0,conversation:{clear(){ctx.cleared++;},loading:false},cleared:0,
+  queued:['old queue'],queueRevision:8,queueSignature:'old',knownProjects:[],$:id=>elements.get(id),updateMode(){},renderSession(){}});
+ vm.runInContext(source.match(/  function setSession\(value\) \{[\s\S]*?\n  \}/)[0],ctx);
+ ctx.setSession({id:'saved',launch_id:'new',agent:'claude',mode:'chat',state:'running',output_end:0});
+ assert.equal(ctx.session.launch_id,'new','new process is accepted despite its smaller output cursor');
+ assert.equal(ctx.cursor,0);assert.equal(ctx.generation,8);assert.equal(ctx.cancelled,1);assert.equal(ctx.activePoll,false);
+ assert.equal(ctx.resets,1);assert.equal(ctx.cleared,1);assert.equal(ctx.conversation.loading,true);assert.equal(ctx.queued.length,0);
+ assert.equal(elements.get('input').value,'unsent draft');assert.equal(ctx.activeViewKey,'project/saved');
+ ctx.setSession({...ctx.session,output_end:20});ctx.setSession({...ctx.session,output_end:10});
+ assert.equal(ctx.session.output_end,20,'older snapshots of the same process remain ignored');assert.equal(ctx.resets,1);
+}

@@ -10,27 +10,37 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.$("method").addEventListener("change",()=>{this.clearSecrets();this.render();});
     this.$("refresh").addEventListener("click",()=>void this.load());
     this.$("update-check").addEventListener("click",()=>void this.updates("check"));
-    this.$("update-start").addEventListener("click",()=>void this.updates("start"));
+    this.$("update-start").addEventListener("click",()=>void this.beginOperation("update"));
     this.$("version-check").addEventListener("click",()=>void this.load("version"));
     this.$("form").addEventListener("submit",event=>{event.preventDefault();void this.start();});
-    this.$("browser").addEventListener("click",()=>{const s=this.state;if(this.current(s)&&s.job?.status==="pending"&&s.job.url)this.actions.link(s.job.url);});
+    this.$("browser").addEventListener("click",()=>this.openBrowser(this.state));
     this.$("code-form").addEventListener("submit",event=>{event.preventDefault();void this.sendCode();});
     this.$("cancel").addEventListener("click",()=>void this.cancel());
     this.$("terminal").addEventListener("click",()=>void this.openTerminal());
+    this.o("confirm").addEventListener("click",()=>void this.confirmOperation());
+    this.o("cancel").addEventListener("click",()=>this.operationDialog.close());
+    this.o("reopen").addEventListener("change",()=>{if(this.state?.operation&&!this.operationBusy())this.state.operation.reopen=this.o("reopen").checked;});
+    this.operationDialog.addEventListener("cancel",event=>{if(this.operationBusy())event.preventDefault();});
+    this.operationDialog.addEventListener("close",()=>{if(this.state?.operation&&!this.operationBusy())this.state.operation=null;});
+    this.$("update-recovery-retry").addEventListener("click",()=>void this.updates("retry_restore"));
+    this.$("recovery-retry").addEventListener("click",()=>void this.retryAccountRestore());
   }
   $(id){return document.getElementById("agent-connection-"+id);}
   get dialog(){return this.$("dialog");}
+  o(id){return document.getElementById("agent-operation-"+id);}
+  get operationDialog(){return this.o("dialog");}
+  operationBusy(){return !!this.state?.confirming;}
+  activeLogin(s=this.state){return ["stopping","pending","restoring"].includes(s?.job?.status);}
   current(state){const c=this.context();return !!state&&state===this.state&&c.instance===state.instance&&c.project===state.project&&(c.path||null)===state.path&&!c.demo;}
   available(){const c=this.context();return c.online&&c.supported&&!c.demo&&!c.paused;}
   clearSecrets(){this.$("key").value="";this.$("code").value="";}
-  pause(){clearTimeout(this.timer);clearTimeout(this.updateTimer);this.timer=null;this.updateTimer=null;this.clearSecrets();}
+  pause(){clearTimeout(this.timer);clearTimeout(this.updateTimer);this.timer=null;this.updateTimer=null;if(this.state)this.state.autoBrowserJob=null;this.clearSecrets();if(this.operationDialog.open&&!this.operationBusy())this.operationDialog.close();}
   payload(extra={}){const s=this.state;return {agent:s.agent,...(s.project?{project_id:s.project,...(s.path?{worktree_path:s.path}:{})}:{}),...extra};}
   async open(agent="codex") {
     this.pause();
     const c=this.context(), previous=this.state;
     if(c.demo)return;
     if(!this.current(previous)||previous.agent!==agent){
-      if(this.current(previous)&&previous.job?.status==="pending")void this.request(this.payload({action:"cancel",id:previous.job.id})).catch(()=>{});
       this.state={agent,instance:c.instance,project:c.project,path:c.path||null,report:null,job:null,busy:false,error:null,version:""};
     }
     this.$("agent").value=agent;
@@ -38,30 +48,105 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.render();
     if(this.context().updates)await this.updates("status");
     if(this.updating())return;
-    if(this.state.job?.status==="pending")void this.poll();else await this.load();
+    if(this.activeLogin())void this.poll();else{await this.load();if(this.activeLogin())void this.poll();}
   }
-  updating(s=this.state){return ["installing","verifying"].includes(s?.updateJob?.status);}
+  updating(s=this.state){return ["waiting","stopping","installing","verifying","restoring"].includes(s?.updateJob?.status);}
+  async beginOperation(kind){
+    const s=this.state;if(!this.current(s)||!this.available()||s.busy||s.updateBusy||this.updating(s)||this.activeLogin(s))return;
+    if(!this.context().maintenance){if(kind==="update")return this.updates("start");return this.start(true);}
+    const choice=this.choice();if(kind==="connection"&&!choice?.supported)return;
+    s.busy=true;s.error=null;this.render();
+    try{
+      const result=kind==="update"?await this.actions.updates({agent:s.agent,action:"prepare",plan_id:s.updatePlan?.id}):
+        await this.request(this.payload({action:"prepare",method:choice.id,...(s.agent==="opencode"?{provider:this.$("provider").value}:{})}));
+      if(!this.current(s)||!this.dialog.open||!this.available())return;
+      s.operation={kind,confirmation:result.confirmation,reopen:true,error:null,started:false};
+      if(!result.confirmation?.targets?.length){s.busy=false;return await this.confirmOperation();}
+      this.operationDialog.showModal();this.renderOperation();
+    }catch(e){if(this.current(s)){s.error=e.key||"error_agent_operation_changed";this.render();}}
+    finally{if(this.current(s)){s.busy=false;this.render();}}
+  }
+  async confirmOperation(){
+    const s=this.state,operation=s?.operation;
+    if(!operation||!this.current(s)||!this.available()||s.confirming)return;
+    operation.reopen=this.operationDialog.open?this.o("reopen").checked:true;
+    s.confirming=true;operation.error=null;this.renderOperation();
+    try{
+      if(operation.kind==="update")await this.updates("start");else await this.start(true);
+      if(this.current(s)){
+        const error=operation.kind==="update"?s.updateError:s.error;
+        if(error){operation.error=error;this.renderOperation();}
+        else{operation.started=true;s.confirming=false;if(this.operationDialog.open)this.operationDialog.close();}
+      }
+    }finally{s.confirming=false;if(this.current(s))this.renderOperation();}
+  }
+  renderOperation(){
+    const s=this.state,operation=s?.operation;if(!operation)return;
+    this.o("confirm").disabled=this.operationBusy()||!this.available();this.o("cancel").disabled=this.operationBusy();
+    this.o("reopen").disabled=this.operationBusy();
+    if(!this.operationBusy())this.o("reopen").checked=operation.reopen;
+    this.o("progress").textContent=operation.error?this.t(operation.error):this.operationBusy()?this.t("connection_loading"):"";
+    this.o("targets").replaceChildren(...(operation.confirmation?.targets||[]).map(row=>{
+      const node=document.createElement("li"),title=document.createElement("strong"),detail=document.createElement("small");
+      title.textContent=row.title||row.id.slice(0,8);detail.textContent=[row.project?.name,row.project?.path,this.t("agent_"+row.agent),row.archived?this.t("session_archived"):""].filter(Boolean).join(" · ");
+      node.append(title,detail);return node;
+    }));
+  }
+  renderRecovery(job,prefix){
+    const recovery=job?.recovery,show=!!recovery?.total;
+    this.$(prefix+"status").hidden=!show;
+    this.$(prefix+"status").textContent=show?this.t(!recovery.reopen?"agent_operation_kept_stopped":job.status==="failed"||["failed","cancelled","expired"].includes(job.status)?"agent_operation_failed_stopped":"agent_operation_result",{done:recovery.restored,total:recovery.total}):"";
+    this.$(prefix+"rows").replaceChildren(...(recovery?.rows||[]).filter(row=>["failed","skipped","uncertain"].includes(row.state)).map(row=>{
+      const node=document.createElement("li");node.textContent=(this.actions.title?.(row.id)||row.id.slice(0,8))+" · "+this.t(row.error||"maintenance_recovery_failed");return node;
+    }));
+    this.$(prefix+"retry").hidden=!recovery?.retryable||!["saved","succeeded"].includes(job?.status);
+    this.$(prefix+"retry").disabled=this.updating()||this.activeLogin()||!this.available();
+  }
+  async retryAccountRestore(){
+    const s=this.state;if(!this.current(s)||!this.available()||s.busy||this.activeLogin(s)||!s.job?.recovery?.retryable)return;
+    s.busy=true;try{const result=await this.request(this.payload({action:"retry_restore",id:s.job.id}));if(this.current(s))s.job=result.job;}
+    catch(e){if(this.current(s))s.error=e.key||"error_agent_operation_restore";}
+    finally{if(this.current(s)){s.busy=false;this.render();if(this.activeLogin(s))void this.poll();}}
+  }
+  scheduleUpdates(s=this.state){
+    clearTimeout(this.updateTimer);this.updateTimer=null;
+    if(!this.current(s)||!this.dialog.open||!this.available()||(!this.updating(s)&&!s.updatePlan?.available))return;
+    this.updateTimer=setTimeout(()=>{this.updateTimer=null;void this.updates(this.updating(s)?"poll":"status");},this.updating(s)?1000:2000);
+  }
   async updates(action="status"){
-    const s=this.state;if(!this.current(s)||!this.available()||!this.context().updates||s.updateBusy)return;
+    const s=this.state,status=action==="status";
+    if(!this.current(s)||!this.available()||!this.context().updates||s.updateBusy||(status&&s.updateStatusBusy))return;
     if(action==="check"&&(this.updating(s)||s.busy||s.job?.status==="pending"))return;
-    if(action==="start"&&(!s.updatePlan?.available||s.updatePlan.blocked||this.updating(s)||s.busy||s.job?.status==="pending"))return;
-    s.updateBusy=true;s.updateError=null;this.render();
-    const body={agent:s.agent,action,...(action==="poll"?{id:s.updateJob.id}:{}),
-      ...(action==="start"?{plan_id:s.updatePlan.id,request_id:s.updateRequest ||= this.actions.uuid()}: {})};
+    if(action==="start"&&(!s.updatePlan?.available||(s.updatePlan.blocked&&!s.operation?.confirmation)||this.updating(s)||s.busy||s.job?.status==="pending"))return;
+    const revision=status?(s.updateRevision||0):(s.updateRevision=(s.updateRevision||0)+1);
+    if(status)s.updateStatusBusy=true;
+    else{clearTimeout(this.updateTimer);this.updateTimer=null;s.updateBusy=true;s.updateError=null;s.updateStatusError=null;this.render();}
+    const body={agent:s.agent,action,...(["poll","retry_restore"].includes(action)?{id:s.updateJob.id}:{}),
+      ...(action==="start"?{plan_id:s.updatePlan.id,request_id:s.updateRequest ||= this.actions.uuid(),...(s.operation?.kind==="update"?{confirmation_id:s.operation.confirmation.id,reopen:s.operation.reopen}:{})}: {})};
     try{
       const result=await this.actions.updates(body);
-      if(!this.current(s))return;
-      if(result.plan){s.updatePlan=result.plan;s.updateJob=null;s.updateRequest=null;s.version=result.plan.current_version;}
+      if(!this.current(s)||(status&&revision!==(s.updateRevision||0)))return;
+      s.updateStatusError=null;
+      if(result.plan){
+        if(s.updatePlan?.id!==result.plan.id)s.updateRequest=null;
+        s.updatePlan=result.plan;s.updateJob=null;s.version=result.plan.current_version;
+        if(s.updateError==="error_agent_update_busy")s.updateError=null;
+      }else if(status&&Object.prototype.hasOwnProperty.call(result,"plan")){
+        s.updatePlan=null;
+        if(result.expired){s.updateRequest=null;s.updateError="error_agent_update_expired";}
+      }
       if(result.job)s.updateJob=result.job;
       if(s.updateJob?.status==="succeeded"){s.version=s.updateJob.installed_version;s.updatePlan=null;}
       if(s.updateJob?.status==="failed"){s.updatePlan=null;s.updateRequest=null;}
-    }catch(e){if(this.current(s))s.updateError=e.key||"error_agent_update_failed";}
-    finally{
-      if(this.current(s)){
-        s.updateBusy=false;this.render();
-        if(this.updating(s)&&this.dialog.open&&this.available())this.updateTimer=setTimeout(()=>{this.updateTimer=null;void this.updates("poll");},1000);
-      }
-    }
+    }catch(e){if(this.current(s)&&(!status||revision===(s.updateRevision||0))){
+      if(status)s.updateStatusError=e.key||"error_agent_update_failed";
+      else{s.updateError=e.key||"error_agent_update_failed";
+        if(["error_agent_update_expired","error_agent_update_unavailable"].includes(e.key)){s.updatePlan=null;s.updateRequest=null;}}
+    }}
+    finally{if(this.current(s)){
+      if(status)s.updateStatusBusy=false;else s.updateBusy=false;
+      this.render();this.scheduleUpdates(s);
+    }}
   }
   async openTerminal(){
     const s=this.state;if(!this.current(s)||s.busy||this.updating(s)||this.context().paused||s.job?.status==="pending")return;
@@ -105,20 +190,30 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.render();
   }
   choice(){return this.choices?.find(m=>m.id===this.$("method").value);}
-  async start(){
+  openBrowser(s, automatic=false){
+    if(!this.current(s)||!this.dialog.open||!this.available()||s.job?.status!=="pending"||!s.job.url)return;
+    if(automatic&&(s.autoBrowserJob!==s.job.id||s.browserOpened))return;
+    // Only an explicit new login arms automatic opening. Status/reopen/polling
+    // must not launch browsers for a previously existing authentication job.
+    s.browserOpened=true;
+    try{Promise.resolve(this.actions.link(s.job.url)).catch(()=>{if(this.current(s)){s.error="error_agent_connection";this.render();}});}
+    catch(_){s.error="error_agent_connection";this.render();}
+  }
+  async start(confirmed=false){
+    if(!confirmed&&this.context().maintenance)return this.beginOperation("connection");
     const s=this.state,m=this.choice();if(!this.current(s)||s.busy||this.updating(s)||!this.available()||!m?.supported||s.job?.status==="pending")return;
-    const body=this.payload({action:"start",method:m.id,request_id:this.actions.uuid(),...(s.agent==="opencode"?{provider:this.$("provider").value}:{}),...(m.type==="api"?{key:this.$("key").value}:{})});
+    const body=this.payload({action:"start",method:m.id,request_id:this.actions.uuid(),...(s.agent==="opencode"?{provider:this.$("provider").value}:{}),...(m.type==="api"?{key:this.$("key").value}:{}),...(s.operation?.kind==="connection"?{confirmation_id:s.operation.confirmation.id,reopen:s.operation.reopen}:{})});
     this.clearSecrets();s.busy=true;s.error=null;this.render();
-    try{const result=await this.request(body);if(this.current(s))s.job=result.job;}
+    try{const result=await this.request(body);if(this.current(s)){s.job=result.job;s.autoBrowserJob=["stopping","pending"].includes(s.job?.status)?s.job.id:null;s.browserOpened=false;}}
     catch(e){if(this.current(s))s.error=e.key||"error_agent_connection";}
-    finally{delete body.key;if(this.current(s)){s.busy=false;this.render();if(s.job?.status==="pending")void this.poll();}}
+    finally{delete body.key;if(this.current(s)){s.busy=false;this.render();this.openBrowser(s,true);if(this.activeLogin(s))void this.poll();}}
   }
   async poll(){
-    const s=this.state;if(!this.current(s)||s.busy||s.job?.status!=="pending"||!this.dialog.open||!this.available())return;
+    const s=this.state;if(!this.current(s)||s.busy||!this.activeLogin(s)||!this.dialog.open||!this.available())return;
     clearTimeout(this.timer);s.busy=true;
     try{const result=await this.request(this.payload({action:"poll",id:s.job.id}));if(this.current(s)){s.job=result.job;s.error=null;}}
     catch(e){if(this.current(s))s.error=e.key||"error_agent_connection";}
-    finally{if(this.current(s)){s.busy=false;this.render();if(s.job?.status==="pending"&&this.dialog.open&&this.available())this.timer=setTimeout(()=>void this.poll(),2000);}}
+    finally{if(this.current(s)){s.busy=false;this.render();this.openBrowser(s,true);if(this.activeLogin(s)&&this.dialog.open&&this.available())this.timer=setTimeout(()=>void this.poll(),2000);}}
   }
   async sendCode(){
     const s=this.state;if(!this.current(s)||s.busy||!this.available()||!s.job?.code_required)return;
@@ -137,15 +232,15 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
   }
   update(){
     if(!this.state||!this.dialog.open)return;
-    if(!this.current(this.state)){this.pause();this.dialog.close();return;}
+    if(!this.current(this.state)){this.state.confirming=false;this.pause();this.dialog.close();return;}
     if(!this.available())this.pause();
-    if(this.available()&&this.updating()&&!this.state.updateBusy&&!this.updateTimer)void this.updates("poll");
+    if(this.available()&&(this.updating()||this.state.updatePlan?.available)&&!this.state.updateBusy&&!this.state.updateStatusBusy&&!this.updateTimer)this.scheduleUpdates();
     this.render();
-    if(this.available()&&this.state.job?.status==="pending"&&!this.state.busy&&!this.timer)void this.poll();
+    if(this.available()&&this.activeLogin()&&!this.state.busy&&!this.timer)void this.poll();
   }
   render(){
     const s=this.state;if(!s)return;
-    const usable=this.available()&&this.current(s),pending=s.job?.status==="pending",report=s.report,updating=this.updating(s);
+    const usable=this.available()&&this.current(s),pending=this.activeLogin(s),report=s.report,updating=this.updating(s);
     this.$("status").textContent=!usable?this.t(this.context().online?"connection_update_bridge":"connection_need_bridge"):s.busy&&!report?this.t("connection_loading"):this.t("connection_"+(report?.state||"unknown"));
     if(usable&&report?.method)this.$("status").textContent+=" · "+report.method;
     this.$("version").textContent=s.version?this.t("connection_version",{version:s.version}):"";
@@ -156,7 +251,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.$("private").hidden=m?.type!=="api";
     this.$("login-hint").hidden=m?.type!=="oauth";
     this.$("submit").textContent=this.t(m?.type==="oauth"?"agent_action_login":"connection_connect");
-    for(const id of ["agent","provider","method","key","submit","refresh","version-check"])this.$(id).disabled=s.busy||pending||(updating&&id!=="agent")||(id!=="agent"&&!usable)||(id==="submit"&&!m?.supported);
+    for(const id of ["agent","provider","method","key","submit","refresh","version-check"])this.$(id).disabled=s.confirming||s.busy||pending||(updating&&id!=="agent")||(id!=="agent"&&!usable)||(id==="submit"&&!m?.supported);
     this.$("key").required=m?.type==="api"&&!this.$("form").hidden;
     this.$("job").hidden=!s.job;
     this.$("job-status").textContent=s.job?this.t("connection_job_"+s.job.status):"";
@@ -166,7 +261,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.$("browser").disabled=!usable;
     this.$("code-form").hidden=!pending||!s.job?.code_required||s.job?.code_submitted;
     this.$("code-submit").disabled=s.busy||!usable;
-    this.$("cancel").hidden=!pending;this.$("cancel").disabled=s.busy||!usable;
+    this.$("cancel").hidden=s.job?.status!=="pending";this.$("cancel").disabled=s.busy||!usable;
     this.$("terminal").disabled=s.busy||pending||updating||this.context().demo||this.context().paused||(s.agent!=="gemini"&&(!usable||!this.context().loginTerminal||!s.project));
     this.$("terminal").hidden=s.agent==="gemini";
     this.$("terminal").textContent=this.t("connection_terminal_in_app");
@@ -177,11 +272,16 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     const plan=s.updatePlan,job=s.updateJob;
     this.$("update-target").textContent=plan?.latest_version?this.t("agent_update_target",{current:plan.current_version,latest:plan.latest_version}):"";
     this.$("update-check").disabled=!usable||s.busy||s.updateBusy||pending||updating;
-    this.$("update-start").disabled=!usable||s.busy||s.updateBusy||pending||updating||!plan?.available||plan.blocked;
-    this.$("update-status").textContent=s.updateError?this.t(s.updateError):s.updateBusy&&!updating?this.t("connection_loading"):
+    this.$("update-start").textContent=this.t(this.context().maintenance&&plan?.blocked_reason==="sessions"?"agent_operation_update":"agent_update_start");
+    this.$("update-start").disabled=!usable||s.busy||s.updateBusy||pending||updating||!plan?.available||(plan.blocked&&!(this.context().maintenance&&["sessions","account","update"].includes(plan.blocked_reason)));
+    const reason=pending?"login":s.busy?"account":plan?.blocked_reason;
+    const blockedKey=["sessions","login","account","update","maintenance"].includes(reason)?"agent_update_blocked_"+reason:"agent_update_blocked";
+    this.$("update-status").textContent=s.updateError||s.updateStatusError?this.t(s.updateError||s.updateStatusError):s.updateBusy&&!updating?this.t("connection_loading"):
       updating?this.t("agent_update_"+job.status):job?.status==="failed"?this.t(job.error||"error_agent_update_failed"):
       job?.status==="succeeded"?this.t("agent_update_succeeded",{version:job.installed_version}):plan?
-      this.t(!plan.supported?"agent_update_unsupported":plan.blocked?"agent_update_blocked":!plan.available?"agent_update_current":"agent_update_ready"):"";
+      this.t(!plan.supported?(plan.unsupported_reason==="major"?"agent_update_major":"agent_update_unsupported"):
+        (plan.blocked||pending||s.busy)?(this.context().maintenance&&reason==="sessions"?"agent_operation_update_hint":blockedKey):!plan.available?"agent_update_current":"agent_update_ready",{count:plan.active_session_count||0}):"";
+    this.renderOperation();this.renderRecovery(s.updateJob,"update-recovery-");this.renderRecovery(s.job,"recovery-");
     this.actions.sync();
   }
 };

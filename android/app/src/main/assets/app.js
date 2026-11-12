@@ -36,7 +36,7 @@
   let canConnections = false;
   let canLoginTerminal = false;
   let canLoginUI = false;
-  let canAgentUpdates = false;
+  let canAgentUpdates = false, canAgentMaintenance = false;
   let canBrowser = false, canBrowserConsent = false, canBrowserNotify = false, browserState = null, browserEnabled = true;
   const worktrees = {};
   const worktreeChecks = new Map();
@@ -88,6 +88,10 @@
   term.loadAddon(fit);
   term.open($("terminal"));
   term.textarea.disabled = true;
+  const terminalOutput = window.BibimerTerminalOutput?.create({terminal:term,native,t,
+    selection:!window.BibimerTerminalTools,
+    context:()=>({instance,project:projectKey(),session:session?.id,tab:currentTab,
+      terminal:currentTab === "work" && !!session && !isChat() && session.kind !== "browser" && !paused && !switchingProject})});
   let terminalCtrl = false, terminalAlt = false, terminalShift = false, terminalKeysContext = "";
   let terminalFullscreen = false, terminalFullscreenContext = "";
   const sidebar = new BibimerSidebar(t, {
@@ -123,9 +127,9 @@
   setInterval(() => void browserConsent.refresh(), 2000);
 
   const agentConnections = new BibimerAgentConnections(t,
-    () => ({online:online && !switchingProject, supported:canConnections, loginTerminal:canLoginTerminal, loginUI:canLoginUI, updates:canAgentUpdates, paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
+    () => ({online:online && !switchingProject, supported:canConnections, loginTerminal:canLoginTerminal, loginUI:canLoginUI, updates:canAgentUpdates, maintenance:canAgentMaintenance, paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
     data => api("POST", "/v1/agent-connections", data),
-    {sync:() => pickers.sync(), uuid:uuid, link:url => native.openLink(url),
+    {sync:() => pickers.sync(), uuid:uuid, link:url => native.openLink(url), title:id => {const row=findSession(id);return row?sessionTitle(row):id.slice(0,8);},
      updates:data => api("POST", "/v1/agent-updates", data),
      session:async value => {
        const sourceInstance=instance, sourceProject=projectKey(), sourcePath=fileContext().path;
@@ -947,6 +951,7 @@
     pickers.close();
     sidebar.close();
     currentTab = name;
+    if (typeof terminalOutput !== "undefined") terminalOutput?.update();
     $("app").classList.toggle("auxiliary-page", name !== "work");
     $("sidebar-open").hidden = name !== "work";
     $("inspector-open").hidden = name !== "work";
@@ -1237,6 +1242,7 @@
     $("subscription-updated").textContent = observed > 0 && observed <= 253402300799 ? t("subscription_updated", {time:new Date(observed * 1000).toLocaleString(i18n.language())}) : "";
   }
   function renderSession() {
+    if (typeof terminalOutput !== "undefined") terminalOutput?.update();
     renderConnectionRecovery();
     renderBrowser();
     renderContextUsage();
@@ -1353,7 +1359,8 @@
   function setSession(value) {
     if (value?.id !== session?.id) closeUsageDetails();
     if (value) value = {...findSession(value.id), ...value};
-    if (isChat() && value?.id === session.id && value.output_end < session.output_end) return;
+    const relaunched = !!value && value.id === session?.id && !!value.launch_id && !!session.launch_id && value.launch_id !== session.launch_id;
+    if (isChat() && value?.id === session.id && !relaunched && value.output_end < session.output_end) return;
     if (canLibrary) {
       const agent = value?.agent || selectedAgent;
       const nextKey = projectKey() + "/" + (value?.id || "new/" + agent + "/" + (draftPath || project?.path || ""));
@@ -1367,7 +1374,8 @@
       }
     }
     if (value) adoptAgent(value.agent);
-    if ((session && session.id) !== (value && value.id)) {
+    if ((session && session.id) !== (value && value.id) || relaunched) {
+      if (relaunched) { ++generation; native.cancelPoll?.(); clearTimeout(retryTimer); activePoll = false; }
       cursor = 0;
       resetTerminal();
       conversation.clear();
@@ -1439,6 +1447,7 @@
       canLoginTerminal = health.features?.includes("agent_login_terminal") === true;
       canLoginUI = health.features?.includes("agent_login_ui") === true;
       canAgentUpdates = health.features?.includes("agent_updates") === true;
+      canAgentMaintenance = health.features?.includes("agent_session_maintenance") === true;
       agentConnections.update();
       canBrowser = health.features?.includes("browser_tools_x11") === true;
       canBrowserConsent = health.features?.includes("browser_control_consent") === true;
@@ -2372,7 +2381,7 @@
     $("terminal-functions-toggle").setAttribute("aria-expanded", String(!panel.hidden));
     if (!panel.hidden) $("terminal-keys").scrollIntoView({block: "nearest"});
   });
-  window.BibimerPause = () => { native.stopSpeechOutput?.(); agentConnections.pause(); pickers.close(); paused = true; browserConsent.render(); updateTerminalKeys(); ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
+  window.BibimerPause = () => { native.stopSpeechOutput?.(); agentConnections.pause(); pickers.close(); paused = true; if (typeof terminalOutput !== "undefined") terminalOutput?.update(); browserConsent.render(); updateTerminalKeys(); ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
   $("language").addEventListener("change", () => {
     try {
       if (!native.setLanguage($("language").value)) throw new Error();
@@ -2585,7 +2594,8 @@
     const dialogs = [...document.querySelectorAll("dialog[open]:not(.docked)")];
     if (dialogs.length) {
       if ((dialogs[dialogs.length - 1].id === "handoff-dialog" && handoff?.busy) ||
-          (dialogs[dialogs.length - 1].id === "bridge-maintenance-dialog" && bridgeMaintenance.stopping)) return true;
+          (dialogs[dialogs.length - 1].id === "bridge-maintenance-dialog" && bridgeMaintenance.stopping) ||
+          (dialogs[dialogs.length - 1].id === "agent-operation-dialog" && agentConnections.operationBusy())) return true;
       dialogs[dialogs.length - 1].close(); return true;
     }
     if (document.querySelector(".context-usage[open]")) { closeUsageDetails(); return true; }

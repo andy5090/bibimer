@@ -53,13 +53,42 @@ class UpdateTests(BridgeTestCase):
   self.assertEqual(409,self.api('POST','/v1/agent-connections',dict(agent='codex',action='start',method='chatgpt',request_id=str(uuid.uuid4())))[0])
   with self.assertRaises(module.Problem):self.bridge.begin_shutdown()
   hold.unlink();self.assertEqual('succeeded',self.wait(result['job'])['status']);self.assertEqual('running',self.bridge.get_session(existing).state)
+ def test_status_refresh_unblocks_ended_sessions_without_registry_or_install_work(self):
+  existing=self.launch();self.bridge.get_session(existing).agent='codex'
+  plan=self.check();self.assertTrue(plan['blocked']);self.assertEqual('sessions',plan['blocked_reason']);self.assertEqual(1,plan['active_session_count'])
+  with patch.object(self.up,'metadata',side_effect=AssertionError('status must not query registry')):
+   status,result=self.call('status');self.assertEqual(200,status,result);self.assertEqual(plan['id'],result['plan']['id']);self.assertTrue(result['plan']['blocked'])
+   self.assertEqual('running',self.bridge.get_session(existing).state)
+   self.assertEqual(200,self.api('POST',f'/v1/sessions/{existing}/stop',{})[0])
+   end=time.monotonic()+3
+   while time.monotonic()<end:
+    status,result=self.call('status')
+    if not result['plan']['blocked']:break
+    time.sleep(.02)
+   self.assertFalse(result['plan']['blocked']);self.assertIsNone(result['plan']['blocked_reason']);self.assertEqual(0,result['plan']['active_session_count']);self.assertEqual(plan['id'],result['plan']['id'])
+  self.assertFalse((self.global_root/'count').exists())
+ def test_status_distinguishes_transient_blockers_and_an_expired_or_new_plan(self):
+  plan=self.check()
+  with patch.object(self.bridge.agent_connections,'operation_agent','codex'):
+   result=self.call('status')[1];self.assertEqual('account',result['plan']['blocked_reason'])
+  with patch.dict(self.bridge.agent_connections.jobs,{'codex':{'status':'pending'}}):
+   result=self.call('status')[1];self.assertEqual('login',result['plan']['blocked_reason'])
+  with patch.object(self.up,'current',{'agent':'claude'}):
+   result=self.call('status')[1];self.assertEqual('update',result['plan']['blocked_reason'])
+  with patch.object(self.bridge,'closing',True):
+   result=self.call('status')[1];self.assertEqual('maintenance',result['plan']['blocked_reason'])
+  self.up.jobs['codex']={'id':'old','plan_id':'old-plan','status':'succeeded','installed_version':'0.160.0'}
+  result=self.call('status')[1];self.assertIsNone(result['job']);self.assertEqual(plan['id'],result['plan']['id']);self.assertFalse(result['plan']['blocked'])
+  self.up.plans['codex']['expires']=0
+  result=self.call('status')[1];self.assertTrue(result['expired']);self.assertIsNone(result['plan']);self.assertIsNone(result['job'])
+  self.assertNotIn('codex',self.up.plans);self.assertFalse((self.global_root/'count').exists())
  def test_auth_validation_stale_plan_and_major_migration_are_rejected(self):
   self.assertEqual(401,self.api('POST','/v1/agent-updates',{},auth=False)[0])
   for payload in [{'agent':'shell','action':'check'},{'agent':'codex','action':'arbitrary'}]:self.assertEqual(400,self.api('POST','/v1/agent-updates',payload)[0])
   plan=self.check();self.entry.write_text(self.entry.read_text()+'\n# changed\n')
   self.assertEqual(409,self.call('start',plan_id=plan['id'],request_id=str(uuid.uuid4()))[0])
   with patch.object(self.up,'metadata',return_value={'version':'1.0.0','dist':{}}):
-   plan=self.check();self.assertFalse(plan['supported']);self.assertFalse(plan['available'])
+   plan=self.check();self.assertFalse(plan['supported']);self.assertFalse(plan['available']);self.assertEqual('major',plan['unsupported_reason'])
   self.assertFalse((self.global_root/'count').exists())
  def test_installer_exit_zero_without_target_version_is_failure(self):
   plan=self.check()

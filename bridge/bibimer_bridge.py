@@ -42,13 +42,17 @@ _recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_rec
 maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
 _recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.25.0"
+VERSION = "0.25.1"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
+    "error_agent_operation_busy": "This agent's maintenance is already in progress.",
+    "error_agent_operation_changed": "The reviewed sessions or operation changed. Review again.",
+    "error_agent_operation_stop": "Session exit could not be confirmed. The operation was not started.",
+    "error_agent_operation_restore": "Some sessions could not reopen. Check the recovery results.",
     "error_agent_update_busy": "End this agent's sessions/sign-in or wait for the current update.",
     "error_agent_update_expired": "The update check expired or the installation changed. Check again.",
     "error_agent_update_unavailable": "This installation or version cannot be updated here.",
@@ -836,8 +840,12 @@ class NativeLoginClient:
                         parsed = urllib.parse.urlsplit(url)
                         hosts = {"accounts.google.com"} if self.agent == "gemini" else {
                             "claude.ai", "console.anthropic.com", "platform.claude.com", "auth.anthropic.com"}
-                        if (parsed.hostname in hosts and not parsed.username and not parsed.password and
-                                parsed.port in {None, 443} and parsed.path.startswith(("/oauth", "/o/oauth2", "/authorize")) and
+                        # Current subscription login uses claude.com/cai/oauth;
+                        # accept that exact native endpoint, not arbitrary pages.
+                        allowed = (parsed.hostname in hosts and parsed.path.startswith(("/oauth", "/o/oauth2", "/authorize"))) or (
+                            self.agent == "claude" and parsed.hostname == "claude.com" and parsed.path == "/cai/oauth/authorize")
+                        if (allowed and not parsed.username and not parsed.password and
+                                parsed.port in {None, 443} and
                                 len(url) <= 8192 and "\\" not in url):
                             self.url = url
                     except ValueError: pass
@@ -875,6 +883,148 @@ class NativeLoginClient:
         # The private reader owns stdout while draining the terminated child.
 
 
+class AgentSessionMaintenance:
+    """In-memory, exact-target consent for CLI installs and account changes."""
+    def __init__(self, bridge):
+        self.bridge, self.previews, self.active = bridge, {}, {}
+        self.restore_receipts = set()
+
+    def targets(self, agent):
+        return [row for row in self.bridge.snapshots() if row['state'] in ACTIVE and
+                (row['agent'] == agent or row.get('authentication_agent') == agent)]
+
+    @staticmethod
+    def identity(row):
+        return row['id'], row.get('launch_id'), row['agent'], row.get('mode'), row.get('kind'), row['project']['id'], row['project']['path'], row.get('authentication_agent')
+
+    def preview(self, agent, kind, scope):
+        with self.bridge.lock:
+            if self.bridge.closing or agent in self.active: raise Problem(409, 'error_agent_operation_busy')
+            rows = self.targets(agent)
+            if len(rows) > maintenance_recovery.LIMIT: raise Problem(409, 'error_agent_operation_changed')
+            key = str(uuid.uuid4())
+            record = {'id': key, 'instance': self.bridge.instance, 'agent': agent, 'kind': kind,
+                      'scope': scope, 'expires': time.monotonic() + 120,
+                      'targets': [self.identity(row) for row in rows], 'rows': []}
+            self.previews[(agent, kind)] = record
+            return {'id': key, 'instance': record['instance'], 'agent': agent, 'kind': kind,
+                    'targets': [{name: row[name] for name in ('id', 'agent', 'mode', 'project', 'title', 'archived', 'queued_count') if name in row}
+                                for row in rows]}
+
+    def reserve(self, agent, kind, scope, key, reopen, job_id):
+        if type(reopen) is not bool: raise Problem(400, 'error_invalid_json')
+        with self.bridge.lock:
+            if self.bridge.closing or agent in self.active: raise Problem(409, 'error_agent_operation_busy')
+            if key is None:
+                if self.targets(agent): raise Problem(409, 'error_agent_operation_changed')
+                self.preview(agent, kind, scope)
+                record = self.previews[(agent, kind)]
+            else:
+                record = self.previews.get((agent, kind))
+                if (not record or key != record['id'] or record['scope'] != scope or
+                        record['instance'] != self.bridge.instance or time.monotonic() > record['expires']):
+                    raise Problem(409, 'error_agent_operation_changed')
+            if set(record['targets']) != {self.identity(row) for row in self.targets(agent)}:
+                raise Problem(409, 'error_agent_operation_changed')
+            self.previews.pop((agent, kind), None)
+            record.update(job_id=job_id, reopen=reopen, phase='waiting')
+            self.active[agent] = record
+            return record
+
+    def valid(self, record):
+        if self.bridge.closing or self.active.get(record['agent']) is not record or record['instance'] != self.bridge.instance:
+            raise Problem(409, 'error_agent_operation_changed')
+
+    def stop(self, record):
+        with self.bridge.lock:
+            self.valid(record)
+            if set(record['targets']) != {self.identity(row) for row in self.targets(record['agent'])}:
+                raise Problem(409, 'error_agent_operation_changed')
+            record['phase'] = 'stopping'
+            targets = []
+            for identity in record['targets']:
+                session = self.bridge.sessions.get(identity[0])
+                if not session or self.identity(session.snapshot()) != identity:
+                    raise Problem(409, 'error_agent_operation_changed')
+                targets.append(session)
+        for session in targets:
+            with self.bridge.lock:
+                self.valid(record)
+                if self.bridge.sessions.get(session.id) is not session: raise Problem(409, 'error_agent_operation_changed')
+                try: session.stop()
+                except Exception: raise Problem(409, 'error_agent_operation_stop') from None
+        deadline = time.monotonic() + 20
+        while True:
+            with self.bridge.lock:
+                self.valid(record)
+                snapshots = {row['id']: row for row in self.bridge.snapshots()}
+                for identity in record['targets']:
+                    row = snapshots.get(identity[0])
+                    if not row or self.identity(row) != identity: raise Problem(409, 'error_agent_operation_changed')
+                if any(self.identity(row) not in record['targets'] for row in self.targets(record['agent'])):
+                    raise Problem(409, 'error_agent_operation_changed')
+                stopped = all(session.state == 'exited' and session.process.poll() is not None for session in targets)
+                if stopped:
+                    record['rows'] = []
+                    for identity in record['targets']:
+                        source = {name: snapshots[identity[0]][name] for name in maintenance_recovery.FIELDS if name in snapshots[identity[0]]}
+                        row = {'id': source['id'], 'launch_id': str(uuid.uuid5(uuid.UUID(record['job_id']), source['id'])),
+                               'source': source, 'state': 'pending', 'error': None}
+                        if source.get('mode') == 'chat' and (not source.get('history_persisted') or not source.get('external_thread_id')):
+                            row.update(state='skipped', error='maintenance_recovery_no_history')
+                        record['rows'].append(row)
+                    record['phase'] = 'ready'
+                    return
+            if time.monotonic() >= deadline: raise Problem(409, 'error_agent_operation_stop')
+            time.sleep(.05)
+
+    def release(self, record):
+        with self.bridge.lock:
+            if self.active.get(record['agent']) is record: self.active.pop(record['agent'], None)
+
+    def busy(self, agent=None):
+        return bool(self.active) if agent is None else agent in self.active
+
+    def allows_restore(self, receipt):
+        return receipt is not None and receipt in self.restore_receipts
+
+    @staticmethod
+    def summary(record):
+        rows = record['rows']
+        return {'total': len(record['targets']), 'reopen': record['reopen'],
+                **{state: sum(row['state'] == state for row in rows) for state in ('restored', 'failed', 'skipped', 'uncertain')},
+                'rows': [{'id': row['id'], 'state': row['state'], 'error': row['error']} for row in rows],
+                'retryable': any(row['state'] == 'failed' for row in rows)}
+
+    def restore(self, record):
+        owner = self
+        class Restore:
+            bridge = owner.bridge
+            _open = maintenance_recovery.Recovery._open
+            _failed = maintenance_recovery.Recovery._failed
+            def _set(self, row, state, error=None):
+                with self.bridge.lock: row.update(state=state, error=error)
+        restorer = Restore()
+        with self.bridge.lock:
+            self.valid(record)
+            record['phase'] = 'restoring'
+        if not record['reopen']: return
+        for row in record['rows']:
+            if row['state'] not in ('pending', 'failed'): continue
+            receipt = (row['id'], row['source'].get('launch_id'))
+            with self.bridge.lock:
+                self.valid(record)
+                row.update(state='launching', error=None)
+                self.restore_receipts.add(receipt)
+            try:
+                restorer._open(row)
+                restorer._set(row, 'restored')
+            except Exception:
+                restorer._failed(row)
+            finally:
+                with self.bridge.lock: self.restore_receipts.discard(receipt)
+
+
 class AgentUpdates:
     """Explicit, pinned-version CLI updates; no arbitrary package/command input."""
     packages = {"codex": {"@openai/codex", "@mmmbuto/codex-cli-termux"},
@@ -883,9 +1033,13 @@ class AgentUpdates:
     def __init__(self, bridge):
         self.bridge, self.plans, self.jobs = bridge, {}, {}
         self.current, self.process, self.closed = None, None, False
+        self.records = {}
+        self.install_lock = threading.Lock()
 
     def busy(self, agent=None):
-        return bool(self.current and (agent is None or self.current["agent"] == agent))
+        return bool(self.current and (agent is None or self.current["agent"] == agent)) or any(
+            job["status"] in {"waiting", "stopping", "installing", "verifying", "restoring"} and (agent is None or job["agent"] == agent)
+            for job in self.jobs.values())
 
     @staticmethod
     def version(value):
@@ -964,29 +1118,54 @@ class AgentUpdates:
         return report
 
     def blocked(self, agent):
-        return self.bridge.agent_connections.operation_agent == agent or any(row["state"] in ACTIVE and (row["agent"] == agent or row.get("authentication_agent") == agent)
-                   for row in self.bridge.snapshots()) or self.bridge.agent_connections.jobs.get(agent, {}).get("status") == "pending"
+        return self.blocker(agent)[0] is not None
+
+    def blocker(self, agent):
+        if self.bridge.closing: return "maintenance", 0
+        if self.busy(): return "update", 0
+        count = sum(row["state"] in ACTIVE and (row["agent"] == agent or row.get("authentication_agent") == agent)
+                    for row in self.bridge.snapshots())
+        if count: return "sessions", count
+        if self.bridge.agent_connections.jobs.get(agent, {}).get("status") == "pending": return "login", 0
+        if self.bridge.agent_connections.operation_active(agent): return "account", 0
+        return None, 0
 
     def public_plan(self, plan):
+        reason, count = self.blocker(plan["agent"])
         return {"id": plan["id"], "agent": plan["agent"], "current_version": plan["current"],
                 "latest_version": plan.get("latest"), "supported": plan["kind"] != "unsupported",
-                "available": plan.get("available", False), "blocked": self.blocked(plan["agent"]),
+                "available": plan.get("available", False), "blocked": reason is not None,
+                "blocked_reason": reason, "active_session_count": count,
+                "unsupported_reason": plan.get("unsupported_reason"),
                 "method": plan["kind"]}
 
     def handle(self, data):
         agent, action = data.get("agent"), data.get("action")
-        if agent not in self.packages or action not in {"check", "start", "poll", "status"}:
+        if agent not in self.packages or action not in {"check", "prepare", "start", "poll", "status", "retry_restore"}:
             raise Problem(400, "error_invalid_json")
         try:
+            if action == "retry_restore":
+                return self.retry_restore(agent, data)
             if action in {"status", "poll"}:
                 with self.bridge.lock:
                     job = self.jobs.get(agent)
                     if action == "poll" and (not job or data.get("id") != job["id"]):
                         raise Problem(409, "error_agent_update_expired")
-                    return {"job": dict(job) if job else None}
+                    if action == "status":
+                        plan = self.plans.get(agent)
+                        expired = bool(plan and not self.busy(agent) and time.monotonic() > plan["expires"])
+                        if expired:
+                            self.plans.pop(agent, None)
+                            plan = None
+                        if plan and not self.busy(agent):
+                            # A fresh check supersedes a previous completed job.
+                            # Refresh blockers without CLI/registry/install work.
+                            return {"job": None, "plan": self.public_plan(plan), "expired": False}
+                        return {"job": self.snapshot(job) if job and not expired else None, "plan": None, "expired": expired}
+                    return {"job": self.snapshot(job) if job else None}
             with self.bridge.lock:
                 if self.closed or self.bridge.closing: raise Problem(409, "error_bridge_stopping")
-                if action == "check" and self.busy(): raise Problem(409, "error_agent_update_busy")
+                if action == "check" and self.busy(agent): raise Problem(409, "error_agent_update_busy")
             if action == "check":
                 plan = self.installation(agent)
                 plan.update(id=str(uuid.uuid4()), expires=time.monotonic() + 600)
@@ -999,30 +1178,47 @@ class AgentUpdates:
                         suffix = v.partition("-")[2]
                         return major(v), not bool(suffix), tuple((0, int(part)) if part.isdigit() else (1, part) for part in suffix.split("."))
                     # Never silently migrate to another major release or downgrade.
-                    if major(plan["latest"])[0] != major(old)[0]: plan["kind"] = "unsupported"
+                    if major(plan["latest"])[0] != major(old)[0]:
+                        plan["kind"] = "unsupported"
+                        plan["unsupported_reason"] = "major"
                     plan["available"] = plan["kind"] != "unsupported" and order(plan["latest"]) > order(old)
                 with self.bridge.lock:
                     self.plans[agent] = plan
                     return {"plan": self.public_plan(plan)}
+            if action == "prepare":
+                with self.bridge.lock:
+                    plan = self.plans.get(agent)
+                    self.validate_plan(plan, data.get("plan_id"))
+                    if self.busy(agent): raise Problem(409, "error_agent_operation_busy")
+                    confirmation = self.bridge.agent_sessions.preview(agent, "update", plan["id"])
+                    return {"confirmation": confirmation}
             key = request_id(data.get("request_id"))
             with self.bridge.lock:
                 previous = self.jobs.get(agent)
                 if previous and previous["id"] == key:
-                    if previous["plan_id"] != data.get("plan_id"): raise Problem(409, "error_launch_conflict")
-                    return {"job": dict(previous)}
+                    record = self.records.get(key)
+                    if (previous["plan_id"] != data.get("plan_id") or (record and
+                            (record["reopen"] != data.get("reopen", False) or
+                             (data.get("confirmation_id") is not None and record["id"] != data["confirmation_id"])) )):
+                        raise Problem(409, "error_launch_conflict")
+                    return {"job": self.snapshot(previous)}
                 plan = self.plans.get(agent)
-                if not plan or plan["id"] != data.get("plan_id") or time.monotonic() > plan["expires"]:
-                    raise Problem(409, "error_agent_update_expired")
-                if self.busy() or self.blocked(agent): raise Problem(409, "error_agent_update_busy")
-                if not plan.get("available"): raise Problem(400, "error_agent_update_unavailable")
-                if (self.fingerprint(plan["executable"]) != plan["fingerprint"] or
-                        (plan.get("guard_path") and self.fingerprint(plan["guard_path"]) != plan["guard_fingerprint"])):
-                    raise Problem(409, "error_agent_update_expired")
-                job = {"id": key, "plan_id": plan["id"], "agent": agent, "status": "installing",
+                self.validate_plan(plan, data.get("plan_id"))
+                if self.busy(agent): raise Problem(409, "error_agent_update_busy")
+                if self.bridge.agent_connections.jobs.get(agent, {}).get("status") in {"stopping", "pending", "restoring"}:
+                    raise Problem(409, "error_connection_busy")
+                # Existing clients cannot silently terminate a live session.
+                if self.bridge.agent_sessions.targets(agent) and not data.get("confirmation_id"):
+                    raise Problem(409, "error_agent_update_busy")
+                record = self.bridge.agent_sessions.reserve(agent, "update", plan["id"],
+                    data.get("confirmation_id"), data.get("reopen", False), key)
+                job = {"id": key, "plan_id": plan["id"], "agent": agent, "status": "waiting",
                        "from_version": plan["current"], "target_version": plan["latest"]}
-                self.jobs[agent] = self.current = job
+                if previous: self.records.pop(previous["id"], None)
+                self.jobs[agent] = job
+                self.records[key] = record
                 threading.Thread(target=self.worker, args=(plan, job), daemon=True).start()
-                return {"job": dict(job)}
+                return {"job": self.snapshot(job)}
         except Problem: raise
         except Exception: raise Problem(400, "error_agent_update_failed") from None
 
@@ -1102,27 +1298,85 @@ class AgentUpdates:
             finally:
                 with contextlib.suppress(FileNotFoundError): os.unlink(name)
 
-    def worker(self, plan, job):
+    def validate_plan(self, plan, key):
+        if not plan or plan["id"] != key or time.monotonic() > plan["expires"]:
+            raise Problem(409, "error_agent_update_expired")
+        if not plan.get("available"): raise Problem(400, "error_agent_update_unavailable")
+        if (self.fingerprint(plan["executable"]) != plan["fingerprint"] or
+                (plan.get("guard_path") and self.fingerprint(plan["guard_path"]) != plan["guard_fingerprint"])):
+            raise Problem(409, "error_agent_update_expired")
+
+    def snapshot(self, job):
+        result = dict(job)
+        record = self.records.get(job["id"])
+        if record: result["recovery"] = self.bridge.agent_sessions.summary(record)
+        return result
+
+    def retry_restore(self, agent, data):
+        with self.bridge.lock:
+            job = self.jobs.get(agent)
+            if not job or job["id"] != data.get("id") or not job.get("installed_version"):
+                raise Problem(409, "error_agent_operation_changed")
+            record = self.records.get(job["id"])
+            if not record or not self.bridge.agent_sessions.summary(record)["retryable"]:
+                raise Problem(409, "error_agent_operation_changed")
+            if self.busy(agent) or self.bridge.agent_sessions.busy(agent): raise Problem(409, "error_agent_operation_busy")
+            self.bridge.agent_sessions.active[agent] = record
+            job.pop("recovery_error", None)
+            job["status"] = "restoring"
+            threading.Thread(target=self.restore, args=(job, record), daemon=True).start()
+            return {"job": self.snapshot(job)}
+
+    def restore(self, job, record):
         try:
-            if plan["kind"] == "npm":
-                self.run([*self.npm(), "install", "--global", plan["package"] + "@" + plan["latest"],
-                          "--registry=https://registry.npmjs.org", "--no-audit", "--no-fund"])
-            else: self.native_install(plan)
-            with self.bridge.lock:
-                job["status"] = "verifying"
-                self.bridge.program_checks.clear(); self.bridge.model_cache.clear(); self.bridge.command_cache.clear()
-            installed = self.probe(self.bridge.agent_executable(plan["agent"]), plan["agent"])
-            if installed.split("-")[0] != plan["latest"].split("-")[0]: raise ValueError()
-            if plan["kind"] == "npm":
-                if json.loads(Path(plan["manifest"]).read_text()).get("version") != plan["latest"]: raise ValueError()
-            with self.bridge.lock: job.update(status="succeeded", installed_version=installed)
+            self.bridge.agent_sessions.restore(record)
+            with self.bridge.lock: job["status"] = "succeeded"
         except Exception:
-            with self.bridge.lock: job.update(status="failed", error="error_agent_update_failed")
+            with self.bridge.lock: job.update(status="succeeded", recovery_error="error_agent_operation_restore")
+        finally:
+            self.bridge.agent_sessions.release(record)
+
+    def worker(self, plan, job):
+        record = self.records[job["id"]]
+        try:
+            # Serialize shared package-manager writes. Other agents' sessions
+            # continue; a queued operation does not stop its targets early.
+            with self.install_lock:
+                with self.bridge.lock:
+                    if self.closed: raise Problem(409, "error_bridge_stopping")
+                    self.validate_plan(plan, plan["id"])
+                    self.current = job
+                    job["status"] = "stopping"
+                deadline = time.monotonic() + 12
+                while self.bridge.agent_connections.operation_active(plan["agent"]):
+                    if time.monotonic() >= deadline: raise Problem(409, "error_agent_operation_busy")
+                    time.sleep(.05)
+                self.bridge.agent_sessions.stop(record)
+                with self.bridge.lock: job["status"] = "installing"
+                if plan["kind"] == "npm":
+                    self.run([*self.npm(), "install", "--global", plan["package"] + "@" + plan["latest"],
+                              "--registry=https://registry.npmjs.org", "--no-audit", "--no-fund"])
+                else: self.native_install(plan)
+                with self.bridge.lock:
+                    job["status"] = "verifying"
+                    self.bridge.program_checks.clear(); self.bridge.model_cache.clear(); self.bridge.command_cache.clear()
+                installed = self.probe(self.bridge.agent_executable(plan["agent"]), plan["agent"])
+                if installed.split("-")[0] != plan["latest"].split("-")[0]: raise ValueError()
+                if plan["kind"] == "npm" and json.loads(Path(plan["manifest"]).read_text()).get("version") != plan["latest"]:
+                    raise ValueError()
+                with self.bridge.lock:
+                    job.update(installed_version=installed, status="restoring")
+                    self.current = None
+            self.restore(job, record)
+        except Exception as error:
+            with self.bridge.lock:
+                job.update(status="failed", error=error.code if isinstance(error, Problem) and error.code.startswith("error_agent_operation") else "error_agent_update_failed")
+            self.bridge.agent_sessions.release(record)
         finally:
             with self.bridge.lock:
                 self.bridge.program_checks.clear(); self.bridge.model_cache.clear(); self.bridge.command_cache.clear()
-                self.current = None
-                self.plans.pop(plan["agent"], None)
+                if self.current is job: self.current = None
+                if self.plans.get(plan["agent"]) is plan: self.plans.pop(plan["agent"], None)
 
     def close(self):
         self.closed = True
@@ -1141,6 +1395,9 @@ class AgentConnections:
         self.lock = threading.RLock()
         self.jobs = {}
         self.operation_agent = None
+        self.operation_agents = set()
+        self.agent_locks = {agent: threading.RLock() for agent in ("codex", "claude", "opencode", "gemini")}
+        self.records = {}
         self.closed = False
 
     @staticmethod
@@ -1203,8 +1460,61 @@ class AgentConnections:
             self.bridge.model_cache.clear()
 
     def snapshot(self, job):
-        return {key: value for key, value in job.items() if key in {
-            "id", "agent", "provider", "status", "url", "instructions", "code_required", "code_submitted", "expires_at"}}
+        result = {key: value for key, value in job.items() if key in {
+            "id", "agent", "provider", "status", "url", "instructions", "code_required", "code_submitted", "expires_at", "recovery", "error"}}
+        record = self.records.get(job["id"])
+        if record: result["recovery"] = self.bridge.agent_sessions.summary(record)
+        return result
+
+    def operation_active(self, agent):
+        return self.operation_agent == agent or agent in self.operation_agents
+
+    def scope(self, data, cwd):
+        return cwd, data.get("provider"), data.get("method")
+
+    def validate_start(self, agent, data, executable, cwd, require_secret=False):
+        method = data.get("method")
+        if agent == "codex":
+            if method not in {"apiKey", "chatgpt"}: raise Problem(400, "error_connection_unsupported")
+            api = method == "apiKey"
+        elif agent in {"claude", "gemini"}:
+            if method not in ({"claudeai", "console"} if agent == "claude" else {"google"}):
+                raise Problem(400, "error_connection_unsupported")
+            if agent == "gemini" and not NativeLoginClient.gemini_supported(executable): raise Problem(400, "error_connection_unsupported")
+            api = False
+        else:
+            client = self.client(executable, cwd)
+            try:
+                provider = next((row for row in self.catalog(client) if row["id"] == data.get("provider")), None)
+                choice = next((row for row in (provider or {}).get("methods", []) if row["id"] == method), None)
+                if not choice or not choice["supported"]: raise Problem(400, "error_connection_unsupported")
+                api = choice["type"] == "api"
+            finally: client.close()
+        if require_secret and api and not self.text(data.get("key", ""), 8192): raise Problem(400, "error_invalid_json")
+
+    def restore(self, job, record):
+        try:
+            self.bridge.agent_sessions.restore(record)
+        except Exception:
+            job["error"] = "error_agent_operation_restore"
+        finally:
+            with self.agent_locks[job["agent"]]: job["status"] = "saved"
+            self.bridge.agent_sessions.release(record)
+
+    def start_after_stop(self, job, record, data, secret, executable, cwd):
+        try:
+            self.bridge.agent_sessions.stop(record)
+            with self.agent_locks[job["agent"]]:
+                if self.jobs.get(job["agent"]) is not job or self.closed: raise ValueError()
+                job["status"] = "pending"
+                self.start_native(job, data, secret, executable, cwd)
+        except Exception as error:
+            with self.agent_locks[job["agent"]]:
+                job["error"] = error.code if isinstance(error, Problem) and error.code.startswith("error_agent_operation") else "error_agent_connection"
+                self.finish(job, "failed")
+        finally:
+            secret = None
+            data.pop("key", None)
 
     def finish(self, job, status):
         job["status"] = status
@@ -1218,13 +1528,21 @@ class AgentConnections:
                     with contextlib.suppress(Exception): client.call("account/login/cancel", {"loginId": job["login_id"]})
                 client.__exit__(None, None, None)
             else: client.close()
-        if status == "saved": self.invalidate()
+        record = self.records.get(job["id"])
+        if status == "saved":
+            self.invalidate()
+            if record and record["reopen"] and record["rows"]:
+                job["status"] = "restoring"
+                threading.Thread(target=self.restore, args=(job, record), daemon=True).start()
+                return
+        if record: self.bridge.agent_sessions.release(record)
 
     def expire(self, agent, job):
-        with self.lock:
+        with self.agent_locks[agent]:
             if self.jobs.get(agent) is job:
                 self.finish(job, "expired")
                 self.jobs.pop(agent, None)
+                self.records.pop(job["id"], None)
 
     def callback(self, job, code=None):
         try:
@@ -1236,22 +1554,24 @@ class AgentConnections:
             success = False
         finally:
             code = None
-        with self.lock:
+        with self.agent_locks[job["agent"]]:
             if self.jobs.get(job["agent"]) is job and job["status"] == "pending":
                 self.finish(job, "saved" if success else "failed")
 
     def handle(self, data):
+        agent = data.get("agent")
+        lock = self.agent_locks.get(agent, self.lock)
         try:
-            if not self.lock.acquire(False): raise Problem(409, "error_connection_busy")
+            if not lock.acquire(timeout=12): raise Problem(409, "error_connection_busy")
             try:
                 with self.bridge.lock:
                     if self.bridge.agent_updates.busy(data.get("agent")):
                         raise Problem(409, "error_agent_update_busy")
-                    self.operation_agent = data.get("agent")
+                    self.operation_agents.add(agent)
                 return self._handle(data)
             finally:
-                with self.bridge.lock: self.operation_agent = None
-                self.lock.release()
+                with self.bridge.lock: self.operation_agents.discard(agent)
+                lock.release()
         except Problem as error:
             if error.code.startswith("error_history"):
                 raise Problem(400, "error_connection_unsupported" if error.code == "error_history_unsupported" else "error_agent_connection") from None
@@ -1262,7 +1582,7 @@ class AgentConnections:
 
     def _handle(self, data):
         agent, action = data.get("agent"), data.get("action")
-        if agent not in {"codex", "claude", "opencode", "gemini"} or action not in {"status", "version", "start", "poll", "code", "cancel", "terminal"}:
+        if agent not in {"codex", "claude", "opencode", "gemini"} or action not in {"status", "version", "prepare", "start", "poll", "code", "cancel", "terminal", "retry_restore"}:
             raise Problem(400, "error_invalid_json")
         if self.closed or self.bridge.closing: raise Problem(409, "error_bridge_stopping")
         if self.bridge.agent_updates.busy(agent): raise Problem(409, "error_agent_update_busy")
@@ -1271,6 +1591,23 @@ class AgentConnections:
         cwd = str(Path.home())
         if data.get("project_id"):
             cwd = self.bridge.working_project(data)["path"]
+        if action == "retry_restore":
+            job = self.jobs.get(agent)
+            record = self.records.get(data.get("id"))
+            if not job or not record or job["id"] != data.get("id") or job["status"] != "saved": raise Problem(409, "error_agent_operation_changed")
+            with self.bridge.lock:
+                if self.bridge.agent_sessions.busy(agent) or not self.bridge.agent_sessions.summary(record)["retryable"]: raise Problem(409, "error_agent_operation_busy")
+                self.bridge.agent_sessions.active[agent] = record
+                job.pop("error", None)
+                job["status"] = "restoring"
+                threading.Thread(target=self.restore, args=(job, record), daemon=True).start()
+            return {"job": self.snapshot(job)}
+        if action == "prepare":
+            executable = self.bridge.agent_executable(agent)
+            if not executable: raise Problem(400, "error_program_missing")
+            if self.jobs.get(agent, {}).get("status") in {"stopping", "pending", "restoring"}: raise Problem(409, "error_connection_busy")
+            self.validate_start(agent, data, executable, cwd)
+            return {"confirmation": self.bridge.agent_sessions.preview(agent, "connection", self.scope(data, cwd))}
         if action == "terminal":
             if agent not in {"codex", "claude", "opencode"}:
                 raise Problem(400, "error_connection_unsupported")
@@ -1288,9 +1625,10 @@ class AgentConnections:
             job = self.jobs.get(agent)
             if not job or data.get("id") != job["id"]: raise Problem(409, "error_connection_expired")
             if job["cwd"] != cwd: raise Problem(409, "error_connection_expired")
-            if time.time() >= job["expires_at"]:
+            if time.time() >= job["expires_at"] and job["status"] not in {"stopping", "restoring"}:
                 self.finish(job, "expired")
             elif action == "cancel":
+                if job["status"] in {"stopping", "restoring"}: raise Problem(409, "error_agent_operation_busy")
                 self.finish(job, "cancelled")
             elif job["status"] == "pending":
                 if agent == "codex":
@@ -1345,7 +1683,7 @@ class AgentConnections:
             return {"agent": agent, "installed": True, "version": match[0].decode("ascii")}
         if action == "status":
             job = self.jobs.get(agent)
-            if job and job["cwd"] == cwd and job["status"] == "pending" and time.time() < job["expires_at"]:
+            if job and job["cwd"] == cwd and job["status"] in {"stopping", "pending", "restoring"} and time.time() < job["expires_at"]:
                 return {"agent": agent, "installed": True, "state": "unknown", "providers": [], "job": self.snapshot(job)}
             result = {"agent": agent, "installed": True, "state": "unknown", "providers": []}
             if agent == "codex":
@@ -1377,21 +1715,40 @@ class AgentConnections:
                     "supported": NativeLoginClient.gemini_supported(executable)}]
             if agent == "gemini" and job and job["cwd"] == cwd and job["status"] == "saved" and time.time() < job["expires_at"]:
                 result.update(state="configured", method="google")
+            if job and job["cwd"] == cwd and time.time() < job["expires_at"]: result["job"] = self.snapshot(job)
             return result
         if agent not in {"codex", "claude", "opencode", "gemini"}: raise Problem(400, "error_connection_unsupported")
         key = request_id(data.get("request_id"))
         secret = self.text(data.get("key", ""), 8192)
-        fingerprint = hashlib.sha256(json.dumps([cwd, data.get("provider"), data.get("method"), secret], sort_keys=True).encode()).hexdigest()
+        fingerprint = hashlib.sha256(json.dumps([cwd, data.get("provider"), data.get("method"), secret, data.get("confirmation_id"), data.get("reopen", False)], sort_keys=True).encode()).hexdigest()
         previous = self.jobs.get(agent)
         if previous and time.time() < previous["expires_at"]:
             if previous["id"] == key:
                 if previous["fingerprint"] != fingerprint: raise Problem(409, "error_launch_conflict")
                 return {"job": self.snapshot(previous)}
-            if previous["status"] == "pending": raise Problem(409, "error_connection_busy")
+            if previous["status"] in {"stopping", "pending", "restoring"}: raise Problem(409, "error_connection_busy")
+        self.validate_start(agent, data, executable, cwd, require_secret=True)
+        # Native login forms use the same reviewed, per-agent maintenance scope.
         with self.bridge.lock:
-            if any(getattr(row, "authentication_agent", None) == agent and row.state in ACTIVE for row in self.bridge.sessions.values()):
-                raise Problem(409, "error_connection_busy")
-        job = {"id": key, "agent": agent, "cwd": cwd, "fingerprint": fingerprint, "status": "pending", "expires_at": int(time.time()) + 600}
+            record = self.bridge.agent_sessions.reserve(agent, "connection", self.scope(data, cwd),
+                data.get("confirmation_id"), data.get("reopen", False), key)
+            job = {"id": key, "agent": agent, "cwd": cwd, "fingerprint": fingerprint, "status": "pending", "expires_at": int(time.time()) + 600}
+            if previous: self.records.pop(previous["id"], None)
+            self.records[key] = record
+            if record["targets"]:
+                self.jobs[agent] = job
+                job["status"] = "stopping"
+                threading.Thread(target=self.start_after_stop, args=(job, record, dict(data), secret, executable, cwd), daemon=True).start()
+                return {"job": self.snapshot(job)}
+        try:
+            self.bridge.agent_sessions.stop(record)
+            return self.start_native(job, data, secret, executable, cwd)
+        except Exception:
+            self.bridge.agent_sessions.release(record)
+            raise
+
+    def start_native(self, job, data, secret, executable, cwd):
+        agent = job["agent"]
         client = None
         try:
             if agent == "codex":
@@ -1451,10 +1808,12 @@ class AgentConnections:
         return value
 
     def close(self):
-        with self.lock:
-            self.closed = True
-            for job in self.jobs.values(): self.finish(job, "cancelled")
-            self.jobs.clear()
+        self.closed = True
+        for agent, lock in self.agent_locks.items():
+            with lock:
+                job = self.jobs.get(agent)
+                if job: self.finish(job, "cancelled")
+        self.jobs.clear()
 
 
 class BrowserSession(Session):
@@ -3659,6 +4018,7 @@ class Bridge:
         self.browser_lock = threading.Lock()
         self.browser_tools = None
         self.model_locks = {}
+        self.agent_sessions = AgentSessionMaintenance(self)
         self.agent_connections = AgentConnections(self)
         self.agent_updates = AgentUpdates(self)
         self.model_cache = {}
@@ -4186,7 +4546,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "browser_consent_notify", "maintenance_recovery", "agent_connections", "agent_login_terminal", "agent_login_ui", "agent_updates"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "browser_consent_notify", "maintenance_recovery", "agent_connections", "agent_login_terminal", "agent_login_ui", "agent_updates", "agent_session_maintenance"], "active_sessions": self.active_count(),
                     "agents": self.agents(), "maintenance_recovery": self.recovery.snapshot(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -4578,7 +4938,9 @@ class Bridge:
         working = self.working_project(data)
 
         def target():
-            if self.agent_updates.busy(agent) or (authentication_agent and self.agent_updates.busy(authentication_agent)):
+            if ((self.agent_updates.busy(agent) or self.agent_sessions.busy(agent) or
+                    (authentication_agent and (self.agent_updates.busy(authentication_agent) or self.agent_sessions.busy(authentication_agent)))) and
+                    not self.agent_sessions.allows_restore(restore_id)):
                 raise Problem(409, "error_agent_update_busy")
             self.recovery_target(restore_id)
             if self.closing:
@@ -4718,7 +5080,7 @@ class Bridge:
 
     def begin_shutdown(self):
         with self.lock:
-            if self.agent_updates.busy(): raise Problem(409, "error_agent_update_busy")
+            if self.agent_updates.busy() or self.agent_sessions.busy(): raise Problem(409, "error_agent_update_busy")
             if self.git_actions.active():
                 raise Problem(409, "git_busy")
             if self.worktree_creation.active():

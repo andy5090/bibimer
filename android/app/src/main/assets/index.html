@@ -29,6 +29,7 @@
   <script src="inspector.js" defer></script>
   <script src="commands.js" defer></script>
   <script src="agent-connections.js" defer></script>
+  <script src="terminal-output.js" defer></script>
   <script src="github.js" defer></script>
   <script src="worktree-create.js" defer></script>
   <script src="bridge-maintenance.js" defer></script>
@@ -387,6 +388,7 @@
       <p id="agent-connection-update-target" class="hint"></p>
       <div class="button-row"><button id="agent-connection-update-check" class="secondary" type="button" data-i18n="agent_update_check">Check for updates</button><button id="agent-connection-update-start" class="primary" type="button" data-i18n="agent_update_start" disabled>Update</button></div>
       <p id="agent-connection-update-status" class="hint" role="status" aria-live="polite"></p>
+      <p id="agent-connection-update-recovery-status" class="hint" role="status" hidden></p><ul id="agent-connection-update-recovery-rows" class="maintenance-sessions"></ul><button id="agent-connection-update-recovery-retry" class="secondary" type="button" data-i18n="agent_operation_retry" hidden>Retry reopening failed sessions</button>
     </section>
     <p class="hint" data-i18n="connection_scope">Uses this agent’s saved account in Termux. Existing sessions stay running. Saved configuration does not verify model access.</p>
     <p id="agent-connection-login-hint" class="hint" data-i18n="connection_native_login_hint">Choose a sign-in method here, then open the browser to authorize your account. If a code is shown, enter it in the masked field in Bibimer. A version check alone does not confirm sign-in.</p>
@@ -399,6 +401,7 @@
     </form>
     <section id="agent-connection-job" hidden>
       <p id="agent-connection-job-status" role="status" aria-live="polite" class="hint"></p><p id="agent-connection-instructions" class="hint" dir="auto"></p><p id="agent-connection-site" class="hint" dir="ltr"></p>
+      <p id="agent-connection-recovery-status" class="hint" role="status" hidden></p><ul id="agent-connection-recovery-rows" class="maintenance-sessions"></ul><button id="agent-connection-recovery-retry" class="secondary" type="button" data-i18n="agent_operation_retry" hidden>Retry reopening failed sessions</button>
       <button id="agent-connection-browser" class="primary full" type="button" data-i18n="connection_browser">Continue in browser</button>
       <form id="agent-connection-code-form" autocomplete="off"><label for="agent-connection-code" data-i18n="connection_code">Authorization code</label><input id="agent-connection-code" type="password" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" required><button id="agent-connection-code-submit" class="primary" type="submit" data-i18n="connection_submit_code">Submit code</button></form>
       <button id="agent-connection-cancel" class="secondary full" type="button" data-i18n="cancel_project">Cancel</button>
@@ -406,6 +409,14 @@
     <p id="agent-connection-error" class="hint danger-text" role="alert" hidden></p>
     <p id="agent-connection-fallback-hint" class="hint" data-i18n="connection_terminal_in_app_hint">Open a separate login terminal inside Bibimer.</p>
     <button id="agent-connection-terminal" class="quiet" type="button" data-i18n="connection_terminal_in_app">Sign in in Bibimer terminal</button>
+  </dialog>
+  <dialog id="agent-operation-dialog" class="settings-dialog" aria-labelledby="agent-operation-title">
+    <h2 id="agent-operation-title" data-i18n="agent_operation_title">End sessions and continue</h2>
+    <p id="agent-operation-warning" class="hint" data-i18n="agent_operation_warning">These sessions will end. Active work and unsent queues are not replayed. Saved chats may reopen; terminals start fresh.</p>
+    <ul id="agent-operation-targets" class="maintenance-sessions"></ul>
+    <label class="settings-switch-row" id="agent-operation-reopen-option"><span data-i18n="agent_operation_reopen">Reopen sessions after success</span><input id="agent-operation-reopen" class="settings-switch" type="checkbox" role="switch" checked></label>
+    <p id="agent-operation-progress" class="hint" role="status" aria-live="polite"></p>
+    <div class="button-row"><button id="agent-operation-confirm" class="primary" type="button" data-i18n="agent_operation_confirm">End sessions and continue</button><button id="agent-operation-cancel" class="secondary" type="button" data-i18n="cancel_project">Cancel</button></div>
   </dialog>
   <dialog id="review-access-dialog" class="settings-dialog" aria-labelledby="review-access-title" aria-describedby="review-access-hint">
     <h2 id="review-access-title" data-i18n="review_access">Review access</h2>
