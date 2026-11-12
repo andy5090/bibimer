@@ -39,6 +39,10 @@ def package_web(destination):
     index = index.replace('<script src="app.js" defer>', '<script src="ios-locales.js" defer></script>\n  <script src="speech-text.js" defer></script>\n  <script src="text-gestures.js" defer></script>\n  <script src="platform.js" defer></script>\n  <script src="terminal-tools.js" defer></script>\n  <link rel="stylesheet" href="terminal-tools.css">\n  <script src="app.js" defer>')
     index = index.replace('width=device-width, initial-scale=1, viewport-fit=cover',
                           'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover')
+    reconnect_row = re.search(r'<div class="button-row"><button id="reconnect-settings".*?</div>', index)
+    if not reconnect_row:
+        raise RuntimeError('Shared reconnect markup changed; review the iOS connection status.')
+    index = index[:reconnect_row.end()] + '\n      <p id="ios-reconnect-status" class="hint" role="status" aria-live="polite" aria-atomic="true"></p>' + index[reconnect_row.end():]
     if index.count('<section id="connection-settings"') != 1:
         raise RuntimeError('Shared Settings markup changed; review the iOS screen controls.')
     index = index.replace('<section id="connection-settings"', '''<section id="ios-screen-settings" class="card preference-card">

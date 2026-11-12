@@ -61,6 +61,7 @@ static BOOL usesDesktopInput(void) {
 @property NSString *token;
 @property NSInteger port;
 @property NSURLSession *http;
+@property NSMutableSet<NSURLSession *> *retiredHTTP;
 @property NSMutableSet<NSURLSessionDataTask *> *polls;
 @property BOOL exited;
 @property BOOL ready;
@@ -77,6 +78,7 @@ static BOOL usesDesktopInput(void) {
 @property BOOL recoveryTimedOut;
 @property NSUInteger recoverySerial;
 @property NSTimeInterval connectionStartedAt;
+@property NSTimeInterval recoveryBootDeadline;
 @property NSInteger healthHTTPStatus;
 @property NSInteger healthNetworkError;
 @property NSInteger healthErrorCategory;
@@ -120,6 +122,7 @@ static BOOL usesDesktopInput(void) {
 - (void)recordConnection:(NSString *)event code:(NSInteger)code;
 - (void)loadConnectionLog;
 - (void)requestReconnect;
+- (BOOL)shouldRecoverAfterHealthFailure;
 - (NSURLSession *)newHTTPTransport;
 - (void)applyScreenBehavior;
 - (void)fail:(NSString *)message;
@@ -230,7 +233,7 @@ static void guestExit(int status) {
     [self loadConnectionLog];
     NSURL *staleExports = [[NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES] URLByAppendingPathComponent:@"bibimer-exports" isDirectory:YES];
     [NSFileManager.defaultManager removeItemAtURL:staleExports error:nil];
-    self.polls = [NSMutableSet new]; self.javascriptErrors = [NSMutableArray new];
+    self.polls = [NSMutableSet new]; self.retiredHTTP = [NSMutableSet new]; self.javascriptErrors = [NSMutableArray new];
     self.utf8Pending = [NSMutableData new];
     self.runtimeQueue = dispatch_queue_create("app.bibimer.ios.runtime",DISPATCH_QUEUE_SERIAL);
     self.runtimeControlFD = -1;
@@ -292,7 +295,7 @@ static void guestExit(int status) {
     self.connectionLogURL = [cache URLByAppendingPathComponent:@"connection-diagnostics.json"];
     NSData *data = [NSData dataWithContentsOfURL:self.connectionLogURL];
     id rows = data.length <= 65536 ? [NSJSONSerialization JSONObjectWithData:data ?: [NSData data] options:0 error:nil] : nil;
-    NSSet *events = [NSSet setWithArray:@[@"launch",@"inactive",@"background",@"active",@"probe_start",@"probe_ok",@"probe_failed",@"probe_watchdog",@"retry",@"retry_blocked_recovery",@"retry_blocked_runtime",@"retry_blocked_inactive",@"reconnect_button",@"service_start",@"recovery_start",@"recovery_watchdog",@"recovery_stopped",@"diagnostics_copy",@"js_delivery_failed",@"message_rejected",@"runtime_exit"]];
+    NSSet *events = [NSSet setWithArray:@[@"launch",@"inactive",@"background",@"active",@"probe_start",@"probe_ok",@"probe_failed",@"probe_watchdog",@"retry",@"retry_blocked_recovery",@"retry_blocked_runtime",@"retry_blocked_inactive",@"reconnect_button",@"service_start",@"recovery_start",@"recovery_watchdog",@"recovery_boot_timeout",@"recovery_stopped",@"diagnostics_copy",@"js_delivery_failed",@"message_rejected",@"runtime_exit"]];
     NSSet *numbers = [NSSet setWithArray:@[@"time",@"uptime",@"build",@"code",@"application",@"scene",@"backgrounded",@"ready",@"started",@"exited",@"startupFailed",@"recovering",@"timedOut",@"attempts",@"epoch",@"shutdownStage",@"observedChildren",@"httpStatus",@"networkError",@"errorCategory"]];
     if (![rows isKindOfClass:NSArray.class]) return;
     for (id row in rows) {
@@ -374,10 +377,14 @@ static void guestExit(int status) {
     // This begins a new foreground probe window. Manual retries within it keep
     // the original window so repeated taps cannot postpone recovery forever.
     self.healthAttempts = 0; self.connectionStartedAt = NSProcessInfo.processInfo.systemUptime;
+    if (self.recoveryBootDeadline > 0) self.recoveryBootDeadline = self.connectionStartedAt + 15;
     [self recordConnection:@"active" code:0];
     [self.backgroundExecution setForeground:YES];
     [self nativeEvent:@"BibimerBackgroundChanged" arguments:@[]];
     [self applyScreenBehavior];
+    // Preserve the failed operation and its visible retry action. Foregrounding
+    // must not turn a bounded failure back into an indefinite connecting state.
+    if (self.recoveryFailed) { [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
     self.recoveryAllowed = self.hasConnected && !self.recoveryAttempted;
     [self retryConnection];
 }
@@ -386,13 +393,22 @@ static void guestExit(int status) {
     // Manual retries and inactive-only transitions need fresh sockets too.
     NSURLSession *previous = self.http;
     self.http = [self newHTTPTransport];
+    if (!previous) return;
+    [self.retiredHTTP addObject:previous];
     [previous getAllTasksWithCompletionHandler:^(NSArray<NSURLSessionTask *> *tasks) {
         // Reads can be repeated. Let already submitted writes finish without
         // cancelling or replaying a command whose delivery may be unknown.
-        for (NSURLSessionTask *task in tasks)
-            if ([task.originalRequest.HTTPMethod isEqual:@"GET"]) [task cancel];
-        [previous finishTasksAndInvalidate];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            for (NSURLSessionTask *task in tasks)
+                if ([task.originalRequest.HTTPMethod isEqual:@"GET"]) [task cancel];
+            if ([self.retiredHTTP containsObject:previous]) [previous finishTasksAndInvalidate];
+        });
     }];
+}
+
+- (void)URLSession:(NSURLSession *)session didBecomeInvalidWithError:(NSError *)error {
+    (void)error;
+    dispatch_async(dispatch_get_main_queue(), ^{ [self.retiredHTTP removeObject:session]; });
 }
 
 - (NSURLSession *)newHTTPTransport {
@@ -550,7 +566,7 @@ static void guestExit(int status) {
     // URLSession's request timeout alone may wait on a suspended connection.
     // Bound each probe independently, without replaying any write requests.
     NSUInteger epoch = self.connectionEpoch;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,5*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,2*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
         [self expireHealthTask:task epoch:epoch];
     });
 }
@@ -566,7 +582,7 @@ static void guestExit(int status) {
 - (void)retryConnection {
     if (self.recovering) { [self recordConnection:@"retry_blocked_recovery" code:0]; [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
     if (self.exited || self.startupFailed) { [self recordConnection:@"retry_blocked_runtime" code:0]; [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
-    if (!self.runtimeStarted || self.backgrounded) { [self recordConnection:@"retry_blocked_inactive" code:0]; return; }
+    if (!self.runtimeStarted || self.backgrounded) { [self recordConnection:@"retry_blocked_inactive" code:0]; [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
     self.connectionEpoch++;
     [self.healthTask cancel]; self.healthTask = nil;
     self.ready = NO;
@@ -585,14 +601,26 @@ static void guestExit(int status) {
     UIWindowScene *scene = self.view.window.windowScene;
     if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive ||
         (scene && scene.activationState == UISceneActivationStateForegroundActive)) self.backgrounded = NO;
-    if (!self.recovering) { self.recoveryAllowed = YES; self.recoveryAttempted = NO; }
-    if (!self.backgrounded && !self.ready && !self.recovering && !self.exited && !self.startupFailed &&
-        self.runtimeStarted && self.runtimeControlFD >= 0 && self.healthAttempts >= 5 && self.connectionStartedAt > 0 &&
-        NSProcessInfo.processInfo.systemUptime - self.connectionStartedAt >= 30 && !self.smokeScript) {
-        [self recoverLinux];
+    // A second tap joins the active operation instead of restarting its probe
+    // or running another shutdown while the new services are still starting.
+    if (self.recovering || (self.recoveryAttempted && !self.hasConnected && !self.recoveryFailed)) {
+        [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
         return;
     }
+    self.recoveryAllowed = YES; self.recoveryAttempted = NO;
+    if (self.healthTask && !self.recoveryFailed) {
+        [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+        return;
+    }
+    self.recoveryBootDeadline = 0;
     [self retryConnection];
+}
+
+- (BOOL)shouldRecoverAfterHealthFailure {
+    // This failure follows a probe on fresh sockets. No elapsed-time or probe
+    // count gate: a live bridge reconnects; an unavailable bridge recovers now.
+    return self.recoveryAllowed && !self.recoveryAttempted && self.runtimeStarted && self.runtimeControlFD >= 0 &&
+        !self.exited && !self.startupFailed && !self.backgrounded && !self.recovering && !self.recoveryFailed;
 }
 
 - (void)handleHealthJSON:(NSDictionary *)json response:(NSHTTPURLResponse *)response error:(NSError *)error {
@@ -604,6 +632,7 @@ static void guestExit(int status) {
         self.ready = YES;
         self.hasConnected = YES;
         self.recoveryAttempted = NO;
+        self.recoveryBootDeadline = 0;
         self.healthAttempts = 0; self.connectionStartedAt = 0;
         [self recordConnection:@"probe_ok" code:response.statusCode];
         if (!self.web) [self loadWorkspace];
@@ -613,10 +642,13 @@ static void guestExit(int status) {
     }
     else {
         [self recordConnection:@"probe_failed" code:error ? error.code : response.statusCode];
-        if (self.recoveryAllowed && self.healthAttempts >= 5 &&
-                 NSProcessInfo.processInfo.systemUptime - self.connectionStartedAt >= 30 &&
-                 !self.recoveryAttempted && !self.smokeScript) {
+        if ([self shouldRecoverAfterHealthFailure] && !self.smokeScript) {
             [self recoverLinux];
+        }
+        else if (self.recoveryBootDeadline > 0 && NSProcessInfo.processInfo.systemUptime >= self.recoveryBootDeadline) {
+            self.recoveryFailed = YES;
+            [self recordConnection:@"recovery_boot_timeout" code:NSURLErrorTimedOut];
+            [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
         }
         else if (self.healthAttempts < 600) {
             if (self.healthAttempts > 5) self.status.text = [NSString stringWithFormat:@"BIBIMER · Waiting for local Linux…\n%@ (HTTP %ld)",error.localizedDescription ?: @"Starting bridge",(long)response.statusCode];
@@ -646,6 +678,10 @@ static void guestExit(int status) {
     // This recovery abandons old executions. Unlike transport-only reconnect,
     // cancel queued writes too, before a new server can accept them at this port.
     [self.http invalidateAndCancel];
+    // Earlier transport-only retries may still contain submitted writes. They
+    // must also be cancelled before the replacement server uses the same port.
+    for (NSURLSession *transport in self.retiredHTTP.allObjects) [transport invalidateAndCancel];
+    [self.retiredHTTP removeAllObjects];
     self.http = [self newHTTPTransport];
     [self.completionNotifications pause]; [self.voice pause]; [self.browser revokeAll];
     self.browserEpoch++; self.browserPolling = NO; [self.browserPoll cancel]; self.browserPoll = nil;
@@ -670,10 +706,19 @@ static void guestExit(int status) {
                 return;
             }
             self.hasConnected = NO; self.recoveryAllowed = NO; self.healthAttempts = 0;
+            self.recoveryBootDeadline = NSProcessInfo.processInfo.systemUptime + 15;
             self.recoveryFailed = ![self startLinuxServices];
             [self replaceHTTPTransport];
             [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
             [self checkHealth];
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW,15*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
+                if (recovery != self.recoverySerial || self.ready || self.recoveryFailed || self.exited || self.backgrounded ||
+                    self.recoveryBootDeadline == 0 || NSProcessInfo.processInfo.systemUptime < self.recoveryBootDeadline) return;
+                self.recoveryFailed = YES;
+                [self recordConnection:@"recovery_boot_timeout" code:NSURLErrorTimedOut];
+                [self.healthTask cancel]; self.healthTask = nil;
+                [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+            });
         });
     });
 }
@@ -684,7 +729,7 @@ static void guestExit(int status) {
     NSString *language = [preference isEqual:@"system"] ? systemLanguage() : preference;
     NSMutableDictionary *environment=[@{@"selfTest":@(self.smokeScript != nil),@"paired":@YES,@"termuxInstalled":@YES,@"platform":@"ios",@"notifications":@{@"enabled":@NO,@"allowed":@NO,@"state":@"unsupported"},@"language":language,@"systemLanguage":systemLanguage(),@"languagePreference":preference,@"agentOptions":[preferences dictionaryForKey:@"agentOptions"] ?: @{},@"enterBehavior":[preferences stringForKey:@"enterBehavior"] ?: @"newline",@"responseDelivery":[[preferences stringForKey:@"responseDelivery"] isEqual:@"steer"] ? @"steer" : @"queue",@"contextDisplay":[[preferences stringForKey:@"contextDisplay"] isEqual:@"remaining"] ? @"remaining" : @"used",@"lastProjectParent":[preferences stringForKey:@"lastProjectParent"] ?: @"/root/projects",@"lastProjectFolder":[preferences stringForKey:@"lastProjectFolder"] ?: @"/root/projects",@"quickSetup":@{@"phase":@"connected",@"id":@"embedded"},@"bundledBridgeVersion":[NSBundle.mainBundle objectForInfoDictionaryKey:@"BibimerBridgeVersion"] ?: @"unknown",@"version":@"0.1.0-ios"} mutableCopy];
     [environment addEntriesFromDictionary:[self.voice environment] ?: @{}];
-    environment[@"localRuntime"] = @{@"state":self.exited ? @"stopped" : self.startupFailed ? @"restart-required" : self.recoveryFailed ? @"recovery-failed" : (self.recovering || (self.recoveryAttempted && !self.hasConnected)) ? @"restarting" : self.ready ? @"connected" : @"connecting", @"foreground":@(!self.backgrounded)};
+    environment[@"localRuntime"] = @{@"state":self.exited ? @"stopped" : self.startupFailed ? @"restart-required" : self.recoveryFailed ? @"recovery-failed" : (self.recovering || (self.recoveryAttempted && !self.hasConnected)) ? @"restarting" : self.ready ? @"connected" : @"connecting", @"foreground":@(!self.backgrounded), @"busy":@(!self.recoveryFailed && (self.recovering || (!self.exited && !self.startupFailed && !self.backgrounded && !self.ready)))};
     environment[@"screenBehavior"] = @{@"keepAwake":@([preferences boolForKey:@"iosKeepAwake"]),@"deferHomeGesture":@([preferences boolForKey:@"iosDeferHomeGesture"]),@"supported":@(!usesDesktopInput())};
     environment[@"backgroundWork"] = [self.backgroundExecution environment] ?: @{};
     environment[@"termuxX11Installed"]=@YES;
@@ -1045,21 +1090,31 @@ static void guestExit(int status) {
             [self reply:identifier status:400 data:@{}]; return;
         }
         if (self.smokeScript && [method isEqual:@"POST"] && [path isEqual:@"/native/test-retry-window"]) {
-            self.backgrounded = YES; self.ready = NO; self.healthAttempts = 6;
-            NSTimeInterval start = NSProcessInfo.processInfo.systemUptime - 35;
+            self.backgrounded = YES; self.ready = NO; self.healthAttempts = 0;
+            NSTimeInterval start = NSProcessInfo.processInfo.systemUptime;
             self.connectionStartedAt = start;
-            [self requestReconnect]; [self requestReconnect];
-            [self reply:identifier status:200 data:@{@"foregroundReconciled":@(!self.backgrounded),@"windowKept":@(self.connectionStartedAt == start),@"attemptsKept":@(self.healthAttempts >= 6)}];
+            [self requestReconnect];
+            BOOL immediate = [self shouldRecoverAfterHealthFailure];
+            NSURLSessionDataTask *probe = self.healthTask;
+            [self requestReconnect];
+            BOOL joined = self.healthTask == probe && self.healthAttempts == 1;
+            self.recoveryAttempted = YES;
+            BOOL bounded = ![self shouldRecoverAfterHealthFailure];
+            self.recoveryAttempted = NO;
+            [self reply:identifier status:200 data:@{@"foregroundReconciled":@(!self.backgrounded),@"windowKept":@(self.connectionStartedAt == start),@"immediateRecovery":@(immediate),@"joinedProbe":@(joined),@"automaticAttemptBounded":@(bounded)}];
             return;
         }
         if (self.smokeScript && [method isEqual:@"POST"] && [path isEqual:@"/native/test-linux-recovery"]) {
             self.testRecoveryWorkspace = self.web;
+            self.testRecoveryWrite = [self.http dataTaskWithRequest:[self request:@"POST" path:@"/v1/health" body:@"{}"]];
+            [self replaceHTTPTransport];
             [self reply:identifier status:200 data:@{@"accepted":@YES}];
             dispatch_async(dispatch_get_main_queue(), ^{ [self recoverLinux]; });
             return;
         }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-linux-recovery"]) {
-            [self reply:identifier status:200 data:@{@"sameWorkspace":@(self.testRecoveryWorkspace == self.web),@"ready":@(self.ready),@"failed":@(self.recoveryFailed)}];
+            BOOL writeCancelled = self.testRecoveryWrite.state == NSURLSessionTaskStateCanceling || self.testRecoveryWrite.state == NSURLSessionTaskStateCompleted;
+            [self reply:identifier status:200 data:@{@"sameWorkspace":@(self.testRecoveryWorkspace == self.web),@"ready":@(self.ready),@"failed":@(self.recoveryFailed),@"oldWriteCancelled":@(writeCancelled)}];
             return;
         }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-late-health"]) {
@@ -1096,6 +1151,8 @@ static void guestExit(int status) {
         BOOL workRequest = !self.smokeScript && startsBackgroundWork(method,path,payload);
         NSString *backgroundToken = workRequest ? [self.backgroundExecution beginUserRequest] : nil;
         NSMutableURLRequest *request = [self request:method path:path body:payload];
+        if ([path isEqual:@"/v1/health"]) request.timeoutInterval = 2;
+        NSUInteger requestEpoch = self.connectionEpoch;
         __block NSURLSessionDataTask *task;
         task = [self.http dataTaskWithRequest:request completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {
             dispatch_async(dispatch_get_main_queue(), ^{ [self.polls removeObject:task]; });
@@ -1104,6 +1161,16 @@ static void guestExit(int status) {
             if (backgroundToken)
                 dispatch_async(dispatch_get_main_queue(),^{ [self.backgroundExecution endUserRequest:backgroundToken]; });
             [self reply:identifier status:error ? 503 : status data:json ?: @{@"code":@"error_connection_failed"}];
+            // Visible connection loss also enters the native recovery path;
+            // returning from the background and tapping Retry are not required.
+            if (error && error.code != NSURLErrorCancelled && [method isEqual:@"GET"] &&
+                ([path isEqual:@"/v1/health"] || [path containsString:@"/events?"])) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (requestEpoch != self.connectionEpoch || !self.ready || self.backgrounded || self.exited || self.recovering) return;
+                    self.recoveryAllowed = self.hasConnected && !self.recoveryAttempted;
+                    [self retryConnection];
+                });
+            }
         }];
         if ([path containsString:@"/events?"]) [self.polls addObject:task];
         [task resume];

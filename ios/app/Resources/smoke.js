@@ -153,14 +153,16 @@
     $("app-settings-open").click();
     await window.BibimerIOSTestAPI("POST","/native/test-connection",{mode:"online"});
     $("reconnect-settings").click();
+    if (!$("reconnect-settings").disabled || $("reconnect-settings").getAttribute("aria-busy") !== "true" || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_checking")) throw new Error("Settings reconnect did not immediately show progress");
     await wait(() => snapshot()?.online,"native connection retry");
+    if ($("reconnect-settings").disabled || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_restored")) throw new Error("Settings reconnect did not show completion");
     const recovered = await window.BibimerIOSTestAPI("POST","/native/test-connection",{mode:"observe"});
     if (!recovered.sameWorkspace || !recovered.ready || !recovered.visible || snapshot().session.id !== sessionId || $("input").value !== recoveryDraft) throw new Error("Native reconnect replaced workspace, session or draft");
     $("page-back").click();
     $("input").value = previousDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
     passed("native_reconnect_preserves_workspace");
     const retryWindow = await window.BibimerIOSTestAPI("POST","/native/test-retry-window",{});
-    if (!retryWindow.foregroundReconciled || !retryWindow.windowKept || !retryWindow.attemptsKept) throw new Error("Manual retries reset the failure window or retained stale background state");
+    if (!retryWindow.foregroundReconciled || !retryWindow.windowKept || !retryWindow.immediateRecovery || !retryWindow.joinedProbe || !retryWindow.automaticAttemptBounded) throw new Error("Reconnect delayed recovery, replaced its active probe or retained stale background state");
     await wait(() => snapshot()?.online,"connection after retry-window fixture");
     passed("manual_reconnect_failure_window");
     $("ios-connection-diagnostics-copy").click();
@@ -269,7 +271,7 @@
       await window.BibimerIOSTestAPI("POST","/native/test-linux-recovery",{});
       await wait(() => snapshot()?.online && snapshot().instance !== previousInstance,"new Linux services without app relaunch",60000);
       const state = await window.BibimerIOSTestAPI("GET","/native/test-linux-recovery");
-      if (!state.sameWorkspace || !state.ready || state.failed) throw new Error("Linux recovery replaced the workspace or failed");
+      if (!state.sameWorkspace || !state.ready || state.failed || !state.oldWriteCancelled) throw new Error("Linux recovery replaced the workspace, failed or retained an old write");
       const saved = await window.BibimerIOSTestAPI("POST","/v1/inspect",{project_id:previousProject,worktree_path:path,action:"file",path:"share.txt"});
       if (!saved.text.includes("Bibimer native file export")) throw new Error("Linux recovery lost project data");
       const health = await window.BibimerIOSTestAPI("GET","/v1/health");

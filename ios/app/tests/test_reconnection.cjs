@@ -1,6 +1,6 @@
 "use strict";
 const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict");
-const posts=[],defaults={localRuntime:{state:"connected",foreground:true}};
+const posts=[],defaults={localRuntime:{state:"connected",foreground:true,busy:false}};
 const context=vm.createContext({crypto:require("node:crypto").webcrypto,
  window:{__bibimerEnvironment:defaults,webkit:{messageHandlers:{bibimer:{postMessage:value=>posts.push(value)}}},addEventListener(){}}});
 vm.runInContext(fs.readFileSync("ios/app/Resources/native.js","utf8"),context);
@@ -12,12 +12,19 @@ context.window.Bibimer.copyConnectionDiagnostics();
 assert.deepEqual({...posts.at(-1)},{action:"connectionDiagnostics"},"Diagnostics need no backend request, credentials or session data");
 const session={id:"same-session"},draft={text:"keep this draft",queue:["keep this queue"]};
 const events=[];
+const controls=new Map(),timers=new Map();let timerSerial=0;
+const $=id=>{
+ if(!controls.has(id))controls.set(id,{dataset:{},attributes:{},textContent:"",disabled:false,
+  addEventListener(){},querySelector(){return null;},setAttribute(key,value){this.attributes[key]=value;}});
+ return controls.get(id);
+};
 Object.assign(context,{generation:7,retryTimer:13,paused:true,session,draft,environment:()=>defaults,
  native:{cancelPoll:()=>events.push("cancel")},clearTimeout:()=>events.push("clear"),
+ setTimeout:fn=>{const id=++timerSerial;timers.set(id,fn);return id;},t:key=>key,$,
  connected:value=>events.push(["connected",value]),notice:key=>events.push(["notice",key]),
  connect:async()=>events.push("health")});
 context.window.BibimerPause=()=>events.push("pause");
-context.$=()=>({addEventListener(){}});
+context.window.BibimerResume=()=>events.push("resume");
 const hook=fs.readFileSync("ios/app/Resources/ui-hooks.js","utf8").split('  permissionModes.gemini')[0];
 vm.runInContext(hook,context);
 (async()=>{
@@ -39,6 +46,34 @@ vm.runInContext(hook,context);
  context.window.BibimerIOSRuntimeChanged();assert.deepEqual(events,["clear","cancel",["connected",false],["notice","connection_initial"]]);
  assert.equal(context.generation,beforeReconnect+1,"A new native recovery invalidates replies and timers from the prior connection");
  defaults.localRuntime.state="connected";await context.connect();assert.equal(events.at(-1),"health");
+ assert.equal(context.session,session);assert.equal(context.draft,draft);
+ // The actual native shim acknowledges synchronously, before any native event.
+ context.window.Bibimer.reconnect();
+ assert.equal($("ios-reconnect-status").textContent,"ios_connection_checking");
+ for(const id of ["reconnect","reconnect-welcome","reconnect-settings"]){
+  assert.equal($(id).disabled,true);assert.equal($(id).attributes["aria-busy"],"true");
+ }
+ defaults.localRuntime={state:"connecting",foreground:true,busy:true};
+ context.window.BibimerIOSRuntimeChanged();
+ assert.equal($("ios-reconnect-status").textContent,"ios_connection_checking");
+ defaults.localRuntime={state:"restarting",foreground:true,busy:true};
+ context.window.BibimerIOSRuntimeChanged();
+ assert.equal($("ios-reconnect-status").textContent,"ios_runtime_restarting");
+ assert.equal($("reconnect-settings").textContent,"ios_connection_restarting");
+ defaults.localRuntime={state:"recovery-failed",foreground:true,busy:false};
+ context.window.BibimerIOSRuntimeChanged();
+ assert.equal($("ios-reconnect-status").textContent,"error_ios_runtime_recovery");
+ assert.equal($("reconnect-settings").disabled,false,"Failure allows a new manual attempt");
+ defaults.localRuntime={state:"connected",foreground:true,busy:false};
+ context.window.BibimerResume();
+ assert.equal($("ios-reconnect-status").textContent,"ios_connection_restored");
+ assert.equal($("reconnect-settings").disabled,false);
+ assert.equal($("reconnect-settings").attributes["aria-busy"],"false");
+ // Even a rejected/lost native message leaves visible feedback and a retry.
+ defaults.localRuntime={state:"connecting",foreground:true,busy:true};
+ context.window.Bibimer.reconnect();timers.get(timerSerial)();
+ assert.equal($("ios-reconnect-status").textContent,"ios_reconnect_unconfirmed");
+ assert.equal($("reconnect-settings").disabled,false);
  assert.equal(context.session,session);assert.equal(context.draft,draft);
  console.log("PASS iOS reconnect: native retry, terminal runtime guard, retained session/draft/queue and live health retry");
 })().catch(error=>{console.error(error);process.exitCode=1;});

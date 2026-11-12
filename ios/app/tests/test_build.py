@@ -54,6 +54,7 @@ class GuestPackagingTests(unittest.TestCase):
             self.assertEqual((self.root/'Web'/name).read_bytes(),(build.REPO/'android/app/src/main/assets'/name).read_bytes())
         self.assertIn('BibimerIOSLocales',(self.root/'Web/ios-locales.js').read_text())
         self.assertIn('id="ios-connection-diagnostics-copy"',index)
+        self.assertIn('id="ios-reconnect-status" class="hint" role="status" aria-live="polite"',index)
 
     def test_missing_opencode_compatibility_patcher_rejects_packaging(self):
         (self.root / 'ios/bridge/opencode_compat.py').unlink()
