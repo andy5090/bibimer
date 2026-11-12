@@ -2,23 +2,66 @@
   const iosPause = window.BibimerPause;
   window.BibimerPause = () => {
     iosPause(); native.cancelPoll?.(); connected(false);
+    iosRenderReconnect();
+  };
+  const iosReconnectButtons = ["reconnect", "reconnect-welcome", "reconnect-settings"];
+  let iosReconnectAckTimer = null;
+  function iosRenderReconnect(requested = false, unconfirmed = false) {
+    const runtime = environment().localRuntime || {};
+    const state = runtime.state;
+    const busy = !unconfirmed && (requested || runtime.busy === true);
+    const key = unconfirmed ? "ios_reconnect_unconfirmed" : requested ? "ios_connection_checking" :
+      state === "connected" ? "ios_connection_restored" : state === "stopped" ? "error_ios_runtime_stopped" :
+      state === "restart-required" ? "error_ios_runtime_start" : state === "recovery-failed" ? "error_ios_runtime_recovery" :
+      runtime.foreground === false ? "connection_off" : state === "restarting" ? "ios_runtime_restarting" : "ios_connection_checking";
+    const status = $("ios-reconnect-status");
+    status.textContent = t(key); status.dataset.i18n = key;
+    for (const id of iosReconnectButtons) {
+      const button = $(id), label = button.querySelector("[data-i18n]") || button;
+      label.dataset.i18n = busy ? (state === "restarting" && !requested ? "ios_connection_restarting" : "ios_connection_checking") : "reconnect";
+      label.textContent = t(label.dataset.i18n);
+      button.disabled = busy; button.setAttribute("aria-busy", String(busy));
+    }
+  }
+  window.BibimerIOSReconnectRequested = () => {
+    // Acknowledge the tap in this frame, before WebKit delivers it to native.
+    if (iosReconnectAckTimer !== null) clearTimeout(iosReconnectAckTimer);
+    iosRenderReconnect(true);
+    iosReconnectAckTimer = setTimeout(() => { iosReconnectAckTimer = null; iosRenderReconnect(false,true); },3000);
+  };
+  const iosResume = window.BibimerResume;
+  window.BibimerResume = () => {
+    if (iosReconnectAckTimer !== null) clearTimeout(iosReconnectAckTimer); iosReconnectAckTimer = null;
+    iosResume(); iosRenderReconnect();
   };
   window.BibimerIOSRuntimeChanged = () => {
+    if (iosReconnectAckTimer !== null) clearTimeout(iosReconnectAckTimer); iosReconnectAckTimer = null;
+    iosRenderReconnect();
     window.BibimerBackgroundChanged?.();
+    // Failure to reconnect must not leave the foreground UI in background mode
+    // with its recovery button hidden until native health eventually succeeds.
+    if (environment().localRuntime?.foreground === true) paused = false;
     const state = environment().localRuntime?.state;
-    if (["stopped", "restart-required"].includes(state)) {
+    if (["stopped", "restart-required", "recovery-failed"].includes(state)) {
       ++generation; clearTimeout(retryTimer); native.cancelPoll?.();
       connected(false);
-      connectionError = state === "stopped" ? "error_ios_runtime_stopped" : "error_ios_runtime_start";
+      connectionError = state === "stopped" ? "error_ios_runtime_stopped" : state === "recovery-failed" ? "error_ios_runtime_recovery" : "error_ios_runtime_start";
       notice(connectionError);
-    } else if (state === "connecting") {
+    } else if (["connecting", "restarting"].includes(state)) {
       ++generation; clearTimeout(retryTimer); native.cancelPoll?.();
-      connected(false); connectionError = "connection_initial"; notice(connectionError);
+      connected(false); connectionError = state === "restarting" ? "ios_runtime_restarting" : "connection_initial"; notice(connectionError);
     }
   };
+  iosRenderReconnect();
   const iosConnect = connect;
+  $("ios-connection-diagnostics-copy").addEventListener("click", () => native.copyConnectionDiagnostics());
+  window.BibimerIOSDiagnosticsCopied = () => {
+    const button = $("ios-connection-diagnostics-copy");
+    button.textContent = t("copied");
+    setTimeout(() => { button.textContent = t("ios_connection_diagnostics_copy"); },1500);
+  };
   connect = async function(...args) {
-    if (["stopped", "restart-required"].includes(environment().localRuntime?.state)) {
+    if (["stopped", "restart-required", "recovery-failed", "restarting"].includes(environment().localRuntime?.state)) {
       window.BibimerIOSRuntimeChanged(); return;
     }
     return iosConnect(...args);
@@ -197,7 +240,7 @@
   };
   if (environment().selfTest) {
     window.BibimerIOSTestFontState = () => ({chat:iosChatFontSize,terminal:term.options.fontSize});
-    window.BibimerIOSSnapshot = () => ({online,project,session,knownProjects,knownAgents,busy,settingsBusy,switchingProject,sending:[...sending],
+    window.BibimerIOSSnapshot = () => ({online,instance,project,session,knownProjects,knownAgents,busy,settingsBusy,switchingProject,sending:[...sending],
       terminal:Array.from({length:term.buffer.active.length},(_,index)=>term.buffer.active.getLine(index)?.translateToString(true) || "").join("\n")});
     window.BibimerIOSTestAPI = api;
     window.BibimerIOSTestOpenWorktree = () => worktreeCreator.open(projectKey());

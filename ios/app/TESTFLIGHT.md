@@ -1,5 +1,21 @@
 # iOS TestFlight 배포
 
+## iOS 0.1.0(9) TestFlight 내부 배포 완료 (2026-11-12)
+
+- **07:48 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내1133자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(9)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드9개를 직접 확인했다. 기존1–8번·그룹/테스터·자동 배포 설정을 유지했다.
+- 업로드 소스 `f1f905e13ee80cdbb4287043c4aff95b74231136`, 빌드 ID `3589005e-b210-4ca1-b929-7aa159cf8f14`. IPA **8,567,543 bytes**, SHA-256 `2717e25be3c9791933cb5d8c5457ea1ebd2c54312d0a02fead4e1442d5252347`. **07:42:07 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**다. 아카이브 `dist/ios-testflight/0.1.0-9-unsigned-nov12-diagnostics/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-9-export-nov12-diagnostics/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-9-nov12/`.
+- 반복 다시 연결의 실패 시간/횟수 보존·실제 활성 화면의 stale backgrounded 보정·guest 종료 잠금의 제한된 대기를 포함한다. **설정 → 연결 진단 → 진단 로그 복사**는 브리지 연결 없이 최근64개 고정 event와 숫자/Boolean 상태를 수동 복사한다. 토큰·URL·프로젝트/세션 ID·경로·대화·PTY 출력은 기록하지 않고 외부 자동 전송도 없다. 기존 서비스 재시작/파일·저장 대화 유지·작업 종료/미저장 대기열·PTY 출력 미복원·명령/승인 미재전송 동작을 유지한다.
+- 양 SDK 컴파일·archive/dSYM·배포 서명·현재 소스/IPA 자산(웹64·게스트18·네이티브11자산/13소스·현지화20·rootfs426) 일치를 확인했다. 실제 전용 WKWebView/Linux **32개·29.13초·JS오류0**와 모의 백그라운드 정책20개·앱 Python30(C 잠금 경합 포함)·iOS 브리지56·Node16파일·Chromium20배치·main/서비스/RuntimeSupport 정적분석0을 통과했다. 기존 syscall 경고4개·미사용 매개변수 컴파일 경고16개는 남아 있다. 제품 소스 추가 수정 없이 f1f905e를 배포했다.
+- **TestFlight에서0.1.0(9)로 업데이트한다.** 실제 iPhone 잠금/앱 전환·반복 재시도 및 과거 실패 원인은 아직 미확인이다. 문제가 계속되면 재현 직후 또는 앱 재실행 뒤 위 진단 로그를 복사한다. QA 성공으로 실제 기기 문제 해결이나 PID1 종료/커널 교착·무기한 백그라운드 실행을 보장하지 않는다. 사용자 앱/Runtime Lab/브리지·세션 재시작·Android/웹사이트 배포·외부 베타·정식 App Store 제출은 수행하지 않았다. 아래 미배포/이전 배포 기록은 당시 상태다.
+
+## iOS 0.1.0(8) TestFlight 내부 배포 완료 (2026-11-12)
+
+- **02:36 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내1018자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(8)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드8개를 직접 확인했다. 기존1–7번·그룹/테스터·자동 배포 설정을 유지했다.
+- 업로드 소스 `23168f5f6ce26d9d005b1e979fb59e39f5dec6bb`, 빌드 ID `df6a60df-5432-41b3-8069-ea8faf1b8dc1`. IPA **8,555,777 bytes**, SHA-256 `95e2d0abb3a01e8310c45f9e7aa19f05c3fa165f3b72aa310fe8402e02c1cca1`.**02:31:11 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**다. 아카이브 `dist/ios-testflight/0.1.0-8-unsigned-nov12-recovery/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-8-export-nov12-recovery/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-8-nov12/`.
+- 복귀/명시적 다시 연결 후 health 실패가30초/5회 이상 지속되면 Linux 사용자 프로세스 종료를 확인하고 동일 rootfs에서 서비스를 다시 시작한다. PID1 supervisor·WKWebView·파일/저장 대화·세션 목록은 유지하며 이전 프로세스는 lost, PTY 출력/미저장 대기열은 유실로 처리한다. 메시지/명령/승인은 재전송하지 않고 브라우저 제어는 다시 허용해야 한다. Claude 설정 로그인은 대화형 `/login`과 수동 코드 입력 경로를 사용한다.
+- 양 SDK 컴파일·archive/dSYM·배포 서명·현재 소스/IPA 자산(웹64·게스트18·네이티브11자산/13소스·현지화20·rootfs426) 일치를 확인했다. 실제 전용 WKWebView/Linux **30개·26.83초·JS오류0**와 모의 백그라운드 정책20개·앱 Python29·iOS 브리지56·Node16파일·Chromium20배치·main/서비스/RuntimeSupport 정적분석0을 통과했다. 최초 검사의 누락된 self-test bridge ID와 필수 검사 목록을 보완했으며 실제 동작 경로 변경은 없다. 기존 syscall 경고4개·미사용 매개변수 컴파일 경고16개는 유지했다.
+- **TestFlight에서0.1.0(8)로 업데이트한다.** 실제 iPhone의 잠금/앱 전환 복구·복구 후 인증 유지·Claude 로그인 및 OS 백그라운드 허가/지속 시간은 별도 확인이다. PID1 종료/커널 교착 복구나 무기한 상주를 보장하지 않는다. 사용자 앱/Runtime Lab/브리지·세션 재시작·Android/웹사이트 배포·외부 베타·정식 App Store 제출은 수행하지 않았다. 아래 준비/미빌드 기록은 이번 배포 이전 상태다.
+
 ## iOS 0.1.0(7) TestFlight 내부 배포 완료 (2026-11-11)
 
 - **01:55 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내951자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(7)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드7개를 직접 확인했다. 기존1–6번·그룹/테스터·자동 배포 설정을 유지했다.

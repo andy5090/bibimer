@@ -28,7 +28,11 @@ Authorization: Bearer <native-only-token>
 
 설치와 로그인 출력은 해당 PTY 세션에서만 다룬다. 로그인은 각 CLI의 원래 인증 흐름을 연다. 브라우저 URL·코드·API 키 입력과 인증 성공 여부는 네이티브 앱 및 실제 CLI에서 확인해야 한다. 개발 Mac의 인증 파일은 복사하지 않는다.
 
+Claude Code 로그인은 `claude /login`의 대화형 흐름을 사용한다. 고정 버전2.1.112의 `claude auth login`은 수동 URL을 출력하지만 코드를 받는 stdin 처리가 없어서 브라우저 자동 실행/callback이 없는 iOS Linux에서 대기할 수 있다. 설치본의 기존 로그인 버튼에서 막히면 앱 터미널에서 `~/.local/bin/claude`를 실행하고 `/login`을 입력한다. Claude가 표시한 URL은 사용자가 직접 열고, 코드 입력을 요구하면 해당 Claude 터미널에 직접 붙여넣는다. 인증 화면이나 코드를 에이전트에게 전달하지 않는다. 대화형 흐름 진입/모의 PTY 입력 검증과 실제 계정 로그인 성공은 구분한다.
+
 ## 도구 설치
+
+앱의 PID1은 고정 `supervisor.sh`로 유지하고 실제 bootstrap/브리지는 그 자식으로 실행한다. 네이티브 전용 stdin 파이프의 정확한 `start` 요청만 처리하며 임의 문자열을 실행하지 않는다. 앱 복귀/명시적 다시 연결 후 30초 이상 상태 확인이 반복 실패하면 네이티브가 PID1 외 작업을 TERM→KILL하고 모두 종료된 경우에만 같은 bootstrap을 다시 시작한다. 새 브리지의 이전 실행 목록은 lost로 표시하고 PTY 출력·대기열·중단 명령은 재실행하지 않는다. rootfs/인증 파일/프로젝트/저장된 대화는 유지한다. 이는 앱 내 Linux 사용자 프로세스 재시작이며 커널 자체의 재초기화/교착 복구는 아니다.
 
 기본 Python·Bash·Git·Node·npm·CA·ripgrep을 동일한 서명 검증 Alpine APK 채널에서 준비한 후 브리지를 시작한다. 기존 rootfs에 다른 도구가 설치되어 있어도 `rg`가 없으면 설치를 수행한다. CLI 설치는 사용자가 Setup의 설치 작업을 선택할 때 수행하므로 첫 화면을 모든 npm 설치 완료까지 막지 않는다. TLS·APK 서명·npm 레지스트리 검증을 끄지 않는다.
 

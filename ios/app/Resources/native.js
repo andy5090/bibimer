@@ -2,6 +2,7 @@
 (() => {
   const defaults = window.__bibimerEnvironment;
   const message = (action, values = {}) => window.webkit.messageHandlers.bibimer.postMessage({action, ...values});
+  const reconnect = () => { window.BibimerIOSReconnectRequested?.(); message("reconnect"); };
   const clipboardRequests = new Map();
   const clipboardDocument = Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,"0")).join("");
   let clipboardSequence = 0;
@@ -59,8 +60,9 @@
     openGuide: guide => message("guide", {guide}),
     openTermux: () => window.BibimerOpenLocalTerminal?.(),
     startAgentAction: (agent, action) => window.BibimerIOSAgentAction?.(agent, action),
-    reconnect: () => message("reconnect"),
-    startQuickSetup: () => message("reconnect"),
+    reconnect,
+    copyConnectionDiagnostics: () => message("connectionDiagnostics"),
+    startQuickSetup: reconnect,
     takeNotificationTarget: () => { const target=defaults.notificationTarget || {};defaults.notificationTarget={};message("notificationTaken");return JSON.stringify(target); },
     setResponseNotifications: enabled => { if(typeof enabled!=="boolean")return false; defaults.notifications={...defaults.notifications,enabled};message("notificationConfigure",{enabled});return true; },
     openNotificationSettings: () => message("notificationSettings"),

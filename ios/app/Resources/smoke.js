@@ -153,12 +153,28 @@
     $("app-settings-open").click();
     await window.BibimerIOSTestAPI("POST","/native/test-connection",{mode:"online"});
     $("reconnect-settings").click();
+    if (!$("reconnect-settings").disabled || $("reconnect-settings").getAttribute("aria-busy") !== "true" || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_checking")) throw new Error("Settings reconnect did not immediately show progress");
     await wait(() => snapshot()?.online,"native connection retry");
+    if ($("reconnect-settings").disabled || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_restored")) throw new Error("Settings reconnect did not show completion");
     const recovered = await window.BibimerIOSTestAPI("POST","/native/test-connection",{mode:"observe"});
     if (!recovered.sameWorkspace || !recovered.ready || !recovered.visible || snapshot().session.id !== sessionId || $("input").value !== recoveryDraft) throw new Error("Native reconnect replaced workspace, session or draft");
     $("page-back").click();
     $("input").value = previousDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
     passed("native_reconnect_preserves_workspace");
+    const retryWindow = await window.BibimerIOSTestAPI("POST","/native/test-retry-window",{});
+    if (!retryWindow.foregroundReconciled || !retryWindow.windowKept || !retryWindow.immediateRecovery || !retryWindow.joinedProbe || !retryWindow.automaticAttemptBounded) throw new Error("Reconnect delayed recovery, replaced its active probe or retained stale background state");
+    await wait(() => snapshot()?.online,"connection after retry-window fixture");
+    passed("manual_reconnect_failure_window");
+    $("ios-connection-diagnostics-copy").click();
+    await wait(() => $("ios-connection-diagnostics-copy").textContent === window.BibimerI18n.t("copied"),"native diagnostic clipboard");
+    const diagnosticClipboard = await window.BibimerIOSTestAPI("GET","/native/test-clipboard");
+    const diagnostic = JSON.parse(diagnosticClipboard.text);
+    if (diagnostic.schema !== 1 || !diagnostic.events.length || diagnostic.events.length > 64) throw new Error("Invalid bounded connection diagnostic");
+    for (const row of diagnostic.events) for (const [key,value] of Object.entries(row)) {
+      if (key !== "event" && typeof value !== "number" && typeof value !== "boolean") throw new Error("Diagnostic contains non-status text");
+    }
+    if (diagnosticClipboard.text.includes(path) || diagnosticClipboard.text.includes(sessionId) || diagnosticClipboard.text.includes(recoveryDraft)) throw new Error("Diagnostic leaked project/session/draft data");
+    passed("connection_diagnostics_status_only");
     const lifecycleDraft = "draft survives background and foreground";
     $("input").value = lifecycleDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
     const lifecycleInstance = snapshot().instance;
@@ -250,6 +266,20 @@
     await window.BibimerIOSTestSelectSession(sessionId);
     await wait(() => snapshot()?.session?.id === sessionId && snapshot().session.state === "running" && (snapshot().terminal || "").includes("BIBIMER_UI_PTY_OK"),"return to running original terminal");
     passed("session_switch_retains_process_output");
+    for (let recovery = 0; recovery < 2; recovery++) {
+      const previousInstance = snapshot().instance, previousProject = snapshot().project.id;
+      await window.BibimerIOSTestAPI("POST","/native/test-linux-recovery",{});
+      await wait(() => snapshot()?.online && snapshot().instance !== previousInstance,"new Linux services without app relaunch",60000);
+      const state = await window.BibimerIOSTestAPI("GET","/native/test-linux-recovery");
+      if (!state.sameWorkspace || !state.ready || state.failed || !state.oldWriteCancelled) throw new Error("Linux recovery replaced the workspace, failed or retained an old write");
+      const saved = await window.BibimerIOSTestAPI("POST","/v1/inspect",{project_id:previousProject,worktree_path:path,action:"file",path:"share.txt"});
+      if (!saved.text.includes("Bibimer native file export")) throw new Error("Linux recovery lost project data");
+      const health = await window.BibimerIOSTestAPI("GET","/v1/health");
+      if (health.active_sessions !== 0) throw new Error("Linux recovery automatically reopened a process");
+      const old = await window.BibimerIOSTestAPI("GET","/v1/sessions/" + sessionId + "/events?cursor=0&wait=0");
+      if (old.session.state !== "lost" || old.data) throw new Error("Linux recovery pretended to restore the old process or output");
+    }
+    passed("linux_services_restart_without_app_relaunch");
     window.webkit.messageHandlers.bibimer.postMessage({action:"smokeResult",result:{ok:true,checks,terminal:terminalEvidence.slice(-12000)}});
   } catch (error) {
     window.webkit.messageHandlers.bibimer.postMessage({action:"smokeResult",result:{ok:false,checks,error:String(error.message || error),snapshot:snapshot()}});

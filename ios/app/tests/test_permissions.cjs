@@ -7,7 +7,7 @@ const vm = require("node:vm");
 const modes = ["inherit","read-only","workspace-write","yolo"];
 const fields = new Map();
 const field = id => {
-  if (!fields.has(id)) fields.set(id,{value:"",disabled:false,hidden:false,textContent:"",dataset:{},options:[],addEventListener(){}});
+  if (!fields.has(id)) fields.set(id,{value:"",disabled:false,hidden:false,textContent:"",dataset:{},options:[],addEventListener(){},querySelector(){return null;},setAttribute(){}});
   return fields.get(id);
 };
 let saved = "read-only", mode = "chat";

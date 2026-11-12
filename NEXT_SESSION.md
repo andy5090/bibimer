@@ -1,5 +1,66 @@
 # Bibimer 다음 세션 시작점
 
+## Android·iOS 개발 내용 레포 동기화 (2026-11-13)
+
+- Android0.41.0(70) 구현/배포 기록2커밋과 원격의 iOS 복구/진단·TestFlight8/9 기록7커밋을 병합했다. `NEXT_SESSION.md`의 양쪽 추가 기록을 모두 유지했으며 iOS 네이티브 전송의 새 에이전트 업데이트 경로/타임아웃도 보존했다.
+- iOS 앱 Python30개(29통과·플랫폼 제한1skip), Node 재연결·권한·화면 설정·공유 에이전트 UI·937키×10언어와 diff 검사를 통과했다. 새 앱 빌드·배포·Xcode/실기기 검증·운영 브리지/세션 재시작은 수행하지 않았다.
+
+## iOS 즉시 재연결·설정 진행 표시 (2026-11-12 후속 소스, 미배포)
+
+- 사용자 요구: Linux 재로딩 전에30초를 기다리지 않고 빠르게 복구하며, 설정의 다시 연결 버튼에 즉각 반응과 진행 상태를 제공한다. 작업 시작 시 원격 `bba8ee0`까지 fast-forward해 TestFlight0.1.0(9) 배포 기록을 반영했다.
+- **30초/5회 실패 조건을 제거**했다. 복귀/명시적 재연결은 새 NSURLSession의 health를 즉시 시작하고, 첫 실패 또는2초 native 감시 제한 후 Linux 서비스 복구를 시작한다. 살아 있는 브리지에 연결되면 프로세스는 유지한다. 전경 health/이벤트 GET의 취소 이외 네트워크 오류도 같은 native 재확인으로 들어간다. 이전 epoch·백그라운드·종료된 runtime의 늦은 오류는 무시하며 POST를 재전송하지 않는다. 앞선 transport 교체에서 완료를 기다리던 NSURLSession도 추적해, 서비스 재시작 전에는 그 연결의 미완료 쓰기까지 취소한다.
+- 수동 반복 요청은 진행 중 health/종료/재시작을 공유해 타이머를 초기화하거나 중복 종료하지 않는다. 자동 복구는 성공 전1회로 제한하며 실패 후 명시적 버튼으로 재시도한다. 실패 후 복귀만으로 실패 상태를 지우고 장시간 connecting으로 돌아가지 않는다. PID1 종료/커널 자체 재부팅은 지원했다고 표시하지 않는다.
+- 버튼 클릭 프레임에서 즉시 ‘연결 확인 중…’을 표시하고 aria-busy를 설정한다. 설정의 버튼 바로 아래 `role=status/aria-live`에 확인·Linux 재시작·완료·실패를 표시한다. native 수신 이벤트가3초간 없으면 무응답 안내와 다시 누르기를 제공한다. 복구 중 진행을 공유하고, 실패하면 버튼을 다시 사용할 수 있다.10언어 문구는39개로 유지한다.
+- 종료 확인 뒤 서비스 기동/health가15초 내 준비되지 않으면 실패로 전환해 무한 재시작 표시를 막는다. 이 시간은 복구 시작 전 의무 대기가 아니며 종료 검증과 실제 기동 시간은 여전히 필요하다. 백그라운드 시간은 복귀 시 기동 확인 창을 새로 열며 `recovery_boot_timeout` 상태 event를 진단 로그에 남긴다. 파일·저장 대화 보존, 기존 실행 lost/PTY 출력·미저장 대기열 비복원, 명령/승인 미재전송, 브라우저 제어 재허용 규칙을 유지한다.
+- 검증: Python30개 중28개 통과/Apple socket·C 경합2개 skip, Node11파일 통과. 최초 terminal-tools 검사는 xterm vendor 미준비로 실행하지 못했으나 기존 고정 SHA-512의 xterm5.5.0만 준비한 뒤 통과했다(APK 빌드 없음). 패키징한 전체 app.js 구문·설정 내부 status 배치·diff 검사도 통과했다. Node 재연결의 즉시 확인/재시작/완료/실패/미응답 표시·세션/초안/대기열 보존 및 화면 설정39문구×10언어/native 기능 검사 통과. native smoke에는 설정 버튼의 동기적 반응/완료 표시와 실패 첫 회부터 복구 가능·진행 probe 공유·자동1회 제한·이전 transport의 미전송 쓰기 취소 검사를 추가했다. 새 Objective-C 컴파일·실제 WKWebView/Linux smoke·실제 iPhone 전환 검증은 이 환경에서 실행하지 못했다.
+- **APK/IPA/TestFlight를 빌드·배포하지 않았으며 사용자 앱/브리지/프로세스를 재시작하지 않았다.** 구현 완료 후 main 커밋·푸시한다. 현재 설치본9는 이전30초 대기를 사용하므로 새 빌드 적용이 필요하다.
+
+## iOS 0.1.0(9) TestFlight 내부 배포 완료 (2026-11-12)
+
+- **07:48 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내1133자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(9)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드9개를 직접 확인했다. 기존1–8번·그룹/테스터·자동 배포 설정을 유지했다.
+- 업로드 소스 `f1f905e13ee80cdbb4287043c4aff95b74231136`, 빌드 ID `3589005e-b210-4ca1-b929-7aa159cf8f14`. IPA **8,567,543 bytes**, SHA-256 `2717e25be3c9791933cb5d8c5457ea1ebd2c54312d0a02fead4e1442d5252347`. **07:42:07 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**다. 아카이브 `dist/ios-testflight/0.1.0-9-unsigned-nov12-diagnostics/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-9-export-nov12-diagnostics/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-9-nov12/`.
+- 반복 다시 연결의 실패 시간/횟수 보존·실제 활성 화면의 stale backgrounded 보정·guest 종료 잠금의 제한된 대기를 포함한다. **설정 → 연결 진단 → 진단 로그 복사**는 브리지 연결 없이 최근64개 고정 event와 숫자/Boolean 상태를 수동 복사한다. 토큰·URL·프로젝트/세션 ID·경로·대화·PTY 출력은 기록하지 않고 외부 자동 전송도 없다. 기존 서비스 재시작/파일·저장 대화 유지·작업 종료/미저장 대기열·PTY 출력 미복원·명령/승인 미재전송 동작을 유지한다.
+- 양 SDK 컴파일·archive/dSYM·배포 서명·현재 소스/IPA 자산(웹64·게스트18·네이티브11자산/13소스·현지화20·rootfs426) 일치를 확인했다. 실제 전용 WKWebView/Linux **32개·29.13초·JS오류0**와 모의 백그라운드 정책20개·앱 Python30(C 잠금 경합 포함)·iOS 브리지56·Node16파일·Chromium20배치·main/서비스/RuntimeSupport 정적분석0을 통과했다. 기존 syscall 경고4개·미사용 매개변수 컴파일 경고16개는 남아 있다. 제품 소스 추가 수정 없이 f1f905e를 배포했다.
+- **TestFlight에서0.1.0(9)로 업데이트한다.** 실제 iPhone 잠금/앱 전환·반복 재시도 및 과거 실패 원인은 아직 미확인이다. 문제가 계속되면 재현 직후 또는 앱 재실행 뒤 위 진단 로그를 복사한다. QA 성공으로 실제 기기 문제 해결이나 PID1 종료/커널 교착·무기한 백그라운드 실행을 보장하지 않는다. 사용자 앱/Runtime Lab/브리지·세션 재시작·Android/웹사이트 배포·외부 베타·정식 App Store 제출은 수행하지 않았다. 아래 미배포/이전 배포 기록은 당시 상태다.
+
+## iOS 다시 연결 무시·복구 대기 고착 분석 및 진단 수집 (후속 소스, 미배포)
+
+- 사용자 재보고: 앱 복귀 후 여전히 연결되지 않고 Settings의 다시 연결도 동작하지 않음. 원격1b21acc까지 동기화해 TestFlight8의 실제 Mac 컴파일/QA·배포 기록을 확인했다. 현재 guest는4.20.69-linuxkit/ARM64이며 설치된 supervisor.sh가 소스와 일치한다. 저장 메타데이터는 상태별 개수만 확인했고 인증 파일·대화/출력은 조회하지 않았다. **설치본8에는 네이티브 연결 진단 수집이 없어 과거 실제 iPhone의 실패 로그를 확보하지 못했다. 기기 원인을 확정했다고 표시하지 않는다.**
+- 코드에서 재현 가능한 실패 조건을 확인했다: retryConnection이 수동 재시도마다 healthAttempts/connectionStartedAt을 초기화해 버튼을 반복하면30초/5회 재시작 조건에 도달하지 못했다. 내부 backgrounded가 남으면 실제 활성 화면의 명시적 버튼도 무시했다. 실패 시간/횟수는 성공 또는 새 활성 주기에서만 초기화하고, 버튼은 실제 UIApplication/scene 활성 상태를 확인해 조정한다. 충분히 실패한 뒤의 명시적 버튼은 다시30초를 기다리지 않고 복구 단계로 간다. 백그라운드/종료된 init/기동 실패에서는 임의로 boot를 재호출하지 않는다.
+- 추가 고착 경로: 기존 종료 helper가 pids_lock을 잡은 채 send_signal 내부의 group/sighand/waiting_cond 잠금에서 무기한 대기하면15초 감시 뒤에도 recovering이 끝나지 않아 버튼이 계속 거절될 수 있었다. guest 종료 요청을 해당 잠금의 trylock과 제한된 재시도로 바꿨다. TERM/KILL의 task pending/queue·대기 조건 통지·SIGUSR1/CPU wake를 유지하고 PID1은 제외한다. 종료 확인 실패/잠금 경합은 실패로 반환하며 새 서비스를 중복 실행하지 않는다. native proxy는 임의 host 종료 대신 ENOTSUP로 실패한다. 실제 커널 잠금 교착을 해결했다고 단정하지 않는다.
+- 새 네이티브 진단은 최근64개 고정 event와 숫자/Boolean 상태만 보관한다. build·시각·UIKit/scene·backgrounded/ready/started/exited·health 횟수/세대·HTTP status·네트워크 error code/category·종료 단계/관찰 task 수를 기록한다. 네트워크 오류 본문/URL·토큰·프로젝트/세션 ID·경로·대화·PTY 출력은 제외한다. native Caches의0600/첫 잠금 해제 후 보호 파일에 직렬로 저장하고, 다시 읽을 때 허용 event/숫자 키만 복원한다. OS의 cache 제거까지 보존을 보장하지 않는다.
+- **설정 → 연결 진단 → 진단 로그 복사**는 사용자 클릭으로 native clipboard에 복사하며 bridge가 끊겨도 동작한다. JS로 원본 로그/인증 정보를 읽어들이거나 자동 외부 전송하지 않는다. 실제 버튼 요청 수신/거절 이유의 bit mask와 JS lifecycle 이벤트 전달 실패 코드도 남긴다. 새 빌드에서 재현 직후 또는 앱을 다시 연 뒤 이 로그로 버튼/화면 상태·HTTP 전송·종료 helper 중 실패 지점을 구분해야 한다.
+- 로그 schema1: event는 고정 이름, 나머지는 숫자/Boolean이다. errorCategory는0없음/1NSURLError/2POSIX/3기타, shutdownStage는0유휴/1PID잠금/2신호전달/3종료대기/4종료확인/5실패/6init없음이다. observedChildren은 마지막 스캔에서 관찰한 수이며 실제 작업 이름/ID를 기록하지 않는다.
+- 엔진의 fs/sockrestart.h/c(pinc8e9dcb9)에는 iOS 정지 후 listen/accept 복구의 필요성과 hook이 있지만 앱 연결은 이를 호출하지 않는다. upstream 복구 구현도 socket 재설정/자원 수명 검토가 필요해 이번에 무검증으로 연결하지 않았다. **이것을 실제 기기 원인으로 확정하거나 listen 복구 완료라고 표시하지 않는다.** 네이티브 진단으로 확인 후 별도 수정해야 한다.
+- 새 QA는 실제 활성 화면에 backgrounded가 남은 조건·반복 버튼의 실패 시간/횟수 유지·진단 clipboard의 상태 전용/64개 제한을 확인하도록 추가했고 runner 필수 항목에도 등록했다. 실제 C helper를 잠금 대역으로 컴파일하는 test_recovery_contention.py는 PID/sighand/group/waiting-cond 경합의 timeout·잠금 해제·재시도 성공·PID1 보존·native proxy 거절을 검사한다. 현재 환경에는 C/Apple 컴파일러가 없으므로 이 검사와 새 native smoke 실행은 Mac에서 필요하다.
+- 현재 검증 결과: 앱 Python30개 중28개 통과/Apple socket 및 C 경합2개 skip, Node 재연결·화면 설정(35문구×10언어)·native 기능 경계, native/platform/smoke JS 구문·diff 검사 통과. 새 native smoke와 Objective-C/C 컴파일을 통과한 것으로 표시하지 않는다.
+- **앱/브리지/사용자 프로세스는 재시작하지 않았으며 APK/IPA/TestFlight를 빌드·배포하지 않았다.** 구현/검증 결과는 원격 main에 동기화하되 실제 사용자 증상이 해결됐다고 표시하지 않는다. 다음 Mac 빌드에서는 새 C 검사·양 SDK 컴파일/정적 분석·실제 WKWebView/Linux32개 및 잠금/반복 재시도 실기기 확인이 필요하다.
+
+## iOS 0.1.0(8) TestFlight 내부 배포 완료 (2026-11-12)
+
+- **02:36 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내1018자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(8)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드8개를 직접 확인했다. 기존1–7번·그룹/테스터·자동 배포 설정을 유지했다.
+- 업로드 소스 `23168f5f6ce26d9d005b1e979fb59e39f5dec6bb`, 빌드 ID `df6a60df-5432-41b3-8069-ea8faf1b8dc1`. IPA **8,555,777 bytes**, SHA-256 `95e2d0abb3a01e8310c45f9e7aa19f05c3fa165f3b72aa310fe8402e02c1cca1`.**02:31:11 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**다. 아카이브 `dist/ios-testflight/0.1.0-8-unsigned-nov12-recovery/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-8-export-nov12-recovery/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-8-nov12/`.
+- 복귀/명시적 다시 연결 후 health 실패가30초/5회 이상 지속되면 Linux 사용자 프로세스 종료를 확인하고 동일 rootfs에서 서비스를 다시 시작한다. PID1 supervisor·WKWebView·파일/저장 대화·세션 목록은 유지하며 이전 프로세스는 lost, PTY 출력/미저장 대기열은 유실로 처리한다. 메시지/명령/승인은 재전송하지 않고 브라우저 제어는 다시 허용해야 한다. Claude 설정 로그인은 대화형 `/login`과 수동 코드 입력 경로를 사용한다.
+- 양 SDK 컴파일·archive/dSYM·배포 서명·현재 소스/IPA 자산(웹64·게스트18·네이티브11자산/13소스·현지화20·rootfs426) 일치를 확인했다. 실제 전용 WKWebView/Linux **30개·26.83초·JS오류0**와 모의 백그라운드 정책20개·앱 Python29·iOS 브리지56·Node16파일·Chromium20배치·main/서비스/RuntimeSupport 정적분석0을 통과했다. 최초 검사의 누락된 self-test bridge ID와 필수 검사 목록을 보완했으며 실제 동작 경로 변경은 없다. 기존 syscall 경고4개·미사용 매개변수 컴파일 경고16개는 유지했다.
+- **TestFlight에서0.1.0(8)로 업데이트한다.** 실제 iPhone의 잠금/앱 전환 복구·복구 후 인증 유지·Claude 로그인 및 OS 백그라운드 허가/지속 시간은 별도 확인이다. PID1 종료/커널 교착 복구나 무기한 상주를 보장하지 않는다. 사용자 앱/Runtime Lab/브리지·세션 재시작·Android/웹사이트 배포·외부 베타·정식 App Store 제출은 수행하지 않았다. 아래 준비/미빌드 기록은 이번 배포 이전 상태다.
+
+## iOS 서비스 재시작 복구 Mac 검증 (2026-11-12, TestFlight8 준비)
+
+- c648ec0의 RuntimeSupport C·Objective-C·supervisor를 Xcode27.2의 기기/Simulator SDK로 컴파일했다. 전용 **Bibimer TestFlight QA**의 실제 WKWebView/내장 Linux **30개·26.83초·JS오류0·fatal0·진단실패0**, 기존 syscall151/152 경고4개다. guest 사용자 프로세스2회 재시작·새 bridge instance·같은 WKWebView/프로젝트 파일·이전 세션 lost/PTY 출력 없음·자동 세션 재실행 없음 검사를 통과했다.
+- 최초 검사는 브리지가 복구됐지만 self-test snapshot에 instance가 없어 ID 전환 판정이 timeout됐다. self-test 전용 snapshot에 instance를 노출하고 run_simulator.py의 필수 검사에도 새 복구 항목을 추가해 재검증했다. 실제 동작 경로는 바꾸지 않았다. 실패 증빙은 dist/ios-app/history/, 성공은 dist/ios-app/recovery-nov12-smoke/에 보존했다.
+- 앱 Python29개·iOS 브리지56개·Node16파일·Chromium20배치와 터미널 선택/붙여넣기·main/BackgroundExecution/RuntimeSupport 정적분석0을 통과했다. 테스트 보완 뒤 Python29·Node 재연결/화면 설정도 재확인했다. 사용자 Runtime Lab·앱/브리지·세션은 재시작하지 않았다.
+- 0.1.0(8) 아카이브/배포 서명과 현재 소스·IPA 자산 일치 검증 후 기존 내부 그룹에 제공한다. 이 항목은 업로드/제공 완료 기록이 아니다. 실제 iPhone 잠금·앱 전환 복구, Claude 대화형 로그인과 OS 백그라운드 허가는 별도 확인이다.
+
+## iOS 연결 실패 후 Linux 서비스 재시작 복구 (2026-11-11, 미빌드)
+
+- 사용자가 TestFlight7의 transport 복구 이후에도 앱 복귀 시 Linux가 연결되지 않는다고 재보고했고, 필요하면 첫 실행처럼 Linux를 다시 시작해서라도 앱 강제 종료 없이 복구하라고 명시했다. 현재 설치 빌드/오류 문구와 실제 실패 지점은 미확인이다. 살아 있는 연결의 재조회만 하던 범위를 Linux 사용자 프로세스 재시작으로 확장했다.
+- PID1에서 Python을 exec하던 구조를 고정 `supervisor.sh`로 바꿨다. supervisor는 네이티브 전용 stdin의 정확한 `start`만 처리하며 bootstrap/브리지를 자식으로 실행한다. 자식 종료/제어 파이프 EOF만으로 PID1/커널을 종료하지 않고, 실행 중인 자식이 있으면 중복 시작을 거절한다. 같은 rootfs·토큰·포트·고정 bootstrap을 사용하고 커널 mount/become_init/boot를 반복하지 않는다.
+- 이전에 연결된 앱의 활성 복귀 또는 명시적 다시 연결 후 30초 이상/5회 이상 health 실패 시 한 차례 복구한다. UIKit 외 작업에서 PID1 이외 guest task를 TERM→KILL하고 모두 사라진 것을 확인해야만 새 bootstrap을 시작한다. 종료 확인 실패/15초 감시 초과는 실패로 표시하고 중복 실행을 시작하지 않는다. 새 연결이 성공하기 전에는 자동 재시작을 반복하지 않는다. 커널의 전역 잠금 교착/PID1 자체 종료까지 복구한다고 보장하지 않는다.
+- 서비스 재시작 직전 이전 URLSession의 대기 POST까지 취소해 같은 포트의 새 브리지에 오래된 명령이 도달하지 않도록 했다. 일반 transport 재연결의 POST 완료 대기는 유지한다. 브라우저 제어는 해제하며 자동 재허용하지 않는다. 기존 WKWebView/파일/저장 대화·세션 목록을 유지하지만 이전 프로세스는 lost·PTY 출력/미저장 대기열은 유실로 다루고 실행/승인/메시지는 재전송하지 않는다. 재시작/실패 안내는10언어로 추가했다.
+- 추가 원인 경로: native health 성공 전에는 JS의 paused를 해제하지 않아 복귀 후 실패 상태에서도 다시 연결 UI가 숨겨질 수 있었다. localRuntime.foreground를 전달해 복귀 시 UI는 활성/오프라인으로 유지하고 Linux 확인 성공과 분리했다.
+- 검증: iOS 앱 Python29개(28통과/Apple 전용1건 skip), Node 재연결·화면 설정·백그라운드 설정, supervisor 셸/JS 구문·diff 검사 통과. 격리된 실제 호스트 셸에서 첫 시작/활성 자식 중복 거절·자식 종료 후2회 재시작·PID1 역할 프로세스/파일 유지·임의 입력 미실행·EOF 유지 확인. 새 네이티브 smoke에 실제 guest 사용자 프로세스2회 재시작·새 bridge instance·동일 WKWebView/파일·이전 세션 lost/출력 없음·자동 세션 실행 없음 검증을 추가했다.
+- **현재 환경은 Linux이며 Apple SDK/Xcode/C 컴파일러가 없어 RuntimeSupport C·Objective-C 컴파일 및 새 iOS native smoke를 실행하지 못했다.** 실제 iPhone 전환/잠금과 초기 도구 설치·이전 기록/인증 유지 검증이 필요하다. 현재 사용자 앱/브리지/프로세스는 재시작하지 않았고 APK/IPA/TestFlight를 빌드·배포하지 않았다. TestFlight7에는 미포함이며 다음 요청 빌드 전에 Mac에서 위 검증을 먼저 수행해야 한다.
+
 ## Android 0.41.0(70) 내부 테스트 배포 완료 (2026-11-12)
 
 - **2026-11-12 21:43 Asia/Seoul**, 기존 Google Play 내부 테스트 트랙에 게시했으며 새로고침 후 **활성 / 내부 테스터에게 제공됨**을 확인했다. 70만 포함·69 제외, EN/KO 출시 노트377/210자·2/2언어, 오류0·기존 매핑 파일 미첨부 경고1건이다. Console의7개 기기 유형 지원 변화는 모두0이다.
@@ -84,6 +145,14 @@
 - 비활성/백그라운드 복귀와 수동 다시 연결에서 새 HTTP transport를 사용하고 멈춘 health 요청을5초 감시로 폐기한다. 기존 WKWebView·bridge·session·draft를 유지하고 제출된 POST는 취소/재전송하지 않는다. 저장 세션 로딩·연결 끊김 옆 다시 연결·답변 우측 하단 재생/복사·조작 UI 선택 방지를 포함한다. 기존 공식 백그라운드 작업·화면 유지 설정도 포함한다.
 - 양 SDK 컴파일·아카이브/dSYM·배포 서명·현재 소스/IPA 자산(웹64·게스트17·네이티브11자산/13소스·현지화20·rootfs426) 일치를 확인했다. 실제 전용 QA WKWebView/Linux **29개·19.04초·JS오류0**와 모의 백그라운드 정책20개·Python25·Node16파일·Chromium20배치·Clang 정적분석0을 통과했다. 기존 syscall 경고4개와 미사용 매개변수 컴파일 경고16개는 남아 있다.
 - **TestFlight에서0.1.0(7)로 업데이트한다.** 실제 iPhone의 앱 전환/잠금 복귀·OS 백그라운드 허가/지속 시간은 별도 검증이다. 이번 검사는 살아 있는 Linux의 transport 복구이며 init 종료/교착 복구나 무기한 상주를 보장하지 않는다. 사용자 앱/브리지/세션 재시작·Android/웹사이트 배포·외부 베타·정식 App Store 제출은 수행하지 않았다. 아래 미빌드/이전 배포 기록은 당시 상태다.
+
+
+## iOS Claude Code 수동 로그인 입력 경로 수정 (2026-11-10, 미빌드)
+
+- 사용자 보고: iOS Linux에서 Claude Code 로그인이 안 됨. 실패 단계/오류 문구는 확인 요청 중이며 실제 계정/인증 화면·코드·자격 증명 파일을 조회하지 않았다. 설치된 공식 CLI2.1.112 소스의 authLogin과 OAuth flow를 확인했다. 기존 `auth login`은 수동 URL을 출력하지만 stdin 코드 핸들러를 연결하지 않아 자동 브라우저 실행/callback이 없는 경우 대기할 수 있다. 이 경로가 사용자 증상의 유일한 원인인지는 미확인이다.
+- 명시적 로그인 작업의 고정 argv를 `claude auth login`에서 `claude /login`으로 변경해 원래 대화형 로그인/수동 코드 입력 UI를 사용한다. 기존 PTY·프로젝트·요청 ID 중복 방지를 유지하고 자동 로그인·코드 수집·CLI 소스 수정·모델 요청을 추가하지 않는다. 설치본 우회는 앱 터미널의 `~/.local/bin/claude` 실행 후 `/login` 입력이며 코드는 사용자가 CLI에 직접 입력한다.
+- 새 회귀 검사에서 수정 전 실패/수정 후 통과를 확인했다. 모의 CLI가 `/login` 고정 인수로 실제 PTY에서 입력을 받고 정상 종료하며 같은 요청 ID는 같은 세션을 반환한다. 2026-11-11 동기화 시 해당 검사 재통과·앱 웹 패키징5개·diff 검사 통과를 확인했다. 이전 전체 iOS 브리지 검사는 실패 표시가 나온 뒤 작업 도구 연결이 끊겨 최종 결과/실패 원인을 회수하지 못했다. 전체 성공으로 표시하지 않는다. 이는 실제 Claude 브라우저 인증/토큰 교환 성공 검증이 아니다.
+- **앱/IPA/TestFlight를 빌드·배포하지 않았고 실행 중인 브리지·사용자 세션을 재시작하지 않았다.** 설치본 로그인 버튼에는 다음 요청 빌드 이후 반영된다. 사용자 오류 확인과 실제 기기에서 사용자가 직접 수행하는 로그인 검증이 남아 있다.
 
 ## iOS 비활성 복귀·수동 재연결 보완 (2026-11-10, 미빌드)
 
