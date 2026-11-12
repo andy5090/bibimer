@@ -91,8 +91,14 @@ html, body { width:100%; max-width:100%; height:100%; overflow:hidden; touch-act
 #conversation .markdown h2 { font-size:calc(19px * var(--ios-chat-text-scale, 1)); }
 #conversation .markdown h3 { font-size:calc(17px * var(--ios-chat-text-scale, 1)); }
 #conversation .markdown h4, #conversation .markdown h5, #conversation .markdown h6 { font-size:calc(15px * var(--ios-chat-text-scale, 1)); }
-#conversation .code-block pre code, #conversation .markdown table { font-size:calc(13px * var(--ios-chat-text-scale, 1)); }
+#conversation .code-block pre, #conversation .markdown table { font-size:calc(13px * var(--ios-chat-text-scale, 1)); }
+#conversation .code-block pre code { font-size:inherit; }
+#conversation .markdown code { font-size:.87em; }
+#conversation .markdown .literal-html { font-size:calc(12px * var(--ios-chat-text-scale, 1)); }
+#conversation .command .activity-title, #conversation .file-change>summary .activity-title { font-size:calc(11px * var(--ios-chat-text-scale, 1)); }
 #conversation .diff-viewport { font-size:calc(11px * var(--ios-chat-text-scale, 1)); }
+#conversation .diff-line code { font-size:inherit; }
+#conversation .diff-numbers { font-size:calc(10px * var(--ios-chat-text-scale, 1)); }
 </style>
 </head>''')
     (destination / 'index.html').write_text(index)

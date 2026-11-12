@@ -19,6 +19,7 @@ const context = vm.createContext({
   setSession() {}, updateQueue() {}, notice(key) { throw new Error(`Unexpected notice ${key}`); },
   sendRaw:async text => { raw = text; return true; }
 });
+require('./optimistic_fixture.cjs')(context);
 vm.runInContext(match[0], context);
 (async () => {
   await vm.runInContext("submitInput(false)", context);

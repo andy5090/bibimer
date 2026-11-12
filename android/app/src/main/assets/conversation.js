@@ -1,10 +1,49 @@
 "use strict";
 (() => {
   const {make, markdown, codeBlock, copyButton, diffBlock, diffBadge} = window.BibimerRichText;
+  class PendingMessages {
+    constructor() { this.rows = new Map(); this.matched = new Set(); }
+    add(context, id, text, revision = 0) {
+      if (!this.rows.has(id)) this.rows.set(id, {context,id,text,revision:Number(revision) || 0,state:"sending",follow:true});
+      else Object.assign(this.rows.get(id), {state:"sending",follow:true});
+      while (this.rows.size > 128) this.rows.delete(this.rows.keys().next().value);
+    }
+    list(context) { return [...this.rows.values()].filter(row => row.context === context); }
+    settle(id, state) { if (this.rows.has(id)) this.rows.get(id).state = state; }
+    remove(id) { this.rows.delete(id); }
+    move(from, to) { for (const row of this.rows.values()) if (row.context === from) row.context = to; }
+    reconcile(context, items) {
+      const replacements = [];
+      for (const item of items) {
+        const identity = JSON.stringify([context,item.id]);
+        if (item.kind !== "user" || !Number.isFinite(item.revision) || this.matched.has(identity)) continue;
+        const rows = this.list(context).filter(row => row.state !== "failed" && item.revision > row.revision);
+        let found = false;
+        for (let start = 0; start < rows.length && !found; start++) {
+          let text = "";
+          for (let end = start; end < rows.length && end < start + 16; end++) {
+            text += (end === start ? "" : "\n\n") + rows[end].text;
+            // The bridge bounds public native text; queues may echo one batch.
+            const truncated = item.text?.endsWith("\n[…]");
+            if (!truncated && text.length > item.text?.length) break;
+            const characters = truncated && text.length > 32768 ? [...text] : null;
+            const echoed = characters?.length > 32768 ? characters.slice(0,32768).join("") + "\n[…]" : text;
+            if (echoed !== item.text) continue;
+            replacements.push({optimisticId:rows[start].id,nativeId:item.id});
+            for (let index = start; index <= end; index++) this.remove(rows[index].id);
+            this.matched.add(identity); found = true; break;
+          }
+        }
+        while (this.matched.size > 512) this.matched.delete(this.matched.values().next().value);
+      }
+      return replacements;
+    }
+  }
   class Conversation {
     constructor(root, prompts, t, respond) {
       this.root = root; this.prompts = prompts; this.t = t; this.respond = respond;
       this.items = new Map(); this.cards = new Map(); this.requests = new Map();
+      this.optimisticIds = new Set();
       this.online = false; this.loading = false;
       this.speech = {enabled:false, readingId:""};
       this.retry = {enabled:false};
@@ -17,8 +56,24 @@
     }
     clear(keepRequests = false) {
       this.items.clear(); this.cards.clear(); this.root.replaceChildren();
+      this.optimisticIds.clear();
       this.latest.hidden = true;
       if (!keepRequests) { this.requests.clear(); this.prompts.replaceChildren(); }
+    }
+    setOptimistic(rows) {
+      const follow = rows.some(row => row.follow) || this.root.scrollHeight - this.root.scrollTop - this.root.clientHeight < 80;
+      const keys = new Set(rows.map(row => "optimistic-" + row.id));
+      for (const id of this.optimisticIds) if (!keys.has(id)) { this.cards.get(id)?.remove(); this.cards.delete(id); }
+      for (const row of rows) this.renderItem({id:"optimistic-" + row.id,kind:"user",text:row.text,status:row.state,optimistic:true});
+      this.optimisticIds = keys;
+      if (follow) this.root.scrollTop = this.root.scrollHeight;
+      for (const row of rows) row.follow = false;
+    }
+    reconcileOptimistic(replacements) {
+      for (const {optimisticId,nativeId} of replacements) {
+        const preview = this.cards.get("optimistic-" + optimisticId), actual = this.cards.get(nativeId);
+        if (preview && actual) this.root.insertBefore(actual, preview);
+      }
     }
     update(event) {
       const follow = this.root.scrollHeight - this.root.scrollTop - this.root.clientHeight < 80;
@@ -110,11 +165,12 @@
       const codeState = [...card.querySelectorAll(".code-block")].map(node => ({wrapped:node.classList.contains("wrapped"), left:node.querySelector("pre").scrollLeft}));
       card.replaceChildren();
       card.dataset.status = item.status || "";
+      card.dataset.optimistic = String(item.optimistic === true);
       // Keep the item in order so a later public summary can reveal it.
       // Empty reasoning events from live or imported history have no UI content.
       card.hidden = item.kind === "plan" && item.summary === true && !(item.text || "").trim() && !item.steps?.length;
       if (card.hidden) return;
-      const status = () => make("span", item.status ? this.t("chat_status_" + item.status) : "", "item-status");
+      const status = () => make("span", item.optimistic ? this.t(({sending:"queue_sending",accepted:"queue_sending",queued:"queue_label",uncertain:"queue_uncertain",failed:"chat_status_failed"})[item.status] || "queue_sending") : item.status ? this.t("chat_status_" + item.status) : "", "item-status");
       const detail = (key, title, opened = false) => {
         const node = make("details"); node.dataset.view = key;
         node.open = detailsState.has(key) ? detailsState.get(key) : opened;
@@ -188,7 +244,7 @@
         const identity = make("span", undefined, "message-identity");
         identity.append(make("span", item.kind === "assistant" ? "B" : item.kind === "user" ? "↑" : "!", "message-avatar"), make("span", this.t("chat_"+item.kind)));
         header.append(identity);
-        if (item.status === "inProgress") header.append(status());
+        if (item.status === "inProgress" || item.optimistic) header.append(status());
         if (item.text && item.kind !== "assistant") header.append(copyButton(item.text, this.t, "copy_message"));
         card.append(header);
         if (item.kind === "assistant") {
@@ -309,4 +365,5 @@
     }
   }
   window.BibimerConversation = Conversation;
+  window.BibimerPendingMessages = PendingMessages;
 })();

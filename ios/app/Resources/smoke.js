@@ -105,10 +105,13 @@
     await wait(() => window.BibimerIOSTestFontState().terminal === enlargedFont,"terminal text pinch");
     pinchText($("terminal-area"),originalFont / enlargedFont);
     await wait(() => window.BibimerIOSTestFontState().terminal === originalFont,"terminal text pinch reset");
-    const sample = document.createElement("div"); sample.className = "markdown"; sample.textContent = "Text scale fixture"; $("conversation").append(sample);
-    const normalText = parseFloat(getComputedStyle(sample).fontSize);
+    const sample = document.createElement("div"); sample.className = "markdown";
+    sample.innerHTML = '<p>Body <code>inline</code></p><div class="code-block"><pre><code><span class="hljs-keyword">const</span> sample = 1;</code></pre></div><div class="diff-viewport"><div class="diff-line"><span class="diff-numbers">1</span><code>+diff</code></div></div><article class="command"><span class="activity-title">command</span></article><details class="file-change"><summary><span class="activity-title">file.js</span></summary></details><p class="literal-html">literal</p>';
+    $("conversation").append(sample);
+    const scaledNodes = [sample, ...sample.querySelectorAll("code, code span, .diff-numbers, .activity-title, .literal-html")];
+    const normalSizes = scaledNodes.map(node => parseFloat(getComputedStyle(node).fontSize));
     $("conversation").style.setProperty("--ios-chat-text-scale","1.5");
-    if (Math.abs(parseFloat(getComputedStyle(sample).fontSize) - normalText * 1.5) > 0.1) throw new Error("Chat body text scale was not applied");
+    if (scaledNodes.some((node,index) => Math.abs(parseFloat(getComputedStyle(node).fontSize) - normalSizes[index] * 1.5) > 0.1)) throw new Error("Chat body, inline/block code, highlighted tokens, diff or command text did not scale together");
     $("conversation").style.removeProperty("--ios-chat-text-scale"); sample.remove();
     if (controls.some((size,index) => getComputedStyle($(["app-settings-open","connection","input"][index])).fontSize !== size)) throw new Error("Text pinch resized app controls");
     passed("scoped_text_pinch");

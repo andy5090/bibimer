@@ -7,6 +7,7 @@ nodes.get('input').setRangeText=function(text,start,end){this.value=this.value.s
 nodes.get('input').dispatchEvent=()=>{};
 nodes.get('mode').value='chat';
 const ctx=vm.createContext({Event,$:id=>nodes.get(id),responseDelivery:'queue',enterBehavior:'send',isChat:()=>ctx.session?.mode==='chat',supportsChat:()=>true,canSteer:true,canClaudeSteer:true,canQueue:true,canInitialMessage:true,settingsBusy:false,sending:new Set(),session:null,demo:false,views:new Map(),calls:[],noticeData:null,notices:[],t:k=>k,uuid:()=>String(ctx.calls.length),viewKey:()=>ctx.session?.id,rememberView(){ctx.views.set(ctx.viewKey(),{text:nodes.get('input').value});},renderSession:()=>ctx.renderSendAction(),resizeInput(){},commands:{invocation:async text=>text.startsWith('/')?{command_id:'native-command'}:{},keydown:()=>false},updateQueue(){},setSession:s=>ctx.session=s,notice:(...args)=>ctx.notices.push(args),launchSession:async()=>ctx.launches++,launches:0,sendRaw:async()=>{throw Error('Chat should not use PTY');}});
+require('./optimistic_fixture.cjs')(ctx);
 ctx.api=async (method,path,body)=>{ctx.calls.push({method,path,body});if(ctx.reject)throw {key:'error_steer_rejected'};return {session:ctx.session};};
 const support=source.slice(source.indexOf('  function supportsSteer()'),source.indexOf('  function renderQueue()'));
 vm.runInContext(support,ctx);

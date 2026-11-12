@@ -47,6 +47,12 @@ class GuestPackagingTests(unittest.TestCase):
         self.assertIn('maximum-scale=1, user-scalable=no',index)
         self.assertIn('touch-action:pan-x pan-y',index)
         self.assertIn('--ios-chat-text-scale',index)
+        for selector in ('#conversation .code-block pre code { font-size:inherit;',
+                         '#conversation .markdown code { font-size:.87em;',
+                         '#conversation .diff-line code { font-size:inherit;',
+                         '#conversation .diff-numbers { font-size:calc(',
+                         '#conversation .command .activity-title'):
+            self.assertIn(selector,index)
         self.assertIn('id="ios-screen-settings"',index)
         for name in ('ios-keep-awake','ios-defer-home'):
             self.assertIn('id="'+name+'" class="settings-switch" type="checkbox" role="switch"',index)
