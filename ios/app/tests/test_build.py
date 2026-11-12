@@ -47,6 +47,12 @@ class GuestPackagingTests(unittest.TestCase):
         self.assertIn('maximum-scale=1, user-scalable=no',index)
         self.assertIn('touch-action:pan-x pan-y',index)
         self.assertIn('--ios-chat-text-scale',index)
+        for selector in ('#conversation .code-block pre code { font-size:inherit;',
+                         '#conversation .markdown code { font-size:.87em;',
+                         '#conversation .diff-line code { font-size:inherit;',
+                         '#conversation .diff-numbers { font-size:calc(',
+                         '#conversation .command .activity-title'):
+            self.assertIn(selector,index)
         self.assertIn('id="ios-screen-settings"',index)
         for name in ('ios-keep-awake','ios-defer-home'):
             self.assertIn('id="'+name+'" class="settings-switch" type="checkbox" role="switch"',index)
@@ -55,6 +61,10 @@ class GuestPackagingTests(unittest.TestCase):
         self.assertIn('BibimerIOSLocales',(self.root/'Web/ios-locales.js').read_text())
         self.assertIn('id="ios-connection-diagnostics-copy"',index)
         self.assertIn('id="ios-reconnect-status" class="hint" role="status" aria-live="polite"',index)
+        announcements=index[index.index('<div id="announcements">'):index.index('<main id="work"')]
+        self.assertIn('id="ios-recovery-progress"',announcements)
+        self.assertIn('aria-atomic="true"',announcements)
+        self.assertIn('prefers-reduced-motion:reduce',index)
 
     def test_missing_opencode_compatibility_patcher_rejects_packaging(self):
         (self.root / 'ios/bridge/opencode_compat.py').unlink()

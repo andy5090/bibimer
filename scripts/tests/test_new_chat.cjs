@@ -24,6 +24,7 @@ function fixture() {
     selectSession:async(...args)=>ctx.selection=args,
     api:async(method,endpoint,body)=>{ctx.requests.push({method,endpoint,body});return {session:result};},
   });
+  require('./optimistic_fixture.cjs')(ctx);
   vm.runInContext(functions,ctx);return {ctx,fields,draft,result};
 }
 (async()=>{
@@ -36,7 +37,7 @@ function fixture() {
     ctx.Option=function(label,value){return {label,value,dataset:{}};};
     ctx.document={querySelectorAll:()=>[]};ctx.t=key=>key;ctx.knownProjects=[];
     Object.assign(ctx,{canSwitchAgents:true,persistentCodex:true,canImport:true,multiImport:true,canQueue:true,canOptions:true,
-      libraryBusy:false,multipleProjects:true,queued:[],canBatchQueue:true,conversation:{items:new Map(),requests:new Map(),enable(){},setRetryControls(){}},
+      libraryBusy:false,multipleProjects:true,queued:[],canBatchQueue:true,conversation:{items:new Map(),requests:new Map(),enable(){},setRetryControls(){},setOptimistic(){},reconcileOptimistic(){}},
       voiceInput:{update(){}},worktreeCreator:{render(){}},github:{render(){}},inspector:{update(){}},fileViewer:{update(){}},commands:{render(){},invocation:async()=>({})},
       importable:()=>false,findSession:()=>null,supportsSteer:()=>false,isResponding:()=>false,sessionTitle:()=>"Existing session",supportsChat:()=>fields.agent.value!=="shell"});
     for(const name of ["renderConnectionRecovery","renderBrowser","renderContextUsage","renderSubscriptionUsage","renderBridgeUpdate","renderSettings","renderModels","renderImport",
@@ -88,10 +89,13 @@ function fixture() {
       ctx.requests.push({method,endpoint,body});if(method==="GET")return {projects:[],instance:"bridge-a"};
       return await new Promise(resolve=>release=()=>resolve({session:result}));
     };
-    const first=ctx.submitInput(false);await new Promise(setImmediate);await ctx.submitInput(false);
+    const first=ctx.submitInput(false);
+    assert.equal(ctx.optimisticMessages.list(ctx.optimisticScope())[0].text,'First message 한글','The first question appears before session creation returns');
+    await new Promise(setImmediate);await ctx.submitInput(false);
     assert.equal(ctx.requests.length,1,"Repeated Send while creating must not duplicate the request");
     fields.input.value="A newer draft";ctx.rememberView();release();await first;
     assert.equal(ctx.views.get(draft).text,"A newer draft","A changed draft must survive completion");
+    assert.equal(ctx.optimisticMessages.list(ctx.optimisticScope())[0].text,'First message 한글','The optimistic question follows the created session');
   }
   {
     const {ctx,fields,draft,result}=fixture();let reject=true;

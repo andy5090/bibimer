@@ -694,3 +694,9 @@ input.settings-switch:disabled { opacity:.4; cursor:default; }
 .maintenance-sessions strong,.maintenance-sessions small{display:block}
 .maintenance-sessions small{margin-top:4px;color:var(--muted)}
 .settings-switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.message[data-optimistic="true"]{border-style:dashed}
+.message[data-optimistic="true"] .item-status{white-space:normal;text-align:end;max-width:60%}
+
+#agent-connection-status[data-loading="true"]::before{content:"";display:inline-block;vertical-align:-2px;width:12px;height:12px;margin-right:7px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:account-loading-spin 1s linear infinite}
+@keyframes account-loading-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){#agent-connection-status[data-loading="true"]::before{animation:none}}

@@ -10,12 +10,23 @@
     const runtime = environment().localRuntime || {};
     const state = runtime.state;
     const busy = !unconfirmed && (requested || runtime.busy === true);
+    const recoveryKey = runtime.phase === "stopping" ? "ios_recovery_stopping" : runtime.phase === "starting" ? "ios_recovery_starting" : "ios_runtime_restarting";
     const key = unconfirmed ? "ios_reconnect_unconfirmed" : requested ? "ios_connection_checking" :
       state === "connected" ? "ios_connection_restored" : state === "stopped" ? "error_ios_runtime_stopped" :
       state === "restart-required" ? "error_ios_runtime_start" : state === "recovery-failed" ? "error_ios_runtime_recovery" :
-      runtime.foreground === false ? "connection_off" : state === "restarting" ? "ios_runtime_restarting" : "ios_connection_checking";
+      runtime.foreground === false ? "connection_off" : state === "restarting" ? recoveryKey : "ios_connection_checking";
     const status = $("ios-reconnect-status");
     status.textContent = t(key); status.dataset.i18n = key;
+    const failed = ["recovery-failed", "stopped", "restart-required"].includes(state) && !requested && !unconfirmed;
+    const banner = $("ios-recovery-progress");
+    banner.hidden = !busy && !failed && !unconfirmed;
+    banner.setAttribute("aria-busy", String(busy));
+    $("ios-recovery-spinner").hidden = !busy;
+    const title = $("ios-recovery-title"), detail = $("ios-recovery-detail");
+    const titleKey = unconfirmed ? "ios_reconnect_unconfirmed" : failed ? "ios_recovery_failed" : state === "restarting" && !requested ? "ios_recovery_active" : "ios_connection_checking";
+    title.textContent = t(titleKey); title.dataset.i18n = titleKey;
+    detail.hidden = !failed && (state !== "restarting" || requested);
+    detail.textContent = t(key); detail.dataset.i18n = key;
     for (const id of iosReconnectButtons) {
       const button = $(id), label = button.querySelector("[data-i18n]") || button;
       label.dataset.i18n = busy ? (state === "restarting" && !requested ? "ios_connection_restarting" : "ios_connection_checking") : "reconnect";

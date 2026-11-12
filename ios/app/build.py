@@ -43,6 +43,13 @@ def package_web(destination):
     if not reconnect_row:
         raise RuntimeError('Shared reconnect markup changed; review the iOS connection status.')
     index = index[:reconnect_row.end()] + '\n      <p id="ios-reconnect-status" class="hint" role="status" aria-live="polite" aria-atomic="true"></p>' + index[reconnect_row.end():]
+    if index.count('<div id="announcements">') != 1:
+        raise RuntimeError('Shared announcements markup changed; review iOS recovery progress.')
+    index = index.replace('<div id="announcements">', '''<div id="announcements">
+    <aside id="ios-recovery-progress" class="ios-recovery-progress" role="status" aria-live="polite" aria-atomic="true" hidden>
+      <span id="ios-recovery-spinner" class="ios-recovery-spinner" aria-hidden="true"></span>
+      <div><strong id="ios-recovery-title"></strong><p id="ios-recovery-detail"></p></div>
+    </aside>''')
     if index.count('<section id="connection-settings"') != 1:
         raise RuntimeError('Shared Settings markup changed; review the iOS screen controls.')
     index = index.replace('<section id="connection-settings"', '''<section id="ios-screen-settings" class="card preference-card">
@@ -68,6 +75,12 @@ def package_web(destination):
     # iOS zooms small text fields on focus. Keep the shared Android sizing intact.
     index = index.replace('</head>', '''<style>
 .ios-unavailable { display:none !important; }
+.ios-recovery-progress { display:flex; align-items:center; gap:10px; margin:6px 12px; padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--raised); font-size:12px; }
+.ios-recovery-progress>div { min-width:0; overflow-wrap:anywhere; }
+.ios-recovery-progress p { margin:4px 0 0; font-size:11px; }
+.ios-recovery-spinner { flex:none; width:16px; height:16px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:ios-recovery-spin 1s linear infinite; }
+@keyframes ios-recovery-spin { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) { .ios-recovery-spinner { animation:none; } }
 /* Native constraints size the WebView; keep navigation inside that height. */
 html, body { width:100%; max-width:100%; height:100%; overflow:hidden; touch-action:pan-x pan-y; overscroll-behavior-x:none; }
 :root #app { height:100%; }
@@ -78,8 +91,14 @@ html, body { width:100%; max-width:100%; height:100%; overflow:hidden; touch-act
 #conversation .markdown h2 { font-size:calc(19px * var(--ios-chat-text-scale, 1)); }
 #conversation .markdown h3 { font-size:calc(17px * var(--ios-chat-text-scale, 1)); }
 #conversation .markdown h4, #conversation .markdown h5, #conversation .markdown h6 { font-size:calc(15px * var(--ios-chat-text-scale, 1)); }
-#conversation .code-block pre code, #conversation .markdown table { font-size:calc(13px * var(--ios-chat-text-scale, 1)); }
+#conversation .code-block pre, #conversation .markdown table { font-size:calc(13px * var(--ios-chat-text-scale, 1)); }
+#conversation .code-block pre code { font-size:inherit; }
+#conversation .markdown code { font-size:.87em; }
+#conversation .markdown .literal-html { font-size:calc(12px * var(--ios-chat-text-scale, 1)); }
+#conversation .command .activity-title, #conversation .file-change>summary .activity-title { font-size:calc(11px * var(--ios-chat-text-scale, 1)); }
 #conversation .diff-viewport { font-size:calc(11px * var(--ios-chat-text-scale, 1)); }
+#conversation .diff-line code { font-size:inherit; }
+#conversation .diff-numbers { font-size:calc(10px * var(--ios-chat-text-scale, 1)); }
 </style>
 </head>''')
     (destination / 'index.html').write_text(index)

@@ -44,9 +44,25 @@ def load_bridge(source=SOURCE):
             raise RuntimeError("Bundled bridge contract changed; review iOS adaptation")
         text = text.replace(before, after)
     structured = '{"codex", "claude", "opencode"}'
-    if text.count(structured) != 6:
+    extended = '{"codex", "claude", "opencode", "gemini"}'
+    # Extend structured sessions, not the separate native-login allowlists.
+    structured_guards = {
+        'data.get("agent") not in ' + structured + ' or data.get("mode") != "chat"': 1,
+        '    def history_call(self, project, method, params, agent="codex"):\n        if agent not in ' + structured + ':': 1,
+        '        if not isinstance(agent, str) or agent not in ' + structured + ':': 2,
+        '        if (not isinstance(agent, str) or agent not in ' + structured + ' or': 1,
+        'if mode not in {"terminal", "chat"} or (mode == "chat" and agent not in ' + structured + '):': 1,
+    }
+    authentication_guards = (
+        '        if action == "terminal":\n            if agent not in ' + structured + ':',
+        '        if authentication_agent is not None and (authentication_agent not in ' + structured + ' or',
+    )
+    if text.count(structured) != 8 or any(text.count(guard) != 1 for guard in authentication_guards):
         raise RuntimeError("Bundled structured-agent contract changed; review iOS adaptation")
-    text = text.replace(structured, '{"codex", "claude", "opencode", "gemini"}')
+    for guard, count in structured_guards.items():
+        if text.count(guard) != count:
+            raise RuntimeError("Bundled structured-agent contract changed; review iOS adaptation")
+        text = text.replace(guard, guard.replace(structured, extended))
     module = types.ModuleType("bibimer_guest_base")
     module.__file__ = str(source)
     sys.modules[module.__name__] = module

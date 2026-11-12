@@ -24,5 +24,5 @@ for(const supported of [true,false]){
 }
 const locales=JSON.parse(fs.readFileSync("ios/app/Resources/ios-locales.json","utf8"));
 assert.equal(Object.keys(locales).length,10);
-for(const strings of Object.values(locales)){assert.equal(strings.length,39);assert.ok(strings.every(value=>typeof value==="string" && value.trim()));}
+for(const strings of Object.values(locales)){assert.equal(strings.length,46);assert.ok(strings.every(value=>typeof value==="string" && value.trim()));}
 console.log("PASS iOS screen preferences: explicit boolean actions, independent settings, restored switches, desktop disabled, ten locales");

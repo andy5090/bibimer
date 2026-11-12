@@ -14,6 +14,8 @@
   let projectInitialized = false, connectionError = null;
   let noticeData = null, knownAgents = [];
   const sending = new Set(), views = new Map();
+  const optimisticMessages = new window.BibimerPendingMessages();
+  const optimisticScope = (key = viewKey()) => JSON.stringify([instance,key]);
   let knownProjects = [], selectedProjectId = null, multipleProjects = false, switchingProject = false;
   let stopTarget = null, catalogRequest = false;
   let canBrowse = false, folderListing = null, folderPath = "~", folderLoading = false;
@@ -1331,8 +1333,16 @@
     $("chat-panel").hidden = !chatDisplay;
     $("chat-empty").textContent = t(newChat ? canInitialMessage ? "new_chat_hint" : "new_chat_update" : "chat_empty");
     $("chat-state").hidden = !isChat();
-    $("chat-empty").hidden = conversation.items.size > 0 || conversation.loading || switchingProject;
-    $("session-loading").hidden = !online || paused || !(switchingProject || conversation.loading);
+    const optimisticContext = optimisticScope();
+    conversation.reconcileOptimistic(optimisticMessages.reconcile(optimisticContext, conversation.items.values()));
+    const optimisticRows = optimisticMessages.list(optimisticContext);
+    for (const row of optimisticRows) {
+      if ((session && !["running", "stopping"].includes(session.state) && ["sending", "accepted", "queued"].includes(row.state)) ||
+          (session?.turn_state === "failed" && row.state === "accepted")) optimisticMessages.settle(row.id, "uncertain");
+    }
+    conversation.setOptimistic(optimisticRows);
+    $("chat-empty").hidden = conversation.items.size > 0 || optimisticRows.length > 0 || conversation.loading || switchingProject;
+    $("session-loading").hidden = !online || paused || optimisticRows.length > 0 || !(switchingProject || conversation.loading);
     $("workspace").classList.toggle("chat-mode", chatDisplay);
     $("workspace").classList.toggle("has-requests", isChat() && conversation.requests.size > 0);
     $("turn-status").textContent = isChat() ? (session.state === "running" ? t("chat_state_" + session.turn_state) : label) : "";
@@ -1646,6 +1656,7 @@
     try {
       const result = await api("POST", `/v1/sessions/${id}/queue`, {action, ...(entryId ? {entry_id:entryId} : {}),
         ...(action === "steer" ? {turn_id:turn} : {}), request_id:uuid()});
+      if (action === "remove") optimisticMessages.remove(entryId);
       if (session?.id === id) {
         setSession(result.session); updateQueue(result);
         if (["error_queue_steer_rejected", "error_steer_unavailable", "error_queue_entry", "error_input_uncertain"].includes(noticeData?.key)) notice("");
@@ -1699,15 +1710,19 @@
     const id = session.id, key = viewKey();
     const turn = session.active_turn_id;
     rememberView();
+    const chat = isChat(), requestId = uuid(), context = optimisticScope(key);
+    if (chat) optimisticMessages.add(context, requestId, text, Math.max(session.output_end || 0, ...[...conversation.items.values()].map(item => item.revision || 0)));
     sending.add(id); renderSession();
-    let ok = false;
-    const chat = isChat();
+    let ok = false, dispatched = false;
     try {
       const invocation = demo ? {} : await commands.invocation(text);
       if (chat) {
         const action = steer ? "steer" : canQueue ? "queue" : "message";
-        const result = await api("POST", `/v1/sessions/${id}/${action}`, {text, ...invocation, request_id:uuid(),
+        dispatched = true;
+        const result = await api("POST", `/v1/sessions/${id}/${action}`, {text, ...invocation, request_id:requestId,
           ...(steer ? {turn_id:turn} : canQueue ? {action:"add"} : {})});
+        if (invocation.command_id) optimisticMessages.remove(requestId);
+        else optimisticMessages.settle(requestId, result.queue?.some(row => row.id === requestId && row.state === "queued") ? "queued" : "accepted");
         if (session?.id === id) { setSession(result.session); updateQueue(result); }
         ok = true;
       } else if (session?.id === id) ok = await sendRaw((invocation.terminalText || text).replace(/\r?\n/g, "\r") + "\r");
@@ -1715,6 +1730,7 @@
       if (ok && key === viewKey() && $("input").value === text) $("input").value = "";
       if (ok && session?.id === id && ["error_steer_rejected", "error_steer_unavailable", "error_queue_full", "error_input_uncertain"].includes(noticeData?.key)) notice("");
     } catch (error) {
+      if (chat) optimisticMessages.settle(requestId, dispatched && (!error.status || error.status >= 500 || ["error_input_uncertain","error_chat_transport"].includes(error.key)) ? "uncertain" : "failed");
       if (session?.id === id) notice(error.key || "error_request_failed",
         !error.key || ["error_chat_transport", "error_input_uncertain", "error_connection_failed", "error_timeout"].includes(error.key) ? "check_delivery" : null);
     }
@@ -2117,11 +2133,20 @@
     const key = viewKey(), sourceProject = projectKey(), sourceInstance = instance;
     rememberView(); busy = true; ++generation; clearTimeout(retryTimer); native.cancelPoll?.(); notice("");
     let attempt = launchAttempts.get(key);
+    const optimisticId = initialText !== null ? attempt?.payload.request_id || uuid() : null;
+    const optimisticContext = optimisticScope(key);
+    let dispatched = false;
+    if (optimisticId && (!attempt || attempt.payload.initial_message?.text === initialText)) optimisticMessages.add(optimisticContext, optimisticId, initialText);
     function accepted(value) {
       if (instance !== sourceInstance) return;
       launchAttempts.delete(key);
       if (initialText !== null && views.get(key)?.text === initialText) Object.assign(views.get(key), {text:"", start:0, end:0});
       cacheSession(value);
+      if (optimisticId) {
+        if (attempt?.payload.initial_message?.command_id) optimisticMessages.remove(optimisticId);
+        else optimisticMessages.settle(optimisticId, "accepted");
+        optimisticMessages.move(optimisticContext, optimisticScope(canLibrary ? sourceProject + "/" + value.id : key));
+      }
       if (projectKey() === sourceProject && (viewKey() === key || session?.id === value.id)) {
         ++generation; setSession(value); resize(); startPoll();
       }
@@ -2130,7 +2155,10 @@
       const invoking = initialText !== null && !demo ? commands.invocation(initialText) : Promise.resolve({});
       renderSession();
       const invocation = await invoking;
-      if (instance !== sourceInstance || viewKey() !== key || paused) return;
+      if (instance !== sourceInstance || viewKey() !== key || paused) {
+        if (optimisticId) optimisticMessages.settle(optimisticId, attempt ? "uncertain" : "failed");
+        return;
+      }
       const payload = {agent:$("agent").value, mode:$("mode").value,
         ...(canLibrary ? {new_session:true, worktree_path:draftPath || project.path} : {}),
         ...(canOptions ? {options:{...savedOptions($("agent").value),
@@ -2138,14 +2166,19 @@
         ...(multipleProjects ? {project_id:selectedProjectId} : {}),
         ...(initialText !== null ? {initial_message:{text:initialText, ...invocation}} : {})};
       const signature = JSON.stringify([sourceInstance, payload]);
-      if (attempt && attempt.signature !== signature) { notice("error_input_uncertain", "check_delivery"); return; }
+      if (attempt && attempt.signature !== signature) {
+        if (optimisticId) optimisticMessages.settle(optimisticId, "uncertain");
+        notice("error_input_uncertain", "check_delivery"); return;
+      }
       if (!attempt) {
-        attempt = {signature, payload:{...payload, cols:Math.max(20, term.cols), rows:Math.max(4, term.rows), request_id:uuid()}};
+        attempt = {signature, payload:{...payload, cols:Math.max(20, term.cols), rows:Math.max(4, term.rows), request_id:optimisticId || uuid()}};
         launchAttempts.set(key, attempt);
       }
+      dispatched = true;
       const data = await api("POST", "/v1/sessions", attempt.payload);
       accepted(data.session);
     } catch (error) {
+      if (optimisticId) optimisticMessages.settle(optimisticId, dispatched && (!error.status || error.status >= 500) ? "uncertain" : "failed");
       if (error.status && error.status < 500) launchAttempts.delete(key);
       notice(error.key || "error_request_failed", !error.status || error.status >= 500 ? "check_delivery" : null);
       if (attempt && (!error.status || error.status >= 500)) {

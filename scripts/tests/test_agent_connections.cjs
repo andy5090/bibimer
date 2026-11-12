@@ -15,6 +15,7 @@ class E{
  constructor(){this.value='';this.children=[];this.handlers={};this.open=false;this.hidden=false;this.disabled=false;this.dataset={};}
  addEventListener(name,f){this.handlers[name]=f;}
  append(...items){this.children.push(...items);}
+ setAttribute(name,value){this[name]=value;}
  replaceChildren(...items){this.children=items;this.value=items.find(n=>!n.disabled)?.value||'';}
  get options(){return this.children;}
  showModal(){this.open=true;}
@@ -46,9 +47,21 @@ const el=id=>node('agent-connection-'+id);
  await controller.open('opencode');assert.equal(terminals.length,0);assert.equal(calls.at(-1).action,'status');assert.equal(el('provider').value,'test');assert.equal(el('method').options[1].disabled,true);
  el('key').value='fictional-private-key';await controller.start();assert.equal(el('key').value,'');assert.equal(calls.at(-1).key,'fictional-private-key');assert.equal(controller.state.job.status,'saved');assert.equal(terminals.length,0);
  await controller.load('version');assert.equal(el('version').textContent,'connection_version');
+ slow=true;const versionLoading=controller.load('version');
+ assert.equal(el('status').textContent,'connection_loading','Cached account status must not hide an active version query');
+ assert.equal(el('status')['aria-busy'],'true');assert.equal(el('status').dataset.loading,'true');
+ assert.equal(el('provider').disabled,true);
+ pendingResolve({version:'1.2.4'});await versionLoading;slow=false;
+ assert.equal(el('status')['aria-busy'],'false');assert.equal(el('status').dataset.loading,'false');
+ assert.equal(el('status').textContent,'connection_configured');
+ const normalRequest=controller.request;
+ controller.request=async()=>{throw {key:'error_timeout'};};await controller.load();controller.request=normalRequest;
+ assert.equal(el('status').dataset.loading,'false','A failed query stops its loading indicator');
+ assert.equal(el('error').textContent,'error_timeout');
  slow=true;const loading=controller.load();assert.equal(controller.state.busy,true);el('key').value='draft-private-key';ctx={...ctx,project:'project-two'};controller.update();assert.equal(controller.dialog.open,false);assert.equal(el('key').value,'');pendingResolve({agent:'opencode',installed:false,state:'signed_out',providers:[]});await loading;assert.equal(controller.state.report.installed,true,'late response must not replace prior context');slow=false;
  ctx={...ctx,path:'/worktree-one'};await controller.open('opencode');assert.equal(calls.at(-1).worktree_path,'/worktree-one');el('key').value='worktree-private-key';ctx={...ctx,path:'/worktree-two'};controller.update();assert.equal(el('key').value,'');assert.equal(controller.dialog.open,false);
  ctx={...ctx,supported:false};const before=calls.length;await controller.open('claude');assert.equal(calls.length,before);assert.equal(el('form').hidden,true);assert.equal(el('status').textContent,'connection_update_bridge');assert.equal(terminals.length,0);await controller.openTerminal();assert.deepEqual(terminals,[]);assert.equal(controller.state.error,'connection_update_bridge');
+ assert.equal(el('status').dataset.loading,'false','An unsupported feature is not presented as still loading');
  ctx={...ctx,supported:true,loginUI:true,loginTerminal:true};
  for(const agent of ['codex','claude','opencode','gemini']){
   await controller.open(agent);assert.equal(el('form').hidden,false,agent+' has a primary account form');

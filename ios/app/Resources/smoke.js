@@ -105,10 +105,13 @@
     await wait(() => window.BibimerIOSTestFontState().terminal === enlargedFont,"terminal text pinch");
     pinchText($("terminal-area"),originalFont / enlargedFont);
     await wait(() => window.BibimerIOSTestFontState().terminal === originalFont,"terminal text pinch reset");
-    const sample = document.createElement("div"); sample.className = "markdown"; sample.textContent = "Text scale fixture"; $("conversation").append(sample);
-    const normalText = parseFloat(getComputedStyle(sample).fontSize);
+    const sample = document.createElement("div"); sample.className = "markdown";
+    sample.innerHTML = '<p>Body <code>inline</code></p><div class="code-block"><pre><code><span class="hljs-keyword">const</span> sample = 1;</code></pre></div><div class="diff-viewport"><div class="diff-line"><span class="diff-numbers">1</span><code>+diff</code></div></div><article class="command"><span class="activity-title">command</span></article><details class="file-change"><summary><span class="activity-title">file.js</span></summary></details><p class="literal-html">literal</p>';
+    $("conversation").append(sample);
+    const scaledNodes = [sample, ...sample.querySelectorAll("code, code span, .diff-numbers, .activity-title, .literal-html")];
+    const normalSizes = scaledNodes.map(node => parseFloat(getComputedStyle(node).fontSize));
     $("conversation").style.setProperty("--ios-chat-text-scale","1.5");
-    if (Math.abs(parseFloat(getComputedStyle(sample).fontSize) - normalText * 1.5) > 0.1) throw new Error("Chat body text scale was not applied");
+    if (scaledNodes.some((node,index) => Math.abs(parseFloat(getComputedStyle(node).fontSize) - normalSizes[index] * 1.5) > 0.1)) throw new Error("Chat body, inline/block code, highlighted tokens, diff or command text did not scale together");
     $("conversation").style.removeProperty("--ios-chat-text-scale"); sample.remove();
     if (controls.some((size,index) => getComputedStyle($(["app-settings-open","connection","input"][index])).fontSize !== size)) throw new Error("Text pinch resized app controls");
     passed("scoped_text_pinch");
@@ -153,9 +156,9 @@
     $("app-settings-open").click();
     await window.BibimerIOSTestAPI("POST","/native/test-connection",{mode:"online"});
     $("reconnect-settings").click();
-    if (!$("reconnect-settings").disabled || $("reconnect-settings").getAttribute("aria-busy") !== "true" || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_checking")) throw new Error("Settings reconnect did not immediately show progress");
+    if (!$("reconnect-settings").disabled || $("reconnect-settings").getAttribute("aria-busy") !== "true" || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_checking") || $("ios-recovery-progress").hidden) throw new Error("Settings reconnect did not immediately show progress");
     await wait(() => snapshot()?.online,"native connection retry");
-    if ($("reconnect-settings").disabled || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_restored")) throw new Error("Settings reconnect did not show completion");
+    if ($("reconnect-settings").disabled || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_restored") || !$("ios-recovery-progress").hidden) throw new Error("Settings reconnect did not show completion");
     const recovered = await window.BibimerIOSTestAPI("POST","/native/test-connection",{mode:"observe"});
     if (!recovered.sameWorkspace || !recovered.ready || !recovered.visible || snapshot().session.id !== sessionId || $("input").value !== recoveryDraft) throw new Error("Native reconnect replaced workspace, session or draft");
     $("page-back").click();
