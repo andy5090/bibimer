@@ -1,5 +1,13 @@
 # Bibimer 다음 세션 시작점
 
+## iOS TestFlight11 Mac 검증·이전 HTTP 쓰기 취소 보완 (2026-11-13, 배포 준비)
+
+- 7776a99의 즉시 질의 표시/배치 뒤 최하단 이동·코드 글자 크기 상속·계정 연결 로딩/안내를 양 SDK로 컴파일했다. 최초 native QA는31개 뒤 Linux 복구의 이전 쓰기 취소 확인에서 실패했다. 미전송 suspended fixture가 실제 등록 task와 다르게 관리됨을 확인했고, 별도 Foundation 실험에서는 실제 resume된 POST도 graceful finish 뒤 invalidateAndCancel만으로 취소되지 않는 문제를 재현했다.
+- 현재/이전 HTTP transport의 등록 task를 직접 cancel한 장벽 뒤에만 guest 종료를 시작한다. 미확인 transport는 시간 초과/다음 시도에도 유지하고 확인된 captured set만 제거한다. 늦은 callback·runtimeQueue 지연·serial/timeout/exited를 재확인해 오래된 시도가 새 복구를 건드리지 않게 했다. 취소 장벽이15초 내 끝나지 않으면 실패/명시적 재시도를 제공하며, 이미 시작한 guest 종료는 완료를 확인하기 전 중복 실행하지 않는다. UIKit은 대기시키지 않는다.
+- self-test는 NSURLProtocol로 실제 resume/등록된 POST를 네트워크에 보내지 않고 보류한다. 실제 helper를 Foundation으로 컴파일하는 회귀2개가 current+graceful retired POST 취소 및 지연 열거→다음 시도의 소유/취소→늦은 ack의 새 transport 보존을 확인한다. 앱 Python32·브리지59·Node22파일(앱12/공통10)·937키×10언어·Chromium20배치·패키징 JS5구문·main/서비스/RuntimeSupport 정적분석0을 통과했다.
+- 수정 후 전용 Bibimer TestFlight QA의 실제 WKWebView/Linux32개를 **28.86초/29.96초로2회 연속**, JS오류/fatal/진단실패0으로 통과했다. 본문·인라인/블록 코드·강조 토큰·literal HTML·diff/줄 번호·명령/파일명의 computed font-size1.5배, 기존 재연결/배너·실제 서비스2회 재시작/파일 보존과 실제 대기 쓰기 취소를 확인했다. 각 실행의 기존 syscall151/152 경고4개는 보존했다.
+- 최초 unsigned 후보는 REJECTED_QA.json으로 제외하고 서명/업로드하지 않았다. 실패는 dist/ios-app/history/chat-nov13-smoke-1794507493588017000/, 성공은 dist/ios-app/chat-nov13-smoke/와 history 및 .tools/ios-nov13-chat-final-qa1/2-verification.json에 보존했다. 최종 chat-final archive/export를 사용한다. 사용자 앱/Runtime Lab/브리지·세션을 재시작하지 않았다. 실제 iPhone의 키보드/스크롤/제스처·계정 로그인은 별도 확인이다. 이 항목은 Apple 제공 완료 기록이 아니다.
+
 ## Android 0.42.0(71) 내부 테스트 배포 완료 (2026-11-13)
 
 - **03:11 Asia/Seoul**, 기존 Google Play 내부 테스트 트랙에 게시하고 새로고침 뒤 **활성 / 내부 테스터에게 제공됨**을 확인했다.71만 포함·70 제외, 한/영 노트401/211자·2/2언어, 오류0·기존 매핑 파일 미첨부 경고1건이다. Console의7개 기기 유형 지원 변화는 모두0이다. 기존 테스터·프로덕션·iOS/TestFlight·웹사이트 범위는 변경하지 않았다.

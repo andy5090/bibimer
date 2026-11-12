@@ -274,7 +274,7 @@
       await window.BibimerIOSTestAPI("POST","/native/test-linux-recovery",{});
       await wait(() => snapshot()?.online && snapshot().instance !== previousInstance,"new Linux services without app relaunch",60000);
       const state = await window.BibimerIOSTestAPI("GET","/native/test-linux-recovery");
-      if (!state.sameWorkspace || !state.ready || state.failed || !state.oldWriteCancelled) throw new Error("Linux recovery replaced the workspace, failed or retained an old write");
+      if (!state.sameWorkspace || !state.ready || state.failed || !state.oldWriteCancelled) throw new Error("Linux recovery replaced the workspace, failed or retained an old write: " + JSON.stringify(state));
       const saved = await window.BibimerIOSTestAPI("POST","/v1/inspect",{project_id:previousProject,worktree_path:path,action:"file",path:"share.txt"});
       if (!saved.text.includes("Bibimer native file export")) throw new Error("Linux recovery lost project data");
       const health = await window.BibimerIOSTestAPI("GET","/v1/health");

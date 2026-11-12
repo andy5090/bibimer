@@ -18,6 +18,47 @@
 
 extern int bibimer_create_directory(const char *path);
 
+static void cancelHTTPTransports(NSArray<NSURLSession *> *transports, NSMutableSet<NSURLSession *> *retired, dispatch_block_t completion) {
+    [retired addObjectsFromArray:transports];
+    dispatch_group_t pending = dispatch_group_create();
+    for (NSURLSession *transport in transports) {
+        dispatch_group_enter(pending);
+        [transport getAllTasksWithCompletionHandler:^(NSArray<NSURLSessionTask *> *tasks) {
+            // invalidateAndCancel does not supersede an earlier graceful
+            // finishTasksAndInvalidate. Cancel each registered task explicitly.
+            for (NSURLSessionTask *task in tasks) [task cancel];
+            [transport invalidateAndCancel];
+            dispatch_group_leave(pending);
+        }];
+    }
+    dispatch_group_notify(pending, dispatch_get_main_queue(), ^{
+        [retired minusSet:[NSSet setWithArray:transports]];
+        completion();
+    });
+}
+
+// Self-test only: a registered POST that cannot reach the local bridge.
+@interface BibimerTestHeldWrite : NSURLProtocol
++ (void)onStart:(dispatch_block_t)callback;
++ (NSUInteger)stopCount;
+@end
+@implementation BibimerTestHeldWrite
+static dispatch_block_t heldWriteStart;
+static NSUInteger heldWriteStops;
++ (void)onStart:(dispatch_block_t)callback { @synchronized(self) { heldWriteStart = [callback copy]; } }
++ (NSUInteger)stopCount { @synchronized(self) { return heldWriteStops; } }
++ (BOOL)canInitWithRequest:(NSURLRequest *)request {
+    return [[request valueForHTTPHeaderField:@"X-Bibimer-Test-Held-Write"] isEqual:@"1"];
+}
++ (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request { return request; }
+- (void)startLoading {
+    dispatch_block_t callback;
+    @synchronized(BibimerTestHeldWrite.class) { callback = heldWriteStart; heldWriteStart = nil; }
+    if (callback) dispatch_async(dispatch_get_main_queue(), callback);
+}
+- (void)stopLoading { @synchronized(BibimerTestHeldWrite.class) { heldWriteStops++; } }
+@end
+
 static BOOL usesDesktopInput(void) {
 #if TARGET_OS_MACCATALYST
     return YES;
@@ -92,6 +133,8 @@ static BOOL usesDesktopInput(void) {
 @property NSURLSession *testRecoveryTransport;
 @property NSURLSessionDataTask *testRecoveryRead;
 @property NSURLSessionDataTask *testRecoveryWrite;
+@property BOOL testRecoveryWriteStarted;
+@property NSUInteger testRecoveryWriteStopCount;
 @property NSMutableData *utf8Pending;
 @property NSMutableArray<NSString *> *javascriptErrors;
 @property NSString *smokeScript;
@@ -243,7 +286,6 @@ static void guestExit(int status) {
     NSMutableString *token = [NSMutableString new];
     for (NSUInteger i = 0; i < random.length; i++) [token appendFormat:@"%02x",((unsigned char *)random.bytes)[i]];
     self.token = token;
-    self.http = [self newHTTPTransport];
     [self recordConnection:@"launch" code:0];
     NSArray *args = NSProcessInfo.processInfo.arguments;
     BOOL agentTest = [args containsObject:@"--agent-self-test"];
@@ -253,6 +295,7 @@ static void guestExit(int status) {
         [NSFileManager.defaultManager removeItemAtURL:[self.documents URLByAppendingPathComponent:self.smokeResultName] error:nil];
         [NSFileManager.defaultManager removeItemAtURL:[self.documents URLByAppendingPathComponent:@"test-progress.json"] error:nil];
     }
+    self.http = [self newHTTPTransport];
     self.voice=[BibimerVoiceService new];self.voice.presenter=self;
     self.browser=[BibimerBrowserService new];self.browser.presenter=self;
     self.completionNotifications=[BibimerCompletionNotifications new];
@@ -416,6 +459,7 @@ static void guestExit(int status) {
     configuration.timeoutIntervalForRequest = 33; configuration.timeoutIntervalForResource = 180;
     configuration.HTTPMaximumConnectionsPerHost = 12;
     configuration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+    if (self.smokeScript) configuration.protocolClasses = [@[BibimerTestHeldWrite.class] arrayByAddingObjectsFromArray:configuration.protocolClasses ?: @[]];
     return [NSURLSession sessionWithConfiguration:configuration delegate:self delegateQueue:nil];
 }
 
@@ -677,47 +721,59 @@ static void guestExit(int status) {
     [self.backgroundExecution runtimeStopped];
     // This recovery abandons old executions. Unlike transport-only reconnect,
     // cancel queued writes too, before a new server can accept them at this port.
-    [self.http invalidateAndCancel];
-    // Earlier transport-only retries may still contain submitted writes. They
-    // must also be cancelled before the replacement server uses the same port.
-    for (NSURLSession *transport in self.retiredHTTP.allObjects) [transport invalidateAndCancel];
-    [self.retiredHTTP removeAllObjects];
+    NSMutableSet<NSURLSession *> *transports = [self.retiredHTTP mutableCopy];
+    if (self.http) [transports addObject:self.http];
     self.http = [self newHTTPTransport];
     [self.completionNotifications pause]; [self.voice pause]; [self.browser revokeAll];
     self.browserEpoch++; self.browserPolling = NO; [self.browserPoll cancel]; self.browserPoll = nil;
     [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
-    // Shutdown runs away from UIKit. A new bridge is started only after every
-    // old guest task except the fixed PID 1 supervisor is confirmed stopped.
+    // Enumeration is asynchronous; the same deadline covers cancellation and
+    // shutdown. A delayed/stale enumeration must never start a new shutdown.
+    __block BOOL shutdownStarted = NO;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW,15*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
         if (!self.recovering || recovery != self.recoverySerial) return;
         self.recoveryTimedOut = YES; self.recoveryFailed = YES;
+        if (!shutdownStarted) self.recovering = NO;
         [self recordConnection:@"recovery_watchdog" code:0];
         [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
     });
-    dispatch_async(self.runtimeQueue, ^{
-        int result = bibimer_stop_guest_children();
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (recovery != self.recoverySerial) return;
-            self.recovering = NO;
-            [self recordConnection:@"recovery_stopped" code:result];
-            if (result != 0 || self.recoveryTimedOut || self.exited) {
-                self.recoveryFailed = YES;
+    cancelHTTPTransports(transports.allObjects, self.retiredHTTP, ^{
+        if (!self.recovering || recovery != self.recoverySerial || self.recoveryTimedOut || self.exited) return;
+        dispatch_async(self.runtimeQueue, ^{
+            __block BOOL proceed = NO;
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                proceed = self.recovering && recovery == self.recoverySerial && !self.recoveryTimedOut && !self.exited;
+                if (proceed) shutdownStarted = YES;
+                if (!proceed && recovery == self.recoverySerial) {
+                    self.recovering = NO;
+                    [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+                }
+            });
+            if (!proceed) return;
+            int result = bibimer_stop_guest_children();
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (recovery != self.recoverySerial) return;
+                self.recovering = NO;
+                [self recordConnection:@"recovery_stopped" code:result];
+                if (result != 0 || self.recoveryTimedOut || self.exited) {
+                    self.recoveryFailed = YES;
+                    [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+                    return;
+                }
+                self.hasConnected = NO; self.recoveryAllowed = NO; self.healthAttempts = 0;
+                self.recoveryBootDeadline = NSProcessInfo.processInfo.systemUptime + 15;
+                self.recoveryFailed = ![self startLinuxServices];
+                [self replaceHTTPTransport];
                 [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
-                return;
-            }
-            self.hasConnected = NO; self.recoveryAllowed = NO; self.healthAttempts = 0;
-            self.recoveryBootDeadline = NSProcessInfo.processInfo.systemUptime + 15;
-            self.recoveryFailed = ![self startLinuxServices];
-            [self replaceHTTPTransport];
-            [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
-            [self checkHealth];
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW,15*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
-                if (recovery != self.recoverySerial || self.ready || self.recoveryFailed || self.exited || self.backgrounded ||
-                    self.recoveryBootDeadline == 0 || NSProcessInfo.processInfo.systemUptime < self.recoveryBootDeadline) return;
-                self.recoveryFailed = YES;
-                [self recordConnection:@"recovery_boot_timeout" code:NSURLErrorTimedOut];
-                [self.healthTask cancel]; self.healthTask = nil;
-                [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+                [self checkHealth];
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW,15*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
+                    if (recovery != self.recoverySerial || self.ready || self.recoveryFailed || self.exited || self.backgrounded ||
+                        self.recoveryBootDeadline == 0 || NSProcessInfo.processInfo.systemUptime < self.recoveryBootDeadline) return;
+                    self.recoveryFailed = YES;
+                    [self recordConnection:@"recovery_boot_timeout" code:NSURLErrorTimedOut];
+                    [self.healthTask cancel]; self.healthTask = nil;
+                    [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+                });
             });
         });
     });
@@ -1106,15 +1162,24 @@ static void guestExit(int status) {
         }
         if (self.smokeScript && [method isEqual:@"POST"] && [path isEqual:@"/native/test-linux-recovery"]) {
             self.testRecoveryWorkspace = self.web;
-            self.testRecoveryWrite = [self.http dataTaskWithRequest:[self request:@"POST" path:@"/v1/health" body:@"{}"]];
-            [self replaceHTTPTransport];
+            self.testRecoveryWriteStarted = NO;
+            self.testRecoveryWriteStopCount = BibimerTestHeldWrite.stopCount;
+            NSMutableURLRequest *held = [self request:@"POST" path:@"/v1/health" body:@"{}"];
+            [held setValue:@"1" forHTTPHeaderField:@"X-Bibimer-Test-Held-Write"];
+            self.testRecoveryWrite = [self.http dataTaskWithRequest:held];
+            [BibimerTestHeldWrite onStart:^{
+                self.testRecoveryWriteStarted = YES;
+                [self replaceHTTPTransport];
+                dispatch_async(dispatch_get_main_queue(), ^{ [self recoverLinux]; });
+            }];
+            [self.testRecoveryWrite resume];
             [self reply:identifier status:200 data:@{@"accepted":@YES}];
-            dispatch_async(dispatch_get_main_queue(), ^{ [self recoverLinux]; });
             return;
         }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-linux-recovery"]) {
             BOOL writeCancelled = self.testRecoveryWrite.state == NSURLSessionTaskStateCanceling || self.testRecoveryWrite.state == NSURLSessionTaskStateCompleted;
-            [self reply:identifier status:200 data:@{@"sameWorkspace":@(self.testRecoveryWorkspace == self.web),@"ready":@(self.ready),@"failed":@(self.recoveryFailed),@"oldWriteCancelled":@(writeCancelled)}];
+            BOOL stopped = BibimerTestHeldWrite.stopCount > self.testRecoveryWriteStopCount;
+            [self reply:identifier status:200 data:@{@"sameWorkspace":@(self.testRecoveryWorkspace == self.web),@"ready":@(self.ready),@"failed":@(self.recoveryFailed),@"oldWriteCancelled":@(self.testRecoveryWriteStarted && writeCancelled && stopped),@"writeState":@(self.testRecoveryWrite.state),@"writeStarted":@(self.testRecoveryWriteStarted),@"writeStopped":@(stopped)}];
             return;
         }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-late-health"]) {
