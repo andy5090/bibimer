@@ -153,9 +153,9 @@
     $("app-settings-open").click();
     await window.BibimerIOSTestAPI("POST","/native/test-connection",{mode:"online"});
     $("reconnect-settings").click();
-    if (!$("reconnect-settings").disabled || $("reconnect-settings").getAttribute("aria-busy") !== "true" || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_checking")) throw new Error("Settings reconnect did not immediately show progress");
+    if (!$("reconnect-settings").disabled || $("reconnect-settings").getAttribute("aria-busy") !== "true" || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_checking") || $("ios-recovery-progress").hidden) throw new Error("Settings reconnect did not immediately show progress");
     await wait(() => snapshot()?.online,"native connection retry");
-    if ($("reconnect-settings").disabled || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_restored")) throw new Error("Settings reconnect did not show completion");
+    if ($("reconnect-settings").disabled || $("ios-reconnect-status").textContent !== window.BibimerI18n.t("ios_connection_restored") || !$("ios-recovery-progress").hidden) throw new Error("Settings reconnect did not show completion");
     const recovered = await window.BibimerIOSTestAPI("POST","/native/test-connection",{mode:"observe"});
     if (!recovered.sameWorkspace || !recovered.ready || !recovered.visible || snapshot().session.id !== sessionId || $("input").value !== recoveryDraft) throw new Error("Native reconnect replaced workspace, session or draft");
     $("page-back").click();

@@ -38,7 +38,11 @@
     "Checking connection…",
     "Local Linux connected.",
     "Reconnect request was not acknowledged. Try again.",
-    "Restarting Linux…"
+    "Restarting Linux…",
+    "Recovering connection…",
+    "Stopping Linux services…",
+    "Starting Linux services and checking the connection…",
+    "Connection recovery failed"
   ],
   "ko": [
     "마이크를 눌렀을 때 음성을 녹음해 입력 초안에 추가합니다.",
@@ -79,7 +83,11 @@
     "연결 확인 중…",
     "내장 Linux에 연결되었습니다.",
     "다시 연결 요청의 응답이 없습니다. 다시 시도하세요.",
-    "Linux 다시 시작 중…"
+    "Linux 다시 시작 중…",
+    "연결 복구 중…",
+    "Linux 서비스 종료 중…",
+    "Linux 서비스를 다시 시작하고 연결을 확인하는 중…",
+    "연결 복구 실패"
   ],
   "pt-BR": [
     "Grava a fala ao tocar no microfone para adicionar texto ao rascunho.",
@@ -120,7 +128,11 @@
     "Verificando conexão…",
     "Linux local conectado.",
     "Sem confirmação da solicitação de reconexão. Tente novamente.",
-    "Reiniciando Linux…"
+    "Reiniciando Linux…",
+    "Recuperando conexão…",
+    "Encerrando serviços Linux…",
+    "Reiniciando serviços Linux e verificando a conexão…",
+    "Falha na recuperação da conexão"
   ],
   "es": [
     "Graba voz al tocar el micrófono para añadir texto al borrador.",
@@ -161,7 +173,11 @@
     "Comprobando conexión…",
     "Linux local conectado.",
     "No se confirmó la solicitud de reconexión. Inténtalo de nuevo.",
-    "Reiniciando Linux…"
+    "Reiniciando Linux…",
+    "Recuperando conexión…",
+    "Deteniendo servicios Linux…",
+    "Reiniciando servicios Linux y comprobando la conexión…",
+    "Error al recuperar la conexión"
   ],
   "id": [
     "Merekam ucapan saat Anda mengetuk mikrofon untuk menambahkan teks ke draf.",
@@ -202,7 +218,11 @@
     "Memeriksa koneksi…",
     "Linux lokal terhubung.",
     "Permintaan koneksi ulang belum mendapat respons. Coba lagi.",
-    "Memulai ulang Linux…"
+    "Memulai ulang Linux…",
+    "Memulihkan koneksi…",
+    "Menghentikan layanan Linux…",
+    "Memulai ulang layanan Linux dan memeriksa koneksi…",
+    "Pemulihan koneksi gagal"
   ],
   "zh-Hans": [
     "点按麦克风时录音，将文字添加到草稿。",
@@ -243,7 +263,11 @@
     "正在检查连接…",
     "已连接内置 Linux。",
     "重新连接请求未收到响应，请重试。",
-    "正在重启 Linux…"
+    "正在重启 Linux…",
+    "正在恢复连接…",
+    "正在停止 Linux 服务…",
+    "正在重启 Linux 服务并检查连接…",
+    "连接恢复失败"
   ],
   "ja": [
     "マイクをタップしたときに録音し、下書きにテキストを追加します。",
@@ -284,7 +308,11 @@
     "接続を確認中…",
     "内蔵 Linux に接続しました。",
     "再接続リクエストへの応答がありません。もう一度お試しください。",
-    "Linux を再起動中…"
+    "Linux を再起動中…",
+    "接続を復旧中…",
+    "Linux サービスを停止中…",
+    "Linux サービスを再起動して接続を確認中…",
+    "接続の復旧に失敗しました"
   ],
   "zh-Hant": [
     "點按麥克風時錄音，將文字加入草稿。",
@@ -325,7 +353,11 @@
     "正在檢查連線…",
     "已連線至內建 Linux。",
     "重新連線要求未收到回應，請重試。",
-    "正在重新啟動 Linux…"
+    "正在重新啟動 Linux…",
+    "正在復原連線…",
+    "正在停止 Linux 服務…",
+    "正在重新啟動 Linux 服務並檢查連線…",
+    "連線復原失敗"
   ],
   "fr": [
     "Enregistre la parole lorsque vous touchez le micro pour ajouter du texte au brouillon.",
@@ -366,7 +398,11 @@
     "Vérification de la connexion…",
     "Linux local connecté.",
     "La demande de reconnexion est sans réponse. Réessayez.",
-    "Redémarrage de Linux…"
+    "Redémarrage de Linux…",
+    "Récupération de la connexion…",
+    "Arrêt des services Linux…",
+    "Redémarrage des services Linux et vérification de la connexion…",
+    "Échec de la récupération de connexion"
   ],
   "de": [
     "Nimmt beim Tippen auf das Mikrofon Sprache auf und fügt Text zum Entwurf hinzu.",
@@ -407,6 +443,10 @@
     "Verbindung wird geprüft…",
     "Lokales Linux verbunden.",
     "Die Verbindungsanfrage wurde nicht bestätigt. Versuche es erneut.",
-    "Linux wird neu gestartet…"
+    "Linux wird neu gestartet…",
+    "Verbindung wird wiederhergestellt…",
+    "Linux-Dienste werden beendet…",
+    "Linux-Dienste werden neu gestartet und die Verbindung geprüft…",
+    "Wiederherstellung der Verbindung fehlgeschlagen"
   ]
 }

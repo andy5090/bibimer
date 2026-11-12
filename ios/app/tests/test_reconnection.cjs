@@ -50,6 +50,8 @@ vm.runInContext(hook,context);
  // The actual native shim acknowledges synchronously, before any native event.
  context.window.Bibimer.reconnect();
  assert.equal($("ios-reconnect-status").textContent,"ios_connection_checking");
+ assert.equal($("ios-recovery-progress").hidden,false,"Progress is visible outside the Settings page");
+ assert.equal($("ios-recovery-title").textContent,"ios_connection_checking");
  for(const id of ["reconnect","reconnect-welcome","reconnect-settings"]){
   assert.equal($(id).disabled,true);assert.equal($(id).attributes["aria-busy"],"true");
  }
@@ -60,15 +62,29 @@ vm.runInContext(hook,context);
  context.window.BibimerIOSRuntimeChanged();
  assert.equal($("ios-reconnect-status").textContent,"ios_runtime_restarting");
  assert.equal($("reconnect-settings").textContent,"ios_connection_restarting");
+ assert.equal($("ios-recovery-title").textContent,"ios_recovery_active");
+ assert.equal($("ios-recovery-spinner").hidden,false);
+ for(const [phase,key] of [["stopping","ios_recovery_stopping"],["starting","ios_recovery_starting"]]){
+  defaults.localRuntime.phase=phase;
+  context.window.BibimerIOSRuntimeChanged();
+  assert.equal($("ios-recovery-detail").textContent,key);
+  assert.equal($("ios-reconnect-status").textContent,key);
+  assert.equal($("ios-recovery-progress").hidden,false);
+  assert.equal($("ios-recovery-progress").attributes["aria-busy"],"true");
+ }
  defaults.localRuntime={state:"recovery-failed",foreground:true,busy:false};
  context.window.BibimerIOSRuntimeChanged();
  assert.equal($("ios-reconnect-status").textContent,"error_ios_runtime_recovery");
  assert.equal($("reconnect-settings").disabled,false,"Failure allows a new manual attempt");
+ assert.equal($("ios-recovery-title").textContent,"ios_recovery_failed");
+ assert.equal($("ios-recovery-progress").hidden,false);
+ assert.equal($("ios-recovery-spinner").hidden,true,"A failed operation must not keep spinning");
  defaults.localRuntime={state:"connected",foreground:true,busy:false};
  context.window.BibimerResume();
  assert.equal($("ios-reconnect-status").textContent,"ios_connection_restored");
  assert.equal($("reconnect-settings").disabled,false);
  assert.equal($("reconnect-settings").attributes["aria-busy"],"false");
+ assert.equal($("ios-recovery-progress").hidden,true,"Completed recovery releases the workspace banner");
  // Even a rejected/lost native message leaves visible feedback and a retry.
  defaults.localRuntime={state:"connecting",foreground:true,busy:true};
  context.window.Bibimer.reconnect();timers.get(timerSerial)();
