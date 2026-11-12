@@ -679,3 +679,9 @@ input.settings-switch:disabled { opacity:.4; cursor:default; }
 
 .connection-recovery{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:6px 12px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px}
 .connection-recovery>button{border:1px solid var(--line);font-size:12px;flex:none}
+
+/* Keep the close control available while a long announcement scrolls. */
+#notice{display:flex;align-items:flex-start;gap:4px;padding:0 4px 0 10px;overflow:hidden}
+#notice-text{flex:1;min-width:0;max-height:78px;padding:8px 0;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap}
+#notice-dismiss{width:36px;min-height:36px;padding:8px;color:inherit}
+#notice-dismiss svg{width:16px;height:16px}

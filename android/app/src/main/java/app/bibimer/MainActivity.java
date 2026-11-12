@@ -53,6 +53,9 @@ public final class MainActivity extends Activity {
         new ArrayBlockingQueue<Runnable>(1));
     private final java.util.concurrent.atomic.AtomicLong fileEpoch = new java.util.concurrent.atomic.AtomicLong();
     private WebView web;
+    private AppScreenCover screenCover;
+    private boolean pageLoaded;
+    private long screenTicket;
     private TokenStore tokens;
     private AppLanguage language;
     private AgentPreferences agentPreferences;
@@ -172,6 +175,16 @@ public final class MainActivity extends Activity {
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         web.setWebViewClient(new WebViewClient() {
+            @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                if (destroyed) return;
+                pageLoaded = false;
+                if (!stopped) screenTicket = screenCover.show(8000);
+            }
+            @Override public void onPageFinished(WebView view, String url) {
+                if (destroyed || !PAGE.equals(url)) return;
+                pageLoaded = true;
+                if (!stopped) screenCover.hideWhenDrawn(screenTicket);
+            }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 return true; // Navigation never brings external content into this privileged WebView.
             }
@@ -192,6 +205,13 @@ public final class MainActivity extends Activity {
         });
         web.addJavascriptInterface(new NativeApi(), "Bibimer");
         root.addView(web, new FrameLayout.LayoutParams(-1, -1));
+        View cover = new View(this);
+        cover.setBackgroundResource(R.drawable.app_starting_background);
+        cover.setClickable(true);
+        cover.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        root.addView(cover, new FrameLayout.LayoutParams(-1, -1));
+        screenCover = new AppScreenCover(cover, web);
+        screenTicket = screenCover.show(8000);
         setContentView(root);
         web.loadUrl(PAGE);
     }
@@ -728,6 +748,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onStop() {
         stopped = true;
+        if (screenCover != null) screenCover.stop();
         if (voice != null) voice.stop();
         if (speech != null) speech.pause();
         script("window.BibimerPause && window.BibimerPause();");
@@ -739,7 +760,11 @@ public final class MainActivity extends Activity {
         super.onStart();
         if (stopped && web != null) {
             stopped = false;
-            script("window.BibimerResume && window.BibimerResume();");
+            screenTicket = screenCover.show(pageLoaded ? 1500 : 8000);
+            long ticket = screenTicket;
+            web.evaluateJavascript("window.BibimerResume && window.BibimerResume();", ignored -> {
+                if (!destroyed && pageLoaded) screenCover.hideWhenDrawn(ticket);
+            });
         }
     }
 
@@ -775,6 +800,7 @@ public final class MainActivity extends Activity {
     @Override protected void onDestroy() {
         backHandling(false);
         destroyed = true;
+        if (screenCover != null) screenCover.close();
         if (voice != null) voice.close();
         if (speech != null) speech.close();
         appUpdates.close();

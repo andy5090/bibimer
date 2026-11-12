@@ -338,3 +338,23 @@ Git 현황·커밋 이력에서 Commit/Push/Pull/Sync를 제공한다. 실행은
 Commit은 기본 staged-only이며 전체 변경 스테이징은 명시적으로 선택한다. Pull은 clean worktree와 ff-only 조건으로 실행하고 Sync는 Pull 성공 뒤에만 명시적 upstream 대상 Push를 실행한다. 강제 Push·자동 stash/rebase·충돌 해결·원격 브랜치 최초 설정은 제공하지 않는다. Git의 사용자 설정/자격 증명을 사용하고 인증 입력창을 임의 실행하지 않는다. 명령당120초, 메모리 출력64KiB, 현재 브리지당128개 작업 이력 제한이 있으며 원문 출력/메시지를 일반 로그나 메타데이터에 기록하지 않는다. 일부 단계 이후 실패/통신 결과 불명은 전체 롤백으로 표시하지 않고 재실행 전에 Termux에서 확인하도록 안내한다.
 
 새 앱과 브리지0.24.0의 `git_actions` 플래그가 필요하다. 기존 브리지/데모는 실행을 비활성화한다. 구현·검증과 미빌드/실기기 제약은 NEXT_SESSION.md를 따른다.
+
+
+## 모든 에이전트의 앱 내 인증 UI (2026-11-12 소스, 브리지0.25.0)
+
+`agent_login_ui` 기능으로 Claude/Gemini를 기존 Codex/OpenCode 연결 관리 UI에 통합한다. Claude는 모델을 실행하지 않는 `auth login` 전용 자식의 stdout/stderr를 메모리에서만 제한적으로 읽어 허용된 OAuth 호스트의 완전한 URL과 코드 필요 상태만 노출한다. 정상 종료 후 별도 `auth status` JSON을 확인한다. Gemini는 설치된 CLI의 실제 import 경로에서 네이티브 OAuth 함수·Storage API를 확인한 뒤 사용자 요청으로 호출하고 성공 완료 표시만 받는다. 공개 OAuth 클라이언트/토큰 교환을 Bibimer에서 재구현하지 않으며 CLI가 원래 쓰는 인증 저장소와 설정을 유지한다. Gemini의 SDK 구조가 바뀌면 지원 불가로 처리한다.
+
+인증용 코드·stdout/stderr·OAuth 주소·원본 상태는 세션/대화/로그/메타데이터로 남기지 않는다. 인증 사이트를 자동으로 열지 않으며 사용자 버튼으로만 연다. 주 로그인 작업은 기존 에이전트당 단일 작업/10분 만료/취소 경계를 유지한다. `terminal` 보조 동작은 별도의 인증된 계정 API에서 고정 argv의 새 PTY만 생성하며 `authentication_agent` 문자열로 종류를 구분한다. 중복 request ID는 같은 PTY로 연결하고 다른 용도로 재사용하지 못한다. 브리지 복원에서 로그인 명령을 자동 재실행하지 않는다. 클라이언트는 브리지 기능 플래그와 네이티브 로그인 방식 보고를 확인하며 외부 Termux 실행을 기본 경로로 사용하지 않는다.
+
+근거: [Claude CLI 인증 명령](https://code.claude.com/docs/en/cli-reference), [Gemini 공식 인증 안내](https://geminicli.com/docs/get-started/authentication/) 및 로컬 Gemini CLI0.64.0의 OAuth 구현/내보낸 API를 확인했다. 실제 계정 로그인·새 앱 배포는 이번 소스 검증과 구분한다.
+
+
+## 에이전트 버전 업데이트 (2026-11-12 소스, 브리지0.25.0)
+
+인증된 `POST /v1/agent-updates`의 `check/start/status/poll`은 고정된 네 에이전트만 받는다. 전역 npm의 실제 루트·패키지/실행 파일 또는 알려진 Claude/OpenCode 관리 런처를 확인한 뒤 같은 패키지의 npm registry latest 메타데이터로10분짜리 메모리 계획을 만든다. 요청의 명령·임의 패키지·버전·다운로드 주소는 실행에 사용하지 않는다. 메이저 이동·다운그레이드를 거절하고 확인한 버전/실행 파일/설치 메타데이터가 달라지면 재확인을 요구한다.
+
+설치는 작업 ID로 중복을 막고 브리지에서 비동기로 실행한다. stdout/stderr는 기록하지 않으며 실행/검증/성공/실패와 버전만 응답한다. 로그인/세션 보호는 브리지 lock과 인증 작업 예약으로 연결하며 관련 실행이 살아 있으면 임의 종료하지 않는다. npm은 기존 패키지의 특정 버전으로 실행하고 이후 패키지 JSON 및 CLI 출력을 확인한다. 관리형 네이티브 패키지는 HTTPS registry URL·512MB 상한·SHA-512·정규 파일 항목·사전 실행을 확인하고 런처를 원자적으로 전환한다. CLI/모델/명령 캐시는 성공/실패 후 조회를 위해 갱신한다. 설치 상태는 메모리이며 브리지 강제 종료 뒤 성공을 추측하거나 자동 재실행하지 않는다.
+
+Android LocalBridge와 iOS 요청 허용 목록에 같은 로컬 경로만 추가했다. Android의 확인 요청은45초 제한이며 실제 설치는 짧은 상태 조회로 추적한다. 인증 토큰을 URL에 넣거나 임의 원격 호스트를 허용하지 않는다. 앱 자체 버전 및 브리지 업데이트와 에이전트 CLI 업데이트를 구분한다.
+
+참고: [Codex 공식 업데이트 안내](https://learn.chatgpt.com/docs/codex/cli), [Claude 설치/업데이트](https://code.claude.com/docs/en/setup), [Gemini npm 설치](https://geminicli.com/docs/get-started/installation/), [기존 OpenCode Android 래퍼 구현](https://github.com/AidanPark/openclaw-android/blob/a2ac938e4f746c0bd052adc2c7e40e8d18359032/scripts/install-opencode.sh). 현재 기기의 커뮤니티 설치 방식은 별도로 식별하며 공식 Android 지원으로 표현하지 않는다.

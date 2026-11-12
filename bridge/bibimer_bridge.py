@@ -42,13 +42,17 @@ _recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_rec
 maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
 _recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.24.1"
+VERSION = "0.25.0"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
 
 
 ERROR_MESSAGES = {
+    "error_agent_update_busy": "End this agent's sessions/sign-in or wait for the current update.",
+    "error_agent_update_expired": "The update check expired or the installation changed. Check again.",
+    "error_agent_update_unavailable": "This installation or version cannot be updated here.",
+    "error_agent_update_failed": "Update failed. Check the installed version before retrying.",
     "error_agent_connection": "Could not complete the agent connection. Check the installed agent and try again.",
     "error_connection_busy": "Another connection operation is in progress.",
     "error_connection_expired": "This connection request has expired. Start again.",
@@ -446,6 +450,7 @@ class Session:
                 "mode": "terminal", "options": self.options.copy(),
                 "started_at": self.started_at, "cols": self.cols, "rows": self.rows,
                 "output_start": self.offset, "output_end": self.offset + len(self.buffer),
+                "authentication_agent": getattr(self, "authentication_agent", None),
             }
 
     def _read(self):
@@ -746,6 +751,385 @@ class AccountClient(HistoryClient):
                 self.completed[key] = params.get("success") is True
 
 
+# Uses only the installed Gemini CLI's native OAuth module and credential store.
+# This helper never creates a Gemini session or makes a model request.
+GEMINI_LOGIN_SCRIPT = r'''
+import fs from 'node:fs';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+const entry=fs.realpathSync(process.argv[1]);
+let source=fs.readFileSync(entry,'utf8'), directory=path.dirname(entry);
+const main=source.match(/import\(["']\.\/(gemini-[A-Za-z0-9_-]+\.js)["']\)/);
+if(main){source=fs.readFileSync(path.join(directory,main[1]),'utf8');}
+const imports=[...source.matchAll(/import\s*\{([^{}]*)\}\s*from\s*["']([^"']+)["']/g)];
+const target=imports.find(m=>/(?:^|[,\s])getOauthClient(?:[,\s]|$)/.test(m[1]));
+if(!target||!target[2].startsWith('./'))throw Error('unsupported');
+const native=await import(pathToFileURL(path.resolve(directory,target[2])).href);
+if(typeof native.getOauthClient!=='function'||typeof native.Storage?.getGlobalSettingsPath!=='function')throw Error('unsupported');
+if(process.argv[2]==='probe'){process.stdout.write('BIBIMER_NATIVE_AUTH_SUPPORTED\n');}
+else {
+const client=await native.getOauthClient('oauth-personal',{
+ getProxy:()=>process.env.HTTPS_PROXY||process.env.https_proxy,
+ isBrowserLaunchSuppressed:()=>true,isInteractive:()=>true,getAcpMode:()=>true,
+});
+if(!client?.credentials?.access_token)throw Error('authentication failed');
+let settingsPath=native.Storage.getGlobalSettingsPath();
+try{settingsPath=fs.realpathSync(settingsPath);}catch(e){if(e.code!=='ENOENT')throw e;}
+let settings={};try{settings=JSON.parse(fs.readFileSync(settingsPath,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
+if(!settings||typeof settings!=='object'||Array.isArray(settings))throw Error('invalid settings');
+settings.security={...settings.security,auth:{...settings.security?.auth,selectedType:'oauth-personal'}};
+fs.mkdirSync(path.dirname(settingsPath),{recursive:true,mode:0o700});
+const temporary=settingsPath+'.bibimer-'+process.pid;
+try{fs.writeFileSync(temporary,JSON.stringify(settings,null,2)+'\n',{mode:0o600,flag:'wx'});fs.renameSync(temporary,settingsPath);}finally{try{fs.unlinkSync(temporary);}catch{}}
+process.stdout.write('\nBIBIMER_NATIVE_AUTH_COMPLETE\n');
+// Let the native credential store's asynchronous token listener finish flushing.
+process.stdin.pause();
+}
+'''
+
+
+class NativeLoginClient:
+    """Private native login child: expose only an allowlisted URL/code request.
+
+    No raw stdout/stderr, tokens, email, OAuth verifier, or code is retained in a
+    session, bridge metadata, diagnostics, or an agent conversation.
+    """
+    @staticmethod
+    def gemini_supported(executable):
+        node = shutil.which("node")
+        if not node: return False
+        try:
+            code, raw = AgentConnections.command([node, "--input-type=module", "-e", GEMINI_LOGIN_SCRIPT, executable, "probe"])
+            return code == 0 and b"BIBIMER_NATIVE_AUTH_SUPPORTED\n" in raw
+        except Exception:
+            return False
+
+    def __init__(self, executable, cwd, agent, method):
+        self.agent, self.url, self.code_required = agent, None, False
+        self.done, self.success, self.closed = False, False, False
+        self.io_lock = threading.Lock()
+        env = os.environ.copy()
+        env.update(BROWSER=shutil.which("true") or "true", NO_BROWSER="true")
+        if agent == "claude":
+            argv = [executable, "auth", "login", *(["--console"] if method == "console" else [])]
+        else:
+            node = shutil.which("node")
+            if not node: raise Problem(400, "error_program_missing")
+            argv = [node, "--input-type=module", "-e", GEMINI_LOGIN_SCRIPT, executable]
+        self.process = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True, close_fds=True)
+        threading.Thread(target=self.read, daemon=True).start()
+
+    def read(self):
+        tail, completed = b"", False
+        try:
+            while not self.closed:
+                if not select.select([self.process.stdout], [], [], .1)[0]:
+                    if self.process.poll() is not None: break
+                    continue
+                chunk = os.read(self.process.stdout.fileno(), 4096)
+                if not chunk: break
+                tail = (tail + chunk)[-32768:]
+                text = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", tail.decode("utf-8", "replace"))
+                for url in re.findall(r'https://[^\s<>"\x00-\x20\x7f]+(?=[\s<>"\x00-\x20\x7f])', text):
+                    try:
+                        parsed = urllib.parse.urlsplit(url)
+                        hosts = {"accounts.google.com"} if self.agent == "gemini" else {
+                            "claude.ai", "console.anthropic.com", "platform.claude.com", "auth.anthropic.com"}
+                        if (parsed.hostname in hosts and not parsed.username and not parsed.password and
+                                parsed.port in {None, 443} and parsed.path.startswith(("/oauth", "/o/oauth2", "/authorize")) and
+                                len(url) <= 8192 and "\\" not in url):
+                            self.url = url
+                    except ValueError: pass
+                lower = text.lower()
+                if self.url and ("paste code" in lower or "authorization code:" in lower or "paste the code" in lower):
+                    self.code_required = True
+                if "\nBIBIMER_NATIVE_AUTH_COMPLETE\n" in text: completed = True
+            if not self.closed:
+                code = self.process.wait(timeout=2)
+                self.success = code == 0 and (self.agent == "claude" or completed)
+        except Exception:
+            self.success = False
+        finally:
+            tail = b""
+            with contextlib.suppress(OSError): self.process.stdout.close()
+            self.done = True
+
+    def send_code(self, code):
+        with self.io_lock:
+            if self.closed or self.done or not self.code_required: raise Problem(409, "error_connection_expired")
+            self.process.stdin.write((code + "\n").encode())
+            self.process.stdin.flush()
+            self.code_required = False
+
+    def close(self):
+        self.closed = True
+        self.url = None
+        with contextlib.suppress(ProcessLookupError): os.killpg(self.process.pid, signal.SIGTERM)
+        try: self.process.wait(timeout=.5)
+        except subprocess.TimeoutExpired:
+            with contextlib.suppress(ProcessLookupError): os.killpg(self.process.pid, signal.SIGKILL)
+            self.process.wait(timeout=1)
+        with self.io_lock:
+            with contextlib.suppress(OSError): self.process.stdin.close()
+        # The private reader owns stdout while draining the terminated child.
+
+
+class AgentUpdates:
+    """Explicit, pinned-version CLI updates; no arbitrary package/command input."""
+    packages = {"codex": {"@openai/codex", "@mmmbuto/codex-cli-termux"},
+                "claude": {"@anthropic-ai/claude-code"}, "opencode": {"opencode-ai"},
+                "gemini": {"@google/gemini-cli"}}
+    def __init__(self, bridge):
+        self.bridge, self.plans, self.jobs = bridge, {}, {}
+        self.current, self.process, self.closed = None, None, False
+
+    def busy(self, agent=None):
+        return bool(self.current and (agent is None or self.current["agent"] == agent))
+
+    @staticmethod
+    def version(value):
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9]{1,5}\.[0-9]{1,5}\.[0-9]{1,5}(?:-[A-Za-z0-9.-]{1,80})?", value):
+            raise Problem(400, "error_agent_update_unavailable")
+        return value
+
+    @staticmethod
+    def fingerprint(path):
+        p = Path(path).resolve(); st = p.stat()
+        return str(p), st.st_ino, st.st_size, st.st_mtime_ns
+
+    @staticmethod
+    def npm():
+        executable = shutil.which("npm")
+        if not executable: raise Problem(400, "error_agent_update_unavailable")
+        entry = Path(executable).resolve()
+        return [shutil.which("node"), str(entry)] if entry.suffix == ".js" and shutil.which("node") else [executable]
+
+    def probe(self, executable, agent):
+        entry = Path(executable).resolve()
+        argv = [shutil.which("node"), str(entry)] if agent == "gemini" and entry.suffix in {".js", ".mjs"} and shutil.which("node") else [executable]
+        code, raw = AgentConnections.command([*argv, "--version"])
+        match = re.search(rb"(?<![A-Za-z0-9])([0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?)", raw)
+        if code or not match: raise Problem(400, "error_agent_update_failed")
+        return self.version(match[1].decode())
+
+    def installation(self, agent):
+        executable = self.bridge.agent_executable(agent)
+        if not executable: raise Problem(400, "error_program_missing")
+        current = self.probe(executable, agent)
+        plan = {"agent": agent, "executable": executable, "current": current,
+                "fingerprint": self.fingerprint(executable), "kind": "unsupported"}
+        entry, home = Path(executable).resolve(), Path.home()
+        managed = home / ".local/share/bibimer/claude-runtime/claude"
+        script = entry.read_text(errors="replace") if entry.stat().st_size < 16384 else ""
+        if agent == "claude" and (entry == managed or re.search(r'(?m)^exec\s+'+re.escape(str(managed))+r'\s+"\$@"\s*$', script)) and managed.is_file():
+            plan.update(kind="claude-runtime", package="@anthropic-ai/claude-code-linux-arm64", target=str(managed.parent), guard_path=str(managed), guard_fingerprint=self.fingerprint(managed))
+            return plan
+        if agent == "opencode" and "exec proot" in script:
+            original_loader = str(home / ".openclaw-android/bin/ld.so.opencode")
+            managed_root = str(home / ".local/share/bibimer/opencode-runtime")
+            loaders = re.findall(re.escape(managed_root) + r'/[0-9A-Za-z.-]+\.ld', script)
+            loader = original_loader if original_loader in script else loaders[0] if len(loaders) == 1 else ""
+
+            pattern = re.escape(str(home)) + r'/\.bun/install/cache/opencode-linux-arm64@[^"\n]+/bin/opencode'
+            binary = re.findall(pattern, script) or [value for value in re.findall(re.escape(managed_root) + r'/[0-9A-Za-z.-]+(?="|\s)', script) if not value.endswith(".ld")]
+            if (loader and script.count(loader) == 1 and len(binary) == 1 and
+                    str(home / ".openclaw-android/proot-root") in script and shutil.which("proot") and
+                    (Path(sys.prefix) / "glibc/lib/ld-linux-aarch64.so.1").is_file()):
+                plan.update(kind="opencode-proot", package="opencode-linux-arm64", wrapper=script,
+                            loader=loader, binary=binary[0])
+            return plan
+        for folder in list(entry.parents)[:5]:
+            manifest = folder / "package.json"
+            if not manifest.is_file(): continue
+            try: info = json.loads(manifest.read_text())
+            except (ValueError, OSError): continue
+            name = info.get("name")
+            if name not in self.packages[agent]: continue
+            code, raw = AgentConnections.command([*self.npm(), "root", "--global"])
+            if code or Path(raw.decode().strip()).resolve() / name != folder: break
+            plan.update(kind="npm", package=name, package_version=self.version(info.get("version")), manifest=str(manifest), guard_path=str(manifest), guard_fingerprint=self.fingerprint(manifest))
+            break
+        return plan
+
+    @staticmethod
+    def metadata(package):
+        url = "https://registry.npmjs.org/" + urllib.parse.quote(package, safe="") + "/latest"
+        with urllib.request.urlopen(url, timeout=12) as response:
+            raw = response.read(2 * 1024 * 1024 + 1)
+        if len(raw) > 2 * 1024 * 1024: raise ValueError()
+        report = json.loads(raw)
+        if report.get("name") != package: raise ValueError()
+        AgentUpdates.version(report.get("version"))
+        return report
+
+    def blocked(self, agent):
+        return self.bridge.agent_connections.operation_agent == agent or any(row["state"] in ACTIVE and (row["agent"] == agent or row.get("authentication_agent") == agent)
+                   for row in self.bridge.snapshots()) or self.bridge.agent_connections.jobs.get(agent, {}).get("status") == "pending"
+
+    def public_plan(self, plan):
+        return {"id": plan["id"], "agent": plan["agent"], "current_version": plan["current"],
+                "latest_version": plan.get("latest"), "supported": plan["kind"] != "unsupported",
+                "available": plan.get("available", False), "blocked": self.blocked(plan["agent"]),
+                "method": plan["kind"]}
+
+    def handle(self, data):
+        agent, action = data.get("agent"), data.get("action")
+        if agent not in self.packages or action not in {"check", "start", "poll", "status"}:
+            raise Problem(400, "error_invalid_json")
+        try:
+            if action in {"status", "poll"}:
+                with self.bridge.lock:
+                    job = self.jobs.get(agent)
+                    if action == "poll" and (not job or data.get("id") != job["id"]):
+                        raise Problem(409, "error_agent_update_expired")
+                    return {"job": dict(job) if job else None}
+            with self.bridge.lock:
+                if self.closed or self.bridge.closing: raise Problem(409, "error_bridge_stopping")
+                if action == "check" and self.busy(): raise Problem(409, "error_agent_update_busy")
+            if action == "check":
+                plan = self.installation(agent)
+                plan.update(id=str(uuid.uuid4()), expires=time.monotonic() + 600)
+                if plan["kind"] != "unsupported":
+                    report = self.metadata(plan["package"])
+                    plan.update(latest=report["version"], dist=report.get("dist", {}))
+                    old = plan.get("package_version", plan["current"])
+                    major = lambda v: tuple(map(int, v.split("-")[0].split(".")))
+                    def order(v):
+                        suffix = v.partition("-")[2]
+                        return major(v), not bool(suffix), tuple((0, int(part)) if part.isdigit() else (1, part) for part in suffix.split("."))
+                    # Never silently migrate to another major release or downgrade.
+                    if major(plan["latest"])[0] != major(old)[0]: plan["kind"] = "unsupported"
+                    plan["available"] = plan["kind"] != "unsupported" and order(plan["latest"]) > order(old)
+                with self.bridge.lock:
+                    self.plans[agent] = plan
+                    return {"plan": self.public_plan(plan)}
+            key = request_id(data.get("request_id"))
+            with self.bridge.lock:
+                previous = self.jobs.get(agent)
+                if previous and previous["id"] == key:
+                    if previous["plan_id"] != data.get("plan_id"): raise Problem(409, "error_launch_conflict")
+                    return {"job": dict(previous)}
+                plan = self.plans.get(agent)
+                if not plan or plan["id"] != data.get("plan_id") or time.monotonic() > plan["expires"]:
+                    raise Problem(409, "error_agent_update_expired")
+                if self.busy() or self.blocked(agent): raise Problem(409, "error_agent_update_busy")
+                if not plan.get("available"): raise Problem(400, "error_agent_update_unavailable")
+                if (self.fingerprint(plan["executable"]) != plan["fingerprint"] or
+                        (plan.get("guard_path") and self.fingerprint(plan["guard_path"]) != plan["guard_fingerprint"])):
+                    raise Problem(409, "error_agent_update_expired")
+                job = {"id": key, "plan_id": plan["id"], "agent": agent, "status": "installing",
+                       "from_version": plan["current"], "target_version": plan["latest"]}
+                self.jobs[agent] = self.current = job
+                threading.Thread(target=self.worker, args=(plan, job), daemon=True).start()
+                return {"job": dict(job)}
+        except Problem: raise
+        except Exception: raise Problem(400, "error_agent_update_failed") from None
+
+    def run(self, argv, timeout=600):
+        process = subprocess.Popen(argv, cwd=Path.home(), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                   stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)
+        self.process = process
+        try:
+            if process.wait(timeout=timeout): raise ValueError()
+        finally:
+            with contextlib.suppress(ProcessLookupError): os.killpg(process.pid, signal.SIGTERM)
+            try: process.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                with contextlib.suppress(ProcessLookupError): os.killpg(process.pid, signal.SIGKILL)
+                process.wait(timeout=1)
+            self.process = None
+
+    @staticmethod
+    def download(plan, target):
+        url, integrity = plan["dist"].get("tarball"), plan["dist"].get("integrity", "")
+        parsed = urllib.parse.urlsplit(url or "")
+        if (parsed.scheme != "https" or parsed.hostname != "registry.npmjs.org" or parsed.username or
+                parsed.password or parsed.port not in {None, 443} or not integrity.startswith("sha512-")):
+            raise ValueError()
+        digest, size = hashlib.sha512(), 0
+        with urllib.request.urlopen(url, timeout=60) as response, target.open("wb") as output:
+            while chunk := response.read(65536):
+                size += len(chunk)
+                if size > 512 * 1024 * 1024: raise ValueError()
+                digest.update(chunk); output.write(chunk)
+        if not hmac.compare_digest(base64.b64encode(digest.digest()).decode(), integrity[7:]): raise ValueError()
+
+    def native_install(self, plan):
+        import importlib.util
+        import tarfile
+        if plan["kind"] == "claude-runtime":
+            with tempfile.TemporaryDirectory(prefix="bibimer-claude-update-") as folder:
+                archive = Path(folder) / "package.tgz"; self.download(plan, archive)
+                with tarfile.open(archive, "r:gz") as bundle:
+                    member = bundle.getmember("package/claude")
+                    if not member.isfile() or member.size > 512 * 1024 * 1024: raise ValueError()
+                spec = importlib.util.spec_from_file_location("bibimer_update_claude", Path(__file__).with_name("repair_claude_termux.py"))
+                repair = importlib.util.module_from_spec(spec); spec.loader.exec_module(repair)
+                repair.VERSION, repair.INTEGRITY = plan["latest"], plan["dist"]["integrity"][7:]
+                # The existing installer verifies --version before its atomic switch.
+                repair.install(Path(plan["target"]), archive, quiet=True)
+            return
+        folder = private_dir(Path.home() / ".local/share/bibimer/opencode-runtime")
+        with tempfile.TemporaryDirectory(prefix=".update-", dir=folder) as temporary:
+            stage = Path(temporary); archive = stage / "package.tgz"; self.download(plan, archive)
+            binary = stage / "opencode"
+            with tarfile.open(archive, "r:gz") as bundle:
+                member = bundle.getmember("package/bin/opencode")
+                if not member.isfile() or member.size > 512 * 1024 * 1024: raise ValueError()
+                with bundle.extractfile(member) as source, binary.open("wb") as output: shutil.copyfileobj(source, output)
+            binary.chmod(0o700)
+            with binary.open("rb") as source: identity = hashlib.file_digest(source, "sha256").hexdigest()[:16]
+            installed = folder / (plan["latest"] + "-" + identity)
+            if not installed.exists(): binary.replace(installed); installed.chmod(0o700)
+            concat = folder / (installed.name + ".ld")
+            if not concat.exists():
+                concat_stage = stage / "ld.so.opencode"
+                with concat_stage.open("wb") as output:
+                    with (Path(sys.prefix) / "glibc/lib/ld-linux-aarch64.so.1").open("rb") as loader: shutil.copyfileobj(loader, output)
+                    with installed.open("rb") as source: shutil.copyfileobj(source, output)
+                concat_stage.chmod(0o700); concat_stage.replace(concat)
+            wrapper = plan["wrapper"].replace(plan["loader"], str(concat)).replace(plan["binary"], str(installed))
+            probe = stage / "opencode-wrapper"; probe.write_text(wrapper); probe.chmod(0o700)
+            if self.probe(str(probe), "opencode") != plan["latest"]: raise ValueError()
+            destination = Path(plan["executable"])
+            # Stage beside the existing launcher for an atomic same-filesystem swap.
+            fd, name = tempfile.mkstemp(prefix=".bibimer-opencode-", dir=destination.parent)
+            try:
+                with os.fdopen(fd, "w") as output: output.write(wrapper)
+                os.chmod(name, destination.stat().st_mode & 0o777)
+                os.replace(name, destination)
+            finally:
+                with contextlib.suppress(FileNotFoundError): os.unlink(name)
+
+    def worker(self, plan, job):
+        try:
+            if plan["kind"] == "npm":
+                self.run([*self.npm(), "install", "--global", plan["package"] + "@" + plan["latest"],
+                          "--registry=https://registry.npmjs.org", "--no-audit", "--no-fund"])
+            else: self.native_install(plan)
+            with self.bridge.lock:
+                job["status"] = "verifying"
+                self.bridge.program_checks.clear(); self.bridge.model_cache.clear(); self.bridge.command_cache.clear()
+            installed = self.probe(self.bridge.agent_executable(plan["agent"]), plan["agent"])
+            if installed.split("-")[0] != plan["latest"].split("-")[0]: raise ValueError()
+            if plan["kind"] == "npm":
+                if json.loads(Path(plan["manifest"]).read_text()).get("version") != plan["latest"]: raise ValueError()
+            with self.bridge.lock: job.update(status="succeeded", installed_version=installed)
+        except Exception:
+            with self.bridge.lock: job.update(status="failed", error="error_agent_update_failed")
+        finally:
+            with self.bridge.lock:
+                self.bridge.program_checks.clear(); self.bridge.model_cache.clear(); self.bridge.command_cache.clear()
+                self.current = None
+                self.plans.pop(plan["agent"], None)
+
+    def close(self):
+        self.closed = True
+        if self.process:
+            with contextlib.suppress(ProcessLookupError): os.killpg(self.process.pid, signal.SIGTERM)
+
+
 class AgentConnections:
     """Explicit native account operations. Secrets remain in native credential stores.
 
@@ -756,6 +1140,7 @@ class AgentConnections:
         self.bridge = bridge
         self.lock = threading.RLock()
         self.jobs = {}
+        self.operation_agent = None
         self.closed = False
 
     @staticmethod
@@ -824,7 +1209,7 @@ class AgentConnections:
     def finish(self, job, status):
         job["status"] = status
         if job.get("timer"): job["timer"].cancel()
-        for key in ("url", "instructions", "code_required"):
+        for key in ("url", "instructions", "code_required", "_code_url_hash"):
             job.pop(key, None)
         client = job.pop("client", None)
         if client:
@@ -858,8 +1243,15 @@ class AgentConnections:
     def handle(self, data):
         try:
             if not self.lock.acquire(False): raise Problem(409, "error_connection_busy")
-            try: return self._handle(data)
-            finally: self.lock.release()
+            try:
+                with self.bridge.lock:
+                    if self.bridge.agent_updates.busy(data.get("agent")):
+                        raise Problem(409, "error_agent_update_busy")
+                    self.operation_agent = data.get("agent")
+                return self._handle(data)
+            finally:
+                with self.bridge.lock: self.operation_agent = None
+                self.lock.release()
         except Problem as error:
             if error.code.startswith("error_history"):
                 raise Problem(400, "error_connection_unsupported" if error.code == "error_history_unsupported" else "error_agent_connection") from None
@@ -870,14 +1262,28 @@ class AgentConnections:
 
     def _handle(self, data):
         agent, action = data.get("agent"), data.get("action")
-        if agent not in {"codex", "claude", "opencode", "gemini"} or action not in {"status", "version", "start", "poll", "code", "cancel"}:
+        if agent not in {"codex", "claude", "opencode", "gemini"} or action not in {"status", "version", "start", "poll", "code", "cancel", "terminal"}:
             raise Problem(400, "error_invalid_json")
         if self.closed or self.bridge.closing: raise Problem(409, "error_bridge_stopping")
+        if self.bridge.agent_updates.busy(agent): raise Problem(409, "error_agent_update_busy")
         # The account belongs to the installed CLI; a supplied project only scopes
         # native provider configuration and never changes the selected project.
         cwd = str(Path.home())
         if data.get("project_id"):
             cwd = self.bridge.working_project(data)["path"]
+        if action == "terminal":
+            if agent not in {"codex", "claude", "opencode"}:
+                raise Problem(400, "error_connection_unsupported")
+            if self.jobs.get(agent, {}).get("status") == "pending":
+                raise Problem(409, "error_connection_busy")
+            # Fixed native login argv, in a separate PTY. Never inject commands
+            # into an existing shell or expose authentication output in a job.
+            return {"session": self.bridge.launch({
+                "agent": "shell", "mode": "terminal", "new_session": True,
+                "project_id": data.get("project_id", self.bridge.active_project_id),
+                **({"worktree_path": data["worktree_path"]} if data.get("worktree_path") else {}),
+                "request_id": data.get("request_id"),
+            }, authentication_agent=agent, select=False)}
         if action in {"poll", "code", "cancel"}:
             job = self.jobs.get(agent)
             if not job or data.get("id") != job["id"]: raise Problem(409, "error_connection_expired")
@@ -891,6 +1297,29 @@ class AgentConnections:
                     job["client"].call("account/read", {"refreshToken": False})
                     completed = job["client"].completed.get(job["login_id"])
                     if completed is not None: self.finish(job, "saved" if completed else "failed")
+                elif agent in {"claude", "gemini"}:
+                    client = job["client"]
+                    if action == "code":
+                        if not client.code_required or job.get("code_submitted"): raise Problem(409, "error_connection_busy")
+                        code = self.text(data.get("code"), 4096)
+                        if not code: raise Problem(400, "error_invalid_json")
+                        client.send_code(code)
+                        job["code_submitted"] = True
+                        job["_code_url_hash"] = hashlib.sha256((client.url or "").encode()).hexdigest()
+                    if client.url: job["url"] = client.url
+                    # A native retry creates a new OAuth state/URL. Only that
+                    # new challenge can accept another explicit code submission.
+                    if (client.url and client.code_required and job.get("code_submitted") and
+                            hashlib.sha256(client.url.encode()).hexdigest() != job.get("_code_url_hash")):
+                        job.pop("code_submitted", None)
+                        job.pop("_code_url_hash", None)
+                    job["code_required"] = client.code_required and not job.get("code_submitted", False)
+                    if client.done:
+                        success = client.success
+                        if success and agent == "claude":
+                            status, raw = self.command([self.bridge.agent_executable(agent), "auth", "status"])
+                            success = status == 0 and json.loads(raw).get("loggedIn") is True
+                        self.finish(job, "saved" if success else "failed")
                 elif action == "code":
                     if not job.get("code_required") or job.get("submitted"): raise Problem(409, "error_connection_busy")
                     code = self.text(data.get("code"), 4096)
@@ -932,6 +1361,10 @@ class AgentConnections:
                 report = json.loads(raw)
                 if type(report.get("loggedIn")) is not bool: raise ValueError()
                 result["state"] = "configured" if report["loggedIn"] else "signed_out"
+                result["login_methods"] = [{"id": "claudeai", "type": "oauth", "name": "Claude", "supported": True}]
+                help_status, help_raw = self.command([executable, "auth", "login", "--help"])
+                result["login_methods"].append({"id": "console", "type": "oauth", "name": "Anthropic Console (API)",
+                    "supported": help_status == 0 and b"--console" in help_raw})
                 method = report.get("authMethod")
                 if method in {"none", "claude.ai", "oauth_token", "api_key", "api_key_helper", "third_party"}: result["method"] = method
             elif agent == "opencode":
@@ -939,8 +1372,13 @@ class AgentConnections:
                 try: result["providers"] = self.catalog(client)
                 finally: client.close()
                 result["state"] = "configured" if any(row["connected"] for row in result["providers"]) else "signed_out"
+            if agent == "gemini":
+                result["login_methods"] = [{"id": "google", "type": "oauth", "name": "Google",
+                    "supported": NativeLoginClient.gemini_supported(executable)}]
+            if agent == "gemini" and job and job["cwd"] == cwd and job["status"] == "saved" and time.time() < job["expires_at"]:
+                result.update(state="configured", method="google")
             return result
-        if agent not in {"codex", "opencode"}: raise Problem(400, "error_connection_unsupported")
+        if agent not in {"codex", "claude", "opencode", "gemini"}: raise Problem(400, "error_connection_unsupported")
         key = request_id(data.get("request_id"))
         secret = self.text(data.get("key", ""), 8192)
         fingerprint = hashlib.sha256(json.dumps([cwd, data.get("provider"), data.get("method"), secret], sort_keys=True).encode()).hexdigest()
@@ -950,6 +1388,9 @@ class AgentConnections:
                 if previous["fingerprint"] != fingerprint: raise Problem(409, "error_launch_conflict")
                 return {"job": self.snapshot(previous)}
             if previous["status"] == "pending": raise Problem(409, "error_connection_busy")
+        with self.bridge.lock:
+            if any(getattr(row, "authentication_agent", None) == agent and row.state in ACTIVE for row in self.bridge.sessions.values()):
+                raise Problem(409, "error_connection_busy")
         job = {"id": key, "agent": agent, "cwd": cwd, "fingerprint": fingerprint, "status": "pending", "expires_at": int(time.time()) + 600}
         client = None
         try:
@@ -963,6 +1404,14 @@ class AgentConnections:
                 if method == "chatgpt":
                     job.update(url=self.login_url(response.get("authUrl")), login_id=self.text(response.get("loginId"), 128), code_required=False)
                     if not job["login_id"]: raise ValueError()
+            elif agent in {"claude", "gemini"}:
+                method = data.get("method")
+                if method not in ({"claudeai", "console"} if agent == "claude" else {"google"}):
+                    raise Problem(400, "error_connection_unsupported")
+                if agent == "gemini" and not NativeLoginClient.gemini_supported(executable):
+                    raise Problem(400, "error_connection_unsupported")
+                client = NativeLoginClient(executable, cwd, agent, method)
+                job.update(code_required=False, method=method)
             else:
                 client = self.client(executable, cwd)
                 rows = self.catalog(client)
@@ -3211,6 +3660,7 @@ class Bridge:
         self.browser_tools = None
         self.model_locks = {}
         self.agent_connections = AgentConnections(self)
+        self.agent_updates = AgentUpdates(self)
         self.model_cache = {}
         self.command_cache = {}
         self.command_locks = {}
@@ -3736,7 +4186,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "browser_consent_notify", "maintenance_recovery", "agent_connections"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "browser_consent_notify", "maintenance_recovery", "agent_connections", "agent_login_terminal", "agent_login_ui", "agent_updates"], "active_sessions": self.active_count(),
                     "agents": self.agents(), "maintenance_recovery": self.recovery.snapshot(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -4091,7 +4541,10 @@ class Bridge:
                               "mode": "chat", "new_session": True, "options": options, "request_id": key}, continuation)
         return {"session": result}
 
-    def launch(self, data, continuation=None, select=True, restore_id=None):
+    def launch(self, data, continuation=None, select=True, restore_id=None, authentication_agent=None):
+        if authentication_agent is not None and (authentication_agent not in {"codex", "claude", "opencode"} or
+                data.get("agent") != "shell" or data.get("mode") != "terminal" or continuation or restore_id):
+            raise Problem(400, "error_connection_unsupported")
         key = request_id(data.get("request_id"))
         cols = integer(data.get("cols", 80), 20, 300)
         rows = integer(data.get("rows", 24), 4, 200)
@@ -4125,6 +4578,8 @@ class Bridge:
         working = self.working_project(data)
 
         def target():
+            if self.agent_updates.busy(agent) or (authentication_agent and self.agent_updates.busy(authentication_agent)):
+                raise Problem(409, "error_agent_update_busy")
             self.recovery_target(restore_id)
             if self.closing:
                 raise Problem(409, "error_bridge_stopping")
@@ -4142,7 +4597,7 @@ class Bridge:
                     raise Problem(409, "error_launch_conflict")
                 if ((current.get("handoff") or {}).get("request_digest") if (current.get("handoff") or {}).get("created_by") == key else None) != (continuation or {}).get("metadata", {}).get("request_digest"):
                     raise Problem(409, "error_launch_conflict")
-                if (current.get("kind") == "browser" or current["project"] != project or current["agent"] != agent or current.get("mode", "terminal") != mode or
+                if (current.get("authentication_agent") != authentication_agent or current.get("kind") == "browser" or current["project"] != project or current["agent"] != agent or current.get("mode", "terminal") != mode or
                         current.get("launch_options", current.get("options", {"permission": "inherit"})) != options or
                         any(current.get(field) != (imported or {}).get(field) for field in ("source_thread_id", "import_mode"))):
                     raise Problem(409, "error_launch_conflict")
@@ -4191,6 +4646,12 @@ class Bridge:
             if agent == "claude" and not self.check_program(agent, executable):
                 raise Problem(400, "error_program_unavailable")
             argv = [executable, "-i"] if agent == "shell" else [executable]
+            if authentication_agent:
+                executable = self.agent_executable(authentication_agent)
+                if not executable:
+                    raise Problem(400, "error_program_missing")
+                argv = [executable, *({"codex": ["login"], "claude": ["auth", "login"],
+                                      "opencode": ["auth", "login"]}[authentication_agent])]
             browser_env, browser_key = None, None
             if agent != "shell" and self.browser_enabled:
                 if self.browser_tools is None:
@@ -4202,6 +4663,7 @@ class Bridge:
                     options=options, browser_env=browser_env, **({"imported": imported, "catalog": catalog, "completed": self.completion_feed.publish, "handoff": (continuation or {}).get("metadata")} if mode == "chat" else {}))
             except OSError:
                 raise Problem(400, "error_launch_failed") from None
+            session.authentication_agent = authentication_agent
             session.browser_key = browser_key
             session.initial_message_digest = initial_digest
             if continuation:
@@ -4256,6 +4718,7 @@ class Bridge:
 
     def begin_shutdown(self):
         with self.lock:
+            if self.agent_updates.busy(): raise Problem(409, "error_agent_update_busy")
             if self.git_actions.active():
                 raise Problem(409, "git_busy")
             if self.worktree_creation.active():
@@ -4277,6 +4740,7 @@ class Server(http.server.ThreadingHTTPServer):
         super().__init__(address, Handler)
 
     def server_close(self):
+        self.bridge.agent_updates.close()
         self.bridge.agent_connections.close()
         if self.bridge.browser_tools:
             self.bridge.browser_tools.close()
@@ -4412,6 +4876,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             result = bridge.session_history(data)
         elif method == "POST" and parsed.path == "/v1/commands":
             result = bridge.commands(data)
+        elif method == "POST" and parsed.path == "/v1/agent-updates":
+            result = bridge.agent_updates.handle(data)
         elif method == "POST" and parsed.path == "/v1/agent-connections":
             result = bridge.agent_connections.handle(data)
         elif method == "POST" and parsed.path == "/v1/models":

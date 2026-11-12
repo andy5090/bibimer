@@ -1,0 +1,6 @@
+<en-US>
+Manage supported coding-agent sign-ins from Bibimer, with an in-app terminal fallback. Check and update supported agent installations from account settings. Agent login and update features require bridge 0.25.0; end that agent's sessions before updating it. Show the Bibimer symbol while Android prepares the app screen. Warning and information banners now have a close button.
+</en-US>
+<ko-KR>
+지원되는 코딩 에이전트의 로그인을 Bibimer 안에서 처리하고 보조 경로로 앱 내 터미널을 제공합니다. 계정 설정에서 에이전트 버전 확인·업데이트를 할 수 있습니다. 로그인·업데이트 기능에는 브리지 0.25.0이 필요하며, 에이전트를 업데이트하기 전 해당 세션을 종료해야 합니다. 안드로이드 화면 준비 중 비비머 심벌을 표시하고, 경고·안내 박스에 닫기 버튼을 추가했습니다.
+</ko-KR>

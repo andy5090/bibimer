@@ -85,6 +85,73 @@ class ConnectionTests(BridgeTestCase):
   for payload in [{'agent':'shell','action':'status'},{'agent':'codex','action':'arbitrary'},{'agent':'codex','action':'status','project_id':'missing'},{'agent':'claude','action':'start','request_id':str(uuid.uuid4())}]:
    status,result=self.api('POST','/v1/agent-connections',payload);self.assertIn(status,[400,404],result)
   self.assertFalse(self.bridge.sessions)
+ def wait_job(self, agent, job, predicate):
+  end=time.monotonic()+5
+  while time.monotonic()<end:
+   status,result=self.call(agent,'poll',id=job['id']);self.assertEqual(200,status,result)
+   if predicate(result['job']):return result['job']
+   time.sleep(.02)
+  self.fail('native login did not reach expected state')
+ def test_claude_ui_login_only_exposes_allowlisted_url_and_confirms_native_status(self):
+  fake=self.bin/'claude'
+  fake.write_text('#!'+sys.executable+'\nimport sys,json\nif sys.argv[1:]==["auth","status"]:print(json.dumps({"loggedIn":True,"email":"PRIVATE_EMAIL","accessToken":"PRIVATE_TOKEN"}));sys.exit()\nassert sys.argv[1:]==["auth","login"]\nprint("PRIVATE_DIAGNOSTIC https://evil.example/oauth/authorize?secret=PRIVATE",flush=True)\nprint("https://claude.ai/oauth/authorize?state=fictional-state",flush=True)\nprint("Paste code here if prompted > ",flush=True)\nassert input()=="fictional-code"\n')
+  job=self.start('claude','claudeai')
+  job=self.wait_job('claude',job,lambda j:j.get('code_required'))
+  self.assertEqual('https://claude.ai/oauth/authorize?state=fictional-state',job['url'])
+  self.assertNotIn('PRIVATE',json.dumps(job));self.assertFalse(self.bridge.sessions)
+  self.assertEqual(200,self.call('claude','code',id=job['id'],code='fictional-code')[0])
+  self.assertEqual('saved',self.wait_job('claude',job,lambda j:j['status']!='pending')['status'])
+  self.assertFalse(self.bridge.sessions)
+  self.assertNotIn('fictional-code',json.dumps(self.bridge.agent_connections.snapshot(self.bridge.agent_connections.jobs['claude'])))
+ def test_claude_exit_zero_without_native_login_is_failure_and_untrusted_url_is_hidden(self):
+  fake=self.bin/'claude'
+  fake.write_text('#!'+sys.executable+'\nimport sys,json\nif sys.argv[1:]==["auth","status"]:print(json.dumps({"loggedIn":False}));sys.exit()\nprint("https://claude.ai.attacker.example/oauth/authorize?secret=PRIVATE",flush=True)\n')
+  job=self.start('claude','claudeai');job=self.wait_job('claude',job,lambda j:j['status']!='pending')
+  self.assertEqual('failed',job['status']);self.assertNotIn('url',job);self.assertNotIn('PRIVATE',json.dumps(job));self.assertFalse(self.bridge.sessions)
+ def test_gemini_ui_uses_native_oauth_module_and_preserves_settings(self):
+  entry=self.bin/'gemini.mjs';settings=self.bin/'settings.json';settings.write_text('{"theme":"keep","security":{"other":true}}')
+  entry.write_text("import {getOauthClient} from './oauth.mjs';")
+  native=self.bin/'oauth.mjs'
+  native.write_text("import readline from 'node:readline';\nexport class Storage { static getGlobalSettingsPath(){return "+json.dumps(str(settings))+";} }\nexport async function getOauthClient(type,config){if(type!=='oauth-personal'||!config.isInteractive()||!config.isBrowserLaunchSuppressed())throw Error('wrong config');console.log('https://accounts.google.com/o/oauth2/v2/auth?state=fake');const rl=readline.createInterface({input:process.stdin,output:process.stdout});const code=await new Promise(resolve=>rl.question('Enter the authorization code: ',resolve));rl.close();if(code!=='gemini-fictional-code')throw Error('wrong code');return {credentials:{access_token:'PRIVATE_GEMINI_TOKEN'}};}\n")
+  with patch.object(self.bridge,'agent_executable',return_value=str(entry)):
+   job=self.start('gemini','google');job=self.wait_job('gemini',job,lambda j:j.get('code_required'))
+   self.assertEqual('https://accounts.google.com/o/oauth2/v2/auth?state=fake',job['url'])
+   self.assertEqual(200,self.call('gemini','code',id=job['id'],code='gemini-fictional-code')[0])
+   job=self.wait_job('gemini',job,lambda j:j['status']!='pending');self.assertEqual('saved',job['status'])
+   self.assertEqual('configured',self.call('gemini')[1]['state'])
+   self.bridge.agent_connections.jobs['gemini']['expires_at']=0
+   self.assertEqual('unknown',self.call('gemini')[1]['state'])
+  saved=json.loads(settings.read_text());self.assertEqual('keep',saved['theme']);self.assertTrue(saved['security']['other']);self.assertEqual('oauth-personal',saved['security']['auth']['selectedType'])
+  self.assertNotIn('PRIVATE',settings.read_text());self.assertNotIn('gemini-fictional-code',settings.read_text());self.assertFalse(self.bridge.sessions)
+ def test_native_ui_cancel_kills_only_owned_child_and_clears_url(self):
+  fake=self.bin/'claude';fake.write_text('#!'+sys.executable+'\nimport time\nprint("https://claude.ai/oauth/authorize?state=fake",flush=True)\ntime.sleep(30)\n')
+  job=self.start('claude','claudeai');child=self.bridge.agent_connections.jobs['claude']['client'].process
+  result=self.call('claude','cancel',id=job['id'])[1]['job'];self.assertEqual('cancelled',result['status']);self.assertNotIn('url',result);self.assertIsNotNone(child.poll())
+ def test_login_terminal_is_dedicated_fixed_argv_scoped_and_idempotent(self):
+  existing=self.launch();project=self.bridge.project['id']
+  fake=self.bin/'claude'
+  fake.write_text('#!'+sys.executable+'\nimport os,sys\nassert sys.argv[1:]==["auth","login"]\nprint("AUTH_READY:"+os.getcwd(),flush=True)\nassert input()=="fictional-code"\nprint("PRIVATE_AUTH_OUTPUT",flush=True)\n')
+  key=str(uuid.uuid4());payload=dict(project_id=project,request_id=key,command='ignored; never executed')
+  status,result=self.call('claude','terminal',**payload);self.assertEqual(200,status,result)
+  session=result['session'];self.assertEqual('shell',session['agent']);self.assertEqual('terminal',session['mode']);self.assertEqual('claude',session['authentication_agent'])
+  self.assertNotEqual(existing,session['id']);self.assertEqual('running',self.bridge.get_session(existing).state)
+  self.assertEqual(existing,self.bridge.selected_sessions[project]['shell'])
+  self.assertEqual(409,self.call('claude','start',method='claudeai',request_id=str(uuid.uuid4()))[0])
+  self.output_until(session['id'],b'AUTH_READY:')
+  self.assertEqual(session['id'],self.call('claude','terminal',**payload)[1]['session']['id'])
+  self.assertEqual(409,self.call('codex','terminal',**payload)[0])
+  self.assertEqual(409,self.api('POST','/v1/sessions',dict(agent='shell',mode='terminal',new_session=True,project_id=project,request_id=key))[0])
+  self.send(session['id'],'fictional-code\n');self.output_until(session['id'],b'PRIVATE_AUTH_OUTPUT')
+  metadata=(self.state/'metadata.json').read_text()
+  self.assertNotIn('PRIVATE_AUTH_OUTPUT',metadata);self.assertNotIn('fictional-code',metadata)
+  self.assertNotIn('PRIVATE_AUTH_OUTPUT',json.dumps(result));self.assertFalse(self.bridge.agent_connections.jobs)
+ def test_login_terminal_requires_auth_project_and_supported_agent(self):
+  self.assertEqual(401,self.api('POST','/v1/agent-connections',dict(agent='claude',action='terminal'),auth=False)[0])
+  self.assertEqual(400,self.call('claude','terminal',request_id=str(uuid.uuid4()))[0])
+  self.register()
+  self.assertEqual(400,self.call('gemini','terminal',request_id=str(uuid.uuid4()))[0])
+  self.assertEqual(404,self.call('claude','terminal',project_id='missing',request_id=str(uuid.uuid4()))[0])
+  self.assertFalse(self.bridge.sessions)
  def test_key_goes_to_native_store_only_and_same_request_is_idempotent(self):
   for agent,method,extra in [('codex','apiKey',{}),('opencode','0',{'provider':'test'})]:
    payload=dict(request_id=str(uuid.uuid4()),method=method,key='fictional-private-key',**extra)

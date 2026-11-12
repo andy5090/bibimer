@@ -36,7 +36,7 @@ def launcher(binary, prefix=PREFIX):
             f"--library-path {quote(prefix / 'glibc/lib')} {quote(binary)} \"$@\"\n")
 
 
-def install(target, archive=None):
+def install(target, archive=None, quiet=False):
     if platform.machine() not in {"aarch64", "arm64"} or not PREFIX.is_dir():
         raise RuntimeError(text("This repair requires arm64 Termux on Android.", "이 복구는 Android의 arm64 Termux에서만 사용할 수 있습니다."))
     if not (PREFIX / "glibc/lib/ld-linux-aarch64.so.1").is_file():
@@ -81,8 +81,10 @@ def install(target, archive=None):
             binary.replace(installed)
         probe.write_text(launcher(installed))
         probe.replace(target / "claude")
-    print(text(f"Claude {VERSION} runtime ready: {target / 'claude'}", f"Claude {VERSION} 실행 환경 준비 완료: {target / 'claude'}"))
-    print(text("Bibimer uses this runtime when the default Claude command cannot run.", "기본 Claude 명령을 실행할 수 없을 때 Bibimer가 이 실행 환경을 사용합니다."))
+    if not quiet:
+        print(text(f"Claude {VERSION} runtime ready: {target / 'claude'}", f"Claude {VERSION} 실행 환경 준비 완료: {target / 'claude'}"))
+        print(text("Bibimer uses this runtime when the default Claude command cannot run.", "기본 Claude 명령을 실행할 수 없을 때 Bibimer가 이 실행 환경을 사용합니다."))
+
 
 
 def main():

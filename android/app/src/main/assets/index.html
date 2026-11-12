@@ -57,7 +57,10 @@
       <span role="status" data-i18n="connection_off">Disconnected</span>
       <button id="reconnect" class="quiet action-with-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.55-1.65L20 8M4 16l2.35 2.65A7 7 0 0 0 17.9 17"/></svg><span data-i18n="reconnect">Reconnect</span></button>
     </aside>
-    <div id="notice" class="notice" role="status" hidden></div>
+    <div id="notice" class="notice" hidden>
+      <span id="notice-text" role="status"></span>
+      <button id="notice-dismiss" class="icon-button" type="button" aria-label="Close" data-i18n-aria-label="sidebar_close"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    </div>
   </div>
   <main id="work" class="page">
     <div id="welcome" class="welcome">
@@ -240,7 +243,7 @@
         <p id="agent-action-status-claude" class="hint" role="status" hidden></p>
         <button data-command="claude-repair" class="secondary full" data-i18n="claude_repair_setup">Copy Claude repair command</button>
         <div class="command"><code id="claude-check-command">~/.local/share/bibimer/claude-runtime/claude --version</code><button data-agent-copy="claude-check-command" data-i18n="copy">Copy</button></div>
-        <p class="hint" data-i18n="agent_claude_auth_hint">A successful version check does not confirm authentication. If your login has expired or you are signed out, run auth login below in Termux and finish signing in with the browser.</p>
+        <p class="hint" data-i18n="agent_claude_auth_hint">Choose a sign-in method here, then open the browser to authorize your account. If a code is shown, enter it in the masked field in Bibimer. A version check alone does not confirm sign-in.</p>
         <div class="command"><code id="claude-auth-command">~/.local/share/bibimer/claude-runtime/claude auth status</code><button data-agent-copy="claude-auth-command" data-i18n="copy">Copy</button></div>
         <div class="command"><code id="claude-login-command">~/.local/share/bibimer/claude-runtime/claude auth login</code><button data-agent-copy="claude-login-command" data-i18n="copy">Copy</button></div>
         <p class="hint" data-i18n="claude_adapter_hint">Copy the bundled command and run it in Termux. No saved setup file or Downloads access is needed. This installs Node.js and the official Agent SDK; a working Claude CLI is required separately.</p>
@@ -378,7 +381,15 @@
     <label for="agent-connection-agent" data-i18n="program_label">Agent to run</label><select id="agent-connection-agent"><option value="codex">Codex</option><option value="claude">Claude Code</option><option value="opencode">OpenCode</option><option value="gemini">Gemini CLI</option></select>
     <p id="agent-connection-status" class="hint" role="status" aria-live="polite"></p><p id="agent-connection-version" class="hint"></p>
     <div class="button-row"><button id="agent-connection-refresh" class="secondary" type="button" data-i18n="connection_refresh">Refresh connection</button><button id="agent-connection-version-check" class="secondary" type="button" data-i18n="agent_action_version">Check version</button></div>
+    <section id="agent-connection-updates" hidden>
+      <h3 data-i18n="agent_update_title">Agent updates</h3>
+      <p class="hint" data-i18n="agent_update_hint">Updates preserve the installation method. End this agent’s sessions and sign-in before updating.</p>
+      <p id="agent-connection-update-target" class="hint"></p>
+      <div class="button-row"><button id="agent-connection-update-check" class="secondary" type="button" data-i18n="agent_update_check">Check for updates</button><button id="agent-connection-update-start" class="primary" type="button" data-i18n="agent_update_start" disabled>Update</button></div>
+      <p id="agent-connection-update-status" class="hint" role="status" aria-live="polite"></p>
+    </section>
     <p class="hint" data-i18n="connection_scope">Uses this agent’s saved account in Termux. Existing sessions stay running. Saved configuration does not verify model access.</p>
+    <p id="agent-connection-login-hint" class="hint" data-i18n="connection_native_login_hint">Choose a sign-in method here, then open the browser to authorize your account. If a code is shown, enter it in the masked field in Bibimer. A version check alone does not confirm sign-in.</p>
     <form id="agent-connection-form" autocomplete="off">
       <div id="agent-connection-provider-field"><label for="agent-connection-provider" data-i18n="connection_provider">Provider</label><select id="agent-connection-provider"></select></div>
       <label for="agent-connection-method" data-i18n="connection_method">Authentication method</label><select id="agent-connection-method"></select>
@@ -393,8 +404,8 @@
       <button id="agent-connection-cancel" class="secondary full" type="button" data-i18n="cancel_project">Cancel</button>
     </section>
     <p id="agent-connection-error" class="hint danger-text" role="alert" hidden></p>
-    <p id="agent-connection-fallback-hint" class="hint" data-i18n="connection_fallback">This method needs the agent’s native setup. Open Termux only when you choose the button below.</p>
-    <button id="agent-connection-terminal" class="quiet" type="button" data-i18n="connection_terminal">Set up in Termux instead</button>
+    <p id="agent-connection-fallback-hint" class="hint" data-i18n="connection_terminal_in_app_hint">Open a separate login terminal inside Bibimer.</p>
+    <button id="agent-connection-terminal" class="quiet" type="button" data-i18n="connection_terminal_in_app">Sign in in Bibimer terminal</button>
   </dialog>
   <dialog id="review-access-dialog" class="settings-dialog" aria-labelledby="review-access-title" aria-describedby="review-access-hint">
     <h2 id="review-access-title" data-i18n="review_access">Review access</h2>

@@ -34,6 +34,9 @@
   let canDragProjects = false, canOrderProjects = false, canManageProjects = false, projectActionTarget = null, projectDeleteTarget = null, projectActionError = null;
   let canGitActions = false, canInspect = false, canOpenFiles = false, openingFile = false;
   let canConnections = false;
+  let canLoginTerminal = false;
+  let canLoginUI = false;
+  let canAgentUpdates = false;
   let canBrowser = false, canBrowserConsent = false, canBrowserNotify = false, browserState = null, browserEnabled = true;
   const worktrees = {};
   const worktreeChecks = new Map();
@@ -120,10 +123,16 @@
   setInterval(() => void browserConsent.refresh(), 2000);
 
   const agentConnections = new BibimerAgentConnections(t,
-    () => ({online:online && !switchingProject, supported:canConnections, paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
+    () => ({online:online && !switchingProject, supported:canConnections, loginTerminal:canLoginTerminal, loginUI:canLoginUI, updates:canAgentUpdates, paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
     data => api("POST", "/v1/agent-connections", data),
     {sync:() => pickers.sync(), uuid:uuid, link:url => native.openLink(url),
-     terminal:agent => { if (native.startAgentAction) native.startAgentAction(agent, "login"); }});
+     updates:data => api("POST", "/v1/agent-updates", data),
+     session:async value => {
+       const sourceInstance=instance, sourceProject=projectKey(), sourcePath=fileContext().path;
+       rememberView(); cacheSession(value); await refreshSidebar();
+       if(instance!==sourceInstance||projectKey()!==sourceProject||fileContext().path!==sourcePath||paused)return;
+       await selectSession(value.project.id, value.id);
+     }});
   $("agent-connections-open").addEventListener("click", () => void agentConnections.open(selectedAgent === "shell" ? "codex" : selectedAgent));
   const github = new BibimerGitHub(t, () => ({online:online && !paused, supported:canGitHub, home:termuxHome}),
     data => api("POST", "/v1/github", data), {
@@ -338,14 +347,18 @@
   }
   function renderNotice() {
     renderConnectionRecovery();
-    $("notice").textContent = noticeData ? t(noticeData.key) + (noticeData.suffix ? " " + t(noticeData.suffix) : "") : "";
+    $("notice-text").textContent = noticeData ? t(noticeData.key) + (noticeData.suffix ? " " + t(noticeData.suffix) : "") : "";
     $("notice").hidden = !noticeData;
-    const error = noticeData?.key?.startsWith("error_") ? $("notice").textContent : "";
+    const error = noticeData?.key?.startsWith("error_") ? $("notice-text").textContent : "";
     $("session-action-error").textContent = error;
     $("session-action-error").hidden = !error;
     if ($("sidebar").open && error) $("sidebar-status").textContent = error;
   }
   function notice(key, suffix = null) { noticeData = key ? {key, suffix} : null; renderNotice(); }
+  $("notice-dismiss").addEventListener("click", () => {
+    notice(null);
+    $(currentTab === "work" ? "sidebar-open" : "page-back").focus({preventScroll:true});
+  });
   function appError(key, status = 0) { return Object.assign(new Error(t(key)), {key, status}); }
   function api(method, path, data = {}) {
     return new Promise((resolve, reject) => {
@@ -559,6 +572,7 @@
   function sessionTitle(value) {
     if (value.title) return value.title;
     if (value.kind === "browser") return t("browser_title");
+    if (value.authentication_agent) return t("agent_"+value.authentication_agent)+" · "+t("connection_terminal_in_app");
     if (value.display_title || sessionTitles.get(value.id)) return value.display_title || sessionTitles.get(value.id);
     const date = new Date(value.started_at * 1000);
     return t("agent_" + value.agent) + " · " + (Number.isNaN(date.getTime()) ? value.id.slice(0,8) :
@@ -1422,6 +1436,9 @@
       canInspect = health.features?.includes("workspace_inspector") === true;
       canGitActions = health.features?.includes("git_actions") === true;
       canConnections = health.features?.includes("agent_connections") === true;
+      canLoginTerminal = health.features?.includes("agent_login_terminal") === true;
+      canLoginUI = health.features?.includes("agent_login_ui") === true;
+      canAgentUpdates = health.features?.includes("agent_updates") === true;
       agentConnections.update();
       canBrowser = health.features?.includes("browser_tools_x11") === true;
       canBrowserConsent = health.features?.includes("browser_control_consent") === true;
