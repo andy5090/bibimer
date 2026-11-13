@@ -1,5 +1,13 @@
 # Bibimer 다음 세션 시작점
 
+## iOS 0.1.0(12) TestFlight 내부 배포 완료 (2026-11-13)
+
+- **14:08 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답·한/영 테스트 안내1281자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(12)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드12개를 직접 확인했다. 기존1–11번·그룹/테스터·자동 배포 설정을 유지했다.
+- 업로드 소스 `cf80243cb59c23a4c57fe019f60447b9753aa40d`, 빌드 ID `5b72662b-bf20-475a-8d8c-00d261643642`. **14:03:33 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**다. 동일 아카이브의 로컬 서명 export IPA는 **8,639,616 bytes**, SHA-256 `cd7254ec0cf655b56e93bf56d8fa52f44dc7d346a0f29a5159c7aa0bcc88464a`. 아카이브 `dist/ios-testflight/0.1.0-12-unsigned-nov13-accounts/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-12-export-nov13-accounts/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-12-nov13/`.
+- iOS 계정/프로바이더 설정·Claude 구독/Console와 Codex ChatGPT의 전용 인증 브라우저·UIKit 보안 코드/API 키 입력·diff 기본10px/줄 번호9px를 포함한다. 수동 인증 터미널은 보조 경로로 유지한다. 입력 제출 뒤에도 하나의 native operation에 요청 ID/문서/generation/연결 epoch/task를 유지하며 취소/만료/앱 비활성화/문서 교체 후 이전 완료가 새 요청/문서에 섞이지 않게 했다. 이미 서버에서 접수한 변경의 취소 rollback은 보장하지 않고 자동 재전송하지 않는다.
+- 양 SDK·archive/dSYM·배포 서명·현재 소스→manifest→IPA 자산(웹65·게스트18·네이티브11자산/17소스·현지화20·rootfs426)을 확인했다. 앱 Python33·브리지77·Node25파일·965키×10언어·Chromium20배치·native5소스 정적분석0을 통과했다. 실제 전용 Simulator의 **WKWebView/Linux32개·47.69초·JS오류0·fatal0·진단실패0**이다. 모의 정책20개·기존 syscall 경고4개/미사용 매개변수 경고16개와 구분한다. 상세 검사/보완 경위는 VALIDATION.md를 따른다.
+- **TestFlight에서0.1.0(12)로 업데이트한다.** 별도 iOS 브리지 업데이트는 필요 없다. 실제 iPhone OAuth·Safari localhost callback·보안 입력 캡처/앱 전환·잠금 복구/OS 백그라운드 허가는 별도 확인이다. 고정 Claude 로그인 사본은 공개 소스/계약과 가짜 CLI로 검증했으며 실제 게스트 OAuth 완료를 보장하지 않는다. 실제 사용자 인증 정보/모델을 테스트에 사용하지 않았다. 아래 준비/미배포 기록은 당시 상태다.
+
 ## iOS 0.1.0(12) 배포 준비·계정 요청 수명 보완 (2026-11-13)
 
 - e45c67f의 iOS 에이전트/프로바이더 설정·Claude/Codex 인증 브라우저·보안 코드/API 키 입력과 diff 기본 글자 축소를 이번 배포 대상으로 검증했다. 입력 제출 뒤에도 요청 ID를 유지하고 입력/HTTP task를 하나의 네이티브 operation으로 관리한다. ID가 다른 취소는 무시하며 취소·180초 제한·비활성화·연결 변경·문서 교체 시 해당 입력/task를 취소한다. WK 문서·generation·연결 epoch·operation/task가 일치하는 결과만 전달해 이전 완료가 새 요청을 지우거나 바뀐 문서에 전달되지 않게 했다. 서버가 이미 접수한 자격 증명 변경은 취소로 되돌릴 수 없고 자동 재전송하지 않는다.

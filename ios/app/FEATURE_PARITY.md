@@ -1,16 +1,16 @@
 # iOS 기능 반영 현황
 
-2026-11-13 소스653f2c5와 **TestFlight 0.1.0(11)** 기준이다. 양 SDK·앱 Python32/iOS 브리지59·Node23·최종 실제 WKWebView/Linux32개·모의 정책20개와 기존 내부 그룹의 테스트 중 상태를 확인했다. 즉시 질의 표시/배치 뒤 스크롤·Chat 코드 크기·계정 조회 로딩/iOS 안내·원격 공통0.42.0/터미널 링크 및 이전 HTTP task 취소 장벽을 포함한다. 실제 iPhone 키보드/스크롤/제스처·로그인·OS 백그라운드 허가는 별도 확인이다.
+2026-11-13 소스cf80243과 **TestFlight 0.1.0(12)** 기준이다. 양 SDK·앱 Python33/iOS 브리지77·Node25·Chromium20배치·실제 WKWebView/Linux32개·모의 정책20개와 기존 내부 그룹의 테스트 중 상태를 확인했다. 에이전트/프로바이더 설정·전용 인증 브라우저/보안 입력·요청 취소/문서 수명·diff 기본 글자 축소와 기존 Chat/복구를 포함한다. 실제 iPhone OAuth·Safari localhost callback·보안 입력/앱 전환·OS 백그라운드 허가는 별도 확인이다.
 
 | 기능 | 현재 소스 | 남은 확인 |
 | --- | --- | --- |
 | Chat 질의 표시·스크롤 | 즉시 버블·전송/대기/실패/불명·이벤트와 합치기·배치 뒤 최하단/수동 이동 취소 | 실제 iPhone 키보드/스크롤, 본문 변환 시 임시 버블 잔류 가능 |
-| Chat 글자 크기 | 인라인/블록/강조 코드·diff/줄 번호·명령/파일명까지 상속, 실제 computed 크기1.5배 검증 | 실제 iPhone 두 손가락 제스처/시각 |
-| 계정 조회·안내 | 새로고침/버전 확인 로딩·iOS 내장 Linux 안내, 기능 지원 경계 유지 | 실제 계정 로그인·기기 권한 |
+| Chat 글자 크기 | diff 기본10px/줄 번호9px, 인라인/블록/강조 코드·diff/줄 번호·명령/파일명까지 상속, 실제 computed 크기1.5배 검증 | 실제 iPhone 두 손가락 제스처/시각 |
+| 계정/프로바이더 설정 | 원본 상태/인증 방법·버전/조회 로딩·OpenCode 목록, UIKit 보안 키 입력과 operation 취소/문서 소유 | 실제 계정/API 키·캡처/앱 전환 |
 | 즉시 복구·진행 배너 | 버튼 즉시 반응·공통 상단/설정의 실제 단계·실패 시 회전 중지/성공 시 접기, 진행 요청 공유 | 실제 iPhone 시각/접근성·전환/잠금, 전체 복구2초 보장 아님 |
 | 재시도·연결 진단 | 실패 시간/횟수 유지·활성 상태 보정·종료 잠금 대기 제한, offline native 진단 복사 | 실제 iPhone 재현 직후/재실행 뒤 로그로 실패 지점 확인 |
 | Linux 서비스 재시작 복구 | 첫 health 실패 또는2초 조회 감시 후 이전 HTTP task 취소 장벽·자식 종료 확인·동일 rootfs 재시작, PID1 유지·기존 작업 종료 | 실제 iPhone 복귀/잠금·인증 유지, PID1 종료/커널 교착은 별개 |
-| Claude 설정 로그인 | 대화형 `/login` PTY·수동 코드 입력 경로, 브리지 검사 통과 | 실제 계정의 수동 코드 로그인 |
+| Claude/Codex 설정 로그인 | 전용 Safari 인증 브라우저·Claude code#state 보안 입력/원본 PKCE·Codex app-server 완료 이벤트, 수동 터미널 보조 경로 | 실제 iPhone OAuth·localhost callback·게스트 CLI 로그인 사본 완료 |
 | 비활성/백그라운드 복귀·수동 다시 연결 | 새 transport·2초 health 감시, 기존 workspace/session/draft 및 POST 유지 검증 | 실제 iPhone 앱 전환·잠금 후 복구, 실제 init 종료/교착은 별개 |
 | 화면 유지·홈 제스처 완화 | 각각 기본 꺼짐, foreground에만 적용 | 실제 iPhone 손가락 조작/잠금 |
 | iOS26+ 백그라운드 작업 | 공식 Continued Processing API·기존 설정 포함, 모의 정책20개 검증 | 실제 OS 허가/Live Activity/지속 시간, 무기한 상주 아님 |
