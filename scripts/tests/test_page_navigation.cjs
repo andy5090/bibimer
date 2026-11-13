@@ -62,6 +62,8 @@ for(const [paired,demo] of [[true,false],[false,true]]){
 {
  const {ctx,$,session,draft}=fixture(true);
  ctx.iosTerminalTools={update(){}};ctx.iosTextGestures=[];
+ const authenticationChecks=[];ctx.iosAuthenticationReturns=0;
+ ctx.iosRefreshAuthentication=reason=>authenticationChecks.push(reason);
  const wrapper=iosHooks.match(/  if \(iosTerminalTools\) \{[^]*?\n  \}/);assert.ok(wrapper);
  vm.runInContext(wrapper[0],ctx);
  ctx.openInitialPage();assert.equal(ctx.pageHistory.length,0);
@@ -71,6 +73,7 @@ for(const [paired,demo] of [[true,false],[false,true]]){
  ctx.closePage();assert.equal(ctx.currentTab,"work");
  assert.equal($("page-back").hidden,true);assert.equal($("sidebar-open").hidden,false);
  assert.equal(ctx.pageHistory.length,0);assert.equal(ctx.session,session);assert.equal(ctx.draft,draft);
+ assert.deepEqual(authenticationChecks,["settings:1","settings:2"],"Explicit iOS Settings returns request scoped authentication status");
 }
 assert.ok(!html.includes('class="bottom-nav"'));assert.ok(!html.match(/id="tab-(work|setup|settings)"/));
 for(const id of ["app-settings-open","page-back","setup-guide-open","agent-install-guide"])assert.ok(html.includes('id="'+id+'"'));

@@ -1,6 +1,11 @@
 """Review the pinned CLI adaptation without executing Node or accessing accounts."""
 import json
 import os
+import select
+import shutil
+import subprocess
+import termios
+import time
 from pathlib import Path
 import stat
 import unittest
@@ -66,6 +71,63 @@ class ClaudeUILoginTests(unittest.TestCase):
         factory.assert_called_once_with(str(self.wrapper))
         self.assertEqual([str(self.state / 'private-login.mjs'), 'auth', 'login', '--console'], spawn.call_args.args[0])
         self.assertFalse(list(self.folder.glob('*.json')), 'No credentials or login reports are written by the adapter')
+
+    @unittest.skipUnless(shutil.which('node'), 'Node is required for the real readline/PTY boundary')
+    def test_reviewed_handler_in_owned_pty_has_no_code_echo_and_exits(self):
+        # Exercise the actual transformed callback/readline code with a local
+        # synthetic native OAuth object. No browser/network/credentials exist.
+        before = r'''import {createRequire} from 'node:module';
+const K=false,A=true,q=undefined,O=undefined;
+class Et {
+ async startOAuthFlow(callback,options) {
+  if(options.skipBrowserOpen!==true)throw Error('browser must stay closed');
+  await callback('https://claude.ai/oauth/authorize?state=fixture-state');
+  return await new Promise(resolve=>{this.complete=resolve;});
+ }
+ handleManualAuthCodeInput(value) {
+  if(this.called)throw Error('duplicate code');this.called=true;
+  if(value.authorizationCode!=='fictional-private-code'||value.state!=='fixture-state')throw Error('bad native input');
+  this.complete({});
+ }
+ cleanup() {}
+}
+async function fX6() { process.stdout.write('AUTH_SAVED\n'); }
+'''
+        target=self.folder/'synthetic-login.mjs'
+        target.write_text(fixtures.entry.claude_ui_login_source(before+LOGIN.removeprefix('#!/usr/bin/env node\n')+'\nawait Jaz();\n',self.cli.as_uri()))
+        target.chmod(0o700)
+        base=fixtures.entry.adapt(self.base,claude_login=lambda executable:target)
+        for state,expected in [('fixture-state',0),('wrong-state',1)]:
+            master,slave=os.openpty()
+            argv=base._ios_authentication_command('/fictional/claude','claude')
+            # Run Node explicitly so this test does not rely on a shell's PATH.
+            argv[argv.index(str(target)):]=[shutil.which('node'),str(target),'auth','login']
+            process=subprocess.Popen(argv,stdin=slave,stdout=slave,stderr=slave,start_new_session=True)
+            os.close(slave);raw=b''
+            try:
+                until=time.monotonic()+10
+                while b'Paste code here' not in raw and time.monotonic()<until:
+                    if select.select([master],[],[],.1)[0]:raw+=os.read(master,65536)
+                self.assertIn(b'Paste code here',raw)
+                code=('fictional-private-code#'+state+'\r').encode()
+                if expected==0:code+=code  # A second line must never submit twice.
+                os.write(master,code)
+                while time.monotonic()<until:
+                    if select.select([master],[],[],.1)[0]:
+                        try:chunk=os.read(master,65536)
+                        except OSError:break
+                        if not chunk:break
+                        raw+=chunk
+                    if process.poll() is not None:break
+                self.assertEqual(expected,process.wait(timeout=2),raw)
+                self.assertNotIn(b'fictional-private-code',raw)
+                self.assertEqual(1 if expected==0 else 0,raw.count(b'AUTH_SAVED'))
+            finally:
+                if process.poll() is None:process.kill();process.wait()
+                os.close(master)
+        other_master,other_slave=os.openpty()
+        try:self.assertTrue(termios.tcgetattr(other_slave)[3]&termios.ECHO)
+        finally:os.close(other_master);os.close(other_slave)
 
 
 if __name__ == '__main__':

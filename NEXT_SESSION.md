@@ -7,6 +7,25 @@
 - 빌드 소스 `503cdc7`의 기존 업로드 키 서명 AAB `dist/play/bibimer-0.43.0-72-release.aab`, **3,492,187bytes**, SHA-256 `60ac574f5393f5575e0a959ccd52647ed991d3d9a969823be59282219425df5c`. 전체 Java/D8·bundletool·기존 인증서·61assets 원본·신규 진단/편집 자산과 네이티브 API·브리지0.25.2의6payload/격리 설치0700·언어 split·심사 digest/비밀 원문 미포함을 검증했다. 이번 버전의 에이전트/디버그/큐 편집/이동·984키×10언어, Android 빌드11·SDK6·로컬 브리지 업데이트1개가 통과했다. 기능별 큐17·Claude/OpenCode 추가1개와 병합 후13개 Node·앱 패키징 검사 등은 앞선 구현/싱크 검증을 따른다. iOS 전체 브리지의 기존 Termux 환경 실패는 아래 싱크 기록 그대로 유지한다.
 - 증빙 `dist/play-0.43.0/`의 업로드/경고/기기 범위/번들/한영 노트/확인/게시/새로고침 화면과 `published.json`. 빌드/검증 `.tools/aab-0.43.0-72-{build.log,verify.log,verification.json}`. 실제 Play 업데이트 수신/설치·Android WebView의 선택/붙여넣기·편집 모달/IME·설정 이동은 후속 실기기 검증이다. 사용자 앱 자동 설치·운영 브리지/세션 재시작·실제 에이전트 업데이트·iOS 빌드/배포는 수행하지 않았다. 아래 미빌드/배포 전 기록은 각 시점의 상태이며 Android 신규3기능의 미빌드 상태는 이번72 게시로 대체한다. iOS의 해당 후속3기능은 여전히 미빌드·TestFlight12 미반영이다.
 
+- 배포 기록 동기화 중 원격 `42b52fc`까지 추가된 iOS Claude 모델/인증·복귀 확인6커밋도 병합했다. Android 앱/공통 브리지/빌드 스크립트는 배포 소스 `503cdc7`과 차이 없으며 이번72에 이 후속 iOS 전용 수정이 배포됐다고 표시하지 않는다. 병합 후 인증 PTY 상태/재연결/에이전트 관리/페이지 Node4파일·패키징6개·Claude metadata3/로그인 사본5/계정15/브리지 계약3개를 통과했다. 계정 테스트에서는 임시 폴더 정리 후 watcher 저장의 FileNotFoundError1회가 별도 스레드에 출력되어 unittest 통과와 구분해 기록한다. 기존 실제 사용자 계정·모델은 검사에 사용하지 않았다.
+
+## 레포 싱크·Claude 수정과 최신 공통 기능 통합 (2026-11-13)
+
+- 사용자 요청으로 원격을 확인해 새2커밋02ee3fb/412ed71을 fast-forward로 반영한 뒤 로컬 Claude metadata/수동 인증/복귀 확인·실제 CLI 검사·검증 기록을5개 논리 커밋으로 보존했다. NEXT_SESSION 충돌은 로컬11줄과 원격36줄의 모든 기록을 유지했다. ui-hooks의 원격 debugMode 게이트/늦은 설치 응답 가드와 로컬 계정 poll/정상 종료 뒤 상태 조회를 함께 유지했다. 강제 푸시/공유 main rebase는 하지 않았다.
+- 통합 후 Mac에서 iOS 브리지82개(25.99초)·앱 Python33개·공유 대기열18개·앱/공통 Node22파일·984키×10언어와 패키징 Chromium 계정 복귀 검사(활성 세션 유무·같은 job 완료·재전송/재열기 없음)를 통과했다. 공유 페이지 이동 테스트의 부분 추출 fixture에 새 인증 조회 함수/카운터를 연결하고 설정 왕복의 호출을 확인했다. 제품 동작은 이 fixture 보완으로 추가 변경하지 않았다. diff 검사도 통과했다.
+- 증빙 `.tools/repo-sync-claude-{bridge,app,queue,node-final,browser}.log`. 아래 Claude 수정의 실제 CLI/WKWebView/양 SDK 근거는 원격 공통 기능 통합 전 검사이며, 통합본의 native SDK/WKWebView 전체를 다시 실행한 결과와 구분한다. 이번 싱크는 새 APK/AAB·IPA 서명·TestFlight 배포나 운영 앱/브리지/세션 변경을 포함하지 않는다. 설치본 기준은 Android0.42.0(71)/TestFlight0.1.0(12)이며 새 소스는 미반영이다.
+
+## iOS·Mac TestFlight Claude 모델/로그인 후속 수정 (2026-11-13, 소스만 반영)
+
+- 사용자 요청대로 먼저 `git fetch origin`을 실행해 main/원격의 차이0/0·깨끗한 작업 트리와 최신 eadff43을 확인한 뒤 수정했다. 설치본0.1.0(12)에는 아직 미반영이다. 이번에는 검증용 SDK 컴파일/전용 QA Simulator만 사용했고 IPA 서명·업로드·TestFlight 배포·운영 앱/사용자 Runtime Lab/브리지·세션 재시작은 하지 않았다.
+- 모델 조회 실패를 실제 내장 Linux에서 재현했다. Claude만 iOS용 긴 시작 예산에서 빠져 Android8초 제한을 사용했으나, 실제 provider 초기화3.684초·모델4개 응답까지29.194초가 필요했다. Claude metadata도 총125초, Chat 시작135초를 적용한다. 무제한 대기나 모델 목록 하드코딩은 추가하지 않고 조회 실패/시간 초과는 소유한 process group만 종료한다.
+- 인증 브라우저/외부 앱 복귀 뒤 connect가 online=true 이전에만 계정 update를 호출해 기존 pending 로그인 poll이 멈췄다. 패키징한 Chromium에서 실패를 재현하고 성공한 재연결 뒤 같은 작업을 다시 조회하도록 보완했다. 새 로그인 전송·코드 재전송·브라우저 자동 재열기는 하지 않는다. 활성 터미널 유무 모두 회귀로 확인했다. 일반 계정 오류가 전역 offline을 만들지는 않았으며 해당 증상 전체를 실제 Linux 종료로 단정하지 않는다.
+- 수동 Claude 로그인 양쪽 진입점(설정의 인증 터미널·iOS 설치/로그인 동작)을 `/login` 대화형 TUI에서 기존 검토 사본의 유한 auth login/코드 한 줄 입력으로 통일했다. 원본 CLI의 PKCE/코드 교환·자격 증명 저장은 유지한다. 정확한 전용 argv의 PTY 생성 직후/Popen 전부터 ECHO/ECHONL을 꺼 조기 붙여넣기도 출력하지 않으며 다른 셸의 입력 모드는 유지한다. 잘못된 state는 거절하고 중복 입력은 한 번만 처리한다.
+- 알려진 인증 PTY의 종료 또는 명시적 foreground/설정 복귀에서 구조화된 계정 상태를 단일 요청으로 조회한다. 정상 종료0 **이후 새로 조회한** configured 상태일 때만 완료 안내·해당 에이전트의 모델 캐시 무효화를 한다. 실행 중/실패한 새 로그인을 과거 자격 증명으로 완료 처리하지 않고, 세션/프로젝트/경로/브리지 변경의 늦은 결과를 무시한다. PTY 문자열이나 출력 revision을 추측해 인증 성공/승인을 처리하지 않고 출력마다 CLI를 실행하지 않는다.
+- 실제 검토 CLI/SDK를 이미 설치한 전용 QA의 격리 HOME·빈 인증 환경에서 최종 signed-out25.225초·변환 CLI 실행21.401초·**수정된 iOS HistoryClient로 모델4개30.260초**를 확인했다. 동시 health86회 모두 성공/최대350ms였다. 실제 사용자 계정/API 키/OAuth/모델 요청은 사용하지 않았다. 새 선택형 `ios/bridge/tests/probe_claude_accounts.py`는 이 실제 패키지 검사를 재사용하며 호스트에서 실행을 거절하고 패키지를 설치하지 않는다. 증빙 `.tools/claude-guest-diagnosis/verified-real-cli-metadata.json`.
+- 최종 양 SDK 빌드·앱 Python33·브리지82(24.93초)·앱 Node15파일·패키징 계정 복귀 브라우저 회귀·모바일/언어20배치·구문/py_compile·diff 검사를 통과했다. 전용 QA의 **실제 WKWebView/Linux32개·41.89초·JS오류0·fatal0·진단실패0**이다. 기존 syscall151/152 경고4개·미사용 매개변수 경고16개는 유지한다. 중간 전체82개 부하 병행 실행에서 기존 stdio kill fixture1개가 실패한 로그를 보존했으며 최종82개는 모두 통과했다. 신규 보안 callback/실제 PTY 회귀는 올바른/잘못된 state·코드 비노출·유한 종료·다른 PTY 보존을 검증했다.
+- 실제 iPhone 및 Mac 설치본의 사용자 OAuth 전체 완료·Safari localhost callback·OS 클립보드 허용 화면/앱 전환은 별도 확인이다. programmatic clipboard 허용 UI가 inactive를 일으키면 안전한 세대 가드가 붙여넣기를 버릴 수 있다는 가능성은 미재현으로 남기며 이를 확인된 원인으로 표시하지 않는다. 실제 iPhone의 Linux 연결 장애 전체가 해결됐거나 무기한 백그라운드 실행된다고 보장하지 않는다.
+
 ## 레포 동기화·Android/iOS 후속 소스 병합 (2026-11-13)
 
 - 사용자 레포 싱크 요청으로 로컬 미빌드 변경을 `02ee3fb`에 커밋하고 원격 `eadff43`까지의7개 커밋을 병합했다. 디버그 모드·대기열 제출 전 수정·에이전트 관리 통합과 iOS 계정/프로바이더·전용 인증 브라우저/보안 입력·요청 수명/HTTP 복구·diff 글자 축소를 함께 유지했다. 공통 계정 UI·컨텍스트·10언어 iOS 안내 충돌을 양쪽 기능을 보존해 해결했다.

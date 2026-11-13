@@ -739,7 +739,7 @@ class BridgeTests(unittest.TestCase):
     def test_claude_login_uses_interactive_command_and_accepts_pty_input(self):
         fixture = self.folder / "claude-login-fixture"
         fixture.write_text("#!" + sys.executable + "\nimport sys\n"
-                           "assert sys.argv[1:] == ['/login'], sys.argv[1:]\n"
+                           "assert sys.argv[1:] == ['auth', 'login'], sys.argv[1:]\n"
                            "print('MANUAL-INPUT-READY', flush=True)\n"
                            "assert sys.stdin.readline().strip() == 'fixture-response'\n"
                            "print('FIXTURE-COMPLETE', flush=True)\n")

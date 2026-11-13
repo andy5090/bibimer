@@ -1,5 +1,14 @@
 # iOS 앱 검증 기록
 
+## 2026-11-13 — Claude 모델/로그인 복귀·수동 코드 후속 수정 (미배포)
+
+- 최신 eadff43 동기화 확인 후 `ios/bridge/run.py`에서 Claude의 Android8초 metadata 경로를 iOS125초/Chat135초로 맞췄다. 전용 QA 실제 CLI의 원본 응답은 초기화3.684초/모델4개29.194초였으며, 수정한 실제 HistoryClient 검사는4개30.260초로 통과했다. 격리 HOME의 signed-out25.225초·변환 CLI 실행21.401초, 동시 health86회 성공/최대350ms·실패0이다. 증빙 `.tools/claude-guest-diagnosis/verified-real-cli-metadata.json`과 선택형 실제 패키지 probe를 유지한다.
+- `ui-hooks.js`는 foreground connect가 online을 복구한 뒤 같은 pending 계정 job의 poll을 재개한다. 패키징 Chromium에서 원본의 poll 중단을 재현했으며 수정 후 활성 세션 유무 모두 기존 job의 저장 완료/계정 상태 갱신·poll1회·새 시작1회 유지·브라우저 재열기 없음·JS오류0을 확인했다. 단순 render는 이를 복구하지 못했다.
+- 수동 인증 양쪽 진입점은 기존 검토한 유한 auth login 사본을 사용한다. 정확한 인증 PTY만 생성 직후/Popen 전부터 echo를 끄고 부모/다른 셸의 모드는 유지한다. Node의 실제 readline/PTY 합성 native OAuth 객체로 올바른 state·잘못된 state·중복 한 번 처리·코드 비노출·유한 종료를 검사했다. 사용자 OAuth나 실제 토큰 교환 검증으로 표시하지 않는다.
+- 수동 PTY 완료는 exit0과 그 이후의 구조화 configured를 함께 확인하며, 실행 중/실패한 새 로그인을 예전 계정 상태로 완료 처리하지 않는다. 반복 렌더는 CLI를 실행하지 않고 완료/명시적 복귀만 단일 조회하며, 세션/프로젝트/경로/브리지 변경의 늦은 결과를 무시한다. 해당 에이전트 모델 캐시만 무효화한다.
+- 최종 양 SDK 컴파일·앱 Python33·브리지82(24.93초)·앱 Node15파일·계정 복귀 브라우저 검사·Chromium20배치·JS/Python 구문·diff 검사를 통과했다. `.tools/ios-claude-fix-*-final.log`와 `dist/ios-app/claude-fix-nov13-smoke/`에 증빙을 유지한다. 실제 **WKWebView/Linux32개·41.89초·JS오류0·fatal0·진단실패0**이고 기존 syscall151/152 경고4개/미사용 매개변수 경고16개는 유지한다. 중간82개 부하 병행 실행의 기존 stdio kill fixture 실패1개는 `.tools/claude-guest-diagnosis/all-bridge-tests.log`, 최종 전체 통과는 `.tools/ios-claude-fix-bridge-final.log`로 구분한다.
+- 실제 iPhone/Mac 사용자 계정 인증·Safari localhost callback·보안 입력/OS 붙여넣기 허용 UI와 잠금 복구는 별도 확인이다. 이번에는 운영 앱/사용자 Runtime Lab·브리지/세션·실제 계정·외부 베타/정식 배포를 다루지 않았다. **TestFlight0.1.0(12)에는 미반영**이며 IPA 서명/업로드를 수행하지 않았다.
+
 ## 2026-11-13 — TestFlight 0.1.0(12) 계정 설정·인증 브라우저·요청 수명 검증
 
 - 배포 소스 `cf80243cb59c23a4c57fe019f60447b9753aa40d`는 e45c67f까지의 iOS 에이전트/프로바이더 설정·Claude/Codex 인증 브라우저·UIKit 보안 코드/API 키 입력·diff 기본10px/줄 번호9px와 요청 수명 보완을 포함한다. 신규 의존성/lockfile 변경은 없고 SafariServices는 Apple 시스템 프레임워크다.

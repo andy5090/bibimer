@@ -18,7 +18,7 @@ const $=id=>{
   addEventListener(){},querySelector(){return null;},setAttribute(key,value){this.attributes[key]=value;}});
  return controls.get(id);
 };
-Object.assign(context,{generation:7,retryTimer:13,paused:true,session,draft,environment:()=>defaults,
+Object.assign(context,{generation:7,retryTimer:13,online:false,paused:true,session,draft,environment:()=>defaults,
  native:{cancelPoll:()=>events.push("cancel")},clearTimeout:()=>events.push("clear"),
  setTimeout:fn=>{const id=++timerSerial;timers.set(id,fn);return id;},t:key=>key,$,
  connected:value=>events.push(["connected",value]),notice:key=>events.push(["notice",key]),

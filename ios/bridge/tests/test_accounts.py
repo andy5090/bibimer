@@ -35,7 +35,7 @@ class AccountTests(unittest.TestCase):
         self.executable('claude', '''import json,os,sys
 if sys.argv[1:]==['auth','status']:
  print(json.dumps({'loggedIn':False,'authMethod':'none','email':'PRIVATE_EMAIL','token':'PRIVATE_TOKEN'}));sys.exit(1)
-assert sys.argv[1:]==['/login'] and os.isatty(0)
+assert sys.argv[1:]==['auth','login'] and os.isatty(0)
 print('AUTH_READY',flush=True)
 assert input()=='fictional-code'
 print('AUTH_DONE',flush=True)
@@ -174,7 +174,48 @@ assert input()=='fictional-code#fictional-state'
         session.write(b'fictional-code\r', str(uuid.uuid4()))
         fixtures.wait_for(lambda: session.state == 'exited', timeout=15)
         self.assertEqual(0, session.exit_code)
+        self.assertNotIn(b'fictional-code',base64.b64decode(self.bridge.session_events(session.id,0,0)['data']))
         self.assertEqual(1, len(self.bridge.sessions))
+
+
+    def test_both_manual_login_entries_run_reviewed_finite_no_echo_child(self):
+        target=self.executable('reviewed-login','''import os,sys,termios
+assert sys.argv[1:]==['auth','login'] and os.isatty(0)
+assert not termios.tcgetattr(0)[3]&(termios.ECHO|termios.ECHONL)
+print('AUTH_READY',flush=True)
+assert input()=='fictional-private-code#fictional-state'
+print('AUTH_DONE',flush=True)
+''')
+        reviewed=[];spawned=[]
+        def prepare(executable):reviewed.append(executable);return target
+        base=fixtures.entry.adapt(fixtures.entry.load_bridge(fixtures.ROOT/'bridge/bibimer_bridge.py'),claude_login=prepare)
+        bridge=base.Bridge(self.root/'manual-state')
+        project=bridge.register({'path':str(self.root),'create':False})
+        spawn=base.subprocess.Popen
+        def checked_spawn(*args,**kwargs):
+            self.assertFalse(base.termios.tcgetattr(kwargs['stdin'])[3]&(base.termios.ECHO|base.termios.ECHONL))
+            spawned.append(True)
+            return spawn(*args,**kwargs)
+        try:
+            with patch.object(bridge,'agent_executable',return_value=str(self.bin/'claude')), patch.object(base.subprocess,'Popen',side_effect=checked_spawn):
+                for route in ('terminal','setup'):
+                    data={'agent':'claude','action':'terminal' if route=='terminal' else 'login','project_id':project['id'],'request_id':str(uuid.uuid4())}
+                    result=bridge.agent_connections.handle(data) if route=='terminal' else bridge.agent_action(data)
+                    session=bridge.get_session(result['session']['id'])
+                    fixtures.wait_for(lambda:b'AUTH_READY' in base64.b64decode(bridge.session_events(session.id,0,0)['data']),timeout=15)
+                    session.write(b'fictional-private-code#fictional-state\r',str(uuid.uuid4()))
+                    fixtures.wait_for(lambda:session.state=='exited',timeout=15)
+                    self.assertEqual(0,session.exit_code)
+                    output=base64.b64decode(bridge.session_events(session.id,0,0)['data'])
+                    self.assertIn(b'AUTH_DONE',output)
+                    self.assertNotIn(b'fictional-private-code',output)
+            self.assertEqual([str(self.bin/'claude')]*2,reviewed)
+            self.assertEqual([True,True],spawned)
+        finally:
+            bridge.agent_connections.close()
+            for session in bridge.sessions.values():
+                session.stop();session.process.wait(timeout=5)
+            bridge.linked_files.close();bridge.github.close();bridge.worktree_creation.close()
 
     def test_codex_terminal_uses_device_auth_and_preserves_existing_session(self):
         self.executable('codex', "import os,sys,time\nassert sys.argv[1:]==['login','--device-auth'] and os.isatty(0)\nprint('DEVICE_AUTH_READY',flush=True)\ntime.sleep(30)\n")

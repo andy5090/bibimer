@@ -100,8 +100,12 @@ def load_bridge(source=SOURCE):
             "if agent not in {'shell','codex','claude','opencode','gemini'} or mode not in {'terminal','chat'} or (agent == 'shell' and mode != 'terminal'):",
         'codex_options({**self.options, "permission": "inherit"})':
             '_ios_codex_initial_options(self.options)',
-        '"codex": ["login"], "claude": ["auth", "login"],':
-            '"codex": ["login", "--device-auth"], "claude": ["/login"],',
+        'argv = [executable, *({"codex": ["login"], "claude": ["auth", "login"],\n'
+        '                                      "opencode": ["auth", "login"]}[authentication_agent])]':
+            'argv = _ios_authentication_command(executable, authentication_agent)',
+        '            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))\n':
+            '            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))\n'
+            '            _ios_prepare_auth_terminal(slave, argv)\n',
     }
     for before, after in changes.items():
         if text.count(before) != 1:
@@ -274,6 +278,28 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
     base._ios_codex_initial_options = initial_codex_options
     base.terminal_command = terminal_command
 
+    auth_launcher = ("import os,sys,termios\n"
+                     "if os.isatty(0):\n"
+                     " a=termios.tcgetattr(0);a[3]&=~(termios.ECHO|termios.ECHONL);termios.tcsetattr(0,termios.TCSANOW,a)\n"
+                     "os.execv(sys.argv[1],sys.argv[1:])\n")
+
+    def prepare_auth_terminal(slave, argv):
+        if argv[:3] == [sys.executable, "-c", auth_launcher]:
+            # Set the owned slave before Popen: even an early paste cannot echo
+            # a secret while the guest Python/Node processes are starting.
+            attributes = base.termios.tcgetattr(slave)
+            attributes[3] &= ~(base.termios.ECHO | base.termios.ECHONL)
+            base.termios.tcsetattr(slave, base.termios.TCSANOW, attributes)
+
+    def authentication_command(executable, agent):
+        if agent == "claude":
+            private = str(claude_login(executable)) if claude_login else executable
+            return [sys.executable, "-c", auth_launcher, private, "auth", "login"]
+        return [executable, *({"codex": ["login", "--device-auth"], "opencode": ["auth", "login"]}[agent])]
+
+    base._ios_prepare_auth_terminal = prepare_auth_terminal
+    base._ios_authentication_command = authentication_command
+
     def provider_command(executable, agent):
         if agent == "gemini":
             return [sys.executable, str(HERE / "provider_gemini.py"), executable]
@@ -293,7 +319,7 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
             super().__init__(executable, cwd, agent)
 
         def call(self, method, params):
-            if self.agent not in {"codex", "gemini", "opencode"}:
+            if self.agent not in {"codex", "claude", "gemini", "opencode"}:
                 return super().call(method, params)
             if method not in self.methods:
                 raise base.Problem(400, "error_import_invalid")
@@ -346,7 +372,7 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
             return super().configure(data, catalog)
 
         def _startup_deadline(self):
-            if self.agent not in {"codex", "gemini", "opencode"}:
+            if self.agent not in {"codex", "claude", "gemini", "opencode"}:
                 return super()._startup_deadline()
             with self.condition:
                 ready = self.condition.wait_for(lambda: (self.thread_id is not None and not self.history_pending) or self.state != "running", timeout=245 if self.agent == "gemini" else 135)
@@ -494,13 +520,13 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
                 executable = self.agent_executable(agent)
                 if not executable:
                     raise base.Problem(400, "error_program_missing")
-                # The pinned Claude `auth login` prints the manual URL but only
-                # waits for a browser callback: it has no stdin code handler.
-                # /login opens the native interactive flow in this owned PTY,
-                # including its manual-code input when browser launch is absent.
-                args = {"codex": ["login", "--device-auth"], "claude": ["/login"],
-                        "opencode": ["auth", "login"], "gemini": []}
-                argv = [executable, *(args[agent] if action == "login" else ["--version"])]
+                # Use the same reviewed manual-code handler as UI sign-in.
+                # This owned auth process exits after login; a full /login TUI
+                # stays open and cannot provide a definitive completion event.
+                if action == "login" and agent in {"codex", "claude", "opencode"}:
+                    argv = authentication_command(executable, agent)
+                else:
+                    argv = [executable, *([] if action == "login" else ["--version"])]
             with self.lock:
                 if self.closing:
                     raise base.Problem(409, "error_bridge_stopping")
