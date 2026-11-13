@@ -221,7 +221,7 @@ assert input()=='fictional-code#fictional-state'
         try:
             self.assertEqual('bibimer_ios_account_opencode', type(client).__module__)
             self.assertTrue(client.account)
-            self.assertEqual(str(self.root), client.cwd)
+            self.assertEqual(str(self.root.resolve()), client.cwd)
             self.assertEqual(['test'], [row['id'] for row in connections.catalog(client)])
         finally:
             client.close()
