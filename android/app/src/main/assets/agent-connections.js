@@ -183,7 +183,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.methods();
   }
   methods(){
-    const s=this.state,choices=s.agent==="codex"?[{id:"chatgpt",type:"oauth",name:"ChatGPT",supported:true},{id:"apiKey",type:"api",name:"API key",supported:true}]:["claude","gemini"].includes(s.agent)&&this.context().loginUI?(s.report?.login_methods||[]):(s.report?.providers||[]).find(p=>p.id===this.$("provider").value)?.methods||[];
+    const s=this.state,choices=s.agent==="codex"?(s.report?.login_methods?.length?s.report.login_methods:[{id:"chatgpt",type:"oauth",name:"ChatGPT",supported:true},{id:"apiKey",type:"api",name:"API key",supported:true}]):["claude","gemini"].includes(s.agent)&&this.context().loginUI?(s.report?.login_methods||[]):(s.report?.providers||[]).find(p=>p.id===this.$("provider").value)?.methods||[];
     this.choices=choices;
     this.$("method").replaceChildren(...choices.map(m=>{const o=new Option(m.name,m.id);o.disabled=!m.supported;if(!m.supported){o.dataset ||= {};o.dataset.description=this.t("connection_fallback");}return o;}));
     const first=choices.find(m=>m.supported);if(first)this.$("method").value=first.id;
@@ -200,11 +200,12 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     catch(_){s.error="error_agent_connection";this.render();}
   }
   async start(confirmed=false){
+    if(this.choice()?.type==="terminal")return this.openTerminal();
     if(!confirmed&&this.context().maintenance)return this.beginOperation("connection");
     const s=this.state,m=this.choice();if(!this.current(s)||s.busy||this.updating(s)||!this.available()||!m?.supported||s.job?.status==="pending")return;
-    const body=this.payload({action:"start",method:m.id,request_id:this.actions.uuid(),...(s.agent==="opencode"?{provider:this.$("provider").value}:{}),...(m.type==="api"?{key:this.$("key").value}:{}),...(s.operation?.kind==="connection"?{confirmation_id:s.operation.confirmation.id,reopen:s.operation.reopen}:{})});
+    const body=this.payload({action:"start",method:m.id,request_id:this.actions.uuid(),...(s.agent==="opencode"?{provider:this.$("provider").value}:{}),...(m.type==="api"&&!this.actions.secret?{key:this.$("key").value}:{}),...(s.operation?.kind==="connection"?{confirmation_id:s.operation.confirmation.id,reopen:s.operation.reopen}:{})});
     this.clearSecrets();s.busy=true;s.error=null;this.render();
-    try{const result=await this.request(body);if(this.current(s)){s.job=result.job;s.autoBrowserJob=["stopping","pending"].includes(s.job?.status)?s.job.id:null;s.browserOpened=false;}}
+    try{const result=await (m.type==="api"&&this.actions.secret?this.actions.secret(body):this.request(body));if(this.current(s)&&!result.cancelled){s.job=result.job;s.autoBrowserJob=["stopping","pending"].includes(s.job?.status)?s.job.id:null;s.browserOpened=false;}}
     catch(e){if(this.current(s))s.error=e.key||"error_agent_connection";}
     finally{delete body.key;if(this.current(s)){s.busy=false;this.render();this.openBrowser(s,true);if(this.activeLogin(s))void this.poll();}}
   }
@@ -250,12 +251,12 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.$("error").textContent=s.error?this.t(s.error):"";this.$("error").hidden=!s.error;
     this.$("provider-field").hidden=s.agent!=="opencode";
     this.$("form").hidden=!usable||!report?.installed||!["codex","opencode","claude","gemini"].includes(s.agent);
-    const m=this.choice();this.$("key-field").hidden=m?.type!=="api";
+    const m=this.choice();this.$("key-field").hidden=m?.type!=="api"||!!this.actions.secret;
     this.$("private").hidden=m?.type!=="api";
-    this.$("login-hint").hidden=m?.type!=="oauth";
-    this.$("submit").textContent=this.t(m?.type==="oauth"?"agent_action_login":"connection_connect");
+    this.$("login-hint").hidden=!["oauth","terminal"].includes(m?.type);
+    this.$("submit").textContent=this.t(["oauth","terminal"].includes(m?.type)?"agent_action_login":"connection_connect");
     for(const id of ["agent","provider","method","key","submit","refresh","version-check"])this.$(id).disabled=s.confirming||s.busy||pending||(updating&&id!=="agent")||(id!=="agent"&&(!usable||loading))||(id==="submit"&&!m?.supported);
-    this.$("key").required=m?.type==="api"&&!this.$("form").hidden;
+    this.$("key").required=m?.type==="api"&&!this.actions.secret&&!this.$("form").hidden;
     this.$("job").hidden=!s.job;
     this.$("job-status").textContent=s.job?this.t("connection_job_"+s.job.status):"";
     this.$("instructions").textContent=s.job?.instructions||"";
@@ -265,12 +266,14 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.$("code-form").hidden=!pending||!s.job?.code_required||s.job?.code_submitted;
     this.$("code-submit").disabled=s.busy||!usable;
     this.$("cancel").hidden=s.job?.status!=="pending";this.$("cancel").disabled=s.busy||!usable;
-    this.$("terminal").disabled=s.busy||pending||updating||this.context().demo||this.context().paused||(s.agent!=="gemini"&&(!usable||!this.context().loginTerminal||!s.project));
+    const terminalUnavailable=!this.context().loginTerminal||(!s.project&&!this.context().loginWithoutProject);
+    this.$("terminal").disabled=s.busy||pending||updating||this.context().demo||this.context().paused||(s.agent!=="gemini"&&(!usable||terminalUnavailable));
+    if(m?.type==="terminal"&&terminalUnavailable)this.$("submit").disabled=true;
     this.$("terminal").hidden=s.agent==="gemini";
     this.$("terminal").textContent=this.t("connection_terminal_in_app");
     if(s.agent!=="gemini")this.$("fallback-hint").textContent=this.t(!this.context().loginTerminal?"connection_update_bridge":"connection_terminal_in_app_hint");
     else this.$("fallback-hint").textContent=this.t(this.context().loginUI?"connection_native_unavailable":"connection_update_bridge");
-    this.$("fallback-hint").hidden=usable&&["codex","opencode","claude","gemini"].includes(s.agent)&&this.choices?.some(m=>m.supported);
+    this.$("fallback-hint").hidden=m?.type!=="terminal"&&usable&&["codex","opencode","claude","gemini"].includes(s.agent)&&this.choices?.some(m=>m.supported);
     this.$("updates").hidden=!this.context().updates;
     const plan=s.updatePlan,job=s.updateJob;
     this.$("update-target").textContent=plan?.latest_version?this.t("agent_update_target",{current:plan.current_version,latest:plan.latest_version}):"";

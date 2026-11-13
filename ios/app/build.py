@@ -106,7 +106,7 @@ html, body { width:100%; max-width:100%; height:100%; overflow:hidden; touch-act
     metadata_timeout = '}, path === "/native/open-file" ? 120000 : 35000);'
     if app.count(metadata_timeout) != 1:
         raise RuntimeError('Shared API timeout contract changed; review iOS metadata deadlines.')
-    app = app.replace(metadata_timeout, '}, path === "/native/open-file" ? 120000 : ["/v1/models", "/v1/commands", "/v1/session-history"].includes(path) ? 150000 : 35000);')
+    app = app.replace(metadata_timeout, '}, path === "/native/open-file" ? 120000 : ["/v1/models", "/v1/commands", "/v1/session-history", "/v1/agent-connections"].includes(path) ? 150000 : 35000);')
     end = app.rfind('})();')
     if end < 0:
         raise RuntimeError('Shared application closure changed; review the iOS integration hooks.')
@@ -160,7 +160,7 @@ def main():
     clang = output('xcrun', '--find', 'clang')
     target = 'arm64-apple-ios16.0' + ('-simulator' if args.sdk == 'iphonesimulator' else '')
     flags = ['-target', target, '-isysroot', sdk, '-DBIBIMER_EMBEDDED=1', '-DGUEST_ARM64=1']
-    sources = [HERE / 'Sources/main.m', HERE / 'Sources/VoiceService.m', HERE / 'Sources/BrowserService.m', HERE / 'Sources/CompletionNotifications.m', HERE / 'Sources/BackgroundExecution.m', HERE / 'Sources/AppSupport.c',
+    sources = [HERE / 'Sources/main.m', HERE / 'Sources/AccountInput.m', HERE / 'Sources/VoiceService.m', HERE / 'Sources/BrowserService.m', HERE / 'Sources/CompletionNotifications.m', HERE / 'Sources/BackgroundExecution.m', HERE / 'Sources/AppSupport.c',
                REPO / 'ios/runtime-lab/Sources/RuntimeSupport.c', runtime / 'embed/ffi.c']
     objects = []
     for source in sources:

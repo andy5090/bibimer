@@ -1,0 +1,26 @@
+"use strict";
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),crypto=require('node:crypto');
+const source=fs.readFileSync('ios/app/Resources/native.js','utf8');
+const posts=[],timers=new Map(),events=new Map();let serial=0;
+const window={__bibimerEnvironment:{},webkit:{messageHandlers:{bibimer:{postMessage:body=>posts.push(body)}}},addEventListener:(name,fn)=>events.set(name,fn)};
+vm.runInNewContext(source,{window,crypto:crypto.webcrypto,Uint8Array,setTimeout:fn=>{timers.set(++serial,fn);return serial;},clearTimeout:id=>timers.delete(id)});
+(async()=>{
+ assert.equal(posts.length,0,'Loading never opens account input or starts login');
+ const body={agent:'codex',action:'start',method:'apiKey',request_id:'fictional-request'};
+ const pending=window.Bibimer.requestAccountSecret(body,{title:'Key',save:'Connect',cancel:'Cancel'});
+ assert.equal(posts.length,1);assert.equal(posts[0].action,'accountSecret');
+ assert.equal(Object.hasOwn(posts[0].body,'key'),false);assert.match(posts[0].id,/^[a-f0-9]{32}:1$/);
+ window.BibimerAccountReply('old-document:1',{ok:true,data:{job:{status:'saved'}}});assert.equal(timers.size,1);
+ window.BibimerAccountReply(posts[0].id,{ok:true,data:{job:{status:'saved'}}});
+ assert.equal((await pending).job.status,'saved');assert.equal(timers.size,0);
+ const canceled=window.Bibimer.requestAccountSecret(body,{}),cancelID=posts.at(-1).id;
+ window.BibimerAccountReply(cancelID,{ok:true,data:{cancelled:true}});assert.equal((await canceled).cancelled,true);
+ const expired=window.Bibimer.requestAccountSecret(body,{});
+ const failure=assert.rejects(expired,e=>e.key==='error_timeout');
+ const timer=[...timers.entries()][0];timers.delete(timer[0]);timer[1]();await failure;
+ assert.equal(posts.at(-1).action,'cancelAccountSecret');
+ window.BibimerAccountReply(posts.at(-1).id,{ok:true,data:{job:{status:'saved'}}});
+ const leaving=window.Bibimer.requestAccountSecret(body,{}),rejection=assert.rejects(leaving,e=>e.key==='error_connection_failed');
+ events.get('pagehide')();await rejection;assert.equal(timers.size,0);assert.equal(posts.at(-1).action,'cancelAccountSecret');
+ console.log('PASS iOS account secret RPC: explicit requests, no WebKit key value, cancellation, timeout and document cleanup');
+})().catch(error=>{console.error(error);process.exitCode=1;});

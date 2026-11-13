@@ -38,6 +38,8 @@ def load_bridge(source=SOURCE):
             "if agent not in {'shell','codex','claude','opencode','gemini'} or mode not in {'terminal','chat'} or (agent == 'shell' and mode != 'terminal'):",
         'codex_options({**self.options, "permission": "inherit"})':
             '_ios_codex_initial_options(self.options)',
+        '"codex": ["login"], "claude": ["auth", "login"],':
+            '"codex": ["login", "--device-auth"], "claude": ["/login"],',
     }
     for before, after in changes.items():
         if text.count(before) != 1:
@@ -231,7 +233,7 @@ def adapt(base, claude_provider=None, opencode_provider=None):
         def call(self, method, params):
             if self.agent not in {"codex", "gemini", "opencode"}:
                 return super().call(method, params)
-            if method not in {"initialize", "thread/list", "thread/read", "model/list", "skills/list", "commands/list"}:
+            if method not in self.methods:
                 raise base.Problem(400, "error_import_invalid")
             try:
                 self.serial += 1
@@ -252,7 +254,10 @@ def adapt(base, claude_provider=None, opencode_provider=None):
                         continue
                     line, self.buffer = self.buffer.split(b"\n", 1)
                     response = json.loads(line)
-                    if response.get("id") != self.serial or "method" in response:
+                    if "method" in response:
+                        self.notification(response)
+                        continue
+                    if response.get("id") != self.serial:
                         continue
                     if "error" in response:
                         raise base.Problem(400, "error_history_unsupported" if response["error"].get("code") == -32601 else "error_history")
@@ -286,7 +291,76 @@ def adapt(base, claude_provider=None, opencode_provider=None):
             if not ready:
                 self._fault("error_import_failed" if self.imported else "error_chat_start")
 
+    class AccountClient(base.AccountClient):
+        def __init__(self, executable, cwd):
+            self.agent = "codex"
+            self.metadata_deadline = time.monotonic() + 125
+            super().__init__(executable, cwd)
+
+        call = HistoryClient.call
+
+    class AgentConnections(base.AgentConnections):
+        @staticmethod
+        def command(argv, timeout=8):
+            # Guest CLI cold starts are slower than native Android processes.
+            return original_connections.command(argv, timeout=max(timeout, 125))
+
+        def client(self, executable, cwd):
+            if opencode_provider is None:
+                return super().client(executable, cwd)
+            spec = importlib.util.spec_from_file_location("bibimer_ios_account_opencode", opencode_provider)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module.Adapter(executable, account=True, cwd=cwd)
+
+        def validate_start(self, agent, data, executable, cwd, require_secret=False):
+            # These pinned CLIs require their native interactive/device flow.
+            # Do not advertise the desktop callback flow as working on iOS.
+            if agent == "claude" or (agent == "codex" and data.get("method") == "chatgpt"):
+                raise base.Problem(400, "error_connection_unsupported")
+            return super().validate_start(agent, data, executable, cwd, require_secret)
+
+        def _handle(self, data):
+            if self.closed or self.bridge.closing:
+                raise base.Problem(409, "error_bridge_stopping")
+            if data.get("agent") == "claude" and data.get("action") == "status":
+                if data.get("project_id"):
+                    self.bridge.working_project(data)
+                executable = self.bridge.agent_executable("claude")
+                if not executable:
+                    return {"agent": "claude", "installed": False, "state": "unavailable", "providers": []}
+                status, raw = self.command([executable, "auth", "status"])
+                report = json.loads(raw)
+                if status not in {0, 1} or type(report.get("loggedIn")) is not bool:
+                    raise ValueError()
+                result = {"agent": "claude", "installed": True, "state": "configured" if report["loggedIn"] else "signed_out",
+                          "providers": [], "login_methods": [{"id": "native", "type": "terminal", "name": "Claude", "supported": True}]}
+                if report.get("authMethod") in {"none", "claude.ai", "oauth_token", "api_key", "api_key_helper", "third_party"}:
+                    result["method"] = report["authMethod"]
+                return result
+            if data.get("action") == "terminal" and data.get("agent") in {"codex", "claude", "opencode"}:
+                # Explicit login works before a first project is registered.
+                with self.bridge.lock:
+                    if not data.get("project_id") and self.bridge.active_project_id is None:
+                        self.bridge.register({"path": str(Path.home() / "projects"), "create": True, "add": True})
+                if not data.get("project_id"):
+                    data = dict(data, project_id=self.bridge.active_project_id)
+            result = super()._handle(data)
+            if data.get("action") == "status" and result.get("installed"):
+                if data["agent"] == "codex":
+                    result["login_methods"] = [
+                        {"id": "chatgpt", "type": "terminal", "name": "ChatGPT", "supported": True},
+                        {"id": "apiKey", "type": "api", "name": "API key", "supported": True}]
+            return result
+
+    original_connections = base.AgentConnections
+    class AgentUpdates(base.AgentUpdates):
+        def handle(self, data):
+            raise base.Problem(400, "error_agent_update_unavailable")
+
     base.HistoryClient, base.ChatSession = HistoryClient, ChatSession
+    base.AccountClient, base.AgentConnections = AccountClient, AgentConnections
+    base.AgentUpdates = AgentUpdates
 
     class Bridge(base.Bridge):
         def check_program(self, agent, executable):
@@ -294,11 +368,11 @@ def adapt(base, claude_provider=None, opencode_provider=None):
                 return claude_installation_ready(base, self.state, executable)
             return super().check_program(agent, executable)
 
-        def launch(self, data, continuation=None, select=True):
+        def launch(self, data, continuation=None, select=True, restore_id=None, authentication_agent=None):
             options = data.get("options")
             if data.get("agent") == "codex" and isinstance(options, dict):
                 validate_codex_policy(options.get("permission", "inherit"), terminal=data.get("mode", "terminal") == "terminal")
-            return super().launch(data, continuation, select)
+            return super().launch(data, continuation, select, restore_id, authentication_agent)
 
         def agents(self):
             rows = super().agents()
@@ -315,7 +389,8 @@ def adapt(base, claude_provider=None, opencode_provider=None):
             result.update(platform="ios", runtime="embedded-arm64-linux")
             # OS notifications/file viewers are native capabilities, not a guest
             # guarantee. The app decides which native facilities are available.
-            result["features"] = [feature for feature in result["features"] if feature not in {"claude_steer", "agent_connections"}]
+            # CLI updates use the fixed iOS installers, not Android's updater.
+            result["features"] = [feature for feature in result["features"] if feature not in {"claude_steer", "agent_updates"}]
             result["features"].append("ios_agent_setup")
             return result
 

@@ -1,6 +1,7 @@
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
 #import "VoiceService.h"
+#import "AccountInput.h"
 #import "CompletionNotifications.h"
 #import "BrowserService.h"
 #import "BackgroundExecution.h"
@@ -91,6 +92,9 @@ static BOOL usesDesktopInput(void) {
 @interface BibimerController : UIViewController <WKScriptMessageHandler, WKNavigationDelegate, NSURLSessionTaskDelegate, UIScrollViewDelegate>
 @property WKWebView *web;
 @property BibimerVoiceService *voice;
+@property BibimerAccountInput *accountInput;
+@property NSString *accountInputID;
+@property NSURLSessionDataTask *accountTask;
 @property BibimerBrowserService *browser;
 @property BOOL browserPolling;
 @property NSUInteger browserEpoch;
@@ -929,6 +933,60 @@ static void guestExit(int status) {
     });
 }
 
+- (void)accountReply:(NSString *)identifier status:(NSInteger)status data:(NSDictionary *)data {
+    [self nativeEvent:@"BibimerAccountReply" arguments:@[identifier,@{@"ok":@(status >= 200 && status < 300),@"status":@(status),@"data":data}]];
+}
+
+- (void)requestAccountSecret:(NSDictionary *)message {
+    NSString *identifier = message[@"id"];
+    if (![identifier isKindOfClass:NSString.class] || [identifier rangeOfString:@"^[a-f0-9]{32}:[0-9]{1,16}$" options:NSRegularExpressionSearch].location == NSNotFound) return;
+    NSDictionary *body = message[@"body"], *labels = message[@"labels"];
+    BOOL valid = [body isKindOfClass:NSDictionary.class] && [labels isKindOfClass:NSDictionary.class];
+    NSSet *allowed = [NSSet setWithArray:@[@"agent",@"action",@"method",@"provider",@"request_id",@"project_id",@"worktree_path",@"confirmation_id",@"reopen"]];
+    if (valid) for (NSString *key in body) if (![allowed containsObject:key]) valid = NO;
+    if (valid) valid = [body[@"action"] isEqual:@"start"] &&
+        (([body[@"agent"] isEqual:@"codex"] && [body[@"method"] isEqual:@"apiKey"]) ||
+         ([body[@"agent"] isEqual:@"opencode"] && [body[@"provider"] isKindOfClass:NSString.class] && [body[@"method"] isKindOfClass:NSString.class]));
+    if (valid) for (NSString *key in @[@"title",@"save",@"cancel"]) {
+        if (![labels[key] isKindOfClass:NSString.class] || ![labels[key] length] || [labels[key] length] > 200) valid = NO;
+    }
+    if (!valid || !self.ready || self.exited || self.accountInput || self.accountTask || self.presentedViewController ||
+        UIApplication.sharedApplication.applicationState != UIApplicationStateActive || UIScreen.mainScreen.isCaptured) {
+        [self accountReply:identifier status:409 data:@{@"code":@"error_agent_connection"}]; return;
+    }
+    WKWebView *web = self.web;
+    NSUInteger epoch = self.connectionEpoch;
+    BibimerAccountInput *input = [BibimerAccountInput new];
+    input.labels = labels; input.modalPresentationStyle = UIModalPresentationOverFullScreen;
+    self.accountInput = input; self.accountInputID = identifier;
+    __weak BibimerController *weak = self;
+    input.completion = ^(NSString *key) {
+        BibimerController *owner = weak;
+        if (!owner || ![owner.accountInputID isEqual:identifier]) return;
+        owner.accountInput = nil; owner.accountInputID = nil;
+        if (!key) { [owner accountReply:identifier status:200 data:@{@"cancelled":@YES}]; return; }
+        if (epoch != owner.connectionEpoch || !owner.ready || owner.exited || owner.web != web ||
+            ![owner isCurrentClipboardWorkspace:web] || UIApplication.sharedApplication.applicationState != UIApplicationStateActive) {
+            [owner accountReply:identifier status:409 data:@{@"code":@"error_connection_failed"}]; return;
+        }
+        NSMutableDictionary *payload = [body mutableCopy]; payload[@"key"] = key;
+        NSMutableURLRequest *request = [owner request:@"POST" path:@"/v1/agent-connections" body:jsonString(payload)];
+        [payload removeObjectForKey:@"key"];
+        owner.accountTask = [owner.http dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            NSDictionary *result = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+            NSInteger status = [(NSHTTPURLResponse *)response statusCode];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                owner.accountTask = nil;
+                if (owner.web != web) return;
+                // The CLI response is already an allowlisted job, never the key.
+                [owner accountReply:identifier status:error ? 503 : status data:[result isKindOfClass:NSDictionary.class] ? result : @{@"code":@"error_agent_connection"}];
+            });
+        }];
+        [owner.accountTask resume];
+    };
+    [self presentViewController:input animated:YES completion:nil];
+}
+
 - (void)openLink:(NSString *)value {
     if (value.length > 8192) return;
     NSURL *url = [NSURL URLWithString:value];
@@ -1061,7 +1119,11 @@ static void guestExit(int status) {
         if(!self.smokeScript)[self.completionNotifications connected:[body[@"supported"] boolValue]];
     } else if([action isEqual:@"notificationSettings"]){if(!self.smokeScript)[self.completionNotifications openSettings];}
     else if([action isEqual:@"notificationTaken"]){[self.completionNotifications takeTarget];}
-    else if ([action isEqual:@"readClipboard"]) {
+    else if ([action isEqual:@"accountSecret"]) {
+        [self requestAccountSecret:body];
+    } else if ([action isEqual:@"cancelAccountSecret"]) {
+        if ([body[@"id"] isEqual:self.accountInputID]) [self.accountInput cancel];
+    } else if ([action isEqual:@"readClipboard"]) {
         NSString *identifier = body[@"id"];
         if (![identifier isKindOfClass:NSString.class] || [identifier rangeOfString:@"^[a-f0-9]{32}:[0-9]{1,16}$" options:NSRegularExpressionSearch].location == NSNotFound) return;
         [self readClipboard:identifier webView:message.webView];

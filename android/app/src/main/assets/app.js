@@ -129,9 +129,10 @@
   setInterval(() => void browserConsent.refresh(), 2000);
 
   const agentConnections = new BibimerAgentConnections(t,
-    () => ({online:online && !switchingProject, supported:canConnections, loginTerminal:canLoginTerminal, loginUI:canLoginUI, updates:canAgentUpdates, maintenance:canAgentMaintenance, paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
+    () => ({online:online && !switchingProject, supported:canConnections, loginTerminal:canLoginTerminal, loginUI:canLoginUI, loginWithoutProject:native.accountLoginWithoutProject===true, updates:canAgentUpdates, maintenance:canAgentMaintenance, paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
     data => api("POST", "/v1/agent-connections", data),
     {sync:() => pickers.sync(), uuid:uuid, link:url => native.openLink(url), title:id => {const row=findSession(id);return row?sessionTitle(row):id.slice(0,8);},
+     secret:native.requestAccountSecret ? body=>native.requestAccountSecret(body,{title:t("connection_key"),save:t("connection_connect"),cancel:t("cancel_project")}) : null,
      updates:data => api("POST", "/v1/agent-updates", data),
      session:async value => {
        const sourceInstance=instance, sourceProject=projectKey(), sourcePath=fileContext().path;
