@@ -293,9 +293,13 @@ static void guestExit(int status) {
     NSURL *cache = [NSFileManager.defaultManager URLsForDirectory:NSCachesDirectory inDomains:NSUserDomainMask].firstObject;
     [NSFileManager.defaultManager createDirectoryAtURL:cache withIntermediateDirectories:YES attributes:nil error:nil];
     self.connectionLogURL = [cache URLByAppendingPathComponent:@"connection-diagnostics.json"];
+    if (![NSUserDefaults.standardUserDefaults boolForKey:@"debugMode"]) {
+        [NSFileManager.defaultManager removeItemAtURL:self.connectionLogURL error:nil];
+        return;
+    }
     NSData *data = [NSData dataWithContentsOfURL:self.connectionLogURL];
     id rows = data.length <= 65536 ? [NSJSONSerialization JSONObjectWithData:data ?: [NSData data] options:0 error:nil] : nil;
-    NSSet *events = [NSSet setWithArray:@[@"launch",@"inactive",@"background",@"active",@"probe_start",@"probe_ok",@"probe_failed",@"probe_watchdog",@"retry",@"retry_blocked_recovery",@"retry_blocked_runtime",@"retry_blocked_inactive",@"reconnect_button",@"service_start",@"recovery_start",@"recovery_watchdog",@"recovery_boot_timeout",@"recovery_stopped",@"diagnostics_copy",@"js_delivery_failed",@"message_rejected",@"runtime_exit"]];
+    NSSet *events = [NSSet setWithArray:@[@"launch",@"inactive",@"background",@"active",@"probe_start",@"probe_ok",@"probe_failed",@"probe_watchdog",@"retry",@"retry_blocked_recovery",@"retry_blocked_runtime",@"retry_blocked_inactive",@"reconnect_button",@"service_start",@"recovery_start",@"recovery_watchdog",@"recovery_boot_timeout",@"recovery_stopped",@"debug_enabled",@"ui_error",@"ui_rejection",@"diagnostics_copy",@"js_delivery_failed",@"message_rejected",@"runtime_exit"]];
     NSSet *numbers = [NSSet setWithArray:@[@"time",@"uptime",@"build",@"code",@"application",@"scene",@"backgrounded",@"ready",@"started",@"exited",@"startupFailed",@"recovering",@"timedOut",@"attempts",@"epoch",@"shutdownStage",@"observedChildren",@"httpStatus",@"networkError",@"errorCategory"]];
     if (![rows isKindOfClass:NSArray.class]) return;
     for (id row in rows) {
@@ -308,7 +312,7 @@ static void guestExit(int status) {
 }
 
 - (void)recordConnection:(NSString *)event code:(NSInteger)code {
-    if (!self.connectionLog) return;
+    if (!self.connectionLog || ![NSUserDefaults.standardUserDefaults boolForKey:@"debugMode"]) return;
     NSDictionary *row = @{@"event":event,@"time":@(NSDate.date.timeIntervalSince1970),@"uptime":@(NSProcessInfo.processInfo.systemUptime),
         @"build":@([[NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleVersion"] integerValue]),@"code":@(code),
         @"application":@(UIApplication.sharedApplication.applicationState),@"scene":@(self.view.window.windowScene ? self.view.window.windowScene.activationState : -1),
@@ -324,6 +328,17 @@ static void guestExit(int status) {
         [data writeToURL:destination options:NSDataWritingAtomic | NSDataWritingFileProtectionCompleteUntilFirstUserAuthentication error:nil];
         [NSFileManager.defaultManager setAttributes:@{NSFilePosixPermissions:@0600} ofItemAtPath:destination.path error:nil];
     });
+}
+
+- (void)clearDebugDiagnostics {
+    [self.connectionLog removeAllObjects];
+    NSURL *destination = self.connectionLogURL;
+    dispatch_async(self.connectionLogQueue, ^{ [NSFileManager.defaultManager removeItemAtURL:destination error:nil]; });
+}
+- (NSString *)debugDiagnostics {
+    if (![NSUserDefaults.standardUserDefaults boolForKey:@"debugMode"]) return @"";
+    NSData *data = [NSJSONSerialization dataWithJSONObject:@{@"schema":@1,@"platform":@"ios",@"events":self.connectionLog ?: @[]} options:NSJSONWritingPrettyPrinted error:nil];
+    return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] ?: @"";
 }
 
 - (void)becameInactive {
@@ -729,6 +744,7 @@ static void guestExit(int status) {
     NSString *language = [preference isEqual:@"system"] ? systemLanguage() : preference;
     NSMutableDictionary *environment=[@{@"selfTest":@(self.smokeScript != nil),@"paired":@YES,@"termuxInstalled":@YES,@"platform":@"ios",@"notifications":@{@"enabled":@NO,@"allowed":@NO,@"state":@"unsupported"},@"language":language,@"systemLanguage":systemLanguage(),@"languagePreference":preference,@"agentOptions":[preferences dictionaryForKey:@"agentOptions"] ?: @{},@"enterBehavior":[preferences stringForKey:@"enterBehavior"] ?: @"newline",@"responseDelivery":[[preferences stringForKey:@"responseDelivery"] isEqual:@"steer"] ? @"steer" : @"queue",@"contextDisplay":[[preferences stringForKey:@"contextDisplay"] isEqual:@"remaining"] ? @"remaining" : @"used",@"lastProjectParent":[preferences stringForKey:@"lastProjectParent"] ?: @"/root/projects",@"lastProjectFolder":[preferences stringForKey:@"lastProjectFolder"] ?: @"/root/projects",@"quickSetup":@{@"phase":@"connected",@"id":@"embedded"},@"bundledBridgeVersion":[NSBundle.mainBundle objectForInfoDictionaryKey:@"BibimerBridgeVersion"] ?: @"unknown",@"version":@"0.1.0-ios"} mutableCopy];
     [environment addEntriesFromDictionary:[self.voice environment] ?: @{}];
+    environment[@"debugMode"] = @([preferences boolForKey:@"debugMode"]);
     environment[@"localRuntime"] = @{@"state":self.exited ? @"stopped" : self.startupFailed ? @"restart-required" : self.recoveryFailed ? @"recovery-failed" : (self.recovering || (self.recoveryAttempted && !self.hasConnected)) ? @"restarting" : self.ready ? @"connected" : @"connecting", @"foreground":@(!self.backgrounded), @"phase":self.recovering ? @"stopping" : (self.recoveryAttempted && !self.hasConnected) ? @"starting" : self.ready ? @"connected" : @"checking", @"busy":@(!self.recoveryFailed && (self.recovering || (!self.exited && !self.startupFailed && !self.backgrounded && !self.ready)))};
     environment[@"screenBehavior"] = @{@"keepAwake":@([preferences boolForKey:@"iosKeepAwake"]),@"deferHomeGesture":@([preferences boolForKey:@"iosDeferHomeGesture"]),@"supported":@(!usesDesktopInput())};
     environment[@"backgroundWork"] = [self.backgroundExecution environment] ?: @{};
@@ -988,7 +1004,34 @@ static void guestExit(int status) {
     else if ([action isEqual:@"reconnect"]) {
         [self requestReconnect];
     }
+    else if ([action isEqual:@"debugMode"]) {
+        id value = body[@"enabled"];
+        if (![value isKindOfClass:NSNumber.class] || CFGetTypeID((__bridge CFTypeRef)value) != CFBooleanGetTypeID()) return;
+        BOOL changed = [NSUserDefaults.standardUserDefaults boolForKey:@"debugMode"] != [value boolValue];
+        [NSUserDefaults.standardUserDefaults setBool:[value boolValue] forKey:@"debugMode"];
+        if (changed) { [self clearDebugDiagnostics]; if ([value boolValue]) [self recordConnection:@"debug_enabled" code:0]; }
+        [self nativeEvent:@"BibimerDebugModeChanged" arguments:@[]];
+    }
+    else if ([action isEqual:@"debugEvent"]) {
+        if ([@[@"ui_error",@"ui_rejection"] containsObject:body[@"event"]]) [self recordConnection:body[@"event"] code:0];
+    }
+    else if ([action isEqual:@"debugDiagnosticsRead"]) {
+        if (![NSUserDefaults.standardUserDefaults boolForKey:@"debugMode"]) return;
+        NSString *identifier = [body[@"id"] isKindOfClass:NSString.class] ? body[@"id"] : nil;
+        if (!identifier || [identifier rangeOfString:@"^[a-f0-9-]{36}$" options:NSRegularExpressionSearch].location == NSNotFound) return;
+        [self nativeEvent:@"BibimerDebugDiagnostics" arguments:@[identifier,[self debugDiagnostics]]];
+    }
+    else if ([action isEqual:@"debugDiagnosticsClear"]) {
+        if ([NSUserDefaults.standardUserDefaults boolForKey:@"debugMode"]) [self clearDebugDiagnostics];
+    }
+    else if ([action isEqual:@"debugDiagnosticsCopy"]) {
+        if (![NSUserDefaults.standardUserDefaults boolForKey:@"debugMode"]) return;
+        NSString *text = [self debugDiagnostics];
+        if (self.smokeScript) self.testClipboard = text; else UIPasteboard.generalPasteboard.string = text;
+        [self nativeEvent:@"BibimerDebugCopied" arguments:@[]];
+    }
     else if ([action isEqual:@"connectionDiagnostics"]) {
+        if (![NSUserDefaults.standardUserDefaults boolForKey:@"debugMode"]) return;
         [self recordConnection:@"diagnostics_copy" code:0];
         NSData *data = [NSJSONSerialization dataWithJSONObject:@{@"schema":@1,@"events":self.connectionLog ?: @[]} options:NSJSONWritingPrettyPrinted error:nil];
         NSString *text = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];

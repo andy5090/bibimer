@@ -1,6 +1,27 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.fr = {
+  "agent_management_accounts": "Compte et fournisseur",
+  "agent_management_advanced": "Installation, réparation et dépannage",
+  "agent_management_install_hint": "Utilisez ces étapes pour installer ou réparer. Pour changer une version existante, utilisez les commandes de mise à jour ci-dessus.",
+  "agent_management_setup_hint": "Ouvrez le même gestionnaire que dans Réglages. Installez le nécessaire et conservez les comptes et fournisseurs existants.",
+  "agent_management_install": "Installer / réparer",
+
+  "queue_edit_current": "Texte actuel en attente",
+  "queue_edit": "Modifier",
+  "queue_edit_title": "Modifier le message en attente",
+  "queue_edit_hint": "La file est en pause. Enregistrez les modifications, puis reprenez la file pour envoyer. Annuler conserve le message original et la pause.",
+  "queue_edit_save": "Enregistrer",
+  "queue_edit_saved": "Modifications enregistrées. Reprenez la file pour envoyer.",
+  "error_queue_changed": "Ce message a changé. Rouvrez l’éditeur pour vérifier la version actuelle. Votre modification est conservée.",
+
+  "developer_options": "Options de développement",
+  "debug_mode": "Mode débogage",
+  "debug_mode_hint": "Collecte des diagnostics locaux limités et permet de sélectionner le texte de l’interface. Collez dans les champs modifiables. La désactivation efface les diagnostics.",
+  "debug_logs": "Journaux de diagnostic",
+  "debug_logs_hint": "Jusqu’à 64 événements locaux d’état. Conversations, sortie du terminal, chemins, URL et identifiants sont exclus. Aucun envoi automatique.",
+  "debug_logs_clear": "Effacer les journaux",
+  "debug_save_failed": "Impossible d’enregistrer le mode débogage. Le choix précédent est conservé.",
   "agent_operation_warning": "Seules les sessions de cet agent listées seront terminées. Les réponses et commandes actives s’arrêtent et les files d’attente sont perdues. Après succès, les conversations enregistrées peuvent reprendre et les terminaux redémarrent. L’ancienne sortie n’est pas restaurée. Les autres agents continuent.",
   "agent_operation_reopen": "Rouvrir les sessions après réussite",
   "agent_operation_confirm": "Terminer les sessions et continuer",
@@ -169,9 +190,9 @@ window.BibimerTranslations.fr = {
   "page_up": "Page précédente",
   "page_down": "Page suivante",
 
-  "connections_title": "Comptes et fournisseurs des agents",
-  "connections_hint": "Consultez les connexions et versions, choisissez un fournisseur et saisissez les clés API compatibles ici.",
-  "connections_manage": "Gérer les connexions",
+  "connections_title": "Gestion des agents",
+  "connections_hint": "Gérez installation, comptes, fournisseurs et mises à jour au même endroit.",
+  "connections_manage": "Ouvrir la gestion des agents",
   "connection_refresh": "Actualiser la connexion",
   "connection_scope": "Utilise le compte de l’agent enregistré dans Termux. Un changement de compte peut nécessiter l’arrêt des sessions de cet agent après confirmation. L’enregistrement ne vérifie pas l’accès aux modèles.",
   "connection_provider": "Fournisseur",

@@ -42,7 +42,7 @@ _recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_rec
 maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
 _recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.25.1"
+VERSION = "0.25.2"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -129,6 +129,7 @@ ERROR_MESSAGES = {
     "error_chat_busy": "Wait for the current response or interrupt it before sending another message.",
     "error_queue_full": "The queue is full. Remove a pending message before adding another.",
     "error_queue_entry": "This message is no longer waiting in the queue.",
+    "error_queue_changed": "This queued message changed. Reopen the editor to review its current version. Your edit is kept.",
     "error_queue_action": "Choose a valid queue action.",
     "error_queue_send": "The queued message was not accepted. Review it and resume the queue.",
     "error_queue_steer_rejected": "Steer was not accepted. The message is kept and the queue is paused.",
@@ -2745,18 +2746,22 @@ class ChatSession(Session):
 
     def queue_action(self, data, invocation=None):
         key, action = request_id(data.get("request_id")), data.get("action")
-        if not isinstance(action, str) or action not in {"add", "remove", "resume", "steer"}:
+        if not isinstance(action, str) or action not in {"add", "remove", "resume", "steer", "edit_begin", "edit"}:
             raise Problem(400, "error_queue_action")
         if action == "steer":
             return self.steer(data, from_queue=True)
         payload = {"action": "queue_" + action}
-        if action == "add":
+        if action in {"add", "edit"}:
             value = data.get("text")
             if not isinstance(value, str) or not value.strip() or len(value.encode()) > 16384:
                 raise Problem(400, "error_input_size")
             payload.update(text=value, command_id=data.get("command_id"))
-        elif action == "remove":
+        if action in {"remove", "edit_begin", "edit"}:
             payload["entry_id"] = request_id(data.get("entry_id"))
+        if action == "edit":
+            revision = data.get("expected_revision")
+            if type(revision) is not int or revision < 0: raise Problem(400, "error_queue_action")
+            payload["expected_revision"] = revision
         with self.condition:
             digest, duplicate = self._duplicate(key, payload)
             if duplicate:
@@ -2769,6 +2774,19 @@ class ChatSession(Session):
                 if not self.queue and self.turn_state in {"ready", "failed"}:
                     self.queue_paused = False
                 self.queue[key] = {"id": key, "text": value, "state": "queued", "_invocation": invocation}
+            elif action in {"edit_begin", "edit"}:
+                entry = self.queue.get(payload["entry_id"])
+                if not entry or entry["state"] not in {"queued", "failed"}:
+                    raise Problem(409, "error_queue_entry")
+                if action == "edit":
+                    if not self.queue_paused or entry.get("edit_revision", 0) != revision:
+                        raise Problem(409, "error_queue_changed")
+                    entry.update(text=value, state="queued", _invocation=invocation,
+                                 edit_revision=revision + 1, command=invocation is not None)
+                    entry.pop("code", None)
+                # Pause under the same condition used by drain/Steer. Saving or
+                # dismissing the editor never resumes work automatically.
+                self.queue_paused = True
             elif action == "remove":
                 entry = self.queue.get(payload["entry_id"])
                 if not entry or entry["state"] in {"sending", "steering"}:
@@ -4546,7 +4564,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "browser_consent_notify", "maintenance_recovery", "agent_connections", "agent_login_terminal", "agent_login_ui", "agent_updates", "agent_session_maintenance"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "queue_edit", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "browser_consent_notify", "maintenance_recovery", "agent_connections", "agent_login_terminal", "agent_login_ui", "agent_updates", "agent_session_maintenance"], "active_sessions": self.active_count(),
                     "agents": self.agents(), "maintenance_recovery": self.recovery.snapshot(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -5306,7 +5324,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 elif action == "options":
                     bridge.configure_session(session, data)
                 elif action == "queue":
-                    session.queue_action(data, bridge.command_input(session, data) if data.get("action") == "add" else None)
+                    session.queue_action(data, bridge.command_input(session, data) if isinstance(data.get("action"), str) and data.get("action") in {"add", "edit"} else None)
                 elif action == "steer":
                     session.steer(data, invocation=bridge.command_input(session, data))
                 else:

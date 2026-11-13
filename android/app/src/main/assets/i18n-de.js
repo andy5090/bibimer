@@ -1,6 +1,27 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "agent_management_accounts": "Konto und Anbieter",
+  "agent_management_advanced": "Installation, Reparatur und Fehlerbehebung",
+  "agent_management_install_hint": "Nutze diese Schritte für Installation oder Reparatur. Ändere bestehende Versionen über die Updatefunktion oben.",
+  "agent_management_setup_hint": "Öffne dieselbe Agentenverwaltung wie in den Einstellungen. Installiere nur Benötigtes und behalte bestehende Konten und Anbieter bei.",
+  "agent_management_install": "Installieren / reparieren",
+
+  "queue_edit_current": "Aktueller Text in der Warteschlange",
+  "queue_edit": "Bearbeiten",
+  "queue_edit_title": "Nachricht in der Warteschlange bearbeiten",
+  "queue_edit_hint": "Die Warteschlange ist pausiert. Speichere die Änderungen und setze sie zum Senden fort. Abbrechen behält den Originaltext und die Pause bei.",
+  "queue_edit_save": "Änderungen speichern",
+  "queue_edit_saved": "Änderungen gespeichert. Setze die Warteschlange zum Senden fort.",
+  "error_queue_changed": "Diese Nachricht wurde geändert. Öffne den Editor erneut und prüfe die aktuelle Version. Deine Bearbeitung bleibt erhalten.",
+
+  "developer_options": "Entwickleroptionen",
+  "debug_mode": "Debugmodus",
+  "debug_mode_hint": "Erfasst begrenzte lokale Diagnosen und erlaubt die Auswahl von Oberflächentext. Einfügen ist in bearbeitbaren Feldern möglich. Ausschalten löscht die Diagnoseprotokolle.",
+  "debug_logs": "Diagnoseprotokolle",
+  "debug_logs_hint": "Bis zu 64 lokale Statusereignisse. Gespräche, Terminalausgaben, Pfade, URLs und Zugangsdaten sind ausgeschlossen. Kein automatischer Versand.",
+  "debug_logs_clear": "Protokolle löschen",
+  "debug_save_failed": "Debugmodus konnte nicht gespeichert werden. Die bisherige Auswahl bleibt erhalten.",
   "agent_operation_warning": "Nur die aufgeführten Sitzungen dieses Agenten werden beendet. Laufende Antworten und Befehle stoppen, Warteschlangen gehen verloren. Nach Erfolg können gespeicherte Chats fortgesetzt und Terminals neu geöffnet werden. Alte Terminalausgaben werden nicht wiederhergestellt. Andere Agenten laufen weiter.",
   "agent_operation_reopen": "Sitzungen nach Erfolg erneut öffnen",
   "agent_operation_confirm": "Sitzungen beenden und fortfahren",
@@ -169,9 +190,9 @@ window.BibimerTranslations.de = {
   "page_up": "Seite nach oben",
   "page_down": "Seite nach unten",
 
-  "connections_title": "Agent-Konten und Anbieter",
-  "connections_hint": "Verbindungen und Versionen prüfen, Anbieter wählen und unterstützte API-Schlüssel hier eingeben.",
-  "connections_manage": "Verbindungen verwalten",
+  "connections_title": "Agentenverwaltung",
+  "connections_hint": "Verwalte Installation, Konten, Anbieter und Versionsupdates an einem Ort.",
+  "connections_manage": "Agentenverwaltung öffnen",
   "connection_refresh": "Verbindung aktualisieren",
   "connection_scope": "Nutzt das in Termux gespeicherte Agent-Konto. Ein Kontowechsel kann nach Bestätigung das Beenden der Sitzungen dieses Agenten erfordern. Speichern bestätigt keinen Modellzugriff.",
   "connection_provider": "Anbieter",

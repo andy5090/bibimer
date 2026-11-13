@@ -374,3 +374,23 @@ health의 `agent_session_maintenance` 기능이 있으면 계정/업데이트 AP
 종료는 실제 process 종료까지 확인한다. 설치와 버전 검증 또는 네이티브 인증 저장 확인이 성공한 뒤에만 기본 선택된 재열기를 수행한다. 기존 `maintenance_recovery.Recovery`의 재개/실패 정리를 메모리 영수증과 내부 restore 권한으로 재사용하며 브리지 업데이트 복구 파일을 덮어쓰지 않는다. 같은 세션 ID·네이티브 대화·이름·보관 상태를 유지하고 프로세스만 교체한다. 인증 터미널은 같은 폴더의 일반 새 셸로 열어 로그인 명령을 재실행하지 않는다. 저장 확인 없는 Chat은 skipped, 복구 실패/종료 불명은 failed/uncertain으로 구분한다. `retry_restore`는 failed 항목만 재열며 설치·인증·사용자 입력을 반복하지 않는다. 취소/실패/만료 시 자동 재열기는 없다. 상태는 메모리이며 브리지 강제 종료 뒤 임의 자동 복구를 하지 않는다.
 
 공유 앱 UI는 자체 확인 창·기본 켜짐 토글·대상/복구 결과와 재시도를 제공한다. 다른 프로젝트로 이동한 뒤의 늦은 확인 응답은 화면을 덮어쓰지 않는다. 같은 논리 세션의 launch ID가 바뀌면 스트림 커서·이전 PTY/대화 캐시만 새 실행에 맞춰 초기화하고 작성 중 초안은 유지한다. 공유 자산은 Android/iOS에 함께 포함된다. 앱 빌드·실기기 OAuth/패키지 설치는 별도 검증이다.
+
+## 앱 디버그 진단 (2026-11-13 후속 소스)
+
+공유 `debug-tools.js`는 설정 하단 접힌 개발자 옵션과 진단 사본 창을 제공한다. native `setDebugMode`, `requestDebugDiagnostics(id)`, `copyDebugDiagnostics`, `clearDebugDiagnostics`, `recordDebugEvent` 경계를 사용한다. 네이티브 설정 기본값은 false이며 모든 읽기/복사/수집 경로에 native gate가 있다. iOS의 기존 `connectionDiagnostics` 복사도 동일 gate를 적용하고 일반 진단 카드는 숨긴다. UI에서는 snapshot 요청 UUID/visible/mode를 함께 확인해 오래된 응답을 버린다.
+
+Android는 private SharedPreferences의 고정 event/time/uptime/code 행64개만 저장하고 재로딩 때 허용 event·숫자 필드를 다시 검증한다. iOS는 기존 상태 필드 allowlist와 보호 파일·직렬 쓰기 큐를 유지하며 디버그 모드가 아닐 때 load/write를 막고 과거 파일을 지운다. 끄기는 설정 저장 후 메모리와 디스크 진단을 비운다. clear와 과거 큐 쓰기는 같은 순서로 처리한다. UI 오류는 메시지/URL/stack을 읽지 않고 고정 이벤트만 기록한다. 터미널/대화·자격 증명·범용 로그·요청/응답 본문을 진단에 넣지 않는다.
+
+화면의 debug CSS 선택 허용과 사이드바 길게 누르기 재정렬 제한만 바꾸며 입력/권한/원격 브라우저 제어 허용 경계는 변경하지 않는다. 실제 앱 빌드/네이티브 iOS 컴파일 및 기기 선택 메뉴 검증은 별도다.
+
+## 대기열 수정 (2026-11-13 후속 소스, 브리지0.25.2)
+
+`queue_edit` health 기능과 기존 세션 queue API의 `edit_begin/edit`를 사용한다. begin은 세션 condition에서 queued/failed 상태를 확인하고 queue_paused=true로 만든다. edit는 같은 잠금으로 일시정지 여부·entry_id·expected_revision을 확인하고 항목 ID/순서를 유지한 채 본문/현재 명령 invocation을 교체한다. revision을 올리고 오류 상태를 queued로 되돌리지만 재개하지 않는다. drain·Steer가 먼저 항목을 제출 중으로 바꿨으면 편집을 거절한다. session별 큐·request receipt·기존 네이티브 명령 검증을 재사용하고 입력은 디스크/메타데이터/진단에 저장하지 않는다.
+
+공유 `queue-editor.js`는 편집 전 원자적 pause 요청이 성공해야 창을 열고, 저장/취소 뒤 사용자가 명시적으로 queue resume을 실행하게 한다. 컨텍스트/요청 상태를 검증하고 실패 시 초안을 유지하며, 버전 충돌은 서버 원문과 비교한다. queue 이벤트의 수정 버전/command 표시는 대기 질문 버블을 갱신해 실제 네이티브 메시지 접수와 한 번만 합치도록 사용한다. 네이티브 전송 중 상태와 전달 여부 불명은 편집 대상으로 취급하지 않는다. 앱/iOS 빌드와 기기 조작 검증은 별도다.
+
+## 공통 에이전트 관리자 (2026-11-13 후속 소스)
+
+기존 `BibimerAgentConnections`를 공통 관리 진입점으로 사용한다. setup은 `setup-agent-manage` 버튼으로 같은 클래스를 열고, Settings는 기존 관리 버튼을 유지한다. `openSetupGuide(agent)`의 에이전트별 이전 상세 경로도 `open(agent, {installation:true})`로 연결하며 환경 연결 가이드 자체는 별도로 유지한다. 기존 상세 DOM/명령 ID는 설치 도움말 안으로 옮겨 네이티브 고정 동작/복사 경로를 유지하고 중복 관리 버튼은 제거한다.
+
+`renderInstallation`은 현재 선택만 표시하고 최신 보고/런타임 상태로 초기 접힘 여부를 결정한다. 캐시된 미설치 보고로 설치 완료 후 다시 펼치지 않으며 이후 사용자 펼침 선택을 유지한다. 계정/업데이트가 진행 중이거나 관련 조회 결과를 기다릴 때 상세 작업과 충돌하지 않게 한다. 전역 환경 렌더가 관리자 내부의 비활성 상태를 덮어쓰지 않는다. iOS platform은 에이전트별 상세를 현지화된 설치·복구 버튼1개로 바꾸며 계정/버전 UI를 중복 생성하지 않는다. 설치 PTY 응답의 인스턴스/프로젝트가 일치할 때만 창 닫기/터미널 선택을 수행한다. 백엔드 설치·인증 계약/자동 실행 범위는 확장하지 않는다.

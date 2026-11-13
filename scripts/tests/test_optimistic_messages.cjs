@@ -72,3 +72,10 @@ preview.add("screen","another","another question",3);conversation.setOptimistic(
 conversation.clear();root.scrollTop=45;frames.shift()();
 assert.equal(root.scrollTop,45,"Switching sessions cancels the old view's deferred scroll");
 console.log("PASS optimistic messages: history/session isolation, repeated text, batching, uncertain delivery, failures, bounded memory");
+
+const editedPreview=new Pending();
+editedPreview.add("edit-session","q-edit","old text",4);editedPreview.settle("q-edit","queued");
+editedPreview.editQueued("q-edit","revised text");
+assert.equal(editedPreview.list("edit-session")[0].text,"revised text");
+assert.equal(editedPreview.reconcile("edit-session",[native("native-edited","revised text",7)]).length,1);
+assert.equal(editedPreview.list("edit-session").length,0,"the revised queued preview matches the accepted native message once");

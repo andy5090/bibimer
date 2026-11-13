@@ -20,6 +20,11 @@
   const store = (key, value) => { defaults[key] = value; message("preference", {key, value}); return true; };
   window.Bibimer = Object.freeze({
     environment: () => JSON.stringify(defaults),
+    setDebugMode: enabled => { if(typeof enabled !== "boolean")return false;defaults.debugMode=enabled;message("debugMode",{enabled});return true; },
+    requestDebugDiagnostics: id => message("debugDiagnosticsRead",{id}),
+    clearDebugDiagnostics: () => message("debugDiagnosticsClear"),
+    copyDebugDiagnostics: () => message("debugDiagnosticsCopy"),
+    recordDebugEvent: event => { if(["ui_error","ui_rejection"].includes(event))message("debugEvent",{event}); },
     request: (id, method, path, body) => message("request", {id, method, path, body}),
     setLanguage: value => {
       if (!["system","en","ko","pt-BR","es","id","zh-Hans","ja","zh-Hant","fr","de"].includes(value)) return false;

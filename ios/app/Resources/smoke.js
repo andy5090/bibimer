@@ -168,6 +168,8 @@
     if (!retryWindow.foregroundReconciled || !retryWindow.windowKept || !retryWindow.immediateRecovery || !retryWindow.joinedProbe || !retryWindow.automaticAttemptBounded) throw new Error("Reconnect delayed recovery, replaced its active probe or retained stale background state");
     await wait(() => snapshot()?.online,"connection after retry-window fixture");
     passed("manual_reconnect_failure_window");
+    $("debug-mode").checked = true; $("debug-mode").dispatchEvent(new Event("change"));
+    await wait(() => JSON.parse(window.Bibimer.environment()).debugMode === true,"debug mode enabled");
     $("ios-connection-diagnostics-copy").click();
     await wait(() => $("ios-connection-diagnostics-copy").textContent === window.BibimerI18n.t("copied"),"native diagnostic clipboard");
     const diagnosticClipboard = await window.BibimerIOSTestAPI("GET","/native/test-clipboard");
@@ -178,6 +180,8 @@
     }
     if (diagnosticClipboard.text.includes(path) || diagnosticClipboard.text.includes(sessionId) || diagnosticClipboard.text.includes(recoveryDraft)) throw new Error("Diagnostic leaked project/session/draft data");
     passed("connection_diagnostics_status_only");
+    $("debug-mode").checked = false; $("debug-mode").dispatchEvent(new Event("change"));
+    await wait(() => JSON.parse(window.Bibimer.environment()).debugMode === false,"debug mode disabled");
     const lifecycleDraft = "draft survives background and foreground";
     $("input").value = lifecycleDraft; $("input").dispatchEvent(new Event("input",{bubbles:true}));
     const lifecycleInstance = snapshot().instance;

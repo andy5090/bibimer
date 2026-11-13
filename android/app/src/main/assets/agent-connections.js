@@ -36,7 +36,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
   clearSecrets(){this.$("key").value="";this.$("code").value="";}
   pause(){clearTimeout(this.timer);clearTimeout(this.updateTimer);this.timer=null;this.updateTimer=null;if(this.state)this.state.autoBrowserJob=null;this.clearSecrets();if(this.operationDialog.open&&!this.operationBusy())this.operationDialog.close();}
   payload(extra={}){const s=this.state;return {agent:s.agent,...(s.project?{project_id:s.project,...(s.path?{worktree_path:s.path}:{})}:{}),...extra};}
-  async open(agent="codex") {
+  async open(agent="codex", options={}) {
     this.pause();
     const c=this.context(), previous=this.state;
     if(c.demo)return;
@@ -44,6 +44,9 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
       this.state={agent,instance:c.instance,project:c.project,path:c.path||null,report:null,job:null,busy:false,error:null,version:""};
     }
     this.$("agent").value=agent;
+    this.$("installation").open=options.installation===true;
+    this.state.installationInitialized=options.installation===true;
+    this.state.installationAwaitingStatus=true;
     if(!this.dialog.open)this.dialog.showModal();
     this.render();
     if(this.context().updates)await this.updates("status");
@@ -119,7 +122,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     if(action==="check"&&(this.updating(s)||s.busy||s.job?.status==="pending"))return;
     if(action==="start"&&(!s.updatePlan?.available||(s.updatePlan.blocked&&!s.operation?.confirmation)||this.updating(s)||s.busy||s.job?.status==="pending"))return;
     const revision=status?(s.updateRevision||0):(s.updateRevision=(s.updateRevision||0)+1);
-    if(status)s.updateStatusBusy=true;
+    if(status){s.updateStatusBusy=true;this.renderInstallation();}
     else{clearTimeout(this.updateTimer);this.updateTimer=null;s.updateBusy=true;s.updateError=null;s.updateStatusError=null;this.render();}
     const body={agent:s.agent,action,...(["poll","retry_restore"].includes(action)?{id:s.updateJob.id}:{}),
       ...(action==="start"?{plan_id:s.updatePlan.id,request_id:s.updateRequest ||= this.actions.uuid(),...(s.operation?.kind==="update"?{confirmation_id:s.operation.confirmation.id,reopen:s.operation.reopen}:{})}: {})};
@@ -172,7 +175,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
       const result=await this.request(this.payload({action}));
       if(!this.current(s))return;
       if(action==="version")s.version=result.version||"";
-      else{s.report=result;this.providers();if(result.job)s.job=result.job;}
+      else{s.report=result;s.installationAwaitingStatus=false;this.providers();if(result.job)s.job=result.job;}
     }catch(e){if(this.current(s))s.error=e.key||"error_agent_connection";}
     finally{if(this.current(s)){s.busy=false;s.loading=null;this.render();}}
   }
@@ -238,8 +241,24 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.render();
     if(this.available()&&this.activeLogin()&&!this.state.busy&&!this.timer)void this.poll();
   }
+  renderInstallation(){
+    const s=this.state;if(!s)return;
+    const installed=s.report?.installed,runtime=this.context().agents?.find(row=>row.id===s.agent);
+    if(!s.installationInitialized&&!s.installationAwaitingStatus&&typeof installed==="boolean"){
+      this.$("installation").open=!installed||runtime?.available===false;s.installationInitialized=true;
+    }
+    for(const agent of ["codex","claude","opencode","gemini"]){
+      const details=document.getElementById(agent+"-install");
+      if(details){details.hidden=agent!==s.agent;details.open=agent===s.agent;}
+    }
+    for(const button of this.$("installation").querySelectorAll?.("[data-agent-action]")||[]){
+      const context=this.context();
+      button.disabled=context.demo||context.paused||(context.platform==="ios"&&!context.online)||s.confirming||s.busy||s.updateBusy||s.updateStatusBusy||(context.online&&context.supported&&!s.report)||this.activeLogin(s)||this.updating(s);
+    }
+  }
   render(){
     const s=this.state;if(!s)return;
+    this.renderInstallation();
     const usable=this.available()&&this.current(s),pending=this.activeLogin(s),report=s.report,updating=this.updating(s);
     const loading=usable&&!!(s.loading||(s.busy&&!report)||(s.updateBusy&&!report));
     this.$("status").setAttribute("aria-busy",String(loading));
@@ -248,13 +267,14 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     if(usable&&!loading&&report?.method)this.$("status").textContent+=" · "+report.method;
     this.$("version").textContent=s.version?this.t("connection_version",{version:s.version}):"";
     this.$("error").textContent=s.error?this.t(s.error):"";this.$("error").hidden=!s.error;
+    this.$("account").hidden=s.report?.installed===false;
     this.$("provider-field").hidden=s.agent!=="opencode";
     this.$("form").hidden=!usable||!report?.installed||!["codex","opencode","claude","gemini"].includes(s.agent);
     const m=this.choice();this.$("key-field").hidden=m?.type!=="api";
     this.$("private").hidden=m?.type!=="api";
     this.$("login-hint").hidden=m?.type!=="oauth";
     this.$("submit").textContent=this.t(m?.type==="oauth"?"agent_action_login":"connection_connect");
-    for(const id of ["agent","provider","method","key","submit","refresh","version-check"])this.$(id).disabled=s.confirming||s.busy||pending||(updating&&id!=="agent")||(id!=="agent"&&(!usable||loading))||(id==="submit"&&!m?.supported);
+    for(const id of ["agent","provider","method","key","submit","refresh","version-check"])this.$(id).disabled=s.confirming||s.busy||pending||(updating&&id!=="agent")||(id!=="agent"&&(!usable||loading))||(id==="version-check"&&report?.installed===false)||(id==="submit"&&!m?.supported);
     this.$("key").required=m?.type==="api"&&!this.$("form").hidden;
     this.$("job").hidden=!s.job;
     this.$("job-status").textContent=s.job?this.t("connection_job_"+s.job.status):"";
@@ -271,7 +291,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     if(s.agent!=="gemini")this.$("fallback-hint").textContent=this.t(!this.context().loginTerminal?"connection_update_bridge":"connection_terminal_in_app_hint");
     else this.$("fallback-hint").textContent=this.t(this.context().loginUI?"connection_native_unavailable":"connection_update_bridge");
     this.$("fallback-hint").hidden=usable&&["codex","opencode","claude","gemini"].includes(s.agent)&&this.choices?.some(m=>m.supported);
-    this.$("updates").hidden=!this.context().updates;
+    this.$("updates").hidden=!this.context().updates||report?.installed===false;
     const plan=s.updatePlan,job=s.updateJob;
     this.$("update-target").textContent=plan?.latest_version?this.t("agent_update_target",{current:plan.current_version,latest:plan.latest_version}):"";
     this.$("update-check").disabled=!usable||s.busy||s.updateBusy||pending||updating;

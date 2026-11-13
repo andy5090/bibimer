@@ -1,6 +1,27 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "agent_management_accounts": "账户与提供商",
+  "agent_management_advanced": "安装、修复和故障排查",
+  "agent_management_install_hint": "需要安装或修复时使用这些步骤。更改现有版本请使用上方的更新功能。",
+  "agent_management_setup_hint": "打开与设置相同的代理管理界面。仅安装需要的代理，并保留现有账户和提供商设置。",
+  "agent_management_install": "安装／修复",
+
+  "queue_edit_current": "当前队列内容",
+  "queue_edit": "编辑",
+  "queue_edit_title": "编辑待发送消息",
+  "queue_edit_hint": "队列已暂停。保存修改后，恢复队列即可发送。取消将保留原文，队列仍暂停。",
+  "queue_edit_save": "保存修改",
+  "queue_edit_saved": "修改已保存。准备发送时请恢复队列。",
+  "error_queue_changed": "此消息已更改。请重新打开编辑器查看最新版本。保留了你的修改内容。",
+
+  "developer_options": "开发者选项",
+  "debug_mode": "调试模式",
+  "debug_mode_hint": "收集有限的本地诊断信息并允许选择界面文字。可在可编辑输入框中粘贴。关闭后清除诊断日志。",
+  "debug_logs": "诊断日志",
+  "debug_logs_hint": "最多保留 64 条本地状态事件。不包含对话、终端输出、路径、URL 或凭据。不自动发送。",
+  "debug_logs_clear": "清除日志",
+  "debug_save_failed": "无法保存调试模式。保留之前的选择。",
   "agent_operation_warning": "只会结束列表中此代理的会话。运行中的回复和命令会停止，队列会丢失。成功后可继续已保存的对话，终端会重新启动。不恢复旧终端输出。其他代理继续运行。",
   "agent_operation_reopen": "成功后重新打开会话",
   "agent_operation_confirm": "结束会话并继续",
@@ -169,9 +190,9 @@ window.BibimerTranslations["zh-Hans"] = {
   "page_up": "向上翻页",
   "page_down": "向下翻页",
 
-  "connections_title": "代理账户与提供商",
-  "connections_hint": "在此查看连接和版本、选择提供商并输入支持的 API 密钥。",
-  "connections_manage": "管理连接",
+  "connections_title": "代理管理",
+  "connections_hint": "在一处管理安装、账户、提供商和版本更新。",
+  "connections_manage": "打开代理管理",
   "connection_refresh": "刷新连接",
   "connection_scope": "使用保存在 Termux 中的代理账户。更改账户可能需要在确认后结束该代理的会话。保存不代表已验证模型访问权限。",
   "connection_provider": "提供商",

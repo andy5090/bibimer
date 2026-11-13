@@ -66,7 +66,7 @@ def package_web(destination):
       <p id="ios-background-hint" class="hint" data-i18n="ios_background_hint"></p>
       <p id="ios-background-status" class="hint" role="status" aria-live="polite"></p>
     </section>
-    <section id="ios-connection-diagnostics" class="card preference-card">
+    <section id="ios-connection-diagnostics" class="card preference-card" hidden>
       <h2 data-i18n="ios_connection_diagnostics">Connection diagnostics</h2>
       <p class="hint" data-i18n="ios_connection_diagnostics_hint"></p>
       <button id="ios-connection-diagnostics-copy" class="secondary" data-i18n="ios_connection_diagnostics_copy">Copy diagnostics</button>

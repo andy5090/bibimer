@@ -150,7 +150,7 @@ window.BibimerSidebar = class BibimerSidebar {
   }
   installProjectDrag() {
     let gesture = null, timer, frame, suppressUntil = 0;
-    const allowed = () => this.dialog.open && this.state?.online && this.state.dragOrdering && !this.state.disabled &&
+    const allowed = () => !document.body?.classList?.contains?.("debug-mode") && this.dialog.open && this.state?.online && this.state.dragOrdering && !this.state.disabled &&
       this.state.projects.length > 1 && ![...document.querySelectorAll("dialog:modal")].some(node => node !== this.dialog);
     const position = () => {
       if (!gesture?.active) return;

@@ -56,7 +56,7 @@ class GuestPackagingTests(unittest.TestCase):
         self.assertIn('id="ios-screen-settings"',index)
         for name in ('ios-keep-awake','ios-defer-home'):
             self.assertIn('id="'+name+'" class="settings-switch" type="checkbox" role="switch"',index)
-        for name in ('browser-consent.js','speech-output.js','voice-input.js','terminal-output.js'):
+        for name in ('browser-consent.js','speech-output.js','voice-input.js','terminal-output.js','debug-tools.js','queue-editor.js'):
             self.assertEqual((self.root/'Web'/name).read_bytes(),(build.REPO/'android/app/src/main/assets'/name).read_bytes())
         self.assertIn('BibimerIOSLocales',(self.root/'Web/ios-locales.js').read_text())
         self.assertIn('id="ios-connection-diagnostics-copy"',index)

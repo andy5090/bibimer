@@ -324,3 +324,71 @@ class QueueTests(ChatFixture):
         event = self.until(lambda e: not e['queue'] and e['session']['turn_state']=='ready')
         self.assertEqual('2',(self.root/'project/turn-count').read_text())
         self.assertEqual(1,sum(i.get('text')=='steer-complete-before-receipt' for i in event['items']))
+
+    def test_edit_pauses_before_completion_keeps_order_and_sends_only_saved_text(self):
+        session = self.chat()
+        self.message('wait'); self.until(lambda e:e['session']['turn_state']=='running')
+        first, second = str(uuid.uuid4()), str(uuid.uuid4())
+        self.queue(text='original', key=first); self.queue(text='second', key=second)
+        status, result = self.queue('edit_begin', entry_id=first)
+        self.assertEqual(200,status); self.assertTrue(result['session']['queue_paused'])
+        self.api('POST',f'/v1/sessions/{self.session_id}/interrupt',{})
+        self.until(lambda e:e['session']['turn_state']=='ready')
+        self.assertEqual(['original','second'],[row['text'] for row in session.events(0,0)['queue']])
+        key=str(uuid.uuid4())
+        status, result=self.queue('edit',key=key,entry_id=first,text='edited 😀',expected_revision=0)
+        self.assertEqual(200,status); self.assertTrue(result['session']['queue_paused'])
+        self.assertEqual([first,second],[row['id'] for row in result['queue']]); self.assertEqual(1,result['queue'][0]['edit_revision'])
+        self.assertEqual(200,self.queue('edit',key=key,entry_id=first,text='edited 😀',expected_revision=0)[0],'exact retry is idempotent')
+        self.assertEqual(409,self.queue('edit',entry_id=first,text='stale',expected_revision=0)[0])
+        self.assertEqual('edited 😀',session.events(0,0)['queue'][0]['text'])
+        self.queue('resume');self.until(lambda e:not e['queue'] and e['session']['turn_state']=='ready')
+        captured=json.loads((self.root/'project/codex-inputs.jsonl').read_text().splitlines()[-1])
+        self.assertEqual('edited 😀\n\nsecond',captured['input'][0]['text']); self.assertEqual('2',(self.root/'project/turn-count').read_text())
+
+    def test_edit_rejects_inflight_uncertain_invalid_and_unpaused_items(self):
+        session=self.chat(); self.message('wait');self.until(lambda e:e['session']['turn_state']=='running')
+        key=str(uuid.uuid4()); self.queue(text='keep',key=key)
+        self.assertEqual(409,self.queue('edit',entry_id=key,text='not paused',expected_revision=0)[0])
+        self.queue('edit_begin',entry_id=key)
+        for values in [{'text':' '},{'text':'😀'*5000},{'text':'next','expected_revision':True}]:
+            payload=dict(entry_id=key,text='next',expected_revision=0);payload.update(values)
+            self.assertEqual(400,self.queue('edit',**payload)[0])
+        for state in ['sending','steering','uncertain']:
+            with session.condition:session.queue[key]['state']=state
+            self.assertEqual(409,self.queue('edit_begin',entry_id=key)[0])
+            self.assertEqual(409,self.queue('edit',entry_id=key,text='next',expected_revision=0)[0])
+        with session.condition:session.queue[key]['state']='failed';session.queue[key]['code']='error_queue_send'
+        self.assertEqual(200,self.queue('edit',entry_id=key,text='recover',expected_revision=0)[0])
+        row=session.events(0,0)['queue'][0];self.assertEqual('queued',row['state']);self.assertNotIn('code',row)
+        self.assertEqual('recover',row['text']);self.assertTrue(session.queue_paused)
+        self.queue('remove',entry_id=key)
+        self.assertEqual(409,self.queue('edit',entry_id=key,text='gone',expected_revision=1)[0])
+
+    def test_edit_replaces_native_invocation_instead_of_replaying_old_command(self):
+        from unittest.mock import patch
+        session=self.chat();self.message('wait');self.until(lambda e:e['session']['turn_state']=='running')
+        key=str(uuid.uuid4());self.queue(text='plain text',key=key);self.queue('edit_begin',entry_id=key)
+        invocation={'input':[{'type':'text','text':'$edited-command'},{'type':'skill','name':'edited-command','path':'/fixture/skill'}]}
+        with patch.object(self.bridge,'command_input',return_value=invocation) as command:
+            status,result=self.queue('edit',entry_id=key,text='/edited-command',command_id='fixture-command',expected_revision=0)
+            self.assertEqual(200,status);self.assertEqual('fixture-command',command.call_args.args[1]['command_id'])
+        self.assertTrue(result['queue'][0]['command']);self.assertEqual(invocation,session.queue[key]['_invocation'])
+        # A second edit to ordinary text discards the old native command/skill.
+        status,result=self.queue('edit',entry_id=key,text='ordinary replacement',expected_revision=1)
+        self.assertEqual(200,status);self.assertFalse(result['queue'][0]['command']);self.assertIsNone(session.queue[key]['_invocation'])
+        self.api('POST',f'/v1/sessions/{self.session_id}/interrupt',{})
+        self.until(lambda e:e['session']['turn_state']=='ready');self.queue('resume')
+        self.until(lambda e:not e['queue'] and e['session']['turn_state']=='ready')
+        captured=json.loads((self.root/'project/codex-inputs.jsonl').read_text().splitlines()[-1])
+        self.assertEqual([{'type':'text','text':'ordinary replacement'}],captured['input'])
+
+    def test_queue_edit_in_one_session_does_not_pause_or_change_another(self):
+        first=self.chat();self.message('wait');self.until(lambda e:e['session']['turn_state']=='running')
+        key=str(uuid.uuid4());self.queue(text='first session',key=key)
+        status,result=self.api('POST','/v1/sessions',{'agent':'codex','mode':'chat','new_session':True,'project_id':first.project['id'],'request_id':str(uuid.uuid4())})
+        self.assertEqual(200,status);other=self.bridge.get_session(result['session']['id'])
+        self.assertEqual(409,self.api('POST',f'/v1/sessions/{other.id}/queue',{'action':'edit_begin','entry_id':key,'request_id':str(uuid.uuid4())})[0])
+        self.assertFalse(first.queue_paused);self.assertFalse(other.queue_paused)
+        self.queue('edit_begin',entry_id=key);self.queue('edit',entry_id=key,text='first revised',expected_revision=0)
+        self.assertTrue(first.queue_paused);self.assertFalse(other.queue_paused);self.assertFalse(other.queue)

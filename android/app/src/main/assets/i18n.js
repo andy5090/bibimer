@@ -3,6 +3,28 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    agent_management_accounts: ["Account and provider", "계정·프로바이더"],
+    agent_management_advanced: ["Installation, repair and troubleshooting", "설치·복구 및 문제 해결"],
+    agent_management_install_hint: ["Use these steps when installation or repair is needed. Use the update controls above to change an existing version.", "설치나 복구가 필요할 때 사용하는 상세 안내입니다. 기존 버전 변경은 위의 업데이트 기능에서 진행하세요."],
+    agent_management_setup_hint: ["Open the same agent manager used in Settings. Install only what you need and keep existing account and provider settings.", "설정과 같은 에이전트 관리 화면을 엽니다. 필요한 에이전트만 설치하고 기존 계정·프로바이더 설정은 그대로 사용할 수 있습니다."],
+    agent_management_install: ["Install / repair", "설치·복구"],
+
+    queue_edit_current: ["Current queued text", "대기열의 현재 내용"],
+    queue_edit: ["Edit", "수정"],
+    queue_edit_title: ["Edit queued message", "대기 메시지 수정"],
+    queue_edit_hint: ["The queue is paused. Save your changes, then resume the queue to send. Cancelling keeps the original message and the queue paused.", "대기열을 일시정지했습니다. 수정 내용을 저장한 뒤 대기열을 재개하면 전송됩니다. 취소하면 원문을 유지하고 대기열은 일시정지 상태로 둡니다."],
+    queue_edit_save: ["Save changes", "수정 저장"],
+    queue_edit_saved: ["Changes saved. Resume the queue when ready to send.", "수정 내용을 저장했습니다. 전송하려면 대기열을 재개하세요."],
+    error_queue_changed: ["This queued message changed. Reopen the editor to review its current version. Your edit is kept.", "대기 메시지가 변경되었습니다. 수정 창을 다시 열어 최신 내용을 확인하세요. 작성한 수정 내용은 유지합니다."],
+
+    developer_options: ["Developer options", "개발자 옵션"],
+    debug_mode: ["Debug mode", "디버그 모드"],
+    debug_mode_hint: ["Collect limited local diagnostics and select interface text. Paste into editable fields. Turning this off clears diagnostics.", "제한된 로컬 진단 로그를 수집하고 화면 문구를 선택·복사할 수 있습니다. 붙여넣기는 편집 가능한 입력란에서 지원합니다. 끄면 진단 로그를 지웁니다."],
+    debug_logs: ["Diagnostic logs", "진단 로그"],
+    debug_logs_hint: ["Up to 64 local status events. Conversations, terminal output, paths, URLs and credentials are excluded. No automatic sending.", "최근 상태 이벤트를 최대 64개 보관합니다. 대화·터미널 출력·경로·URL·인증 정보는 제외하며 자동 전송하지 않습니다."],
+    debug_logs_clear: ["Clear logs", "로그 지우기"],
+    debug_save_failed: ["Could not save debug mode. Your previous choice is kept.", "디버그 모드를 저장하지 못했습니다. 기존 선택을 유지합니다."],
+
     agent_operation_warning: ["Only the listed agent sessions will end. Running responses and commands stop, and queues are lost. After success, saved chats can resume and terminals start fresh. Old terminal output is not restored. Other agents keep running.", "목록의 에이전트 세션만 종료합니다. 진행 중 응답·명령은 중단되고 대기열은 사라집니다. 성공 후 저장 대화는 이어가고 터미널은 새로 실행할 수 있습니다. 이전 터미널 출력은 복원하지 않습니다. 다른 에이전트 작업은 유지합니다."],
     agent_operation_reopen: ["Reopen sessions after success", "성공 후 세션 다시 열기"],
     agent_operation_confirm: ["End sessions and continue", "세션 종료 후 계속"],
@@ -101,9 +123,9 @@
     voice_failed: ["Voice input failed. Check your speech provider and microphone access, then try again.", "음성 입력에 실패했습니다. 음성 인식 앱과 마이크 접근 권한을 확인한 뒤 다시 시도하세요."],
     voice_changed: ["The draft or session changed. Voice input was not inserted.", "초안 또는 세션이 변경되어 음성 입력을 삽입하지 않았습니다."],
 
-    connections_title: ["Agent accounts and providers", "에이전트 계정 및 프로바이더"],
-    connections_hint: ["View connections and versions, choose providers, and enter supported API keys here.", "연결 상태·버전을 조회하고 프로바이더 선택과 지원되는 API 키 입력을 여기서 진행합니다."],
-    connections_manage: ["Manage connections", "연결 관리"],
+    connections_title: ["Agent management", "에이전트 관리"],
+    connections_hint: ["Manage installation, accounts, providers and version updates in one place.", "설치·계정 연결·프로바이더·버전 업데이트를 한곳에서 관리합니다."],
+    connections_manage: ["Open agent manager", "관리 열기"],
     connection_refresh: ["Refresh connection", "연결 상태 새로고침"],
     connection_scope: ["Uses the agent’s account saved in Termux. Account changes may require ending that agent’s sessions after confirmation. Saving does not verify model access.", "Termux에 저장된 에이전트 계정을 사용합니다. 계정 변경 시 확인 후 해당 에이전트의 세션을 종료할 수 있습니다. 저장만으로 모델 접근을 확인하지 않습니다."],
     connection_provider: ["Provider", "프로바이더"],

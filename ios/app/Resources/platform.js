@@ -67,7 +67,7 @@
     setup_connected:["Local Linux connected","내장 Linux 연결됨"],
     setup_connected_body:["Your projects and development tools run inside this app.","프로젝트와 개발 도구가 이 앱 안에서 실행됩니다."],
     termux_open:["Open local terminal","내장 터미널 열기"],
-    agent_body:["Install the CLIs you need, check their versions, then complete account authentication in the terminal.","필요한 CLI를 설치하고 버전을 확인한 뒤 터미널에서 계정 인증을 완료하세요."],
+
     agent_termux_basis:["Linux ARM64 packages run through the embedded interpreter. Compatibility depends on each CLI.","내장 해석기에서 Linux ARM64 패키지를 실행합니다. CLI별 호환성은 다를 수 있습니다."],
     agent_action_hint:["Each action opens a local PTY session. Installation output and sign-in links appear there.","각 작업은 앱 안의 PTY 세션에서 열립니다. 설치 결과와 로그인 링크를 그곳에서 확인하세요."],
     agent_action_login:["Sign in","로그인"],
@@ -102,16 +102,12 @@
     details.replaceChildren();
     const summary = document.createElement("summary"); summary.textContent = label; details.append(summary);
     const row = document.createElement("div"); row.className = "button-row";
-    for (const [action,en,ko] of [["install","Install / update","설치 / 업데이트"],["version","Check version","버전 확인"],["login","Sign in","로그인"]]) {
-      const button = document.createElement("button"); button.type = "button"; button.className = action === "install" ? "primary" : "secondary";
-      button.dataset.agent = agent; button.dataset.agentAction = action; button.textContent = original.language() === "ko" ? ko : en;
-      button.dataset.iosEn = en; button.dataset.iosKo = ko; row.append(button);
-    }
+    const button = document.createElement("button");button.type="button";button.className="primary";
+    button.dataset.agent=agent;button.dataset.agentAction="install";
+    button.dataset.i18n="agent_management_install";button.textContent=window.BibimerI18n.t("agent_management_install");row.append(button);
     const status = document.createElement("p"); status.id = `agent-action-status-${agent}`; status.className = "hint"; status.hidden = true;
     details.append(row,status);
   }
-  const oldApply = window.BibimerI18n.apply;
-  window.BibimerI18n.apply = () => { oldApply(); for (const button of document.querySelectorAll("[data-ios-en]")) button.textContent = original.language() === "ko" ? button.dataset.iosKo : button.dataset.iosEn; };
   for (const selector of ["#manual-setup","#setup-connection-steps","#review-access-open","#app-update-banner","#app-update-card","#bridge-update-card","#forget","[data-command='restart']","[data-i18n='bridge_update_hint']","[data-i18n='agent_termux_return']"]) {
     const element = document.querySelector(selector); if (element) element.classList.add("ios-unavailable");
   }

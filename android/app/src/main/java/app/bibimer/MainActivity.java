@@ -41,7 +41,7 @@ public final class MainActivity extends Activity {
     private VoiceInputController voice;
     private SpeechOutputController speech;
     private static final Set<String> ASSETS = new HashSet<>(Arrays.asList(
-        "index.html", "app.js", "voice-input.js", "speech-output.js", "browser-consent.js", "commands.js", "select.js", "sidebar.js", "inspector.js", "file-viewer.js", "github.js", "agent-connections.js", "terminal-output.js", "worktree-create.js", "bridge-maintenance.js", "app.css", "i18n.js", "i18n-pt-BR.js", "i18n-es.js", "i18n-id.js", "i18n-zh-Hans.js", "i18n-ja.js", "i18n-zh-Hant.js", "i18n-fr.js", "i18n-de.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/mermaid.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
+        "index.html", "app.js", "voice-input.js", "speech-output.js", "browser-consent.js", "commands.js", "select.js", "sidebar.js", "inspector.js", "file-viewer.js", "github.js", "agent-connections.js", "terminal-output.js", "debug-tools.js", "queue-editor.js", "worktree-create.js", "bridge-maintenance.js", "app.css", "i18n.js", "i18n-pt-BR.js", "i18n-es.js", "i18n-id.js", "i18n-zh-Hans.js", "i18n-ja.js", "i18n-zh-Hant.js", "i18n-fr.js", "i18n-de.js", "conversation.js", "rich-text.js", "brand.svg", "fonts/SpaceGrotesk-Bold.woff2", "vendor/marked.js", "vendor/highlight.js", "vendor/mermaid.js", "vendor/xterm.js", "vendor/xterm.css", "vendor/addon-fit.js"));
     private final ExecutorService actions = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<Runnable>(128));
     private final ExecutorService events = Executors.newSingleThreadExecutor();
@@ -54,6 +54,7 @@ public final class MainActivity extends Activity {
     private final java.util.concurrent.atomic.AtomicLong fileEpoch = new java.util.concurrent.atomic.AtomicLong();
     private WebView web;
     private AppScreenCover screenCover;
+    private DebugDiagnostics diagnostics;
     private boolean pageLoaded;
     private long screenTicket;
     private TokenStore tokens;
@@ -132,6 +133,8 @@ public final class MainActivity extends Activity {
         super.onCreate(saved);
         notificationTarget = saved == null ? "{}" : saved.getString("notificationTarget", "{}");
         captureNotification(getIntent());
+        diagnostics = new DebugDiagnostics(this);
+        diagnostics.record("launch", 0);
         tokens = new TokenStore(this);
         language = new AppLanguage(this);
         agentPreferences = new AgentPreferences(this);
@@ -242,6 +245,7 @@ public final class MainActivity extends Activity {
     }
 
     private void reply(String id, JSONObject result, long epoch) {
+        if (diagnostics != null) diagnostics.record(result.optBoolean("ok") ? "request_ok" : "request_failed", result.optInt("status"));
         String source = "window.BibimerNativeReply && window.BibimerNativeReply(" + JSONObject.quote(id) + "," + result + ");";
         runOnUiThread(() -> { if (!destroyed && epoch == DemoMode.epoch()) web.evaluateJavascript(source, null); });
     }
@@ -326,6 +330,7 @@ public final class MainActivity extends Activity {
                 }
                 return new JSONObject().put("paired", !tokens.get().isEmpty())
                     .put("demo", DemoMode.enabled(MainActivity.this))
+                    .put("debugMode", diagnostics.enabled())
                     .put("reviewAccessConfigured", ReviewAccess.configured(ReviewAccessConfig.DIGEST))
                     .put("termuxInstalled", termuxInstalled())
                     .put("termuxX11Installed", getPackageManager().getLaunchIntentForPackage("com.termux.x11") != null)
@@ -676,6 +681,27 @@ public final class MainActivity extends Activity {
             });
         }
 
+        @JavascriptInterface public boolean setDebugMode(boolean enabled) {
+            return diagnostics.setEnabled(enabled);
+        }
+        @JavascriptInterface public void requestDebugDiagnostics(String id) {
+            if (id == null || !id.matches("[a-f0-9-]{36}")) return;
+            runOnUiThread(() -> { if (!destroyed && diagnostics.enabled())
+                script("window.BibimerDebugDiagnostics && window.BibimerDebugDiagnostics(" + JSONObject.quote(id) + "," + JSONObject.quote(diagnostics.snapshot()) + ");"); });
+        }
+        @JavascriptInterface public void clearDebugDiagnostics() { if (diagnostics.enabled()) diagnostics.clear(); }
+        @JavascriptInterface public void copyDebugDiagnostics() {
+            runOnUiThread(() -> { synchronized (diagnostics) {
+                if (destroyed || !diagnostics.enabled()) return;
+                ClipboardManager clipboard = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                clipboard.setPrimaryClip(ClipData.newPlainText("Bibimer diagnostics", diagnostics.snapshot()));
+                script("window.BibimerDebugCopied && window.BibimerDebugCopied();");
+            } });
+        }
+        @JavascriptInterface public void recordDebugEvent(String event, int code) {
+            if ("ui_error".equals(event) || "ui_rejection".equals(event)) diagnostics.record(event, code);
+        }
+
         @JavascriptInterface public void copyText(String text) {
             if (text == null || text.length() > 65536) return;
             runOnUiThread(() -> {
@@ -743,6 +769,7 @@ public final class MainActivity extends Activity {
         resumed = false;
         // A visible DeX / multi-window activity can be paused when another window
         // gains focus. Keep its existing poll and UI state until it is hidden.
+        if (diagnostics != null) diagnostics.record("pause", 0);
         super.onPause();
     }
 
@@ -776,6 +803,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        if (diagnostics != null) diagnostics.record("resume", 0);
         resumed = true;
         if (speech != null) speech.resume();
         refreshLanguage();

@@ -12,7 +12,7 @@ function fixture(paired=false,demo=false){
   classList:{toggle(name,on){on?nodes.get(id).classes.add(name):nodes.get(id).classes.delete(name);}},
   setAttribute(k,v){this.attributes[k]=v;},focus(){events.push(["focus",id]);},scrollIntoView(){events.push(["scroll",id]);}});return nodes.get(id);};
  const session={id:"running",state:"running",mode:"chat"},draft={text:"작성 중인 초안",queue:["대기 중"]};
- const ctx=vm.createContext({$,events,currentTab:"work",pageHistory:[],demo,environment:()=>({paired}),session,draft,
+ const ctx=vm.createContext({$,events,agentConnections:{open:(agent,options)=>events.push(["manager",agent,options.installation])},currentTab:"work",pageHistory:[],demo,environment:()=>({paired}),session,draft,
   closeUsageDetails(){},pickers:{close(){},sync(){}},sidebar:{close(){}},voiceSettings:{render(){}},
   speechOutput:{render(){},syncContext(){}},voiceInput:{update(){}},browserConsent:{render(){},refresh(){}},
   updateTerminalFullscreen(){},updateTerminalKeys(){},updateBackState(){},updateEnvironment(){},setTimeout:fn=>fn(),resize(){}});
@@ -33,7 +33,8 @@ for(const [paired,demo] of [[true,false],[false,true]]){
  assert.equal($("sidebar-open").hidden,true);assert.equal($("app-settings-open").hidden,true);
  assert.ok($("app").classes.has("auxiliary-page"));
  $("settings").scrollTop=317;ctx.openSetupGuide("claude");
- assert.equal(ctx.currentTab,"setup");assert.equal($("claude-install").open,true);
+ assert.equal(ctx.currentTab,"settings");assert.deepEqual(ctx.events.at(-1),["manager","claude",true],"Agent-specific details open the shared manager without adding a setup page");
+ ctx.openSetupGuide();assert.equal(ctx.currentTab,"setup");
  ctx.closePage();assert.equal(ctx.currentTab,"settings");assert.equal($("settings").scrollTop,317);
  ctx.closePage();assert.equal(ctx.currentTab,"work");assert.equal(ctx.pageHistory.length,0);
  assert.equal(ctx.session,session);assert.equal(ctx.draft,draft);assert.equal(draft.text,"작성 중인 초안");assert.deepEqual(draft.queue,["대기 중"]);
@@ -74,6 +75,9 @@ for(const [paired,demo] of [[true,false],[false,true]]){
 assert.ok(!html.includes('class="bottom-nav"'));assert.ok(!html.match(/id="tab-(work|setup|settings)"/));
 for(const id of ["app-settings-open","page-back","setup-guide-open","agent-install-guide"])assert.ok(html.includes('id="'+id+'"'));
 assert.ok(html.indexOf('id="forget"')>html.indexOf('id="settings"'),"Connection management lives in Settings");
-for(const agent of ["codex","claude","opencode","gemini"])assert.ok(html.includes('data-agent-connection="'+agent+'"'));
+assert.ok(html.includes('id="setup-agent-manage"'));
+const setupAgent=html.split('id="agent-setup-section"')[1].split('</section>')[0];
+assert.ok(!setupAgent.includes('agent-install'));assert.ok(!setupAgent.includes('data-agent-action'));
+for(const agent of ["codex","claude","opencode","gemini"])assert.ok(html.indexOf('id="'+agent+'-install"')>html.indexOf('id="agent-connection-dialog"'));
 assert.ok(!html.match(/data-agent="(?:codex|claude|opencode|gemini)" data-agent-action="(?:login|status|version)"/),"The setup guide reuses account management");
 console.log("PASS page navigation: initial guide, paired/offline and demo Work entry, Settings/guide Back stack and scroll, overlay priority, preserved running session/draft/queue, no footer and shared connection management");

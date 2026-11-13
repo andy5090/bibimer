@@ -1,6 +1,27 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "agent_management_accounts": "アカウントとプロバイダー",
+  "agent_management_advanced": "インストール・修復と問題解決",
+  "agent_management_install_hint": "インストールや修復が必要な場合の手順です。既存のバージョン変更は上の更新機能を使ってください。",
+  "agent_management_setup_hint": "設定と同じエージェント管理画面を開きます。必要なものだけをインストールし、既存のアカウントとプロバイダー設定を維持できます。",
+  "agent_management_install": "インストール／修復",
+
+  "queue_edit_current": "キューの現在の内容",
+  "queue_edit": "編集",
+  "queue_edit_title": "待機メッセージを編集",
+  "queue_edit_hint": "キューを一時停止しました。変更を保存し、キューを再開すると送信されます。キャンセルすると元の文面を維持し、一時停止のままにします。",
+  "queue_edit_save": "変更を保存",
+  "queue_edit_saved": "変更を保存しました。送信するにはキューを再開してください。",
+  "error_queue_changed": "このメッセージは変更されました。編集画面を開き直して最新版を確認してください。編集中の内容は保持します。",
+
+  "developer_options": "開発者向けオプション",
+  "debug_mode": "デバッグモード",
+  "debug_mode_hint": "限定的なローカル診断を収集し、画面の文字を選択できます。貼り付けは編集可能な入力欄で行えます。オフにすると診断ログを削除します。",
+  "debug_logs": "診断ログ",
+  "debug_logs_hint": "最大64件のローカル状態イベントを保持します。会話、端末出力、パス、URL、認証情報は含まず、自動送信しません。",
+  "debug_logs_clear": "ログを削除",
+  "debug_save_failed": "デバッグモードを保存できませんでした。以前の選択を維持します。",
   "agent_operation_warning": "一覧にあるこのエージェントのセッションだけを終了します。実行中の応答・コマンドは中断され、キューは失われます。成功後、保存済み会話を再開し、ターミナルを新しく開けます。以前のターミナル出力は復元しません。他のエージェントは継続します。",
   "agent_operation_reopen": "成功後にセッションを再度開く",
   "agent_operation_confirm": "セッションを終了して続行",
@@ -169,9 +190,9 @@ window.BibimerTranslations.ja = {
   "page_up": "前のページ",
   "page_down": "次のページ",
 
-  "connections_title": "エージェントのアカウントとプロバイダー",
-  "connections_hint": "接続とバージョンの確認、プロバイダーの選択、対応するAPIキーの入力をここで行います。",
-  "connections_manage": "接続を管理",
+  "connections_title": "エージェント管理",
+  "connections_hint": "インストール、アカウント、プロバイダー、バージョン更新を一か所で管理します。",
+  "connections_manage": "エージェント管理を開く",
   "connection_refresh": "接続を更新",
   "connection_scope": "Termuxに保存されたエージェントのアカウントを使います。アカウント変更時は確認後にそのエージェントのセッションを終了する場合があります。保存だけではモデルへのアクセスを確認できません。",
   "connection_provider": "プロバイダー",

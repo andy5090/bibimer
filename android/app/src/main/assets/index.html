@@ -36,6 +36,8 @@
   <script src="browser-consent.js" defer></script>
   <script src="voice-input.js" defer></script>
   <script src="speech-output.js" defer></script>
+  <script src="queue-editor.js" defer></script>
+  <script src="debug-tools.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -219,64 +221,8 @@
     </fieldset>
     <section id="agent-setup-section" class="card setup-step">
       <div class="step-heading"><span class="step-number">3</span><h2 data-i18n="agent_setup">Prepare an agent</h2></div>
-      <p data-i18n="agent_body">Start with Terminal to check input and output. Install Codex, Claude Code or OpenCode in Termux and complete the required account authentication, provider connections and model setup.</p>
-      <p class="hint" data-i18n="agent_termux_basis">These configurations were checked on an Android 16 arm64 phone. Versions are reference versions, not automatic updates. A fresh installation on another phone still needs verification.</p>
-      <p class="hint" data-i18n="agent_action_hint">Run each action in a new Termux terminal. Allow command access first; if Termux does not open, open it from its notification. Complete browser login yourself. Check the result in Termux. Command copying is also available below.</p>
-      <div id="agent-diagnostics" aria-live="polite"></div>
-      <details class="agent-install" id="codex-install">
-        <summary>Codex · Termux</summary>
-        <p data-i18n="agent_codex_termux">Use the community Termux package, not the standard Linux binary. This version requires Android 10+ and arm64. If Node.js and npm already work, skip the first command. Check the version, then sign in.</p>
-
-        <button type="button" class="secondary" data-agent-connection="codex" data-i18n="connections_manage">Manage connections</button>
-        <p id="agent-action-status-codex" class="hint" role="status" hidden></p>
-        <div class="command"><code id="codex-dependencies-command">pkg install nodejs-lts npm</code><button data-agent-copy="codex-dependencies-command" data-i18n="copy">Copy</button></div>
-        <div class="command"><code id="codex-install-command">npm install -g @mmmbuto/codex-cli-termux@0.160.0-termux.3</code><button data-agent-copy="codex-install-command" data-i18n="copy">Copy</button></div>
-        <div class="command"><code id="codex-check-command">codex --version</code><button data-agent-copy="codex-check-command" data-i18n="copy">Copy</button></div>
-        <div class="command"><code id="codex-login-command">codex login</code><button data-agent-copy="codex-login-command" data-i18n="copy">Copy</button></div>
-        <div class="button-row"><button data-guide="codex-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="codex" class="quiet" data-i18n="codex_guide">Codex guide ↗</button></div>
-      </details>
-      <details class="agent-install" id="claude-install">
-        <summary>Claude Code · Termux</summary>
-        <p data-i18n="agent_claude_termux">Claude 2.1.283 uses a separate Bibimer runtime. It requires arm64 Termux with glibc and ripgrep. Copy the repair command below and run it in Termux; it includes the Chat SDK. No setup file needs to be saved. If your CLI already works, prepare only the adapter.</p>
-        <div class="button-row"><button data-agent="claude" data-agent-action="repair" data-i18n="claude_action_repair">Repair in Termux</button><button data-agent="claude" data-agent-action="adapter" class="secondary" data-i18n="claude_action_adapter">Set up adapter in Termux</button></div>
-
-        <button type="button" class="secondary" data-agent-connection="claude" data-i18n="connections_manage">Manage connections</button>
-        <p id="agent-action-status-claude" class="hint" role="status" hidden></p>
-        <button data-command="claude-repair" class="secondary full" data-i18n="claude_repair_setup">Copy Claude repair command</button>
-        <div class="command"><code id="claude-check-command">~/.local/share/bibimer/claude-runtime/claude --version</code><button data-agent-copy="claude-check-command" data-i18n="copy">Copy</button></div>
-        <p class="hint" data-i18n="agent_claude_auth_hint">Choose a sign-in method here, then open the browser to authorize your account. If a code is shown, enter it in the masked field in Bibimer. A version check alone does not confirm sign-in.</p>
-        <div class="command"><code id="claude-auth-command">~/.local/share/bibimer/claude-runtime/claude auth status</code><button data-agent-copy="claude-auth-command" data-i18n="copy">Copy</button></div>
-        <div class="command"><code id="claude-login-command">~/.local/share/bibimer/claude-runtime/claude auth login</code><button data-agent-copy="claude-login-command" data-i18n="copy">Copy</button></div>
-        <p class="hint" data-i18n="claude_adapter_hint">Copy the bundled command and run it in Termux. No saved setup file or Downloads access is needed. This installs Node.js and the official Agent SDK; a working Claude CLI is required separately.</p>
-        <button data-command="claude-adapter" class="secondary full" data-i18n="claude_adapter_setup">Copy Claude adapter setup command</button>
-        <div class="button-row"><button data-guide="claude-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="claude" class="quiet" data-i18n="claude_guide">Claude Code guide ↗</button></div>
-      </details>
-      <details class="agent-install" id="opencode-install">
-        <summary>OpenCode · Termux</summary>
-        <p data-i18n="agent_opencode_termux">The checked OpenCode 1.17.13 uses the community OpenClaw Android setup: glibc, proot and a Bun binary wrapper. Installing the ordinary npm package alone does not reproduce it. Follow the Termux details for prerequisites and installation, then check the version and configure your provider connection.</p>
-
-        <button type="button" class="secondary" data-agent-connection="opencode" data-i18n="connections_manage">Manage connections</button>
-        <p class="hint" data-i18n="agent_opencode_provider_hint">Choose a provider in Termux, then configure its API key or supported sign-in method. This sets up OpenCode’s connection to that provider.</p>
-        <p id="agent-action-status-opencode" class="hint" role="status" hidden></p>
-        <div class="button-row"><button data-guide="opencode-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="opencode-source" class="quiet" data-i18n="agent_termux_source">Community installation source ↗</button></div>
-        <div class="command"><code id="opencode-check-command">opencode --version</code><button data-agent-copy="opencode-check-command" data-i18n="copy">Copy</button></div>
-        <div class="command"><code id="opencode-login-command">opencode auth login</code><button data-agent-copy="opencode-login-command" data-i18n="copy">Copy</button></div>
-        <button data-guide="opencode" class="quiet" data-i18n="opencode_guide">OpenCode guide ↗</button>
-      </details>
-      <details class="agent-install" id="gemini-install">
-        <summary>Gemini CLI · Termux</summary>
-        <p data-i18n="agent_gemini_termux">Gemini CLI 0.58.0 is also installed on the checked phone and requires Node.js 20+. Skip installation if it is already present. The Node commands below avoid a launcher path issue in the checked environment. Use Terminal to run it directly; Bibimer agent selection and structured Chat are not integrated. Sign-in and model responses still need verification.</p>
-
-        <button type="button" class="secondary" data-agent-connection="gemini" data-i18n="connections_manage">Manage connections</button>
-        <p id="agent-action-status-gemini" class="hint" role="status" hidden></p>
-        <p class="hint" data-i18n="agent_gemini_login_hint">This opens Gemini CLI. Choose Sign in with Google, or type /auth if it is already signed in. Finish authentication in the browser. This does not add Gemini to Bibimer Chat.</p>
-        <div class="command"><code id="gemini-install-command">npm install -g @google/gemini-cli@0.58.0</code><button data-agent-copy="gemini-install-command" data-i18n="copy">Copy</button></div>
-        <div class="command"><code id="gemini-check-command">node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js" --version</code><button data-agent-copy="gemini-check-command" data-i18n="copy">Copy</button></div>
-        <div class="command"><code id="gemini-start-command">node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js"</code><button data-agent-copy="gemini-start-command" data-i18n="copy">Copy</button></div>
-        <div class="button-row"><button data-guide="gemini-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="gemini" class="quiet" data-i18n="gemini_guide">Gemini CLI guide ↗</button></div>
-      </details>
-      <p class="hint" data-i18n="agent_termux_return">After setup in Termux, return to Bibimer and reconnect. If a bridge update requires a restart, finish active sessions first. Setup does not install all agents automatically.</p>
-      <p class="hint" data-i18n="agent_hint">Finding a program does not confirm Android compatibility or account access. Check each agent's Termux installation and runtime requirements.</p>
+      <p class="hint" data-i18n="agent_management_setup_hint">Use the same agent manager for installation, account connections, providers and updates. Keep existing configurations after setup.</p>
+      <button id="setup-agent-manage" class="secondary full" type="button" data-i18n="connections_manage">Manage agents</button>
     </section>
   </main>
   <main id="settings" class="page scroll" hidden>
@@ -343,7 +289,7 @@
       </fieldset>
       <p id="tts-status" class="hint" role="status"></p>
     </section>
-    <section class="card preference-card"><h2 data-i18n="connections_title">Agent accounts and providers</h2><p class="hint" data-i18n="connections_hint">View connections and versions, choose providers, and enter supported API keys here.</p><div class="button-row"><button id="agent-connections-open" type="button" class="secondary" data-i18n="connections_manage">Manage connections</button><button id="agent-install-guide" type="button" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button></div></section>
+    <section class="card preference-card"><h2 data-i18n="connections_title">Agent management</h2><p class="hint" data-i18n="connections_hint">View connections and versions, choose providers, and enter supported API keys here.</p><div class="button-row"><button id="agent-connections-open" type="button" class="secondary" data-i18n="connections_manage">Manage agents</button></div></section>
     <section id="browser-preference" class="card preference-card" hidden>
       <h2 data-i18n="browser_title">Firefox · Termux:X11</h2>
       <div class="preference-row"><label for="browser-agent-tools" data-i18n="browser_tools_label">Agent connection</label><select id="browser-agent-tools" aria-describedby="browser-default-hint"><option value="on" data-i18n="browser_tools_on">Automatic</option><option value="off" data-i18n="browser_tools_off">Off</option></select></div>
@@ -375,13 +321,35 @@
     </section>
     <p class="hint preferences-saved" data-i18n="app_settings_saved">Saved on this phone for all projects and sessions.</p>
     <div class="button-row"><button type="button" class="quiet" data-guide="privacy" data-i18n="privacy_policy">Privacy policy</button><button id="review-access-open" type="button" class="quiet review-access-link" data-i18n="review_access" aria-haspopup="dialog" aria-controls="review-access-dialog">Review access</button></div>
+    <details id="developer-options" class="developer-options">
+      <summary data-i18n="developer_options">Developer options</summary>
+      <div class="preference-row"><label for="debug-mode" data-i18n="debug_mode">Debug mode</label><input id="debug-mode" type="checkbox" class="settings-switch" role="switch" aria-controls="debug-tools" aria-describedby="debug-mode-hint"></div>
+      <p id="debug-mode-hint" class="hint" data-i18n="debug_mode_hint">Collect limited local diagnostics and select interface text. Paste into editable fields. Turning this off clears diagnostics.</p>
+      <fieldset id="debug-tools" class="feature-settings" hidden disabled><button id="debug-logs-open" class="secondary" type="button" data-i18n="debug_logs">Diagnostic logs</button></fieldset>
+      <p id="debug-status" class="hint" role="status"></p>
+    </details>
     <p id="version" class="version"></p>
   </main>
+  <dialog id="queue-edit-dialog" class="settings-dialog" aria-labelledby="queue-edit-title" aria-describedby="queue-edit-hint">
+    <h2 id="queue-edit-title" data-i18n="queue_edit_title">Edit queued message</h2>
+    <p id="queue-edit-hint" class="hint" data-i18n="queue_edit_hint">The queue is paused. Save your changes, then resume the queue to send. Cancelling keeps the original message and the queue paused.</p>
+    <details id="queue-edit-current" hidden><summary data-i18n="queue_edit_current">Current queued text</summary><pre id="queue-edit-original"></pre></details>
+    <form id="queue-edit-form"><textarea id="queue-edit-text" rows="6" maxlength="16384" data-i18n-aria-label="queue_edit_title" aria-label="Edit queued message"></textarea>
+    <p id="queue-edit-status" class="hint" role="status"></p><div class="button-row"><button id="queue-edit-save" class="primary" type="submit" data-i18n="queue_edit_save">Save changes</button><button id="queue-edit-cancel" class="secondary" type="button" data-i18n="cancel_project">Cancel</button></div></form>
+  </dialog>
+  <dialog id="debug-logs-dialog" class="settings-dialog" aria-labelledby="debug-logs-title">
+    <h2 id="debug-logs-title" data-i18n="debug_logs">Diagnostic logs</h2>
+    <p class="hint" data-i18n="debug_logs_hint">Up to 64 local status events. No conversations, terminal output, paths, URLs or credentials are collected or sent.</p>
+    <textarea id="debug-logs-text" readonly spellcheck="false" data-i18n-aria-label="debug_logs" aria-label="Diagnostic logs"></textarea>
+    <div class="button-row"><button id="debug-logs-refresh" class="secondary" type="button" data-i18n="commands_refresh">Refresh</button><button id="debug-logs-copy" class="secondary" type="button" data-i18n="copy">Copy</button><button id="debug-logs-clear" class="secondary" type="button" data-i18n="debug_logs_clear">Clear logs</button></div>
+    <p id="debug-logs-status" class="hint" role="status"></p><button id="debug-logs-close" class="secondary" type="button" data-i18n="settings_done">Done</button>
+  </dialog>
   <dialog id="agent-connection-dialog" class="settings-dialog" aria-labelledby="agent-connection-title">
-    <div class="sidebar-heading"><h2 id="agent-connection-title" data-i18n="connections_title">Agent accounts and providers</h2><button id="agent-connection-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
+    <div class="sidebar-heading"><h2 id="agent-connection-title" data-i18n="connections_title">Agent management</h2><button id="agent-connection-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
     <label for="agent-connection-agent" data-i18n="program_label">Agent to run</label><select id="agent-connection-agent"><option value="codex">Codex</option><option value="claude">Claude Code</option><option value="opencode">OpenCode</option><option value="gemini">Gemini CLI</option></select>
     <p id="agent-connection-status" class="hint" role="status" aria-live="polite"></p><p id="agent-connection-version" class="hint"></p>
     <div class="button-row"><button id="agent-connection-refresh" class="secondary" type="button" data-i18n="connection_refresh">Refresh connection</button><button id="agent-connection-version-check" class="secondary" type="button" data-i18n="agent_action_version">Check version</button></div>
+    <p id="agent-connection-error" class="hint danger-text" role="alert" hidden></p>
     <section id="agent-connection-updates" hidden>
       <h3 data-i18n="agent_update_title">Agent updates</h3>
       <p class="hint" data-i18n="agent_update_hint">Updates preserve the installation method. End this agent’s sessions and sign-in before updating.</p>
@@ -390,6 +358,8 @@
       <p id="agent-connection-update-status" class="hint" role="status" aria-live="polite"></p>
       <p id="agent-connection-update-recovery-status" class="hint" role="status" hidden></p><ul id="agent-connection-update-recovery-rows" class="maintenance-sessions"></ul><button id="agent-connection-update-recovery-retry" class="secondary" type="button" data-i18n="agent_operation_retry" hidden>Retry reopening failed sessions</button>
     </section>
+    <section id="agent-connection-account">
+    <h3 data-i18n="agent_management_accounts">Account and provider</h3>
     <p class="hint" data-i18n="connection_scope">Uses this agent’s saved account in Termux. Existing sessions stay running. Saved configuration does not verify model access.</p>
     <p id="agent-connection-login-hint" class="hint" data-i18n="connection_native_login_hint">Choose a sign-in method here, then open the browser to authorize your account. If a code is shown, enter it in the masked field in Bibimer. A version check alone does not confirm sign-in.</p>
     <form id="agent-connection-form" autocomplete="off">
@@ -406,9 +376,63 @@
       <form id="agent-connection-code-form" autocomplete="off"><label for="agent-connection-code" data-i18n="connection_code">Authorization code</label><input id="agent-connection-code" type="password" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" required><button id="agent-connection-code-submit" class="primary" type="submit" data-i18n="connection_submit_code">Submit code</button></form>
       <button id="agent-connection-cancel" class="secondary full" type="button" data-i18n="cancel_project">Cancel</button>
     </section>
-    <p id="agent-connection-error" class="hint danger-text" role="alert" hidden></p>
     <p id="agent-connection-fallback-hint" class="hint" data-i18n="connection_terminal_in_app_hint">Open a separate login terminal inside Bibimer.</p>
     <button id="agent-connection-terminal" class="quiet" type="button" data-i18n="connection_terminal_in_app">Sign in in Bibimer terminal</button>
+    </section>
+    <details id="agent-connection-installation" class="agent-install">
+      <summary id="agent-install-guide" data-i18n="agent_management_advanced">Installation, repair and troubleshooting</summary>
+      <p class="hint" data-i18n="agent_management_install_hint">Use these steps when installation or repair is needed. Use the version update controls above for an existing installation.</p>
+      <p class="hint" data-i18n="agent_termux_basis">These configurations were checked on an Android 16 arm64 phone. Versions are reference versions, not automatic updates. A fresh installation on another phone still needs verification.</p>
+      <p class="hint" data-i18n="agent_action_hint">Run each action in a new Termux terminal. Allow command access first; if Termux does not open, open it from its notification. Complete browser login yourself. Check the result in Termux. Command copying is also available below.</p>
+      <div id="agent-diagnostics" aria-live="polite"></div>
+      <details class="agent-install" id="codex-install">
+        <summary>Codex · Termux</summary>
+        <p data-i18n="agent_codex_termux">Use the community Termux package, not the standard Linux binary. This version requires Android 10+ and arm64. If Node.js and npm already work, skip the first command. Check the version, then sign in.</p>
+        <p id="agent-action-status-codex" class="hint" role="status" hidden></p>
+        <div class="command"><code id="codex-dependencies-command">pkg install nodejs-lts npm</code><button data-agent-copy="codex-dependencies-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="codex-install-command">npm install -g @mmmbuto/codex-cli-termux@0.160.0-termux.3</code><button data-agent-copy="codex-install-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="codex-check-command">codex --version</code><button data-agent-copy="codex-check-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="codex-login-command">codex login</code><button data-agent-copy="codex-login-command" data-i18n="copy">Copy</button></div>
+        <div class="button-row"><button data-guide="codex-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="codex" class="quiet" data-i18n="codex_guide">Codex guide ↗</button></div>
+      </details>
+      <details class="agent-install" id="claude-install">
+        <summary>Claude Code · Termux</summary>
+        <p data-i18n="agent_claude_termux">Claude 2.1.283 uses a separate Bibimer runtime. It requires arm64 Termux with glibc and ripgrep. Copy the repair command below and run it in Termux; it includes the Chat SDK. No setup file needs to be saved. If your CLI already works, prepare only the adapter.</p>
+        <div class="button-row"><button data-agent="claude" data-agent-action="repair" data-i18n="claude_action_repair">Repair in Termux</button><button data-agent="claude" data-agent-action="adapter" class="secondary" data-i18n="claude_action_adapter">Set up adapter in Termux</button></div>
+        <p id="agent-action-status-claude" class="hint" role="status" hidden></p>
+        <button data-command="claude-repair" class="secondary full" data-i18n="claude_repair_setup">Copy Claude repair command</button>
+        <div class="command"><code id="claude-check-command">~/.local/share/bibimer/claude-runtime/claude --version</code><button data-agent-copy="claude-check-command" data-i18n="copy">Copy</button></div>
+        <p class="hint" data-i18n="agent_claude_auth_hint">Choose a sign-in method here, then open the browser to authorize your account. If a code is shown, enter it in the masked field in Bibimer. A version check alone does not confirm sign-in.</p>
+        <div class="command"><code id="claude-auth-command">~/.local/share/bibimer/claude-runtime/claude auth status</code><button data-agent-copy="claude-auth-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="claude-login-command">~/.local/share/bibimer/claude-runtime/claude auth login</code><button data-agent-copy="claude-login-command" data-i18n="copy">Copy</button></div>
+        <p class="hint" data-i18n="claude_adapter_hint">Copy the bundled command and run it in Termux. No saved setup file or Downloads access is needed. This installs Node.js and the official Agent SDK; a working Claude CLI is required separately.</p>
+        <button data-command="claude-adapter" class="secondary full" data-i18n="claude_adapter_setup">Copy Claude adapter setup command</button>
+        <div class="button-row"><button data-guide="claude-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="claude" class="quiet" data-i18n="claude_guide">Claude Code guide ↗</button></div>
+      </details>
+      <details class="agent-install" id="opencode-install">
+        <summary>OpenCode · Termux</summary>
+        <p data-i18n="agent_opencode_termux">The checked OpenCode 1.17.13 uses the community OpenClaw Android setup: glibc, proot and a Bun binary wrapper. Installing the ordinary npm package alone does not reproduce it. Follow the Termux details for prerequisites and installation, then check the version and configure your provider connection.</p>
+        <p class="hint" data-i18n="agent_opencode_provider_hint">Choose a provider in Termux, then configure its API key or supported sign-in method. This sets up OpenCode’s connection to that provider.</p>
+        <p id="agent-action-status-opencode" class="hint" role="status" hidden></p>
+        <div class="button-row"><button data-guide="opencode-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="opencode-source" class="quiet" data-i18n="agent_termux_source">Community installation source ↗</button></div>
+        <div class="command"><code id="opencode-check-command">opencode --version</code><button data-agent-copy="opencode-check-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="opencode-login-command">opencode auth login</code><button data-agent-copy="opencode-login-command" data-i18n="copy">Copy</button></div>
+        <button data-guide="opencode" class="quiet" data-i18n="opencode_guide">OpenCode guide ↗</button>
+      </details>
+      <details class="agent-install" id="gemini-install">
+        <summary>Gemini CLI · Termux</summary>
+        <p data-i18n="agent_gemini_termux">Gemini CLI 0.58.0 is also installed on the checked phone and requires Node.js 20+. Skip installation if it is already present. The Node commands below avoid a launcher path issue in the checked environment. Use Terminal to run it directly; Bibimer agent selection and structured Chat are not integrated. Sign-in and model responses still need verification.</p>
+        <p id="agent-action-status-gemini" class="hint" role="status" hidden></p>
+        <p class="hint" data-i18n="agent_gemini_login_hint">This opens Gemini CLI. Choose Sign in with Google, or type /auth if it is already signed in. Finish authentication in the browser. This does not add Gemini to Bibimer Chat.</p>
+        <div class="command"><code id="gemini-install-command">npm install -g @google/gemini-cli@0.58.0</code><button data-agent-copy="gemini-install-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="gemini-check-command">node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js" --version</code><button data-agent-copy="gemini-check-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="gemini-start-command">node "$(npm root -g)/@google/gemini-cli/bundle/gemini.js"</code><button data-agent-copy="gemini-start-command" data-i18n="copy">Copy</button></div>
+        <div class="button-row"><button data-guide="gemini-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="gemini" class="quiet" data-i18n="gemini_guide">Gemini CLI guide ↗</button></div>
+      </details>
+      <p class="hint" data-i18n="agent_termux_return">After setup in Termux, return to Bibimer and reconnect. If a bridge update requires a restart, finish active sessions first. Setup does not install all agents automatically.</p>
+      <p class="hint" data-i18n="agent_hint">Finding a program does not confirm Android compatibility or account access. Check each agent's Termux installation and runtime requirements.</p>
+
+    </details>
   </dialog>
   <dialog id="agent-operation-dialog" class="settings-dialog" aria-labelledby="agent-operation-title">
     <h2 id="agent-operation-title" data-i18n="agent_operation_title">End sessions and continue</h2>

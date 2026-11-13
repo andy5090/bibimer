@@ -1,6 +1,27 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "agent_management_accounts": "Akun dan penyedia",
+  "agent_management_advanced": "Instalasi, perbaikan, dan pemecahan masalah",
+  "agent_management_install_hint": "Gunakan langkah ini untuk instalasi atau perbaikan. Ubah versi yang sudah terpasang melalui kontrol pembaruan di atas.",
+  "agent_management_setup_hint": "Buka pengelola agen yang sama dengan Pengaturan. Instal hanya yang diperlukan dan pertahankan akun serta penyedia yang ada.",
+  "agent_management_install": "Instal / perbaiki",
+
+  "queue_edit_current": "Teks antrean saat ini",
+  "queue_edit": "Edit",
+  "queue_edit_title": "Edit pesan antrean",
+  "queue_edit_hint": "Antrean dijeda. Simpan perubahan, lalu lanjutkan antrean untuk mengirim. Membatalkan mempertahankan pesan asli dan antrean tetap dijeda.",
+  "queue_edit_save": "Simpan perubahan",
+  "queue_edit_saved": "Perubahan disimpan. Lanjutkan antrean saat siap mengirim.",
+  "error_queue_changed": "Pesan ini telah berubah. Buka kembali editor untuk memeriksa versi terbaru. Edit Anda dipertahankan.",
+
+  "developer_options": "Opsi pengembang",
+  "debug_mode": "Mode debug",
+  "debug_mode_hint": "Kumpulkan diagnostik lokal terbatas dan pilih teks antarmuka. Tempel di kolom yang dapat diedit. Menonaktifkan akan menghapus diagnostik.",
+  "debug_logs": "Log diagnostik",
+  "debug_logs_hint": "Maksimal 64 peristiwa status lokal. Percakapan, keluaran terminal, jalur, URL, dan kredensial tidak disertakan. Tidak dikirim otomatis.",
+  "debug_logs_clear": "Hapus log",
+  "debug_save_failed": "Tidak dapat menyimpan mode debug. Pilihan sebelumnya dipertahankan.",
   "agent_operation_warning": "Hanya sesi agen yang tercantum akan diakhiri. Respons dan perintah aktif berhenti, dan antrean hilang. Setelah berhasil, chat tersimpan dapat dilanjutkan dan terminal dimulai baru. Keluaran terminal lama tidak dipulihkan. Agen lain tetap berjalan.",
   "agent_operation_reopen": "Buka kembali sesi setelah berhasil",
   "agent_operation_confirm": "Akhiri sesi dan lanjutkan",
@@ -169,9 +190,9 @@ window.BibimerTranslations.id = {
   "page_up": "Halaman atas",
   "page_down": "Halaman bawah",
 
-  "connections_title": "Akun dan penyedia agen",
-  "connections_hint": "Lihat koneksi dan versi, pilih penyedia, dan masukkan kunci API yang didukung di sini.",
-  "connections_manage": "Kelola koneksi",
+  "connections_title": "Pengelolaan agen",
+  "connections_hint": "Kelola instalasi, akun, penyedia, dan pembaruan versi di satu tempat.",
+  "connections_manage": "Buka pengelola agen",
   "connection_refresh": "Segarkan koneksi",
   "connection_scope": "Menggunakan akun agen yang disimpan di Termux. Perubahan akun mungkin memerlukan penghentian sesi agen tersebut setelah konfirmasi. Penyimpanan tidak memverifikasi akses model.",
   "connection_provider": "Penyedia",

@@ -1,6 +1,27 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["pt-BR"] = {
+  "agent_management_accounts": "Conta e provedor",
+  "agent_management_advanced": "Instalação, reparo e solução de problemas",
+  "agent_management_install_hint": "Use estas etapas para instalar ou reparar. Para mudar uma versão existente, use os controles de atualização acima.",
+  "agent_management_setup_hint": "Abra o mesmo gerenciador das Configurações. Instale apenas o necessário e mantenha as contas e provedores existentes.",
+  "agent_management_install": "Instalar / reparar",
+
+  "queue_edit_current": "Texto atual na fila",
+  "queue_edit": "Editar",
+  "queue_edit_title": "Editar mensagem na fila",
+  "queue_edit_hint": "A fila está pausada. Salve as alterações e retome a fila para enviar. Cancelar mantém a mensagem original e a fila pausada.",
+  "queue_edit_save": "Salvar alterações",
+  "queue_edit_saved": "Alterações salvas. Retome a fila quando quiser enviar.",
+  "error_queue_changed": "Esta mensagem mudou. Reabra o editor para conferir a versão atual. Sua edição foi mantida.",
+
+  "developer_options": "Opções de desenvolvedor",
+  "debug_mode": "Modo de depuração",
+  "debug_mode_hint": "Coleta diagnósticos locais limitados e permite selecionar textos da interface. Cole em campos editáveis. Desativar apaga os diagnósticos.",
+  "debug_logs": "Registros de diagnóstico",
+  "debug_logs_hint": "Até 64 eventos locais de estado. Conversas, saída do terminal, caminhos, URLs e credenciais são excluídos. Sem envio automático.",
+  "debug_logs_clear": "Apagar registros",
+  "debug_save_failed": "Não foi possível salvar o modo de depuração. A opção anterior foi mantida.",
   "agent_operation_warning": "Somente as sessões listadas deste agente serão encerradas. Respostas e comandos em execução param, e as filas são perdidas. Após o sucesso, conversas salvas podem continuar e terminais iniciam de novo. A saída anterior não é restaurada. Outros agentes continuam.",
   "agent_operation_reopen": "Reabrir sessões após o sucesso",
   "agent_operation_confirm": "Encerrar sessões e continuar",
@@ -169,9 +190,9 @@ window.BibimerTranslations["pt-BR"] = {
   "page_up": "Página anterior",
   "page_down": "Próxima página",
 
-  "connections_title": "Contas e provedores dos agentes",
-  "connections_hint": "Consulte conexões e versões, escolha provedores e informe chaves de API compatíveis aqui.",
-  "connections_manage": "Gerenciar conexões",
+  "connections_title": "Gerenciar agentes",
+  "connections_hint": "Gerencie instalação, contas, provedores e atualizações em um só lugar.",
+  "connections_manage": "Abrir gerenciador de agentes",
   "connection_refresh": "Atualizar conexão",
   "connection_scope": "Usa a conta do agente salva no Termux. Alterar a conta pode exigir encerrar as sessões desse agente após confirmação. Salvar não verifica o acesso aos modelos.",
   "connection_provider": "Provedor",

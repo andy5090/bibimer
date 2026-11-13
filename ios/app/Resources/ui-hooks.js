@@ -65,7 +65,7 @@
   };
   iosRenderReconnect();
   const iosConnect = connect;
-  $("ios-connection-diagnostics-copy").addEventListener("click", () => native.copyConnectionDiagnostics());
+  $("ios-connection-diagnostics-copy").addEventListener("click", () => { if(environment().debugMode===true)native.copyConnectionDiagnostics(); });
   window.BibimerIOSDiagnosticsCopied = () => {
     const button = $("ios-connection-diagnostics-copy");
     button.textContent = t("copied");
@@ -232,9 +232,13 @@
   }});
   window.BibimerIOSAgentAction = async (agent, action) => {
     if (!online || !["codex","claude","opencode","gemini"].includes(agent) || !["install","version","login"].includes(action)) return;
+    const sourceInstance=instance, sourceProject=projectKey(), managerState=agentConnections.state;
     try {
       const result = await api("POST", "/v1/ios/agents", {agent,action,project_id:projectKey(),request_id:uuid()});
+      if(instance!==sourceInstance||projectKey()!==sourceProject||paused)return;
+      if(agentConnections.state===managerState&&agentConnections.dialog.open)agentConnections.dialog.close();
       await refreshCatalog();
+      if(instance!==sourceInstance||projectKey()!==sourceProject||paused)return;
       const destination = result.session;
       if (destination?.project?.id && destination.id) await selectSession(destination.project.id,destination.id);
       else if (destination?.id) await selectSession(projectKey(),destination.id);

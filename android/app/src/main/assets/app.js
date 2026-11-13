@@ -4,6 +4,7 @@
   const native = window.Bibimer;
   const i18n = window.BibimerI18n;
   const t = i18n.t;
+  const debugTools = window.BibimerDebugTools ? new window.BibimerDebugTools(t, native, environment) : {pause(){}};
   const pending = new Map();
   let serial = 0, online = false, paused = false, session = null, cursor = 0;
   let instance = null, activePoll = false, retryTimer = null, generation = 0, busy = false;
@@ -25,6 +26,7 @@
   let importCursor = null, importSearch = "", importTicket = 0, importLoading = false, importError = null;
   let canOptions = false, canLiveOptions = false, settingsBusy = false, pendingOptions = null;
   let canCreateWorktrees = false;
+  let canQueueEdit = false;
   let canQueue = false, canBatchQueue = false, canSteer = false, canClaudeSteer = false, canQueueSteer = false, queued = [], queueRevision = -1, queueSignature = "";
   let canCommands = false, canHandoff = false, handoff = null;
   let canModels = false, canSwitchAgents = false, selectedAgent = "shell";
@@ -129,7 +131,7 @@
   setInterval(() => void browserConsent.refresh(), 2000);
 
   const agentConnections = new BibimerAgentConnections(t,
-    () => ({online:online && !switchingProject, supported:canConnections, loginTerminal:canLoginTerminal, loginUI:canLoginUI, updates:canAgentUpdates, maintenance:canAgentMaintenance, paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
+    () => ({online:online && !switchingProject, supported:canConnections, loginTerminal:canLoginTerminal, loginUI:canLoginUI, updates:canAgentUpdates, maintenance:canAgentMaintenance, agents:knownAgents, platform:environment().platform||"android", paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
     data => api("POST", "/v1/agent-connections", data),
     {sync:() => pickers.sync(), uuid:uuid, link:url => native.openLink(url), title:id => {const row=findSession(id);return row?sessionTitle(row):id.slice(0,8);},
      updates:data => api("POST", "/v1/agent-updates", data),
@@ -166,6 +168,13 @@
       mode:session?.mode || $("mode").value, supported:canCommands, enabled:!$("input").disabled && ["codex", "claude", "opencode"].includes(agent)};
   }, data => api("POST", "/v1/commands", data));
 
+  const queueEditor = window.BibimerQueueEditor ? new window.BibimerQueueEditor(t,
+    () => ({instance,project:projectKey(),session:session?.id,launch:session?.launch_id,supported:canQueueEdit,
+      online:online&&!switchingProject,paused,work:currentTab==="work",running:session?.state==="running"&&isChat()}),
+    (id,data) => api("POST", `/v1/sessions/${id}/queue`, data), {
+      uuid,invocation:text=>commands.invocation(text),changed:()=>renderQueue(),error:notice,
+      accept:(result,id)=>{if(session?.id===id){setSession(result.session);updateQueue(result);}}
+    }) : null;
   const voiceInput = new BibimerVoiceInput($("input"), $("voice-input"), $("voice-status"), t,
     () => JSON.stringify([instance, projectKey(), viewKey(), selectedAgent,
       session?.project?.path || draftPath || project?.path, session?.mode || $("mode").value, currentTab]),
@@ -417,19 +426,18 @@
     renderQuickSetup();
   }
   function updateEnvironment() {
-    agentConnections.update();
     renderNotificationSettings();
     renderAppUpdates(); renderBridgeUpdate();
     const env = environment();
     $("demo-banner").hidden = !demo;
     $("demo-settings-card").hidden = !demo;
     $("review-access-open").hidden = demo;
-    for (const id of ["agent-connections-open", "forget", "open-termux", "setup-open-termux", "quick-open-termux", "quick-app-permissions", "export-installer", "pair"]) $(id).disabled = demo;
+    for (const id of ["setup-agent-manage", "agent-connections-open", "forget", "open-termux", "setup-open-termux", "quick-open-termux", "quick-app-permissions", "export-installer", "pair"]) $(id).disabled = demo;
     $("termux-status").textContent = t(env.termuxInstalled ? "installed" : "install_needed");
     $("termux-status").className = "badge" + (env.termuxInstalled ? " connected" : "");
     $("reconnect-welcome").hidden = !env.paired;
     for (const button of document.querySelectorAll("[data-agent-action]")) button.disabled = demo;
-    for (const button of document.querySelectorAll("[data-agent-connection]")) button.disabled = demo;
+    agentConnections.update();
     renderQuickSetup(env);
   }
   function renderSetupConnection() {
@@ -953,6 +961,7 @@
     pickers.close();
     sidebar.close();
     currentTab = name;
+    if (typeof queueEditor !== "undefined") queueEditor?.update();
     if (typeof terminalOutput !== "undefined") terminalOutput?.update();
     $("app").classList.toggle("auxiliary-page", name !== "work");
     $("sidebar-open").hidden = name !== "work";
@@ -985,11 +994,8 @@
     if (currentTab === "settings") $("setup-guide-open").focus({preventScroll:true});
   }
   function openSetupGuide(agent = null) {
+    if (agent) { void agentConnections.open(agent, {installation:true}); return; }
     tab("setup");
-    if (agent) {
-      const details = $(agent + "-install");
-      if (details) { details.open = true; details.scrollIntoView({block:"start"}); }
-    }
   }
   function openInitialPage() {
     // Pairing survives a temporary outage. An existing installation stays in Work.
@@ -1244,6 +1250,7 @@
     $("subscription-updated").textContent = observed > 0 && observed <= 253402300799 ? t("subscription_updated", {time:new Date(observed * 1000).toLocaleString(i18n.language())}) : "";
   }
   function renderSession() {
+    if (typeof queueEditor !== "undefined") queueEditor?.update();
     if (typeof terminalOutput !== "undefined") terminalOutput?.update();
     renderConnectionRecovery();
     renderBrowser();
@@ -1441,6 +1448,7 @@
       canSteer = health.features?.includes("codex_steer") === true;
       canClaudeSteer = health.features?.includes("claude_steer") === true;
       canQueueSteer = health.features?.includes("queue_steer") === true;
+      canQueueEdit = health.features?.includes("queue_edit") === true;
       canModels = health.features?.includes("model_options") === true;
       canSwitchAgents = health.features?.includes("agent_sessions") === true;
       canLibrary = health.features?.includes("session_library") === true;
@@ -1606,7 +1614,12 @@
   function updateQueue(event) {
     if (event.session?.id !== session?.id || !Array.isArray(event.queue) || event.session.output_end < queueRevision) return;
     queued = event.queue;
+    let edited = false;
+    for (const row of queued) if (row.edit_revision > 0) {
+      edited = (row.command ? optimisticMessages.remove(row.id) : optimisticMessages.editQueued(row.id, row.text)) || edited;
+    }
     queueRevision = event.session.output_end;
+    if (edited) renderSession();
     renderQueue();
   }
   function supportsSteer() {
@@ -1616,11 +1629,11 @@
     $("chat-queue").hidden = !isChat() || !queued.length;
     $("queue-count").textContent = t(session?.queue_paused ? "queue_paused" : "queue_count", {count:queued.length});
     $("queue-resume").hidden = !session?.queue_paused;
-    $("queue-resume").disabled = !online || session?.state !== "running" || sending.has(session?.id) ||
+    $("queue-resume").disabled = !!queueEditor?.editing(session?.id) || !online || session?.state !== "running" || sending.has(session?.id) ||
       queued.some(entry => ["steering", "uncertain"].includes(entry.state));
     const steerable = isChat() && supportsSteer() && !!session.active_turn_id && ["running", "waiting"].includes(session.turn_state);
     const signature = JSON.stringify([session?.id, queued, online, session?.state, session?.active_turn_id, steerable, canQueueSteer, canSteer, canClaudeSteer, session?.can_steer,
-      settingsBusy, switchingProject, sending.has(session?.id), i18n.language()]);
+      settingsBusy, switchingProject, sending.has(session?.id), canQueueEdit, !!queueEditor?.editing(session?.id), i18n.language()]);
     if (signature === queueSignature) return;
     queueSignature = signature;
     const target = session?.id, turn = session?.active_turn_id;
@@ -1641,6 +1654,12 @@
           settingsBusy || switchingProject || sending.has(target);
         steer.addEventListener("click", () => changeQueue(target, "steer", entry.id, turn));
         row.append(steer);
+      }
+      if (canQueueEdit) {
+        const edit=document.createElement("button");edit.type="button";edit.className="quiet";edit.dataset.queueAction="edit";
+        edit.textContent=t("queue_edit");edit.disabled=!online||session?.state!=="running"||!["queued","failed"].includes(entry.state)||
+          sending.has(target)||!!queueEditor?.editing(target)||settingsBusy||switchingProject;
+        edit.addEventListener("click",()=>void queueEditor?.open(entry));row.append(edit);
       }
       const remove = document.createElement("button");
       remove.type = "button"; remove.className = "quiet"; remove.textContent = t("queue_remove");
@@ -2233,7 +2252,7 @@
   $("app-settings-open").addEventListener("click", () => tab("settings"));
   $("page-back").addEventListener("click", closePage);
   $("setup-guide-open").addEventListener("click", () => openSetupGuide());
-  $("agent-install-guide").addEventListener("click", () => openSetupGuide(selectedAgent === "shell" ? "codex" : selectedAgent));
+  $("setup-agent-manage").addEventListener("click", () => void agentConnections.open(selectedAgent === "shell" ? "codex" : selectedAgent, {installation:!online}));
   $("go-setup").addEventListener("click", () => openSetupGuide());
   for (const id of ["demo-settings-exit", "demo-exit-banner"]) $(id).addEventListener("click", () => {
     ++generation; paused = true; clearTimeout(retryTimer); native.cancelPoll?.(); native.setDemoMode?.(false);
@@ -2311,9 +2330,6 @@
     const status = $("agent-action-status-" + agent);
     status.dataset.i18n = code; status.textContent = t(code); status.hidden = false;
   };
-  for (const button of document.querySelectorAll("[data-agent-connection]")) button.addEventListener("click", () => {
-    if (!demo && !paused && !button.disabled) void agentConnections.open(button.dataset.agentConnection);
-  });
   for (const button of document.querySelectorAll("[data-agent-action]")) button.addEventListener("click", () => {
     if (demo || paused || button.disabled) return;
     try {
@@ -2414,7 +2430,8 @@
     $("terminal-functions-toggle").setAttribute("aria-expanded", String(!panel.hidden));
     if (!panel.hidden) $("terminal-keys").scrollIntoView({block: "nearest"});
   });
-  window.BibimerPause = () => { native.stopSpeechOutput?.(); agentConnections.pause(); pickers.close(); paused = true; if (typeof terminalOutput !== "undefined") terminalOutput?.update(); browserConsent.render(); updateTerminalKeys(); ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
+  window.BibimerPause = () => {
+    debugTools.pause(); queueEditor?.pause(); native.stopSpeechOutput?.(); agentConnections.pause(); pickers.close(); paused = true; if (typeof terminalOutput !== "undefined") terminalOutput?.update(); browserConsent.render(); updateTerminalKeys(); ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
   $("language").addEventListener("change", () => {
     try {
       if (!native.setLanguage($("language").value)) throw new Error();

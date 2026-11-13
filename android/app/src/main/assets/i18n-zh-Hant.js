@@ -1,6 +1,27 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "agent_management_accounts": "帳戶與供應商",
+  "agent_management_advanced": "安裝、修復與疑難排解",
+  "agent_management_install_hint": "需要安裝或修復時使用這些步驟。變更現有版本請使用上方的更新功能。",
+  "agent_management_setup_hint": "開啟與設定相同的代理程式管理畫面。只安裝需要的代理程式，並保留現有帳戶與供應商設定。",
+  "agent_management_install": "安裝／修復",
+
+  "queue_edit_current": "目前佇列內容",
+  "queue_edit": "編輯",
+  "queue_edit_title": "編輯待傳送訊息",
+  "queue_edit_hint": "佇列已暫停。儲存修改後，恢復佇列即可傳送。取消將保留原文，佇列仍暫停。",
+  "queue_edit_save": "儲存修改",
+  "queue_edit_saved": "已儲存修改。準備傳送時請恢復佇列。",
+  "error_queue_changed": "此訊息已變更。請重新開啟編輯器查看最新版本。保留了你的修改內容。",
+
+  "developer_options": "開發者選項",
+  "debug_mode": "偵錯模式",
+  "debug_mode_hint": "收集有限的本機診斷資訊並允許選取介面文字。可在可編輯的輸入欄貼上。關閉後清除診斷記錄。",
+  "debug_logs": "診斷記錄",
+  "debug_logs_hint": "最多保留 64 筆本機狀態事件。不包含對話、終端輸出、路徑、URL 或認證資訊。不會自動傳送。",
+  "debug_logs_clear": "清除記錄",
+  "debug_save_failed": "無法儲存偵錯模式。保留先前的選擇。",
   "agent_operation_warning": "只會結束清單中此代理的工作階段。執行中的回覆和命令會停止，佇列會遺失。成功後可繼續已儲存的對話，終端機會重新啟動。不還原舊終端機輸出。其他代理繼續執行。",
   "agent_operation_reopen": "成功後重新開啟工作階段",
   "agent_operation_confirm": "結束工作階段並繼續",
@@ -169,9 +190,9 @@ window.BibimerTranslations["zh-Hant"] = {
   "page_up": "向上翻頁",
   "page_down": "向下翻頁",
 
-  "connections_title": "代理程式帳戶與供應商",
-  "connections_hint": "在此檢視連線和版本、選擇供應商並輸入支援的 API 金鑰。",
-  "connections_manage": "管理連線",
+  "connections_title": "代理程式管理",
+  "connections_hint": "在同一處管理安裝、帳戶、供應商和版本更新。",
+  "connections_manage": "開啟代理程式管理",
   "connection_refresh": "重新整理連線",
   "connection_scope": "使用儲存在 Termux 的代理程式帳戶。變更帳戶可能需要在確認後結束該代理程式的工作階段。儲存不代表已驗證模型存取權。",
   "connection_provider": "供應商",

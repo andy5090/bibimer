@@ -10,7 +10,14 @@
     }
     list(context) { return [...this.rows.values()].filter(row => row.context === context); }
     settle(id, state) { if (this.rows.has(id)) this.rows.get(id).state = state; }
-    remove(id) { this.rows.delete(id); }
+    editQueued(id, text) {
+      const row = this.rows.get(id);
+      if (row && ["queued", "accepted"].includes(row.state) && (row.text !== text || row.state !== "queued")) {
+        row.text = text; row.state = "queued"; return true;
+      }
+      return false;
+    }
+    remove(id) { return this.rows.delete(id); }
     move(from, to) { for (const row of this.rows.values()) if (row.context === from) row.context = to; }
     reconcile(context, items) {
       const replacements = [];

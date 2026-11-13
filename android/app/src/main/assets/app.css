@@ -700,3 +700,20 @@ input.settings-switch:disabled { opacity:.4; cursor:default; }
 #agent-connection-status[data-loading="true"]::before{content:"";display:inline-block;vertical-align:-2px;width:12px;height:12px;margin-right:7px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:account-loading-spin 1s linear infinite}
 @keyframes account-loading-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){#agent-connection-status[data-loading="true"]::before{animation:none}}
+
+/* Deliberate opt-in; no labels become editable and password protection is retained. */
+.developer-options{margin:16px 0 0;color:var(--muted);font-size:12px}
+.developer-options>summary{padding:8px 0;cursor:pointer}
+.developer-options>.preference-row{margin-top:12px}
+body.debug-mode,body.debug-mode *{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}
+body.debug-mode input[type="password"]{-webkit-text-security:disc}
+#debug-logs-text{display:block;width:100%;height:42dvh;min-height:120px;margin:10px 0;font:12px/1.5 monospace;white-space:pre;overflow:auto}
+
+#queue-edit-text{display:block;width:100%;min-height:140px;max-height:50dvh;resize:vertical;margin:10px 0;font:inherit}
+.queue-entry{flex-wrap:wrap}
+.queue-entry>div{flex-basis:50%}
+#queue-edit-original{white-space:pre-wrap;overflow-wrap:anywhere;max-height:20dvh;overflow:auto;font:inherit}
+
+#agent-connection-installation{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+#agent-connection-installation>summary{font-size:12px;color:var(--muted)}
+#agent-connection-installation .agent-install{margin-top:12px}
