@@ -96,9 +96,9 @@ html, body { width:100%; max-width:100%; height:100%; overflow:hidden; touch-act
 #conversation .markdown code { font-size:.87em; }
 #conversation .markdown .literal-html { font-size:calc(12px * var(--ios-chat-text-scale, 1)); }
 #conversation .command .activity-title, #conversation .file-change>summary .activity-title { font-size:calc(11px * var(--ios-chat-text-scale, 1)); }
-#conversation .diff-viewport { font-size:calc(11px * var(--ios-chat-text-scale, 1)); }
+#conversation .diff-viewport { font-size:calc(10px * var(--ios-chat-text-scale, 1)); }
 #conversation .diff-line code { font-size:inherit; }
-#conversation .diff-numbers { font-size:calc(10px * var(--ios-chat-text-scale, 1)); }
+#conversation .diff-numbers { font-size:calc(9px * var(--ios-chat-text-scale, 1)); }
 </style>
 </head>''')
     (destination / 'index.html').write_text(index)
