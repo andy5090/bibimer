@@ -1,5 +1,12 @@
 # iOS 앱 검증 기록
 
+## 2026-11-13 — 0.1.0(13) 최종 통합 소스 검증·업로드
+
+- 검증한 소스는2cc4e7e다. 최신 공통 관리/디버그/대기열 편집과 Claude 모델/로그인 보완을 포함한다. 실제 Claude4개30.260초/격리 HOME·동시 health86회 성공 근거는 앞선 Claude 수정 검사를 유지하며 이번에는 사용자 계정/OAuth/모델을 호출하지 않았다.
+- Xcode27.2 양 SDK 컴파일·앱 Python33·브리지82(26.17초)·앱/공통 Node23파일·984키×10언어·패키징 계정 복귀 브라우저/모바일·언어20배치·main/AccountInput/AccountBrowser/BackgroundExecution/RuntimeSupport 정적분석 진단0을 통과했다. 실제 전용 QA WKWebView/Linux32개는41.95초·JS오류0·fatal0·진단실패0이다. 모의 정책20개/기존 syscall151/152 경고4개·기존 unused parameter 경고16개를 구분한다. 증빙 `.tools/ios-tf13-*`, `dist/ios-app/testflight13-nov13-smoke/`.
+- archive/arm64/Scene/SDK/dSYM·기존 팀/번들 배포 서명과 현재 소스→manifest→로컬 export IPA 자산(웹67·게스트18·네이티브11/17소스·현지화20·rootfs426) 일치를 확인했다. 로컬 IPA8,654,116bytes/SHA-256 `06e765875653aa4b618c17ff79ac06e156fec9475ac7186e0df03990d2bb4e15`이며15:41:51KST Xcode 업로드 exit0/성공을 확인했다.
+- 화면 제어 도구 연결 실패로 Apple 처리 결과/내부 그룹 제공은 아직 미확인이다. [배포 기록](TESTFLIGHT.md)의 미완료 상태를 따른다. 실제 기기 OAuth·보안 입력/클립보드/localhost callback·잠금/백그라운드 허가는 별도 확인이다.
+
 ## 2026-11-13 — Claude 모델/로그인 복귀·수동 코드 후속 수정 (미배포)
 
 - 최신 eadff43 동기화 확인 후 `ios/bridge/run.py`에서 Claude의 Android8초 metadata 경로를 iOS125초/Chat135초로 맞췄다. 전용 QA 실제 CLI의 원본 응답은 초기화3.684초/모델4개29.194초였으며, 수정한 실제 HistoryClient 검사는4개30.260초로 통과했다. 격리 HOME의 signed-out25.225초·변환 CLI 실행21.401초, 동시 health86회 성공/최대350ms·실패0이다. 증빙 `.tools/claude-guest-diagnosis/verified-real-cli-metadata.json`과 선택형 실제 패키지 probe를 유지한다.
