@@ -1,5 +1,11 @@
 # Bibimer 다음 세션 시작점
 
+## 레포 싱크·Claude 수정과 최신 공통 기능 통합 (2026-11-13)
+
+- 사용자 요청으로 원격을 확인해 새2커밋02ee3fb/412ed71을 fast-forward로 반영한 뒤 로컬 Claude metadata/수동 인증/복귀 확인·실제 CLI 검사·검증 기록을5개 논리 커밋으로 보존했다. NEXT_SESSION 충돌은 로컬11줄과 원격36줄의 모든 기록을 유지했다. ui-hooks의 원격 debugMode 게이트/늦은 설치 응답 가드와 로컬 계정 poll/정상 종료 뒤 상태 조회를 함께 유지했다. 강제 푸시/공유 main rebase는 하지 않았다.
+- 통합 후 Mac에서 iOS 브리지82개(25.99초)·앱 Python33개·공유 대기열18개·앱/공통 Node22파일·984키×10언어와 패키징 Chromium 계정 복귀 검사(활성 세션 유무·같은 job 완료·재전송/재열기 없음)를 통과했다. 공유 페이지 이동 테스트의 부분 추출 fixture에 새 인증 조회 함수/카운터를 연결하고 설정 왕복의 호출을 확인했다. 제품 동작은 이 fixture 보완으로 추가 변경하지 않았다. diff 검사도 통과했다.
+- 증빙 `.tools/repo-sync-claude-{bridge,app,queue,node-final,browser}.log`. 아래 Claude 수정의 실제 CLI/WKWebView/양 SDK 근거는 원격 공통 기능 통합 전 검사이며, 통합본의 native SDK/WKWebView 전체를 다시 실행한 결과와 구분한다. 이번 싱크는 새 APK/AAB·IPA 서명·TestFlight 배포나 운영 앱/브리지/세션 변경을 포함하지 않는다. 설치본 기준은 Android0.42.0(71)/TestFlight0.1.0(12)이며 새 소스는 미반영이다.
+
 ## iOS·Mac TestFlight Claude 모델/로그인 후속 수정 (2026-11-13, 소스만 반영)
 
 - 사용자 요청대로 먼저 `git fetch origin`을 실행해 main/원격의 차이0/0·깨끗한 작업 트리와 최신 eadff43을 확인한 뒤 수정했다. 설치본0.1.0(12)에는 아직 미반영이다. 이번에는 검증용 SDK 컴파일/전용 QA Simulator만 사용했고 IPA 서명·업로드·TestFlight 배포·운영 앱/사용자 Runtime Lab/브리지·세션 재시작은 하지 않았다.
