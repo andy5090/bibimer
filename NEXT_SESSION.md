@@ -1,12 +1,12 @@
 # Bibimer 다음 세션 시작점
 
-## iOS 0.1.0(13) 업로드 완료·내부 제공 미확인 (2026-11-13)
+## iOS 0.1.0(13) 업로드 완료·사용자 내부 배포 완료 보고 (2026-11-13)
 
-- 사용자 TestFlight 반영 요청으로 원격2cc4e7e까지 fast-forward하고 최종 소스를 검증/서명했다. **15:41:51 Asia/Seoul Xcode Upload succeeded / EXPORT SUCCEEDED / exit0**를 확인했다. Apple 처리 진입까지 성공했으나 화면 제어 도구가 `Sky Computer Use native pipe startup failed`/browser access host unavailable로 시작하지 못해 현재 처리 결과·테스트 안내 저장·암호화 응답·Bibimer Internal 연결은 아직 확인/완료하지 못했다. 기존 내부 제공 버전은0.1.0(12)이며13 제공 완료로 표시하지 않는다. 같은 아카이브를 중복 업로드하지 않는다.
+- 사용자 TestFlight 반영 요청으로 원격2cc4e7e까지 검증/서명했고 **15:41:51 Asia/Seoul Xcode Upload succeeded / EXPORT SUCCEEDED / exit0**를 확인했다. 화면 제어 도구 오류로 자동 UI 확인이 중단된 뒤 사용자가 수출 규정 응답·기존 Bibimer Internal 그룹 추가 안내를 따라 **완료**를 보고했다. 내부 배포 완료는 사용자 보고에 근거하며, 빌드 UUID·정확한 테스트 중 표시·한영 테스트 안내 저장은 직접 확인하지 못했다. 같은 아카이브를 다시 업로드하거나 그룹 추가를 중복 실행하지 않는다.
 - 업로드 소스 `2cc4e7efae3e10e3cffa2adb999c11e2bb7a3a6d`. 로컬 export IPA **8,654,116 bytes**, SHA-256 `06e765875653aa4b618c17ff79ac06e156fec9475ac7186e0df03990d2bb4e15`. 아카이브 `dist/ios-testflight/0.1.0-13-unsigned-nov13-claude/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-13-export-nov13-claude/export/Bibimer.ipa`, 비공개 영수증/업로드 로그/한영1344자 테스트 안내 `dist/ios-testflight/upload-0.1.0-13-nov13/`.
 - Claude metadata125초/Chat135초·로그인 복귀 poll 재개·유한 수동 코드 입력/전용 PTY의 Popen 전 echo 차단·정상 종료 뒤 구조화 계정 상태 확인을 포함한다. 공통 에이전트 관리·대기열 제출 전 수정/수동 재개·기본 꺼짐 디버그/로컬 제한 진단도 패키징했다. iOS 내장 브리지는0.25.2이며 별도 사용자 브리지 업데이트가 필요 없다.
 - 최종 양 SDK·archive/dSYM/배포 서명·현재 소스→manifest→IPA 자산(웹67·게스트18·네이티브11자산/17소스·현지화20·rootfs426)을 확인했다. 앱 Python33·iOS 브리지82(26.17초)·Node23파일/984키×10언어·Chromium20배치·계정 복귀 브라우저 검사·native5소스 정적분석0을 통과했다. 실제 전용 QA **WKWebView/Linux32개·41.95초·JS오류0·fatal0·진단실패0**이며 모의 정책20개와 기존 syscall 경고4개/미사용 매개변수 컴파일 경고16개를 구분한다. 증빙 `.tools/ios-tf13-*`, `dist/ios-app/testflight13-nov13-smoke/`.
-- 실제 사용자 OAuth/코드/API 키·Mac/iPhone 설치본의 전체 로그인/붙여넣기·localhost callback·잠금 복구/OS 백그라운드 허가는 미검증이다. 사용자 운영 앱/Runtime Lab·브리지/세션, Android/웹사이트 배포·외부 베타·정식 App Store 제출은 이번 작업 범위에 넣지 않았다. 화면 제어 연결이 복구되면 기존 그룹/테스터를 유지해13만 추가하고 테스트 중 상태를 확인한 뒤 이 항목을 완료 기록으로 갱신한다.
+- 실제 사용자 OAuth/코드/API 키·Mac/iPhone 설치본의 전체 로그인/붙여넣기·localhost callback·잠금 복구/OS 백그라운드 허가는 미검증이다. 사용자 운영 앱/Runtime Lab·브리지/세션, Android/웹사이트 배포·외부 베타·정식 App Store 제출은 이번 작업 범위에 넣지 않았다. 제어 서비스 로그의 요청자 인증 거절을 확인했고 REPL 초기화·helper 정상 재시작 뒤에도 실패해 현재 세션의 화면 제어는 복구되지 않았다. 진단은 비공개 .tools/computer-control-repair/diagnosis.md를 따른다. UI 연결이 복구되면 상태 확인만 하고 이미 완료 보고한 배포를 중복 실행하지 않는다.
 
 ## Android 0.43.0(72) 내부 테스트 배포 완료 (2026-11-13)
 
