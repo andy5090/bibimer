@@ -293,7 +293,7 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
             super().__init__(executable, cwd, agent)
 
         def call(self, method, params):
-            if self.agent not in {"codex", "gemini", "opencode"}:
+            if self.agent not in {"codex", "claude", "gemini", "opencode"}:
                 return super().call(method, params)
             if method not in self.methods:
                 raise base.Problem(400, "error_import_invalid")
@@ -346,7 +346,7 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
             return super().configure(data, catalog)
 
         def _startup_deadline(self):
-            if self.agent not in {"codex", "gemini", "opencode"}:
+            if self.agent not in {"codex", "claude", "gemini", "opencode"}:
                 return super()._startup_deadline()
             with self.condition:
                 ready = self.condition.wait_for(lambda: (self.thread_id is not None and not self.history_pending) or self.state != "running", timeout=245 if self.agent == "gemini" else 135)
