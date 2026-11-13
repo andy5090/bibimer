@@ -6,6 +6,7 @@ allowlists are extended for Gemini; all existing implementations stay in that
 module, including its private PTY child entry point.
 """
 import importlib.util
+import hashlib
 import hmac
 import json
 import os
@@ -28,6 +29,67 @@ SOURCE = HERE.parent / "bridge" / "bibimer_bridge.py"
 CLAUDE_VERSION = "2.1.112"
 CLAUDE_SDK_VERSION = "0.2.112"
 
+# Connect the pinned CLI's existing manual OAuth handler to stdin. Token
+# exchange, scopes, PKCE and credential persistence remain in the native CLI.
+CLAUDE_CODE_INPUT = r'''
+const bibimerState=new URL(X).searchParams.get("state");
+if(!bibimerState)throw Error("Unsupported native login challenge");
+const {createInterface:bibimerReadline}=await import("node:readline");
+bibimerInput=bibimerReadline({input:process.stdin,terminal:false});
+bibimerInput.once("line",bibimerLine=>{
+ const bibimerParts=bibimerLine.trim().split("#");
+ if(bibimerParts.length!==2||!bibimerParts[0]||bibimerParts[1]!==bibimerState){
+  process.stderr.write("Invalid login challenge\n");process.exit(1);return;
+ }
+ j.handleManualAuthCodeInput({authorizationCode:bibimerParts[0],state:bibimerParts[1]});
+ bibimerInput.close();process.stdin.pause();
+});
+process.stdout.write("\nPaste code here if prompted > \n");
+'''
+
+
+def claude_ui_login_source(text, original_url):
+    start, end = "async function Jaz(", "async function Xaz("
+    if text.count(start) != 1 or text.count(end) != 1:
+        raise RuntimeError("Unreviewed Claude login implementation")
+    prefix, rest = text.split(start)
+    login, suffix = rest.split(end)
+    changes = {
+        'let $=K?"sso":void 0,j=new Et;try{':
+            'let $=K?"sso":void 0,j=new Et,bibimerInput;try{',
+        '`)},{loginWithClaudeAi:A,loginHint:q,loginMethod:$,orgUUID:O});':
+            '`);' + CLAUDE_CODE_INPUT + '},{skipBrowserOpen:true,loginWithClaudeAi:A,loginHint:q,loginMethod:$,orgUUID:O});',
+        'finally{j.cleanup()}}': 'finally{bibimerInput?.close();j.cleanup()}}',
+    }
+    for before, after in changes.items():
+        if login.count(before) != 1:
+            raise RuntimeError("Unreviewed Claude manual login contract")
+        login = login.replace(before, after)
+    # Preserve bundled module/resource resolution from the original package.
+    # The pinned source uses import.meta.url as a direct function argument.
+    text = prefix + start + login + end + suffix
+    return re.sub(r'(?<=\()import\.meta\.url(?=\))', lambda _: json.dumps(original_url), text)
+
+
+def prepare_claude_ui_login(state, executable, home=None):
+    installation = claude_installation(home)
+    if str(executable) != installation["executable"]:
+        raise RuntimeError("Unreviewed Claude executable")
+    source = Path(installation["executable"]).parent.parent / "share/bibimer/agents/claude/node_modules/@anthropic-ai/claude-code/cli.js"
+    if source.stat().st_size > 32 * 1024 * 1024:
+        raise RuntimeError("Unexpected Claude source size")
+    adapted = claude_ui_login_source(source.read_text(), source.as_uri())
+    if claude_installation(home) != installation:
+        raise RuntimeError("Claude installation changed during login preparation")
+    digest = hashlib.sha256(adapted.encode()).hexdigest()
+    name = "claude-login-" + digest + ".mjs"
+    target = state / name
+    if target.is_file() and not target.is_symlink() and hashlib.sha256(target.read_bytes()).hexdigest() == digest:
+        return target
+    target = private_provider(state, name, adapted)
+    target.chmod(0o700)
+    return target
+
 
 def load_bridge(source=SOURCE):
     text = source.read_text(encoding="utf-8")
@@ -38,6 +100,8 @@ def load_bridge(source=SOURCE):
             "if agent not in {'shell','codex','claude','opencode','gemini'} or mode not in {'terminal','chat'} or (agent == 'shell' and mode != 'terminal'):",
         'codex_options({**self.options, "permission": "inherit"})':
             '_ios_codex_initial_options(self.options)',
+        '"codex": ["login"], "claude": ["auth", "login"],':
+            '"codex": ["login", "--device-auth"], "claude": ["/login"],',
     }
     for before, after in changes.items():
         if text.count(before) != 1:
@@ -177,7 +241,7 @@ def claude_installation_ready(base, state, executable, home=None):
         return False
 
 
-def adapt(base, claude_provider=None, opencode_provider=None):
+def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None):
     original_provider_command = base.provider_command
     original_codex_options = base.codex_options
     original_terminal_command = base.terminal_command
@@ -231,7 +295,7 @@ def adapt(base, claude_provider=None, opencode_provider=None):
         def call(self, method, params):
             if self.agent not in {"codex", "gemini", "opencode"}:
                 return super().call(method, params)
-            if method not in {"initialize", "thread/list", "thread/read", "model/list", "skills/list", "commands/list"}:
+            if method not in self.methods:
                 raise base.Problem(400, "error_import_invalid")
             try:
                 self.serial += 1
@@ -252,7 +316,10 @@ def adapt(base, claude_provider=None, opencode_provider=None):
                         continue
                     line, self.buffer = self.buffer.split(b"\n", 1)
                     response = json.loads(line)
-                    if response.get("id") != self.serial or "method" in response:
+                    if "method" in response:
+                        self.notification(response)
+                        continue
+                    if response.get("id") != self.serial:
                         continue
                     if "error" in response:
                         raise base.Problem(400, "error_history_unsupported" if response["error"].get("code") == -32601 else "error_history")
@@ -286,7 +353,88 @@ def adapt(base, claude_provider=None, opencode_provider=None):
             if not ready:
                 self._fault("error_import_failed" if self.imported else "error_chat_start")
 
+    class AccountClient(base.AccountClient):
+        def __init__(self, executable, cwd):
+            self.agent = "codex"
+            self.metadata_deadline = time.monotonic() + 125
+            super().__init__(executable, cwd)
+
+        def call(self, method, params):
+            # A browser login may outlive the initialization budget. Each
+            # explicit poll still has its own bounded native RPC deadline.
+            self.metadata_deadline = time.monotonic() + 125
+            return HistoryClient.call(self, method, params)
+
+    class AgentConnections(base.AgentConnections):
+        @staticmethod
+        def command(argv, timeout=8):
+            # Guest CLI cold starts are slower than native Android processes.
+            return original_connections.command(argv, timeout=max(timeout, 125))
+
+        def client(self, executable, cwd):
+            if opencode_provider is None:
+                return super().client(executable, cwd)
+            spec = importlib.util.spec_from_file_location("bibimer_ios_account_opencode", opencode_provider)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module.Adapter(executable, account=True, cwd=cwd)
+
+        def _handle(self, data):
+            if self.closed or self.bridge.closing:
+                raise base.Problem(409, "error_bridge_stopping")
+            if data.get("agent") == "claude" and data.get("action") == "status":
+                if data.get("project_id"):
+                    self.bridge.working_project(data)
+                cwd = self.bridge.working_project(data)["path"] if data.get("project_id") else str(Path.home())
+                job = self.jobs.get("claude")
+                if job and job["cwd"] == cwd and job["status"] in {"stopping", "pending", "restoring"} and time.time() < job["expires_at"]:
+                    return {"agent": "claude", "installed": True, "state": "unknown", "providers": [], "job": self.snapshot(job)}
+                executable = self.bridge.agent_executable("claude")
+                if not executable:
+                    return {"agent": "claude", "installed": False, "state": "unavailable", "providers": []}
+                status, raw = self.command([executable, "auth", "status"])
+                report = json.loads(raw)
+                if status not in {0, 1} or type(report.get("loggedIn")) is not bool:
+                    raise ValueError()
+                result = {"agent": "claude", "installed": True, "state": "configured" if report["loggedIn"] else "signed_out",
+                          "providers": [], "login_methods": [
+                              {"id": "claudeai", "type": "oauth", "name": "Claude", "supported": True},
+                              {"id": "console", "type": "oauth", "name": "Anthropic Console (API)", "supported": True}]}
+                if report.get("authMethod") in {"none", "claude.ai", "oauth_token", "api_key", "api_key_helper", "third_party"}:
+                    result["method"] = report["authMethod"]
+                if job and job["cwd"] == cwd and time.time() < job["expires_at"]:
+                    result["job"] = self.snapshot(job)
+                return result
+            if data.get("action") == "terminal" and data.get("agent") in {"codex", "claude", "opencode"}:
+                # Explicit login works before a first project is registered.
+                with self.bridge.lock:
+                    if not data.get("project_id") and self.bridge.active_project_id is None:
+                        self.bridge.register({"path": str(Path.home() / "projects"), "create": True, "add": True})
+                if not data.get("project_id"):
+                    data = dict(data, project_id=self.bridge.active_project_id)
+            result = super()._handle(data)
+            if data.get("action") == "status" and result.get("installed"):
+                if data["agent"] == "codex":
+                    result["login_methods"] = [
+                        {"id": "chatgpt", "type": "oauth", "name": "ChatGPT", "supported": True},
+                        {"id": "apiKey", "type": "api", "name": "API key", "supported": True}]
+            return result
+
+    original_connections = base.AgentConnections
+    class NativeLoginClient(base.NativeLoginClient):
+        def __init__(self, executable, cwd, agent, method):
+            if agent == "claude" and claude_login is not None:
+                executable = str(claude_login(executable))
+            super().__init__(executable, cwd, agent, method)
+
+    class AgentUpdates(base.AgentUpdates):
+        def handle(self, data):
+            raise base.Problem(400, "error_agent_update_unavailable")
+
     base.HistoryClient, base.ChatSession = HistoryClient, ChatSession
+    base.AccountClient, base.AgentConnections = AccountClient, AgentConnections
+    base.NativeLoginClient = NativeLoginClient
+    base.AgentUpdates = AgentUpdates
 
     class Bridge(base.Bridge):
         def check_program(self, agent, executable):
@@ -294,11 +442,11 @@ def adapt(base, claude_provider=None, opencode_provider=None):
                 return claude_installation_ready(base, self.state, executable)
             return super().check_program(agent, executable)
 
-        def launch(self, data, continuation=None, select=True):
+        def launch(self, data, continuation=None, select=True, restore_id=None, authentication_agent=None):
             options = data.get("options")
             if data.get("agent") == "codex" and isinstance(options, dict):
                 validate_codex_policy(options.get("permission", "inherit"), terminal=data.get("mode", "terminal") == "terminal")
-            return super().launch(data, continuation, select)
+            return super().launch(data, continuation, select, restore_id, authentication_agent)
 
         def agents(self):
             rows = super().agents()
@@ -315,7 +463,8 @@ def adapt(base, claude_provider=None, opencode_provider=None):
             result.update(platform="ios", runtime="embedded-arm64-linux")
             # OS notifications/file viewers are native capabilities, not a guest
             # guarantee. The app decides which native facilities are available.
-            result["features"] = [feature for feature in result["features"] if feature not in {"claude_steer", "agent_connections"}]
+            # CLI updates use the fixed iOS installers, not Android's updater.
+            result["features"] = [feature for feature in result["features"] if feature not in {"claude_steer", "agent_updates"}]
             result["features"].append("ios_agent_setup")
             return result
 
@@ -432,7 +581,8 @@ def main():
     base = load_bridge()
     state = base.private_dir(Path.home() / ".local/state/bibimer")
     base.save_json(state / "token.json", token)
-    base = adapt(base, prepare_claude_provider(state), prepare_opencode_provider(state))
+    base = adapt(base, prepare_claude_provider(state), prepare_opencode_provider(state),
+                 claude_login=lambda executable: prepare_claude_ui_login(state, executable))
     os.environ["PATH"] = str(Path.home() / ".local/bin") + os.pathsep + os.environ.get("PATH", "")
     base.main()
 

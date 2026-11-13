@@ -1,5 +1,24 @@
 # iOS 앱 검증 기록
 
+## 2026-11-13 — TestFlight 0.1.0(12) 계정 설정·인증 브라우저·요청 수명 검증
+
+- 배포 소스 `cf80243cb59c23a4c57fe019f60447b9753aa40d`는 e45c67f까지의 iOS 에이전트/프로바이더 설정·Claude/Codex 인증 브라우저·UIKit 보안 코드/API 키 입력·diff 기본10px/줄 번호9px와 요청 수명 보완을 포함한다. 신규 의존성/lockfile 변경은 없고 SafariServices는 Apple 시스템 프레임워크다.
+- 보안 검토에서 제출 시 요청 ID 소실·task 취소 누락·같은 WKView의 교체 문서/새 요청에 이전 완료가 섞일 수 있음을 확인했다. 메타데이터만 가진 네이티브 operation에 요청 ID·weak 문서·generation·epoch·정확한 task를 묶고 입력 제출 후에도 소유권을 유지했다. 취소/180초 native 감시/비활성화/연결 변경/주 문서 교체가 입력과 task를 정리하고 이전 callback은 새 operation/task를 지우거나 WebKit에 결과를 전달하지 않는다. 서버에서 이미 접수한 변경의 rollback은 보장하지 않고 자동 재전송하지 않는다.
+- 실제 helper/owner 메서드를 Foundation으로 컴파일한 held NSURLProtocol 회귀1개가 잘못된 ID의 취소 거절, 제출 task 직접 취소, 늦은/다른 task 완료, 새 요청 소유, 문서 generation/epoch/교체 WKView와 시간 초과를 확인했다. 기존 HTTP 복구 회귀2개를 포함한 앱 Python33개·브리지77개·Node25파일(앱14/공통11)·965키×10언어를 통과했다. 브리지 테스트의 /var와 /private/var 비교만 canonical 경로로 정리했다. 초기77개 중 그 경로 assertion1개 실패와 중간 들여쓰기 import 오류를 수정한 최종77개는23.26초에 모두 통과했다.
+- Xcode27.2 양 SDK 컴파일·main/AccountInput/AccountBrowser/BackgroundExecution/RuntimeSupport 정적분석 진단0·Chromium20개 모바일/언어 배치와 가짜 클립보드 부분 선택/검토 붙여넣기를 통과했다. 기존 미사용 매개변수 컴파일 경고16개는 유지한다.
+- 전용 **Bibimer TestFlight QA**의 실제 WKWebView/내장 Linux **32개·47.69초·JS오류0·fatal0·진단실패0**다. 모의 백그라운드 정책20개 및 기존 syscall151/152 경고4개와 구분한다. 증빙 `dist/ios-app/accounts-nov13-smoke/`, `.tools/ios-nov13-auth-final-*`, `.tools/ios-nov13-auth-bridge-final.log`에 보존했다. 사용자 Runtime Lab/프로젝트·계정/브리지/세션을 재시작하지 않았다.
+- archive/arm64/Scene/SDK/dSYM·기존 팀/번들의 배포 서명과 현재 소스→manifest→IPA 자산(웹65·게스트18·네이티브11자산/17소스·현지화20·rootfs426)을 확인했다. IPA `dist/ios-testflight/0.1.0-12-export-nov13-accounts/export/Bibimer.ipa`, **8,639,616 bytes**, SHA-256 `cd7254ec0cf655b56e93bf56d8fa52f44dc7d346a0f29a5159c7aa0bcc88464a`. 비공개 업로드 증빙 `dist/ios-testflight/upload-0.1.0-12-nov13/`.
+- 계정/CLI 검사는 가짜 Python CLI/HTTP/PTY와 공개 고정 CLI 소스의 변환 계약이다. 실제 사용자 OAuth/API 키·게스트 Node에서의 고정 로그인 사본 완료·iPhone Safari localhost callback·보안 입력 캡처/앱 전환·잠금 복구/OS 백그라운드 허가는 별도 확인이다. 인증 브라우저는 agent-controlled WebKit/브라우저 목록·화면 캡처 도구와 분리되어 있다. Apple 제공 결과는 [배포 기록](TESTFLIGHT.md)을 따른다.
+
+## 2026-11-13 — TestFlight 0.1.0(11) Chat 표시·코드 크기·이전 요청 취소 검증
+
+- 최종 소스 `653f2c5bca575231a6d20c93bc2ec8658a954f0b`는7776a99의 즉시 사용자 버블/배치 뒤 최하단 이동·코드 크기 상속·계정 조회 로딩/안내, 원격30754a5까지의 공통0.42.0/브리지0.25.1·터미널 링크/선택, 아래 HTTP 취소 보완을 포함한다. push 거절 후 원격3커밋과 자체 수정을 rebase했고 NEXT_SESSION의 양쪽 기록을 보존했다.
+- 최초 native QA는31개 뒤 복구의 이전 쓰기 확인에서 실패했다. 생성만 한 suspended task fixture는 등록된 요청과 다르게 관리됐으며, 별도 Foundation 실험에서 실제 resume된 POST도 graceful finish 뒤 invalidateAndCancel만으로 취소되지 않음을 확인했다. 현재/retired task를 직접 cancel한 완료 장벽 뒤에 guest 종료를 시작하고, 시간 초과/다음 시도에도 미확인 transport를 유지한다. 늦은 callback/serial/실행 직전 timeout/exited를 확인해 오래된 종료를 막는다. main.m·smoke.js와 새 test_http_recovery.py를 수정했다.
+- 실제 helper를 컴파일한 Foundation 회귀2개가 current+graceful POST 취소 및 지연 열거/다음 시도 소유/늦은 ack의 새 transport 보존을 확인했다. 앱 Python32개·iOS 브리지59개·공통 로그인15/업데이트9/세션 유지보수10개·Node23파일(앱12/공통11)·965키×10언어·Chromium20배치·패키징 JS6구문을 통과했다. main/BackgroundExecution/RuntimeSupport 정적분석0이며 native source는 최종 병합에서도 동일하다. 기존 미사용 매개변수 컴파일 경고16개는 남아 있다.
+- 취소 보완 뒤 전용 **Bibimer TestFlight QA**의 실제 WKWebView/Linux32개를28.86/29.96초로2회 연속 통과했고, 원격 공통 변경 병합/재패키징 후 **최종 소스32개·29.04초·JS오류0·fatal0·진단실패0**를 다시 통과했다. 본문·인라인/블록/강조 코드·literal HTML·diff/줄 번호·명령/파일명 모두 computed font-size1.5배와 기존 복구/배너·실제 서비스 재시작/파일 보존·등록된 보류 POST 취소를 확인했다. 모의 백그라운드 정책20개와 각 실행의 기존 syscall151/152 경고4개를 구분한다.
+- 최종 archive/arm64/Scene/SDK/dSYM·기존 팀/번들 배포 서명·현재 소스/IPA 자산(웹65·게스트18·네이티브11자산/13소스·현지화20·rootfs426)을 확인했다. IPA `dist/ios-testflight/0.1.0-11-export-nov13-chat-synced/export/Bibimer.ipa`, **8,614,141 bytes**, SHA-256 `24226d29ea2a87c20c15697f1ee2019b6d17b85986d2042f769995f765ee7f80`. 최초chat 후보는 REJECTED_QA.json, 병합 전chat-final은SUPERSEDED.json으로 제외했고 둘 다 업로드하지 않았다.
+- 실패 증빙은 `dist/ios-app/history/chat-nov13-smoke-1794507493588017000/`, 성공은 `dist/ios-app/chat-nov13-smoke/`와 history·.tools/ios-nov13-chat-final-qa1/2-verification.json·ios-nov13-chat-synced-verification.json, 서명/업로드는 `dist/ios-testflight/upload-0.1.0-11-nov13/`에 보존했다. 실제 iPhone 키보드/스크롤/제스처·계정 로그인·OS 백그라운드 허가는 별도 확인이다. 사용자 Runtime Lab·앱/브리지·세션은 재시작하지 않았다. Apple 제공 결과는 [배포 기록](TESTFLIGHT.md)을 따른다.
+
 ## 2026-11-13 — TestFlight 0.1.0(10) 즉시 복구·진행 배너 검증
 
 - 업로드 소스 `2bdc74776e249943f7c9c54bc4bbc08d66e6c576`는39191c5의 즉시 재연결/공통 배너·실제 단계와 공통0.41.0을 포함한다. 최초 브리지 검사는 새 인증 allowlist2곳으로 구조화 변환 계약이6→8이 되어24건 중단됐다. 기존6개 Gemini 구조화 가드만 문맥별로 확장하고 새 인증 제한은 유지하도록 고쳤다. 실제 공통 소스 로딩·Gemini import/인증 거절·미검토 변경 거절 회귀3개를 추가했으며 전체 iOS 브리지59개를 독립 재실행해14.65초에 통과했다.

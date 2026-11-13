@@ -1,6 +1,8 @@
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
 #import "VoiceService.h"
+#import "AccountInput.h"
+#import "AccountBrowser.h"
 #import "CompletionNotifications.h"
 #import "BrowserService.h"
 #import "BackgroundExecution.h"
@@ -17,6 +19,74 @@
 #include "RuntimeSupport.h"
 
 extern int bibimer_create_directory(const char *path);
+
+static void cancelHTTPTransports(NSArray<NSURLSession *> *transports, NSMutableSet<NSURLSession *> *retired, dispatch_block_t completion) {
+    [retired addObjectsFromArray:transports];
+    dispatch_group_t pending = dispatch_group_create();
+    for (NSURLSession *transport in transports) {
+        dispatch_group_enter(pending);
+        [transport getAllTasksWithCompletionHandler:^(NSArray<NSURLSessionTask *> *tasks) {
+            // invalidateAndCancel does not supersede an earlier graceful
+            // finishTasksAndInvalidate. Cancel each registered task explicitly.
+            for (NSURLSessionTask *task in tasks) [task cancel];
+            [transport invalidateAndCancel];
+            dispatch_group_leave(pending);
+        }];
+    }
+    dispatch_group_notify(pending, dispatch_get_main_queue(), ^{
+        [retired minusSet:[NSSet setWithArray:transports]];
+        completion();
+    });
+}
+
+// Self-test only: a registered POST that cannot reach the local bridge.
+@interface BibimerTestHeldWrite : NSURLProtocol
++ (void)onStart:(dispatch_block_t)callback;
++ (NSUInteger)stopCount;
+@end
+@implementation BibimerTestHeldWrite
+static dispatch_block_t heldWriteStart;
+static NSUInteger heldWriteStops;
++ (void)onStart:(dispatch_block_t)callback { @synchronized(self) { heldWriteStart = [callback copy]; } }
++ (NSUInteger)stopCount { @synchronized(self) { return heldWriteStops; } }
++ (BOOL)canInitWithRequest:(NSURLRequest *)request {
+    return [[request valueForHTTPHeaderField:@"X-Bibimer-Test-Held-Write"] isEqual:@"1"];
+}
++ (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request { return request; }
+- (void)startLoading {
+    dispatch_block_t callback;
+    @synchronized(BibimerTestHeldWrite.class) { callback = heldWriteStart; heldWriteStart = nil; }
+    if (callback) dispatch_async(dispatch_get_main_queue(), callback);
+}
+- (void)stopLoading { @synchronized(BibimerTestHeldWrite.class) { heldWriteStops++; } }
+@end
+
+// Owns only native request metadata and its task, never the entered secret.
+@interface BibimerAccountOperation : NSObject
+@property NSString *identifier;
+@property(weak) id document;
+@property NSUInteger generation;
+@property NSUInteger epoch;
+@property NSURLSessionDataTask *task;
+@property BOOL cancelled;
+- (BOOL)matchesDocument:(id)document generation:(NSUInteger)generation epoch:(NSUInteger)epoch;
+- (BOOL)finishTask:(NSURLSessionDataTask *)task;
+- (void)cancel;
+@end
+@implementation BibimerAccountOperation
+- (BOOL)matchesDocument:(id)document generation:(NSUInteger)generation epoch:(NSUInteger)epoch {
+    return !self.cancelled && document && self.document == document && self.generation == generation && self.epoch == epoch;
+}
+- (BOOL)finishTask:(NSURLSessionDataTask *)task {
+    if (self.cancelled || !task || self.task != task) return NO;
+    self.task = nil;
+    return YES;
+}
+- (void)cancel {
+    self.cancelled = YES;
+    [self.task cancel]; self.task = nil;
+}
+@end
 
 static BOOL usesDesktopInput(void) {
 #if TARGET_OS_MACCATALYST
@@ -50,6 +120,10 @@ static BOOL usesDesktopInput(void) {
 @interface BibimerController : UIViewController <WKScriptMessageHandler, WKNavigationDelegate, NSURLSessionTaskDelegate, UIScrollViewDelegate>
 @property WKWebView *web;
 @property BibimerVoiceService *voice;
+@property BibimerAccountInput *accountInput;
+@property BibimerAccountBrowser *accountBrowser;
+@property BibimerAccountOperation *accountOperation;
+@property NSUInteger workspaceGeneration;
 @property BibimerBrowserService *browser;
 @property BOOL browserPolling;
 @property NSUInteger browserEpoch;
@@ -92,6 +166,8 @@ static BOOL usesDesktopInput(void) {
 @property NSURLSession *testRecoveryTransport;
 @property NSURLSessionDataTask *testRecoveryRead;
 @property NSURLSessionDataTask *testRecoveryWrite;
+@property BOOL testRecoveryWriteStarted;
+@property NSUInteger testRecoveryWriteStopCount;
 @property NSMutableData *utf8Pending;
 @property NSMutableArray<NSString *> *javascriptErrors;
 @property NSString *smokeScript;
@@ -118,6 +194,8 @@ static BOOL usesDesktopInput(void) {
 - (void)replaceHTTPTransport;
 - (void)expireHealthTask:(NSURLSessionDataTask *)task epoch:(NSUInteger)epoch;
 - (void)recoverLinux;
+- (void)cancelAccountOperation:(NSString *)identifier error:(NSString *)code;
+- (void)invalidateAccountDocument;
 - (BOOL)startLinuxServices;
 - (void)recordConnection:(NSString *)event code:(NSInteger)code;
 - (void)loadConnectionLog;
@@ -202,6 +280,7 @@ static NSInteger availablePort(void) {
 static void guestExit(int status) {
     int code = WIFEXITED(status) ? WEXITSTATUS(status) : 128 + WTERMSIG(status);
     dispatch_async(dispatch_get_main_queue(), ^{
+        [activeController cancelAccountOperation:nil error:@"error_connection_failed"];
         activeController.exited = YES;
         [activeController recordConnection:@"runtime_exit" code:code];
         if (activeController.runtimeControlFD >= 0) close(activeController.runtimeControlFD);
@@ -243,7 +322,6 @@ static void guestExit(int status) {
     NSMutableString *token = [NSMutableString new];
     for (NSUInteger i = 0; i < random.length; i++) [token appendFormat:@"%02x",((unsigned char *)random.bytes)[i]];
     self.token = token;
-    self.http = [self newHTTPTransport];
     [self recordConnection:@"launch" code:0];
     NSArray *args = NSProcessInfo.processInfo.arguments;
     BOOL agentTest = [args containsObject:@"--agent-self-test"];
@@ -253,7 +331,9 @@ static void guestExit(int status) {
         [NSFileManager.defaultManager removeItemAtURL:[self.documents URLByAppendingPathComponent:self.smokeResultName] error:nil];
         [NSFileManager.defaultManager removeItemAtURL:[self.documents URLByAppendingPathComponent:@"test-progress.json"] error:nil];
     }
+    self.http = [self newHTTPTransport];
     self.voice=[BibimerVoiceService new];self.voice.presenter=self;
+    self.accountBrowser=[BibimerAccountBrowser new];self.accountBrowser.presenter=self;
     self.browser=[BibimerBrowserService new];self.browser.presenter=self;
     self.completionNotifications=[BibimerCompletionNotifications new];
     self.backgroundExecution = BibimerBackgroundExecution.shared;
@@ -342,6 +422,7 @@ static void guestExit(int status) {
 }
 
 - (void)becameInactive {
+    [self cancelAccountOperation:nil error:@"error_connection_failed"];
     if (self.backgrounded) return;
     self.backgrounded = YES; self.ready = NO; self.connectionEpoch++;
     [self recordConnection:@"inactive" code:0];
@@ -431,6 +512,7 @@ static void guestExit(int status) {
     configuration.timeoutIntervalForRequest = 33; configuration.timeoutIntervalForResource = 180;
     configuration.HTTPMaximumConnectionsPerHost = 12;
     configuration.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+    if (self.smokeScript) configuration.protocolClasses = [@[BibimerTestHeldWrite.class] arrayByAddingObjectsFromArray:configuration.protocolClasses ?: @[]];
     return [NSURLSession sessionWithConfiguration:configuration delegate:self delegateQueue:nil];
 }
 
@@ -447,6 +529,7 @@ static void guestExit(int status) {
 
 - (void)fail:(NSString *)message {
     dispatch_async(dispatch_get_main_queue(), ^{
+        [self cancelAccountOperation:nil error:@"error_connection_failed"];
         self.ready = NO;
         if (!self.runtimeStarted) self.startupFailed = YES;
         [self.healthTask cancel]; self.healthTask = nil;
@@ -598,6 +681,7 @@ static void guestExit(int status) {
     if (self.recovering) { [self recordConnection:@"retry_blocked_recovery" code:0]; [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
     if (self.exited || self.startupFailed) { [self recordConnection:@"retry_blocked_runtime" code:0]; [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
     if (!self.runtimeStarted || self.backgrounded) { [self recordConnection:@"retry_blocked_inactive" code:0]; [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
+    [self cancelAccountOperation:nil error:@"error_connection_failed"];
     self.connectionEpoch++;
     [self.healthTask cancel]; self.healthTask = nil;
     self.ready = NO;
@@ -685,6 +769,7 @@ static void guestExit(int status) {
     if (self.recovering || self.exited || !self.runtimeStarted || self.runtimeControlFD < 0) return;
     self.recovering = YES; self.ready = NO; self.recoveryAttempted = YES;
     self.recoveryFailed = NO; self.recoveryTimedOut = NO;
+    [self cancelAccountOperation:nil error:@"error_connection_failed"];
     self.connectionEpoch++;
     NSUInteger recovery = ++self.recoverySerial;
     [self recordConnection:@"recovery_start" code:0];
@@ -692,47 +777,59 @@ static void guestExit(int status) {
     [self.backgroundExecution runtimeStopped];
     // This recovery abandons old executions. Unlike transport-only reconnect,
     // cancel queued writes too, before a new server can accept them at this port.
-    [self.http invalidateAndCancel];
-    // Earlier transport-only retries may still contain submitted writes. They
-    // must also be cancelled before the replacement server uses the same port.
-    for (NSURLSession *transport in self.retiredHTTP.allObjects) [transport invalidateAndCancel];
-    [self.retiredHTTP removeAllObjects];
+    NSMutableSet<NSURLSession *> *transports = [self.retiredHTTP mutableCopy];
+    if (self.http) [transports addObject:self.http];
     self.http = [self newHTTPTransport];
     [self.completionNotifications pause]; [self.voice pause]; [self.browser revokeAll];
     self.browserEpoch++; self.browserPolling = NO; [self.browserPoll cancel]; self.browserPoll = nil;
     [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
-    // Shutdown runs away from UIKit. A new bridge is started only after every
-    // old guest task except the fixed PID 1 supervisor is confirmed stopped.
+    // Enumeration is asynchronous; the same deadline covers cancellation and
+    // shutdown. A delayed/stale enumeration must never start a new shutdown.
+    __block BOOL shutdownStarted = NO;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW,15*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
         if (!self.recovering || recovery != self.recoverySerial) return;
         self.recoveryTimedOut = YES; self.recoveryFailed = YES;
+        if (!shutdownStarted) self.recovering = NO;
         [self recordConnection:@"recovery_watchdog" code:0];
         [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
     });
-    dispatch_async(self.runtimeQueue, ^{
-        int result = bibimer_stop_guest_children();
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (recovery != self.recoverySerial) return;
-            self.recovering = NO;
-            [self recordConnection:@"recovery_stopped" code:result];
-            if (result != 0 || self.recoveryTimedOut || self.exited) {
-                self.recoveryFailed = YES;
+    cancelHTTPTransports(transports.allObjects, self.retiredHTTP, ^{
+        if (!self.recovering || recovery != self.recoverySerial || self.recoveryTimedOut || self.exited) return;
+        dispatch_async(self.runtimeQueue, ^{
+            __block BOOL proceed = NO;
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                proceed = self.recovering && recovery == self.recoverySerial && !self.recoveryTimedOut && !self.exited;
+                if (proceed) shutdownStarted = YES;
+                if (!proceed && recovery == self.recoverySerial) {
+                    self.recovering = NO;
+                    [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+                }
+            });
+            if (!proceed) return;
+            int result = bibimer_stop_guest_children();
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (recovery != self.recoverySerial) return;
+                self.recovering = NO;
+                [self recordConnection:@"recovery_stopped" code:result];
+                if (result != 0 || self.recoveryTimedOut || self.exited) {
+                    self.recoveryFailed = YES;
+                    [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+                    return;
+                }
+                self.hasConnected = NO; self.recoveryAllowed = NO; self.healthAttempts = 0;
+                self.recoveryBootDeadline = NSProcessInfo.processInfo.systemUptime + 15;
+                self.recoveryFailed = ![self startLinuxServices];
+                [self replaceHTTPTransport];
                 [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
-                return;
-            }
-            self.hasConnected = NO; self.recoveryAllowed = NO; self.healthAttempts = 0;
-            self.recoveryBootDeadline = NSProcessInfo.processInfo.systemUptime + 15;
-            self.recoveryFailed = ![self startLinuxServices];
-            [self replaceHTTPTransport];
-            [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
-            [self checkHealth];
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW,15*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
-                if (recovery != self.recoverySerial || self.ready || self.recoveryFailed || self.exited || self.backgrounded ||
-                    self.recoveryBootDeadline == 0 || NSProcessInfo.processInfo.systemUptime < self.recoveryBootDeadline) return;
-                self.recoveryFailed = YES;
-                [self recordConnection:@"recovery_boot_timeout" code:NSURLErrorTimedOut];
-                [self.healthTask cancel]; self.healthTask = nil;
-                [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+                [self checkHealth];
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW,15*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
+                    if (recovery != self.recoverySerial || self.ready || self.recoveryFailed || self.exited || self.backgrounded ||
+                        self.recoveryBootDeadline == 0 || NSProcessInfo.processInfo.systemUptime < self.recoveryBootDeadline) return;
+                    self.recoveryFailed = YES;
+                    [self recordConnection:@"recovery_boot_timeout" code:NSURLErrorTimedOut];
+                    [self.healthTask cancel]; self.healthTask = nil;
+                    [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
+                });
             });
         });
     });
@@ -755,6 +852,7 @@ static void guestExit(int status) {
 }
 
 - (void)loadWorkspace {
+    [self invalidateAccountDocument];
     if (self.web) return;
     WKWebViewConfiguration *configuration = [WKWebViewConfiguration new];
     configuration.ignoresViewportScaleLimits = NO;
@@ -814,6 +912,11 @@ static void guestExit(int status) {
     [self restoreWorkspaceOrigin];
 }
 
+- (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation {
+    (void)navigation;
+    if (webView == self.web) [self invalidateAccountDocument];
+}
+
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
     self.status.hidden = YES; self.bootstrapOutput.hidden = YES;
     webView.hidden = NO;
@@ -831,7 +934,9 @@ static void guestExit(int status) {
     NSString *path = url.URLByStandardizingPath.URLByResolvingSymlinksInPath.path;
     BOOL local = url.isFileURL && [path hasPrefix:root];
     if (action.targetFrame.mainFrame) local = local && [path isEqual:[root stringByAppendingString:@"index.html"]];
-    decisionHandler(local || [url.absoluteString isEqual:@"about:blank"] ? WKNavigationActionPolicyAllow : WKNavigationActionPolicyCancel);
+    BOOL allowed = local || [url.absoluteString isEqual:@"about:blank"];
+    if (allowed && action.targetFrame.mainFrame && webView == self.web) [self invalidateAccountDocument];
+    decisionHandler(allowed ? WKNavigationActionPolicyAllow : WKNavigationActionPolicyCancel);
     if (!local && action.navigationType == WKNavigationTypeLinkActivated) [self openLink:url.absoluteString];
 }
 
@@ -856,6 +961,7 @@ static void guestExit(int status) {
 }
 
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
+    if (webView == self.web) [self invalidateAccountDocument];
     if (!self.exited) [webView reload];
 }
 
@@ -887,6 +993,103 @@ static void guestExit(int status) {
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([self isCurrentClipboardWorkspace:web]) [web evaluateJavaScript:script completionHandler:nil];
     });
+}
+
+- (void)accountReply:(BibimerAccountOperation *)operation status:(NSInteger)status data:(NSDictionary *)data {
+    WKWebView *web = operation.document;
+    if (![operation matchesDocument:self.web generation:self.workspaceGeneration epoch:self.connectionEpoch] ||
+        self.exited || ![self isCurrentClipboardWorkspace:web]) return;
+    NSString *script = [NSString stringWithFormat:@"window.BibimerAccountReply?.(%@,%@)",jsonString(operation.identifier),
+        jsonString(@{@"ok":@(status >= 200 && status < 300),@"status":@(status),@"data":data})];
+    [web evaluateJavaScript:script completionHandler:nil];
+}
+
+- (void)cancelAccountOperation:(NSString *)identifier error:(NSString *)code {
+    BibimerAccountOperation *operation = self.accountOperation;
+    if (!operation || (identifier && ![operation.identifier isEqual:identifier])) return;
+    if (code) [self accountReply:operation status:409 data:@{@"code":code}];
+    self.accountOperation = nil;
+    BibimerAccountInput *input = self.accountInput; self.accountInput = nil;
+    [operation cancel];
+    [input cancel];
+}
+
+- (void)invalidateAccountDocument {
+    self.workspaceGeneration++;
+    [self cancelAccountOperation:nil error:nil];
+}
+
+- (void)finishAccountOperation:(BibimerAccountOperation *)operation task:(NSURLSessionDataTask *)task status:(NSInteger)status data:(NSDictionary *)data {
+    if (self.accountOperation != operation || ![operation finishTask:task]) return;
+    self.accountOperation = nil;
+    [self accountReply:operation status:status data:data];
+}
+
+- (void)requestAccountSecret:(NSDictionary *)message {
+    NSString *identifier = message[@"id"];
+    if (![identifier isKindOfClass:NSString.class] || [identifier rangeOfString:@"^[a-f0-9]{32}:[0-9]{1,16}$" options:NSRegularExpressionSearch].location == NSNotFound) return;
+    BibimerAccountOperation *operation = [BibimerAccountOperation new];
+    operation.identifier = identifier; operation.document = self.web;
+    operation.generation = self.workspaceGeneration; operation.epoch = self.connectionEpoch;
+    NSDictionary *body = message[@"body"], *labels = message[@"labels"];
+    BOOL valid = [body isKindOfClass:NSDictionary.class] && [labels isKindOfClass:NSDictionary.class];
+    NSSet *allowed = [NSSet setWithArray:@[@"agent",@"action",@"method",@"provider",@"request_id",@"project_id",@"worktree_path",@"confirmation_id",@"reopen",@"id"]];
+    if (valid) for (NSString *key in body) if (![allowed containsObject:key]) valid = NO;
+    BOOL codeInput = valid && [body[@"action"] isEqual:@"code"];
+    if (valid) valid = codeInput ?
+        ([body[@"agent"] isKindOfClass:NSString.class] && [@[@"claude",@"opencode",@"gemini"] containsObject:body[@"agent"]] && [body[@"id"] isKindOfClass:NSString.class] && [[NSUUID alloc] initWithUUIDString:body[@"id"]] != nil) :
+        [body[@"action"] isEqual:@"start"] &&
+        (([body[@"agent"] isEqual:@"codex"] && [body[@"method"] isEqual:@"apiKey"]) ||
+         ([body[@"agent"] isEqual:@"opencode"] && [body[@"provider"] isKindOfClass:NSString.class] && [body[@"method"] isKindOfClass:NSString.class]));
+    if (valid) for (NSString *key in @[@"title",@"save",@"cancel"]) {
+        if (![labels[key] isKindOfClass:NSString.class] || ![labels[key] length] || [labels[key] length] > 200) valid = NO;
+    }
+    if (!valid || !self.ready || self.exited || ![self isCurrentClipboardWorkspace:self.web] || self.accountOperation || self.presentedViewController ||
+        UIApplication.sharedApplication.applicationState != UIApplicationStateActive || UIScreen.mainScreen.isCaptured) {
+        [self accountReply:operation status:409 data:@{@"code":@"error_agent_connection"}]; return;
+    }
+    BibimerAccountInput *input = [BibimerAccountInput new];
+    input.limit = codeInput ? 4096 : 8192;
+    input.labels = labels; input.modalPresentationStyle = UIModalPresentationOverFullScreen;
+    self.accountInput = input; self.accountOperation = operation;
+    __weak BibimerController *weak = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW,180*NSEC_PER_SEC),dispatch_get_main_queue(), ^{
+        BibimerController *owner = weak;
+        if (owner.accountOperation == operation) [owner cancelAccountOperation:identifier error:@"error_timeout"];
+    });
+    input.completion = ^(NSString *key) {
+        BibimerController *owner = weak;
+        if (!owner || owner.accountOperation != operation || operation.cancelled) return;
+        owner.accountInput = nil;
+        if (!key) {
+            [owner accountReply:operation status:200 data:@{@"cancelled":@YES}];
+            [owner cancelAccountOperation:identifier error:nil]; return;
+        }
+        if (![operation matchesDocument:owner.web generation:owner.workspaceGeneration epoch:owner.connectionEpoch] ||
+            !owner.ready || owner.exited || ![owner isCurrentClipboardWorkspace:operation.document] ||
+            UIApplication.sharedApplication.applicationState != UIApplicationStateActive) {
+            [owner cancelAccountOperation:identifier error:@"error_connection_failed"]; return;
+        }
+        NSString *secretField = codeInput ? @"code" : @"key";
+        NSMutableDictionary *payload = [body mutableCopy]; payload[secretField] = key;
+        NSMutableURLRequest *request = [owner request:@"POST" path:@"/v1/agent-connections" body:jsonString(payload)];
+        [payload removeObjectForKey:secretField];
+        __block __weak NSURLSessionDataTask *weakTask;
+        NSURLSessionDataTask *task = [owner.http dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            NSURLSessionDataTask *completed = weakTask;
+            NSDictionary *result = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+            NSInteger status = [(NSHTTPURLResponse *)response statusCode];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                BibimerController *current = weak;
+                // Only the owning operation/document/epoch can receive this
+                // result. Cancellation cannot undo a credential already accepted.
+                [current finishAccountOperation:operation task:completed status:error ? 503 : status data:[result isKindOfClass:NSDictionary.class] ? result : @{@"code":@"error_agent_connection"}];
+            });
+        }];
+        weakTask = task; operation.task = task;
+        [task resume];
+    };
+    [self presentViewController:input animated:YES completion:nil];
 }
 
 - (void)openLink:(NSString *)value {
@@ -1048,7 +1251,16 @@ static void guestExit(int status) {
         if(!self.smokeScript)[self.completionNotifications connected:[body[@"supported"] boolValue]];
     } else if([action isEqual:@"notificationSettings"]){if(!self.smokeScript)[self.completionNotifications openSettings];}
     else if([action isEqual:@"notificationTaken"]){[self.completionNotifications takeTarget];}
-    else if ([action isEqual:@"readClipboard"]) {
+    else if ([action isEqual:@"accountBrowser"]) {
+        if (![self.accountBrowser open:body[@"url"] job:body[@"job"]])
+            [self nativeEvent:@"BibimerAccountBrowserFailed" arguments:@[body[@"job"] ?: @""]];
+    } else if ([action isEqual:@"closeAccountBrowser"]) {
+        [self.accountBrowser close:body[@"job"]];
+    } else if ([action isEqual:@"accountSecret"]) {
+        [self requestAccountSecret:body];
+    } else if ([action isEqual:@"cancelAccountSecret"]) {
+        if ([body[@"id"] isKindOfClass:NSString.class]) [self cancelAccountOperation:body[@"id"] error:nil];
+    } else if ([action isEqual:@"readClipboard"]) {
         NSString *identifier = body[@"id"];
         if (![identifier isKindOfClass:NSString.class] || [identifier rangeOfString:@"^[a-f0-9]{32}:[0-9]{1,16}$" options:NSRegularExpressionSearch].location == NSNotFound) return;
         [self readClipboard:identifier webView:message.webView];
@@ -1149,15 +1361,24 @@ static void guestExit(int status) {
         }
         if (self.smokeScript && [method isEqual:@"POST"] && [path isEqual:@"/native/test-linux-recovery"]) {
             self.testRecoveryWorkspace = self.web;
-            self.testRecoveryWrite = [self.http dataTaskWithRequest:[self request:@"POST" path:@"/v1/health" body:@"{}"]];
-            [self replaceHTTPTransport];
+            self.testRecoveryWriteStarted = NO;
+            self.testRecoveryWriteStopCount = BibimerTestHeldWrite.stopCount;
+            NSMutableURLRequest *held = [self request:@"POST" path:@"/v1/health" body:@"{}"];
+            [held setValue:@"1" forHTTPHeaderField:@"X-Bibimer-Test-Held-Write"];
+            self.testRecoveryWrite = [self.http dataTaskWithRequest:held];
+            [BibimerTestHeldWrite onStart:^{
+                self.testRecoveryWriteStarted = YES;
+                [self replaceHTTPTransport];
+                dispatch_async(dispatch_get_main_queue(), ^{ [self recoverLinux]; });
+            }];
+            [self.testRecoveryWrite resume];
             [self reply:identifier status:200 data:@{@"accepted":@YES}];
-            dispatch_async(dispatch_get_main_queue(), ^{ [self recoverLinux]; });
             return;
         }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-linux-recovery"]) {
             BOOL writeCancelled = self.testRecoveryWrite.state == NSURLSessionTaskStateCanceling || self.testRecoveryWrite.state == NSURLSessionTaskStateCompleted;
-            [self reply:identifier status:200 data:@{@"sameWorkspace":@(self.testRecoveryWorkspace == self.web),@"ready":@(self.ready),@"failed":@(self.recoveryFailed),@"oldWriteCancelled":@(writeCancelled)}];
+            BOOL stopped = BibimerTestHeldWrite.stopCount > self.testRecoveryWriteStopCount;
+            [self reply:identifier status:200 data:@{@"sameWorkspace":@(self.testRecoveryWorkspace == self.web),@"ready":@(self.ready),@"failed":@(self.recoveryFailed),@"oldWriteCancelled":@(self.testRecoveryWriteStarted && writeCancelled && stopped),@"writeState":@(self.testRecoveryWrite.state),@"writeStarted":@(self.testRecoveryWriteStarted),@"writeStopped":@(stopped)}];
             return;
         }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-late-health"]) {

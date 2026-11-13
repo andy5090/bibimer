@@ -1,5 +1,22 @@
 # iOS TestFlight 배포
 
+## iOS 0.1.0(12) TestFlight 내부 배포 완료 (2026-11-13)
+
+- **14:08 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답·한/영 테스트 안내1281자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(12)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드12개를 직접 확인했다. 기존1–11번·그룹/테스터·자동 배포 설정을 유지했다.
+- 업로드 소스 `cf80243cb59c23a4c57fe019f60447b9753aa40d`, 빌드 ID `5b72662b-bf20-475a-8d8c-00d261643642`. **14:03:33 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**다. 동일 아카이브의 로컬 서명 export IPA는 **8,639,616 bytes**, SHA-256 `cd7254ec0cf655b56e93bf56d8fa52f44dc7d346a0f29a5159c7aa0bcc88464a`. 아카이브 `dist/ios-testflight/0.1.0-12-unsigned-nov13-accounts/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-12-export-nov13-accounts/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-12-nov13/`.
+- iOS 계정/프로바이더 설정·Claude 구독/Console와 Codex ChatGPT의 전용 인증 브라우저·UIKit 보안 코드/API 키 입력·diff 기본10px/줄 번호9px를 포함한다. 수동 인증 터미널은 보조 경로로 유지한다. 입력 제출 뒤에도 하나의 native operation에 요청 ID/문서/generation/연결 epoch/task를 유지하며 취소/만료/앱 비활성화/문서 교체 후 이전 완료가 새 요청/문서에 섞이지 않게 했다. 이미 서버에서 접수한 변경의 취소 rollback은 보장하지 않고 자동 재전송하지 않는다.
+- 양 SDK·archive/dSYM·배포 서명·현재 소스→manifest→IPA 자산(웹65·게스트18·네이티브11자산/17소스·현지화20·rootfs426)을 확인했다. 앱 Python33·브리지77·Node25파일·965키×10언어·Chromium20배치·native5소스 정적분석0을 통과했다. 실제 전용 Simulator의 **WKWebView/Linux32개·47.69초·JS오류0·fatal0·진단실패0**이다. 모의 정책20개·기존 syscall 경고4개/미사용 매개변수 경고16개와 구분한다. 상세 검사/보완 경위는 VALIDATION.md를 따른다.
+- **TestFlight에서0.1.0(12)로 업데이트한다.** 별도 iOS 브리지 업데이트는 필요 없다. 실제 iPhone OAuth·Safari localhost callback·보안 입력 캡처/앱 전환·잠금 복구/OS 백그라운드 허가는 별도 확인이다. 고정 Claude 로그인 사본은 공개 소스/계약과 가짜 CLI로 검증했으며 실제 게스트 OAuth 완료를 보장하지 않는다. 실제 사용자 인증 정보/모델을 테스트에 사용하지 않았다. 아래 준비/미배포 기록은 당시 상태다.
+
+## iOS 0.1.0(11) TestFlight 내부 배포 완료 (2026-11-13)
+
+- **03:40 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내1222자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(11)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드11개를 직접 확인했다. 기존1–10번·그룹/테스터·자동 배포 설정을 유지했다.
+- 업로드 소스 `653f2c5bca575231a6d20c93bc2ec8658a954f0b`, 빌드 ID `6ce47e98-04c9-4481-beb8-6f8be4472698`. IPA **8,614,141 bytes**, SHA-256 `24226d29ea2a87c20c15697f1ee2019b6d17b85986d2042f769995f765ee7f80`. **03:26:47 Asia/Seoul Xcode 업로드 성공/exit0/EXPORT SUCCEEDED**이며 Apple 처리 후 기존 그룹에 제공했다. 아카이브 `dist/ios-testflight/0.1.0-11-unsigned-nov13-chat-synced/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-11-export-nov13-chat-synced/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-11-nov13/`.
+- 즉시 Chat 질의 버블·전송/대기/실패/불명 구분·배치 뒤 최하단 이동/수동 스크롤 시 예약 취소, Chat 코드/강조/diff/줄 번호/명령·파일명의 글자 크기 상속, 계정 조회 로딩/iOS 내장 Linux 안내를 포함한다. 원격30754a5의 공통0.42.0/브리지0.25.1·터미널 링크/선택 변경도 병합·재검증했다. 실패/불명 입력은 유지하고 자동 재전송하지 않으며 실제 사용자 이벤트와 맞출 때 같은 버블로 합친다.
+- 배포 전 검사에서 이전 HTTP 쓰기 취소 문제도 보완했다. current/retired의 등록 task를 직접 취소한 장벽 뒤에 guest 종료를 시작하며, 시간 초과/재시도 중 미확인 transport를 유지하고 늦은 ack가 새 연결/복구를 건드리지 않게 한다. main.m·smoke.js·test_http_recovery.py 변경과 Foundation 회귀2개를 포함한다. 최초 미전송 fixture 실패 후보는REJECTED_QA, 병합 전chat-final 후보는SUPERSEDED로 제외했고 둘 다 업로드하지 않았다.
+- 양 SDK·archive/dSYM·배포 서명·현재 소스/IPA 자산(웹65·게스트18·네이티브11자산/13소스·현지화20·rootfs426)을 확인했다. 앱 Python32·iOS 브리지59·공통 로그인15/업데이트9/세션 유지보수10·Node23파일·965키×10언어·Chromium20배치·JS6구문·native3소스 정적분석0을 통과했다. 취소 보완본의 실제 WKWebView/Linux32개를28.86/29.96초로2회, **최종 병합본32개·29.04초·JS오류0·fatal0·진단실패0**를 통과했다. 모의 정책20개·각 실행의 기존 syscall 경고4개·미사용 매개변수 컴파일 경고16개는 구분한다. 상세 증빙/실패 경위는 VALIDATION.md를 따른다.
+- **TestFlight에서0.1.0(11)로 업데이트한다.** 실제 iPhone 키보드/스크롤·글자 크기 제스처·실제 계정 로그인·잠금/백그라운드 허가는 별도 확인이다. 네이티브 사용자 이벤트에 client request ID가 없어 본문+revision으로 대응하므로 에이전트가 본문을 변환하면 임시 버블이 남을 수 있다. 기존 복구의 작업 종료·파일/저장 대화 보존·PTY/미저장 대기열 비복원·명령/승인 미재전송 규칙을 유지한다. 이번 Mac 작업에서 사용자 Runtime Lab·앱/브리지/세션 재시작·Android/웹사이트 배포·외부 베타·정식 App Store 제출은 하지 않았다. 아래 준비/미배포 기록은 당시 상태다.
+
 ## iOS 0.1.0(10) TestFlight 내부 배포 완료 (2026-11-13)
 
 - **01:24 Asia/Seoul**, Apple 처리·기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한/영 테스트 안내1206자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(10)·테스트 중·90일 후 만료**, 내부 테스터1명·빌드10개를 직접 확인했다. 기존1–9번·그룹/테스터·자동 배포 설정을 유지했다.

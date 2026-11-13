@@ -6,6 +6,14 @@
   const clipboardRequests = new Map();
   const clipboardDocument = Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,"0")).join("");
   let clipboardSequence = 0;
+  const accountRequests = new Map();
+  window.BibimerAccountReply = (id, response) => {
+    const request = accountRequests.get(id);
+    if (!request) return;
+    accountRequests.delete(id); clearTimeout(request.timer);
+    if (response?.ok) request.resolve(response.data);
+    else request.reject({key:response?.data?.code || "error_agent_connection",status:response?.status});
+  };
   window.BibimerClipboardReply = (id, response) => {
     const request = clipboardRequests.get(id);
     if (!request) return;
@@ -14,11 +22,27 @@
     else request.reject(new Error(response?.code || "clipboard_failed"));
   };
   window.addEventListener("pagehide", () => {
+    for (const [id, request] of accountRequests) {
+      clearTimeout(request.timer); message("cancelAccountSecret",{id});
+      request.reject({key:"error_connection_failed"});
+    }
+    accountRequests.clear();
     for (const request of clipboardRequests.values()) { clearTimeout(request.timer); request.reject(new Error("clipboard_changed")); }
     clipboardRequests.clear();
   });
   const store = (key, value) => { defaults[key] = value; message("preference", {key, value}); return true; };
   window.Bibimer = Object.freeze({
+    accountLoginWithoutProject: true,
+    requestAccountSecret: (body, labels) => new Promise((resolve,reject) => {
+      const id = clipboardDocument + ":" + (++clipboardSequence);
+      const timer = setTimeout(() => {
+        accountRequests.delete(id); message("cancelAccountSecret",{id});
+        reject({key:"error_timeout"});
+      },180000);
+      accountRequests.set(id,{resolve,reject,timer});
+      try { message("accountSecret",{id,body,labels}); }
+      catch (_) { clearTimeout(timer); accountRequests.delete(id); reject({key:"error_agent_connection"}); }
+    }),
     environment: () => JSON.stringify(defaults),
     setDebugMode: enabled => { if(typeof enabled !== "boolean")return false;defaults.debugMode=enabled;message("debugMode",{enabled});return true; },
     requestDebugDiagnostics: id => message("debugDiagnosticsRead",{id}),
@@ -61,6 +85,8 @@
       catch (_) { clearTimeout(timer); clipboardRequests.delete(id); reject(new Error("clipboard_failed")); }
     }),
     openBrowserWindow: tag => message("browserWindow",{tag}),
+    openAccountLink: (url, job) => message("accountBrowser",{url,job}),
+    closeAccountLink: job => message("closeAccountBrowser",{job}),
     openLink: url => message("link", {url}),
     openGuide: guide => message("guide", {guide}),
     openTermux: () => window.BibimerOpenLocalTerminal?.(),
