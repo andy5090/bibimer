@@ -15,6 +15,10 @@ vm.runInNewContext(source,{window,crypto:crypto.webcrypto,Uint8Array,setTimeout:
  assert.equal((await pending).job.status,'saved');assert.equal(timers.size,0);
  const canceled=window.Bibimer.requestAccountSecret(body,{}),cancelID=posts.at(-1).id;
  window.BibimerAccountReply(cancelID,{ok:true,data:{cancelled:true}});assert.equal((await canceled).cancelled,true);
+ const code=window.Bibimer.requestAccountSecret({agent:'claude',action:'code',id:'00000000-0000-4000-8000-000000000001'},{title:'Code',save:'Submit',cancel:'Cancel'});
+ assert.equal(posts.at(-1).action,'accountSecret');assert.equal(posts.at(-1).body.action,'code');
+ assert.equal(Object.hasOwn(posts.at(-1).body,'code'),false,'The code value is collected in native UI');
+ window.BibimerAccountReply(posts.at(-1).id,{ok:true,data:{job:{status:'saved'}}});assert.equal((await code).job.status,'saved');
  const expired=window.Bibimer.requestAccountSecret(body,{});
  const failure=assert.rejects(expired,e=>e.key==='error_timeout');
  const timer=[...timers.entries()][0];timers.delete(timer[0]);timer[1]();await failure;
@@ -22,5 +26,8 @@ vm.runInNewContext(source,{window,crypto:crypto.webcrypto,Uint8Array,setTimeout:
  window.BibimerAccountReply(posts.at(-1).id,{ok:true,data:{job:{status:'saved'}}});
  const leaving=window.Bibimer.requestAccountSecret(body,{}),rejection=assert.rejects(leaving,e=>e.key==='error_connection_failed');
  events.get('pagehide')();await rejection;assert.equal(timers.size,0);assert.equal(posts.at(-1).action,'cancelAccountSecret');
+ const job='00000000-0000-4000-8000-000000000001';
+ window.Bibimer.openAccountLink('https://auth.example.test/login',job);assert.equal(posts.at(-1).action,'accountBrowser');assert.equal(posts.at(-1).job,job);
+ window.Bibimer.closeAccountLink(job);assert.equal(posts.at(-1).action,'closeAccountBrowser');
  console.log('PASS iOS account secret RPC: explicit requests, no WebKit key value, cancellation, timeout and document cleanup');
 })().catch(error=>{console.error(error);process.exitCode=1;});

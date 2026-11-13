@@ -196,7 +196,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     // Only an explicit new login arms automatic opening. Status/reopen/polling
     // must not launch browsers for a previously existing authentication job.
     s.browserOpened=true;
-    try{Promise.resolve(this.actions.link(s.job.url)).catch(()=>{if(this.current(s)){s.error="error_agent_connection";this.render();}});}
+    try{Promise.resolve(this.actions.link(s.job.url,s.job.id)).catch(()=>{if(this.current(s)){s.error="error_agent_connection";this.render();}});}
     catch(_){s.error="error_agent_connection";this.render();}
   }
   async start(confirmed=false){
@@ -211,16 +211,23 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
   }
   async poll(){
     const s=this.state;if(!this.current(s)||s.busy||!this.activeLogin(s)||!this.dialog.open||!this.available())return;
-    clearTimeout(this.timer);s.busy=true;
-    try{const result=await this.request(this.payload({action:"poll",id:s.job.id}));if(this.current(s)){s.job=result.job;s.error=null;}}
-    catch(e){if(this.current(s))s.error=e.key||"error_agent_connection";}
+    clearTimeout(this.timer);this.timer=null;s.busy=true;
+    let completed=false;
+    try{const result=await this.request(this.payload({action:"poll",id:s.job.id}));if(this.current(s)){s.job=result.job;s.error=null;completed=s.job?.status==="saved";}}
+    catch(e){if(this.current(s)){
+      s.error=e.key||"error_agent_connection";
+      if(e.key==="error_connection_expired"){
+        s.job={id:s.job.id,agent:s.agent,status:"expired"};this.clearSecrets();
+      }
+    }}
     finally{if(this.current(s)){s.busy=false;this.render();this.openBrowser(s,true);if(this.activeLogin(s)&&this.dialog.open&&this.available())this.timer=setTimeout(()=>void this.poll(),2000);}}
+    if(completed&&this.current(s)&&this.dialog.open&&this.available())await this.load();
   }
   async sendCode(){
     const s=this.state;if(!this.current(s)||s.busy||!this.available()||!s.job?.code_required)return;
-    const body=this.payload({action:"code",id:s.job.id,code:this.$("code").value});
-    this.clearSecrets();s.busy=true;s.error=null;
-    try{const r=await this.request(body);if(this.current(s))s.job=r.job;}
+    const body=this.payload({action:"code",id:s.job.id,...(!this.actions.codeSecret?{code:this.$("code").value}:{})});
+    this.clearSecrets();s.busy=true;s.error=null;this.render();
+    try{const r=await (this.actions.codeSecret?this.actions.codeSecret(body):this.request(body));if(this.current(s)&&!r.cancelled)s.job=r.job;}
     catch(e){if(this.current(s))s.error=e.key||"error_agent_connection";}
     finally{delete body.code;if(this.current(s)){s.busy=false;this.render();void this.poll();}}
   }
@@ -259,11 +266,14 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.$("key").required=m?.type==="api"&&!this.actions.secret&&!this.$("form").hidden;
     this.$("job").hidden=!s.job;
     this.$("job-status").textContent=s.job?this.t("connection_job_"+s.job.status):"";
+    if(s.job&&!pending&&s.closedBrowserJob!==s.job.id){s.closedBrowserJob=s.job.id;this.actions.closeBrowser?.(s.job.id);}
     this.$("instructions").textContent=s.job?.instructions||"";
     this.$("site").textContent=s.job?.url?new URL(s.job.url).origin:"";
     this.$("browser").hidden=!pending||!s.job?.url;
     this.$("browser").disabled=!usable;
     this.$("code-form").hidden=!pending||!s.job?.code_required||s.job?.code_submitted;
+    this.$("code").hidden=!!this.actions.codeSecret;
+    this.$("code").required=!this.actions.codeSecret&&!this.$("code-form").hidden;
     this.$("code-submit").disabled=s.busy||!usable;
     this.$("cancel").hidden=s.job?.status!=="pending";this.$("cancel").disabled=s.busy||!usable;
     const terminalUnavailable=!this.context().loginTerminal||(!s.project&&!this.context().loginWithoutProject);

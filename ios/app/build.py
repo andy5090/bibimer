@@ -160,7 +160,7 @@ def main():
     clang = output('xcrun', '--find', 'clang')
     target = 'arm64-apple-ios16.0' + ('-simulator' if args.sdk == 'iphonesimulator' else '')
     flags = ['-target', target, '-isysroot', sdk, '-DBIBIMER_EMBEDDED=1', '-DGUEST_ARM64=1']
-    sources = [HERE / 'Sources/main.m', HERE / 'Sources/AccountInput.m', HERE / 'Sources/VoiceService.m', HERE / 'Sources/BrowserService.m', HERE / 'Sources/CompletionNotifications.m', HERE / 'Sources/BackgroundExecution.m', HERE / 'Sources/AppSupport.c',
+    sources = [HERE / 'Sources/main.m', HERE / 'Sources/AccountInput.m', HERE / 'Sources/AccountBrowser.m', HERE / 'Sources/VoiceService.m', HERE / 'Sources/BrowserService.m', HERE / 'Sources/CompletionNotifications.m', HERE / 'Sources/BackgroundExecution.m', HERE / 'Sources/AppSupport.c',
                REPO / 'ios/runtime-lab/Sources/RuntimeSupport.c', runtime / 'embed/ffi.c']
     objects = []
     for source in sources:
@@ -171,7 +171,7 @@ def main():
         objects.append(obj)
     run(clang, *flags, *objects, engine / 'libish.a', engine / 'libish_emu.a', engine / 'libfakefs.a',
         '-framework', 'UIKit', '-framework', 'Foundation', '-framework', 'CoreFoundation', '-framework', 'CoreGraphics', '-framework', 'WebKit', '-framework', 'AVFoundation', '-framework', 'Speech', '-framework', 'Security', '-framework', 'UserNotifications',
-        '-framework', 'BackgroundTasks', '-lsqlite3', '-lresolv', '-o', app / 'Bibimer')
+        '-framework', 'BackgroundTasks', '-framework', 'SafariServices', '-lsqlite3', '-lresolv', '-o', app / 'Bibimer')
     if (app / 'rootfs').exists():
         shutil.rmtree(app / 'rootfs')
     shutil.copytree(ENGINE_WORK / 'base-rootfs', app / 'rootfs', symlinks=True)

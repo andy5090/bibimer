@@ -80,6 +80,8 @@
       catch (_) { clearTimeout(timer); clipboardRequests.delete(id); reject(new Error("clipboard_failed")); }
     }),
     openBrowserWindow: tag => message("browserWindow",{tag}),
+    openAccountLink: (url, job) => message("accountBrowser",{url,job}),
+    closeAccountLink: job => message("closeAccountBrowser",{job}),
     openLink: url => message("link", {url}),
     openGuide: guide => message("guide", {guide}),
     openTermux: () => window.BibimerOpenLocalTerminal?.(),

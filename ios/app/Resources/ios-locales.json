@@ -46,7 +46,8 @@
     "Account settings could not be loaded. Check the built-in Linux connection. No separate bridge installation or update is needed.",
     "Connect to the built-in Linux environment first. Use Reconnect in Settings.",
     "iOS requires no separate bridge installation or update. Manage agent sign-ins and OpenCode providers here.",
-    "Open a separate login terminal inside Bibimer and follow the CLI instructions. Then refresh account status here. Existing sessions keep running."
+    "Open a separate login terminal inside Bibimer and follow the CLI instructions. Then refresh account status here. Existing sessions keep running.",
+    "Continue in the sign-in browser. If a code is shown, copy the entire code, including #state, and submit it here. Return to Bibimer to check completion."
   ],
   "ko": [
     "마이크를 눌렀을 때 음성을 녹음해 입력 초안에 추가합니다.",
@@ -95,7 +96,8 @@
     "계정 설정을 불러오지 못했습니다. 내장 Linux 연결을 확인하세요. 별도 브리지 설치나 업데이트는 필요하지 않습니다.",
     "먼저 내장 Linux에 연결하세요. 설정의 다시 연결을 사용할 수 있습니다.",
     "iOS에서는 별도 브리지 설치나 업데이트가 필요하지 않습니다. 여기서 에이전트 로그인과 OpenCode 프로바이더를 관리합니다.",
-    "Bibimer 안에 별도 로그인 터미널을 열고 CLI 안내를 따르세요. 이후 여기서 계정 상태를 새로고침하세요. 기존 세션은 계속 실행됩니다."
+    "Bibimer 안에 별도 로그인 터미널을 열고 CLI 안내를 따르세요. 이후 여기서 계정 상태를 새로고침하세요. 기존 세션은 계속 실행됩니다.",
+    "로그인 브라우저에서 인증을 진행하세요. 코드가 표시되면 #state를 포함한 코드 전체를 복사해 여기서 제출하세요. Bibimer로 돌아오면 완료 상태를 확인할 수 있습니다."
   ],
   "pt-BR": [
     "Grava a fala ao tocar no microfone para adicionar texto ao rascunho.",
@@ -144,7 +146,8 @@
     "Não foi possível carregar as contas. Verifique a conexão com o Linux integrado. Não é necessário instalar nem atualizar uma ponte separada.",
     "Conecte primeiro ao Linux integrado. Use Reconectar nos Ajustes.",
     "No iOS, não é necessário instalar nem atualizar uma ponte separada. Gerencie aqui os logins dos agentes e provedores do OpenCode.",
-    "Abra um terminal de login separado no Bibimer e siga as instruções da CLI. Depois atualize o status da conta aqui. As sessões existentes continuam em execução."
+    "Abra um terminal de login separado no Bibimer e siga as instruções da CLI. Depois atualize o status da conta aqui. As sessões existentes continuam em execução.",
+    "Continue no navegador de login. Se aparecer um código, copie-o inteiro, incluindo #state, e envie-o aqui. Volte ao Bibimer para verificar a conclusão."
   ],
   "es": [
     "Graba voz al tocar el micrófono para añadir texto al borrador.",
@@ -193,7 +196,8 @@
     "No se pudieron cargar las cuentas. Comprueba la conexión con el Linux integrado. No es necesario instalar ni actualizar un puente por separado.",
     "Conecta primero al Linux integrado. Usa Reconectar en Ajustes.",
     "En iOS no es necesario instalar ni actualizar un puente por separado. Gestiona aquí los inicios de sesión y proveedores de OpenCode.",
-    "Abre un terminal de inicio de sesión separado en Bibimer y sigue las instrucciones de la CLI. Después actualiza aquí el estado de la cuenta. Las sesiones existentes siguen ejecutándose."
+    "Abre un terminal de inicio de sesión separado en Bibimer y sigue las instrucciones de la CLI. Después actualiza aquí el estado de la cuenta. Las sesiones existentes siguen ejecutándose.",
+    "Continúa en el navegador de inicio de sesión. Si aparece un código, cópialo completo, incluido #state, y envíalo aquí. Vuelve a Bibimer para comprobar el resultado."
   ],
   "id": [
     "Merekam ucapan saat Anda mengetuk mikrofon untuk menambahkan teks ke draf.",
@@ -242,7 +246,8 @@
     "Pengaturan akun gagal dimuat. Periksa koneksi Linux bawaan. Tidak perlu memasang atau memperbarui bridge terpisah.",
     "Hubungkan Linux bawaan terlebih dahulu. Gunakan Hubungkan kembali di Pengaturan.",
     "Di iOS, tidak perlu memasang atau memperbarui bridge terpisah. Kelola login agen dan penyedia OpenCode di sini.",
-    "Buka terminal login terpisah di Bibimer dan ikuti petunjuk CLI. Lalu segarkan status akun di sini. Sesi yang ada tetap berjalan."
+    "Buka terminal login terpisah di Bibimer dan ikuti petunjuk CLI. Lalu segarkan status akun di sini. Sesi yang ada tetap berjalan.",
+    "Lanjutkan di browser login. Jika kode ditampilkan, salin seluruh kode termasuk #state dan kirimkan di sini. Kembali ke Bibimer untuk memeriksa penyelesaian."
   ],
   "zh-Hans": [
     "点按麦克风时录音，将文字添加到草稿。",
@@ -291,7 +296,8 @@
     "无法加载账户设置。请检查内置 Linux 连接。不需要单独安装或更新桥接服务。",
     "请先连接内置 Linux。可在设置中使用重新连接。",
     "iOS 不需要单独安装或更新桥接服务。在此管理代理登录和 OpenCode 提供商。",
-    "在 Bibimer 中打开独立登录终端并按照 CLI 提示操作。然后在此刷新账户状态。现有会话会继续运行。"
+    "在 Bibimer 中打开独立登录终端并按照 CLI 提示操作。然后在此刷新账户状态。现有会话会继续运行。",
+    "在登录浏览器中继续验证。如果显示代码，请复制包含 #state 的完整代码并在此提交。返回 Bibimer 查看完成状态。"
   ],
   "ja": [
     "マイクをタップしたときに録音し、下書きにテキストを追加します。",
@@ -340,7 +346,8 @@
     "アカウント設定を読み込めませんでした。内蔵 Linux の接続を確認してください。ブリッジの個別インストールや更新は不要です。",
     "まず内蔵 Linux に接続してください。設定の再接続を利用できます。",
     "iOS ではブリッジの個別インストールや更新は不要です。ここでエージェントのログインと OpenCode プロバイダーを管理します。",
-    "Bibimer 内の別のログインターミナルを開き、CLI の案内に従ってください。その後ここでアカウント状態を更新してください。既存のセッションは実行を続けます。"
+    "Bibimer 内の別のログインターミナルを開き、CLI の案内に従ってください。その後ここでアカウント状態を更新してください。既存のセッションは実行を続けます。",
+    "ログイン用ブラウザーで認証を進めてください。コードが表示された場合は #state を含むコード全体をコピーしてここで送信してください。Bibimer に戻って完了状態を確認できます。"
   ],
   "zh-Hant": [
     "點按麥克風時錄音，將文字加入草稿。",
@@ -389,7 +396,8 @@
     "無法載入帳戶設定。請檢查內建 Linux 連線。不需要單獨安裝或更新橋接服務。",
     "請先連線至內建 Linux。可在設定中使用重新連線。",
     "iOS 不需要單獨安裝或更新橋接服務。在此管理代理登入和 OpenCode 供應商。",
-    "在 Bibimer 中開啟獨立登入終端並依照 CLI 提示操作。然後在此重新整理帳戶狀態。現有工作階段會繼續執行。"
+    "在 Bibimer 中開啟獨立登入終端並依照 CLI 提示操作。然後在此重新整理帳戶狀態。現有工作階段會繼續執行。",
+    "在登入瀏覽器中繼續驗證。如果顯示代碼，請複製包含 #state 的完整代碼並在此提交。返回 Bibimer 查看完成狀態。"
   ],
   "fr": [
     "Enregistre la parole lorsque vous touchez le micro pour ajouter du texte au brouillon.",
@@ -438,7 +446,8 @@
     "Impossible de charger les comptes. Vérifiez la connexion au Linux intégré. Aucune installation ni mise à jour séparée du pont n’est nécessaire.",
     "Connectez d’abord le Linux intégré. Utilisez Reconnecter dans Réglages.",
     "Sur iOS, aucune installation ni mise à jour séparée du pont n’est nécessaire. Gérez ici les connexions des agents et les fournisseurs OpenCode.",
-    "Ouvrez un terminal de connexion distinct dans Bibimer et suivez les instructions de la CLI. Actualisez ensuite le compte ici. Les sessions existantes continuent."
+    "Ouvrez un terminal de connexion distinct dans Bibimer et suivez les instructions de la CLI. Actualisez ensuite le compte ici. Les sessions existantes continuent.",
+    "Continuez dans le navigateur de connexion. Si un code apparaît, copiez-le entièrement, y compris #state, et envoyez-le ici. Revenez dans Bibimer pour vérifier le résultat."
   ],
   "de": [
     "Nimmt beim Tippen auf das Mikrofon Sprache auf und fügt Text zum Entwurf hinzu.",
@@ -487,6 +496,7 @@
     "Die Kontoeinstellungen konnten nicht geladen werden. Prüfe die integrierte Linux-Verbindung. Eine separate Installation oder Aktualisierung der Bridge ist nicht nötig.",
     "Verbinde zuerst die integrierte Linux-Umgebung. Nutze Erneut verbinden in den Einstellungen.",
     "Unter iOS ist keine separate Installation oder Aktualisierung der Bridge nötig. Verwalte hier Agent-Anmeldungen und OpenCode-Anbieter.",
-    "Öffne ein separates Anmeldeterminal in Bibimer und folge den CLI-Anweisungen. Aktualisiere danach hier den Kontostatus. Bestehende Sitzungen laufen weiter."
+    "Öffne ein separates Anmeldeterminal in Bibimer und folge den CLI-Anweisungen. Aktualisiere danach hier den Kontostatus. Bestehende Sitzungen laufen weiter.",
+    "Fahre im Anmeldebrowser fort. Wird ein Code angezeigt, kopiere ihn vollständig einschließlich #state und sende ihn hier. Kehre zu Bibimer zurück, um den Abschluss zu prüfen."
   ]
 }

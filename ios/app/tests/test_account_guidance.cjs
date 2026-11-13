@@ -5,7 +5,7 @@ const source=fs.readFileSync("ios/app/Resources/platform.js","utf8").split("  co
 for(const language of Object.keys(locales)){
  const window={BibimerIOSLocales:locales,BibimerI18n:{language:()=>language,t:key=>"ANDROID_BRIDGE_UPDATE_"+key,apply(){}}};
  vm.runInNewContext(source,{window});
- for(const [key,index] of [["connection_update_bridge",43],["connection_need_bridge",44],["connections_hint",45],["connection_terminal_in_app_hint",46]]){
+ for(const [key,index] of [["connection_update_bridge",43],["connection_need_bridge",44],["connections_hint",45],["connection_terminal_in_app_hint",46],["connection_login_hint",47]]){
   assert.equal(window.BibimerI18n.t(key),locales[language][index],language+" uses iOS account guidance");
   assert.ok(!window.BibimerI18n.t(key).includes("ANDROID_BRIDGE_UPDATE_"));
  }

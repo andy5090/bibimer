@@ -57,15 +57,16 @@ print('AUTH_DONE',flush=True)
         self.bridge.linked_files.close(); self.bridge.github.close(); self.bridge.worktree_creation.close()
 
     def api(self, agent='codex', action='status', token=True, origin=None, **body):
-        connection = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=5)
+        connection = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=20)
         headers = {'Content-Type': 'application/json'}
         if token: headers['Authorization'] = 'Bearer ' + self.bridge.token
         if origin: headers['Origin'] = origin
-        connection.request('POST', '/v1/agent-connections', json.dumps(dict(agent=agent, action=action, **body)), headers)
-        response = connection.getresponse()
-        result = response.status, json.loads(response.read())
-        connection.close()
-        return result
+        try:
+            connection.request('POST', '/v1/agent-connections', json.dumps(dict(agent=agent, action=action, **body)), headers)
+            response = connection.getresponse()
+            return response.status, json.loads(response.read())
+        finally:
+            connection.close()
 
     def test_health_enables_accounts_but_keeps_android_updater_disabled(self):
         with patch.object(self.base.shutil, 'which', return_value=None):
@@ -90,11 +91,11 @@ print('AUTH_DONE',flush=True)
         code, result = self.api('claude')
         self.assertEqual(200, code, result)
         self.assertEqual('signed_out', result['state'])
-        self.assertEqual('terminal', result['login_methods'][0]['type'])
+        self.assertEqual('oauth', result['login_methods'][0]['type'])
         self.assertNotIn('PRIVATE', json.dumps(result))
         code, result = self.api()
         self.assertEqual(200, code, result)
-        self.assertEqual(['terminal', 'api'], [row['type'] for row in result['login_methods']])
+        self.assertEqual(['oauth', 'api'], [row['type'] for row in result['login_methods']])
         self.assertNotIn('PRIVATE', json.dumps(result))
         self.assertIsNone(self.bridge.active_project_id)
         self.assertFalse(self.bridge.sessions)
@@ -114,13 +115,49 @@ print('AUTH_DONE',flush=True)
         self.assertEqual(['test'], [row['id'] for row in result['providers']])
         self.assertFalse(result['providers'][0]['methods'][2]['supported'])
 
-    def test_desktop_oauth_start_is_rejected_for_pinned_claude_and_codex(self):
-        for agent, method in [('claude','claudeai'),('codex','chatgpt')]:
-            for action in ('prepare','start'):
-                code, result = self.api(agent, action, method=method, request_id=str(uuid.uuid4()))
-                self.assertEqual(400, code, result)
-                self.assertEqual('error_connection_unsupported', result['code'])
-        self.assertFalse(self.bridge.sessions)
+    def test_codex_ui_login_waits_for_native_completion_without_terminal(self):
+        code, result = self.api('codex','start',method='chatgpt',request_id=str(uuid.uuid4()))
+        self.assertEqual(200,code,result)
+        job=result['job'];self.assertEqual('pending',job['status']);self.assertTrue(job['url'].startswith('https://'))
+        code, result = self.api('codex','poll',id=job['id']);self.assertEqual('pending',result['job']['status'])
+        (self.bin/'complete').touch()
+        code, result = self.api('codex','poll',id=job['id']);self.assertEqual('saved',result['job']['status'])
+        self.assertNotIn('url',result['job']);self.assertNotIn('PRIVATE',json.dumps(result));self.assertFalse(self.bridge.sessions)
+
+    def test_claude_ui_login_accepts_code_and_confirms_cli_account_status(self):
+        self.executable('claude', """import json,pathlib,sys
+root=pathlib.Path(__file__).parent
+if sys.argv[1:]==['auth','status']:
+ print(json.dumps({'loggedIn':(root/'signed-in').exists(),'token':'PRIVATE_TOKEN'}));sys.exit()
+assert sys.argv[1:]==['auth','login']
+print('https://claude.ai/oauth/authorize?state=fictional-state',flush=True)
+print('Paste code here if prompted > ',flush=True)
+assert input()=='fictional-code#fictional-state'
+(root/'signed-in').touch()
+""")
+        code, result=self.api('claude','start',method='claudeai',request_id=str(uuid.uuid4()));self.assertEqual(200,code,result)
+        job=result['job']
+        def poll():
+            code,result=self.api('claude','poll',id=job['id']);self.assertEqual(200,code,result);return result['job']
+        fixtures.wait_for(lambda:poll().get('code_required'),timeout=15)
+        code,result=self.api('claude','status');self.assertEqual(job['id'],result['job']['id'])
+        code,result=self.api('claude','code',id=job['id'],code='fictional-code#fictional-state');self.assertEqual(200,code,result)
+        final=fixtures.wait_for(lambda:(row if (row:=poll())['status']!='pending' else None),timeout=15)
+        self.assertEqual('saved',final['status']);self.assertNotIn('url',final)
+        self.assertNotIn('PRIVATE',json.dumps(final));self.assertNotIn('fictional-code',json.dumps(final))
+        code,result=self.api('claude','status');self.assertEqual('configured',result['state'])
+        self.assertFalse(self.bridge.sessions);self.assertIsNone(self.bridge.active_project_id)
+
+    def test_ui_login_cancel_and_expiry_remove_url_and_owned_process(self):
+        self.executable('claude', "import time\nprint('https://claude.ai/oauth/authorize?state=fictional',flush=True)\ntime.sleep(60)\n")
+        for action in ('cancel','expire'):
+            code,result=self.api('claude','start',method='claudeai',request_id=str(uuid.uuid4()));self.assertEqual(200,code,result)
+            job=result['job'];internal=self.bridge.agent_connections.jobs['claude'];child=internal['client'].process
+            fixtures.wait_for(lambda:internal['client'].url,timeout=15)
+            if action=='expire':internal['expires_at']=0
+            code,result=self.api('claude','cancel' if action=='cancel' else 'poll',id=job['id'])
+            self.assertEqual(200,code,result);self.assertEqual('cancelled' if action=='cancel' else 'expired',result['job']['status'])
+            self.assertNotIn('url',result['job']);self.assertIsNotNone(child.poll());self.assertFalse(self.bridge.sessions)
 
     def test_claude_terminal_before_first_project_uses_pty_login_and_retry_reattaches(self):
         key = str(uuid.uuid4())
@@ -169,6 +206,12 @@ print('AUTH_DONE',flush=True)
                 with self.assertRaises(self.base.Problem) as blocked:
                     client.call(method, {})
                 self.assertEqual('error_import_invalid', blocked.exception.code)
+
+    def test_account_poll_gets_fresh_budget_after_browser_wait(self):
+        with self.base.AccountClient(str(self.bin / 'codex'), str(self.root)) as client:
+            client.metadata_deadline = 0
+            self.assertIn('account', client.call('account/read', {'refreshToken':False}))
+            self.assertGreater(client.metadata_deadline, time.monotonic())
 
     def test_opencode_accounts_use_the_prepared_ios_server_adapter(self):
         provider = fixtures.entry.prepare_opencode_provider(self.root, fixtures.ROOT / 'bridge/provider_opencode.py')

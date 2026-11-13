@@ -176,6 +176,27 @@ const el=id=>node('agent-connection-'+id);
  const savedJob=controller.state.job;controller.actions.secret=async()=>({cancelled:true});await controller.start();
  assert.equal(controller.state.job,savedJob);assert.equal(controller.state.error,null,'Cancelling the native sheet performs no connection');
  controller.actions.secret=null;
+ await controller.open('claude');
+ const codeBodies=[],closedBrowsers=[];
+ controller.actions.codeSecret=async body=>{codeBodies.push({...body});return {job:{id:body.id,status:'pending',code_submitted:true}};};
+ controller.actions.closeBrowser=id=>closedBrowsers.push(id);
+ controller.state.job={id:'ui-code-login',status:'pending',code_required:true};controller.render();
+ assert.equal(el('code').hidden,true);assert.equal(el('code').required,false);
+ el('code').value='never-copy-this-code-to-the-web-request';const beforeCode=calls.length;
+ await controller.sendCode();await new Promise(setImmediate);
+ assert.equal(codeBodies.length,1);assert.equal(Object.hasOwn(codeBodies[0],'code'),false);assert.equal(codeBodies[0].id,'ui-code-login');
+ assert.equal(calls.slice(beforeCode).some(body=>body.action==='code'),false,'Code submission uses native input directly');
+ assert.equal(el('code').value,'');assert.ok(closedBrowsers.includes('ui-code-login'),'Native completion closes only its authentication browser');
+ assert.equal(calls.at(-1).action,'status','Completion refreshes the actual account status');
+ controller.actions.codeSecret=null;
+ const beforeExpiredRequest=controller.request;
+ controller.request=async()=>{throw {key:'error_connection_expired'};};
+ controller.state.job={id:'expired-ui-login',status:'pending',url:'https://auth.example.test/login',code_required:true};
+ await controller.poll();assert.equal(controller.state.job.status,'expired');assert.equal(controller.state.job.url,undefined);
+ assert.equal(controller.activeLogin(),false);assert.equal(controller.timer,null,'An expired login cannot keep polling forever');
+ assert.ok(closedBrowsers.includes('expired-ui-login'));controller.request=beforeExpiredRequest;
+
+
  ctx={...ctx,demo:true};const demoCalls=calls.length;await controller.open('opencode');el('terminal').handlers.click();assert.equal(calls.length,demoCalls);assert.deepEqual(terminals,[]);
  console.log('Agent connections: in-app status/key flow, explicit native/browser actions, masked and cleared secrets, unsupported forms/old bridge, pending completion and stale context guards passed');
 })().catch(error=>{console.error(error);process.exitCode=1;});

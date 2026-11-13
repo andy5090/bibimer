@@ -76,7 +76,7 @@
 - (void)captureChanged { if (UIScreen.mainScreen.isCaptured) [self cancel]; }
 - (BOOL)valid {
     NSString *key = self.field.text;
-    return key.length > 0 && key.length <= 8192 &&
+    return key.length > 0 && key.length <= (self.limit ?: 8192) &&
         [key rangeOfCharacterFromSet:NSCharacterSet.controlCharacterSet].location == NSNotFound;
 }
 - (void)changed { self.save.enabled = [self valid]; }
