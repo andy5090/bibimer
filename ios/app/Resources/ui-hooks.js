@@ -43,6 +43,7 @@
   const iosResume = window.BibimerResume;
   window.BibimerResume = () => {
     if (iosReconnectAckTimer !== null) clearTimeout(iosReconnectAckTimer); iosReconnectAckTimer = null;
+    iosAuthenticationReturnReason = "foreground:" + (++iosAuthenticationReturns);
     iosResume(); iosRenderReconnect();
   };
   window.BibimerIOSRuntimeChanged = () => {
@@ -64,6 +65,47 @@
     }
   };
   iosRenderReconnect();
+  // A login PTY exit is only a trigger to read structured account status.
+  // Neither terminal text nor its exit code establishes authentication success.
+  const iosAuthenticationAttempts = new Set(), iosAuthenticationInFlight = new Set(), iosAuthenticationConfirmed = new Set();
+  let iosAuthenticationReturns = 0, iosAuthenticationReturnReason = null;
+  function iosAuthenticationIdentity() {
+    const agent = session?.authentication_agent || (session?.setup_action?.action === "login" ? session.setup_action.agent : null);
+    if (!["codex","claude","opencode"].includes(agent) || !online || paused || switchingProject || !canConnections) return null;
+    return {agent,key:JSON.stringify([instance,session.id,session.launch_id || null,agent]),project:projectKey(),path:fileContext().path || null};
+  }
+  async function iosRefreshAuthentication(reason = "exit") {
+    const source = iosAuthenticationIdentity();
+    if (!source || (reason === "exit" && session.state !== "exited") || iosAuthenticationConfirmed.has(source.key)) return;
+    const exited = session.state === "exited", exitCode = session.exit_code;
+    const attempt = source.key + ":" + reason;
+    if (iosAuthenticationAttempts.has(attempt) || iosAuthenticationInFlight.has(source.key)) return;
+    iosAuthenticationAttempts.add(attempt); iosAuthenticationInFlight.add(source.key);
+    const current = () => {
+      const target = iosAuthenticationIdentity();
+      return target?.key === source.key && target.project === source.project && target.path === source.path;
+    };
+    try {
+      const report = await api("POST","/v1/agent-connections",{agent:source.agent,action:"status",
+        ...(source.project ? {project_id:source.project,...(source.path ? {worktree_path:source.path} : {})} : {})});
+      if (!current() || report.agent !== source.agent) return;
+      // Existing credentials may already be configured while a new login is
+      // running. Only check completion against a fresh post-exit status read.
+      if (exited && exitCode === 0 && report.state === "configured") {
+        iosAuthenticationConfirmed.add(source.key);
+        for (const key of modelCatalogs.keys()) if (key.split("/")[1] === source.agent) modelCatalogs.delete(key);
+        notice("connection_configured");
+        if (agentConnections.dialog.open && agentConnections.state?.agent === source.agent && agentConnections.current(agentConnections.state)) void agentConnections.load();
+        renderSession();
+      } else if (exited) notice(exitCode !== 0 ? "error_agent_connection" : report.state === "signed_out" ? "connection_signed_out" : "connection_unknown");
+    } catch (error) {
+      if (current() && session.state === "exited") notice(error.key || "error_agent_connection");
+    } finally {
+      iosAuthenticationInFlight.delete(source.key);
+      // A return-to-app check may finish just as the finite login process exits.
+      if (reason !== "exit" && current() && session.state === "exited") void iosRefreshAuthentication();
+    }
+  }
   const iosConnect = connect;
   $("ios-connection-diagnostics-copy").addEventListener("click", () => { if(environment().debugMode===true)native.copyConnectionDiagnostics(); });
   window.BibimerIOSDiagnosticsCopied = () => {
@@ -75,7 +117,15 @@
     if (["stopped", "restart-required", "recovery-failed", "restarting"].includes(environment().localRuntime?.state)) {
       window.BibimerIOSRuntimeChanged(); return;
     }
-    return iosConnect(...args);
+    const result = await iosConnect(...args);
+    // The shared connect path refreshes account state before setting online.
+    // Resume the existing job only after that foreground health check succeeds.
+    if (online && !paused) {
+      agentConnections.update();
+      const reason = iosAuthenticationReturnReason; iosAuthenticationReturnReason = null;
+      void iosRefreshAuthentication(reason || "exit");
+    }
+    return result;
   };
   for (const [id,key] of [["ios-keep-awake","keepAwake"],["ios-defer-home","deferHomeGesture"]]) {
     const control = $(id);
@@ -155,7 +205,10 @@
   })});
   if (iosTerminalTools) {
     const iosTab = tab;
-    tab = function(...args) { iosTextGestures.forEach(gesture => gesture.cancel()); iosTab(...args); iosTerminalTools.update(); };
+    tab = function(...args) {
+      iosTextGestures.forEach(gesture => gesture.cancel()); iosTab(...args); iosTerminalTools.update();
+      if (currentTab === "settings") void iosRefreshAuthentication("settings:" + (++iosAuthenticationReturns));
+    };
   }
   const iosSetupRefreshed = new Set(), iosSetupRefreshing = new Set();
   async function iosRefreshSetupAgents(id) {
@@ -190,6 +243,7 @@
     if (iosPermissionIssue($("import-agent").value,savedOptions($("import-agent").value).permission,"chat")) $("import-confirm").disabled = true;
     if (online && session?.id && session.setup_action?.action === "install" && session.state === "exited" && session.exit_code === 0) void iosRefreshSetupAgents(session.id);
     iosTerminalTools?.update();
+    void iosRefreshAuthentication();
   };
   const iosWorktreeRender = worktreeCreator.render.bind(worktreeCreator);
   worktreeCreator.render = function() {
