@@ -33,6 +33,12 @@ OPERATION_SOURCE
 @implementation BibimerAccountInput
 - (void)cancel { self.cancelled = YES; }
 @end
+@interface BibimerAccountBrowser : NSObject
+- (void)stopCodeWatch;
+@end
+@implementation BibimerAccountBrowser
+- (void)stopCodeWatch {}
+@end
 static NSString *jsonString(id value) {
     NSData *data = [NSJSONSerialization dataWithJSONObject:value options:NSJSONWritingFragmentsAllowed error:nil];
     return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
@@ -44,6 +50,7 @@ static NSString *jsonString(id value) {
 @property NSUInteger connectionEpoch;
 @property BibimerAccountOperation *accountOperation;
 @property BibimerAccountInput *accountInput;
+@property BibimerAccountBrowser *accountBrowser;
 - (BOOL)isCurrentClipboardWorkspace:(WKWebView *)web;
 - (void)accountReply:(BibimerAccountOperation *)operation status:(NSInteger)status data:(NSDictionary *)data;
 - (void)cancelAccountOperation:(NSString *)identifier error:(NSString *)code;

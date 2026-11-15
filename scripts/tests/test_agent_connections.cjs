@@ -44,6 +44,11 @@ const controller=new sandbox.window.BibimerAgentConnections(k=>k,()=>ctx,request
 }});
 const el=id=>node('agent-connection-'+id);
 (async()=>{
+ const idleCalls=calls.length;await controller.open();
+ assert.equal(calls.length,idleCalls,'Opening management waits for an explicit agent choice');
+ assert.equal(el('agent').value,'');assert.equal(el('account').hidden,true);assert.equal(el('installation').hidden,true);
+ assert.equal(el('status').textContent,'connection_choose_agent');assert.equal(el('status')['aria-busy'],'false');
+ await controller.load();await controller.start();assert.equal(calls.length,idleCalls);
  await controller.open('opencode');assert.equal(terminals.length,0);assert.equal(calls.at(-1).action,'status');assert.equal(el('provider').value,'test');assert.equal(el('method').options[1].disabled,true);
  el('key').value='fictional-private-key';await controller.start();assert.equal(el('key').value,'');assert.equal(calls.at(-1).key,'fictional-private-key');assert.equal(controller.state.job.status,'saved');assert.equal(terminals.length,0);
  await controller.load('version');assert.equal(el('version').textContent,'connection_version');
@@ -235,6 +240,53 @@ const el=id=>node('agent-connection-'+id);
  controller.state.browserOpened=false;const leavingBrowser=controller.openBrowser(controller.state);
  controller.pause();assert.ok(canceledOpen.includes('ack-login'));browserReject({key:'error_connection_failed'});await leavingBrowser;
  controller.actions.link=originalLink;pollJob=null;
+
+ // A new login may finish preparing its URL while the app is inactive.
+ controller.state.job={id:'resume-new-login',status:'pending'};controller.state.autoBrowserJob='resume-new-login';
+ controller.state.browserAttempted=false;controller.state.browserOpened=false;
+ const beforeResume=links.length;ctx={...ctx,paused:true};controller.pause(true);
+ pollJob={id:'resume-new-login',status:'pending',url:'https://claude.ai/oauth/authorize?state=late'};
+ await controller.poll();assert.equal(links.length,beforeResume);
+ ctx={...ctx,paused:false};controller.update();await new Promise(setImmediate);
+ assert.equal(links.length,beforeResume+1,'Returning to the app opens the explicitly requested delayed browser');
+ await controller.poll();assert.equal(links.length,beforeResume+1);
+ const beforeDeferred=links.length;
+ controller.state.job={id:'inactive-native-open',status:'pending',url:'https://claude.ai/oauth/authorize'};
+ controller.state.autoBrowserJob='inactive-native-open';controller.state.browserOpened=false;controller.state.browserAttempted=false;controller.state.browserRetryAvailable=false;
+ controller.actions.link=async()=>{throw {browserReason:2,key:'error_agent_connection'};};
+ await controller.openBrowser(controller.state,true);assert.equal(controller.state.browserDeferred,true);
+ ctx={...ctx,paused:true};controller.pause(true);controller.actions.link=originalLink;
+ pollJob={...controller.state.job};ctx={...ctx,paused:false};controller.update();await new Promise(setImmediate);
+ assert.equal(links.length,beforeDeferred+1,'A native inactive refusal is retried once after foreground return');
+ controller.update();await new Promise(setImmediate);assert.equal(links.length,beforeDeferred+1);
+
+ // Automatic native input never delivers clipboard contents to this controller.
+ let finishAutomatic,codeProgress;const automaticBodies=[],canceledWatches=[];
+ controller.actions.autoCode=(body,url,progress)=>{codeProgress=progress;automaticBodies.push({...body,url});return new Promise(resolve=>finishAutomatic=resolve);};
+ controller.actions.cancelCodeWatch=job=>canceledWatches.push(job);
+ controller.state.job={id:'copy-login',status:'pending',url:'https://claude.ai/oauth/authorize?state=synthetic',code_required:false};
+ await controller.openBrowser(controller.state);assert.equal(automaticBodies.length,0);
+ pollJob={...controller.state.job,code_required:true};await controller.poll();controller.watchCode(controller.state);
+ assert.equal(automaticBodies.length,1);assert.equal(automaticBodies[0].action,'code');assert.equal(Object.hasOwn(automaticBodies[0],'code'),false);
+ assert.equal(el('auto-code-hint').hidden,false);assert.equal(el('code-fallback').hidden,false);assert.equal(el('code-fallback').open,false);
+ codeProgress();assert.equal(el('job-status')['aria-busy'],'true');assert.equal(el('code-submit').disabled,true);
+ const beforeBusyCode=canceledWatches.length;await controller.sendCode();assert.equal(canceledWatches.length,beforeBusyCode,'Receiving a code cannot open a second input');
+ slow=true;const stalePoll=controller.poll();
+ finishAutomatic({job:{id:'copy-login',status:'saved'}});await new Promise(setImmediate);
+ pendingResolve({job:{id:'copy-login',status:'pending',code_required:true}});slow=false;await stalePoll;
+ assert.equal(controller.state.job.status,'saved','A stale poll cannot undo native authentication completion');
+ assert.equal(el('auto-code-hint').hidden,true);assert.equal(calls.at(-1).action,'status');
+ controller.state.job={id:'manual-fallback',status:'pending',code_required:true};
+ controller.actions.codeSecret=async body=>({cancelled:true});pollJob={...controller.state.job};
+ await controller.sendCode();assert.ok(canceledWatches.includes('manual-fallback'),'Manual entry first cancels the automatic receiver');
+ await new Promise(setImmediate);controller.actions.codeSecret=null;
+ controller.state.job={id:'old-project-code',status:'pending',url:'https://claude.ai/oauth/authorize',code_required:true};
+ await controller.openBrowser(controller.state);const oldCodeState=controller.state;
+ ctx={...ctx,project:'new-code-project'};controller.update();
+ finishAutomatic({job:{id:'old-project-code',status:'saved'}});await new Promise(setImmediate);
+ assert.equal(oldCodeState.job.status,'pending','A code result cannot update another project');
+ assert.ok(canceledWatches.includes('old-project-code'));controller.actions.autoCode=null;
+ await controller.open('claude');pollJob=null;
  ctx={...ctx,demo:true};const demoCalls=calls.length;await controller.open('opencode');el('terminal').handlers.click();assert.equal(calls.length,demoCalls);assert.deepEqual(terminals,[]);
  console.log('Agent connections: in-app status/key flow, explicit native/browser actions, masked and cleared secrets, unsupported forms/old bridge, pending completion and stale context guards passed');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -7,6 +7,8 @@
   const clipboardDocument = Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,"0")).join("");
   let clipboardSequence = 0;
   const accountRequests = new Map();
+  const codeWatchRequests = new Map();
+  window.BibimerAccountProgress = id => accountRequests.get(id)?.progress?.();
   const browserRequests = new Map();
   window.BibimerAccountBrowserReply = (id, reason) => {
     const request = browserRequests.get(id); if (!request) return;
@@ -18,6 +20,7 @@
     const request = accountRequests.get(id);
     if (!request) return;
     accountRequests.delete(id); clearTimeout(request.timer);
+    if(request.job&&codeWatchRequests.get(request.job)===id)codeWatchRequests.delete(request.job);
     if (response?.ok) request.resolve(response.data);
     else request.reject({key:response?.data?.code || "error_agent_connection",status:response?.status});
   };
@@ -39,12 +42,25 @@
       request.reject({key:"error_connection_failed"});
     }
     accountRequests.clear();
+    codeWatchRequests.clear();
     for (const request of clipboardRequests.values()) { clearTimeout(request.timer); request.reject(new Error("clipboard_changed")); }
     clipboardRequests.clear();
   });
   const store = (key, value) => { defaults[key] = value; message("preference", {key, value}); return true; };
   window.Bibimer = Object.freeze({
     accountLoginWithoutProject: true,
+    watchAccountCode: (body, url, progress) => new Promise((resolve,reject) => {
+      const id=clipboardDocument+":"+(++clipboardSequence),job=body.id;
+      const timer=setTimeout(()=>{accountRequests.delete(id);codeWatchRequests.delete(job);message("cancelAccountSecret",{id});resolve({cancelled:true});},600000);
+      accountRequests.set(id,{resolve,reject,timer,job,progress});codeWatchRequests.set(job,id);
+      try{message("accountCodeWatch",{id,body,url});}
+      catch(_){clearTimeout(timer);accountRequests.delete(id);codeWatchRequests.delete(job);reject({key:"error_agent_connection"});}
+    }),
+    cancelAccountCodeWatch: job => {
+      const id=codeWatchRequests.get(job),request=accountRequests.get(id);if(!request)return;
+      clearTimeout(request.timer);codeWatchRequests.delete(job);accountRequests.delete(id);
+      message("cancelAccountSecret",{id});request.resolve({cancelled:true});
+    },
     requestAccountSecret: (body, labels) => new Promise((resolve,reject) => {
       const id = clipboardDocument + ":" + (++clipboardSequence);
       const timer = setTimeout(() => {

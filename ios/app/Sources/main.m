@@ -196,6 +196,7 @@ static BOOL usesDesktopInput(void) {
 - (void)recoverLinux;
 - (void)cancelAccountOperation:(NSString *)identifier error:(NSString *)code;
 - (void)invalidateAccountDocument;
+- (void)submitAccountSecret:(NSString *)secret field:(NSString *)field body:(NSDictionary *)body operation:(BibimerAccountOperation *)operation;
 - (BOOL)startLinuxServices;
 - (void)recordConnection:(NSString *)event code:(NSInteger)code;
 - (void)loadConnectionLog;
@@ -1011,6 +1012,7 @@ static void guestExit(int status) {
     self.accountOperation = nil;
     BibimerAccountInput *input = self.accountInput; self.accountInput = nil;
     [operation cancel];
+    [self.accountBrowser stopCodeWatch];
     [input cancel];
 }
 
@@ -1048,6 +1050,9 @@ static void guestExit(int status) {
         UIApplication.sharedApplication.applicationState != UIApplicationStateActive || UIScreen.mainScreen.isCaptured) {
         [self accountReply:operation status:409 data:@{@"code":@"error_agent_connection"}]; return;
     }
+    if (labels[@"paste"] && (![labels[@"paste"] isKindOfClass:NSString.class] || [labels[@"paste"] length] > 200)) {
+        [self accountReply:operation status:409 data:@{@"code":@"error_agent_connection"}]; return;
+    }
     BibimerAccountInput *input = [BibimerAccountInput new];
     input.limit = codeInput ? 4096 : 8192;
     input.labels = labels; input.modalPresentationStyle = UIModalPresentationOverFullScreen;
@@ -1070,26 +1075,65 @@ static void guestExit(int status) {
             UIApplication.sharedApplication.applicationState != UIApplicationStateActive) {
             [owner cancelAccountOperation:identifier error:@"error_connection_failed"]; return;
         }
-        NSString *secretField = codeInput ? @"code" : @"key";
-        NSMutableDictionary *payload = [body mutableCopy]; payload[secretField] = key;
-        NSMutableURLRequest *request = [owner request:@"POST" path:@"/v1/agent-connections" body:jsonString(payload)];
-        [payload removeObjectForKey:secretField];
-        __block __weak NSURLSessionDataTask *weakTask;
-        NSURLSessionDataTask *task = [owner.http dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-            NSURLSessionDataTask *completed = weakTask;
-            NSDictionary *result = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
-            NSInteger status = [(NSHTTPURLResponse *)response statusCode];
-            dispatch_async(dispatch_get_main_queue(), ^{
-                BibimerController *current = weak;
-                // Only the owning operation/document/epoch can receive this
-                // result. Cancellation cannot undo a credential already accepted.
-                [current finishAccountOperation:operation task:completed status:error ? 503 : status data:[result isKindOfClass:NSDictionary.class] ? result : @{@"code":@"error_agent_connection"}];
-            });
-        }];
-        weakTask = task; operation.task = task;
-        [task resume];
+        [owner submitAccountSecret:key field:codeInput ? @"code" : @"key" body:body operation:operation];
     };
     [self presentViewController:input animated:YES completion:nil];
+}
+
+- (void)submitAccountSecret:(NSString *)secret field:(NSString *)secretField body:(NSDictionary *)body operation:(BibimerAccountOperation *)operation {
+    if (self.accountOperation != operation || operation.cancelled ||
+        ![operation matchesDocument:self.web generation:self.workspaceGeneration epoch:self.connectionEpoch] ||
+        !self.ready || self.exited || ![self isCurrentClipboardWorkspace:operation.document] ||
+        UIApplication.sharedApplication.applicationState != UIApplicationStateActive || UIScreen.mainScreen.isCaptured) {
+        [self cancelAccountOperation:operation.identifier error:@"error_connection_failed"]; return;
+    }
+    __weak BibimerController *weak = self;
+    NSMutableDictionary *payload = [body mutableCopy]; payload[secretField] = secret;
+    NSMutableURLRequest *request = [self request:@"POST" path:@"/v1/agent-connections" body:jsonString(payload)];
+    [payload removeObjectForKey:secretField];
+    __block __weak NSURLSessionDataTask *weakTask;
+    NSURLSessionDataTask *task = [self.http dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        NSURLSessionDataTask *completed = weakTask;
+        NSDictionary *result = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+        NSInteger status = [(NSHTTPURLResponse *)response statusCode];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            BibimerController *current = weak;
+            // Only the owning operation/document/epoch can receive this
+            // result. Cancellation cannot undo a credential already accepted.
+            [current finishAccountOperation:operation task:completed status:error ? 503 : status data:[result isKindOfClass:NSDictionary.class] ? result : @{@"code":@"error_agent_connection"}];
+        });
+    }];
+    weakTask = task; operation.task = task;
+    [task resume];
+}
+
+- (void)watchAccountCode:(NSDictionary *)message {
+    NSString *identifier = message[@"id"];
+    if (![identifier isKindOfClass:NSString.class] || [identifier rangeOfString:@"^[a-f0-9]{32}:[0-9]{1,16}$" options:NSRegularExpressionSearch].location == NSNotFound) return;
+    BibimerAccountOperation *operation = [BibimerAccountOperation new];
+    operation.identifier = identifier; operation.document = self.web;
+    operation.generation = self.workspaceGeneration; operation.epoch = self.connectionEpoch;
+    NSDictionary *body = message[@"body"];
+    BOOL valid = [body isKindOfClass:NSDictionary.class] && [body[@"agent"] isEqual:@"claude"] && [body[@"action"] isEqual:@"code"];
+    NSSet *allowed = [NSSet setWithArray:@[@"agent",@"action",@"id",@"project_id",@"worktree_path"]];
+    if (valid) for (NSString *name in body) if (![allowed containsObject:name]) valid = NO;
+    if (!valid || !self.ready || self.exited || self.accountOperation || ![self isCurrentClipboardWorkspace:self.web] ||
+        UIApplication.sharedApplication.applicationState != UIApplicationStateActive || UIScreen.mainScreen.isCaptured) {
+        [self accountReply:operation status:409 data:@{@"code":@"error_agent_connection"}]; return;
+    }
+    __weak BibimerController *weak = self;
+    BOOL watching = [self.accountBrowser watchCodeForURL:message[@"url"] job:body[@"id"] completion:^(NSString *code) {
+        BibimerController *owner = weak;
+        if (!owner || owner.accountOperation != operation || operation.cancelled) return;
+        if (!code) {
+            [owner accountReply:operation status:200 data:@{@"cancelled":@YES}];
+            [owner cancelAccountOperation:identifier error:nil]; return;
+        }
+        [owner nativeEvent:@"BibimerAccountProgress" arguments:@[identifier]];
+        [owner submitAccountSecret:code field:@"code" body:body operation:operation];
+    }];
+    if (watching) self.accountOperation = operation;
+    else [self accountReply:operation status:200 data:@{@"cancelled":@YES}];
 }
 
 - (void)openLink:(NSString *)value {
@@ -1265,6 +1309,8 @@ static void guestExit(int status) {
         [self.accountBrowser close:body[@"job"]];
     } else if ([action isEqual:@"cancelAccountBrowserOpening"]) {
         [self.accountBrowser cancelOpening:body[@"job"]];
+    } else if ([action isEqual:@"accountCodeWatch"]) {
+        [self watchAccountCode:body];
     } else if ([action isEqual:@"accountSecret"]) {
         [self requestAccountSecret:body];
     } else if ([action isEqual:@"cancelAccountSecret"]) {

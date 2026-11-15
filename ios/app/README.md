@@ -1,5 +1,7 @@
 # Bibimer iOS 앱
 
+2026-11-15 후속 소스(미빌드·미배포): 사용자가 iPhone에서 Claude 로그인 성공을 보고했다. 관리 화면은 에이전트 선택 전 계정 조회를 시작하지 않는다. 새 로그인에서 인증 URL이 준비되면 브라우저를 자동으로 열며, 일시적 비활성화 뒤에도 같은 로그인 요청의 열기 예약을 유지한다. Claude는 Safari에서 승인 후 `#state`를 포함한 전체 코드를 복사하면 현재 challenge와 일치하는 코드만 네이티브에서 직접 전송한다. iOS 붙여넣기 허용이 필요할 수 있다. Safari 인증 페이지를 읽거나 에이전트에 노출하지 않으며 수동 코드 입력·보안 붙여넣기를 보조 경로로 제공한다. 새 네이티브 코드의 Apple SDK 컴파일·iPhone 복사/권한 검증은 남아 있고 TestFlight14에는 아직 미반영이다.
+
 2026-11-15: **0.1.0(14)를 기존 TestFlight 내부 그룹에 제공 중**이다. Claude 수동 로그인에서 인증 URL 준비 전 localhost 콜백 리스너에 의존하던 경로를 제거했다. 인증 브라우저의 실제 표시 응답을 확인하며 열기 실패·명시적 재시도를 구분하고 로그인이나 코드를 자동 재전송하지 않는다. 양 SDK·앱 Python 33개·브리지 83개·Node 23파일·실제 전용 WKWebView/Linux 32개를 검증했다. 실제 iPhone 전체 인증·잠금/백그라운드 허가는 별도 확인이다. iOS 브리지는 앱에 포함되어 별도 업데이트가 필요 없다. [배포 기록](TESTFLIGHT.md)과 [검증 기록](VALIDATION.md)을 따른다.
 
 2026-11-13: **0.1.0(12)를 기존 TestFlight 내부 그룹에 제공 중**이다. iOS 계정/프로바이더 설정, Claude 구독/Console·Codex ChatGPT의 전용 인증 브라우저와 보안 코드/API 키 입력, diff 기본 글자 축소를 포함한다. 입력과 제출 요청을 하나의 native operation으로 관리해 취소·만료·비활성화·문서 교체 뒤 이전 완료가 새 요청/화면을 건드리지 않게 했다. 양 SDK·앱 Python33·브리지77·Node25·Chromium20배치·실제 WKWebView/Linux32개를 통과했다. 실제 iPhone OAuth·Safari localhost callback·보안 입력/앱 전환과 OS 백그라운드 허가는 별도 확인이다. 별도 iOS 브리지 업데이트는 필요 없다. [배포 기록](TESTFLIGHT.md)과 [검증 기록](VALIDATION.md)을 따른다.

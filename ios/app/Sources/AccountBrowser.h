@@ -7,4 +7,6 @@
 - (void)open:(NSString *)url job:(NSString *)job completion:(void (^)(NSInteger))completion;
 - (void)close:(NSString *)job;
 - (void)cancelOpening:(NSString *)job;
+- (BOOL)watchCodeForURL:(NSString *)url job:(NSString *)job completion:(void (^)(NSString *))completion;
+- (void)stopCodeWatch;
 @end

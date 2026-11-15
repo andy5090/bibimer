@@ -42,5 +42,17 @@ vm.runInNewContext(source,{window,crypto:crypto.webcrypto,Uint8Array,setTimeout:
  events.get('pagehide')();await aborted;assert.equal(timers.size,0);
 
  window.Bibimer.closeAccountLink(job);assert.equal(posts.at(-1).action,'closeAccountBrowser');
+ const watchBody={agent:'claude',action:'code',id:job};
+ let progress=0;const watch=window.Bibimer.watchAccountCode(watchBody,'https://claude.ai/oauth/authorize?state=fictional-state',()=>progress++);
+ assert.equal(posts.at(-1).action,'accountCodeWatch');assert.equal(Object.hasOwn(posts.at(-1).body,'code'),false);
+ const watchID=posts.at(-1).id;window.BibimerAccountProgress('old-document');assert.equal(progress,0);window.BibimerAccountProgress(watchID);assert.equal(progress,1);
+ window.BibimerAccountReply(watchID,{ok:true,data:{job:{id:job,status:'saved'}}});assert.equal((await watch).job.status,'saved');window.BibimerAccountProgress(watchID);assert.equal(progress,1);
+ const posted=posts.length;window.Bibimer.cancelAccountCodeWatch(job);assert.equal(posts.length,posted,'Completed receivers are no longer cancelable');
+ const manual=window.Bibimer.watchAccountCode(watchBody,'https://claude.ai/oauth/authorize');
+ window.Bibimer.cancelAccountCodeWatch(job);assert.equal((await manual).cancelled,true);assert.equal(posts.at(-1).action,'cancelAccountSecret');assert.equal(timers.size,0);
+ const expiredWatch=window.Bibimer.watchAccountCode(watchBody,'https://claude.ai/oauth/authorize');
+ const watchTimer=[...timers.entries()][0];timers.delete(watchTimer[0]);watchTimer[1]();assert.equal((await expiredWatch).cancelled,true);
+ const oldWatch=window.Bibimer.watchAccountCode(watchBody,'https://claude.ai/oauth/authorize'),oldRejection=assert.rejects(oldWatch,e=>e.key==='error_connection_failed');
+ events.get('pagehide')();await oldRejection;assert.equal(timers.size,0);assert.equal(posts.at(-1).action,'cancelAccountSecret');
  console.log('PASS iOS account secret RPC: explicit requests, no WebKit key value, cancellation, timeout and document cleanup');
 })().catch(error=>{console.error(error);process.exitCode=1;});

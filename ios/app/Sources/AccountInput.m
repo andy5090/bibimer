@@ -46,7 +46,18 @@
     UIStackView *buttons = [[UIStackView alloc] initWithArrangedSubviews:@[cancel, self.save]];
     buttons.axis = UILayoutConstraintAxisHorizontal; buttons.spacing = 10;
     buttons.distribution = UIStackViewDistributionFillEqually;
-    UIStackView *content = [[UIStackView alloc] initWithArrangedSubviews:@[title, self.field, buttons]];
+    NSMutableArray *rows = [NSMutableArray arrayWithArray:@[title, self.field]];
+    if ([self.labels[@"paste"] isKindOfClass:NSString.class] && self.labels[@"paste"].length) {
+        UIButton *paste = [UIButton buttonWithType:UIButtonTypeSystem];
+        [paste setTitle:self.labels[@"paste"] forState:UIControlStateNormal];
+        paste.tintColor = self.save.tintColor; paste.layer.borderWidth = 1; paste.layer.cornerRadius = 8;
+        paste.layer.borderColor = [UIColor colorWithWhite:0.3 alpha:1].CGColor;
+        [paste.heightAnchor constraintGreaterThanOrEqualToConstant:44].active = YES;
+        [paste addTarget:self action:@selector(pasteCode) forControlEvents:UIControlEventTouchUpInside];
+        [rows addObject:paste];
+    }
+    [rows addObject:buttons];
+    UIStackView *content = [[UIStackView alloc] initWithArrangedSubviews:rows];
     content.axis = UILayoutConstraintAxisVertical; content.spacing = 16;
     panel.translatesAutoresizingMaskIntoConstraints = NO;
     content.translatesAutoresizingMaskIntoConstraints = NO;
@@ -80,6 +91,15 @@
         [key rangeOfCharacterFromSet:NSCharacterSet.controlCharacterSet].location == NSNotFound;
 }
 - (void)changed { self.save.enabled = [self valid]; }
+- (void)pasteCode {
+    if (!self.completion || UIApplication.sharedApplication.applicationState != UIApplicationStateActive || UIScreen.mainScreen.isCaptured) return;
+    void (^owner)(NSString *) = self.completion;
+    NSString *value = [UIPasteboard.generalPasteboard.string stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    if (self.completion != owner || UIApplication.sharedApplication.applicationState != UIApplicationStateActive || UIScreen.mainScreen.isCaptured) return;
+    if (value.length && value.length <= self.limit && [value rangeOfCharacterFromSet:NSCharacterSet.controlCharacterSet].location == NSNotFound) {
+        self.field.text = value; [self changed];
+    }
+}
 - (void)submit { if ([self valid]) [self finish:self.field.text]; }
 - (void)cancel { [self finish:nil]; }
 - (void)finish:(NSString *)key {

@@ -346,7 +346,7 @@
   </dialog>
   <dialog id="agent-connection-dialog" class="settings-dialog" aria-labelledby="agent-connection-title">
     <div class="sidebar-heading"><h2 id="agent-connection-title" data-i18n="connections_title">Agent management</h2><button id="agent-connection-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
-    <label for="agent-connection-agent" data-i18n="program_label">Agent to run</label><select id="agent-connection-agent"><option value="codex">Codex</option><option value="claude">Claude Code</option><option value="opencode">OpenCode</option><option value="gemini">Gemini CLI</option></select>
+    <label for="agent-connection-agent" data-i18n="program_label">Agent to run</label><select id="agent-connection-agent"><option value="" disabled data-i18n="connection_choose_agent">Choose an agent first</option><option value="codex">Codex</option><option value="claude">Claude Code</option><option value="opencode">OpenCode</option><option value="gemini">Gemini CLI</option></select>
     <p id="agent-connection-status" class="hint" role="status" aria-live="polite"></p><p id="agent-connection-version" class="hint"></p>
     <div class="button-row"><button id="agent-connection-refresh" class="secondary" type="button" data-i18n="connection_refresh">Refresh connection</button><button id="agent-connection-version-check" class="secondary" type="button" data-i18n="agent_action_version">Check version</button></div>
     <p id="agent-connection-error" class="hint danger-text" role="alert" hidden></p>
@@ -373,7 +373,9 @@
       <p id="agent-connection-job-status" role="status" aria-live="polite" class="hint"></p><p id="agent-connection-instructions" class="hint" dir="auto"></p><p id="agent-connection-site" class="hint" dir="ltr"></p>
       <p id="agent-connection-recovery-status" class="hint" role="status" hidden></p><ul id="agent-connection-recovery-rows" class="maintenance-sessions"></ul><button id="agent-connection-recovery-retry" class="secondary" type="button" data-i18n="agent_operation_retry" hidden>Retry reopening failed sessions</button>
       <button id="agent-connection-browser" class="primary full" type="button" data-i18n="connection_browser">Continue in browser</button>
-      <form id="agent-connection-code-form" autocomplete="off"><label for="agent-connection-code" data-i18n="connection_code">Authorization code</label><input id="agent-connection-code" type="password" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" required><button id="agent-connection-code-submit" class="primary" type="submit" data-i18n="connection_submit_code">Submit code</button></form>
+      <p id="agent-connection-auto-code-hint" class="hint" data-i18n="connection_auto_code" hidden></p>
+      <details id="agent-connection-code-fallback"><summary data-i18n="connection_manual_code">Enter code manually</summary>
+      <form id="agent-connection-code-form" autocomplete="off"><label for="agent-connection-code" data-i18n="connection_code">Authorization code</label><input id="agent-connection-code" type="password" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" required><button id="agent-connection-code-submit" class="primary" type="submit" data-i18n="connection_submit_code">Submit code</button></form></details>
       <button id="agent-connection-cancel" class="secondary full" type="button" data-i18n="cancel_project">Cancel</button>
     </section>
     <p id="agent-connection-fallback-hint" class="hint" data-i18n="connection_terminal_in_app_hint">Open a separate login terminal inside Bibimer.</p>

@@ -133,9 +133,9 @@
   const agentConnections = new BibimerAgentConnections(t,
     () => ({online:online && !switchingProject, supported:canConnections, loginTerminal:canLoginTerminal, loginUI:canLoginUI, loginWithoutProject:native.accountLoginWithoutProject===true, updates:canAgentUpdates, maintenance:canAgentMaintenance, agents:knownAgents, platform:environment().platform||"android", paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
     data => api("POST", "/v1/agent-connections", data),
-    {sync:() => pickers.sync(), uuid:uuid, link:(url,job) => native.openAccountLink ? native.openAccountLink(url,job) : native.openLink(url), closeBrowser:job=>native.closeAccountLink?.(job), cancelBrowserOpening:job=>native.cancelAccountLinkOpening?.(job), title:id => {const row=findSession(id);return row?sessionTitle(row):id.slice(0,8);},
+    {sync:() => pickers.sync(), uuid:uuid, autoCode:native.watchAccountCode ? (body,url,progress)=>native.watchAccountCode(body,url,progress) : null, cancelCodeWatch:job=>native.cancelAccountCodeWatch?.(job), link:(url,job) => native.openAccountLink ? native.openAccountLink(url,job) : native.openLink(url), closeBrowser:job=>native.closeAccountLink?.(job), cancelBrowserOpening:job=>native.cancelAccountLinkOpening?.(job), title:id => {const row=findSession(id);return row?sessionTitle(row):id.slice(0,8);},
      secret:native.requestAccountSecret ? body=>native.requestAccountSecret(body,{title:t("connection_key"),save:t("connection_connect"),cancel:t("cancel_project")}) : null,
-     codeSecret:native.requestAccountSecret ? body=>native.requestAccountSecret(body,{title:t("connection_code"),save:t("connection_submit_code"),cancel:t("cancel_project")}) : null,
+     codeSecret:native.requestAccountSecret ? body=>native.requestAccountSecret(body,{title:t("connection_code"),save:t("connection_submit_code"),cancel:t("cancel_project"),paste:t("connection_paste_code")}) : null,
      updates:data => api("POST", "/v1/agent-updates", data),
      session:async value => {
        const sourceInstance=instance, sourceProject=projectKey(), sourcePath=fileContext().path;
@@ -143,7 +143,7 @@
        if(instance!==sourceInstance||projectKey()!==sourceProject||fileContext().path!==sourcePath||paused)return;
        await selectSession(value.project.id, value.id);
      }});
-  $("agent-connections-open").addEventListener("click", () => void agentConnections.open(selectedAgent === "shell" ? "codex" : selectedAgent));
+  $("agent-connections-open").addEventListener("click", () => void agentConnections.open(null));
   window.BibimerAccountBrowserFailed = job => {
     if(agentConnections.state?.job?.id!==job||!agentConnections.current(agentConnections.state)||!agentConnections.dialog.open)return;
     agentConnections.state.error="error_agent_connection";agentConnections.render();
@@ -2258,7 +2258,7 @@
   $("app-settings-open").addEventListener("click", () => tab("settings"));
   $("page-back").addEventListener("click", closePage);
   $("setup-guide-open").addEventListener("click", () => openSetupGuide());
-  $("setup-agent-manage").addEventListener("click", () => void agentConnections.open(selectedAgent === "shell" ? "codex" : selectedAgent, {installation:!online}));
+  $("setup-agent-manage").addEventListener("click", () => void agentConnections.open(null, {installation:!online}));
   $("go-setup").addEventListener("click", () => openSetupGuide());
   for (const id of ["demo-settings-exit", "demo-exit-banner"]) $(id).addEventListener("click", () => {
     ++generation; paused = true; clearTimeout(retryTimer); native.cancelPoll?.(); native.setDemoMode?.(false);
@@ -2437,7 +2437,7 @@
     if (!panel.hidden) $("terminal-keys").scrollIntoView({block: "nearest"});
   });
   window.BibimerPause = () => {
-    debugTools.pause(); queueEditor?.pause(); native.stopSpeechOutput?.(); agentConnections.pause(); pickers.close(); paused = true; if (typeof terminalOutput !== "undefined") terminalOutput?.update(); browserConsent.render(); updateTerminalKeys(); ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
+    debugTools.pause(); queueEditor?.pause(); native.stopSpeechOutput?.(); agentConnections.pause(true); pickers.close(); paused = true; if (typeof terminalOutput !== "undefined") terminalOutput?.update(); browserConsent.render(); updateTerminalKeys(); ++generation; clearTimeout(retryTimer); clearTimeout(quickTimer); inspector.update(); };
   $("language").addEventListener("change", () => {
     try {
       if (!native.setLanguage($("language").value)) throw new Error();

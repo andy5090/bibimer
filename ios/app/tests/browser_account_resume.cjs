@@ -44,6 +44,8 @@ const fixture=()=>{
       await page.goto("http://127.0.0.1:"+server.address().port);
       await page.waitForFunction(()=>document.getElementById("connection").classList.contains("connected"));
       await page.evaluate(()=>document.getElementById("agent-connections-open").click());
+      assert.equal(await page.evaluate(()=>window.authFixture.calls.length),0,"Agent choice precedes account status lookup");
+      await page.evaluate(()=>{const agent=document.getElementById("agent-connection-agent");agent.value="codex";agent.dispatchEvent(new Event("change",{bubbles:true}));});
       await page.waitForFunction(()=>!document.getElementById("agent-connection-submit").disabled);
       await page.locator("#agent-connection-submit").click();
       await page.waitForFunction(()=>window.authFixture.calls.some(call=>call.action==="poll"));
