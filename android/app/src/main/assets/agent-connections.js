@@ -34,7 +34,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
   current(state){const c=this.context();return !!state&&state===this.state&&c.instance===state.instance&&c.project===state.project&&(c.path||null)===state.path&&!c.demo;}
   available(){const c=this.context();return c.online&&c.supported&&!c.demo&&!c.paused;}
   clearSecrets(){this.$("key").value="";this.$("code").value="";}
-  pause(){clearTimeout(this.timer);clearTimeout(this.updateTimer);this.timer=null;this.updateTimer=null;if(this.state)this.state.autoBrowserJob=null;this.clearSecrets();if(this.operationDialog.open&&!this.operationBusy())this.operationDialog.close();}
+  pause(){clearTimeout(this.timer);clearTimeout(this.updateTimer);this.timer=null;this.updateTimer=null;if(this.state){this.state.autoBrowserJob=null;if(this.state.browserOpening)this.actions.cancelBrowserOpening?.(this.state.browserOpening);}this.clearSecrets();if(this.operationDialog.open&&!this.operationBusy())this.operationDialog.close();}
   payload(extra={}){const s=this.state;return {agent:s.agent,...(s.project?{project_id:s.project,...(s.path?{worktree_path:s.path}:{})}:{}),...extra};}
   async open(agent="codex", options={}) {
     this.pause();
@@ -193,22 +193,24 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.render();
   }
   choice(){return this.choices?.find(m=>m.id===this.$("method").value);}
-  openBrowser(s, automatic=false){
-    if(!this.current(s)||!this.dialog.open||!this.available()||s.job?.status!=="pending"||!s.job.url)return;
-    if(automatic&&(s.autoBrowserJob!==s.job.id||s.browserOpened))return;
+  async openBrowser(s, automatic=false){
+    if(!this.current(s)||!this.dialog.open||!this.available()||s.job?.status!=="pending"||!s.job.url||s.browserOpening)return;
+    if(automatic&&(s.autoBrowserJob!==s.job.id||s.browserAttempted||s.browserOpened))return;
     // Only an explicit new login arms automatic opening. Status/reopen/polling
     // must not launch browsers for a previously existing authentication job.
-    s.browserOpened=true;
-    try{Promise.resolve(this.actions.link(s.job.url,s.job.id)).catch(()=>{if(this.current(s)){s.error="error_agent_connection";this.render();}});}
-    catch(_){s.error="error_agent_connection";this.render();}
+    const job=s.job.id;
+    s.browserAttempted=true;s.browserOpening=job;s.browserError=null;this.render();
+    try{await this.actions.link(s.job.url,job);if(this.current(s)&&s.job?.id===job)s.browserOpened=true;}
+    catch(error){if(this.current(s)&&s.job?.id===job){s.browserOpened=false;s.browserError=error?.key||"error_agent_connection";}}
+    finally{if(s.browserOpening===job)s.browserOpening=null;if(this.current(s))this.render();}
   }
   async start(confirmed=false){
     if(this.choice()?.type==="terminal")return this.openTerminal();
     if(!confirmed&&this.context().maintenance)return this.beginOperation("connection");
     const s=this.state,m=this.choice();if(!this.current(s)||s.busy||this.updating(s)||!this.available()||!m?.supported||s.job?.status==="pending")return;
     const body=this.payload({action:"start",method:m.id,request_id:this.actions.uuid(),...(s.agent==="opencode"?{provider:this.$("provider").value}:{}),...(m.type==="api"&&!this.actions.secret?{key:this.$("key").value}:{}),...(s.operation?.kind==="connection"?{confirmation_id:s.operation.confirmation.id,reopen:s.operation.reopen}:{})});
-    this.clearSecrets();s.busy=true;s.error=null;this.render();
-    try{const result=await (m.type==="api"&&this.actions.secret?this.actions.secret(body):this.request(body));if(this.current(s)&&!result.cancelled){s.job=result.job;s.autoBrowserJob=["stopping","pending"].includes(s.job?.status)?s.job.id:null;s.browserOpened=false;}}
+    this.clearSecrets();s.busy=true;s.error=null;s.browserError=null;this.render();
+    try{const result=await (m.type==="api"&&this.actions.secret?this.actions.secret(body):this.request(body));if(this.current(s)&&!result.cancelled){s.job=result.job;s.autoBrowserJob=["stopping","pending"].includes(s.job?.status)?s.job.id:null;s.browserOpened=false;s.browserAttempted=false;}}
     catch(e){if(this.current(s))s.error=e.key||"error_agent_connection";}
     finally{delete body.key;if(this.current(s)){s.busy=false;this.render();this.openBrowser(s,true);if(this.activeLogin(s))void this.poll();}}
   }
@@ -274,7 +276,9 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.$("status").textContent=!usable?this.t(this.context().online?"connection_update_bridge":"connection_need_bridge"):loading?this.t("connection_loading"):this.t("connection_"+(report?.state||"unknown"));
     if(usable&&!loading&&report?.method)this.$("status").textContent+=" · "+report.method;
     this.$("version").textContent=s.version?this.t("connection_version",{version:s.version}):"";
-    this.$("error").textContent=s.error?this.t(s.error):"";this.$("error").hidden=!s.error;
+    if(!pending)s.browserError=null;
+    const error=s.error||s.browserError;
+    this.$("error").textContent=error?this.t(error):"";this.$("error").hidden=!error;
     this.$("account").hidden=s.report?.installed===false;
     this.$("provider-field").hidden=s.agent!=="opencode";
     this.$("form").hidden=!usable||!report?.installed||!["codex","opencode","claude","gemini"].includes(s.agent);
@@ -285,12 +289,13 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     for(const id of ["agent","provider","method","key","submit","refresh","version-check"])this.$(id).disabled=s.confirming||s.busy||pending||(updating&&id!=="agent")||(id!=="agent"&&(!usable||loading))||(id==="version-check"&&report?.installed===false)||(id==="submit"&&!m?.supported);
     this.$("key").required=m?.type==="api"&&!this.actions.secret&&!this.$("form").hidden;
     this.$("job").hidden=!s.job;
-    this.$("job-status").textContent=s.job?this.t("connection_job_"+s.job.status):"";
+    this.$("job-status").textContent=s.browserOpening?this.t("connection_loading"):s.job?this.t("connection_job_"+s.job.status):"";
+    this.$("job-status").setAttribute("aria-busy",String(!!s.browserOpening));
     if(s.job&&!pending&&s.closedBrowserJob!==s.job.id){s.closedBrowserJob=s.job.id;this.actions.closeBrowser?.(s.job.id);}
     this.$("instructions").textContent=s.job?.instructions||"";
     this.$("site").textContent=s.job?.url?new URL(s.job.url).origin:"";
     this.$("browser").hidden=!pending||!s.job?.url;
-    this.$("browser").disabled=!usable;
+    this.$("browser").disabled=!usable||!!s.browserOpening;
     this.$("code-form").hidden=!pending||!s.job?.code_required||s.job?.code_submitted;
     this.$("code").hidden=!!this.actions.codeSecret;
     this.$("code").required=!this.actions.codeSecret&&!this.$("code-form").hidden;

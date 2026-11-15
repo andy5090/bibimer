@@ -7,6 +7,13 @@
   const clipboardDocument = Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,"0")).join("");
   let clipboardSequence = 0;
   const accountRequests = new Map();
+  const browserRequests = new Map();
+  window.BibimerAccountBrowserReply = (id, reason) => {
+    const request = browserRequests.get(id); if (!request) return;
+    browserRequests.delete(id); clearTimeout(request.timer);
+    if (reason === 0) request.resolve();
+    else request.reject({key:"error_agent_connection",browserReason:reason});
+  };
   window.BibimerAccountReply = (id, response) => {
     const request = accountRequests.get(id);
     if (!request) return;
@@ -22,6 +29,11 @@
     else request.reject(new Error(response?.code || "clipboard_failed"));
   };
   window.addEventListener("pagehide", () => {
+    for (const request of browserRequests.values()) {
+      clearTimeout(request.timer); message("closeAccountBrowser",{job:request.job});
+      request.reject({key:"error_connection_failed"});
+    }
+    browserRequests.clear();
     for (const [id, request] of accountRequests) {
       clearTimeout(request.timer); message("cancelAccountSecret",{id});
       request.reject({key:"error_connection_failed"});
@@ -85,8 +97,18 @@
       catch (_) { clearTimeout(timer); clipboardRequests.delete(id); reject(new Error("clipboard_failed")); }
     }),
     openBrowserWindow: tag => message("browserWindow",{tag}),
-    openAccountLink: (url, job) => message("accountBrowser",{url,job}),
+    openAccountLink: (url, job) => new Promise((resolve,reject) => {
+      const id = clipboardDocument + ":" + (++clipboardSequence);
+      const timer = setTimeout(() => {
+        browserRequests.delete(id);message("cancelAccountBrowserOpening",{job});
+        reject({key:"error_timeout"});
+      },5000);
+      browserRequests.set(id,{job,resolve,reject,timer});
+      try { message("accountBrowser",{id,url,job}); }
+      catch (_) { clearTimeout(timer);browserRequests.delete(id);reject({key:"error_agent_connection"}); }
+    }),
     closeAccountLink: job => message("closeAccountBrowser",{job}),
+    cancelAccountLinkOpening: job => message("cancelAccountBrowserOpening",{job}),
     openLink: url => message("link", {url}),
     openGuide: guide => message("guide", {guide}),
     openTermux: () => window.BibimerOpenLocalTerminal?.(),

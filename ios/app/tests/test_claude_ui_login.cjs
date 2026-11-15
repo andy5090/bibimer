@@ -16,6 +16,14 @@ async function challenge(code){
  return {writes,errors,accepted,closed,paused,exit};
 }
 (async()=>{
+ const listenerSource=source.match(/CLAUDE_MANUAL_LISTENER = r'''([\s\S]*?)'''/)[1];
+ let nativeStarts=0;
+ class NativeListener{constructor(){nativeStarts++;throw Error('Local callback unavailable');}}
+ const choose=new Function('K','T87','return K?.bibimerManual?'+listenerSource+':new T87');
+ const manual=choose({bibimerManual:true},NativeListener);assert.equal(await manual.start(),0);assert.equal(manual.hasPendingResponse(),false);
+ let ready=0;manual.waitForAuthorization('fictional-state',()=>{ready++;});await Promise.resolve();assert.equal(ready,1);assert.equal(nativeStarts,0);
+ const nativeError=manual.waitForAuthorization('fictional-state',()=>{throw Error('ready failed');});await assert.rejects(nativeError,/ready failed/);
+ manual.close();
  const valid=await challenge('  fictional-code#fictional-state  ');
  assert.deepEqual(valid.accepted,[{authorizationCode:'fictional-code',state:'fictional-state'}]);assert.equal(valid.closed,1);assert.equal(valid.paused,1);
  assert.ok(!valid.writes.join('').includes('fictional-code'),'Codes are not echoed into CLI output');

@@ -4,6 +4,7 @@
 // Authentication pages have no workspace bridge or agent control capability.
 @interface BibimerAccountBrowser : NSObject <SFSafariViewControllerDelegate>
 @property(nonatomic,weak) UIViewController *presenter;
-- (BOOL)open:(NSString *)url job:(NSString *)job;
+- (void)open:(NSString *)url job:(NSString *)job completion:(void (^)(NSInteger))completion;
 - (void)close:(NSString *)job;
+- (void)cancelOpening:(NSString *)job;
 @end

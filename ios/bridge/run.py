@@ -29,6 +29,15 @@ SOURCE = HERE.parent / "bridge" / "bibimer_bridge.py"
 CLAUDE_VERSION = "2.1.112"
 CLAUDE_SDK_VERSION = "0.2.112"
 
+# Manual code delivery needs no localhost listener. Preserve the native flow's
+# ready/error contract while letting its existing manual resolver receive code.
+CLAUDE_MANUAL_LISTENER = r'''({
+ start:async()=>0,
+ hasPendingResponse:()=>false,
+ waitForAuthorization:(_state,ready)=>new Promise((_resolve,reject)=>{Promise.resolve().then(ready).catch(reject);}),
+ close:()=>{}
+})'''
+
 # Connect the pinned CLI's existing manual OAuth handler to stdin. Token
 # exchange, scopes, PKCE and credential persistence remain in the native CLI.
 CLAUDE_CODE_INPUT = r'''
@@ -58,7 +67,7 @@ def claude_ui_login_source(text, original_url):
         'let $=K?"sso":void 0,j=new Et;try{':
             'let $=K?"sso":void 0,j=new Et,bibimerInput;try{',
         '`)},{loginWithClaudeAi:A,loginHint:q,loginMethod:$,orgUUID:O});':
-            '`);' + CLAUDE_CODE_INPUT + '},{skipBrowserOpen:true,loginWithClaudeAi:A,loginHint:q,loginMethod:$,orgUUID:O});',
+            '`);' + CLAUDE_CODE_INPUT + '},{bibimerManual:true,skipBrowserOpen:true,loginWithClaudeAi:A,loginHint:q,loginMethod:$,orgUUID:O});',
         'finally{j.cleanup()}}': 'finally{bibimerInput?.close();j.cleanup()}}',
     }
     for before, after in changes.items():
@@ -68,6 +77,11 @@ def claude_ui_login_source(text, original_url):
     # Preserve bundled module/resource resolution from the original package.
     # The pinned source uses import.meta.url as a direct function argument.
     text = prefix + start + login + end + suffix
+    listener = 'this.authCodeListener=new T87,this.port=await this.authCodeListener.start();'
+    if text.count(listener) != 1:
+        raise RuntimeError("Unreviewed Claude callback listener contract")
+    text = text.replace(listener, 'this.authCodeListener=K?.bibimerManual?' + CLAUDE_MANUAL_LISTENER +
+                        ':new T87,this.port=await this.authCodeListener.start();')
     return re.sub(r'(?<=\()import\.meta\.url(?=\))', lambda _: json.dumps(original_url), text)
 
 

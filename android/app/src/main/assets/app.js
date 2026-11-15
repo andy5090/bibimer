@@ -133,7 +133,7 @@
   const agentConnections = new BibimerAgentConnections(t,
     () => ({online:online && !switchingProject, supported:canConnections, loginTerminal:canLoginTerminal, loginUI:canLoginUI, loginWithoutProject:native.accountLoginWithoutProject===true, updates:canAgentUpdates, maintenance:canAgentMaintenance, agents:knownAgents, platform:environment().platform||"android", paused, demo, instance, project:project?.id || null, path:fileContext().path || null}),
     data => api("POST", "/v1/agent-connections", data),
-    {sync:() => pickers.sync(), uuid:uuid, link:(url,job) => native.openAccountLink ? native.openAccountLink(url,job) : native.openLink(url), closeBrowser:job=>native.closeAccountLink?.(job), title:id => {const row=findSession(id);return row?sessionTitle(row):id.slice(0,8);},
+    {sync:() => pickers.sync(), uuid:uuid, link:(url,job) => native.openAccountLink ? native.openAccountLink(url,job) : native.openLink(url), closeBrowser:job=>native.closeAccountLink?.(job), cancelBrowserOpening:job=>native.cancelAccountLinkOpening?.(job), title:id => {const row=findSession(id);return row?sessionTitle(row):id.slice(0,8);},
      secret:native.requestAccountSecret ? body=>native.requestAccountSecret(body,{title:t("connection_key"),save:t("connection_connect"),cancel:t("cancel_project")}) : null,
      codeSecret:native.requestAccountSecret ? body=>native.requestAccountSecret(body,{title:t("connection_code"),save:t("connection_submit_code"),cancel:t("cancel_project")}) : null,
      updates:data => api("POST", "/v1/agent-updates", data),

@@ -13,7 +13,7 @@ const fixture=()=>{
   window.authFixture={calls:[],opened:[],closed:[],saved:false,noSession:false,job:null};
   window.webkit={messageHandlers:{bibimer:{postMessage(message){
     const fixture=window.authFixture;
-    if(message.action==="accountBrowser"){fixture.opened.push(message.job);return;}
+    if(message.action==="accountBrowser"){fixture.opened.push(message.job);setTimeout(()=>window.BibimerAccountBrowserReply(message.id,0),0);return;}
     if(message.action==="closeAccountBrowser"){fixture.closed.push(message.job);return;}
     if(message.action!=="request")return;
     const reply=data=>window.BibimerNativeReply(message.id,{ok:true,status:200,data:JSON.parse(JSON.stringify(data))});

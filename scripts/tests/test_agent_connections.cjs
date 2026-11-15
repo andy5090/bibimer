@@ -216,6 +216,25 @@ const el=id=>node('agent-connection-'+id);
  assert.ok(closedBrowsers.includes('expired-ui-login'));controller.request=beforeExpiredRequest;
 
 
+ await controller.open('claude');
+ const originalLink=controller.actions.link;let browserAck,browserReject,openCalls=0;
+ controller.state.job={id:'ack-login',status:'pending',url:'https://claude.ai/oauth/authorize?state=fake'};
+ controller.state.autoBrowserJob='ack-login';controller.state.browserAttempted=false;controller.state.browserOpened=false;
+ controller.actions.link=()=>{openCalls++;return new Promise((resolve,reject)=>{browserAck=resolve;browserReject=reject;});};
+ const pendingBrowser=controller.openBrowser(controller.state,true);
+ assert.equal(controller.state.browserOpened,false,'Sending a native request is not proof that Safari appeared');
+ assert.equal(el('browser').disabled,true);assert.equal(el('job-status')['aria-busy'],'true');
+ await controller.openBrowser(controller.state,true);assert.equal(openCalls,1,'Polling cannot duplicate an in-flight native presentation');
+ browserReject({key:'error_agent_connection',browserReason:3});await pendingBrowser;
+ assert.equal(controller.state.browserOpened,false);assert.equal(el('browser').disabled,false);assert.equal(el('error').hidden,false);
+ pollJob={...controller.state.job};await controller.poll();assert.equal(el('error').hidden,false,'Successful status reads keep the browser failure visible');
+ assert.equal(openCalls,1,'A rejected native window does not trigger repeated automatic attempts');
+ const manualRetry=controller.openBrowser(controller.state);assert.equal(openCalls,2);browserAck();await manualRetry;
+ assert.equal(controller.state.browserOpened,true);assert.equal(el('error').hidden,true);assert.equal(el('job-status')['aria-busy'],'false');
+ const canceledOpen=[];controller.actions.cancelBrowserOpening=id=>canceledOpen.push(id);
+ controller.state.browserOpened=false;const leavingBrowser=controller.openBrowser(controller.state);
+ controller.pause();assert.ok(canceledOpen.includes('ack-login'));browserReject({key:'error_connection_failed'});await leavingBrowser;
+ controller.actions.link=originalLink;pollJob=null;
  ctx={...ctx,demo:true};const demoCalls=calls.length;await controller.open('opencode');el('terminal').handlers.click();assert.equal(calls.length,demoCalls);assert.deepEqual(terminals,[]);
  console.log('Agent connections: in-app status/key flow, explicit native/browser actions, masked and cleared secrets, unsupported forms/old bridge, pending completion and stale context guards passed');
 })().catch(error=>{console.error(error);process.exitCode=1;});

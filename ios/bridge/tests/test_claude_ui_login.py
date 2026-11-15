@@ -15,6 +15,7 @@ import test_ios_bridge as fixtures
 
 LOGIN = '''#!/usr/bin/env node
 const require = createRequire(import.meta.url);
+const reviewedFlow={async startOAuthFlow(q,K){this.authCodeListener=new T87,this.port=await this.authCodeListener.start();}};
 async function Jaz(){let $=K?"sso":void 0,j=new Et;try{let H=await j.startOAuthFlow(async(X)=>{process.stdout.write(`Opening browser to sign in…
 `),process.stdout.write(`If the browser didn't open, visit: ${X}
 `)},{loginWithClaudeAi:A,loginHint:q,loginMethod:$,orgUUID:O});await fX6(H)}finally{j.cleanup()}}
@@ -53,6 +54,12 @@ class ClaudeUILoginTests(unittest.TestCase):
         self.cli.write_text(LOGIN)
         self.cli.with_name('package.json').write_text(json.dumps({'version':'9.9.9'}))
         with self.assertRaises(RuntimeError):
+            fixtures.entry.prepare_claude_ui_login(self.state, str(self.wrapper), self.folder)
+        self.assertFalse(list(self.state.glob('claude-login-*.mjs')))
+
+    def test_unknown_callback_listener_contract_is_rejected(self):
+        self.cli.write_text(LOGIN.replace('this.authCodeListener=new T87', 'this.authCodeListener=new UNKNOWN'))
+        with self.assertRaisesRegex(RuntimeError, 'callback listener contract'):
             fixtures.entry.prepare_claude_ui_login(self.state, str(self.wrapper), self.folder)
         self.assertFalse(list(self.state.glob('claude-login-*.mjs')))
 

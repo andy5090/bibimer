@@ -27,7 +27,20 @@ vm.runInNewContext(source,{window,crypto:crypto.webcrypto,Uint8Array,setTimeout:
  const leaving=window.Bibimer.requestAccountSecret(body,{}),rejection=assert.rejects(leaving,e=>e.key==='error_connection_failed');
  events.get('pagehide')();await rejection;assert.equal(timers.size,0);assert.equal(posts.at(-1).action,'cancelAccountSecret');
  const job='00000000-0000-4000-8000-000000000001';
- window.Bibimer.openAccountLink('https://auth.example.test/login',job);assert.equal(posts.at(-1).action,'accountBrowser');assert.equal(posts.at(-1).job,job);
+ const opened=window.Bibimer.openAccountLink('https://auth.example.test/login',job);
+ const browserId=posts.at(-1).id;
+ assert.equal(posts.at(-1).action,'accountBrowser');assert.equal(posts.at(-1).job,job);
+ let acknowledged=false;opened.then(()=>acknowledged=true);await Promise.resolve();assert.equal(acknowledged,false);
+ window.BibimerAccountBrowserReply('stale-document',0);assert.equal(timers.size,1);
+ window.BibimerAccountBrowserReply(browserId,0);await opened;assert.equal(timers.size,0);
+ const denied=window.Bibimer.openAccountLink('https://auth.example.test/login',job),deniedResult=assert.rejects(denied,e=>e.browserReason===3);
+ window.BibimerAccountBrowserReply(posts.at(-1).id,3);await deniedResult;assert.equal(timers.size,0);
+ const neverShown=window.Bibimer.openAccountLink('https://auth.example.test/login',job),timedOut=assert.rejects(neverShown,e=>e.key==='error_timeout');
+ const browserTimer=[...timers.entries()][0];timers.delete(browserTimer[0]);browserTimer[1]();await timedOut;
+ assert.equal(posts.at(-1).action,'cancelAccountBrowserOpening');
+ const abandoned=window.Bibimer.openAccountLink('https://auth.example.test/login',job),aborted=assert.rejects(abandoned,e=>e.key==='error_connection_failed');
+ events.get('pagehide')();await aborted;assert.equal(timers.size,0);
+
  window.Bibimer.closeAccountLink(job);assert.equal(posts.at(-1).action,'closeAccountBrowser');
  console.log('PASS iOS account secret RPC: explicit requests, no WebKit key value, cancellation, timeout and document cleanup');
 })().catch(error=>{console.error(error);process.exitCode=1;});

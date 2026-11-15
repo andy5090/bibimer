@@ -379,7 +379,7 @@ static void guestExit(int status) {
     }
     NSData *data = [NSData dataWithContentsOfURL:self.connectionLogURL];
     id rows = data.length <= 65536 ? [NSJSONSerialization JSONObjectWithData:data ?: [NSData data] options:0 error:nil] : nil;
-    NSSet *events = [NSSet setWithArray:@[@"launch",@"inactive",@"background",@"active",@"probe_start",@"probe_ok",@"probe_failed",@"probe_watchdog",@"retry",@"retry_blocked_recovery",@"retry_blocked_runtime",@"retry_blocked_inactive",@"reconnect_button",@"service_start",@"recovery_start",@"recovery_watchdog",@"recovery_boot_timeout",@"recovery_stopped",@"debug_enabled",@"ui_error",@"ui_rejection",@"diagnostics_copy",@"js_delivery_failed",@"message_rejected",@"runtime_exit"]];
+    NSSet *events = [NSSet setWithArray:@[@"launch",@"inactive",@"background",@"active",@"probe_start",@"probe_ok",@"probe_failed",@"probe_watchdog",@"retry",@"retry_blocked_recovery",@"retry_blocked_runtime",@"retry_blocked_inactive",@"reconnect_button",@"service_start",@"recovery_start",@"recovery_watchdog",@"recovery_boot_timeout",@"recovery_stopped",@"debug_enabled",@"ui_error",@"ui_rejection",@"diagnostics_copy",@"js_delivery_failed",@"message_rejected",@"runtime_exit",@"auth_browser_request",@"auth_browser_shown",@"auth_browser_failed"]];
     NSSet *numbers = [NSSet setWithArray:@[@"time",@"uptime",@"build",@"code",@"application",@"scene",@"backgrounded",@"ready",@"started",@"exited",@"startupFailed",@"recovering",@"timedOut",@"attempts",@"epoch",@"shutdownStage",@"observedChildren",@"httpStatus",@"networkError",@"errorCategory"]];
     if (![rows isKindOfClass:NSArray.class]) return;
     for (id row in rows) {
@@ -1252,10 +1252,19 @@ static void guestExit(int status) {
     } else if([action isEqual:@"notificationSettings"]){if(!self.smokeScript)[self.completionNotifications openSettings];}
     else if([action isEqual:@"notificationTaken"]){[self.completionNotifications takeTarget];}
     else if ([action isEqual:@"accountBrowser"]) {
-        if (![self.accountBrowser open:body[@"url"] job:body[@"job"]])
-            [self nativeEvent:@"BibimerAccountBrowserFailed" arguments:@[body[@"job"] ?: @""]];
+        NSString *identifier = body[@"id"];
+        if (![identifier isKindOfClass:NSString.class] || [identifier rangeOfString:@"^[a-f0-9]{32}:[0-9]{1,16}$" options:NSRegularExpressionSearch].location == NSNotFound) return;
+        WKWebView *document = self.web; NSUInteger generation = self.workspaceGeneration;
+        [self recordConnection:@"auth_browser_request" code:0];
+        [self.accountBrowser open:body[@"url"] job:body[@"job"] completion:^(NSInteger reason) {
+            [self recordConnection:reason ? @"auth_browser_failed" : @"auth_browser_shown" code:reason];
+            if (self.web == document && self.workspaceGeneration == generation)
+                [self nativeEvent:@"BibimerAccountBrowserReply" arguments:@[identifier,@(reason)]];
+        }];
     } else if ([action isEqual:@"closeAccountBrowser"]) {
         [self.accountBrowser close:body[@"job"]];
+    } else if ([action isEqual:@"cancelAccountBrowserOpening"]) {
+        [self.accountBrowser cancelOpening:body[@"job"]];
     } else if ([action isEqual:@"accountSecret"]) {
         [self requestAccountSecret:body];
     } else if ([action isEqual:@"cancelAccountSecret"]) {
