@@ -1,5 +1,15 @@
 # Bibimer 다음 세션 시작점
 
+## iOS 0.1.0(14) TestFlight 내부 배포 완료 (2026-11-15)
+
+- **21:35 Asia/Seoul**, Apple 처리 완료 후 기존 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답과 한영 테스트 안내 1,440자 저장을 완료했다. 기존 **Bibimer Internal** 그룹의 **0.1.0(14) · 테스트 중 · 90일 후 만료**, 내부 테스터 1명·빌드 14개를 직접 확인했다. 기존 1–13번·그룹·테스터를 유지했다. 외부 테스트·정식 App Store 제출은 수행하지 않았다.
+- 배포 소스 `98138ae733ecbb4c98d0e07855f5ddb477183fff`, 빌드 ID `c88d0338-13d5-439b-8186-c589dcff7af5`. **21:21:58 KST Xcode Upload succeeded / EXPORT SUCCEEDED / exit 0**이다. IPA **8,657,701 bytes**, SHA-256 `e5e0457b503487b5037f3192a9f0386e0a580d6cdbf51bb5f52ec2a11c2f962e`.
+- Claude 수동 로그인에서 인증 URL 준비 전 localhost 콜백 리스너에 의존하던 경로를 제거하고, 네이티브 인증 브라우저의 실제 표시 응답·열기 실패·명시적 재시도를 반영했다. 로그인·코드를 자동 재전송하지 않는다. iOS 브리지는 앱에 포함되어 별도 업데이트가 필요 없다.
+- 양 SDK 컴파일·앱 Python 33개·브리지 83개(26.18초)·Node 23파일·984키×10언어·패키징 계정 복귀 Chromium·네이티브 5소스 정적분석 진단 0을 통과했다. 전용 QA의 실제 WKWebView/Linux **32개 · 42.33초 · JS오류 0 · fatal 0 · 진단실패 0**이며 모의 백그라운드 정책 20개·기존 syscall 151/152 경고 4개를 구분한다. 사용자 계정/OAuth/모델을 테스트에 사용하지 않았다.
+- archive/arm64/SDK/dSYM·기존 팀/번들 배포 서명·현재 소스→manifest→IPA 자산(웹 67·게스트 18·네이티브 11자산/17소스·현지화 20·rootfs 426) 일치를 확인했다. 아카이브 `dist/ios-testflight/0.1.0-14-unsigned-nov15-claude/Bibimer.xcarchive`, IPA `dist/ios-testflight/0.1.0-14-export-nov15-claude-retry2/export/Bibimer.ipa`, 비공개 증빙 `dist/ios-testflight/upload-0.1.0-14-nov15/`와 `.tools/ios-tf14-*`, `dist/ios-app/testflight14-nov15-smoke/`.
+- 최초/로그인 후 재시도의 `PLA Update available` 및 배포 인증서 없음·exit 70은 사용자의 새 개발자 계약 동의 후 해소됐다. 같은 검증된 아카이브를 새 export 폴더로 서명했으며 실패 로그를 보존했다. 인증서/프로파일 폐기는 하지 않았다.
+- **TestFlight에서 0.1.0(14)로 업데이트한다.** 실제 iPhone 인증 창 표시·전체 사용자 OAuth·잠금 복귀/OS 백그라운드 허가는 별도 확인이다. 사용자 운영 앱/Runtime Lab·브리지·세션·Android/웹사이트 배포는 변경하지 않았다. 아래 미빌드/미배포 기록은 각 시점의 상태다.
+
 ## Claude 로그인 브라우저 미표시 후속 수정 (2026-11-15, 소스만 반영)
 
 - 사용자 재보고를 받아 먼저 원격15개 커밋을 fast-forward로 반영했다. TestFlight13 배포 기록·Claude metadata/인증 터미널/복귀 poll 수정·공통 에이전트 관리/큐 편집/디버그를 유지한다. 사용자 iPhone의 실제 오류 문구/진단 로그는 아직 제공되지 않았으므로 아래 재현 조건을 실기기의 확정 원인으로 단정하지 않는다.

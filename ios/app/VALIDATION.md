@@ -1,5 +1,12 @@
 # iOS 앱 검증 기록
 
+## 2026-11-15 — 0.1.0(14) 소스·아카이브·배포 서명 검증과 업로드
+
+- `98138ae`의 Claude 수동 로그인/브라우저 표시 확인 수정에 대해 Xcode27.2 양 SDK 컴파일, 앱 Python33개·iOS 브리지83개(26.18초), 앱/공통 Node23파일·984키×10언어·패키징 계정 복귀 Chromium을 통과했다. 최초 Node 목록의 존재하지 않는 별도 언어 테스트 이름을 제거하고 기존 i18n 검사가 언어 UI까지 포함함을 확인했으며 제품 소스는 수정하지 않았다.
+- main/AccountInput/AccountBrowser/BackgroundExecution/RuntimeSupport의 Clang 정적분석 진단0이다. 전용 Bibimer TestFlight QA의 실제 WKWebView/Linux32개는42.33초·JS오류0·fatal0·진단실패0이며 모의 백그라운드 정책20개·기존 syscall151/152 경고4개와 구분한다. 증빙 `.tools/ios-tf14-*`, `dist/ios-app/testflight14-nov15-smoke/`.
+- 빌드14 archive의arm64/SDK/dSYM 및 현재 소스→manifest→아카이브 자산(웹67·게스트18·네이티브11/17소스·현지화20·rootfs426)을 확인했다. 최초 자동 배포 서명의 `PLA Update available`/배포 인증서 없음·exit70은 사용자 계약 동의 후 해소됐다. 같은 아카이브의 기존 팀/번들 배포 서명·원본→manifest→IPA 자산 일치와21:21:58KST Xcode 업로드 성공/exit0을 확인했다. IPA8,657,701bytes/SHA-256 `e5e0457b503487b5037f3192a9f0386e0a580d6cdbf51bb5f52ec2a11c2f962e`이며 [배포 기록](TESTFLIGHT.md)의 Apple 처리/내부 그룹 제공 상태를 따른다. 실제 iPhone 인증 창 표시·사용자 OAuth·잠금/백그라운드 허가는 별도 확인이다.
+- Apple 처리 후 21:35 KST 기존 Bibimer Internal 그룹에서 빌드 14의 테스트 중/90일 만료·내부 테스터 1명·빌드 14개를 직접 확인했다. 수출 규정 응답과 한영 테스트 안내 1,440자 저장을 완료했으며 빌드 ID는 `c88d0338-13d5-439b-8186-c589dcff7af5`다.
+
 ## 2026-11-13 — 0.1.0(13) 최종 통합 소스 검증·업로드
 
 - 검증한 소스는2cc4e7e다. 최신 공통 관리/디버그/대기열 편집과 Claude 모델/로그인 보완을 포함한다. 실제 Claude4개30.260초/격리 HOME·동시 health86회 성공 근거는 앞선 Claude 수정 검사를 유지하며 이번에는 사용자 계정/OAuth/모델을 호출하지 않았다.
