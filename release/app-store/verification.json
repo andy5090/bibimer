@@ -58,7 +58,7 @@
     "appleProcessingCompleted": true,
     "appStoreBuildID": "f8041489-d7cf-4a6a-9db5-bdc69e2fcadf",
     "exportComplianceCompleted": false,
-    "exportComplianceReason": "production_france_territory_decision_pending"
+    "exportComplianceReason": "response_pending_after_territories_confirmed_screenshots_prioritized"
   },
   "screenshotsReady": false,
   "appStoreConnectAccess": "authenticated_verified",
@@ -66,7 +66,7 @@
   "privacyPolicyIOSReady": false,
   "providerDataDisclosureReady": false,
   "reviewAccessReady": false,
-  "territoriesConfirmed": false,
+  "territoriesConfirmed": true,
   "ageRatingConfirmed": false,
   "sourceRepositoryVisibility": "public_verified_via_github_connector",
   "appStoreDraftSaved": true,
@@ -80,7 +80,7 @@
     "explicit_ai_data_permission_evidence",
     "full_reviewer_access_and_physical_device_validation",
     "runtime_corresponding_source_and_policy_classification_review",
-    "territories_france_export_and_age_rating",
+    "export_response_and_age_rating",
     "required_review_contact_and_final_review_notes_save"
   ],
   "storeVersionVerified": "1.0.0",
@@ -95,5 +95,15 @@
   "reviewNotesConsoleCharacters": 3396,
   "reviewNotesLocalCharacters": 3426,
   "reviewNotesUpdateBlockedBy": "required_review_contact_missing",
-  "reviewContactReady": false
+  "reviewContactReady": false,
+  "territoryAvailabilitySaved": true,
+  "territoryAvailableCount": 175,
+  "territorySelectedCount": 173,
+  "excludedTerritories": [
+    "CN",
+    "FR"
+  ],
+  "automaticFutureTerritories": false,
+  "submissionExplicitlyOnHold": true,
+  "reviewContactEmailPhoneReceived": true
 }
