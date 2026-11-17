@@ -1,5 +1,12 @@
 # iOS 앱 검증 기록
 
+## 2026-11-18 — App Store 후보 1.0.0(15) 검증·로컬 서명
+
+- 배포 준비 소스는 `7741191def46e5bc6b475c4ada30435e3546c6cb`다. 원격 로그인/에이전트 선택·Claude 코드 수신 개선을 포함하며 제품 코드를 추가로 수정하지 않았다. 앱 Python34개(Apple Foundation의 실제 코드/복사 수신 합성 회귀 포함)·브리지83개/29.79초·Node23파일/988키×10언어·패키징 계정 복귀 Chromium을 통과했다.
+- Xcode27.2 양 SDK 컴파일, main/AccountInput/AccountBrowser/BackgroundExecution/RuntimeSupport 정적분석 진단0이다. 전용 Bibimer TestFlight QA의 실제 WKWebView/Linux32개는46.07초·JS오류0·fatal0·진단실패0이며 모의 백그라운드 정책20개와 기존 syscall151/152 경고4개를 구분한다. 사용자 OAuth·실제 클립보드·모델은 검사에 사용하지 않았다. 증빙 `.tools/appstore-1.0.0-*`, `dist/ios-app/appstore-1.0.0-nov18-smoke/`.
+- 1.0.0(15)의 archive/arm64/SDK/dSYM·기존 팀/번들 배포 서명과 현재 소스→manifest→IPA 자산(웹67·게스트18·네이티브11/17소스·현지화20·rootfs426)을 확인했다. IPA `dist/ios-appstore/1.0.0-15-export-nov18/export/Bibimer.ipa`,8,669,738bytes/SHA-256 `21ae105b131076db313a72a07758bdb32316ac434544787797100a3c5e9958b7`다. 01:08:57KST Xcode Upload succeeded/EXPORT SUCCEEDED/exit0, Apple 처리와1.0.0 초안의 빌드15 연결을 확인했다. 수출 규정/국가 확정은 남아 있으며 심사/정식 제공 성공으로 표시하지 않는다.
+- 영한 등록 문구의 필드 길이/키워드 UTF-8 한도·후보 버전/자산/검사 결과를 검증했다. Console의1.0.0·무료 가격·수동 공개·영한 문구/부제·개발자 도구 카테고리·초안 심사 메모를 저장했다. 실제 스토어용 iPhone/iPad 캡처·공개 iOS 정책·App Privacy/AI 동의·심사 접근·실기기15 회귀는 미완료이며 `release/app-store/verification.json.submissionReady=false`다. Simulator UI 앱이 없는 환경의 자동 QA 복구 후 화면은 스토어 캡처로 채택하지 않았다. 초기 이미지 검사 도구(Pillow) 미설치는 테스트 실패가 아니라 도구 제약이며 추가 의존성을 설치하지 않았다.
+
 ## 2026-11-15 — 0.1.0(14) 소스·아카이브·배포 서명 검증과 업로드
 
 - `98138ae`의 Claude 수동 로그인/브라우저 표시 확인 수정에 대해 Xcode27.2 양 SDK 컴파일, 앱 Python33개·iOS 브리지83개(26.18초), 앱/공통 Node23파일·984키×10언어·패키징 계정 복귀 Chromium을 통과했다. 최초 Node 목록의 존재하지 않는 별도 언어 테스트 이름을 제거하고 기존 i18n 검사가 언어 UI까지 포함함을 확인했으며 제품 소스는 수정하지 않았다.

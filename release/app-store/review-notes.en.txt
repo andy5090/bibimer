@@ -1,0 +1,24 @@
+DRAFT — not ready for submission. Resolve the privacy, reviewer-access and device-validation gates before App Review.
+
+Bibimer is an on-device Agent Development Environment for iPhone and iPad. It is not an AI model or an AI subscription service. The user installs compatible coding-agent tools and connects their own provider account. Bibimer does not sell AI credits, provider subscriptions or other digital goods.
+
+Architecture and downloaded code
+The app bundles an ARM64 Linux interpreter and an Alpine base filesystem. On first preparation it downloads development packages from the configured Alpine HTTPS repositories: Python, Bash, Git, Node.js/npm, curl, jq, SQLite, GitHub CLI and ripgrep, with their dependencies. Agent installation is a separate user action and downloads the chosen CLI and its dependencies. This is executable development software, not merely static content. It executes in the app's local environment. No JIT entitlement is requested by this application; its Node runtime uses the embedded interpreter's supported jitless configuration.
+
+Review access without an AI account
+1. Launch the app and wait for initial local-tool preparation to complete. Internet access is needed for that preparation.
+2. Open the project sidebar and add a folder under the app's local home, for example ~/projects/review. Select the option to create it if it does not exist.
+3. Select Terminal (shell) and start a terminal session.
+4. Enter pwd and press the terminal Enter key. Enter printf 'Bibimer review\n' to confirm real local input and output.
+5. Inspect the project through its file/Git controls. Return through the top-bar Settings button to the setup guide and agent manager.
+
+Agent account access
+Provider-backed Chat requires an appropriate third-party account or supported API configuration. No developer account credentials are embedded in the app. Provide a review-access arrangement or reviewer-approved account path before submission; the shell checks above do not demonstrate all Chat features. Do not reuse the Android private demo-code instructions for this iOS build.
+
+Authentication uses SFSafariViewController and native secure input. The authentication browser is separate from agent browser control. During an explicit supported Claude manual-code flow, the app can inspect a newly copied code while the authentication browser is visible and active, validate the code's state and send it through the native authentication path. The OS retains control of paste access. The app does not expose the code to its web UI or ordinary logs, or clear the user's clipboard. Manual native code input remains available.
+
+The separate work browser uses WKWebView. The user must authorize a project/browser run before the agent can capture or scroll it. Native click/type/key automation is not offered. Projects, terminal commands, downloaded tools, provider communication and the supported host capabilities should be considered together when reviewing the app's execution model.
+
+Background work is subject to iOS scheduling and termination. Saved files and conversations are retained independently of running processes; no unlimited background execution is promised.
+
+Privacy policy and App Privacy answers must be updated for the iOS build and its optional external AI/voice services before submission. The final reviewed consent flow and data recipients should be described here after verification.

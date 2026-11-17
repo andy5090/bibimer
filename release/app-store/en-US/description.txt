@@ -1,0 +1,26 @@
+Your agent development environment, on your iPhone or iPad.
+
+Bibimer brings projects, Git worktrees, coding-agent sessions, conversations and a terminal into one workspace. Its bundled Linux interpreter runs project files and development tools on this device. A separate development computer, remote development host or Termux installation is not required.
+
+Bibimer is an Agent Development Environment (ADE). Connected coding agents perform the coding work; Bibimer helps you manage their sessions and interact with them.
+
+PROJECTS AND WORKTREES
+Browse your project folders, inspect files and Git changes, and organize sessions by project and worktree. Rename and archive sessions without treating a screen change as a request to stop their work.
+
+CHAT AND TERMINAL
+Use structured conversations to follow supported agents' replies and tool activity. Review approval requests, queue follow-up instructions and return to saved conversations. Use the terminal for commands and interactive tools. Controls and compatibility depend on the agent and installed version.
+
+CONNECT YOUR TOOLS
+The app provides installation and account-management flows for compatible Codex, Claude, OpenCode and Gemini CLI versions. Connect your own provider account or supported API configuration. Model choices and reasoning options come from the installed tool.
+
+YOUR DEVICE, YOUR SETTINGS
+Choose from ten interface languages, configure message-entry behavior and use optional speech input, answer read-aloud and completion notifications. These features depend on device permissions and the selected service. Speech results enter a draft for you to send.
+
+BEFORE YOU START
+Initial development-tool preparation and agent installation require internet access, storage and time. Connected AI services may require a separate account or subscription and may charge for usage. Bibimer does not include AI credits or sell provider subscriptions.
+
+Prompts, code, files and conversation context may be sent by the connected agent to its configured providers and tools. Optional external speech services process the audio or text you choose to send. Keeping project files on this device does not mean that AI processing is offline.
+
+iOS can suspend or stop the app. Background execution and notification delivery depend on the operating system. Saved files and conversations are separate from live processes; lost terminal output and interrupted work are not automatically restored or replayed.
+
+The embedded environment does not support every Linux package, native extension, browser action or development workflow. Bibimer is independent of the supported agents and service providers.

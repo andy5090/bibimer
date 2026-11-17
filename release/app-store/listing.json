@@ -1,0 +1,82 @@
+{
+  "status": "app_store_connect_draft_saved",
+  "preparedOn": "2026-11-18",
+  "bundleIdentifier": "app.bibimer.ios",
+  "appStoreId": "6826729307",
+  "version": "1.0.0",
+  "build": "15",
+  "sourceCommit": "7741191",
+  "pricing": "free",
+  "releaseMethod": "manual_after_approval",
+  "territories": null,
+  "excludedTerritoriesPendingConfirmation": [
+    "FR"
+  ],
+  "territoryNote": "TestFlight 14 used a no-France encryption response. Confirm production availability and encryption requirements together.",
+  "primaryCategorySuggestion": "DEVELOPER_TOOLS",
+  "minimumOSVersion": "16.0",
+  "deviceFamilies": [
+    "iPhone",
+    "iPad"
+  ],
+  "copyright": "2026 Andineering",
+  "appPrivacyStatus": "needs_provider_and_retention_review",
+  "ageRatingStatus": "questionnaire_pending",
+  "reviewContactStatus": "owner_confirmation_required",
+  "submitted": false,
+  "published": false,
+  "localizations": {
+    "en-US": {
+      "name": "Bibimer",
+      "subtitle": "Your agent development space",
+      "promotionalText": "Manage projects, Git worktrees, coding-agent conversations and a terminal in an on-device development environment for iPhone and iPad.",
+      "keywords": "coding,developer,terminal,git,worktree,agent,projects,programming,workspace,linux",
+      "descriptionFile": "en-US/description.txt",
+      "supportURL": "https://bibimer.app/contact/",
+      "privacyPolicyURL": "https://bibimer.app/privacy/",
+      "privacyPolicyReadyForIOS": false,
+      "screenshots": {
+        "iphone": [],
+        "ipad": []
+      }
+    },
+    "ko": {
+      "name": "Bibimer 비비머",
+      "subtitle": "내 손안의 에이전트 개발 환경",
+      "promotionalText": "프로젝트와 Git 워크트리, 코딩 에이전트 대화, 터미널을 한곳에서 관리하세요. iPhone과 iPad에 내장된 Linux 환경에서 개발을 진행합니다.",
+      "keywords": "코딩,개발,터미널,에이전트,프로젝트,워크트리,프로그래밍,git,linux",
+      "descriptionFile": "ko/description.txt",
+      "supportURL": "https://bibimer.app/ko/contact/",
+      "privacyPolicyURL": "https://bibimer.app/ko/privacy/",
+      "privacyPolicyReadyForIOS": false,
+      "screenshots": {
+        "iphone": [],
+        "ipad": []
+      }
+    }
+  },
+  "primaryCategory": "DEVELOPER_TOOLS",
+  "console": {
+    "version": "1.0.0",
+    "releaseMethod": "manual_after_approval",
+    "priceUSD": "0.00",
+    "priceKRW": "0.00",
+    "priceCurrenciesConfigured": 175,
+    "priceCurrencyCountIsNotAvailability": true,
+    "localizationsSaved": [
+      "en-US",
+      "ko"
+    ],
+    "reviewNotes": "earlier_draft_saved_latest_header_update_blocked_by_required_contact",
+    "appPrivacy": "not_started",
+    "privacyPolicyURL": "not_set",
+    "ageRating": "not_set",
+    "territoryAvailability": "not_set",
+    "buildSelection": "1.0.0(15)_selected_export_response_pending",
+    "chinaMainlandComplianceNotice": "security_assessment_and_aigc_filing_required_if_distributed",
+    "buildID": "f8041489-d7cf-4a6a-9db5-bdc69e2fcadf",
+    "reviewNotesCharacters": 3396,
+    "reviewContact": "not_set"
+  },
+  "uploaded": true
+}
