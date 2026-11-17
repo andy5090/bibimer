@@ -58,10 +58,10 @@
     "appleProcessingCompleted": true,
     "appStoreBuildID": "f8041489-d7cf-4a6a-9db5-bdc69e2fcadf",
     "exportComplianceCompleted": false,
-    "exportComplianceReason": "response_pending_after_territories_confirmed_screenshots_prioritized"
+    "exportComplianceReason": "console_login_failed_official_outage_confirmed"
   },
-  "screenshotsReady": false,
-  "appStoreConnectAccess": "authenticated_verified",
+  "screenshotsReady": true,
+  "appStoreConnectAccess": "login_failed_official_outage_confirmed",
   "publicPrivacyAndSupportAccess": "ko_pages_confirmed_in_chrome",
   "privacyPolicyIOSReady": false,
   "providerDataDisclosureReady": false,
@@ -75,13 +75,14 @@
   "published": false,
   "submissionReady": false,
   "remainingGates": [
-    "actual_iphone_ipad_screenshots_en_ko",
     "ios_public_privacy_policy_and_provider_data_review",
     "explicit_ai_data_permission_evidence",
     "full_reviewer_access_and_physical_device_validation",
     "runtime_corresponding_source_and_policy_classification_review",
     "export_response_and_age_rating",
-    "required_review_contact_and_final_review_notes_save"
+    "required_review_contact_and_final_review_notes_save",
+    "upload_reviewed_screenshots_after_console_recovery",
+    "review_korean_iphone_file_toolbar_overlap"
   ],
   "storeVersionVerified": "1.0.0",
   "manualReleaseSaved": true,
@@ -105,5 +106,20 @@
   ],
   "automaticFutureTerritories": false,
   "submissionExplicitlyOnHold": true,
-  "reviewContactEmailPhoneReceived": true
+  "reviewContactEmailPhoneReceived": true,
+  "screenshotCount": 12,
+  "screenshotsUploaded": false,
+  "testFlight15Requested": true,
+  "testFlight15InternalDistributionVerified": false,
+  "lastVerifiedInternalBuild": "0.1.0(14)",
+  "appStoreConnectOutage": {
+    "officialURL": "https://developer.apple.com/system-status/",
+    "observedAt": "2026-11-18T02:50:00+09:00",
+    "startedAt": "2026-11-18T01:50:00+09:00",
+    "ongoingAtObservation": true,
+    "affected": "all_users"
+  },
+  "knownVisualIssues": [
+    "Korean iPhone file-viewer toolbar label overlap; screenshot excluded, product code not changed."
+  ]
 }

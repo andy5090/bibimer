@@ -1,47 +1,33 @@
 # App Store 화면 자료
 
-현재 App Store용 iOS 스크린샷은 준비 중이다. Android 화면, 웹사이트 예시 이미지, 합성 채팅 화면을 iOS 실행 증거로 재사용하지 않는다. 실제 출시 후보의 iOS UI를 별도 QA 환경에서 캡처하고 사용한 소스·기기·언어·실제/예시 데이터 범위를 기록한다.
+2026-11-18: **영어·한국어 iPhone/iPad 각3장, 총12장 촬영·검토 완료. Console 업로드는0장**이다. App Store Connect 로그인 실패와 공식 서비스 장애로 등록은 대기 중이며 심사 제출은 사용자 지시로 보류한다.
 
-2026-11-18 환경에서는 Simulator의 UI 앱 번들이 없어 화면 제어 도구로 열 수 없었다. 기존 자동 검증이 저장한 실제 WKWebView 화면은 복구 뒤의 유실 세션/빈 터미널 상태여서 스토어 자료로 채택하지 않았다. 실행 검증 32개 통과와 적합한 마케팅 화면 확보를 구분한다. 실제 기기 또는 화면 제어가 가능한 Simulator에서 위 구성으로 다시 촬영해야 한다.
+## 실제 촬영 구성
 
-## 촬영 구성
-
-| 순서 | 화면 | 확인할 내용 |
+| 순서 | 파일 | 실제 내용 |
 | --- | --- | --- |
-| 1 | 실제 터미널 | 테스트 프로젝트에서 실행한 명령과 출력, 입력 키, 상단 탐색 |
-| 2 | 프로젝트·워크트리 사이드바 | 개인정보 없는 로컬 프로젝트와 실제 Git 워크트리 |
-| 3 | 파일·코드 보기 | 같은 프로젝트에서 작성한 공개 예제 파일 |
-| 4 | 에이전트 관리 | 설치/계정 상태의 실제 표시, 사용자 인증 정보 제외 |
-| 5 | 설정 | 언어·입력·음성 선택, 기능이 꺼진 기본 상태 |
+| 1 | `01-terminal.jpg` | 기기 내 Linux에서 실행한 `pwd`, `uname`, `ls`와 출력 |
+| 2 | `02-explorer.jpg` | 같은 QA 프로젝트의 실제 `readme` 파일 목록 |
+| 3 | `03-settings.jpg` | 실제 앱 설정·입력·OS 실행 제약 안내 |
 
-Chat 화면은 실제 확인한 기능과 정확히 일치하는 공개 예제만 사용하고, 모델 응답·계정 연결 성공을 조작하지 않는다. 인증 화면·OAuth URL·코드·API 키·사용자 저장소·개인 알림은 포함하지 않는다.
+`en-US/{iphone,ipad}/`와 `ko/{iphone,ipad}/`의 파일을 해당 언어/기기에 등록한다. 경로는 `../listing.json`, SHA-256·해상도·기기·언어·촬영 시각은 [manifest.json](manifest.json)에 기록했다. 초기5장씩20장 계획 대신 실제 확보·검토한3장씩12장을 기본 등록 세트로 확정했다. Chat·워크트리 홍보 화면을 확보했다고 표시하지 않는다.
 
-## 기기·파일 조건
+## 환경·출처
 
-- iPhone 필수 슬롯: 확인일 현재 Apple의 Dynamic Island 중간 화면 규격을 기준으로 1206×2622 또는 1179×2556 세로 이미지를 준비한다. 다른 허용 크기는 최신 Console 슬롯을 확인한다.
-- iPad도 지원하므로 13인치용 2064×2752 또는 2048×2732 세로 이미지가 필요하다.
-- 언어는 `en-US`와 `ko`. 각 기기/언어에 최소 1장, 최대 10장. PNG/JPEG, 투명도/알파 채널 없음.
-- 작은 화면 이미지를 단순 확대하거나 외곽을 잘라 규격을 맞추지 않는다. 같은 크기의 Simulator 또는 실제 기기에서 다시 촬영한다.
-- `listing.json`에 실제 파일 경로를 넣고 SHA-256·소스 커밋·기기/언어·캡처 방식·시각을 manifest로 남긴다.
+- Xcode27.2의 시뮬레이터 화면 앱은 **Device Hub**다. Simulator.app이 없으므로 촬영 불가라는 이전 판단을 정정한다. Xcode의 필수 시스템 구성요소 설치를 완료하고 Device Hub에서 실제 앱을 조작했다.
+- 별도 `Bibimer TestFlight QA` iPhone17Pro(iOS26.5)와 새 `Bibimer App Store iPad QA` iPadPro13-inch(M5, iPadOS26.5)를 사용했다. 사용자 Runtime Lab·운영 앱·기존 iPad는 변경하지 않았다.
+- 촬영 앱의 버전/빌드 메타데이터는1.0.0(15)다. 시뮬레이터 패키징의 기존0.1.0(1) 메타데이터만 별도 복사본에서 수정하고 ad-hoc 서명을 검증했다. 네이티브 소스·패키징 자산 해시는 업로드한15번 아카이브와 일치한다. Simulator 바이너리와 기기용 IPA를 동일 바이너리라고 주장하지 않는다.
+- 실제 화면의 Screenshot 버튼으로 네이티브 PNG를 저장했다. PNG에 알파 채널이 있어 macOS `sips`로 JPEG 품질100 변환만 했다. 크기 변경·자르기·문구/상태 합성·베젤 추가는 하지 않았다.
+- iPhone은1206×2622, iPad는2064×2752 세로, JPEG·알파 없음이다. 네이티브 원본과 패키징 영수증은 비공개 `dist/ios-appstore/preparation-nov18/screenshots-sim/`에 보존한다.
 
-근거: [Apple 스크린샷 규격](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/) (2026-11-18 확인). iPhone Duo의 별도 요구사항은 2027년 4월부터 적용된다는 현재 안내와 이번 필수 슬롯을 구분한다.
+프로젝트 `/root/projects/storedemo`와 `readme`, Git 저장소는 별도 QA 앱에서 실제 생성했다. 터미널의 호스트 이름은 게스트가 가진 실제 프롬프트이며 명령은 기기 내 Linux에서 실행했다. 모델 응답·계정 로그인·워크트리 생성은 합성하지 않았고 사용자 프로젝트·인증 정보·OAuth URL·코드·알림을 포함하지 않았다.
 
-## 이번 등록 순서와 촬영 준비
+## 검토 결과와 남은 작업
 
-심사 제출은 사용자 지시로 보류한다. 촬영 경로가 준비되면 후보1.0.0(15)의 별도 QA 데이터로 아래5장을 언어별·기기별로 촬영해 검토하고 등록한다. 영어/한국어×iPhone/iPad×5장으로20장이 목표다. 각 기기/언어에서 화면 구성을 유지하고 상단 문구가 필요한 경우 다음 원고를 사용한다. 아직 이미지나 완성된 합성물이 아니다.
+12장 모두 실제 화면과 대조하고 표시 언어·해상도·알파 없음·파일 해시를 확인했다. iPhone 파일 **내용 보기**의 한국어 도구 모음에서 `파일 새로고침`과 `iOS 앱으로 열기`가 겹치는 문제를 발견했다. 해당 사진은 양 언어 모두 제외하고 파일 **탐색 목록**으로 다시 촬영했다. 제품 코드를 수정한 것은 아니므로 출시 전 UI 검토 항목으로 남긴다.
 
-| 파일 순서 | 한국어 문구 | 영어 문구 |
-| --- | --- | --- |
-| 01-terminal | 기기 안에서 개발 명령 실행 | Run development commands on your device |
-| 02-projects | 프로젝트와 워크트리를 한곳에서 | Keep projects and worktrees together |
-| 03-files | 파일과 변경 사항 살펴보기 | Explore files and changes |
-| 04-agents | 사용할 에이전트를 직접 연결 | Connect the agents you use |
-| 05-settings | 나에게 맞는 작업 환경 | Set up your workspace |
+설정 사진은 실제 백그라운드 실행 불가 안내를 그대로 포함한다. 물리 기기의 백그라운드 실행·계정 로그인·음성 권한 검증을 대신하지 않는다. [출시 준비](../readiness.md)의 나머지 제출 조건도 유지한다.
 
-1. 사용자 프로젝트와 분리한 `~/projects/store-demo`를 만들고 작은 공개 예제 파일과 Git 저장소를 준비한다. 디렉터리 생성·파일/Git 명령은 실제 터미널로 실행한다.
-2. 터미널에서 `pwd`, `python3 --version`, `git status --short` 등 실제 명령의 출력을 확인한다. 실패 출력을 지우고 성공처럼 꾸미거나 모델 응답을 합성하지 않는다.
-3. 실제 존재하는 워크트리와 세션을 사이드바에 표시하고 예제 파일·변경 내역을 연다. 관리 화면에서는 실제 설치 상태를 유지하고 로그인되지 않은 도구를 연결 완료로 바꾸지 않는다.
-4. 설정에서 영어/한국어를 직접 선택한 뒤 각 언어의5개 화면을 원본 해상도로 촬영한다. 개인정보·프로바이더 계정·인증 URL·코드·알림이 보이지 않는지 검사한다.
-5. 파일별 원본 해상도·알파 없음·표시 언어·빌드15·실제 화면/문구 일치·잘림·빈 화면·연결 오류를 확인한다. 검토를 통과한 파일만 언어별 iPhone/iPad 슬롯에 올린다.
+서비스 복구 후 Console의 영어/한국어 iPhone·iPad 슬롯에 각3장 업로드하고 저장·처리 완료·순서를 다시 확인한다. 등록만 진행하고 `심사에 추가`·제출·공개는 실행하지 않는다.
 
-현재 촬영/등록 수는0장이다. 자동 QA 화면을 등록 완료 자료로 집계하지 않는다. 실제 기기에서 후보15를 쓰려면 먼저 별도 내부 TestFlight 제공이 필요하며, 현재 내부 배포14의 화면을15의 검증으로 간주하지 않는다.
+근거: [Apple 스크린샷 규격](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/), [Device Hub](https://developer.apple.com/documentation/Xcode/device-hub), [기기 화면 촬영](https://developer.apple.com/documentation/xcode/capturing-screenshots-and-videos-from-devices), [Apple 개발자 시스템 상태](https://developer.apple.com/system-status/) (2026-11-18 확인).

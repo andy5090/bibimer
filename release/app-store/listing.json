@@ -43,8 +43,16 @@
       "privacyPolicyURL": "https://bibimer.app/privacy/",
       "privacyPolicyReadyForIOS": false,
       "screenshots": {
-        "iphone": [],
-        "ipad": []
+        "iphone": [
+          "screenshots/en-US/iphone/01-terminal.jpg",
+          "screenshots/en-US/iphone/02-explorer.jpg",
+          "screenshots/en-US/iphone/03-settings.jpg"
+        ],
+        "ipad": [
+          "screenshots/en-US/ipad/01-terminal.jpg",
+          "screenshots/en-US/ipad/02-explorer.jpg",
+          "screenshots/en-US/ipad/03-settings.jpg"
+        ]
       }
     },
     "ko": {
@@ -57,8 +65,16 @@
       "privacyPolicyURL": "https://bibimer.app/ko/privacy/",
       "privacyPolicyReadyForIOS": false,
       "screenshots": {
-        "iphone": [],
-        "ipad": []
+        "iphone": [
+          "screenshots/ko/iphone/01-terminal.jpg",
+          "screenshots/ko/iphone/02-explorer.jpg",
+          "screenshots/ko/iphone/03-settings.jpg"
+        ],
+        "ipad": [
+          "screenshots/ko/ipad/01-terminal.jpg",
+          "screenshots/ko/ipad/02-explorer.jpg",
+          "screenshots/ko/ipad/03-settings.jpg"
+        ]
       }
     }
   },
@@ -83,7 +99,9 @@
     "chinaMainlandComplianceNotice": "security_assessment_and_aigc_filing_required_if_distributed",
     "buildID": "f8041489-d7cf-4a6a-9db5-bdc69e2fcadf",
     "reviewNotesCharacters": 3396,
-    "reviewContact": "not_set"
+    "reviewContact": "not_set",
+    "screenshots": "not_uploaded_app_store_connect_outage",
+    "testFlight15": "requested_internal_group_distribution_pending_outage"
   },
   "uploaded": true,
   "submissionPolicy": "do_not_submit_without_new_explicit_user_instruction"

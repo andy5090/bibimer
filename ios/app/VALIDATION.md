@@ -1,5 +1,8 @@
 # iOS 앱 검증 기록
 
+2026-11-18 02:50 KST 후속: Device Hub로 영어/한국어 iPhone/iPad 실제 스크린샷12장 촬영·검토를 완료했다. Simulator.app 부재를 촬영 불가로 해석했던 판단을 정정한다. **사용자가15번 내부 TestFlight 제공을 요청했으나 App Store Connect 공식 장애(01:50 KST부터 진행 중)와 로그인 실패로 아직 미반영**이다. 마지막 확인한 내부 제공은14번이며15번을 재업로드하지 않는다. 스크린샷 Console 등록0장, 심사 제출/공개는 사용자 지시로 보류한다. 한국어 iPhone 파일 보기의 도구 모음 글자 겹침은 사진 교체만 했고 제품 수정은 하지 않았다. [현재 준비 상태](../../release/app-store/readiness.md)와 [촬영 자료](../../release/app-store/screenshots/README.md)를 따른다.
+
+
 ## 2026-11-18 — App Store 후보 1.0.0(15) 검증·로컬 서명
 
 - 배포 준비 소스는 `7741191def46e5bc6b475c4ada30435e3546c6cb`다. 원격 로그인/에이전트 선택·Claude 코드 수신 개선을 포함하며 제품 코드를 추가로 수정하지 않았다. 앱 Python34개(Apple Foundation의 실제 코드/복사 수신 합성 회귀 포함)·브리지83개/29.79초·Node23파일/988키×10언어·패키징 계정 복귀 Chromium을 통과했다.
