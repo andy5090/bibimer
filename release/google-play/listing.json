@@ -211,16 +211,16 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.43.0",
-    "versionCode": 72,
+    "versionName": "0.43.1",
+    "versionCode": 73,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "60ac574f5393f5575e0a959ccd52647ed991d3d9a969823be59282219425df5c",
-    "file": "bibimer-0.43.0-72-release.aab",
-    "bytes": 3492187,
+    "sha256": "96fc5e8c062add75a4af9181ba835042d87ee75b333fa3ed08c433943e1f3b8a",
+    "file": "bibimer-0.43.1-73-release.aab",
+    "bytes": 3494076,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
@@ -254,11 +254,11 @@
     "settingsSwitchesAndDisabledGroupsPackaged": true,
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
-    "builtOn": "2026-11-13",
-    "sourceCommit": "503cdc73caa3c96dbbf2bac6f8b351f9ffe56492",
-    "releaseName": "0.43.0 (72) - Debug, queue editing and agent setup",
-    "releaseNotesFile": "release/google-play/release-notes/0.43.0.txt",
-    "bridgeUpdateRequiredForNewFeatures": true,
+    "builtOn": "2026-11-18",
+    "sourceCommit": "377731b184e25bce6cd558e493820f405ec52ec9",
+    "releaseName": "0.43.1 (73) - Check selected agent connection",
+    "releaseNotesFile": "release/google-play/release-notes/0.43.1.txt",
+    "bridgeUpdateRequiredForNewFeatures": false,
     "interruptedQuestionEditingPackaged": true,
     "messageCopyIconsPackaged": true,
     "compactCopyButtonsPackaged": true,
@@ -277,7 +277,8 @@
     "optimisticMessagesPackaged": true,
     "debugModePackaged": true,
     "queueEditorPackaged": true,
-    "unifiedAgentManagementPackaged": true
+    "unifiedAgentManagementPackaged": true,
+    "selectedAgentConnectionCheckPackaged": true
   },
   "consoleScreenshotsUpdatedOn": "2026-11-11",
   "playAppSigning": {
@@ -528,26 +529,26 @@
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.42.0",
-    "versionCode": 71,
+    "versionName": "0.43.0",
+    "versionCode": 72,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "9ea952d66a4165abee9b0a75b239275833880dff80ee22c627eab8a8af8ba17d",
-    "file": "bibimer-0.42.0-71-release.aab",
-    "bytes": 3479727,
+    "sha256": "60ac574f5393f5575e0a959ccd52647ed991d3d9a969823be59282219425df5c",
+    "file": "bibimer-0.43.0-72-release.aab",
+    "bytes": 3492187,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
     "packagedAssetsMatchSource": true,
-    "packagedAssetCount": 59,
+    "packagedAssetCount": 61,
     "languageSplitsDisabled": true,
     "reviewDigestPackaged": true,
     "privateReviewCodeIncluded": false,
     "privatePasswordIncluded": false,
-    "embeddedBridgeVersion": "0.25.1",
+    "embeddedBridgeVersion": "0.25.2",
     "maintenanceSixPayloadsMatch": true,
     "installerIsolatedExtractionVerified": true,
     "notificationSymbolPackaged": true,
@@ -572,9 +573,9 @@
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
     "builtOn": "2026-11-13",
-    "sourceCommit": "ec59b922b9435c4db17abe26933df8fb1afbf310",
-    "releaseName": "0.42.0 (71) - Agent maintenance and links",
-    "releaseNotesFile": "release/google-play/release-notes/0.42.0.txt",
+    "sourceCommit": "503cdc73caa3c96dbbf2bac6f8b351f9ffe56492",
+    "releaseName": "0.43.0 (72) - Debug, queue editing and agent setup",
+    "releaseNotesFile": "release/google-play/release-notes/0.43.0.txt",
     "bridgeUpdateRequiredForNewFeatures": true,
     "interruptedQuestionEditingPackaged": true,
     "messageCopyIconsPackaged": true,
@@ -591,7 +592,10 @@
     "agentSessionMaintenancePackaged": true,
     "terminalOutputSelectionPackaged": true,
     "claudeOAuthURLFixPackaged": true,
-    "optimisticMessagesPackaged": true
+    "optimisticMessagesPackaged": true,
+    "debugModePackaged": true,
+    "queueEditorPackaged": true,
+    "unifiedAgentManagementPackaged": true
   },
   "previousUpdate": {
     "versionName": "0.38.2",
@@ -663,26 +667,26 @@
     "consoleUploaded": true
   },
   "internalTestRelease": {
-    "versionName": "0.43.0",
-    "versionCode": 72,
-    "releaseName": "0.43.0 (72) - Debug, queue editing and agent setup",
+    "versionName": "0.43.1",
+    "versionCode": 73,
+    "releaseName": "0.43.1 (73) - Check selected agent connection",
     "consoleStatus": "active_available_to_existing_testers",
-    "publishedOn": "2026-11-13",
-    "publishedAtLocal": "2026-11-13 15:27 Asia/Seoul",
+    "publishedOn": "2026-11-18",
+    "publishedAtLocal": "2026-11-18 22:06 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      72
+      73
     ],
     "excludedPreviousVersionCodes": [
-      71
+      72
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 379,
-      "ko-KR": 198
+      "en-US": 327,
+      "ko-KR": 143
     },
     "errors": [],
     "warnings": [
@@ -691,26 +695,26 @@
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed seven Console device-type rows",
     "supportedDevices": {
-      "phone": 11607,
-      "tablet": 6517,
+      "phone": 11546,
+      "tablet": 6528,
       "tv": 5,
       "wear": 0,
-      "car": 29,
+      "car": 30,
       "chromebook": 77,
       "androidXR": 2
     },
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "503cdc73caa3c96dbbf2bac6f8b351f9ffe56492",
-    "releaseNotesFile": "release/google-play/release-notes/0.43.0.txt",
-    "evidence": "dist/play-0.43.0/published.json",
+    "sourceCommit": "377731b184e25bce6cd558e493820f405ec52ec9",
+    "releaseNotesFile": "release/google-play/release-notes/0.43.1.txt",
+    "evidence": "dist/play-0.43.1/published.json",
     "sourceBridgeVersion": "0.25.2",
-    "bridgeUpdateRequiredForNewFeatures": true,
-    "sha256": "60ac574f5393f5575e0a959ccd52647ed991d3d9a969823be59282219425df5c",
-    "bytes": 3492187,
+    "bridgeUpdateRequiredForNewFeatures": false,
+    "sha256": "96fc5e8c062add75a4af9181ba835042d87ee75b333fa3ed08c433943e1f3b8a",
+    "bytes": 3494076,
     "packagedAssetCount": 61,
-    "sourceLanguageKeys": 984,
+    "sourceLanguageKeys": 988,
     "sourceLanguageCount": 10,
     "debugModePackaged": true,
     "queueEditorPackaged": true,
@@ -718,7 +722,8 @@
     "deviceInstallVerified": false,
     "operatingBridgeRestarted": false,
     "installedAgentsUpdated": false,
-    "existingTestersUnchanged": true
+    "existingTestersUnchanged": true,
+    "selectedAgentConnectionCheckPackaged": true
   },
   "productionReleaseHistory": [
     {
@@ -1031,26 +1036,26 @@
     "manifest": "screenshots/current-20261111/manifest.json"
   },
   "previousInternalTestRelease": {
-    "versionName": "0.42.0",
-    "versionCode": 71,
-    "releaseName": "0.42.0 (71) - Agent maintenance and links",
+    "versionName": "0.43.0",
+    "versionCode": 72,
+    "releaseName": "0.43.0 (72) - Debug, queue editing and agent setup",
     "consoleStatus": "active_available_to_existing_testers",
     "publishedOn": "2026-11-13",
-    "publishedAtLocal": "2026-11-13 03:11 Asia/Seoul",
+    "publishedAtLocal": "2026-11-13 15:27 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
     "includedVersionCodes": [
-      71
+      72
     ],
     "excludedPreviousVersionCodes": [
-      70
+      71
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 401,
-      "ko-KR": 211
+      "en-US": 379,
+      "ko-KR": 198
     },
     "errors": [],
     "warnings": [
@@ -1070,13 +1075,23 @@
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "ec59b922b9435c4db17abe26933df8fb1afbf310",
-    "releaseNotesFile": "release/google-play/release-notes/0.42.0.txt",
-    "evidence": "dist/play-0.42.0/published.json",
-    "sourceBridgeVersion": "0.25.1",
+    "sourceCommit": "503cdc73caa3c96dbbf2bac6f8b351f9ffe56492",
+    "releaseNotesFile": "release/google-play/release-notes/0.43.0.txt",
+    "evidence": "dist/play-0.43.0/published.json",
+    "sourceBridgeVersion": "0.25.2",
     "bridgeUpdateRequiredForNewFeatures": true,
-    "sha256": "9ea952d66a4165abee9b0a75b239275833880dff80ee22c627eab8a8af8ba17d",
-    "bytes": 3479727
+    "sha256": "60ac574f5393f5575e0a959ccd52647ed991d3d9a969823be59282219425df5c",
+    "bytes": 3492187,
+    "packagedAssetCount": 61,
+    "sourceLanguageKeys": 984,
+    "sourceLanguageCount": 10,
+    "debugModePackaged": true,
+    "queueEditorPackaged": true,
+    "unifiedAgentManagementPackaged": true,
+    "deviceInstallVerified": false,
+    "operatingBridgeRestarted": false,
+    "installedAgentsUpdated": false,
+    "existingTestersUnchanged": true
   },
   "consoleScreenshotsVerifiedOn": "2026-11-11",
   "sourceLanguages": [
@@ -2713,6 +2728,54 @@
       "dismissibleNoticesPackaged": true,
       "operatingBridgeRestarted": false,
       "installedAgentsUpdated": false
+    },
+    {
+      "versionName": "0.42.0",
+      "versionCode": 71,
+      "releaseName": "0.42.0 (71) - Agent maintenance and links",
+      "consoleStatus": "active_available_to_existing_testers",
+      "publishedOn": "2026-11-13",
+      "publishedAtLocal": "2026-11-13 03:11 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+      "includedVersionCodes": [
+        71
+      ],
+      "excludedPreviousVersionCodes": [
+        70
+      ],
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "releaseNotesCharacters": {
+        "en-US": 401,
+        "ko-KR": 211
+      },
+      "errors": [],
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed seven Console device-type rows",
+      "supportedDevices": {
+        "phone": 11607,
+        "tablet": 6517,
+        "tv": 5,
+        "wear": 0,
+        "car": 29,
+        "chromebook": 77,
+        "androidXR": 2
+      },
+      "refreshedStatusVerified": true,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "sourceCommit": "ec59b922b9435c4db17abe26933df8fb1afbf310",
+      "releaseNotesFile": "release/google-play/release-notes/0.42.0.txt",
+      "evidence": "dist/play-0.42.0/published.json",
+      "sourceBridgeVersion": "0.25.1",
+      "bridgeUpdateRequiredForNewFeatures": true,
+      "sha256": "9ea952d66a4165abee9b0a75b239275833880dff80ee22c627eab8a8af8ba17d",
+      "bytes": 3479727
     }
   ]
 }
