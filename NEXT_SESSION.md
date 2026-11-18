@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## Android 0.43.1(73) 내부 테스트 준비 (2026-11-18, 브라우저 제어 허용 대기)
+
+- 사용자 요청으로 관리 화면 진입 시 자동 조회하지 않고 에이전트 선택 뒤 해당 설치/로그인 상태를 확인하는 최신 공통 UI를73번에 포함했다. 소스 `377731b`, 기존 업로드 키 서명 `dist/play/bibimer-0.43.1-73-release.aab`,3,494,076bytes·SHA-256 `96fc5e8c062add75a4af9181ba835042d87ee75b333fa3ed08c433943e1f3b8a`다. 브리지는0.25.2 그대로이며 이 선택 UI 변경 자체에 새 브리지 업데이트는 필요 없다.
+- 에이전트 UI/페이지 이동/988키×10언어·빌드11개 검사, 전체 Java/D8·bundletool·기존 인증서·61assets 원본·브리지6payload/격리 추출0700·언어 split·심사 digest/비밀 원문 제외 검증을 통과했다. 기존 Java8/deprecated 경고만 유지한다. 증빙 `.tools/aab-0.43.1-73-{build.log,verify.log,verification.json}`, `dist/play-0.43.1/prepared.json`, 한영 출시 노트 `release/google-play/release-notes/0.43.1.txt`다.
+- **아직 Play 업로드/게시하지 않았다.** 관리 Firefox가 manual_login=true로 열려 사용자 직접 로그인/제어 허용을 기다린다. 작업 화면의 브라우저 제어 요청 → 로그인 완료 · 에이전트 제어 허용이 필요하다. 카드 없는 이전 설치본은 하단 설정 → Firefox · Termux:X11 → 로그인 및 에이전트 제어다. 에이전트는 잠금을 해제하지 않았다. 시작 실패는 사용 가능한70–89번 display가 이전 X11 파일로 차 있던 상태였다.71번만 전용 flock·PID 부재·소켓 연결 거절을 확인한 뒤 비공개 tmp에 보존하고 재시작했다.70번은 PID 확인 불가로 유지했다.
+- 허용 후 기존 내부 테스트 트랙에73만 포함해 업로드·출시 노트·검토·게시·새로고침 상태 확인을 이어간다. 현재 Android 내부 제공은72이며 앱 설치/운영 브리지/세션·iOS/정식/웹 배포는 수행하지 않았다. 실제 Android WebView 조작은 후속 검증이다.
+
 ## App Store 실제 촬영12장·Apple 장애·TestFlight15 요청 (2026-11-18 02:50 KST)
 
 - 영어/한국어 × iPhone/iPad 각3장 총12장을 `release/app-store/screenshots/`에 저장하고 실제 UI·해상도·알파 없음·SHA-256 검토를 완료했다. 업로드0장, 심사 제출/공개0회다. `listing.json`과 `manifest.json`에 파일 순서와 출처가 있다.
