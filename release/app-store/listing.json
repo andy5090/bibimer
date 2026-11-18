@@ -28,7 +28,7 @@
   ],
   "copyright": "2026 Andineering",
   "appPrivacyStatus": "needs_provider_and_retention_review",
-  "ageRatingStatus": "questionnaire_pending",
+  "ageRatingStatus": "saved_16_plus",
   "reviewContactStatus": "saved_verified_after_reload",
   "submitted": false,
   "published": false,
@@ -91,19 +91,21 @@
       "ko"
     ],
     "reviewNotes": "latest_draft_saved_verified_after_reload",
-    "appPrivacy": "not_started",
+    "appPrivacy": "4_data_types_published_2026_11_19",
     "privacyPolicyURL": "not_set",
-    "ageRating": "not_set",
+    "ageRating": "16_plus_saved",
     "territoryAvailability": "173_regions_selected_excluding_CN_FR",
     "buildSelection": "1.0.0(15)_selected_export_response_completed",
     "chinaMainlandComplianceNotice": "security_assessment_and_aigc_filing_required_if_distributed",
     "buildID": "f8041489-d7cf-4a6a-9db5-bdc69e2fcadf",
     "reviewNotesCharacters": 3426,
     "reviewContact": "saved_verified_no_raw_contact_in_repository",
-    "screenshots": "12_uploaded_four_sets_of_three_verified_after_reload",
-    "testFlight15": "testing_existing_Bibimer_Internal_group"
+    "screenshots": "12_saved_including_2_updated_ipad_settings_build16",
+    "testFlight15": "testing_existing_Bibimer_Internal_group",
+    "dsa": "trader_active_verified",
+    "privacyPolicy": "en_US_and_ko_urls_saved_2026_11_19"
   },
   "uploaded": true,
-  "submissionPolicy": "do_not_submit_without_new_explicit_user_instruction",
+  "submissionPolicy": "user_authorized_submit_after_readiness_gates_keep_manual_release",
   "updatedOn": "2026-11-19"
 }

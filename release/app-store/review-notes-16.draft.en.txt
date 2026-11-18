@@ -1,0 +1,23 @@
+DRAFT — build16 local candidate. Do not submit this draft until the iOS source-license grant and full reviewer-access arrangement below are complete.
+
+Bibimer is an on-device Agent Development Environment for iPhone and iPad. It is not an AI model or an AI subscription service. Connected coding-agent tools perform the coding work. Bibimer is free and does not sell AI credits, provider subscriptions or other digital goods.
+
+Architecture and downloaded code
+The app bundles an ARM64 Linux interpreter and an Alpine base filesystem. Initial preparation downloads development packages from configured Alpine HTTPS repositories, including Python, Bash, Git, Node.js/npm, curl, jq, SQLite, GitHub CLI and ripgrep with dependencies. Installing a coding agent is a separate user action that downloads its CLI and dependencies. These are executable development tools, not static content. They execute inside the app's interpreted local Linux environment. The app requests no JIT entitlement; Node uses the supported jitless configuration. We request assessment of this actual execution model and do not claim educational-app status or blanket authorization under guideline4.7.
+
+Review the local workspace
+1. Launch and allow initial local-tool preparation to finish; internet access is required.
+2. Open the project sidebar, add ~/projects/review and select the option to create the folder.
+3. Choose Terminal (shell), start a session, read the data-sharing disclosure and explicitly allow it if you wish to continue.
+4. Run pwd and printf 'Bibimer review\n'. Browse the project files and Git controls.
+5. Use top-bar Settings for the setup guide, agent manager, input/language preferences, data-sharing revocation, licenses and source links.
+
+Provider-backed Chat
+A real third-party account or supported API configuration is required. The terminal steps alone do not provide full Chat access. REVIEW ACCESS ARRANGEMENT STILL REQUIRED: provide valid dedicated access through the confidential App Review login fields or establish another complete review route before submission. No shared credentials or fake model responses are embedded in the app. Android demo-code instructions do not apply.
+
+Data and permissions
+Before Chat execution/transmission, an app-styled dialog identifies the selected tool/default provider, warns that CLI configuration may select another recipient, and describes transmission of prompts, conversation context, code, files, images/screenshots and selected tools/services. Provider terms and retention apply. Chat asks again for each transmission because external CLI configuration can change independently. Terminal installation/login/execution and optional speech/TTS have their corresponding disclosures; cancellation does not send or launch the requested operation. Settings can revoke permissions. Claude optional telemetry and Gemini statistics/telemetry are disabled for new app-managed launches.
+
+The iOS policy is public at https://bibimer.app/privacy/ and https://bibimer.app/ko/privacy/. App Privacy declares linked photos/videos, audio, other user content and user IDs; no tracking. Voice keys use native secure storage/input. Authentication uses SFSafariViewController, separate from agent browser control. Supported manual Claude code handling validates the current operation/state and uses native secure transport; manual native input remains available.
+
+The work browser uses WKWebView and needs explicit authorization for its project/browser run before agent capture/scroll. iOS controls background execution and may suspend or stop the app. Saved files/conversations are separate from live processes; unlimited background execution and replay of interrupted work are not promised.

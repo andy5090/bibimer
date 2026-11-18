@@ -1,5 +1,18 @@
 # Bibimer 다음 세션 시작점
 
+## App Store 제출 승인·진행 중 (2026-11-19)
+
+- 사용자가 남은 준비와 **심사 제출까지 진행**하도록 새로 명시했다. 이전 제출 보류는 이 지시로 해제됐으며 **승인 후 수동 공개** 설정은 유지한다. 제출 성공은 아직 확인하지 않았다.
+- 후보16 소스 `a12d75f`를 커밋·push했다. 자체 전송 동의/취소·철회, 통계 차단, GPL/Alpine 고지, 한국어 파일 도구 모음 수정이 포함된다. 양 SDK·Python앱34/브리지86·Node18파일·실제 WKWebView/Linux34개(45.75초, JS오류0/fatal0/진단실패0, 기존 syscall경고4) 통과. unsigned 아카이브/패키지 소스 일치까지 확인했고 서명·export·업로드는 아직 없다. ASC 선택/마지막 내부 제공은15다.
+- 기존12장 중 변경된 iPad 설정 영한2장을16으로 실제 재촬영·교체하고 새로고침 뒤 각3장과 순서를 확인했다. 나머지10장은15 출처를 보존했다. 실제 iPhone 한국어 파일 도구 모음·AI/터미널 고지/취소, iPad GPL/Alpine 고지도 화면 제어로 확인했다. visual verdict94/pass.
+- 라이선스 결정과 실제 Chat 심사 접근 답변이 필요하다. 결정 뒤 효력 있는 라이선스 패키징/검증→16 서명·업로드·초안 선택→콘텐츠 권한/최종메모→심사 제출 순서다. 새 draft는 `release/app-store/review-notes-16.draft.en.txt`, Console3426자 DRAFT는 유지했다. 사용자 심사 제출 승인은 이미 있으므로 같은 제출 승인을 다시 묻지 않는다.
+- 비공개 증빙: `dist/ios-appstore/submission-nov19/`, `dist/ios-app/submission-1.0.0-16-nov19-smoke/`, `.tools/ios-submission16-*`. 고지 원문에는 upstream 공백/CRLF·Markdown 밑줄이 보존되어 전체 git diff --check의 공백/충돌표식 오탐을 일으킨다. 자체 변경의 check는 통과했고 원문 해시는 provenance로 검증했다.
+- 실제 기능 설문으로 unrestricted web access를 예로 답해 연령16+를 저장했다. 무료 앱 계약·DSA 거래자 상태 활성화를 Console 비즈니스에서 확인했다. 유료 계약 업데이트에는 동의하지 않았다.
+- iOS 개인정보 정책10언어를 배포했다(`https://a65016d8.bibimer.pages.dev`). 운영10개 URL HTTP200·원본 SHA256 일치를 검증했고 Chrome 한국어 페이지도 확인했다. ASC 영한 정책 주소 저장과 App Privacy 4종(사진/비디오·오디오·기타 사용자 콘텐츠·사용자 ID)의 계정 연결/추적 없음 신고 게시를 확인했다.
+- 심사자가 실제 Chat에 접근할 전용 제공자 계정/접근 방법과, iSH GPLv3 의무에 맞춘 Bibimer 소유 iOS 대응 소스 라이선스 부여 선택을 사용자에게 질문했다. 원문 키/비밀번호를 대화에 보내지 않도록 안내했다. GPL 검토안은 `release/app-store/ios-license-proposal.md`; 승인 전 라이선스 효력은 없다.
+- 연결한 물리 iPhone/iPad가 없고 전용 시뮬레이터만 확인됐다. 실기기 검증으로 표시하지 않는다.
+
+
 ## App Store 스크린샷12장 등록·TestFlight15 제공 완료 (2026-11-19)
 
 - 사용자 복구 안내 후 인증된 App Store Connect에 접근했다. **1.0.0(15)**의 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답을 저장하고 한영 테스트 안내1,836자를 저장했다. 기존 Bibimer Internal 그룹에서 **테스트 중·90일 후 만료·내부 테스터1명·빌드15개**를 직접 확인했다. 재업로드/외부 그룹/새 테스터/공개 링크는 없다.

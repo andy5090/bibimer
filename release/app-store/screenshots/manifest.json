@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "build": "15",
-  "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb",
+  "build": "mixed_15_16",
+  "sourceCommit": "per_file",
   "captureMethod": "Device Hub Screenshot button via CUA",
   "postprocessing": "JPEG quality 100 conversion only; no crop, resize, overlay or altered UI",
   "uploaded": true,
@@ -22,7 +22,9 @@
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 1
+      "consoleOrder": 1,
+      "build": "15",
+      "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb"
     },
     {
       "file": "screenshots/en-US/ipad/02-explorer.jpg",
@@ -40,7 +42,9 @@
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 2
+      "consoleOrder": 2,
+      "build": "15",
+      "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb"
     },
     {
       "file": "screenshots/en-US/ipad/03-settings.jpg",
@@ -52,13 +56,17 @@
       "height": 2752,
       "hasAlpha": false,
       "rawPNGColorType": 6,
-      "capturedAt": "2026-11-17T17:47:44.422154+00:00",
-      "sha256": "2e7e2fbb777ca0accd7659944e629974b62db267877ab48488fea8277b93922e",
-      "rawSHA256": "30329e011145be1a8ab5d94b77393556c67e0dd194d8649662926c981318f42b",
+      "capturedAt": "2026-11-18T16:20:37.463812+00:00",
+      "sha256": "833a62faf5acbdc1e759923b31b845cc4d1b7599d37224fae0ad9bb5d74c55c8",
+      "rawSHA256": "65cd5664e57808ded429e60bbb19f9e0493c4fef73d1691d73f4d52daba33025",
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 3
+      "consoleOrder": 3,
+      "build": "16",
+      "sourceCommit": "a12d75fb2a483c6b4ac19a62ef7198ec26b08e44",
+      "uploadedOn": "2026-11-19",
+      "savedAfterReload": true
     },
     {
       "file": "screenshots/en-US/iphone/01-terminal.jpg",
@@ -76,7 +84,9 @@
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 1
+      "consoleOrder": 1,
+      "build": "15",
+      "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb"
     },
     {
       "file": "screenshots/en-US/iphone/02-explorer.jpg",
@@ -94,7 +104,9 @@
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 2
+      "consoleOrder": 2,
+      "build": "15",
+      "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb"
     },
     {
       "file": "screenshots/en-US/iphone/03-settings.jpg",
@@ -112,7 +124,9 @@
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 3
+      "consoleOrder": 3,
+      "build": "15",
+      "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb"
     },
     {
       "file": "screenshots/ko/ipad/01-terminal.jpg",
@@ -130,7 +144,9 @@
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 1
+      "consoleOrder": 1,
+      "build": "15",
+      "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb"
     },
     {
       "file": "screenshots/ko/ipad/02-explorer.jpg",
@@ -148,7 +164,9 @@
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 2
+      "consoleOrder": 2,
+      "build": "15",
+      "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb"
     },
     {
       "file": "screenshots/ko/ipad/03-settings.jpg",
@@ -160,13 +178,17 @@
       "height": 2752,
       "hasAlpha": false,
       "rawPNGColorType": 6,
-      "capturedAt": "2026-11-17T17:48:26.081131+00:00",
-      "sha256": "568a5576e20278f9f9ec86ef5bc72b2244013eb7495c64f2cbfd47ac57a91db8",
-      "rawSHA256": "5ad2b72f6badb6c7fad8539db6e12fa285eaa28a849f2159c1f6898208a23e05",
+      "capturedAt": "2026-11-18T16:18:56.122031+00:00",
+      "sha256": "177dbb778c177b7e2f3a7430d3c692ee4c8f78ff1bc76700fc2b52e6e3dfb3cc",
+      "rawSHA256": "c06c891554b1e2724628a6ed96ca66de91cca99026041e1f9af5cf99fef35cd1",
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 3
+      "consoleOrder": 3,
+      "build": "16",
+      "sourceCommit": "a12d75fb2a483c6b4ac19a62ef7198ec26b08e44",
+      "uploadedOn": "2026-11-19",
+      "savedAfterReload": true
     },
     {
       "file": "screenshots/ko/iphone/01-terminal.jpg",
@@ -184,7 +206,9 @@
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 1
+      "consoleOrder": 1,
+      "build": "15",
+      "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb"
     },
     {
       "file": "screenshots/ko/iphone/02-explorer.jpg",
@@ -202,7 +226,9 @@
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 2
+      "consoleOrder": 2,
+      "build": "15",
+      "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb"
     },
     {
       "file": "screenshots/ko/iphone/03-settings.jpg",
@@ -220,10 +246,12 @@
       "reviewed": true,
       "uploaded": true,
       "consoleVerifiedAfterReload": true,
-      "consoleOrder": 3
+      "consoleOrder": 3,
+      "build": "15",
+      "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb"
     }
   ],
-  "reviewedOn": "2026-11-18",
+  "reviewedOn": "2026-11-19",
   "captureCount": 12,
   "rejectedCaptures": [
     {
@@ -240,7 +268,7 @@
     }
   ],
   "dataScope": "Dedicated QA project /root/projects/storedemo; actual shell commands, Git repository and readme. No model responses, user repositories, credentials or simulated account success.",
-  "simulatorPackaging": "Version/build metadata set to 1.0.0(15) and ad-hoc signed; native source hashes and packaged resource hashes match uploaded archive. Different simulator/device binaries are not treated as identical.",
+  "simulatorPackaging": "Per-file source build15 or16. Build16 uses 1.0.0(16) Info.plist and ad-hoc signature; same final simulator native and Web/Guest resources as candidate16. Unchanged build15 screenshots retain original provenance.",
   "uploadedOn": "2026-11-19",
   "uploadedCount": 12,
   "consoleVerifiedAfterReload": true
