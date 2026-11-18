@@ -78,11 +78,24 @@
   <article id="zh-Hant" lang="zh-Hant" aria-labelledby="zh-Hant-title">
     <h2 id="zh-Hant-title">Bibimer 隱私政策</h2>
     <dl>
-      <dt>應用程式</dt><dd>Bibimer (app.bibimer)</dd>
+      <dt>應用程式</dt><dd>Bibimer (Android: app.bibimer; iOS: app.bibimer.ios)</dd>
       <dt>營運方</dt><dd>Andineering</dd>
       <dt>聯絡方式</dt><dd><a href="mailto:andy@andineering.com">andy@andineering.com</a></dd>
-      <dt>生效日期</dt><dd>2026年11月4日</dd>
+      <dt>生效日期</dt><dd>2026年11月19日</dd>
     </dl>
+    <p id="platform-scope">本政策適用於 Android 與 iOS 版 Bibimer。以下 iOS 說明解釋其與第 1–5 節 Android、Termux 功能的差異。網站、諮詢和年齡條款適用於兩個版本。</p>
+    <section id="ios-privacy" aria-labelledby="ios-privacy-title">
+      <h3 id="ios-privacy-title">iPhone 和 iPad 上的 Bibimer</h3>
+      <p>iOS 應用程式（app.bibimer.ios）在自己的應用程式容器內執行 Linux，無需 Termux。專案檔案、工作階段中繼資料和代理程式記錄保存在此環境，偏好設定則在裝置的私有儲存區。本機儲存不代表已連接的 AI 服務會離線處理資料。</p>
+      <p>已連接的程式代理可將指示、對話脈絡、程式碼、檔案與工具要求傳送至設定的提供者及其他工具。連接帳號或 API 時，也會處理提供者帳號識別資訊與驗證資料。接收者、處理、保留及是否用於改善模型取決於提供者、帳號、權限和服務設定。允許 AI 功能前請閱讀資料分享說明。您執行的命令和外部工具也可能自行發出網路要求。</p>
+      <p>提供者登入可使用原生 Safari 驗證畫面及安全代碼或金鑰輸入。僅在您啟動的、受支援的 Claude 手動代碼登入期間，驗證畫面可見且應用程式使用中時，應用程式才可讀取剛複製的驗證代碼。它會驗證目前的驗證挑戰，並經原生登入路徑提交一次。貼上權限由 iOS 控制，也保留安全的手動輸入。秘密值不會傳回網頁介面或一般記錄，也不會清空剪貼簿。代理程式憑證遵循應用程式環境內所選 CLI 的儲存規則。</p>
+      <p>選用的 iOS 語音輸入使用 Apple Speech 或選擇的 API 提供者。Apple Speech 可能使用 Apple 網路服務。外部轉錄會在錄音與傳送確認後，把錄音送至 OpenAI 或 ElevenLabs。朗讀使用裝置語音或 ElevenLabs；外部朗讀和語音試聽會把所選回答或本機擷取的摘要文字送至 ElevenLabs。轉錄結果進入草稿，不會自動作為代理訊息傳送。費用和保留條件取決於帳號與設定。</p>
+      <p>語音 API 金鑰保存在 iOS Keychain，可在設定中刪除。錄音及播放暫存檔在完成、取消或失敗後刪除，殘留語音檔於下次啟動應用程式時清理。本機摘要擷取不會額外呼叫模型。刪除本機金鑰或暫存檔，不會刪除提供者已收到的音訊或文字。</p>
+      <p>獨立工作瀏覽器使用 WKWebView，並在應用程式的瀏覽器設定檔保存網站資料。開啟的網站可依各自政策處理要求、Cookie 和帳號資料。代理程式截圖及捲動需要允許對應專案與瀏覽器執行；允許的截圖可能將可見頁面內容傳給代理程式及其設定的服務。原生驗證畫面與這項瀏覽器控制分離。</p>
+      <p>iOS 完成通知使用一般完成訊息。顯示與背景傳遞受裝置權限及作業系統限制。選用的除錯診斷預設關閉，啟用時僅於本機保存有限的固定狀態事件及數值或布林值歷史。關閉即清除歷史，不會自動上傳。您選擇傳送的副本或支援諮詢遵循下列諮詢條款。</p>
+      <p>取消專案註冊或從清單刪除已結束工作階段，不會刪除專案檔案、Git 工作樹或代理程式原始記錄。需要時請在應用程式的本機 Linux 中刪除。移除 iOS 應用程式會移除其本機容器，但受裝置備份及還原設定影響；不同於 Android 獨立的 Termux 儲存區，此容器屬於 Bibimer。語音金鑰請在設定中刪除，外部存取撤銷及提供者資料刪除請使用提供者的管理功能。支援諮詢請勿包含密碼、API 金鑰、驗證代碼或私人檔案。</p>
+      <p>所選接收者的政策與服務條款適用，並應確認所在地及帳號對應的版本：<a href="https://openai.com/policies/privacy-policy/">OpenAI</a>, <a href="https://www.anthropic.com/legal/privacy">Anthropic</a>, <a href="https://policies.google.com/privacy">Google</a>, <a href="https://elevenlabs.io/privacy-policy">ElevenLabs</a>, <a href="https://www.apple.com/legal/privacy/">Apple</a>.</p>
+    </section>
     <h3>1. 用途與處理的資訊</h3>
     <p>Bibimer 是一款行動代理開發環境（ADE），用於管理同一部 Android 手機上 Termux 中的專案和程式開發代理工作階段。它會處理專案名稱和資料夾路徑、工作階段識別碼與設定、指令、回覆、終端機和工具輸出，以及你選擇使用的檔案。這些資訊用於顯示專案和工作階段、傳送指令、展示結果，以及提供你請求的功能。</p>
     <p>Android 介面與同一裝置上經過身分驗證的橋接服務通訊。應用程式將偏好設定和連線資訊儲存在其私有儲存空間中，並使用 Android Keystore 加密連線權杖。Termux 單獨儲存專案和工作階段中繼資料以及 AI 代理紀錄。目前 Android 應用程式不含廣告或分析 SDK，也沒有將對話上傳至 Bibimer 營運伺服器的功能。</p>

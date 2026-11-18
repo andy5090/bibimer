@@ -86,12 +86,53 @@ class WebsiteLocalesTests(unittest.TestCase):
                                 self.assertTrue(target.exists(), str(target))
                     if suffix == 'privacy/':
                         counts = Counter(t for t, _ in page.tags)
-                        self.assertEqual(counts['h3'], 8)
+                        self.assertEqual(counts['h3'], 9)
                         self.assertEqual(counts['h4'], 1)
                         self.assertEqual(counts['ol'], 0)
                         self.assertIn('90', (ROOT / ('' if locale == 'en' else locale) / 'privacy/index.html').read_text())
                         self.assertIn('data-deletion', ids)
                         self.assertEqual(counts['p'], Counter(t for t, _ in Page(ROOT / 'privacy/index.html').tags)['p'])
+
+    def test_ios_policy_scope_and_third_party_disclosures_in_every_locale(self):
+        provider_policies = {
+            'https://openai.com/policies/privacy-policy/',
+            'https://www.anthropic.com/legal/privacy',
+            'https://policies.google.com/privacy',
+            'https://elevenlabs.io/privacy-policy',
+            'https://www.apple.com/legal/privacy/',
+        }
+        for locale in LOCALES:
+            with self.subTest(locale=locale):
+                file = ROOT / ('' if locale == 'en' else locale) / 'privacy/index.html'
+                text = file.read_text()
+                page = Page(file)
+                self.assertIn('Android: app.bibimer; iOS: app.bibimer.ios', text)
+                sections = [a for t, a in page.tags if t == 'section' and a.get('id') == 'ios-privacy']
+                self.assertEqual(sections, [{'id': 'ios-privacy', 'aria-labelledby': 'ios-privacy-title'}])
+                scope = re.search(r'<p id="platform-scope">(.*?)</p>', text).group(1)
+                self.assertIn('Android', scope)
+                self.assertIn('iOS', scope)
+                self.assertIn('Termux', scope)
+                ios = re.search(r'<section id="ios-privacy"[^>]*>(.*?)</section>', text, re.S).group(1)
+                self.assertEqual(ios.count('<p>'), 9)
+                for feature in ('app.bibimer.ios', 'Linux', 'Claude', 'Safari', 'Apple Speech',
+                                'OpenAI', 'ElevenLabs', 'Keychain', 'WKWebView'):
+                    self.assertIn(feature, ios)
+                ios_links = {a['href'] for t, a in PageFragment(ios).tags if t == 'a'}
+                self.assertEqual(ios_links, provider_policies)
+                # iOS disclosure precedes the preserved Android-specific numbered clauses.
+                self.assertLess(text.index('id="ios-privacy"'), text.index('id="voice-privacy"'))
+                self.assertIn('Android Keystore', text)
+
+
+class PageFragment(HTMLParser):
+    def __init__(self, text):
+        super().__init__()
+        self.tags = []
+        self.feed(text)
+
+    def handle_starttag(self, tag, attrs):
+        self.tags.append((tag, dict(attrs)))
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,7 +4,9 @@ const posts=[],defaults={voiceInput:{provider:'device'},speechOutput:{enabled:fa
 const window={__bibimerEnvironment:defaults,webkit:{messageHandlers:{bibimer:{postMessage:x=>posts.push(x)}}},addEventListener(){}};
 const box=vm.createContext({window,crypto:require('node:crypto').webcrypto});
 for(const file of ['speech-text.js','native.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../Resources',file),'utf8'),box);
+(async()=>{
 const native=window.Bibimer;
+window.BibimerDataConsent={ensure:async()=>true,invalidate(){},cancel(){}};
 assert.equal(posts.length,0,'Loading never records, requests permission, or contacts a provider');
 for(const value of ["true",1,null,{}])assert.equal(native.setBackgroundWork(value),false);
 assert.equal(posts.length,0,'Invalid background settings never reach native code');
@@ -16,13 +18,15 @@ for(const args of [['bad','en'],['device','en\r\nInjected'],['device',null]])ass
 assert.equal(native.configureSpeechOutput('{bad'),false);assert.equal(native.configureSpeechOutput('null'),false);
 for(const settings of [{provider:'openai'},{enabled:'true'},{engine:'some-engine'},{voice:'a'.repeat(257)},{unexpected:true}])assert.equal(native.configureSpeechOutput(JSON.stringify(settings)),false);
 assert.equal(native.configureSpeechOutput(JSON.stringify({enabled:true,provider:'elevenlabs',mode:'summary'})),true);
+native.setSpeechContext('session-one');
 native.readSpeechMessage('session-one','**Hello** [world](https://example.com)\n```js\nsecret code\n```','answer-one');
+await new Promise(setImmediate);
 assert.equal(posts.at(-1).action,'speechRead');assert.equal(posts.at(-1).text,'Hello world');assert.equal(posts.at(-1).messageID,'answer-one');
 assert.equal(window.BibimerSpeechText('a'.repeat(65537),'full'),'');
 const long='First important sentence.\n'.repeat(70);assert.ok(window.BibimerSpeechText(long,'summary').length<=1000);
 native.voiceKeyAction('openai','edit','{}');assert.equal(posts.at(-1).purpose,'input');assert.equal(posts.at(-1).key,undefined);
 native.speechKeyAction('elevenlabs','edit','{}');assert.equal(posts.at(-1).purpose,'output');
-native.startVoiceInput('draft-id','{}');assert.equal(posts.at(-1).id,'draft-id');
+native.startVoiceInput('draft-id','{}');await new Promise(setImmediate);assert.equal(posts.at(-1).id,'draft-id');
 native.cancelVoiceInput('draft-id');assert.equal(posts.at(-1).action,'voiceCancel');
 native.setSpeechContext('new-session');assert.equal(posts.at(-1).context,'new-session');
 native.stopSpeechOutput();assert.equal(posts.at(-1).action,'speechStop');
@@ -33,3 +37,5 @@ assert.equal(JSON.parse(native.takeNotificationTarget()).session_id,'s');assert.
 native.openBrowserWindow('ios-run');assert.equal(posts.at(-1).action,'browserWindow');
 assert.ok(!JSON.stringify(defaults).includes('secret'));
 console.log('PASS iOS native feature boundary: explicit-only actions, validated settings, local text preparation, independent key purposes, notifications and browser routing');
+
+})().catch(error=>{console.error(error);process.exitCode=1;});

@@ -46,6 +46,17 @@
     for (const request of clipboardRequests.values()) { clearTimeout(request.timer); request.reject(new Error("clipboard_changed")); }
     clipboardRequests.clear();
   });
+  let pendingVoice = null, activeVoice = null, speechGeneration = 0, speechContext = "";
+  const permitVoice = (purpose, provider, scope, guard) => {
+    const recipient = provider === "openai" ? "OpenAI" : provider === "elevenlabs" ? "ElevenLabs" : "Apple";
+    return window.BibimerDataConsent?.ensure({purpose,recipient,scope,guard}) || Promise.resolve(false);
+  };
+  const readSpeech = async (context,text,messageID,mode) => {
+    const generation=++speechGeneration,provider=defaults.speechOutput?.provider || "android";
+    if(provider === "elevenlabs" && !await permitVoice("voiceOutput",provider,provider,()=>generation===speechGeneration && context===speechContext))return;
+    if(generation!==speechGeneration || context!==speechContext)return;
+    message("speechRead",{context,text:window.BibimerSpeechText(text,mode),messageID});
+  };
   const store = (key, value) => { defaults[key] = value; message("preference", {key, value}); return true; };
   window.Bibimer = Object.freeze({
     accountLoginWithoutProject: true,
@@ -62,6 +73,7 @@
       message("cancelAccountSecret",{id});request.resolve({cancelled:true});
     },
     requestAccountSecret: (body, labels) => new Promise((resolve,reject) => {
+      window.BibimerDataConsent?.invalidate();
       const id = clipboardDocument + ":" + (++clipboardSequence);
       const timer = setTimeout(() => {
         accountRequests.delete(id); message("cancelAccountSecret",{id});
@@ -135,14 +147,29 @@
     takeNotificationTarget: () => { const target=defaults.notificationTarget || {};defaults.notificationTarget={};message("notificationTaken");return JSON.stringify(target); },
     setResponseNotifications: enabled => { if(typeof enabled!=="boolean")return false; defaults.notifications={...defaults.notifications,enabled};message("notificationConfigure",{enabled});return true; },
     openNotificationSettings: () => message("notificationSettings"),
-    startVoiceInput: (id, labels) => message("voiceStart",{id,labels}),
-    cancelVoiceInput: id => message("voiceCancel",{id}),
+    startVoiceInput: (id, labels) => {
+      const provider=defaults.voiceInput?.provider || "device";
+      pendingVoice=id;
+      void permitVoice(provider === "device" ? "voiceDevice" : "voiceInput",provider,provider,()=>pendingVoice===id && (defaults.voiceInput?.provider || "device")===provider).then(allowed=>{
+        if(pendingVoice!==id)return;
+        pendingVoice=null;
+        if(allowed){activeVoice=id;message("voiceStart",{id,labels});}
+        else window.BibimerVoiceResult?.(id,"cancelled","");
+      });
+    },
+    revokeDataSharing: () => {
+      const id=pendingVoice || activeVoice;pendingVoice=null;activeVoice=null;++speechGeneration;
+      if(id){message("voiceCancel",{id});window.BibimerVoiceResult?.(id,"cancelled","");}
+      message("speechStop");
+    },
+    cancelVoiceInput: id => { if(activeVoice===id)activeVoice=null;if(pendingVoice===id){pendingVoice=null;window.BibimerDataConsent?.cancel();window.BibimerVoiceResult?.(id,"cancelled","");}message("voiceCancel",{id}); },
     configureVoiceInput: (provider, language) => {
       if(!["device","openai","elevenlabs"].includes(provider) || !["","en","ko","pt","es","id","zh","ja","fr","de"].includes(language))return false;
+      if(defaults.voiceInput?.provider!==provider)window.BibimerDataConsent?.invalidate();
       defaults.voiceInput={...defaults.voiceInput,provider,language};message("voiceConfigure",{provider,language});return true;
     },
-    voiceKeyAction: (provider, operation, labels) => message("voiceKey",{purpose:"input",provider,operation,labels}),
-    speechKeyAction: (provider, operation, labels) => message("voiceKey",{purpose:"output",provider,operation,labels}),
+    voiceKeyAction: (provider, operation, labels) => { if(operation!=="check")window.BibimerDataConsent?.invalidate();message("voiceKey",{purpose:"input",provider,operation,labels}); },
+    speechKeyAction: (provider, operation, labels) => { window.BibimerDataConsent?.invalidate();message("voiceKey",{purpose:"output",provider,operation,labels}); },
     configureSpeechOutput: value => {
       let settings;try {settings=JSON.parse(value);}catch(_){return false;}
       if(!settings || typeof settings!=="object" || Array.isArray(settings))return false;
@@ -153,12 +180,13 @@
         if(key==="voice" && typeof value==="string" && value.length<=256)continue;
         if(key==="engine" && value==="")continue;return false;
       }
+      ++speechGeneration;if(settings.provider && settings.provider!==defaults.speechOutput?.provider)window.BibimerDataConsent?.invalidate();
       defaults.speechOutput={...defaults.speechOutput,...settings};message("speechConfigure",{settings});return true;
     },
-    setSpeechContext: context => message("speechContext",{context}),
-    readSpeechMessage: (context,text,messageID) => message("speechRead",{context,text:window.BibimerSpeechText(text,defaults.speechOutput?.mode),messageID}),
-    readSpeechOutput: (context,text) => message("speechRead",{context,text:window.BibimerSpeechText(text,"full"),messageID:""}),
-    stopSpeechOutput: () => message("speechStop"),
+    setSpeechContext: context => { if(speechContext!==context){++speechGeneration;window.BibimerDataConsent?.cancel();}speechContext=context;message("speechContext",{context}); },
+    readSpeechMessage: (context,text,messageID) => { void readSpeech(context,text,messageID,defaults.speechOutput?.mode); },
+    readSpeechOutput: (context,text) => { void readSpeech(context,text,"","full"); },
+    stopSpeechOutput: () => { ++speechGeneration;window.BibimerDataConsent?.cancel();message("speechStop"); },
     refreshSpeechVoices: more => message("speechVoices",{more:more===true}),
     saveNormalDraftViews: value => { try { sessionStorage.setItem("bibimerDrafts", value); return true; } catch (_) { return false; } },
     takeNormalDraftViews: () => sessionStorage.getItem("bibimerDrafts") || "{}",

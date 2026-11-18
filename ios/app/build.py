@@ -31,12 +31,14 @@ def package_web(destination):
     if destination.exists():
         shutil.rmtree(destination)
     shutil.copytree(source, destination)
-    for name in ['platform.js', 'terminal-tools.js', 'terminal-tools.css', 'speech-text.js', 'text-gestures.js']:
+    for name in ['platform.js', 'terminal-tools.js', 'terminal-tools.css', 'speech-text.js', 'text-gestures.js', 'data-consent.js']:
         shutil.copy2(HERE / 'Resources' / name, destination / name)
     locales=json.loads((HERE / 'Resources/ios-locales.json').read_text())
     (destination / 'ios-locales.js').write_text('window.BibimerIOSLocales='+json.dumps(locales,ensure_ascii=False)+';\n')
+    for name, global_name in [('data-consent-locales.json', 'BibimerIOSDataLocales'), ('runtime-notices.json', 'BibimerRuntimeNotices'), ('alpine-notices.json', 'BibimerAlpineNotices')]:
+        (destination / name.replace('.json', '.js')).write_text('window.' + global_name + '=' + json.dumps(json.loads((HERE / 'Resources' / name).read_text()), ensure_ascii=False) + ';\n')
     index = (destination / 'index.html').read_text()
-    index = index.replace('<script src="app.js" defer>', '<script src="ios-locales.js" defer></script>\n  <script src="speech-text.js" defer></script>\n  <script src="text-gestures.js" defer></script>\n  <script src="platform.js" defer></script>\n  <script src="terminal-tools.js" defer></script>\n  <link rel="stylesheet" href="terminal-tools.css">\n  <script src="app.js" defer>')
+    index = index.replace('<script src="app.js" defer>', '<script src="ios-locales.js" defer></script>\n  <script src="speech-text.js" defer></script>\n  <script src="text-gestures.js" defer></script>\n  <script src="platform.js" defer></script>\n  <script src="terminal-tools.js" defer></script>\n  <script src="data-consent-locales.js" defer></script>\n  <script src="runtime-notices.js" defer></script>\n  <script src="alpine-notices.js" defer></script>\n  <script src="data-consent.js" defer></script>\n  <link rel="stylesheet" href="terminal-tools.css">\n  <script src="app.js" defer>')
     index = index.replace('width=device-width, initial-scale=1, viewport-fit=cover',
                           'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover')
     reconnect_row = re.search(r'<div class="button-row"><button id="reconnect-settings".*?</div>', index)
@@ -73,8 +75,17 @@ def package_web(destination):
     </section>
     <section id="connection-settings"''')
     # iOS zooms small text fields on focus. Keep the shared Android sizing intact.
+    index = index.replace('<section id="connection-settings"', '\n    <section class="card preference-card" id="ios-data-settings"><h2 data-ios-data="settings"></h2><p class="hint" data-ios-data="sessionOnly"></p><div class="button-row"><button id="ios-data-revoke" type="button" class="secondary" data-ios-data="revoke"></button><button id="ios-legal-open" type="button" class="secondary" data-ios-data="legal"></button></div><p id="ios-data-revoke-status" class="hint" role="status"></p></section>\n    <section id="connection-settings"')
+    index = index.replace('</body>', '''<dialog id="ios-data-consent" aria-labelledby="ios-data-title" aria-describedby="ios-data-description ios-data-purpose"><h2 id="ios-data-title" data-ios-data="title"></h2><p><strong data-ios-data="recipient"></strong>: <span id="ios-data-recipient"></span></p><p id="ios-data-description"></p><p id="ios-data-purpose"></p><div class="button-row"><button id="ios-data-cancel" type="button" class="secondary" data-ios-data="cancel"></button><button id="ios-data-allow" type="button" class="primary" data-ios-data="allow"></button></div></dialog>
+    <dialog id="ios-legal" aria-labelledby="ios-legal-title"><div class="dialog-header"><h2 id="ios-legal-title" data-ios-data="legal"></h2><button id="ios-legal-close" type="button" class="secondary" data-ios-data="close"></button></div><p>Bibimer · ARM64 Linux interpreter · Alpine Linux</p><ul><li><a href="https://github.com/andy5090/bibimer" target="_blank" rel="noopener">Bibimer source and build instructions</a></li><li><a href="https://github.com/andy5090/bibimer/blob/main/release/app-store/runtime-sources.md" target="_blank" rel="noopener">Runtime components, licenses and corresponding sources</a></li><li><a href="https://github.com/dnakov/litter-ish/tree/c8e9dcb954963b0d9f359b3ad9da871f19b28652" target="_blank" rel="noopener">Pinned litter-ish runtime source</a></li><li><a href="https://github.com/andy5090/bibimer/blob/main/ios/runtime-lab/patches/embedded-runtime.patch" target="_blank" rel="noopener">Runtime modifications</a></li><li><a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html" target="_blank" rel="noopener">GNU GPL version 2</a></li><li><a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">GNU GPL version 3</a></li></ul><details><summary>Bundled runtime license</summary><pre id="ios-runtime-license"></pre></details><details><summary>iOS distribution exception</summary><pre id="ios-runtime-exception"></pre></details><details><summary>GNU General Public License version 3</summary><pre id="ios-runtime-gpl"></pre></details><details><summary>GNU General Public License version 2</summary><pre id="ios-runtime-gpl2"></pre></details><div id="ios-alpine-notices"></div></dialog></body>''')
     index = index.replace('</head>', '''<style>
 .ios-unavailable { display:none !important; }
+#file-viewer .file-toolbar { display:flex; flex-wrap:wrap; gap:8px; }
+#file-viewer .file-toolbar button { flex:1 1 125px; min-width:0; height:auto; min-height:36px; white-space:normal; overflow-wrap:anywhere; }
+#ios-data-consent, #ios-legal { width:min(560px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); overflow:auto; overflow-wrap:anywhere; }
+#ios-data-consent .button-row, #ios-data-settings .button-row { display:flex; flex-wrap:wrap; gap:8px; }
+#ios-data-consent button, #ios-data-settings button { flex:1 1 150px; min-width:0; white-space:normal; }
+#ios-legal pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
 .ios-recovery-progress { display:flex; align-items:center; gap:10px; margin:6px 12px; padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--raised); font-size:12px; }
 .ios-recovery-progress>div { min-width:0; overflow-wrap:anywhere; }
 .ios-recovery-progress p { margin:4px 0 0; font-size:11px; }
@@ -110,7 +121,7 @@ html, body { width:100%; max-width:100%; height:100%; overflow:hidden; touch-act
     end = app.rfind('})();')
     if end < 0:
         raise RuntimeError('Shared application closure changed; review the iOS integration hooks.')
-    app = app[:end] + (HERE / 'Resources/ui-hooks.js').read_text() + '\n' + app[end:]
+    app = app[:end] + (HERE / 'Resources/data-consent-hooks.js').read_text() + '\n' + (HERE / 'Resources/ui-hooks.js').read_text() + '\n' + app[end:]
     (destination / 'app.js').write_text(app)
 
 
@@ -186,7 +197,10 @@ def main():
         native_strings={'Chat response completed.':strings[2],'Browser':strings[3],'Background work':strings[16]}
         for name,values in [('InfoPlist.strings',info_strings),('Localizable.strings',native_strings)]:
             (folder/name).write_text('\n'.join(json.dumps(k,ensure_ascii=False)+' = '+json.dumps(v,ensure_ascii=False)+';' for k,v in values.items())+'\n')
+    bundled_notices = json.loads((HERE / 'Resources/runtime-notices.json').read_text())
     for name in ['LICENSE.md', 'LICENSE.IOS']:
+        if bundled_notices.get(name) != (runtime / name).read_text():
+            raise RuntimeError('Bundled runtime notice differs from verified runtime: ' + name)
         shutil.copy2(runtime / name, app / ('Runtime-' + name))
     bridge_version=re.search(r'^VERSION = "([0-9.]+)"$',(REPO/'bridge/bibimer_bridge.py').read_text(),re.M).group(1)
     info = dict(BibimerBridgeVersion=bridge_version,CFBundleIdentifier='app.bibimer.ios', CFBundleExecutable='Bibimer',

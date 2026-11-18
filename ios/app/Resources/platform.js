@@ -82,6 +82,7 @@
     error_android_required:["The local iOS connection is unavailable.","앱의 내장 실행 환경에 연결할 수 없습니다."]
   };
   function t(key, values = {}) {
+    if (key === "ios_data_cancelled") return window.BibimerIOSDataLocales?.[original.language()]?.cancel || "Cancelled";
     const ios=window.BibimerIOSLocales?.[original.language()] || window.BibimerIOSLocales?.en;
     const keys={browser_consent_body:4,browser_control_status:4,error_browser_manual:4,voice_device_hint:5,tts_android_hint:6,notifications_hint:7,error_ios_runtime_stopped:8,error_ios_runtime_start:9,ios_screen_title:10,ios_keep_awake:11,ios_keep_awake_hint:12,ios_defer_home:13,ios_defer_home_hint:14,ios_screen_background_hint:15,ios_background_title:16,ios_background_enable:17,ios_background_hint:18,ios_background_off:19,ios_background_unsupported:20,ios_background_ready:21,ios_background_pending:22,ios_background_running:23,ios_background_completed:24,ios_background_waiting:25,ios_background_ended:26,ios_background_expired:27,ios_background_unavailable:28,ios_background_failed:29,ios_runtime_restarting:30,error_ios_runtime_recovery:31,ios_connection_diagnostics:32,ios_connection_diagnostics_hint:33,ios_connection_diagnostics_copy:34,ios_connection_checking:35,ios_connection_restored:36,ios_reconnect_unconfirmed:37,ios_connection_restarting:38,ios_recovery_active:39,ios_recovery_stopping:40,ios_recovery_starting:41,ios_recovery_failed:42,connection_update_bridge:43,connection_need_bridge:44,connections_hint:45,connection_terminal_in_app_hint:46,connection_login_hint:47,connection_native_login_hint:47};
     if(ios && key in keys)return ios[keys[key]];
@@ -93,6 +94,7 @@
   }
   window.BibimerI18n = {...original, t, errorKey:data=>overrides[data?.code] ? data.code : original.errorKey(data), apply() {
     original.apply();
+    window.BibimerDataConsent?.apply();
     for (const node of document.querySelectorAll("[data-i18n]")) node.textContent = t(node.dataset.i18n);
     for (const attribute of ["placeholder","aria-label"]) for (const node of document.querySelectorAll(`[data-i18n-${attribute}]`)) node.setAttribute(attribute,t(node.getAttribute(`data-i18n-${attribute}`)));
   }};

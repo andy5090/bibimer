@@ -259,10 +259,53 @@ def claude_installation_ready(base, state, executable, home=None):
         return False
 
 
+def private_gemini_settings(base, environment):
+    """Preserve system security settings, disabling only optional telemetry.
+
+    Gemini documents GEMINI_CLI_SYSTEM_SETTINGS_PATH as the highest-priority
+    settings layer. Never rewrite the user's source or project configuration.
+    """
+    configured = environment.get("GEMINI_CLI_SYSTEM_SETTINGS_PATH")
+    source = Path(configured) if configured else Path("/etc/gemini-cli/settings.json")
+    settings = {}
+    if source.exists():
+        try:
+            if not source.is_file() or source.stat().st_size > 1024 * 1024:
+                raise ValueError()
+            settings = json.loads(source.read_text())
+            if not isinstance(settings, dict):
+                raise ValueError()
+        except (OSError, ValueError, UnicodeError):
+            raise RuntimeError("Gemini system settings could not be preserved; optional telemetry policy was not applied.") from None
+    elif configured:
+        raise RuntimeError("Configured Gemini system settings are missing; refusing to replace them.")
+    for group, key in [("privacy", "usageStatisticsEnabled"), ("telemetry", "enabled")]:
+        if group not in settings:
+            settings[group] = {}
+        if not isinstance(settings[group], dict):
+            raise RuntimeError("Gemini system settings have an unsupported policy structure.")
+        settings[group][key] = False
+    directory = base.private_dir(Path.home() / ".local/state/bibimer")
+    target = directory / "gemini-system-settings.json"
+    base.save_json(target, settings)
+    return str(target)
+
+
 def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None):
     original_provider_command = base.provider_command
     original_codex_options = base.codex_options
     original_terminal_command = base.terminal_command
+    original_launch_environment = base.launch_environment
+
+    def launch_environment(agent, options):
+        environment = original_launch_environment(agent, options)
+        if agent == "claude":
+            environment.update(CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1", DISABLE_TELEMETRY="1", DISABLE_ERROR_REPORTING="1")
+        elif agent == "gemini":
+            environment["GEMINI_CLI_SYSTEM_SETTINGS_PATH"] = private_gemini_settings(base, environment)
+        return environment
+
+    base.launch_environment = launch_environment
     base.ERROR_MESSAGES.update(
         error_ios_codex_sandbox="This Linux sandbox mode is unavailable in the embedded iOS runtime. Explicitly choose a supported policy.",
         error_ios_codex_terminal_policy="App sandbox with approvals is available in Chat only. Choose the terminal agent's native policy explicitly.")
@@ -621,6 +664,10 @@ def main():
     base = load_bridge()
     state = base.private_dir(Path.home() / ".local/state/bibimer")
     base.save_json(state / "token.json", token)
+    # This is the app-owned bridge process, not the user's shell or settings.
+    # Provider metadata/account clients also inherit these defaults, not just PTYs.
+    os.environ.update(CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1", DISABLE_TELEMETRY="1", DISABLE_ERROR_REPORTING="1")
+    os.environ["GEMINI_CLI_SYSTEM_SETTINGS_PATH"] = private_gemini_settings(base, os.environ)
     base = adapt(base, prepare_claude_provider(state), prepare_opencode_provider(state),
                  claude_login=lambda executable: prepare_claude_ui_login(state, executable))
     os.environ["PATH"] = str(Path.home() / ".local/bin") + os.pathsep + os.environ.get("PATH", "")
