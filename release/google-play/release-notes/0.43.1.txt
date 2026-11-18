@@ -1,0 +1,6 @@
+<en-US>
+Choose an agent before checking its connection. Opening agent management no longer starts an account check automatically. After selection, Bibimer checks that agent and shows its installation and sign-in status. Keeps debug mode, queued-message editing and unified agent management. Queue editing requires Termux bridge 0.25.2.
+</en-US>
+<ko-KR>
+에이전트 관리 화면을 열 때 자동으로 연결을 조회하지 않고, 에이전트를 선택한 뒤 해당 에이전트의 설치·로그인 상태를 확인합니다. 디버그 모드·대기 메시지 수정·통합 에이전트 관리를 유지합니다. 대기열 수정에는 Termux 브리지 0.25.2가 필요합니다.
+</ko-KR>
