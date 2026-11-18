@@ -57,11 +57,12 @@
     "uploadCompletedAt": "2026-11-17T16:08:57.646998+00:00",
     "appleProcessingCompleted": true,
     "appStoreBuildID": "f8041489-d7cf-4a6a-9db5-bdc69e2fcadf",
-    "exportComplianceCompleted": false,
-    "exportComplianceReason": "console_login_failed_official_outage_confirmed"
+    "exportComplianceCompleted": true,
+    "exportComplianceReason": "standard_algorithms_outside_or_alongside_apple_os_france_not_distributed_response_saved",
+    "internalTestFlightProvided": true
   },
   "screenshotsReady": true,
-  "appStoreConnectAccess": "login_failed_official_outage_confirmed",
+  "appStoreConnectAccess": "authenticated_verified_after_service_recovery",
   "publicPrivacyAndSupportAccess": "ko_pages_confirmed_in_chrome",
   "privacyPolicyIOSReady": false,
   "providerDataDisclosureReady": false,
@@ -79,10 +80,8 @@
     "explicit_ai_data_permission_evidence",
     "full_reviewer_access_and_physical_device_validation",
     "runtime_corresponding_source_and_policy_classification_review",
-    "export_response_and_age_rating",
-    "required_review_contact_and_final_review_notes_save",
-    "upload_reviewed_screenshots_after_console_recovery",
-    "review_korean_iphone_file_toolbar_overlap"
+    "review_korean_iphone_file_toolbar_overlap",
+    "age_rating_questionnaire"
   ],
   "storeVersionVerified": "1.0.0",
   "manualReleaseSaved": true,
@@ -91,12 +90,12 @@
   "reviewNotesDraftSaved": true,
   "appStoreBuildSelected": true,
   "appleProcessingCompleted": true,
-  "exportComplianceCompleted": false,
-  "reviewNotesLocalTextMatchesConsole": false,
-  "reviewNotesConsoleCharacters": 3396,
+  "exportComplianceCompleted": true,
+  "reviewNotesLocalTextMatchesConsole": true,
+  "reviewNotesConsoleCharacters": 3426,
   "reviewNotesLocalCharacters": 3426,
-  "reviewNotesUpdateBlockedBy": "required_review_contact_missing",
-  "reviewContactReady": false,
+  "reviewNotesUpdateBlockedBy": null,
+  "reviewContactReady": true,
   "territoryAvailabilitySaved": true,
   "territoryAvailableCount": 175,
   "territorySelectedCount": 173,
@@ -108,18 +107,85 @@
   "submissionExplicitlyOnHold": true,
   "reviewContactEmailPhoneReceived": true,
   "screenshotCount": 12,
-  "screenshotsUploaded": false,
+  "screenshotsUploaded": true,
   "testFlight15Requested": true,
-  "testFlight15InternalDistributionVerified": false,
-  "lastVerifiedInternalBuild": "0.1.0(14)",
+  "testFlight15InternalDistributionVerified": true,
+  "lastVerifiedInternalBuild": "1.0.0(15)",
   "appStoreConnectOutage": {
     "officialURL": "https://developer.apple.com/system-status/",
     "observedAt": "2026-11-18T02:50:00+09:00",
     "startedAt": "2026-11-18T01:50:00+09:00",
     "ongoingAtObservation": true,
-    "affected": "all_users"
+    "affected": "all_users",
+    "consoleAccessRestoredVerifiedOn": "2026-11-19"
   },
   "knownVisualIssues": [
     "Korean iPhone file-viewer toolbar label overlap; screenshot excluded, product code not changed."
-  ]
+  ],
+  "updatedOn": "2026-11-19",
+  "screenshotsUploadedCount": 12,
+  "screenshotSaveVerifiedAfterReload": true,
+  "reviewContactSaved": true,
+  "consoleRecoveryVerifiedOn": "2026-11-19",
+  "testFlight15": {
+    "verifiedOn": "2026-11-19",
+    "group": "Bibimer Internal",
+    "groupID": "05c12695-3fe4-411f-acf8-53bce8a31aac",
+    "testers": 1,
+    "groupBuildCount": 15,
+    "status": "Testing",
+    "expirationDisplay": "90 days",
+    "notesFile": "testflight-notes.en-ko.txt",
+    "notesCharacters": 1836,
+    "notesSHA256": "d7ab029cae5a7e94746d452e82b43c43f980eb745ece87183eb6c462d841888e",
+    "notesSaved": true,
+    "newExternalTesters": false,
+    "reuploaded": false
+  },
+  "screenshotConsoleVerification": {
+    "en-US": {
+      "iphone": {
+        "count": 3,
+        "order": [
+          "01-terminal.jpg",
+          "02-explorer.jpg",
+          "03-settings.jpg"
+        ],
+        "savedAfterReload": true,
+        "customLocaleAssets": true
+      },
+      "ipad": {
+        "count": 3,
+        "order": [
+          "01-terminal.jpg",
+          "02-explorer.jpg",
+          "03-settings.jpg"
+        ],
+        "savedAfterReload": true,
+        "customLocaleAssets": true
+      }
+    },
+    "ko": {
+      "iphone": {
+        "count": 3,
+        "order": [
+          "01-terminal.jpg",
+          "02-explorer.jpg",
+          "03-settings.jpg"
+        ],
+        "savedAfterReload": true,
+        "customLocaleAssets": true
+      },
+      "ipad": {
+        "count": 3,
+        "order": [
+          "01-terminal.jpg",
+          "02-explorer.jpg",
+          "03-settings.jpg"
+        ],
+        "savedAfterReload": true,
+        "customLocaleAssets": true
+      }
+    }
+  }
 }

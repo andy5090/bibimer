@@ -1,5 +1,8 @@
 # Bibimer iOS 앱
 
+2026-11-19: **TestFlight1.0.0(15)를 기존 Bibimer Internal 그룹에 제공 중**이다. 수출 규정 응답·한영 테스트 안내를 저장하고 테스트 중 상태를 확인했다. 영어/한국어 iPhone·iPad 스크린샷12장·심사 연락처·최신 메모 저장을 완료했으며 새로고침 후 확인했다. **심사 제출/공개는 보류**다. 개인정보/AI 동의·심사 접근·연령/DSA·실기기·런타임 검토와 한국어 파일 도구 모음 문제는 남아 있다. 아래 미반영/장애 기록은 당시 상태이며 [현재 출시 준비](../../release/app-store/readiness.md)를 기준으로 한다.
+
+
 2026-11-18 02:50 KST 후속: Device Hub로 영어/한국어 iPhone/iPad 실제 스크린샷12장 촬영·검토를 완료했다. Simulator.app 부재를 촬영 불가로 해석했던 판단을 정정한다. **사용자가15번 내부 TestFlight 제공을 요청했으나 App Store Connect 공식 장애(01:50 KST부터 진행 중)와 로그인 실패로 아직 미반영**이다. 마지막 확인한 내부 제공은14번이며15번을 재업로드하지 않는다. 스크린샷 Console 등록0장, 심사 제출/공개는 사용자 지시로 보류한다. 한국어 iPhone 파일 보기의 도구 모음 글자 겹침은 사진 교체만 했고 제품 수정은 하지 않았다. [현재 준비 상태](../../release/app-store/readiness.md)와 [촬영 자료](../../release/app-store/screenshots/README.md)를 따른다.
 
 

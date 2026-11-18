@@ -1,6 +1,6 @@
 # App Store 화면 자료
 
-2026-11-18: **영어·한국어 iPhone/iPad 각3장, 총12장 촬영·검토 완료. Console 업로드는0장**이다. App Store Connect 로그인 실패와 공식 서비스 장애로 등록은 대기 중이며 심사 제출은 사용자 지시로 보류한다.
+2026-11-19: **영어·한국어 iPhone/iPad 각3장, 총12장 Console 등록 완료**다. 서비스 복구 뒤 각 언어/기기에 업로드하고 새로고침 후 파일3개·순서·개별 현지화 등록을 재확인했다. 심사 제출·공개는 사용자 지시로 보류한다.
 
 ## 실제 촬영 구성
 
@@ -28,6 +28,6 @@
 
 설정 사진은 실제 백그라운드 실행 불가 안내를 그대로 포함한다. 물리 기기의 백그라운드 실행·계정 로그인·음성 권한 검증을 대신하지 않는다. [출시 준비](../readiness.md)의 나머지 제출 조건도 유지한다.
 
-서비스 복구 후 Console의 영어/한국어 iPhone·iPad 슬롯에 각3장 업로드하고 저장·처리 완료·순서를 다시 확인한다. 등록만 진행하고 `심사에 추가`·제출·공개는 실행하지 않는다.
+서비스 복구 후 Console의 영어/한국어 iPhone·iPad 슬롯에 각3장을 업로드했다. 각 슬롯에서 `10개 중 3개의 앱 스크린샷`과 `01-terminal` → `02-explorer` → `03-settings` 순서를 새로고침 뒤 확인했다. 한국어는 영어 기본 자산 상속 대신 실제 한국어 파일3개를 별도로 등록했다. `심사에 추가`·제출·공개는 실행하지 않았다.
 
 근거: [Apple 스크린샷 규격](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/), [Device Hub](https://developer.apple.com/documentation/Xcode/device-hub), [기기 화면 촬영](https://developer.apple.com/documentation/xcode/capturing-screenshots-and-videos-from-devices), [Apple 개발자 시스템 상태](https://developer.apple.com/system-status/) (2026-11-18 확인).

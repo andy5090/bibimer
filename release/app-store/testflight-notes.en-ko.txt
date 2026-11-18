@@ -1,0 +1,21 @@
+Bibimer 1.0.0 (15) — Internal testing
+
+This build contains the latest account-management and Claude sign-in changes. It is a release candidate for testing; App Store review has not been submitted.
+
+Please test:
+• Open Settings → agent manager. No agent should be selected or account lookup started until you choose one.
+• Start Claude sign-in. When the authentication URL is ready, the sign-in browser should open. If opening fails, use the visible retry/open action.
+• After approval, copy the full Claude code including #state, then return to Bibimer. Allow iOS paste access if prompted. Only the matching, current sign-in request should receive the code once.
+• Also test manual code entry, cancellation, leaving/reopening management and returning from the browser. Cancelled or expired requests must not submit a code.
+• Check projects, saved conversations, terminal input and files on iPhone/iPad, including Korean/English and the keyboard.
+
+The local Linux environment runs on your device. iOS can suspend the app in the background; files and saved conversations persist, but live processes are not restored after app exit. Use your own supported provider account if testing Chat. Do not include passwords, API keys, sign-in codes or private conversations in feedback.
+
+한국어
+이번 빌드는 에이전트 선택 전 계정 조회 방지와 Claude 인증 브라우저/복사 코드 복귀 처리를 포함한 출시 후보입니다. 정식 심사 제출은 하지 않았습니다.
+
+설정 → 에이전트 관리에서 직접 선택하기 전 계정 조회가 시작되지 않는지 확인해주세요. Claude 로그인 URL이 준비되면 인증 브라우저가 열리는지, 실패 시 다시 열기가 동작하는지 확인해주세요. 승인 후 #state를 포함한 전체 코드를 복사해 앱으로 돌아오고, 필요한 경우 iOS 붙여넣기를 허용해주세요. 현재 요청과 일치하는 코드만 한 번 처리되어야 합니다.
+
+수동 코드 입력, 취소, 관리 화면 재진입, 브라우저 복귀도 확인해주세요. 취소·만료된 요청에 코드가 전송되면 안 됩니다. iPhone/iPad의 프로젝트·저장 대화·터미널·파일·영한 표시·키보드를 확인해주세요.
+
+iOS는 백그라운드에서 앱을 중지할 수 있으며 앱 종료 후 실행 프로세스는 복원되지 않습니다. 파일과 저장 대화는 유지됩니다. Chat은 본인의 지원되는 제공자 계정으로 테스트하고 피드백에 비밀번호·API 키·인증 코드·비공개 대화를 포함하지 마세요.
