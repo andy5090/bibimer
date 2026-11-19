@@ -1,6 +1,6 @@
 DRAFT — build16 local candidate. Do not submit until the selected review-access route and final submission checks are complete.
 
-Bibimer is an on-device Agent Development Environment for iPhone and iPad. Bibimer has no service accounts, registration or Bibimer sign-in. It is not an AI model or an AI subscription service. Connected coding-agent tools perform the coding work. Bibimer is free and does not sell AI credits, provider subscriptions or other digital goods.
+Bibimer is an on-device Agent Development Environment for iPhone and iPad. Bibimer has no accounts or sign-in. It is not an AI model or an AI subscription service. Connected coding-agent tools perform the coding work. Bibimer is free and does not sell AI credits, provider subscriptions or other digital goods.
 
 Architecture and downloaded code
 The app bundles an ARM64 Linux interpreter and an Alpine base filesystem. Initial preparation downloads development packages from configured Alpine HTTPS repositories, including Python, Bash, Git, Node.js/npm, curl, jq, SQLite, GitHub CLI and ripgrep with dependencies. Installing a coding agent is a separate user action that downloads its CLI and dependencies. These are executable development tools, not static content. They execute inside the app's interpreted local Linux environment. The app requests no JIT entitlement; Node uses the supported jitless configuration. We request assessment of this actual execution model and do not claim educational-app status or blanket authorization under guideline4.7.

@@ -2,6 +2,9 @@
 
 ## App Store 제출 승인·진행 중 (2026-11-19)
 
+- 최신 사용자 정정: **Bibimer 자체 계정/회원가입/로그인은 없다.** 사용자가 로컬 터미널에 코딩 에이전트를 설치하고 각자의 외부 제공자 계정으로 사용한다. 데모 계정/API 키를 반드시 개발자가 제공해야 한다는 이전 제출 gate는 철회했다. 사용자는 Play 코드 기반 심사 모드 통과를 보고했으며 Apple의 해당 방식 거절은 관측하지 않았다. 현재 iOS에 Android 예제 재생 진입 구현은 없으므로 심사 접근 경로 구현/검증은 여전히 남아 있다. 코드→제한API는 미구현 설계안이고 Codex 키는 선택적 보완, 비용 최소화 선호/Bibimer 비용제한 없음이다. 키·유료 호출·추가 숫자 예산 답변을 필수 준비 조건으로 삼지 않는다. 실제 키 사용이 필요한 작업이 확정되면 그 작업 범위의 승인만 확인한다.
+
+
 - 후속 사용자 응답: **iOS GPLv3 제공 승인 완료**. 승인 범위 라이선스/예외를 실제 소스·Legal 번들에 반영해 `6308683`으로 커밋·push했다. 양 SDK·앱Python36/Node20파일·실제WKWebView/Linux34개(45.40초, JS오류0/fatal0/진단실패0, 기존 syscall경고4)와 iPhone Legal의 실제 GPL허락 표시를 확인했다. 새 unsigned16 아카이브/소스→자산(Web74/Guest18/rootfs426/Native18/현지화20/네이티브소스17) 일치 검증 완료. 비공개 증빙 `dist/ios-appstore/submission-nov19/candidate16-gpl-local-receipt.json`, `own-gpl-grant-iphone.png`, `.tools/ios-submission16-gpl-*`. 아직 서명/export/업로드는 없다. 자체 서비스 계정이 아닌 API 키 제공 방식을 검토 중이며 제공자·사용자가 허용할 테스트 비용·비공개 키 전달은 아직 미확정이다. 키를 채팅/공개 저장소에 받지 않는다. Apple 비공개 App Review Notes 전달·현재 Codex/OpenCode API 연결과 비용 제한 확인 절차는 `release/app-store/reviewer-api-access.md`를 따른다. 실제 키/모델 호출/구매/충전은 아직 없다. 아래 라이선스 승인 대기는 이전 상태다.
 
 

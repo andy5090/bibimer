@@ -76,8 +76,7 @@
   "published": false,
   "submissionReady": false,
   "remainingGates": [
-    "reviewer_API_provider_spend_limit_and_private_key_delivery",
-    "actual_review_API_connection_validation",
+    "reviewer_access_route_implementation_and_validation",
     "candidate16_signed_upload_and_final_submission_preflight"
   ],
   "storeVersionVerified": "1.0.0",
@@ -288,9 +287,7 @@
     "effectiveOwnLicenseCUAVerified": true
   },
   "physicalDeviceValidation": "not_connected_and_not_claimed; simulator_checks_are_separate",
-  "submissionBlockedByUserDecision": [
-    "reviewer_API_provider_and_authorized_spend_limit_and_private_key_delivery"
-  ],
+  "submissionBlockedByUserDecision": [],
   "screenshot16Replacements": {
     "files": [
       "screenshots/en-US/ipad/03-settings.jpg",
@@ -301,5 +298,13 @@
     "savedAfterReload": true,
     "remainingCapturesBuild": 15
   },
-  "reviewerAccessPlan": "reviewer-api-access.md"
+  "reviewerAccessPlan": "reviewer-api-access.md",
+  "bibimerServiceAccounts": false,
+  "externalProviderAuthentication": "user_owned_credentials_in_user_installed_coding_agent",
+  "reviewerAPIKeyMandatory": false,
+  "reviewerProviderPreference": "codex_OpenAI_if_real_API_supplement_used",
+  "reviewerCostPreference": "minimize_cost_no_Bibimer_spend_limiter_no_numeric_budget_authorized",
+  "androidReviewModeApproval": "Google_Play_approval_reported_by_user",
+  "iosReviewModeRejectedByApple": false,
+  "iosAndroidReviewModePorted": false
 }
