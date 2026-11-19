@@ -45,22 +45,24 @@
     "uploaded": true,
     "uploadExitCode": 0,
     "uploadCompletedAt": "2026-11-19T16:39:34.036+00:00",
-    "appleProcessingCompleted": false,
+    "appleProcessingCompleted": true,
     "archive": "dist/ios-appstore/1.0.0-16-unsigned-nov20-review/Bibimer.xcarchive",
     "localIPAHashIsExportArtifact": true,
     "uploadSource": "Xcode upload export from the same verified archive; uploaded package processing acknowledged",
     "submitted": false,
     "published": false,
     "submissionReady": false,
-    "internalTestFlightProvided": false,
-    "exportComplianceCompleted": false,
+    "internalTestFlightProvided": true,
+    "exportComplianceCompleted": true,
     "appTests": 41,
     "nodeFiles": 23,
     "nativeChecks": 34,
     "nativeElapsedSeconds": 47.276113290921785,
     "nativeStaticAnalysisDiagnostics": 0,
     "existingSyscallWarnings": 4,
-    "archiveVerified": true
+    "archiveVerified": true,
+    "appStoreBuildID": "0ea77d0f-567b-488d-b868-c9c748a10c04",
+    "exportComplianceReason": "standard_algorithms_outside_or_alongside_Apple_OS; France_not_distributed"
   },
   "screenshotsReady": true,
   "appStoreConnectAccess": "authenticated_verified_after_service_recovery",
@@ -77,21 +79,20 @@
   "published": false,
   "submissionReady": false,
   "remainingGates": [
-    "apple_processing_and_export_compliance",
-    "candidate16_internal_distribution_and_selection",
-    "final_review_notes_and_submission_preflight"
+    "user_review_and_accept_updated_Paid_Applications_Agreement",
+    "final_Add_for_Review_and_submit"
   ],
   "storeVersionVerified": "1.0.0",
   "manualReleaseSaved": true,
   "freePriceSaved": true,
   "categorySaved": "DEVELOPER_TOOLS",
-  "reviewNotesDraftSaved": true,
-  "appStoreBuildSelected": false,
-  "appleProcessingCompleted": false,
+  "reviewNotesDraftSaved": false,
+  "appStoreBuildSelected": true,
+  "appleProcessingCompleted": true,
   "exportComplianceCompleted": true,
-  "reviewNotesLocalTextMatchesConsole": false,
-  "reviewNotesConsoleCharacters": 3426,
-  "reviewNotesLocalCharacters": 3426,
+  "reviewNotesLocalTextMatchesConsole": true,
+  "reviewNotesConsoleCharacters": 3405,
+  "reviewNotesLocalCharacters": 3405,
   "reviewNotesUpdateBlockedBy": null,
   "reviewContactReady": true,
   "territoryAvailabilitySaved": true,
@@ -108,7 +109,7 @@
   "screenshotsUploaded": true,
   "testFlight15Requested": true,
   "testFlight15InternalDistributionVerified": true,
-  "lastVerifiedInternalBuild": "1.0.0(15)",
+  "lastVerifiedInternalBuild": "1.0.0(16)",
   "appStoreConnectOutage": {
     "officialURL": "https://developer.apple.com/system-status/",
     "observedAt": "2026-11-18T02:50:00+09:00",
@@ -189,7 +190,7 @@
   "ageRatingGlobal": "16+",
   "dsaTraderStatus": "active_verified_in_business",
   "freeAppsAgreement": "active_verified_in_business",
-  "paidAppsAgreement": "pending_update_not_accepted_final_preflight_required",
+  "paidAppsAgreement": "update_required_actual_Add_for_Review_block; final_agreement_not_accepted",
   "physicalDeviceConnected": false,
   "privacyDisclosurePublished": true,
   "privacyDisclosurePublishedOn": "2026-11-19",
@@ -265,7 +266,7 @@
     "nativeChecks": 34,
     "signed": true,
     "exported": true,
-    "status": "uploaded_processing_unverified_console_control_conflict",
+    "status": "TestFlight16_provided_AppStore16_saved_contract_update_blocks_review",
     "nativeVerification": {
       "status": "PASS_WITH_WARNINGS",
       "checks": 34,
@@ -296,7 +297,9 @@
     "exportedSignatureVerified": true
   },
   "physicalDeviceValidation": "not_connected_and_not_claimed; simulator_checks_are_separate",
-  "submissionBlockedByUserDecision": [],
+  "submissionBlockedByUserDecision": [
+    "new_legally_binding_Paid_Applications_Agreement_action_time_confirmation_required"
+  ],
   "screenshot16Replacements": {
     "files": [
       "screenshots/en-US/ipad/03-settings.jpg",
@@ -379,8 +382,27 @@
     "exportComplianceReason": "standard_algorithms_outside_or_alongside_apple_os_france_not_distributed_response_saved",
     "internalTestFlightProvided": true
   },
-  "appStoreConnectControl": "concurrent_user_chrome_changes_guarded_actions_stopped",
-  "reviewNotesDraftSavedBuild": 15,
-  "appStoreBuildSelectedVersion": "1.0.0(15)",
-  "testFlight16InternalDistributionVerified": false
+  "appStoreConnectControl": "available_user_paused_other_Chrome_work",
+  "reviewNotesDraftSavedBuild": null,
+  "appStoreBuildSelectedVersion": "1.0.0(16)",
+  "testFlight16InternalDistributionVerified": true,
+  "reviewNotesFinalSaved": true,
+  "reviewNotesFinalTemplate": "review-notes-16.en.txt",
+  "reviewLoginRequired": false,
+  "reviewPrivateCodeSaved": true,
+  "reviewPrivateCodePublic": false,
+  "testFlight16": {
+    "group": "Bibimer Internal",
+    "groupID": "05c12695-3fe4-411f-acf8-53bce8a31aac",
+    "testers": 1,
+    "groupBuildCount": 16,
+    "status": "Testing",
+    "expirationDisplay": "90 days",
+    "notesFile": "release/app-store/testflight-notes-16.en-ko.txt",
+    "notesCharacters": 1158,
+    "notesSHA256": "83005fb9aeda1c8d5ad19a48c13f842f3f0c8736ade1b948d4dd0189b6bb2b03",
+    "notesSaved": true
+  },
+  "screenshotSaveReverifiedOn": "2026-11-20",
+  "submissionBlockObserved": "Add for Review opens Agreement Update modal requiring Paid Applications Agreement update"
 }
