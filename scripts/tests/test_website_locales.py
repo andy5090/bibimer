@@ -114,7 +114,7 @@ class WebsiteLocalesTests(unittest.TestCase):
                 self.assertIn('iOS', scope)
                 self.assertIn('Termux', scope)
                 ios = re.search(r'<section id="ios-privacy"[^>]*>(.*?)</section>', text, re.S).group(1)
-                self.assertEqual(ios.count('<p>'), 9)
+                self.assertEqual(ios.count('<p>'), 10)
                 for feature in ('app.bibimer.ios', 'Linux', 'Claude', 'Safari', 'Apple Speech',
                                 'OpenAI', 'ElevenLabs', 'Keychain', 'WKWebView'):
                     self.assertIn(feature, ios)

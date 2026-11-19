@@ -1,12 +1,14 @@
 # iOS 공개 정책 보완 원고
 
-2026-11-19: 아래 보완 내용을 `release/website/public/`의 영어·한국어 및 나머지8개 언어 정책에 반영했다. 공개 URL 게시·실제 원본 일치 검증은 배포 단계에서 확인해야 하며 이 문서만으로 게시 완료를 주장하지 않는다. 기존 Android·문의·삭제·연령·호스팅 조항을 유지하고 적용 범위를 구분했다. 최종 제공자별 App Privacy 신고를 대신하지 않는다.
+2026-11-20: 아래 보완 내용을 `release/website/public/`의 영어·한국어 및 나머지8개 언어 정책에 반영했다. 공개 URL 게시·실제 원본 일치 검증은 배포 단계에서 확인해야 하며 이 문서만으로 게시 완료를 주장하지 않는다. 기존 Android·문의·삭제·연령·호스팅 조항을 유지하고 적용 범위를 구분했다. 최종 제공자별 App Privacy 신고를 대신하지 않는다.
 
 ## English
 
 ### Bibimer on iPhone and iPad
 
 The iOS application (app.bibimer.ios) uses a Linux environment within its own app container. A separate Termux installation is not needed on iOS. Project files, local session metadata and agent records are kept in this app's environment. App preferences use app-private storage. Removing the iOS app removes its local container, subject to your device's backup and restore settings; it does not delete data held by an external provider.
+
+On iOS, explicitly entering a review code opens a separate sample workspace that replays fictional Chat and terminal examples. Chat and terminal input is not used to generate responses or retained; this replay does not access a real shell, model, API or your projects. Sample settings are separate from normal settings, and the sample workspace and settings reset when you exit the mode or its process ends. No separate Bibimer service account is required; real use relies on your own external CLI authentication.
 
 Agents can send instructions, conversation context, code, files and tool requests to their configured services. The provider, account, agent permissions and settings affect this processing. Keeping the development environment on the device does not make provider-backed AI processing offline. Review the selected provider's policy and the app's data-sharing information before connecting and sending work.
 
@@ -27,6 +29,8 @@ Removing a project registration or an ended session listing does not erase the u
 ### iPhone·iPad의 Bibimer
 
 iOS 앱(app.bibimer.ios)은 앱 전용 저장 공간 안의 Linux 환경을 사용하며 별도의 Termux 설치가 필요하지 않습니다. 프로젝트 파일, 로컬 세션 정보, 에이전트 기록은 이 환경에 보관하고 앱 설정은 앱 전용 저장소에 보관합니다. iOS 앱을 제거하면 기기의 백업·복원 설정에 따른 예외를 제외하고 앱의 로컬 저장 공간도 제거되지만, 외부 제공자가 보유한 데이터까지 삭제되지는 않습니다.
+
+iOS에서 심사 코드를 직접 입력하면 별도 예제 공간이 열리고 가상의 Chat·터미널 예제를 재생합니다. Chat·터미널 입력은 응답 생성에 사용하거나 보관하지 않으며, 예제 재생은 실제 셸·모델·API·사용자 프로젝트에 접근하지 않습니다. 예제 설정은 일반 설정과 분리되며 모드를 종료하거나 해당 프로세스가 끝나면 예제 공간과 설정을 초기화합니다. 별도의 Bibimer 서비스 계정은 필요하지 않으며 실제 사용에는 본인의 외부 CLI 인증을 사용합니다.
 
 에이전트는 지시, 대화 맥락, 코드, 파일, 도구 요청을 설정된 서비스에 전송할 수 있습니다. 처리 방식은 제공자, 계정, 에이전트 권한과 설정에 따라 달라집니다. 개발 환경을 기기에 둔다고 해서 AI 제공자의 처리까지 오프라인이라는 뜻은 아닙니다. 연결하고 작업을 보내기 전에 선택한 제공자의 정책과 앱의 데이터 전송 안내를 확인해 주세요.
 
@@ -53,3 +57,8 @@ iOS 완료 알림은 일반 완료 문구를 사용합니다. 표시와 백그�
 - [Apple](https://www.apple.com/legal/privacy/)
 
 코드 대조: `AccountBrowser.m`의 현재 challenge/새 복사/활성 인증 화면 제한, `VoiceService.m`의 Keychain·임시 파일 정리, `BrowserService.m`의 WKWebView 데이터 저장소·실행별 캡처/스크롤 허용을 확인했다. 새 AI 전송 동의 UI의 최종 제출 후보 검증과 실제 App Privacy 응답은 별도 준비 작업이다.
+
+
+## iOS 심사 예제 공간 보완 (2026-11-20)
+
+`ReviewController.m`의 비영구 WKWebView·종료 전용 네이티브 처리, `review-native.js`의 메모리 내 예제 설정·종료 시 해제, `review-workspace.js`의 가상 응답·터미널 재생과 입력 비보관을 대조했다. 같은 범위의 설명을 공개 10언어 iOS 절에 추가하고 시행일을 2026-11-20으로 갱신했다. 기존 Android 예제 모드 고지, 수집 항목·외부 전송·문의 보관 약속은 바꾸지 않았다. 실제 공개 URL 반영은 웹 배포 후 별도 확인한다.

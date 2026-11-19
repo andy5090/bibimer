@@ -81,12 +81,13 @@
       <dt>應用程式</dt><dd>Bibimer (Android: app.bibimer; iOS: app.bibimer.ios)</dd>
       <dt>營運方</dt><dd>Andineering</dd>
       <dt>聯絡方式</dt><dd><a href="mailto:andy@andineering.com">andy@andineering.com</a></dd>
-      <dt>生效日期</dt><dd>2026年11月19日</dd>
+      <dt>生效日期</dt><dd>2026年11月20日</dd>
     </dl>
     <p id="platform-scope">本政策適用於 Android 與 iOS 版 Bibimer。以下 iOS 說明解釋其與第 1–5 節 Android、Termux 功能的差異。網站、諮詢和年齡條款適用於兩個版本。</p>
     <section id="ios-privacy" aria-labelledby="ios-privacy-title">
       <h3 id="ios-privacy-title">iPhone 和 iPad 上的 Bibimer</h3>
       <p>iOS 應用程式（app.bibimer.ios）在自己的應用程式容器內執行 Linux，無需 Termux。專案檔案、工作階段中繼資料和代理程式記錄保存在此環境，偏好設定則在裝置的私有儲存區。本機儲存不代表已連接的 AI 服務會離線處理資料。</p>
+      <p>在 iOS 上主動輸入審查代碼後，會開啟獨立的範例工作區，重播虛構的 Chat 與終端範例。Chat 與終端輸入不會用於產生回覆，也不會被保留；範例重播不會存取真實的 shell、模型、API 或您的專案。範例設定與一般設定分開，退出該模式或其程序結束時，範例工作區與設定會重設。無需另外建立 Bibimer 服務帳戶；實際使用時透過您自己的外部 CLI 驗證。</p>
       <p>已連接的程式代理可將指示、對話脈絡、程式碼、檔案與工具要求傳送至設定的提供者及其他工具。連接帳號或 API 時，也會處理提供者帳號識別資訊與驗證資料。接收者、處理、保留及是否用於改善模型取決於提供者、帳號、權限和服務設定。允許 AI 功能前請閱讀資料分享說明。您執行的命令和外部工具也可能自行發出網路要求。</p>
       <p>提供者登入可使用原生 Safari 驗證畫面及安全代碼或金鑰輸入。僅在您啟動的、受支援的 Claude 手動代碼登入期間，驗證畫面可見且應用程式使用中時，應用程式才可讀取剛複製的驗證代碼。它會驗證目前的驗證挑戰，並經原生登入路徑提交一次。貼上權限由 iOS 控制，也保留安全的手動輸入。秘密值不會傳回網頁介面或一般記錄，也不會清空剪貼簿。代理程式憑證遵循應用程式環境內所選 CLI 的儲存規則。</p>
       <p>選用的 iOS 語音輸入使用 Apple Speech 或選擇的 API 提供者。Apple Speech 可能使用 Apple 網路服務。外部轉錄會在錄音與傳送確認後，把錄音送至 OpenAI 或 ElevenLabs。朗讀使用裝置語音或 ElevenLabs；外部朗讀和語音試聽會把所選回答或本機擷取的摘要文字送至 ElevenLabs。轉錄結果進入草稿，不會自動作為代理訊息傳送。費用和保留條件取決於帳號與設定。</p>
