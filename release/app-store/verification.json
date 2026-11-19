@@ -63,10 +63,10 @@
   },
   "screenshotsReady": true,
   "appStoreConnectAccess": "authenticated_verified_after_service_recovery",
-  "publicPrivacyAndSupportAccess": "10_production_privacy_urls_http200_exact_source_hash_and_ko_chrome_verified",
+  "publicPrivacyAndSupportAccess": "10_production_privacy_urls_http200_exact_source_hash_nov20",
   "privacyPolicyIOSReady": true,
   "providerDataDisclosureReady": true,
-  "reviewAccessReady": false,
+  "reviewAccessReady": true,
   "territoriesConfirmed": true,
   "ageRatingConfirmed": true,
   "sourceRepositoryVisibility": "public_verified_via_github_connector",
@@ -76,7 +76,6 @@
   "published": false,
   "submissionReady": false,
   "remainingGates": [
-    "reviewer_access_route_implementation_and_validation",
     "candidate16_signed_upload_and_final_submission_preflight"
   ],
   "storeVersionVerified": "1.0.0",
@@ -116,7 +115,7 @@
     "consoleAccessRestoredVerifiedOn": "2026-11-19"
   },
   "knownVisualIssues": [],
-  "updatedOn": "2026-11-19",
+  "updatedOn": "2026-11-20",
   "screenshotsUploadedCount": 12,
   "screenshotSaveVerifiedAfterReload": true,
   "reviewContactSaved": true,
@@ -187,7 +186,7 @@
   "ageRatingGlobal": "16+",
   "dsaTraderStatus": "active_verified_in_business",
   "freeAppsAgreement": "active_verified_in_business",
-  "paidAppsAgreement": "pending_update_not_required_for_this_free_app",
+  "paidAppsAgreement": "pending_update_not_accepted_final_preflight_required",
   "physicalDeviceConnected": false,
   "privacyDisclosurePublished": true,
   "privacyDisclosurePublishedOn": "2026-11-19",
@@ -232,9 +231,9 @@
       "iphonesimulator",
       "iphoneos"
     ],
-    "appPythonTests": 36,
+    "appPythonTests": 41,
     "bridgePythonTests": 86,
-    "nodeTestFiles": 20,
+    "nodeTestFiles": 23,
     "nativePreFinalResources": {
       "checks": 34,
       "elapsedSeconds": 46.593042624997906,
@@ -248,31 +247,31 @@
     "submitted": false,
     "sourceLicensingProposal": "ios-license-proposal.md",
     "physicalDeviceVerified": false,
-    "sourceCommit": "6308683689ed05e707a523d28f137f2bfda14e90",
-    "archive": "dist/ios-appstore/1.0.0-16-unsigned-nov19-gpl/Bibimer.xcarchive",
-    "archiveVerified": true,
+    "sourceCommit": null,
+    "archive": null,
+    "archiveVerified": false,
     "sourceAndPackagedResourcesMatch": true,
     "resourceCounts": {
-      "Web": 74,
+      "Web": 78,
       "Guest": 18,
       "rootfs": 426,
-      "Native": 18,
+      "Native": 21,
       "NativeLocalization": 20
     },
-    "nativeSourceCount": 17,
+    "nativeSourceCount": 21,
     "nativeChecks": 34,
     "signed": false,
     "exported": false,
-    "status": "local_candidate_pending_user_license_and_reviewer_access",
+    "status": "review_mode_verified_pending_signed_upload",
     "nativeVerification": {
       "status": "PASS_WITH_WARNINGS",
       "checks": 34,
-      "elapsedSeconds": 45.40326924994588,
+      "elapsedSeconds": 47.276113290921785,
       "warnings": [
-        "69(bash) stub syscall 151",
-        "69(bash) stub syscall 152",
-        "69(bash) stub syscall 151",
-        "69(bash) stub syscall 152"
+        "64(bash) stub syscall 151",
+        "64(bash) stub syscall 152",
+        "64(bash) stub syscall 151",
+        "64(bash) stub syscall 152"
       ],
       "fatal": null,
       "diagnosticFailures": []
@@ -284,7 +283,10 @@
     "finalLicenseGrantStillRequired": false,
     "licenseGrantApprovedOn": "2026-11-19",
     "effectiveLicenseBundled": true,
-    "effectiveOwnLicenseCUAVerified": true
+    "effectiveOwnLicenseCUAVerified": true,
+    "reviewModeCUAVerified": true,
+    "reviewMode": "isolated_fictional_sample_replay",
+    "nativeStaticAnalysisDiagnostics": 0
   },
   "physicalDeviceValidation": "not_connected_and_not_claimed; simulator_checks_are_separate",
   "submissionBlockedByUserDecision": [],
@@ -306,5 +308,28 @@
   "reviewerCostPreference": "minimize_cost_no_Bibimer_spend_limiter_no_numeric_budget_authorized",
   "androidReviewModeApproval": "Google_Play_approval_reported_by_user",
   "iosReviewModeRejectedByApple": false,
-  "iosAndroidReviewModePorted": false
+  "iosAndroidReviewModePorted": true,
+  "contentRightsConfirmed": true,
+  "reviewModeValidation": {
+    "version": "1.0.0",
+    "build": 16,
+    "reviewMode": "isolated_fictional_sample_replay_no_API",
+    "settingsEntryCUAVerified": true,
+    "invalidCodeRejected": true,
+    "terminalInputCUAVerified": true,
+    "filePreviewCUAVerified": true,
+    "exitPreservesNormalSettings": true,
+    "bootstrapEntryCUAVerified": false,
+    "physicalDeviceVerified": false,
+    "resourceCounts": {
+      "Web": 78,
+      "Guest": 18,
+      "rootfs": 426,
+      "Native": 21,
+      "NativeLocalization": 20
+    },
+    "nativeSourceCount": 21,
+    "visualScore": 93,
+    "privateEvidence": "dist/ios-appstore/submission-nov20/review-mode-validation.json"
+  }
 }

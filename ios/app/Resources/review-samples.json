@@ -1,0 +1,855 @@
+{
+  "androidSourceSHA256": "61672a93a682436dc180cca68644711a80623b3c4bf80386b5a588081bd8855d",
+  "samples": {
+    "en": {
+      "codex": [
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "Explore the fictional garden",
+                "status": "completed"
+              },
+              {
+                "step": "Review sample changes",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Codex · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Codex sample session\n\nThis is **fictional log replay**, independent of your input. No agent, shell or file operation ran.\n\n[Sample file](src/garden.js) · preview from the Files panel.\n\n### Garden checklist\n- [x] Display sample files\n- [x] Show a diff\n- [ ] Try approval and question cards\n\n| Feature | Sample result |\n| --- | --- |\n| Flowers | 3 |\n| Color | mint |\n\n```javascript\nexport const flowers = 3;\nconsole.log('Hello, pocket garden');\n```\n\n> The phone is the workspace; this demo only previews its interface.\n\nSend any text to replay the next example. Every third example offers **approval**, then a **question**. The other examples finish automatically so you can test background alerts.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "Explore the fictional garden",
+                "status": "completed"
+              },
+              {
+                "step": "Review sample changes",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Codex · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "command",
+            "title": "demo: fictional Python test",
+            "text": "FICTIONAL TEST OUTPUT — no Python process was started\nTraceback (most recent call last):\n  File \"sample_garden.py\", line 4, in sample\n    raise ValueError('sample only')\nValueError: sample only\n\n...\n3 example checks passed\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Codex · Python example\n\n**Fictional replay.** The traceback and results above are sample text, unrelated to your input. No tests actually ran.\n\n1. Read a sample traceback.\n2. Expand the command card to see multiline output.\n3. Inspect the suggested code below.\n\n```python\ndef describe_garden(flowers):\n    return f'{len(flowers)} sample flowers'\n\nprint(describe_garden(['mint', 'iris', 'rose']))\n```\n\n> Example output: `3 sample flowers`\n\n### Next steps\n- Keep the function small.\n- Try another prerecorded sample.\n\nEvery third send shows a sample approval and question. Other sends finish automatically for background alert testing.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "Explore the fictional garden",
+                "status": "completed"
+              },
+              {
+                "step": "Review sample changes",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Codex · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Codex · Documentation example\n\nThis **fictional log** previews Markdown, structured data and diagram source. Your input did not create this answer.\n\n### Sample configuration\n```json\n{\n  \"project\": \"pocket-garden\",\n  \"demo\": true,\n  \"flowers\": 3\n}\n```\n\n### Diagram source (displayed as code)\n```mermaid\nflowchart LR\n  Phone --> Workspace\n  Workspace --> SampleSession\n```\n\n### Notes\n- **Project:** a fictional garden\n- *Session:* prerecorded content\n- `demo: review garden`: a sample label, never an executed command\n\n> No real session transcript was used.\n\nSend any text to switch sample formats. Every third send offers approval, then a question; other examples finish automatically.",
+            "status": "completed"
+          }
+        ]
+      ],
+      "claude": [
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "Explore the fictional garden",
+                "status": "completed"
+              },
+              {
+                "step": "Review sample changes",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Claude Code · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "command",
+            "title": "demo: fictional Python test",
+            "text": "FICTIONAL TEST OUTPUT — no Python process was started\nTraceback (most recent call last):\n  File \"sample_garden.py\", line 4, in sample\n    raise ValueError('sample only')\nValueError: sample only\n\n...\n3 example checks passed\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Claude Code · Python example\n\n**Fictional replay.** The traceback and results above are sample text, unrelated to your input. No tests actually ran.\n\n1. Read a sample traceback.\n2. Expand the command card to see multiline output.\n3. Inspect the suggested code below.\n\n```python\ndef describe_garden(flowers):\n    return f'{len(flowers)} sample flowers'\n\nprint(describe_garden(['mint', 'iris', 'rose']))\n```\n\n> Example output: `3 sample flowers`\n\n### Next steps\n- Keep the function small.\n- Try another prerecorded sample.\n\nEvery third send shows a sample approval and question. Other sends finish automatically for background alert testing.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "Explore the fictional garden",
+                "status": "completed"
+              },
+              {
+                "step": "Review sample changes",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Claude Code · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Claude Code · Documentation example\n\nThis **fictional log** previews Markdown, structured data and diagram source. Your input did not create this answer.\n\n### Sample configuration\n```json\n{\n  \"project\": \"pocket-garden\",\n  \"demo\": true,\n  \"flowers\": 3\n}\n```\n\n### Diagram source (displayed as code)\n```mermaid\nflowchart LR\n  Phone --> Workspace\n  Workspace --> SampleSession\n```\n\n### Notes\n- **Project:** a fictional garden\n- *Session:* prerecorded content\n- `demo: review garden`: a sample label, never an executed command\n\n> No real session transcript was used.\n\nSend any text to switch sample formats. Every third send offers approval, then a question; other examples finish automatically.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "Explore the fictional garden",
+                "status": "completed"
+              },
+              {
+                "step": "Review sample changes",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Claude Code · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Claude Code sample session\n\nThis is **fictional log replay**, independent of your input. No agent, shell or file operation ran.\n\n[Sample file](src/garden.js) · preview from the Files panel.\n\n### Garden checklist\n- [x] Display sample files\n- [x] Show a diff\n- [ ] Try approval and question cards\n\n| Feature | Sample result |\n| --- | --- |\n| Flowers | 3 |\n| Color | mint |\n\n```javascript\nexport const flowers = 3;\nconsole.log('Hello, pocket garden');\n```\n\n> The phone is the workspace; this demo only previews its interface.\n\nSend any text to replay the next example. Every third example offers **approval**, then a **question**. The other examples finish automatically so you can test background alerts.",
+            "status": "completed"
+          }
+        ]
+      ],
+      "opencode": [
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "Explore the fictional garden",
+                "status": "completed"
+              },
+              {
+                "step": "Review sample changes",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "OpenCode · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## OpenCode · Documentation example\n\nThis **fictional log** previews Markdown, structured data and diagram source. Your input did not create this answer.\n\n### Sample configuration\n```json\n{\n  \"project\": \"pocket-garden\",\n  \"demo\": true,\n  \"flowers\": 3\n}\n```\n\n### Diagram source (displayed as code)\n```mermaid\nflowchart LR\n  Phone --> Workspace\n  Workspace --> SampleSession\n```\n\n### Notes\n- **Project:** a fictional garden\n- *Session:* prerecorded content\n- `demo: review garden`: a sample label, never an executed command\n\n> No real session transcript was used.\n\nSend any text to switch sample formats. Every third send offers approval, then a question; other examples finish automatically.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "Explore the fictional garden",
+                "status": "completed"
+              },
+              {
+                "step": "Review sample changes",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "OpenCode · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## OpenCode sample session\n\nThis is **fictional log replay**, independent of your input. No agent, shell or file operation ran.\n\n[Sample file](src/garden.js) · preview from the Files panel.\n\n### Garden checklist\n- [x] Display sample files\n- [x] Show a diff\n- [ ] Try approval and question cards\n\n| Feature | Sample result |\n| --- | --- |\n| Flowers | 3 |\n| Color | mint |\n\n```javascript\nexport const flowers = 3;\nconsole.log('Hello, pocket garden');\n```\n\n> The phone is the workspace; this demo only previews its interface.\n\nSend any text to replay the next example. Every third example offers **approval**, then a **question**. The other examples finish automatically so you can test background alerts.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "Explore the fictional garden",
+                "status": "completed"
+              },
+              {
+                "step": "Review sample changes",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "OpenCode · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "command",
+            "title": "demo: fictional Python test",
+            "text": "FICTIONAL TEST OUTPUT — no Python process was started\nTraceback (most recent call last):\n  File \"sample_garden.py\", line 4, in sample\n    raise ValueError('sample only')\nValueError: sample only\n\n...\n3 example checks passed\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## OpenCode · Python example\n\n**Fictional replay.** The traceback and results above are sample text, unrelated to your input. No tests actually ran.\n\n1. Read a sample traceback.\n2. Expand the command card to see multiline output.\n3. Inspect the suggested code below.\n\n```python\ndef describe_garden(flowers):\n    return f'{len(flowers)} sample flowers'\n\nprint(describe_garden(['mint', 'iris', 'rose']))\n```\n\n> Example output: `3 sample flowers`\n\n### Next steps\n- Keep the function small.\n- Try another prerecorded sample.\n\nEvery third send shows a sample approval and question. Other sends finish automatically for background alert testing.",
+            "status": "completed"
+          }
+        ]
+      ]
+    },
+    "ko": {
+      "codex": [
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "가상의 정원 살펴보기",
+                "status": "completed"
+              },
+              {
+                "step": "예제 변경 내용 확인",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Codex · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Codex 예제 세션\n\n입력과 관계없이 **가상의 로그를 재생**합니다. 에이전트·셸 명령·파일 작업은 실행하지 않았습니다.\n\n[예제 파일](src/garden.js) · 파일 패널에서 미리 볼 수 있습니다.\n\n### 정원 체크리스트\n- [x] 예제 파일 표시\n- [x] 변경 내용 보기\n- [ ] 승인·질문 카드 체험\n\n| 항목 | 예제 결과 |\n| --- | --- |\n| 꽃 | 3개 |\n| 색상 | 민트 |\n\n```javascript\nexport const flowers = 3;\nconsole.log('Hello, pocket garden');\n```\n\n> 휴대폰이 개발 공간이 됩니다. 이 데모는 그 화면을 미리 보여줍니다.\n\n아무 내용이나 보내면 다음 예제를 재생합니다. 세 번째마다 **승인**과 **질문**을 체험할 수 있습니다. 나머지 예제는 자동으로 끝나므로 백그라운드 알림도 확인할 수 있습니다.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "가상의 정원 살펴보기",
+                "status": "completed"
+              },
+              {
+                "step": "예제 변경 내용 확인",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Codex · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "command",
+            "title": "demo: fictional Python test",
+            "text": "FICTIONAL TEST OUTPUT — no Python process was started\nTraceback (most recent call last):\n  File \"sample_garden.py\", line 4, in sample\n    raise ValueError('sample only')\nValueError: sample only\n\n...\n3 example checks passed\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Codex · Python 예제\n\n**가상의 예제 재생입니다.** 위 오류와 결과는 미리 작성한 예제이며 입력과 관계없습니다. 테스트를 실제로 실행하지 않았습니다.\n\n1. 예제 오류를 읽어 보세요.\n2. 명령 카드를 펼쳐 여러 줄 출력을 확인하세요.\n3. 아래 코드를 살펴보세요.\n\n```python\ndef describe_garden(flowers):\n    return f'{len(flowers)} sample flowers'\n\nprint(describe_garden(['mint', 'iris', 'rose']))\n```\n\n> 예제 출력: `3 sample flowers`\n\n### 다음 단계\n- 함수를 간결하게 유지합니다.\n- 미리 준비한 다른 예제도 재생해 보세요.\n\n세 번째 전송마다 승인·질문 예제를 표시합니다. 나머지는 자동으로 끝나므로 백그라운드 알림도 확인할 수 있습니다.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "가상의 정원 살펴보기",
+                "status": "completed"
+              },
+              {
+                "step": "예제 변경 내용 확인",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Codex · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Codex · 문서 예제\n\n**가상의 로그**로 Markdown·구조화된 데이터·다이어그램 소스를 보여줍니다. 입력으로 이 답변을 작성하지 않았습니다.\n\n### 예제 설정\n```json\n{\n  \"project\": \"pocket-garden\",\n  \"demo\": true,\n  \"flowers\": 3\n}\n```\n\n### 다이어그램 소스 (코드로 표시)\n```mermaid\nflowchart LR\n  Phone --> Workspace\n  Workspace --> SampleSession\n```\n\n### 안내\n- **프로젝트:** 가상의 정원\n- *세션:* 미리 준비한 내용\n- `demo: review garden`: 실행하지 않는 예제 문구\n\n> 실제 세션 기록은 사용하지 않았습니다.\n\n아무 내용이나 보내면 다른 형식의 예제를 보여줍니다. 세 번째마다 승인·질문을 체험하고 나머지 예제는 자동으로 끝납니다.",
+            "status": "completed"
+          }
+        ]
+      ],
+      "claude": [
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "가상의 정원 살펴보기",
+                "status": "completed"
+              },
+              {
+                "step": "예제 변경 내용 확인",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Claude Code · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "command",
+            "title": "demo: fictional Python test",
+            "text": "FICTIONAL TEST OUTPUT — no Python process was started\nTraceback (most recent call last):\n  File \"sample_garden.py\", line 4, in sample\n    raise ValueError('sample only')\nValueError: sample only\n\n...\n3 example checks passed\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Claude Code · Python 예제\n\n**가상의 예제 재생입니다.** 위 오류와 결과는 미리 작성한 예제이며 입력과 관계없습니다. 테스트를 실제로 실행하지 않았습니다.\n\n1. 예제 오류를 읽어 보세요.\n2. 명령 카드를 펼쳐 여러 줄 출력을 확인하세요.\n3. 아래 코드를 살펴보세요.\n\n```python\ndef describe_garden(flowers):\n    return f'{len(flowers)} sample flowers'\n\nprint(describe_garden(['mint', 'iris', 'rose']))\n```\n\n> 예제 출력: `3 sample flowers`\n\n### 다음 단계\n- 함수를 간결하게 유지합니다.\n- 미리 준비한 다른 예제도 재생해 보세요.\n\n세 번째 전송마다 승인·질문 예제를 표시합니다. 나머지는 자동으로 끝나므로 백그라운드 알림도 확인할 수 있습니다.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "가상의 정원 살펴보기",
+                "status": "completed"
+              },
+              {
+                "step": "예제 변경 내용 확인",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Claude Code · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Claude Code · 문서 예제\n\n**가상의 로그**로 Markdown·구조화된 데이터·다이어그램 소스를 보여줍니다. 입력으로 이 답변을 작성하지 않았습니다.\n\n### 예제 설정\n```json\n{\n  \"project\": \"pocket-garden\",\n  \"demo\": true,\n  \"flowers\": 3\n}\n```\n\n### 다이어그램 소스 (코드로 표시)\n```mermaid\nflowchart LR\n  Phone --> Workspace\n  Workspace --> SampleSession\n```\n\n### 안내\n- **프로젝트:** 가상의 정원\n- *세션:* 미리 준비한 내용\n- `demo: review garden`: 실행하지 않는 예제 문구\n\n> 실제 세션 기록은 사용하지 않았습니다.\n\n아무 내용이나 보내면 다른 형식의 예제를 보여줍니다. 세 번째마다 승인·질문을 체험하고 나머지 예제는 자동으로 끝납니다.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "가상의 정원 살펴보기",
+                "status": "completed"
+              },
+              {
+                "step": "예제 변경 내용 확인",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "Claude Code · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## Claude Code 예제 세션\n\n입력과 관계없이 **가상의 로그를 재생**합니다. 에이전트·셸 명령·파일 작업은 실행하지 않았습니다.\n\n[예제 파일](src/garden.js) · 파일 패널에서 미리 볼 수 있습니다.\n\n### 정원 체크리스트\n- [x] 예제 파일 표시\n- [x] 변경 내용 보기\n- [ ] 승인·질문 카드 체험\n\n| 항목 | 예제 결과 |\n| --- | --- |\n| 꽃 | 3개 |\n| 색상 | 민트 |\n\n```javascript\nexport const flowers = 3;\nconsole.log('Hello, pocket garden');\n```\n\n> 휴대폰이 개발 공간이 됩니다. 이 데모는 그 화면을 미리 보여줍니다.\n\n아무 내용이나 보내면 다음 예제를 재생합니다. 세 번째마다 **승인**과 **질문**을 체험할 수 있습니다. 나머지 예제는 자동으로 끝나므로 백그라운드 알림도 확인할 수 있습니다.",
+            "status": "completed"
+          }
+        ]
+      ],
+      "opencode": [
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "가상의 정원 살펴보기",
+                "status": "completed"
+              },
+              {
+                "step": "예제 변경 내용 확인",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "OpenCode · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## OpenCode · 문서 예제\n\n**가상의 로그**로 Markdown·구조화된 데이터·다이어그램 소스를 보여줍니다. 입력으로 이 답변을 작성하지 않았습니다.\n\n### 예제 설정\n```json\n{\n  \"project\": \"pocket-garden\",\n  \"demo\": true,\n  \"flowers\": 3\n}\n```\n\n### 다이어그램 소스 (코드로 표시)\n```mermaid\nflowchart LR\n  Phone --> Workspace\n  Workspace --> SampleSession\n```\n\n### 안내\n- **프로젝트:** 가상의 정원\n- *세션:* 미리 준비한 내용\n- `demo: review garden`: 실행하지 않는 예제 문구\n\n> 실제 세션 기록은 사용하지 않았습니다.\n\n아무 내용이나 보내면 다른 형식의 예제를 보여줍니다. 세 번째마다 승인·질문을 체험하고 나머지 예제는 자동으로 끝납니다.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "가상의 정원 살펴보기",
+                "status": "completed"
+              },
+              {
+                "step": "예제 변경 내용 확인",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "OpenCode · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## OpenCode 예제 세션\n\n입력과 관계없이 **가상의 로그를 재생**합니다. 에이전트·셸 명령·파일 작업은 실행하지 않았습니다.\n\n[예제 파일](src/garden.js) · 파일 패널에서 미리 볼 수 있습니다.\n\n### 정원 체크리스트\n- [x] 예제 파일 표시\n- [x] 변경 내용 보기\n- [ ] 승인·질문 카드 체험\n\n| 항목 | 예제 결과 |\n| --- | --- |\n| 꽃 | 3개 |\n| 색상 | 민트 |\n\n```javascript\nexport const flowers = 3;\nconsole.log('Hello, pocket garden');\n```\n\n> 휴대폰이 개발 공간이 됩니다. 이 데모는 그 화면을 미리 보여줍니다.\n\n아무 내용이나 보내면 다음 예제를 재생합니다. 세 번째마다 **승인**과 **질문**을 체험할 수 있습니다. 나머지 예제는 자동으로 끝나므로 백그라운드 알림도 확인할 수 있습니다.",
+            "status": "completed"
+          }
+        ],
+        [
+          {
+            "kind": "plan",
+            "steps": [
+              {
+                "step": "가상의 정원 살펴보기",
+                "status": "completed"
+              },
+              {
+                "step": "예제 변경 내용 확인",
+                "status": "completed"
+              }
+            ]
+          },
+          {
+            "kind": "command",
+            "title": "demo: inspect sample workspace",
+            "text": "[sample output]\nsrc/garden.js\nREADME.md\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "tool",
+            "title": "OpenCode · fictional tool event",
+            "text": "{\"demo\": true, \"flowers\": [\"mint\", \"iris\", \"rose\"]}",
+            "status": "completed"
+          },
+          {
+            "kind": "diff",
+            "title": "Sample change · no file was edited",
+            "changes": [
+              {
+                "path": "src/garden.js",
+                "diff": "diff --git a/src/garden.js b/src/garden.js\n--- a/src/garden.js\n+++ b/src/garden.js\n@@ -1 +1 @@\n-export const flowers = 2;\n+export const flowers = 3;\n"
+              }
+            ],
+            "status": "completed"
+          },
+          {
+            "kind": "command",
+            "title": "demo: fictional Python test",
+            "text": "FICTIONAL TEST OUTPUT — no Python process was started\nTraceback (most recent call last):\n  File \"sample_garden.py\", line 4, in sample\n    raise ValueError('sample only')\nValueError: sample only\n\n...\n3 example checks passed\n",
+            "exit_code": 0,
+            "status": "completed"
+          },
+          {
+            "kind": "assistant",
+            "text": "## OpenCode · Python 예제\n\n**가상의 예제 재생입니다.** 위 오류와 결과는 미리 작성한 예제이며 입력과 관계없습니다. 테스트를 실제로 실행하지 않았습니다.\n\n1. 예제 오류를 읽어 보세요.\n2. 명령 카드를 펼쳐 여러 줄 출력을 확인하세요.\n3. 아래 코드를 살펴보세요.\n\n```python\ndef describe_garden(flowers):\n    return f'{len(flowers)} sample flowers'\n\nprint(describe_garden(['mint', 'iris', 'rose']))\n```\n\n> 예제 출력: `3 sample flowers`\n\n### 다음 단계\n- 함수를 간결하게 유지합니다.\n- 미리 준비한 다른 예제도 재생해 보세요.\n\n세 번째 전송마다 승인·질문 예제를 표시합니다. 나머지는 자동으로 끝나므로 백그라운드 알림도 확인할 수 있습니다.",
+            "status": "completed"
+          }
+        ]
+      ]
+    }
+  }
+}

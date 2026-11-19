@@ -30,6 +30,11 @@ This grant covers the Andineering-owned portions of:
 - the common `bridge/` source files and `android/app/src/main/assets/` source
   assets actually included in the Bibimer iOS distribution by
   `ios/app/build.py` at the accompanying source revision.
+- the Andineering-owned build-only helper source needed for that iOS build,
+  including the review-access configuration helper reused from
+  `scripts/build_apk.py`, and `android/app/src/main/java/app/bibimer/DemoWorkspace.java`
+  as the source of the sample replay data bundled in iOS. This does not license
+  the Android application as a whole.
 
 The last item identifies the shared source included in the iOS application and
 its corresponding source. Once received under this grant, the covered code may

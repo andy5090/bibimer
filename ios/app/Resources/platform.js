@@ -110,7 +110,7 @@
     const status = document.createElement("p"); status.id = `agent-action-status-${agent}`; status.className = "hint"; status.hidden = true;
     details.append(row,status);
   }
-  for (const selector of ["#manual-setup","#setup-connection-steps","#review-access-open","#app-update-banner","#app-update-card","#bridge-update-card","#forget","[data-command='restart']","[data-i18n='bridge_update_hint']","[data-i18n='agent_termux_return']"]) {
+  for (const selector of ["#manual-setup","#setup-connection-steps","#app-update-banner","#app-update-card","#bridge-update-card","#forget","[data-command='restart']","[data-i18n='bridge_update_hint']","[data-i18n='agent_termux_return']"]) {
     const element = document.querySelector(selector); if (element) element.classList.add("ios-unavailable");
   }
   for(const element of document.querySelectorAll("[data-agent='browser'][data-agent-action='install'],#browser-setup,#tts-engine-row"))element.classList.add("ios-unavailable");

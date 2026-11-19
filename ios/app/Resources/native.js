@@ -10,6 +10,13 @@
   const codeWatchRequests = new Map();
   window.BibimerAccountProgress = id => accountRequests.get(id)?.progress?.();
   const browserRequests = new Map();
+  const reviewRequests = new Map();
+  window.BibimerReviewReply = (id, accepted) => {
+    const request=reviewRequests.get(id);if(!request)return false;
+    const current=!request.guard || request.guard();
+    reviewRequests.delete(id);clearTimeout(request.timer);request.resolve(accepted===true && current);
+    return accepted===true && current;
+  };
   window.BibimerAccountBrowserReply = (id, reason) => {
     const request = browserRequests.get(id); if (!request) return;
     browserRequests.delete(id); clearTimeout(request.timer);
@@ -32,6 +39,7 @@
     else request.reject(new Error(response?.code || "clipboard_failed"));
   };
   window.addEventListener("pagehide", () => {
+    for(const request of reviewRequests.values()){clearTimeout(request.timer);request.resolve(false);}reviewRequests.clear();
     for (const request of browserRequests.values()) {
       clearTimeout(request.timer); message("closeAccountBrowser",{job:request.job});
       request.reject({key:"error_connection_failed"});
@@ -60,6 +68,14 @@
   const store = (key, value) => { defaults[key] = value; message("preference", {key, value}); return true; };
   window.Bibimer = Object.freeze({
     accountLoginWithoutProject: true,
+    enterReviewDemo: (code,guard) => new Promise(resolve => {
+      if(!defaults.reviewAccessConfigured || typeof code!=="string" || !code || code.length>128 || reviewRequests.size){resolve(false);return;}
+      const id=clipboardDocument+":"+(++clipboardSequence);
+      const timer=setTimeout(()=>{reviewRequests.delete(id);resolve(false);},5000);
+      reviewRequests.set(id,{resolve,timer,guard});
+      try{message("reviewEnter",{id,code});}catch(_){reviewRequests.delete(id);clearTimeout(timer);resolve(false);}
+    }),
+    cancelReviewEntry: () => {for(const request of reviewRequests.values()){clearTimeout(request.timer);request.resolve(false);}reviewRequests.clear();},
     watchAccountCode: (body, url, progress) => new Promise((resolve,reject) => {
       const id=clipboardDocument+":"+(++clipboardSequence),job=body.id;
       const timer=setTimeout(()=>{accountRequests.delete(id);codeWatchRequests.delete(job);message("cancelAccountSecret",{id});resolve({cancelled:true});},600000);
