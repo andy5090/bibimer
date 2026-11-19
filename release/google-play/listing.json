@@ -302,15 +302,15 @@
   },
   "consoleScreenshotsStatus": "in_review_pre_review_checks_running",
   "productionRelease": {
-    "versionName": "0.38.1",
-    "versionCode": 63,
-    "releaseName": "0.38.1 (63) - Voice and work-first settings",
-    "consoleStatus": "in_review",
-    "submittedOn": "2026-11-05",
-    "submittedAtLocal": "2026-11-05 09:36 Asia/Seoul",
-    "submissionVerifiedAtLocal": "2026-11-05 10:28 Asia/Seoul",
+    "versionName": "0.43.1",
+    "versionCode": 73,
+    "releaseName": "0.43.1 (73) - Agent management and queue editing",
+    "consoleStatus": "submitted_pending_pre_review_checks",
+    "submittedOn": "2026-11-19",
+    "submittedAtLocal": "2026-11-19 18:59 Asia/Seoul",
+    "submissionVerifiedAtLocal": "2026-11-19 19:00 Asia/Seoul",
     "refreshedStatusVerified": true,
-    "changeCount": 2,
+    "changeCount": 1,
     "rolloutPercent": 100,
     "allExistingTargetCountries": true,
     "targetCountryCount": 178,
@@ -324,39 +324,40 @@
     ],
     "errors": [],
     "supportedDeviceChanges": 0,
-    "supportedDeviceChangesScope": "observed seven device-type rows",
-    "preReviewChecksCompleted": true,
-    "releaseNotesFile": "release/google-play/release-notes/0.38.1-production.txt",
+    "supportedDeviceChangesScope": "visible Console device-type rows",
+    "preReviewChecksCompleted": false,
+    "releaseNotesFile": "release/google-play/release-notes/0.43.1-production.txt",
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 472,
-      "ko-KR": 304
+      "en-US": 487,
+      "ko-KR": 250
     },
-    "reusedValidatedInternalTestBundle": false,
-    "newSignedBundle": true,
-    "previousPublicVersionName": "0.35.1",
-    "previousPublicVersionCode": 59,
-    "sourceCommit": "a1c1c0d8b0bcac9f0c907b40eea835dbb4a93ac8",
-    "sourceBridgeVersion": "0.24.1",
-    "bundleSha256": "a0c06eed6c669b1aa1ee3e540cd89a169a4eab94e6cad49206c0e6dc31ab6b5f",
-    "bundleBytes": 3431129,
+    "reusedValidatedInternalTestBundle": true,
+    "newSignedBundle": false,
+    "previousPublicVersionName": "0.38.1",
+    "previousPublicVersionCode": 63,
+    "sourceCommit": "377731b184e25bce6cd558e493820f405ec52ec9",
+    "sourceBridgeVersion": "0.25.2",
+    "bundleSha256": "96fc5e8c062add75a4af9181ba835042d87ee75b333fa3ed08c433943e1f3b8a",
+    "bundleBytes": 3494076,
     "includedVersionCodes": [
-      63
+      73
     ],
     "excludedPreviousVersionCodes": [
-      59
+      63
     ],
-    "evidence": "dist/production-0.38.1/submitted.json",
+    "evidence": "dist/production-0.43.1/submitted.json",
     "physicalDeviceVerified": false,
     "deviceInstallVerified": false,
-    "dataSafetyProductionFormChanged": true,
+    "dataSafetyProductionFormChanged": false,
     "privacyPolicyChanged": false,
     "websiteDeploymentPerformed": false,
     "existingInternalTrackUnchanged": true,
-    "note": "Fresh signed production bundle includes internal62 plus TTS spacing, auxiliary button outlines and microphone/text spacing. Submitted release and optional audio Data Safety update. Google approval/public availability pending; current public59 preserved."
+    "note": "Promoted the existing validated internal73 bundle. Full rollout to all existing178 countries; managed publishing off, automatic publication after approval. Submission confirmed; pre-review checks in progress. Public63 remains available. No new build, upload, internal tester, iOS or website changes.",
+    "preReviewChecksInProgress": true
   },
   "internalTesterParticipation": {
     "consoleRegistration": "saved_one_tester",
@@ -466,18 +467,21 @@
     "consoleUploaded": true
   },
   "previousProductionRelease": {
-    "versionName": "0.35.1",
-    "versionCode": 59,
-    "releaseName": "0.35.1 (59) - Mobile Git and browser consent",
-    "consoleStatus": "available_on_google_play",
-    "promotionPreparedOn": "2026-11-04",
-    "changeCount": 1,
+    "versionName": "0.38.1",
+    "versionCode": 63,
+    "releaseName": "0.38.1 (63) - Voice and work-first settings",
+    "consoleStatus": "in_review",
+    "submittedOn": "2026-11-05",
+    "submittedAtLocal": "2026-11-05 09:36 Asia/Seoul",
+    "submissionVerifiedAtLocal": "2026-11-05 10:28 Asia/Seoul",
+    "refreshedStatusVerified": true,
+    "changeCount": 2,
     "rolloutPercent": 100,
     "allExistingTargetCountries": true,
     "targetCountryCount": 178,
     "managedPublishing": false,
     "publishAfterApproval": true,
-    "publicAvailabilityConfirmed": true,
+    "publicAvailabilityConfirmed": false,
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582",
     "publishingOverviewUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
     "warnings": [
@@ -485,47 +489,48 @@
     ],
     "errors": [],
     "supportedDeviceChanges": 0,
-    "supportedDeviceChangesScope": "observed Console rows: phone, tablet, TV, wearable, car, Chromebook, Android XR; min/target SDK unchanged",
+    "supportedDeviceChangesScope": "observed seven device-type rows",
     "preReviewChecksCompleted": true,
-    "releaseNotesFile": "release/google-play/release-notes/0.35.1-production.txt",
+    "releaseNotesFile": "release/google-play/release-notes/0.38.1-production.txt",
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 431,
-      "ko-KR": 266
+      "en-US": 472,
+      "ko-KR": 304
     },
-    "reusedValidatedInternalTestBundle": true,
-    "previousPublicVersionName": "0.32.0",
-    "previousPublicVersionCode": 54,
-    "sourceBridgeVersion": "0.24.0",
-    "bundleSha256": "7bacdccbf48857ca8c914728c47ff0b5463ee69dff6aa7342299aafcfadfd561",
+    "reusedValidatedInternalTestBundle": false,
+    "newSignedBundle": true,
+    "previousPublicVersionName": "0.35.1",
+    "previousPublicVersionCode": 59,
+    "sourceCommit": "a1c1c0d8b0bcac9f0c907b40eea835dbb4a93ac8",
+    "sourceBridgeVersion": "0.24.1",
+    "bundleSha256": "a0c06eed6c669b1aa1ee3e540cd89a169a4eab94e6cad49206c0e6dc31ab6b5f",
+    "bundleBytes": 3431129,
     "includedVersionCodes": [
-      59
+      63
     ],
     "excludedPreviousVersionCodes": [
-      54
+      59
     ],
-    "evidence": "dist/production-0.35.1/available.json",
+    "evidence": "dist/production-0.38.1/submitted.json",
     "physicalDeviceVerified": false,
-    "submittedOn": "2026-11-04",
-    "submittedAtLocal": "2026-11-04 01:37 Asia/Seoul",
-    "refreshedStatusVerified": true,
-    "submissionVerifiedAtLocal": "2026-11-04 01:38 Asia/Seoul",
-    "note": "Visible Firefox production dashboard shows active latest version 0.35.1(59), 178 target countries. Releases tab shows available on Google Play, published November 4 at 01:47. Device update receipt is not verified.",
-    "availabilityVerifiedOn": "2026-11-04",
-    "availabilityVerifiedAtLocal": "2026-11-04 15:32 Asia/Seoul",
-    "publishedAtConsoleLocal": "2026-11-04 01:47 Asia/Seoul"
+    "deviceInstallVerified": false,
+    "dataSafetyProductionFormChanged": true,
+    "privacyPolicyChanged": false,
+    "websiteDeploymentPerformed": false,
+    "existingInternalTrackUnchanged": true,
+    "note": "Fresh signed production bundle includes internal62 plus TTS spacing, auxiliary button outlines and microphone/text spacing. Submitted release and optional audio Data Safety update. Google approval/public availability pending; current public59 preserved."
   },
   "publicStoreUrl": "https://play.google.com/store/apps/details?id=app.bibimer",
   "currentPublicVersion": {
-    "versionName": "0.35.1",
-    "versionCode": 59,
-    "verifiedOn": "2026-11-05",
+    "versionName": "0.38.1",
+    "versionCode": 63,
+    "verifiedOn": "2026-11-19",
     "consoleProductionAvailabilityVerified": true,
     "devicePublicUpdateVerified": false,
-    "verificationEvidence": "Visible production dashboard before submission: active latest 0.35.1(59), 178 countries; new63 availability not confirmed."
+    "verificationEvidence": "dist/production-0.43.1/previous-production.png: active latest0.38.1(63),178 countries;73 submitted, not public."
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
@@ -1025,6 +1030,63 @@
       "availabilityVerifiedOn": "2026-11-04",
       "availabilityVerifiedAtLocal": "2026-11-04 15:32 Asia/Seoul",
       "publishedAtConsoleLocal": "2026-11-04 01:47 Asia/Seoul"
+    },
+    {
+      "versionName": "0.38.1",
+      "versionCode": 63,
+      "releaseName": "0.38.1 (63) - Voice and work-first settings",
+      "consoleStatus": "in_review",
+      "submittedOn": "2026-11-05",
+      "submittedAtLocal": "2026-11-05 09:36 Asia/Seoul",
+      "submissionVerifiedAtLocal": "2026-11-05 10:28 Asia/Seoul",
+      "refreshedStatusVerified": true,
+      "changeCount": 2,
+      "rolloutPercent": 100,
+      "allExistingTargetCountries": true,
+      "targetCountryCount": 178,
+      "managedPublishing": false,
+      "publishAfterApproval": true,
+      "publicAvailabilityConfirmed": false,
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582",
+      "publishingOverviewUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "errors": [],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed seven device-type rows",
+      "preReviewChecksCompleted": true,
+      "releaseNotesFile": "release/google-play/release-notes/0.38.1-production.txt",
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "releaseNotesCharacters": {
+        "en-US": 472,
+        "ko-KR": 304
+      },
+      "reusedValidatedInternalTestBundle": false,
+      "newSignedBundle": true,
+      "previousPublicVersionName": "0.35.1",
+      "previousPublicVersionCode": 59,
+      "sourceCommit": "a1c1c0d8b0bcac9f0c907b40eea835dbb4a93ac8",
+      "sourceBridgeVersion": "0.24.1",
+      "bundleSha256": "a0c06eed6c669b1aa1ee3e540cd89a169a4eab94e6cad49206c0e6dc31ab6b5f",
+      "bundleBytes": 3431129,
+      "includedVersionCodes": [
+        63
+      ],
+      "excludedPreviousVersionCodes": [
+        59
+      ],
+      "evidence": "dist/production-0.38.1/submitted.json",
+      "physicalDeviceVerified": false,
+      "deviceInstallVerified": false,
+      "dataSafetyProductionFormChanged": true,
+      "privacyPolicyChanged": false,
+      "websiteDeploymentPerformed": false,
+      "existingInternalTrackUnchanged": true,
+      "note": "Fresh signed production bundle includes internal62 plus TTS spacing, auxiliary button outlines and microphone/text spacing. Submitted release and optional audio Data Safety update. Google approval/public availability pending; current public59 preserved."
     }
   ],
   "screenshotsExampleData": {
