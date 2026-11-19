@@ -1,16 +1,17 @@
 # 런타임·설치 소프트웨어 근거
 
-기준 소스 `7741191`, 2026-11-18. 기술적 출처 목록이며 배포 라이선스 의무를 모두 검토했다는 확인서는 아니다.
+2026-11-19 갱신. 기존 후보의 기준 소스는 `7741191`이며 최종 제출 후보의 정확한 커밋은 최종 배포 기록에 남긴다. 기술적 출처와 승인된 iOS 라이선스 적용 기록이며 배포 라이선스 의무를 모두 검토했다는 확인서는 아니다.
 
 | 구성 | 출처와 확인한 상태 |
 | --- | --- |
 | 앱 소스·빌드 절차 | GitHub `andy5090/bibimer`의 공개 저장소 상태를 연결 도구로 확인. [이번 후보의 고정 소스](https://github.com/andy5090/bibimer/tree/7741191def46e5bc6b475c4ada30435e3546c6cb) |
+| Bibimer 소유 iOS 코드 | 사용자 명시 승인 후 [GPLv3 허락](../../ios/LICENSE.md)·[App Store 약관 충돌 한정 예외](../../ios/LICENSE.IOS)·[전문](../../ios/COPYING) 적용. iOS에 패키징되는 공통 소스의 Andineering 소유 부분 포함. 타 저작권·Android 전체·웹사이트 전체의 라이선스는 변경하지 않으며 수령자의 GPL 권리는 플랫폼으로 제한하지 않음 |
 | 내장 해석기 | `dnakov/litter-ish`, 고정 커밋 `c8e9dcb954963b0d9f359b3ad9da871f19b28652`. [GPL 원문](https://github.com/dnakov/litter-ish/blob/c8e9dcb954963b0d9f359b3ad9da871f19b28652/LICENSE.md), [iOS 예외](https://github.com/dnakov/litter-ish/blob/c8e9dcb954963b0d9f359b3ad9da871f19b28652/LICENSE.IOS) |
 | 해석기 수정 | [고정 후보의 embedded-runtime.patch](https://github.com/andy5090/bibimer/blob/7741191def46e5bc6b475c4ada30435e3546c6cb/ios/runtime-lab/patches/embedded-runtime.patch). 빌드 도구가 검증된 runtime diff·패치 해시 일치를 확인 |
 | 내장 rootfs | Alpine minirootfs 3.21.0 aarch64. 원본 파일명·해시·리소스 해시를 앱 `build-manifest.json`에 유지 |
 | 초기 설치 | `ios/bridge/bootstrap.sh`가 해당 Alpine 버전의 공식 HTTPS 저장소에서 CA 인증서·Python·Bash·Git·Node/npm·curl·jq·SQLite·GitHub CLI·ripgrep 및 의존성을 설치. 최초 준비에는 인터넷 필요 |
 | 에이전트 CLI | 사용자가 선택한 도구만 고정 설치 작업으로 설치. CLI/의존성 버전·원본 출처·변환된 실행 사본은 `ios/bridge/run.py`와 각 호환 코드 기준. 원본을 앱이 작성한 도구로 소개하지 않음 |
-| 번들 notice | 후보 IPA 안의 `Runtime-LICENSE.md`, `Runtime-LICENSE.IOS`, 게스트 OpenCode notice 포함 확인. 폰트·xterm 등 기존 웹 자산의 라이선스도 번들 구조 유지 |
+| 번들 notice | 기존 후보 IPA의 `Runtime-LICENSE.md`, `Runtime-LICENSE.IOS`, 게스트 OpenCode notice 포함 확인. 새 패키징은 `Web/BIBIMER-LICENSE.md`, `Web/BIBIMER-LICENSE.IOS`, `Web/GPL-3.0.txt`와 앱 내 법적 고지를 추가하며 원본 법문과의 일치를 검사. 최종 서명 후보의 실제 자산 확인은 별도 수행. 폰트·xterm 등 기존 웹 자산의 라이선스도 번들 구조 유지 |
 
 ## 정식 제출 전 확인
 

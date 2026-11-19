@@ -8,7 +8,7 @@ Checked 2026-11-19. These are source and build references for the actual bundled
 - Interpreter upstream: [dnakov/litter-ish at c8e9dcb954963b0d9f359b3ad9da871f19b28652](https://github.com/dnakov/litter-ish/tree/c8e9dcb954963b0d9f359b3ad9da871f19b28652).
 - Applied modifications: [embedded-runtime.patch](https://github.com/andy5090/bibimer/blob/main/ios/runtime-lab/patches/embedded-runtime.patch), SHA-256 `29dabdb385b105b31c58b5d2d1d5958a216028d2113448eaa8b185233b09c0c8`. Apply it to the pinned upstream, then follow the runtime/application README build steps.
 - Preserve [upstream GPL notices](https://github.com/dnakov/litter-ish/blob/c8e9dcb954963b0d9f359b3ad9da871f19b28652/LICENSE.md) and the [limited App Store additional terms](https://github.com/dnakov/litter-ish/blob/c8e9dcb954963b0d9f359b3ad9da871f19b28652/LICENSE.IOS). The latter do not waive corresponding-source obligations.
-- Bibimer-owned iOS licensing is being finalized under the [approval proposal](ios-license-proposal.md); do not treat the proposal as an effective license.
+- Andineering-owned Bibimer iOS code is licensed under [GPL version 3](../../ios/LICENSE.md), with the limited [App Store additional permission](../../ios/LICENSE.IOS); the [full GPL text](../../ios/COPYING) accompanies the source. This effective grant covers the Andineering-owned iOS application, bridge/runtime integration and shared source actually packaged for iOS, while preserving third-party terms. It does not relicense the entire Android application or website, or restrict a GPL recipient to iOS use. The [approval record](ios-license-proposal.md) records the authorized scope.
 
 ## Bundled Alpine base filesystem
 
@@ -38,7 +38,7 @@ Each recipe below is pinned to the actual package database’s `c:` aports commi
 
 - System UIKit/Foundation/WebKit/Speech/Security/SQLite/resolver frameworks are linked as Apple system libraries. Homebrew libarchive is used by the host filesystem conversion tool; it is not linked into the app executable by the app build command.
 - Shared web assets preserve their bundled licenses: xterm.js and addon-fit (MIT), marked (MIT), highlight.js (BSD-3-Clause), Space Grotesk (SIL OFL), and other included vendor notices. See `android/app/src/main/assets/vendor/` and `fonts/` in the corresponding source.
-- The app preserves `Runtime-LICENSE.md`, `Runtime-LICENSE.IOS`, web vendor/font notices and `Guest/ios/LICENSE.OPENCODE`. The Settings legal/source screen exposes the runtime texts and these source references.
+- The app preserves `Runtime-LICENSE.md`, `Runtime-LICENSE.IOS`, web vendor/font notices and `Guest/ios/LICENSE.OPENCODE`. It also bundles the effective Bibimer grant, additional permission and GPLv3 text as `Web/BIBIMER-LICENSE.md`, `Web/BIBIMER-LICENSE.IOS` and `Web/GPL-3.0.txt`. The Settings legal/source screen exposes the Bibimer grant/permission, runtime texts, Alpine notices and source references. Packaging rejects a Bibimer notice that differs from its source license file.
 - First-run development packages and later user-selected agents are downloaded separately. Their versions and terms may differ from this base archive. `apk info -v`, `apk info -L <package>` and the Alpine package database identify installed versions; the package origin/commit locates the corresponding Alpine build sources.
 - The app does not describe downloaded programs as static data or claim educational status to avoid Apple review. It uses an interpreter without JIT entitlements; Apple makes the App Store policy classification decision.
 

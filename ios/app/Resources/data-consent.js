@@ -28,6 +28,8 @@
     });
     document.getElementById("ios-legal-open").addEventListener("click", () => document.getElementById("ios-legal").showModal());
     document.getElementById("ios-legal-close").addEventListener("click", () => document.getElementById("ios-legal").close());
+    document.getElementById("ios-bibimer-license").textContent = window.BibimerRuntimeNotices?.["BIBIMER-LICENSE.md"] || "";
+    document.getElementById("ios-bibimer-exception").textContent = window.BibimerRuntimeNotices?.["BIBIMER-LICENSE.IOS"] || "";
     document.getElementById("ios-runtime-license").textContent = window.BibimerRuntimeNotices?.["LICENSE.md"] || "";
     document.getElementById("ios-runtime-exception").textContent = window.BibimerRuntimeNotices?.["LICENSE.IOS"] || "";
     document.getElementById("ios-runtime-gpl").textContent = window.BibimerRuntimeNotices?.["GPL-3.0"] || "";

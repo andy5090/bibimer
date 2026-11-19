@@ -10,19 +10,23 @@ class Element {
   showModal(){this.open=true;}
   close(){this.open=false;setImmediate(()=>this.listeners.close?.());}
 }
-function fixture(alpineNotices){
+function fixture(alpineNotices,runtimeNotices){
  const nodes=new Map(),events=new Map();
  const document={createElement:()=>new Element(),getElementById:id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);},querySelectorAll:()=>[],addEventListener:(n,f)=>events.set(n,f),activeElement:new Element(),hidden:false};
  const posts=[],results=[];
  const window={BibimerIOSDataLocales:JSON.parse(fs.readFileSync(resources+"data-consent-locales.json","utf8")),BibimerI18n:{language:()=>"en"},addEventListener:(n,f)=>events.set(n,f),__bibimerEnvironment:{voiceInput:{provider:"openai"},speechOutput:{provider:"elevenlabs",mode:"full"}},webkit:{messageHandlers:{bibimer:{postMessage:x=>posts.push(x)}}},BibimerVoiceResult:(...r)=>results.push(r)};
  const box=vm.createContext({window,document,crypto:crypto.webcrypto,setTimeout,clearTimeout,console});
  window.BibimerAlpineNotices=alpineNotices;
+ window.BibimerRuntimeNotices=runtimeNotices;
  vm.runInContext(fs.readFileSync(resources+"data-consent.js","utf8"),box);
  let context="project-one";window.BibimerDataConsent.configure(()=>context);
  return {box,window,document,nodes,posts,results,events,setContext:v=>context=v,allow:()=>nodes.get("ios-data-allow").click(),cancel:()=>nodes.get("ios-data-cancel").click()};
 }
 (async()=>{
- const f=fixture({components:[{name:"musl",license:"MIT",notice:"Copyright <script>literal license text</script>",limitations:["Component limitation"]}],limitations:["Inventory limitation"]}),consent=f.window.BibimerDataConsent;
+ const ownNotices=JSON.parse(fs.readFileSync(resources+"runtime-notices.json","utf8"));
+ const f=fixture({components:[{name:"musl",license:"MIT",notice:"Copyright <script>literal license text</script>",limitations:["Component limitation"]}],limitations:["Inventory limitation"]},ownNotices),consent=f.window.BibimerDataConsent;
+ assert.equal(f.nodes.get("ios-bibimer-license").textContent,fs.readFileSync("ios/LICENSE.md","utf8"));
+ assert.equal(f.nodes.get("ios-bibimer-exception").textContent,fs.readFileSync("ios/LICENSE.IOS","utf8"));
  const rendered=f.nodes.get("ios-alpine-notices").children;
  assert.equal(rendered[0].children[0].textContent,"musl · MIT");
  assert.equal(rendered[0].children[1].textContent,"Copyright <script>literal license text</script>","License text must be preserved as text, never interpreted as HTML");
