@@ -49,9 +49,9 @@
     "archive": "dist/ios-appstore/1.0.0-16-unsigned-nov20-review/Bibimer.xcarchive",
     "localIPAHashIsExportArtifact": true,
     "uploadSource": "Xcode upload export from the same verified archive; uploaded package processing acknowledged",
-    "submitted": false,
+    "submitted": true,
     "published": false,
-    "submissionReady": false,
+    "submissionReady": true,
     "internalTestFlightProvided": true,
     "exportComplianceCompleted": true,
     "appTests": 41,
@@ -62,7 +62,8 @@
     "existingSyscallWarnings": 4,
     "archiveVerified": true,
     "appStoreBuildID": "0ea77d0f-567b-488d-b868-c9c748a10c04",
-    "exportComplianceReason": "standard_algorithms_outside_or_alongside_Apple_OS; France_not_distributed"
+    "exportComplianceReason": "standard_algorithms_outside_or_alongside_Apple_OS; France_not_distributed",
+    "submissionID": "62cb55af-5a41-4558-9544-02484489f678"
   },
   "screenshotsReady": true,
   "appStoreConnectAccess": "authenticated_verified_after_service_recovery",
@@ -75,13 +76,10 @@
   "sourceRepositoryVisibility": "public_verified_via_github_connector",
   "appStoreDraftSaved": true,
   "uploaded": true,
-  "submitted": false,
+  "submitted": true,
   "published": false,
-  "submissionReady": false,
-  "remainingGates": [
-    "user_review_and_accept_updated_Paid_Applications_Agreement",
-    "final_Add_for_Review_and_submit"
-  ],
+  "submissionReady": true,
+  "remainingGates": [],
   "storeVersionVerified": "1.0.0",
   "manualReleaseSaved": true,
   "freePriceSaved": true,
@@ -190,7 +188,7 @@
   "ageRatingGlobal": "16+",
   "dsaTraderStatus": "active_verified_in_business",
   "freeAppsAgreement": "active_verified_in_business",
-  "paidAppsAgreement": "update_required_actual_Add_for_Review_block; final_agreement_not_accepted",
+  "paidAppsAgreement": "updated_Schedule2_accepted_by_user; pending_user_information; submission_successfully_accepted",
   "physicalDeviceConnected": false,
   "privacyDisclosurePublished": true,
   "privacyDisclosurePublishedOn": "2026-11-19",
@@ -248,7 +246,7 @@
     "nativeFinalResourcesVerified": true,
     "licenseGrantApproved": true,
     "uploaded": true,
-    "submitted": false,
+    "submitted": true,
     "sourceLicensingProposal": "ios-license-proposal.md",
     "physicalDeviceVerified": false,
     "sourceCommit": "0214d866a52fbbc583b0d46d8f043d856135cdeb",
@@ -266,7 +264,7 @@
     "nativeChecks": 34,
     "signed": true,
     "exported": true,
-    "status": "TestFlight16_provided_AppStore16_saved_contract_update_blocks_review",
+    "status": "submitted_to_App_Review",
     "nativeVerification": {
       "status": "PASS_WITH_WARNINGS",
       "checks": 34,
@@ -297,9 +295,7 @@
     "exportedSignatureVerified": true
   },
   "physicalDeviceValidation": "not_connected_and_not_claimed; simulator_checks_are_separate",
-  "submissionBlockedByUserDecision": [
-    "new_legally_binding_Paid_Applications_Agreement_action_time_confirmation_required"
-  ],
+  "submissionBlockedByUserDecision": [],
   "screenshot16Replacements": {
     "files": [
       "screenshots/en-US/ipad/03-settings.jpg",
@@ -382,7 +378,7 @@
     "exportComplianceReason": "standard_algorithms_outside_or_alongside_apple_os_france_not_distributed_response_saved",
     "internalTestFlightProvided": true
   },
-  "appStoreConnectControl": "available_user_paused_other_Chrome_work",
+  "appStoreConnectControl": "available; submission_completed",
   "reviewNotesDraftSavedBuild": null,
   "appStoreBuildSelectedVersion": "1.0.0(16)",
   "testFlight16InternalDistributionVerified": true,
@@ -404,5 +400,14 @@
     "notesSaved": true
   },
   "screenshotSaveReverifiedOn": "2026-11-20",
-  "submissionBlockObserved": "Add for Review opens Agreement Update modal requiring Paid Applications Agreement update"
+  "submissionBlockObserved": null,
+  "submissionObservedAt": "2026-11-20T06:06:48+09:00",
+  "submissionID": "62cb55af-5a41-4558-9544-02484489f678",
+  "submissionURL": "https://appstoreconnect.apple.com/apps/6826729307/distribution/reviewsubmissions/details/62cb55af-5a41-4558-9544-02484489f678",
+  "appReviewConfirmation": "1개의 항목 제출됨",
+  "appStoreVersionStatus": "submitted_confirmed_by_success_modal",
+  "nextActions": [
+    "await_Apple_App_Review_result",
+    "manual_release_only_after_approval_and_user_release_instruction"
+  ]
 }
