@@ -1,4 +1,4 @@
-DRAFT — build16 local candidate. Do not submit this draft until the iOS source-license grant and full reviewer-access arrangement below are complete.
+DRAFT — build16 local candidate. Do not submit until reviewer API access, cost limits and the actual connection test are complete.
 
 Bibimer is an on-device Agent Development Environment for iPhone and iPad. It is not an AI model or an AI subscription service. Connected coding-agent tools perform the coding work. Bibimer is free and does not sell AI credits, provider subscriptions or other digital goods.
 

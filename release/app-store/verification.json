@@ -76,10 +76,9 @@
   "published": false,
   "submissionReady": false,
   "remainingGates": [
-    "ios_source_license_grant_user_decision",
-    "reviewer_provider_access_user_input",
-    "final_license_packaging_and_candidate16_signed_upload",
-    "final_content_rights_review_notes_and_submission_preflight"
+    "reviewer_API_provider_spend_limit_and_private_key_delivery",
+    "actual_review_API_connection_validation",
+    "candidate16_signed_upload_and_final_submission_preflight"
   ],
   "storeVersionVerified": "1.0.0",
   "manualReleaseSaved": true,
@@ -234,9 +233,9 @@
       "iphonesimulator",
       "iphoneos"
     ],
-    "appPythonTests": 34,
+    "appPythonTests": 36,
     "bridgePythonTests": 86,
-    "nodeTestFiles": 18,
+    "nodeTestFiles": 20,
     "nativePreFinalResources": {
       "checks": 34,
       "elapsedSeconds": 46.593042624997906,
@@ -245,17 +244,17 @@
       "diagnosticFailures": []
     },
     "nativeFinalResourcesVerified": true,
-    "licenseGrantApproved": false,
+    "licenseGrantApproved": true,
     "uploaded": false,
     "submitted": false,
     "sourceLicensingProposal": "ios-license-proposal.md",
     "physicalDeviceVerified": false,
-    "sourceCommit": "a12d75fb2a483c6b4ac19a62ef7198ec26b08e44",
-    "archive": "dist/ios-appstore/1.0.0-16-unsigned-nov19/Bibimer.xcarchive",
+    "sourceCommit": "6308683689ed05e707a523d28f137f2bfda14e90",
+    "archive": "dist/ios-appstore/1.0.0-16-unsigned-nov19-gpl/Bibimer.xcarchive",
     "archiveVerified": true,
     "sourceAndPackagedResourcesMatch": true,
     "resourceCounts": {
-      "Web": 71,
+      "Web": 74,
       "Guest": 18,
       "rootfs": 426,
       "Native": 18,
@@ -269,12 +268,12 @@
     "nativeVerification": {
       "status": "PASS_WITH_WARNINGS",
       "checks": 34,
-      "elapsedSeconds": 45.75488716701511,
+      "elapsedSeconds": 45.40326924994588,
       "warnings": [
-        "62(bash) stub syscall 151",
-        "62(bash) stub syscall 152",
-        "62(bash) stub syscall 151",
-        "62(bash) stub syscall 152"
+        "69(bash) stub syscall 151",
+        "69(bash) stub syscall 152",
+        "69(bash) stub syscall 151",
+        "69(bash) stub syscall 152"
       ],
       "fatal": null,
       "diagnosticFailures": []
@@ -283,12 +282,14 @@
     "legalNoticesCUAVerified": true,
     "consentCUAVerified": true,
     "koreanFileToolbarCUAVerified": true,
-    "finalLicenseGrantStillRequired": true
+    "finalLicenseGrantStillRequired": false,
+    "licenseGrantApprovedOn": "2026-11-19",
+    "effectiveLicenseBundled": true,
+    "effectiveOwnLicenseCUAVerified": true
   },
   "physicalDeviceValidation": "not_connected_and_not_claimed; simulator_checks_are_separate",
   "submissionBlockedByUserDecision": [
-    "GPLv3_license_grant_for_Bibimer_owned_iOS_corresponding_sources",
-    "real_provider_account_or_complete_review_access_arrangement"
+    "reviewer_API_provider_and_authorized_spend_limit_and_private_key_delivery"
   ],
   "screenshot16Replacements": {
     "files": [
@@ -299,5 +300,6 @@
     "build": 16,
     "savedAfterReload": true,
     "remainingCapturesBuild": 15
-  }
+  },
+  "reviewerAccessPlan": "reviewer-api-access.md"
 }

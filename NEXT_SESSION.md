@@ -2,6 +2,9 @@
 
 ## App Store 제출 승인·진행 중 (2026-11-19)
 
+- 후속 사용자 응답: **iOS GPLv3 제공 승인 완료**. 승인 범위 라이선스/예외를 실제 소스·Legal 번들에 반영해 `6308683`으로 커밋·push했다. 양 SDK·앱Python36/Node20파일·실제WKWebView/Linux34개(45.40초, JS오류0/fatal0/진단실패0, 기존 syscall경고4)와 iPhone Legal의 실제 GPL허락 표시를 확인했다. 새 unsigned16 아카이브/소스→자산(Web74/Guest18/rootfs426/Native18/현지화20/네이티브소스17) 일치 검증 완료. 비공개 증빙 `dist/ios-appstore/submission-nov19/candidate16-gpl-local-receipt.json`, `own-gpl-grant-iphone.png`, `.tools/ios-submission16-gpl-*`. 아직 서명/export/업로드는 없다. 자체 서비스 계정이 아닌 API 키 제공 방식을 검토 중이며 제공자·사용자가 허용할 테스트 비용·비공개 키 전달은 아직 미확정이다. 키를 채팅/공개 저장소에 받지 않는다. Apple 비공개 App Review Notes 전달·현재 Codex/OpenCode API 연결과 비용 제한 확인 절차는 `release/app-store/reviewer-api-access.md`를 따른다. 실제 키/모델 호출/구매/충전은 아직 없다. 아래 라이선스 승인 대기는 이전 상태다.
+
+
 - 사용자가 남은 준비와 **심사 제출까지 진행**하도록 새로 명시했다. 이전 제출 보류는 이 지시로 해제됐으며 **승인 후 수동 공개** 설정은 유지한다. 제출 성공은 아직 확인하지 않았다.
 - 후보16 소스 `a12d75f`를 커밋·push했다. 자체 전송 동의/취소·철회, 통계 차단, GPL/Alpine 고지, 한국어 파일 도구 모음 수정이 포함된다. 양 SDK·Python앱34/브리지86·Node18파일·실제 WKWebView/Linux34개(45.75초, JS오류0/fatal0/진단실패0, 기존 syscall경고4) 통과. unsigned 아카이브/패키지 소스 일치까지 확인했고 서명·export·업로드는 아직 없다. ASC 선택/마지막 내부 제공은15다.
 - 기존12장 중 변경된 iPad 설정 영한2장을16으로 실제 재촬영·교체하고 새로고침 뒤 각3장과 순서를 확인했다. 나머지10장은15 출처를 보존했다. 실제 iPhone 한국어 파일 도구 모음·AI/터미널 고지/취소, iPad GPL/Alpine 고지도 화면 제어로 확인했다. visual verdict94/pass.
