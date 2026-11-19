@@ -6,7 +6,8 @@
 - 양 SDK 컴파일, Python41개/Node23파일(브라우저3개 포함), 독립 소스 검토 APPROVE(HIGH/MEDIUM0), Clang 신규 네이티브4파일 진단0. 실제 전용 iPhone WKWebView/Linux34개는47.28초·JS오류0/fatal0/진단실패0, 기존 syscall경고4개다.
 - 실제 CUA에서 잘못된 코드 거절, 올바른 코드 진입, 한국어 배너/Chat/세션 목록/터미널 키 입력과 예제 출력/가상 파일/종료 후 정상 설정 복귀를 확인했다. visual verdict93/pass. Simulator 비동기 클립보드 전달로 첫 입력이 실패했으며 화면 키보드 직접 입력으로 해결했다. 제품 오류로 확정하지 않는다. 초기 준비 화면의 별도 진입은 소스/단위 검증만이며 실제 CUA는 아직이다. 물리 iPhone/iPad 검증은 아니다.
 - iOS 심사 모드 정책10언어를 운영 배포(88e80fe7.bibimer.pages.dev), 운영10URL HTTP200·원본 SHA 일치를 확인했다. 콘텐츠 권한YES 저장·무료 가격/173개 지역(CN/FR 제외)도 확인했다. 유료 계약 업데이트는 동의하지 않았고 최종 제출 시 실제 차단 여부를 확인한다.
-- 아직 빌드16은 **로컬**이다. 기존 TestFlight/ASC 선택은15. 다음은 최종 소스 commit/push→새16 archive/서명/export/업로드→기존 내부그룹 제공→ASC16선택/로그인필수해제/비공개 코드 메모→심사 제출이다. 사용자 제출 승인은 이미 있으며 승인 후 수동 공개를 유지한다.
+- 빌드16 소스 `0214d86`을 commit/push하고 새16 아카이브·배포 서명/export·소스/IPA 자산 일치를 검증했다. IPA9,070,975bytes, SHA-256 `bfdcf9fb8e41e73c33f5264a3d517157fad9900f50764f23b366d6830a7be85c`. 2026-11-20 01:39 KST Xcode `Upload succeeded`/`EXPORT SUCCEEDED` exit0으로 **업로드 성공·Apple 처리 중**을 확인했다. 기존 TestFlight/ASC 선택은15. 다음은 Apple 처리 확인→기존 내부그룹 제공→ASC16선택/로그인필수해제/비공개 코드 메모→심사 제출이다. 사용자 제출 승인은 이미 있으며 승인 후 수동 공개를 유지한다.
+- 후속 Console 제어는 Chrome의 AWS/Gmail 작업과 겹쳐 `The user changed Google Chrome` 차단과 CUA timeout이 반복됐다. 선택/저장/제출을 강행하지 않았다. 사용자에게 Chrome 조작을 잠시 멈출 수 있는지 비동기 질문을 보냈으며 아직 응답하지 않았다. 재개 시 현재 Chrome 창을 다시 읽고 App Store Connect 전용 창을 선택한다. CUA 세션은 timeout으로 reset되어 변수 재초기화가 필요하다. review mode CUA completion_summary는 이번 턴에1회 완료했다. iPad에 최신 simulator 앱을 설치·일반 시작해 초기 준비 영어 버튼 표시를 확인했으나 초기 버튼 유효 진입과 iPad 리뷰 화면은 미검증이다. 기존 storedemo는 유지됐다.
 - 비공개 증빙: `dist/ios-appstore/submission-nov20/`, `dist/ios-app/submission-1.0.0-16-nov20-review-smoke/`, `.tools/ios-review16-nov20-*`. 실제 코드는 외부 private file에만 있고 공개 문서는 placeholder를 유지한다. 아래 기록은 당시 상태다.
 
 ## App Store 제출 승인·진행 중 (2026-11-19)

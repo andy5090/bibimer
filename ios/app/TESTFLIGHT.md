@@ -1,5 +1,12 @@
 # iOS TestFlight 배포
 
+## 2026-11-20 — 1.0.0(16) 업로드
+
+- 소스 `0214d866a52fbbc583b0d46d8f043d856135cdeb`의 격리 심사 모드·전송 동의·법적 고지를 포함한다. 기존 팀/번들로 서명한 새 아카이브에서 Xcode 업로드 exit0·Upload succeeded·EXPORT SUCCEEDED를 확인했다(01:39 KST). Apple 처리·수출 응답·기존 내부 그룹 제공·심사 제출은 아직 별도 확인이 필요하다. 마지막 내부 제공은15다.
+- 로컬 export IPA9,070,975bytes, SHA-256 `bfdcf9fb8e41e73c33f5264a3d517157fad9900f50764f23b366d6830a7be85c`. 업로드는 검증된 동일 아카이브에서 별도 Xcode upload export를 사용했으며 로컬 export IPA의 바이트 해시와 구분한다. 비공개 증빙 `dist/ios-appstore/upload-1.0.0-16-nov20-review/`.
+- 물리 기기/실제 AI 호출을 검증했다고 주장하지 않는다. 공개 출시는 심사 승인 후 수동이다.
+
+
 ## App Store 스크린샷12장 등록·TestFlight15 제공 완료 (2026-11-19)
 
 - 사용자 복구 안내 후 인증된 App Store Connect에 접근했다. **1.0.0(15)**의 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답을 저장하고 한영 테스트 안내1,836자를 저장했다. 기존 Bibimer Internal 그룹에서 **테스트 중·90일 후 만료·내부 테스터1명·빌드15개**를 직접 확인했다. 재업로드/외부 그룹/새 테스터/공개 링크는 없다.
