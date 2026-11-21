@@ -1,5 +1,14 @@
 # Bibimer 다음 세션 시작점
 
+## Android74에서도 Codex 실행 ENOENT 보고·npm 실행기 호환 수정 (2026-11-21, 미배포)
+
+- 사용자가74 업데이트 후에도 계정 조회의 `error_agent_connection` 안내와 별도 로그인 터미널의 `Bibimer: [Errno 2] No such file or directory: '/data/data/com.termux/files/usr/bin/codex'`를 보고했다. 앞서 Termux 셸에서는 같은 경로의 `codex-cli 0.163.0` 실행에 성공했다.74의 UI 갱신 수정으로 이 실행 오류가 해결됐다고 취급하지 않는다. 현재 연결된 Android는 없으며, 실행 파일 대상·첫 줄·Python 직접 실행 결과를 사용자에게 요청한 상태다. 아직 진단 응답은 없다.
+- 공식 npm `@openai/codex@0.163.0`의 체크섬 검증된 소스에서 `bin/codex.js`의 `#!/usr/bin/env node`를 확인했다. Termux [실행 환경](https://github.com/termux/termux-packages/wiki/Termux-execution-environment)과 [fix-shebang](https://github.com/termux/termux-fix-shebang) 문서상 비로그인/외부 실행의 실행기 누락으로 파일이 존재해도 ENOENT가 가능하다. 이는 유력한 가설이며 해당 휴대폰의 설치 형태/원인은 아직 미확정이다. 실제 파일이 존재하고 실행기가 없는 로컬 별도 fixture에서도 ENOENT가 발생하는 것을 확인했다.
+- 브리지0.25.3 소스에서 해당 첫 줄의 Codex npm 스크립트만 설치된 Node와 실제 JS 경로로 실행하도록 공통 명령 구성을 추가했다. 계정/Chat app-server·버전·업데이트 probe·일반 PTY·별도 로그인 PTY에 적용하고 native/다른 shebang/실행 파일 없음은 기존 직접 실행을 유지한다. 파일 첫256bytes만 읽으며 파일 수정·설치·로그인·모델 실행·사용자 프로세스 재시작을 하지 않는다.
+- 새 `test_codex_launcher.py`는 **Popen에 ENOENT를 주입한 모의 검사**에서 기존400 연결 오류를 먼저 재현한 뒤 수정 후 통과했다. 실제 Node의 가상 account RPC·버전·두 PTY와 인수/공백 경로·바이너리/다른 실행기/Node 없음 경계를 포함한5개, 기존 계정15개·업데이트9개·빌드11개가 통과했다. 별도 소스 검토는 차단 결함 없음/COMMENT이며 LSP 도구 부재와 실제 기기 미확인을 명시했다. 실제 Codex 계정/모델 검증을 대신하지 않는다.
+- 추가 전체 브리지 검사는281개 중35실패/4오류로 전체 통과하지 않았다. Mac의 `/var`→`/private/var` 경로 비교·셸/프로세스·워크트리 및 `play_sdk` import 실패를 관측했다. 대표4개(PTY resize·Codex skill 경로·워크트리 생성·setup import)를 수정 전 HEAD 부모 코드로 재실행해 같은 실패/오류를 확인했다(`.tools/codex-launcher-baseline-check.log`)。setup은 `PYTHONPATH=scripts`로 경로를 지정한 재검사4개가 통과했다. 나머지 실패 전부를 수정 전과 비교한 것은 아니므로 전체를 기존 문제로 확정하지 않는다. 변경 두 Python AST/py_compile·diff 검사는 통과했다.
+- **현재 내부74의 내장 브리지는 여전히0.25.2이며 이 수정은 소스에만 있다.** APK/AAB/IPA 빌드·배포, 운영 브리지/세션 재시작, 설치 파일/계정 변경은 수행하지 않았다. 다음은 사용자 진단 결과로 npm shebang 가설을 확인하고, 해당 설치본의 안전한 실행기 경로 보정 또는 새 앱/브리지 배포를 진행하는 것이다. 신규 미확정 APK 배포를 해결 완료로 표시하지 않는다.
+
 ## Android 0.43.2(74) 내부 테스트 배포 완료 (2026-11-21 09:32 KST)
 
 - 기존 Play 내부 테스트 트랙에서 **0.43.2 (74) - Refresh installed Codex**를 저장·출시하고 게시 후 트랙의 **활성 / 최신74 / 내부 테스터에게 제공됨 / 게시일11월21일 오전9:32**를 실제 Chrome UI에서 확인했다. 출시 ID44, 한/영 노트310/185자·2/2,74만 포함·73제외, 오류0·기존 매핑 파일 미첨부 경고1건,7개 기기 유형 지원 변화0이다. 게시 상태를 관측했으며 별도의 페이지 새로고침은 수행하지 않았다. CUA completion_summary로 화면 제어를 종료했다.

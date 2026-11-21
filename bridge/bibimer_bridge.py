@@ -42,7 +42,7 @@ _recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_rec
 maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
 _recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.25.2"
+VERSION = "0.25.3"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -378,8 +378,25 @@ def launch_environment(agent, options):
     return env
 
 
+def codex_command(executable):
+    # npm uses /usr/bin/env, which may not exist in a Termux background
+    # process without termux-exec. Run that JS entry with the installed Node;
+    # leave native binaries and other launchers untouched.
+    try:
+        entry = Path(executable).resolve()
+        with entry.open("rb") as stream:
+            header = stream.readline(256).strip()
+        if header == b"#!/usr/bin/env node":
+            node = shutil.which("node")
+            if node:
+                return [node, str(entry)]
+    except OSError:
+        pass
+    return [executable]
+
+
 def terminal_command(argv, agent, options):
-    result = list(argv)
+    result = codex_command(argv[0]) + list(argv[1:]) if agent == "codex" else list(argv)
     mode = options["permission"]
     if agent == "codex":
         if mode == "yolo":
@@ -595,7 +612,7 @@ def claude_sdk_path():
 
 def provider_command(executable, agent):
     if agent == "codex":
-        return [executable, "app-server", "--listen", "stdio://"]
+        return [*codex_command(executable), "app-server", "--listen", "stdio://"]
     if agent == "opencode":
         return [sys.executable, str(Path(__file__).with_name("provider_opencode.py")), executable]
     if agent == "claude":
@@ -1062,7 +1079,9 @@ class AgentUpdates:
 
     def probe(self, executable, agent):
         entry = Path(executable).resolve()
-        argv = [shutil.which("node"), str(entry)] if agent == "gemini" and entry.suffix in {".js", ".mjs"} and shutil.which("node") else [executable]
+        argv = codex_command(executable) if agent == "codex" else [executable]
+        if agent == "gemini" and entry.suffix in {".js", ".mjs"} and shutil.which("node"):
+            argv = [shutil.which("node"), str(entry)]
         code, raw = AgentConnections.command([*argv, "--version"])
         match = re.search(rb"(?<![A-Za-z0-9])([0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?)", raw)
         if code or not match: raise Problem(400, "error_agent_update_failed")
@@ -1672,7 +1691,7 @@ class AgentConnections:
             if action == "start": raise Problem(400, "error_program_missing")
             return {"agent": agent, "installed": False, "state": "unavailable", "providers": []}
         if action == "version":
-            argv = [executable, "--version"]
+            argv = [*(codex_command(executable) if agent == "codex" else [executable]), "--version"]
             entry = Path(executable).resolve()
             if agent == "gemini" and str(entry).endswith("/@google/gemini-cli/bundle/gemini.js"):
                 node = shutil.which("node")
@@ -5030,7 +5049,7 @@ class Bridge:
                 executable = self.agent_executable(authentication_agent)
                 if not executable:
                     raise Problem(400, "error_program_missing")
-                argv = [executable, *({"codex": ["login"], "claude": ["auth", "login"],
+                argv = [*(codex_command(executable) if authentication_agent == "codex" else [executable]), *({"codex": ["login"], "claude": ["auth", "login"],
                                       "opencode": ["auth", "login"]}[authentication_agent])]
             browser_env, browser_key = None, None
             if agent != "shell" and self.browser_enabled:
