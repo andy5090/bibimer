@@ -1570,6 +1570,9 @@
       const health = await api("GET", "/v1/health");
       if (ticket !== generation || paused || switchingProject) return;
       if (health.instance !== instance) { await connect(); return; }
+      if (Array.isArray(health.agents) && JSON.stringify(knownAgents) !== JSON.stringify(health.agents)) {
+        knownAgents = health.agents; renderAgents();
+      }
       knownProjects = health.projects || [];
       browserEnabled = health.browser_enabled !== false;
       const entry = knownProjects.find(item => item.id === selectedProjectId);
