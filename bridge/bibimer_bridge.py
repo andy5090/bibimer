@@ -378,8 +378,21 @@ def launch_environment(agent, options):
     return env
 
 
+def agent_command(executable, agent):
+    # Android-started bridges may lack termux-exec's shebang rewriting.
+    # npm's Codex entry uses /usr/bin/env node, which is absent on Android.
+    if agent == "codex":
+        entry = Path(executable).resolve()
+        if entry.suffix in {".js", ".mjs"}:
+            node = shutil.which("node")
+            if not node:
+                raise Problem(400, "error_program_missing")
+            return [node, str(entry)]
+    return [executable]
+
+
 def terminal_command(argv, agent, options):
-    result = list(argv)
+    result = [*agent_command(argv[0], agent), *argv[1:]]
     mode = options["permission"]
     if agent == "codex":
         if mode == "yolo":
@@ -595,7 +608,7 @@ def claude_sdk_path():
 
 def provider_command(executable, agent):
     if agent == "codex":
-        return [executable, "app-server", "--listen", "stdio://"]
+        return [*agent_command(executable, agent), "app-server", "--listen", "stdio://"]
     if agent == "opencode":
         return [sys.executable, str(Path(__file__).with_name("provider_opencode.py")), executable]
     if agent == "claude":
@@ -1062,7 +1075,7 @@ class AgentUpdates:
 
     def probe(self, executable, agent):
         entry = Path(executable).resolve()
-        argv = [shutil.which("node"), str(entry)] if agent == "gemini" and entry.suffix in {".js", ".mjs"} and shutil.which("node") else [executable]
+        argv = [shutil.which("node"), str(entry)] if agent == "gemini" and entry.suffix in {".js", ".mjs"} and shutil.which("node") else agent_command(executable, agent)
         code, raw = AgentConnections.command([*argv, "--version"])
         match = re.search(rb"(?<![A-Za-z0-9])([0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?)", raw)
         if code or not match: raise Problem(400, "error_agent_update_failed")
@@ -1672,7 +1685,7 @@ class AgentConnections:
             if action == "start": raise Problem(400, "error_program_missing")
             return {"agent": agent, "installed": False, "state": "unavailable", "providers": []}
         if action == "version":
-            argv = [executable, "--version"]
+            argv = [*agent_command(executable, agent), "--version"]
             entry = Path(executable).resolve()
             if agent == "gemini" and str(entry).endswith("/@google/gemini-cli/bundle/gemini.js"):
                 node = shutil.which("node")
@@ -5030,7 +5043,7 @@ class Bridge:
                 executable = self.agent_executable(authentication_agent)
                 if not executable:
                     raise Problem(400, "error_program_missing")
-                argv = [executable, *({"codex": ["login"], "claude": ["auth", "login"],
+                argv = [*agent_command(executable, authentication_agent), *({"codex": ["login"], "claude": ["auth", "login"],
                                       "opencode": ["auth", "login"]}[authentication_agent])]
             browser_env, browser_key = None, None
             if agent != "shell" and self.browser_enabled:

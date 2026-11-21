@@ -1,5 +1,13 @@
 # Bibimer 다음 세션 시작점
 
+## Android Codex 감지/계정 조회 실패 복구 (2026-11-21)
+
+- 사용자 보고를 받아 현재 폰의 앱 versionCode74·운영 브리지0.25.2·Codex0.163.0을 확인했다. `/v1/health`의 Codex `installed:true`와 달리 실제 버전/계정 조회는 `error_agent_connection`으로 실패했다. 브리지에는 `LD_PRELOAD`가 없고 npm 진입점 `@mmmbuto/codex-cli-termux/bin/codex.js`가 `#!/usr/bin/env node`를 사용해 `Popen`에서 파일이 존재하는데도 `FileNotFoundError`가 발생했다. 같은 환경으로 시작한 별도 Python에서 재현했다. 단순 PATH/설치 부재나 로그아웃으로 단정하지 않는다.
+- 현재 설치본은 npm 진입점 첫 줄만 Termux의 실제 Node 경로 `#!/data/data/com.termux/files/usr/bin/node`로 원자적으로 보정했다. 원본 코드는 비공개 `~/.local/share/bibimer/repairs/codex-b175a5c550c4c4d7.js`에0700으로 백업했고 symlink·패키지 버전·나머지 본문을 유지했다. 운영 API에서 버전0.163.0·계정 `configured`를 확인했다. 브리지 인스턴스와 활성 세션1개를 유지했으며 브리지/사용자 세션을 재시작하거나 새 모델 요청·로그인을 실행하지 않았다. npm 재설치/업데이트는 이 로컬 shebang 보정을 덮어쓸 수 있다.
+- 재발 방지 소스는 `agent_command()`로 Codex의 실제 npm `.js`/`.mjs` 진입점을 Node로 직접 실행한다. 계정/기록/Chat app-server·버전·업데이트 검사·PTY·로그인 터미널에 적용하며 네이티브 바이너리와 확장자 없는 커스텀 래퍼는 기존 실행을 유지한다. Node가 없으면 설치 필요 오류를 반환한다. 운영 브리지 파일/프로세스에는 이 소스 변경을 아직 적용하지 않았다.
+- 새 회귀3개와 기존 계정/업데이트24개, Chat/옵션13개 총40개가 통과했다. 없는 shebang 경로를 가진 JS+symlink fixture로 실제 HTTP 계정/버전·업데이트 검사·PTY·로그인 터미널을 확인했다. 실제 원본 npm shebang의 임시 사본과 운영 브리지의 `LD_PRELOAD` 없는 환경에서도 수정한 소스의 버전/읽기 전용 계정 RPC가 통과했다. 인증 정보/원본 응답은 출력하거나 기록하지 않았다.
+- APK/AAB 빌드·배포는 하지 않았다. 현재 설치본 복구는 즉시 적용됐지만 Android 화면의 재선택/새로고침과 실제 모델 응답은 후속 확인이다. 지속적인 브리지 수정은 다음 요청 빌드/업데이트에 포함한다. 운영 브리지 유지보수는 기존 세션 종료 대상 확인 절차를 따른다.
+
 ## Android 0.43.1(73) 정식 출시 검토 제출 (2026-11-19)
 
 - **18:59 Asia/Seoul**, 검증된 내부73 번들을 프로덕션으로 승급해 변경1개를 Google 검토에 전송했다. 새로고침 후 **검토 중인 변경사항 / 사전 검사 진행 중**을 확인했다. 상태는 `submitted_pending_pre_review_checks`이며 사전 검사 뒤 Google 심사가 이어진다. 기존178개 국가·지역100% 전체 출시,73만 포함·63 제외, 관리형 게시OFF로 **승인 후 자동 공개**한다. **73의 정식 공개 완료는 아니다.** 이전 정식0.38.1(63)이 활성·178개 지역 제공 중임을 이번에 확인했다.
