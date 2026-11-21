@@ -1,0 +1,6 @@
+<en-US>
+Fixes Codex connection and terminal launch failures after npm updates in Termux. Compatible npm launchers now run with the installed Node; native binaries keep their normal launch path. After updating the app, update the Termux bridge to 0.25.3 in Settings. Review and confirm the sessions to stop before updating. Keeps agent selection, current version refresh and saved sessions. Interrupted work is not replayed.
+</en-US>
+<ko-KR>
+Termux에서 npm으로 Codex를 업데이트한 뒤 계정 연결이나 터미널 실행이 실패하는 문제를 수정했습니다. 해당 npm 실행기는 설치된 Node로 실행하고 네이티브 바이너리는 기존 실행 방식을 유지합니다. 앱 업데이트 후 설정에서 Termux 브리지를 0.25.3으로 업데이트하세요. 종료할 세션을 확인하고 진행합니다. 에이전트 선택·현재 버전 갱신·저장 세션은 유지하며, 중단된 작업은 자동 재실행하지 않습니다.
+</ko-KR>
