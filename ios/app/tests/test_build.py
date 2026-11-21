@@ -1,5 +1,6 @@
 """Guest packaging must preserve the fixed license and reject missing resources."""
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -41,6 +42,25 @@ class GuestPackagingTests(unittest.TestCase):
         build.package_web(self.root/'Web')
         index=(self.root/'Web/index.html').read_text()
         self.assertIn('ios-locales.js',index)
+        for name in ('data-consent.js', 'data-consent-locales.js', 'runtime-notices.js', 'alpine-notices.js'):
+            self.assertIn(name, index)
+            self.assertTrue((self.root/'Web'/name).exists())
+        for name in ('ios-data-consent', 'ios-data-revoke', 'ios-legal-open', 'ios-bibimer-license', 'ios-bibimer-exception', 'ios-runtime-license', 'ios-runtime-exception', 'ios-runtime-gpl', 'ios-runtime-gpl2', 'ios-alpine-notices'):
+            self.assertIn('id=\"'+name+'\"', index)
+        self.assertIn('#file-viewer .file-toolbar { display:flex; flex-wrap:wrap;', index)
+        self.assertIn('remember:purpose === \"terminal\"', (self.root/'Web/app.js').read_text())
+        self.assertIn('GNU GENERAL PUBLIC LICENSE', (self.root/'Web/runtime-notices.js').read_text())
+        self.assertGreater(len((self.root/'Web/runtime-notices.js').read_text()), 30000)
+        self.assertIn('https://github.com/andy5090/bibimer/blob/main/ios/LICENSE.md',index)
+        for packaged, source in [('BIBIMER-LICENSE.md','LICENSE.md'), ('BIBIMER-LICENSE.IOS','LICENSE.IOS'), ('GPL-3.0.txt','COPYING')]:
+            self.assertEqual((self.root/'Web'/packaged).read_bytes(),(build.HERE.parent/source).read_bytes())
+        alpine=json.loads((build.HERE/'Resources/alpine-notices.json').read_text())
+        bundled=json.loads((self.root/'Web/alpine-notices.js').read_text().removeprefix('window.BibimerAlpineNotices=').strip().removesuffix(';'))
+        self.assertEqual(bundled,alpine)
+        self.assertEqual(len(bundled['components']),10)
+        self.assertEqual(sum(len(c['packagedNames']) for c in bundled['components']),15)
+        for component in bundled['components']:
+            self.assertTrue(component['notice'].strip())
         self.assertIn('speech-text.js',index)
         self.assertIn('speech-output.js',index)
         self.assertIn('text-gestures.js',index)
@@ -65,6 +85,22 @@ class GuestPackagingTests(unittest.TestCase):
         self.assertIn('id="ios-recovery-progress"',announcements)
         self.assertIn('aria-atomic="true"',announcements)
         self.assertIn('prefers-reduced-motion:reduce',index)
+
+    def test_stale_bibimer_license_rejects_packaging_before_replacing_web(self):
+        notices=json.loads((build.HERE/'Resources/runtime-notices.json').read_text())
+        notices['BIBIMER-LICENSE.md']='outdated grant'
+        web=self.root/'Web';web.mkdir();(web/'keep').write_text('previous package')
+        with patch.object(build.json,'loads',return_value=notices):
+            with self.assertRaisesRegex(RuntimeError,'Bundled Bibimer license differs from its source: BIBIMER-LICENSE.md'):
+                build.package_web(web)
+        self.assertEqual((web/'keep').read_text(),'previous package')
+
+    def test_stale_bibimer_exception_rejects_packaging(self):
+        notices=json.loads((build.HERE/'Resources/runtime-notices.json').read_text())
+        notices['BIBIMER-LICENSE.IOS']='outdated permission'
+        with patch.object(build.json,'loads',return_value=notices):
+            with self.assertRaisesRegex(RuntimeError,'Bundled Bibimer license differs from its source: BIBIMER-LICENSE.IOS'):
+                build.package_web(self.root/'Web')
 
     def test_missing_opencode_compatibility_patcher_rejects_packaging(self):
         (self.root / 'ios/bridge/opencode_compat.py').unlink()

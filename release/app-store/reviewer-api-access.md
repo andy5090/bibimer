@@ -1,0 +1,50 @@
+# App Review 접근 방식 — API 키는 선택적 보완
+
+2026-11-20 구현 상태: iOS에도 격리된 비영속 예제 재생과 비공개 코드 진입을 구현했다. 실제 iPhone 시뮬레이터의 Settings 진입·예제 Chat/터미널/파일·종료 복귀를 확인했다. API 키 없이 이 경로와 실제 로컬 셸을 심사 자료로 제공한다. Apple의 이 앱에 대한 승인 여부는 아직 미확정이다.
+
+2026-11-19 사용자 정정: **Bibimer 자체에는 계정·회원가입·Bibimer 로그인이 없다.** 사용자가 로컬 터미널/환경에 코딩 에이전트를 설치하고, 해당 도구에 각자의 외부 제공자 계정으로 인증해 사용한다. 외부 CLI 인증을 Bibimer 서비스 계정으로 설명하지 않는다.
+
+- 사용자는 Play 심사에서 기존 코드 기반 심사 모드로 통과했다고 보고했다. App Store에서 같은 방식이 거절됐다는 관측은 없다. Apple도 전체 기능을 검토할 수 있는 데모 모드를 허용하며2.1(a)의 해당 사전 승인 조건을 함께 확인한다. 계정이 없다는 사실만으로 모든 AI 기능의 검토 접근이 자동 충족된다고 단정하지 않는다.
+- Android 심사 모드는 화면·입력·세션 관리·터미널 UI의 예제 재생이다. 실제 명령/모델 실행과 구분한다. iOS에도 동일한 가상 예제의 격리 진입을 구현·검증했다. 실제 iOS 로컬 터미널은 별도 유료 AI 계정 없이 검토할 수 있다.
+- 별도 Bibimer 데모 계정 발급과 개발자 API 키 전달을 필수 제출 조건으로 둔 이전 설명은 정정한다. 남은 것은 **선택한 심사 접근 경로의 구현·검증과 정확한 설명**이다. API 키 제공은 실제 AI 호출 검토를 보완하는 선택지다.
+- 사용자는 보완용으로 Codex 키를 제공할 의향을 밝혔으며 비용은 최소화를 원한다. Bibimer 자체 비용 제한 기능은 없다. 키 전달·유료 호출·수치로 정한 지출 승인은 아직 없으며 추가 숫자 예산 답변 자체를 필수 준비 조건으로 삼지 않는다.
+- 심사 코드로 제한 API를 사용하는 방식은 별도 설계안이다. 키를 앱에 내장하거나 클라이언트의 호출 횟수 제한만으로 비용이 보장된다고 설명하지 않는다. 아직 구현하거나 배포하지 않았다.
+
+## 확인한 전달 수단
+
+Apple의 App Review Information은 고객에게 공개되지 않는다. Notes에는 앱을 테스트하는 데 필요한 설정/계정 상세 정보를 기재할 수 있다. API 키 전용 필드는 없으므로 API 보완을 선택한다면 **심사 전용 API 키 + 앱 내 연결 절차를 Notes에 제공하는 방식**을 검토할 수 있다. 이는 Apple의 일반적인 테스트 접근 정보 안내에 근거한 적용 방안이지, 이 앱에 대한 API 키 방식 사전 승인이나 심사 통과 보장이 아니다.
+
+- 전달 경로: App Store Connect → Bibimer → iOS1.0.0 → 앱 심사 정보 → 메모.
+- 이 메모는 비공개 심사 자료다. 공개 설명·스크린샷·웹사이트·Git 저장소·배포 바이너리에 키를 포함하지 않는다. 별도의 비밀 보관함 또는 개발자에게도 안 보이는 암호 필드라고 설명하지 않는다.
+- 부모가 키 없는 최종 안내문을 먼저 준비한다. 사용자가 App Store Connect의 메모에 심사 전용 키를 직접 추가하도록 할 수 있다. 이후 자동화에서 메모 원문을 출력하거나 공개 원고를 다시 덮어써 키를 지우지 않는다.
+- Bibimer 서비스용 사용자 이름/비밀번호를 꾸며 넣지 않는다. '로그인 필요' 여부와 관련 필드에는 실제 선택한 접근 방식을 사실대로 반영한다.
+- 심사가 진행되는 동안 접근을 유지한다. 심사가 끝나고 테스트 접근이 더 필요하지 않은 시점에 전용 키를 폐기/교체한다. 제출 직후나 고정 단기 만료로 심사 접근을 끊지 않는다.
+
+## 현 소스에서 확인한 앱 연결 경로
+
+Settings → 에이전트 관리 → 관리 열기 → 선택한 에이전트/제공자 → API key → 연결. 정확한 표시·제공 모델은 설치된 CLI의 목록에 따른다.
+
+- Codex: `apiKey` 연결을 원래 account/login/start API로 전달한다. OpenAI API 키용이며 ChatGPT 웹 로그인과 구분한다.
+- OpenCode: 원래 provider catalog에 지원되는 `api` 방식이 있으면 해당 제공자 인증 API로 전달한다. Anthropic 등 제공자 선택은 실제 목록/지원 여부를 확인한다.
+- 현재 Claude Code의 자체 연결 UI는 Claude.ai/Console 로그인 방식이다. 원문 Anthropic 키를 이 로그인란에 넣는 안내를 하지 않는다. API 키만 제공하는 경우 지원되는 OpenCode 경로부터 검증한다.
+- iOS 키 입력은 자체 스타일의 마스킹된 네이티브 입력을 사용하며 WebView에는 키 원문을 반환하지 않는다. 키는 계정 관리의 네이티브 전송으로 처리한다. CLI의 원래 자격 증명 저장 방식과 음성 키의 Keychain 저장을 혼동하지 않는다.
+- 아직 실제 심사용 키로 로그인/추론을 검증하지 않았다. 소스의 지원 경로 확인과 실제 제공자 호출 성공은 구분한다.
+
+## API 보완을 선택할 경우의 비용 검토
+
+1. 제공자와 사용할 모델, 사용자가 승인한 테스트 비용 상한을 확정한다.
+2. 운영 자원과 분리된 심사용 프로젝트/워크스페이스와 전용 키를 준비한다. 관리자 권한은 제공하지 않는다.
+3. 제공자 문서/실제 Console에서 한도가 알림만 주는 예산인지 실제 차단 한도인지 확인한다. 키 하나의 권한 제한과 프로젝트 전체의 지출 한도는 별개다.
+4. 사용자 승인 범위 안에서 연결과 작은 실제 요청을 검증하고, 예상하지 못한 반복 실행/유료 호출은 하지 않는다. 결제·충전·자동충전·기존 운영 한도는 별도 사용자 지시 없이 변경하지 않는다.
+5. API 보완을 최종 심사 접근 경로로 선택했다면 작동하는 연결 절차와 비공개 키 전달을 완료한다. 키 제공만으로 다른 에이전트/음성 제공자 계정까지 검증했다고 표시하지 않는다.
+
+Anthropic을 선택할 경우 공식 문서는 별도 워크스페이스의 월 지출/요청 제한과 워크스페이스 범위 키를 지원한다. Default Workspace 한도에는 일부 사용이 빠질 수 있으므로 별도 워크스페이스를 구분한다. 제공자가 정해지기 전에 이 설정을 다른 서비스에도 동일하게 적용한다고 가정하지 않는다.
+
+## 공식 근거
+
+- [Apple: Platform version information — App Review information](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information/)
+- [Apple: App Review guidelines, Before You Submit 및2.1](https://developer.apple.com/app-store/review/guidelines/)
+- [Claude: Workspaces — scope, spending and rate limits](https://platform.claude.com/docs/en/manage-claude/workspaces)
+- [Claude: API rate/spend limits](https://platform.claude.com/docs/en/api/rate-limits)
+
+소스 근거: `android/app/src/main/assets/agent-connections.js`, `bridge/bibimer_bridge.py`의 `AgentConnections.validate_start/start_native`, `ios/app/Resources/native.js`의 `requestAccountSecret`, `ios/app/Sources/AccountInput.m`.

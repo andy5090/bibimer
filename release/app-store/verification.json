@@ -23,6 +23,323 @@
   },
   "candidate": {
     "version": "1.0.0",
+    "build": 16,
+    "sourceCommit": "0214d866a52fbbc583b0d46d8f043d856135cdeb",
+    "ipa": "dist/ios-appstore/1.0.0-16-export-nov20-review/export/Bibimer.ipa",
+    "ipaBytes": 9070975,
+    "ipaSHA256": "bfdcf9fb8e41e73c33f5264a3d517157fad9900f50764f23b366d6830a7be85c",
+    "exported": true,
+    "exportedSignatureVerified": true,
+    "sourceAndPackagedResourcesMatch": true,
+    "reviewAccessConfigured": true,
+    "team": "ZA9HMYAJT7",
+    "resourceCounts": {
+      "Web": 78,
+      "Guest": 18,
+      "rootfs": 426,
+      "Native": 21,
+      "NativeLocalization": 20
+    },
+    "nativeSourceCount": 21,
+    "physicalDeviceVerified": false,
+    "uploaded": true,
+    "uploadExitCode": 0,
+    "uploadCompletedAt": "2026-11-19T16:39:34.036+00:00",
+    "appleProcessingCompleted": true,
+    "archive": "dist/ios-appstore/1.0.0-16-unsigned-nov20-review/Bibimer.xcarchive",
+    "localIPAHashIsExportArtifact": true,
+    "uploadSource": "Xcode upload export from the same verified archive; uploaded package processing acknowledged",
+    "submitted": true,
+    "published": false,
+    "submissionReady": true,
+    "internalTestFlightProvided": true,
+    "exportComplianceCompleted": true,
+    "appTests": 41,
+    "nodeFiles": 23,
+    "nativeChecks": 34,
+    "nativeElapsedSeconds": 47.276113290921785,
+    "nativeStaticAnalysisDiagnostics": 0,
+    "existingSyscallWarnings": 4,
+    "archiveVerified": true,
+    "appStoreBuildID": "0ea77d0f-567b-488d-b868-c9c748a10c04",
+    "exportComplianceReason": "standard_algorithms_outside_or_alongside_Apple_OS; France_not_distributed",
+    "submissionID": "62cb55af-5a41-4558-9544-02484489f678"
+  },
+  "screenshotsReady": true,
+  "appStoreConnectAccess": "authenticated_verified_after_service_recovery",
+  "publicPrivacyAndSupportAccess": "10_production_privacy_urls_http200_exact_source_hash_nov20",
+  "privacyPolicyIOSReady": true,
+  "providerDataDisclosureReady": true,
+  "reviewAccessReady": true,
+  "territoriesConfirmed": true,
+  "ageRatingConfirmed": true,
+  "sourceRepositoryVisibility": "public_verified_via_github_connector",
+  "appStoreDraftSaved": true,
+  "uploaded": true,
+  "submitted": true,
+  "published": false,
+  "submissionReady": true,
+  "remainingGates": [],
+  "storeVersionVerified": "1.0.0",
+  "manualReleaseSaved": true,
+  "freePriceSaved": true,
+  "categorySaved": "DEVELOPER_TOOLS",
+  "reviewNotesDraftSaved": false,
+  "appStoreBuildSelected": true,
+  "appleProcessingCompleted": true,
+  "exportComplianceCompleted": true,
+  "reviewNotesLocalTextMatchesConsole": true,
+  "reviewNotesConsoleCharacters": 3405,
+  "reviewNotesLocalCharacters": 3405,
+  "reviewNotesUpdateBlockedBy": null,
+  "reviewContactReady": true,
+  "territoryAvailabilitySaved": true,
+  "territoryAvailableCount": 175,
+  "territorySelectedCount": 173,
+  "excludedTerritories": [
+    "CN",
+    "FR"
+  ],
+  "automaticFutureTerritories": false,
+  "submissionExplicitlyOnHold": false,
+  "reviewContactEmailPhoneReceived": true,
+  "screenshotCount": 12,
+  "screenshotsUploaded": true,
+  "testFlight15Requested": true,
+  "testFlight15InternalDistributionVerified": true,
+  "lastVerifiedInternalBuild": "1.0.0(16)",
+  "appStoreConnectOutage": {
+    "officialURL": "https://developer.apple.com/system-status/",
+    "observedAt": "2026-11-18T02:50:00+09:00",
+    "startedAt": "2026-11-18T01:50:00+09:00",
+    "ongoingAtObservation": true,
+    "affected": "all_users",
+    "consoleAccessRestoredVerifiedOn": "2026-11-19"
+  },
+  "knownVisualIssues": [],
+  "updatedOn": "2026-11-20",
+  "screenshotsUploadedCount": 12,
+  "screenshotSaveVerifiedAfterReload": true,
+  "reviewContactSaved": true,
+  "consoleRecoveryVerifiedOn": "2026-11-19",
+  "testFlight15": {
+    "verifiedOn": "2026-11-19",
+    "group": "Bibimer Internal",
+    "groupID": "05c12695-3fe4-411f-acf8-53bce8a31aac",
+    "testers": 1,
+    "groupBuildCount": 15,
+    "status": "Testing",
+    "expirationDisplay": "90 days",
+    "notesFile": "testflight-notes.en-ko.txt",
+    "notesCharacters": 1836,
+    "notesSHA256": "d7ab029cae5a7e94746d452e82b43c43f980eb745ece87183eb6c462d841888e",
+    "notesSaved": true,
+    "newExternalTesters": false,
+    "reuploaded": false
+  },
+  "screenshotConsoleVerification": {
+    "en-US": {
+      "iphone": {
+        "count": 3,
+        "order": [
+          "01-terminal.jpg",
+          "02-explorer.jpg",
+          "03-settings.jpg"
+        ],
+        "savedAfterReload": true,
+        "customLocaleAssets": true
+      },
+      "ipad": {
+        "count": 3,
+        "order": [
+          "01-terminal.jpg",
+          "02-explorer.jpg",
+          "03-settings.jpg"
+        ],
+        "savedAfterReload": true,
+        "customLocaleAssets": true
+      }
+    },
+    "ko": {
+      "iphone": {
+        "count": 3,
+        "order": [
+          "01-terminal.jpg",
+          "02-explorer.jpg",
+          "03-settings.jpg"
+        ],
+        "savedAfterReload": true,
+        "customLocaleAssets": true
+      },
+      "ipad": {
+        "count": 3,
+        "order": [
+          "01-terminal.jpg",
+          "02-explorer.jpg",
+          "03-settings.jpg"
+        ],
+        "savedAfterReload": true,
+        "customLocaleAssets": true
+      }
+    }
+  },
+  "submissionAuthorized": true,
+  "submissionAuthorizationOn": "2026-11-19",
+  "ageRatingGlobal": "16+",
+  "dsaTraderStatus": "active_verified_in_business",
+  "freeAppsAgreement": "active_verified_in_business",
+  "paidAppsAgreement": "updated_Schedule2_accepted_by_user; pending_user_information; submission_successfully_accepted",
+  "physicalDeviceConnected": false,
+  "privacyDisclosurePublished": true,
+  "privacyDisclosurePublishedOn": "2026-11-19",
+  "privacyPolicyURLsSaved": {
+    "en-US": "https://bibimer.app/privacy/",
+    "ko": "https://bibimer.app/ko/privacy/"
+  },
+  "appPrivacy": {
+    "published": true,
+    "dataTypes": [
+      "Photos or Videos",
+      "Audio Data",
+      "Other User Content",
+      "User ID"
+    ],
+    "linkedToUser": true,
+    "tracking": false,
+    "purposes": {
+      "Photos or Videos": [
+        "App Functionality",
+        "Other Purposes"
+      ],
+      "Audio Data": [
+        "App Functionality",
+        "Other Purposes"
+      ],
+      "Other User Content": [
+        "App Functionality",
+        "Other Purposes"
+      ],
+      "User ID": [
+        "App Functionality"
+      ]
+    },
+    "evidence": "provider-data-evidence.md",
+    "scope": "candidate16_optional_telemetry_disabled"
+  },
+  "preparation16": {
+    "version": "1.0.0",
+    "build": 16,
+    "sdkCompilation": [
+      "iphonesimulator",
+      "iphoneos"
+    ],
+    "appPythonTests": 41,
+    "bridgePythonTests": 86,
+    "nodeTestFiles": 23,
+    "nativePreFinalResources": {
+      "checks": 34,
+      "elapsedSeconds": 46.593042624997906,
+      "javascriptErrors": 0,
+      "fatal": null,
+      "diagnosticFailures": []
+    },
+    "nativeFinalResourcesVerified": true,
+    "licenseGrantApproved": true,
+    "uploaded": true,
+    "submitted": true,
+    "sourceLicensingProposal": "ios-license-proposal.md",
+    "physicalDeviceVerified": false,
+    "sourceCommit": "0214d866a52fbbc583b0d46d8f043d856135cdeb",
+    "archive": "dist/ios-appstore/1.0.0-16-unsigned-nov20-review/Bibimer.xcarchive",
+    "archiveVerified": true,
+    "sourceAndPackagedResourcesMatch": true,
+    "resourceCounts": {
+      "Web": 78,
+      "Guest": 18,
+      "rootfs": 426,
+      "Native": 21,
+      "NativeLocalization": 20
+    },
+    "nativeSourceCount": 21,
+    "nativeChecks": 34,
+    "signed": true,
+    "exported": true,
+    "status": "submitted_to_App_Review",
+    "nativeVerification": {
+      "status": "PASS_WITH_WARNINGS",
+      "checks": 34,
+      "elapsedSeconds": 47.276113290921785,
+      "warnings": [
+        "64(bash) stub syscall 151",
+        "64(bash) stub syscall 152",
+        "64(bash) stub syscall 151",
+        "64(bash) stub syscall 152"
+      ],
+      "fatal": null,
+      "diagnosticFailures": []
+    },
+    "localArchivePrepared": true,
+    "legalNoticesCUAVerified": true,
+    "consentCUAVerified": true,
+    "koreanFileToolbarCUAVerified": true,
+    "finalLicenseGrantStillRequired": false,
+    "licenseGrantApprovedOn": "2026-11-19",
+    "effectiveLicenseBundled": true,
+    "effectiveOwnLicenseCUAVerified": true,
+    "reviewModeCUAVerified": true,
+    "reviewMode": "isolated_fictional_sample_replay",
+    "nativeStaticAnalysisDiagnostics": 0,
+    "ipa": "dist/ios-appstore/1.0.0-16-export-nov20-review/export/Bibimer.ipa",
+    "ipaBytes": 9070975,
+    "ipaSHA256": "bfdcf9fb8e41e73c33f5264a3d517157fad9900f50764f23b366d6830a7be85c",
+    "exportedSignatureVerified": true
+  },
+  "physicalDeviceValidation": "not_connected_and_not_claimed; simulator_checks_are_separate",
+  "submissionBlockedByUserDecision": [],
+  "screenshot16Replacements": {
+    "files": [
+      "screenshots/en-US/ipad/03-settings.jpg",
+      "screenshots/ko/ipad/03-settings.jpg"
+    ],
+    "sourceCommit": "a12d75fb2a483c6b4ac19a62ef7198ec26b08e44",
+    "build": 16,
+    "savedAfterReload": true,
+    "remainingCapturesBuild": 15
+  },
+  "reviewerAccessPlan": "reviewer-api-access.md",
+  "bibimerServiceAccounts": false,
+  "externalProviderAuthentication": "user_owned_credentials_in_user_installed_coding_agent",
+  "reviewerAPIKeyMandatory": false,
+  "reviewerProviderPreference": "codex_OpenAI_if_real_API_supplement_used",
+  "reviewerCostPreference": "minimize_cost_no_Bibimer_spend_limiter_no_numeric_budget_authorized",
+  "androidReviewModeApproval": "Google_Play_approval_reported_by_user",
+  "iosReviewModeRejectedByApple": false,
+  "iosAndroidReviewModePorted": true,
+  "contentRightsConfirmed": true,
+  "reviewModeValidation": {
+    "version": "1.0.0",
+    "build": 16,
+    "reviewMode": "isolated_fictional_sample_replay_no_API",
+    "settingsEntryCUAVerified": true,
+    "invalidCodeRejected": true,
+    "terminalInputCUAVerified": true,
+    "filePreviewCUAVerified": true,
+    "exitPreservesNormalSettings": true,
+    "bootstrapEntryCUAVerified": false,
+    "physicalDeviceVerified": false,
+    "resourceCounts": {
+      "Web": 78,
+      "Guest": 18,
+      "rootfs": 426,
+      "Native": 21,
+      "NativeLocalization": 20
+    },
+    "nativeSourceCount": 21,
+    "visualScore": 93,
+    "privateEvidence": "dist/ios-appstore/submission-nov20/review-mode-validation.json"
+  },
+  "previousCandidate15": {
+    "version": "1.0.0",
     "build": 15,
     "sourceCommit": "7741191def46e5bc6b475c4ada30435e3546c6cb",
     "ipa": "dist/ios-appstore/1.0.0-15-export-nov18/export/Bibimer.ipa",
@@ -57,69 +374,40 @@
     "uploadCompletedAt": "2026-11-17T16:08:57.646998+00:00",
     "appleProcessingCompleted": true,
     "appStoreBuildID": "f8041489-d7cf-4a6a-9db5-bdc69e2fcadf",
-    "exportComplianceCompleted": false,
-    "exportComplianceReason": "console_login_failed_official_outage_confirmed"
+    "exportComplianceCompleted": true,
+    "exportComplianceReason": "standard_algorithms_outside_or_alongside_apple_os_france_not_distributed_response_saved",
+    "internalTestFlightProvided": true
   },
-  "screenshotsReady": true,
-  "appStoreConnectAccess": "login_failed_official_outage_confirmed",
-  "publicPrivacyAndSupportAccess": "ko_pages_confirmed_in_chrome",
-  "privacyPolicyIOSReady": false,
-  "providerDataDisclosureReady": false,
-  "reviewAccessReady": false,
-  "territoriesConfirmed": true,
-  "ageRatingConfirmed": false,
-  "sourceRepositoryVisibility": "public_verified_via_github_connector",
-  "appStoreDraftSaved": true,
-  "uploaded": true,
-  "submitted": false,
-  "published": false,
-  "submissionReady": false,
-  "remainingGates": [
-    "ios_public_privacy_policy_and_provider_data_review",
-    "explicit_ai_data_permission_evidence",
-    "full_reviewer_access_and_physical_device_validation",
-    "runtime_corresponding_source_and_policy_classification_review",
-    "export_response_and_age_rating",
-    "required_review_contact_and_final_review_notes_save",
-    "upload_reviewed_screenshots_after_console_recovery",
-    "review_korean_iphone_file_toolbar_overlap"
-  ],
-  "storeVersionVerified": "1.0.0",
-  "manualReleaseSaved": true,
-  "freePriceSaved": true,
-  "categorySaved": "DEVELOPER_TOOLS",
-  "reviewNotesDraftSaved": true,
-  "appStoreBuildSelected": true,
-  "appleProcessingCompleted": true,
-  "exportComplianceCompleted": false,
-  "reviewNotesLocalTextMatchesConsole": false,
-  "reviewNotesConsoleCharacters": 3396,
-  "reviewNotesLocalCharacters": 3426,
-  "reviewNotesUpdateBlockedBy": "required_review_contact_missing",
-  "reviewContactReady": false,
-  "territoryAvailabilitySaved": true,
-  "territoryAvailableCount": 175,
-  "territorySelectedCount": 173,
-  "excludedTerritories": [
-    "CN",
-    "FR"
-  ],
-  "automaticFutureTerritories": false,
-  "submissionExplicitlyOnHold": true,
-  "reviewContactEmailPhoneReceived": true,
-  "screenshotCount": 12,
-  "screenshotsUploaded": false,
-  "testFlight15Requested": true,
-  "testFlight15InternalDistributionVerified": false,
-  "lastVerifiedInternalBuild": "0.1.0(14)",
-  "appStoreConnectOutage": {
-    "officialURL": "https://developer.apple.com/system-status/",
-    "observedAt": "2026-11-18T02:50:00+09:00",
-    "startedAt": "2026-11-18T01:50:00+09:00",
-    "ongoingAtObservation": true,
-    "affected": "all_users"
+  "appStoreConnectControl": "available; submission_completed",
+  "reviewNotesDraftSavedBuild": null,
+  "appStoreBuildSelectedVersion": "1.0.0(16)",
+  "testFlight16InternalDistributionVerified": true,
+  "reviewNotesFinalSaved": true,
+  "reviewNotesFinalTemplate": "review-notes-16.en.txt",
+  "reviewLoginRequired": false,
+  "reviewPrivateCodeSaved": true,
+  "reviewPrivateCodePublic": false,
+  "testFlight16": {
+    "group": "Bibimer Internal",
+    "groupID": "05c12695-3fe4-411f-acf8-53bce8a31aac",
+    "testers": 1,
+    "groupBuildCount": 16,
+    "status": "Testing",
+    "expirationDisplay": "90 days",
+    "notesFile": "release/app-store/testflight-notes-16.en-ko.txt",
+    "notesCharacters": 1158,
+    "notesSHA256": "83005fb9aeda1c8d5ad19a48c13f842f3f0c8736ade1b948d4dd0189b6bb2b03",
+    "notesSaved": true
   },
-  "knownVisualIssues": [
-    "Korean iPhone file-viewer toolbar label overlap; screenshot excluded, product code not changed."
+  "screenshotSaveReverifiedOn": "2026-11-20",
+  "submissionBlockObserved": null,
+  "submissionObservedAt": "2026-11-20T06:06:48+09:00",
+  "submissionID": "62cb55af-5a41-4558-9544-02484489f678",
+  "submissionURL": "https://appstoreconnect.apple.com/apps/6826729307/distribution/reviewsubmissions/details/62cb55af-5a41-4558-9544-02484489f678",
+  "appReviewConfirmation": "1개의 항목 제출됨",
+  "appStoreVersionStatus": "submitted_confirmed_by_success_modal",
+  "nextActions": [
+    "await_Apple_App_Review_result",
+    "manual_release_only_after_approval_and_user_release_instruction"
   ]
 }

@@ -211,74 +211,41 @@
   "sourceRepositoryVisibility": "public",
   "releaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.43.1",
-    "versionCode": 73,
+    "versionName": "0.43.2",
+    "versionCode": 74,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "96fc5e8c062add75a4af9181ba835042d87ee75b333fa3ed08c433943e1f3b8a",
-    "file": "bibimer-0.43.1-73-release.aab",
-    "bytes": 3494076,
+    "sha256": "e9132c59cad1e68f9ab87de5f428da1858bf2fb01ca38b0869594673a6c8c328",
+    "file": "bibimer-0.43.2-74-release.aab",
+    "bytes": 3491411,
+    "bundleValidated": true,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
-    "manifestLaunchable": true,
     "packagedAssetsMatchSource": true,
     "packagedAssetCount": 61,
-    "languageSplitsDisabled": true,
-    "reviewDigestPackaged": true,
     "privateReviewCodeIncluded": false,
     "privatePasswordIncluded": false,
+    "manifestLaunchable": true,
+    "languageSplitsDisabled": true,
+    "reviewDigestPackaged": true,
     "embeddedBridgeVersion": "0.25.2",
     "maintenanceSixPayloadsMatch": true,
-    "installerIsolatedExtractionVerified": true,
-    "notificationSymbolPackaged": true,
-    "terminalFullscreenAndPageKeysPackaged": true,
-    "responseDeliveryNativeAndWebPackaged": true,
-    "gitActionsPackaged": true,
-    "terminalExitInputDisabledPackaged": true,
-    "browserConsentStatusRefreshPackaged": true,
-    "manualGlobeConsentDialogPackaged": true,
-    "consoleUploaded": true,
-    "released": true,
+    "agentCatalogRefreshPackaged": true,
+    "currentAgentVersionRefreshPackaged": true,
+    "agentSelectionBeforeAccountQueryPackaged": true,
     "physicalDeviceVerified": false,
-    "nativeSpeechInputPackaged": true,
-    "speechProviderSelectionPackaged": true,
-    "ttsAndroidAndElevenLabsOnly": true,
-    "ttsDefaultsOff": true,
-    "localExtractiveSummaryPackaged": true,
-    "browserConsentNotifyPackaged": true,
-    "workFirstNavigationPackaged": true,
-    "customNativeDialogsPackaged": true,
-    "settingsSwitchesAndDisabledGroupsPackaged": true,
+    "sourceCommit": "507d314488af1a6f439004d8fab5b7d316206cad",
+    "builtOn": "2026-11-21",
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
-    "builtOn": "2026-11-18",
-    "sourceCommit": "377731b184e25bce6cd558e493820f405ec52ec9",
-    "releaseName": "0.43.1 (73) - Check selected agent connection",
-    "releaseNotesFile": "release/google-play/release-notes/0.43.1.txt",
-    "bridgeUpdateRequiredForNewFeatures": false,
-    "interruptedQuestionEditingPackaged": true,
-    "messageCopyIconsPackaged": true,
-    "compactCopyButtonsPackaged": true,
-    "answerFooterControlsPackaged": true,
-    "sessionHistoryLoadingPackaged": true,
-    "disconnectedReconnectActionPackaged": true,
-    "rightAlignedAnswerControlsPackaged": true,
-    "controlTextSelectionDisabledPackaged": true,
-    "agentLoginUIPackaged": true,
-    "agentUpdatesPackaged": true,
-    "startupCoverPackaged": true,
-    "dismissibleNoticesPackaged": true,
-    "agentSessionMaintenancePackaged": true,
-    "terminalOutputSelectionPackaged": true,
-    "claudeOAuthURLFixPackaged": true,
-    "optimisticMessagesPackaged": true,
-    "debugModePackaged": true,
-    "queueEditorPackaged": true,
-    "unifiedAgentManagementPackaged": true,
-    "selectedAgentConnectionCheckPackaged": true
+    "consoleUploaded": true,
+    "released": true,
+    "releaseName": "0.43.2 (74) - Refresh installed Codex",
+    "releaseNotesFile": "release/google-play/release-notes/0.43.2.txt",
+    "evidence": "dist/play-0.43.2/published.json"
   },
   "consoleScreenshotsUpdatedOn": "2026-11-11",
   "playAppSigning": {
@@ -305,28 +272,19 @@
     "versionName": "0.43.1",
     "versionCode": 73,
     "releaseName": "0.43.1 (73) - Agent management and queue editing",
-    "consoleStatus": "submitted_pending_pre_review_checks",
+    "consoleStatus": "available_on_google_play",
+    "rolloutPercent": 100,
+    "verifiedOn": "2026-11-21",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/production?releaseType=defaultReleases",
+    "publicAvailabilityConfirmed": true,
+    "devicePublicUpdateVerified": false,
+    "note": "Read-only observation of existing production dashboard; this task did not submit or release production.",
+    "sourceCommit": "377731b184e25bce6cd558e493820f405ec52ec9",
+    "releaseNotesFile": "release/google-play/release-notes/0.43.1-production.txt",
+    "sourceBridgeVersion": "0.25.2",
     "submittedOn": "2026-11-19",
     "submittedAtLocal": "2026-11-19 18:59 Asia/Seoul",
     "submissionVerifiedAtLocal": "2026-11-19 19:00 Asia/Seoul",
-    "refreshedStatusVerified": true,
-    "changeCount": 1,
-    "rolloutPercent": 100,
-    "allExistingTargetCountries": true,
-    "targetCountryCount": 178,
-    "managedPublishing": false,
-    "publishAfterApproval": true,
-    "publicAvailabilityConfirmed": false,
-    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4697502344481526582",
-    "publishingOverviewUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/publishing",
-    "warnings": [
-      "no_deobfuscation_mapping_file"
-    ],
-    "errors": [],
-    "supportedDeviceChanges": 0,
-    "supportedDeviceChangesScope": "visible Console device-type rows",
-    "preReviewChecksCompleted": false,
-    "releaseNotesFile": "release/google-play/release-notes/0.43.1-production.txt",
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
@@ -335,29 +293,16 @@
       "en-US": 487,
       "ko-KR": 250
     },
-    "reusedValidatedInternalTestBundle": true,
-    "newSignedBundle": false,
-    "previousPublicVersionName": "0.38.1",
-    "previousPublicVersionCode": 63,
-    "sourceCommit": "377731b184e25bce6cd558e493820f405ec52ec9",
-    "sourceBridgeVersion": "0.25.2",
     "bundleSha256": "96fc5e8c062add75a4af9181ba835042d87ee75b333fa3ed08c433943e1f3b8a",
     "bundleBytes": 3494076,
+    "reusedValidatedInternalTestBundle": true,
     "includedVersionCodes": [
       73
     ],
     "excludedPreviousVersionCodes": [
       63
     ],
-    "evidence": "dist/production-0.43.1/submitted.json",
-    "physicalDeviceVerified": false,
-    "deviceInstallVerified": false,
-    "dataSafetyProductionFormChanged": false,
-    "privacyPolicyChanged": false,
-    "websiteDeploymentPerformed": false,
-    "existingInternalTrackUnchanged": true,
-    "note": "Promoted the existing validated internal73 bundle. Full rollout to all existing178 countries; managed publishing off, automatic publication after approval. Submission confirmed; pre-review checks in progress. Public63 remains available. No new build, upload, internal tester, iOS or website changes.",
-    "preReviewChecksInProgress": true
+    "submissionEvidence": "dist/production-0.43.1/submitted.json"
   },
   "internalTesterParticipation": {
     "consoleRegistration": "saved_one_tester",
@@ -470,7 +415,7 @@
     "versionName": "0.38.1",
     "versionCode": 63,
     "releaseName": "0.38.1 (63) - Voice and work-first settings",
-    "consoleStatus": "in_review",
+    "consoleStatus": "available_on_google_play",
     "submittedOn": "2026-11-05",
     "submittedAtLocal": "2026-11-05 09:36 Asia/Seoul",
     "submissionVerifiedAtLocal": "2026-11-05 10:28 Asia/Seoul",
@@ -521,29 +466,31 @@
     "privacyPolicyChanged": false,
     "websiteDeploymentPerformed": false,
     "existingInternalTrackUnchanged": true,
-    "note": "Fresh signed production bundle includes internal62 plus TTS spacing, auxiliary button outlines and microphone/text spacing. Submitted release and optional audio Data Safety update. Google approval/public availability pending; current public59 preserved."
+    "note": "Fresh signed production bundle includes internal62 plus TTS spacing, auxiliary button outlines and microphone/text spacing. Submitted release and optional audio Data Safety update. Google approval/public availability pending; current public59 preserved.",
+    "verifiedOn": "2026-11-19",
+    "verificationEvidence": "dist/production-0.43.1/previous-production.png: active latest0.38.1(63),178 countries;73 submitted, not public."
   },
   "publicStoreUrl": "https://play.google.com/store/apps/details?id=app.bibimer",
   "currentPublicVersion": {
-    "versionName": "0.38.1",
-    "versionCode": 63,
-    "verifiedOn": "2026-11-19",
+    "versionName": "0.43.1",
+    "versionCode": 73,
+    "verifiedOn": "2026-11-21",
     "consoleProductionAvailabilityVerified": true,
     "devicePublicUpdateVerified": false,
-    "verificationEvidence": "dist/production-0.43.1/previous-production.png: active latest0.38.1(63),178 countries;73 submitted, not public."
+    "verificationEvidence": "Existing production dashboard showed 0.43.1(73), rollout100%; observed while preparing the separate internal74 release."
   },
   "previousReleaseBundle": {
     "package": "app.bibimer",
-    "versionName": "0.43.0",
-    "versionCode": 72,
+    "versionName": "0.43.1",
+    "versionCode": 73,
     "minSdk": 26,
     "targetSdk": 36,
     "signed": true,
     "bundletool": "1.18.3",
     "reviewAccessConfigured": true,
-    "sha256": "60ac574f5393f5575e0a959ccd52647ed991d3d9a969823be59282219425df5c",
-    "file": "bibimer-0.43.0-72-release.aab",
-    "bytes": 3492187,
+    "sha256": "96fc5e8c062add75a4af9181ba835042d87ee75b333fa3ed08c433943e1f3b8a",
+    "file": "bibimer-0.43.1-73-release.aab",
+    "bytes": 3494076,
     "signatureVerified": true,
     "uploadCertificateMatchesPlay": true,
     "manifestLaunchable": true,
@@ -577,11 +524,11 @@
     "settingsSwitchesAndDisabledGroupsPackaged": true,
     "status": "published_internal_test",
     "consoleUploadStatus": "published_internal_test",
-    "builtOn": "2026-11-13",
-    "sourceCommit": "503cdc73caa3c96dbbf2bac6f8b351f9ffe56492",
-    "releaseName": "0.43.0 (72) - Debug, queue editing and agent setup",
-    "releaseNotesFile": "release/google-play/release-notes/0.43.0.txt",
-    "bridgeUpdateRequiredForNewFeatures": true,
+    "builtOn": "2026-11-18",
+    "sourceCommit": "377731b184e25bce6cd558e493820f405ec52ec9",
+    "releaseName": "0.43.1 (73) - Check selected agent connection",
+    "releaseNotesFile": "release/google-play/release-notes/0.43.1.txt",
+    "bridgeUpdateRequiredForNewFeatures": false,
     "interruptedQuestionEditingPackaged": true,
     "messageCopyIconsPackaged": true,
     "compactCopyButtonsPackaged": true,
@@ -600,7 +547,8 @@
     "optimisticMessagesPackaged": true,
     "debugModePackaged": true,
     "queueEditorPackaged": true,
-    "unifiedAgentManagementPackaged": true
+    "unifiedAgentManagementPackaged": true,
+    "selectedAgentConnectionCheckPackaged": true
   },
   "previousUpdate": {
     "versionName": "0.38.2",
@@ -672,26 +620,27 @@
     "consoleUploaded": true
   },
   "internalTestRelease": {
-    "versionName": "0.43.1",
-    "versionCode": 73,
-    "releaseName": "0.43.1 (73) - Check selected agent connection",
+    "versionName": "0.43.2",
+    "versionCode": 74,
+    "releaseName": "0.43.2 (74) - Refresh installed Codex",
     "consoleStatus": "active_available_to_existing_testers",
-    "publishedOn": "2026-11-18",
-    "publishedAtLocal": "2026-11-18 22:06 Asia/Seoul",
+    "publishedOn": "2026-11-21",
+    "publishedAtLocal": "2026-11-21 09:32 Asia/Seoul",
     "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+    "releaseDetailsUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/44/details",
     "includedVersionCodes": [
-      73
+      74
     ],
     "excludedPreviousVersionCodes": [
-      72
+      73
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 327,
-      "ko-KR": 143
+      "en-US": 310,
+      "ko-KR": 185
     },
     "errors": [],
     "warnings": [
@@ -700,35 +649,36 @@
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed seven Console device-type rows",
     "supportedDevices": {
-      "phone": 11546,
-      "tablet": 6528,
+      "phone": 11534,
+      "tablet": 6546,
       "tv": 5,
       "wear": 0,
       "car": 30,
       "chromebook": 77,
       "androidXR": 2
     },
-    "refreshedStatusVerified": true,
+    "publishedStatusVerified": true,
+    "refreshedStatusVerified": false,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "377731b184e25bce6cd558e493820f405ec52ec9",
-    "releaseNotesFile": "release/google-play/release-notes/0.43.1.txt",
-    "evidence": "dist/play-0.43.1/published.json",
+    "sourceCommit": "507d314488af1a6f439004d8fab5b7d316206cad",
+    "releaseNotesFile": "release/google-play/release-notes/0.43.2.txt",
+    "evidence": "dist/play-0.43.2/published.json",
     "sourceBridgeVersion": "0.25.2",
     "bridgeUpdateRequiredForNewFeatures": false,
-    "sha256": "96fc5e8c062add75a4af9181ba835042d87ee75b333fa3ed08c433943e1f3b8a",
-    "bytes": 3494076,
+    "sha256": "e9132c59cad1e68f9ab87de5f428da1858bf2fb01ca38b0869594673a6c8c328",
+    "bytes": 3491411,
     "packagedAssetCount": 61,
     "sourceLanguageKeys": 988,
     "sourceLanguageCount": 10,
-    "debugModePackaged": true,
-    "queueEditorPackaged": true,
-    "unifiedAgentManagementPackaged": true,
+    "agentCatalogRefreshPackaged": true,
+    "currentAgentVersionRefreshPackaged": true,
+    "agentSelectionBeforeAccountQueryPackaged": true,
     "deviceInstallVerified": false,
+    "physicalDeviceVerified": false,
     "operatingBridgeRestarted": false,
     "installedAgentsUpdated": false,
-    "existingTestersUnchanged": true,
-    "selectedAgentConnectionCheckPackaged": true
+    "existingTestersUnchanged": true
   },
   "productionReleaseHistory": [
     {
@@ -1098,26 +1048,26 @@
     "manifest": "screenshots/current-20261111/manifest.json"
   },
   "previousInternalTestRelease": {
-    "versionName": "0.43.0",
-    "versionCode": 72,
-    "releaseName": "0.43.0 (72) - Debug, queue editing and agent setup",
+    "versionName": "0.43.1",
+    "versionCode": 73,
+    "releaseName": "0.43.1 (73) - Check selected agent connection",
     "consoleStatus": "active_available_to_existing_testers",
-    "publishedOn": "2026-11-13",
-    "publishedAtLocal": "2026-11-13 15:27 Asia/Seoul",
-    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+    "publishedOn": "2026-11-18",
+    "publishedAtLocal": "2026-11-18 22:06 Asia/Seoul",
+    "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/43/details",
     "includedVersionCodes": [
-      72
+      73
     ],
     "excludedPreviousVersionCodes": [
-      71
+      72
     ],
     "releaseNotesLocales": [
       "en-US",
       "ko-KR"
     ],
     "releaseNotesCharacters": {
-      "en-US": 379,
-      "ko-KR": 198
+      "en-US": 327,
+      "ko-KR": 143
     },
     "errors": [],
     "warnings": [
@@ -1126,26 +1076,26 @@
     "supportedDeviceChanges": 0,
     "supportedDeviceChangesScope": "observed seven Console device-type rows",
     "supportedDevices": {
-      "phone": 11607,
-      "tablet": 6517,
+      "phone": 11546,
+      "tablet": 6528,
       "tv": 5,
       "wear": 0,
-      "car": 29,
+      "car": 30,
       "chromebook": 77,
       "androidXR": 2
     },
     "refreshedStatusVerified": true,
     "productionSubmitted": false,
     "productionReleased": false,
-    "sourceCommit": "503cdc73caa3c96dbbf2bac6f8b351f9ffe56492",
-    "releaseNotesFile": "release/google-play/release-notes/0.43.0.txt",
-    "evidence": "dist/play-0.43.0/published.json",
+    "sourceCommit": "377731b184e25bce6cd558e493820f405ec52ec9",
+    "releaseNotesFile": "release/google-play/release-notes/0.43.1.txt",
+    "evidence": "dist/play-0.43.1/published.json",
     "sourceBridgeVersion": "0.25.2",
-    "bridgeUpdateRequiredForNewFeatures": true,
-    "sha256": "60ac574f5393f5575e0a959ccd52647ed991d3d9a969823be59282219425df5c",
-    "bytes": 3492187,
+    "bridgeUpdateRequiredForNewFeatures": false,
+    "sha256": "96fc5e8c062add75a4af9181ba835042d87ee75b333fa3ed08c433943e1f3b8a",
+    "bytes": 3494076,
     "packagedAssetCount": 61,
-    "sourceLanguageKeys": 984,
+    "sourceLanguageKeys": 988,
     "sourceLanguageCount": 10,
     "debugModePackaged": true,
     "queueEditorPackaged": true,
@@ -1153,7 +1103,10 @@
     "deviceInstallVerified": false,
     "operatingBridgeRestarted": false,
     "installedAgentsUpdated": false,
-    "existingTestersUnchanged": true
+    "existingTestersUnchanged": true,
+    "selectedAgentConnectionCheckPackaged": true,
+    "observedOn": "2026-11-21",
+    "note": "November18 local build/publication receipts and November21 remote Console observation were reconciled during repository sync."
   },
   "consoleScreenshotsVerifiedOn": "2026-11-11",
   "sourceLanguages": [
@@ -1205,74 +1158,6 @@
     "de"
   ],
   "internalTestReleaseHistory": [
-    {
-      "versionName": "0.40.1",
-      "versionCode": 69,
-      "releaseName": "0.40.1 (69) - Right aligned answer controls",
-      "consoleStatus": "active_available_to_existing_testers",
-      "publishedOn": "2026-11-11",
-      "publishedAtLocal": "2026-11-11 01:15 Asia/Seoul",
-      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
-      "includedVersionCodes": [
-        69
-      ],
-      "excludedPreviousVersionCodes": [
-        68
-      ],
-      "releaseNotesLocales": [
-        "en-US",
-        "ko-KR"
-      ],
-      "releaseNotesCharacters": {
-        "en-US": 342,
-        "ko-KR": 170
-      },
-      "errors": [],
-      "warnings": [
-        "no_deobfuscation_mapping_file"
-      ],
-      "supportedDeviceChanges": 0,
-      "supportedDeviceChangesScope": "observed seven Console device-type rows",
-      "supportedDevices": {
-        "phone": 11609,
-        "tablet": 6518,
-        "tv": 5,
-        "wear": 0,
-        "car": 29,
-        "chromebook": 77,
-        "androidXR": 2
-      },
-      "refreshedStatusVerified": true,
-      "productionSubmitted": false,
-      "productionReleased": false,
-      "sourceCommit": "81556d9e65df8b6a02c7a3a45a144a022059c59d",
-      "releaseNotesFile": "release/google-play/release-notes/0.40.1.txt",
-      "evidence": "dist/play-0.40.1/published.json",
-      "sourceBridgeVersion": "0.24.1",
-      "bridgeUpdateRequiredForNewFeatures": false,
-      "packagedAssetCount": 58,
-      "sourceLanguageKeys": 917,
-      "sourceLanguageCount": 10,
-      "physicalDeviceVerified": false,
-      "deviceInstallVerified": false,
-      "bundleSha256": "00e7f2251fb1bbf809e0578f23899a31f2644f91b128aa9527e4471a2cead556",
-      "bundleBytes": 3435401,
-      "existingTestersUnchanged": true,
-      "interruptedQuestionEditingPackaged": true,
-      "messageCopyIconsPackaged": true,
-      "dataSafetyProductionFormChanged": false,
-      "privacyPolicyChanged": false,
-      "websiteDeploymentPerformed": false,
-      "compactCopyButtonsPackaged": true,
-      "sourceNodeChecksPassed": 5,
-      "fullSourceSuiteRepeated": true,
-      "sourcePythonChecksPassed": 39,
-      "answerFooterControlsPackaged": true,
-      "sessionHistoryLoadingPackaged": true,
-      "disconnectedReconnectActionPackaged": true,
-      "rightAlignedAnswerControlsPackaged": true,
-      "controlTextSelectionDisabledPackaged": true
-    },
     {
       "versionName": "0.20.0",
       "versionCode": 37,
@@ -2718,6 +2603,74 @@
       "disconnectedReconnectActionPackaged": true
     },
     {
+      "versionName": "0.40.1",
+      "versionCode": 69,
+      "releaseName": "0.40.1 (69) - Right aligned answer controls",
+      "consoleStatus": "active_available_to_existing_testers",
+      "publishedOn": "2026-11-11",
+      "publishedAtLocal": "2026-11-11 01:15 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+      "includedVersionCodes": [
+        69
+      ],
+      "excludedPreviousVersionCodes": [
+        68
+      ],
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "releaseNotesCharacters": {
+        "en-US": 342,
+        "ko-KR": 170
+      },
+      "errors": [],
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed seven Console device-type rows",
+      "supportedDevices": {
+        "phone": 11609,
+        "tablet": 6518,
+        "tv": 5,
+        "wear": 0,
+        "car": 29,
+        "chromebook": 77,
+        "androidXR": 2
+      },
+      "refreshedStatusVerified": true,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "sourceCommit": "81556d9e65df8b6a02c7a3a45a144a022059c59d",
+      "releaseNotesFile": "release/google-play/release-notes/0.40.1.txt",
+      "evidence": "dist/play-0.40.1/published.json",
+      "sourceBridgeVersion": "0.24.1",
+      "bridgeUpdateRequiredForNewFeatures": false,
+      "packagedAssetCount": 58,
+      "sourceLanguageKeys": 917,
+      "sourceLanguageCount": 10,
+      "physicalDeviceVerified": false,
+      "deviceInstallVerified": false,
+      "bundleSha256": "00e7f2251fb1bbf809e0578f23899a31f2644f91b128aa9527e4471a2cead556",
+      "bundleBytes": 3435401,
+      "existingTestersUnchanged": true,
+      "interruptedQuestionEditingPackaged": true,
+      "messageCopyIconsPackaged": true,
+      "dataSafetyProductionFormChanged": false,
+      "privacyPolicyChanged": false,
+      "websiteDeploymentPerformed": false,
+      "compactCopyButtonsPackaged": true,
+      "sourceNodeChecksPassed": 5,
+      "fullSourceSuiteRepeated": true,
+      "sourcePythonChecksPassed": 39,
+      "answerFooterControlsPackaged": true,
+      "sessionHistoryLoadingPackaged": true,
+      "disconnectedReconnectActionPackaged": true,
+      "rightAlignedAnswerControlsPackaged": true,
+      "controlTextSelectionDisabledPackaged": true
+    },
+    {
       "versionName": "0.41.0",
       "versionCode": 70,
       "releaseName": "0.41.0 (70) - Agent accounts and updates",
@@ -2838,6 +2791,125 @@
       "bridgeUpdateRequiredForNewFeatures": true,
       "sha256": "9ea952d66a4165abee9b0a75b239275833880dff80ee22c627eab8a8af8ba17d",
       "bytes": 3479727
+    },
+    {
+      "versionName": "0.43.0",
+      "versionCode": 72,
+      "releaseName": "0.43.0 (72) - Debug, queue editing and agent setup",
+      "consoleStatus": "active_available_to_existing_testers",
+      "publishedOn": "2026-11-13",
+      "publishedAtLocal": "2026-11-13 15:27 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363",
+      "includedVersionCodes": [
+        72
+      ],
+      "excludedPreviousVersionCodes": [
+        71
+      ],
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "releaseNotesCharacters": {
+        "en-US": 379,
+        "ko-KR": 198
+      },
+      "errors": [],
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed seven Console device-type rows",
+      "supportedDevices": {
+        "phone": 11607,
+        "tablet": 6517,
+        "tv": 5,
+        "wear": 0,
+        "car": 29,
+        "chromebook": 77,
+        "androidXR": 2
+      },
+      "refreshedStatusVerified": true,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "sourceCommit": "503cdc73caa3c96dbbf2bac6f8b351f9ffe56492",
+      "releaseNotesFile": "release/google-play/release-notes/0.43.0.txt",
+      "evidence": "dist/play-0.43.0/published.json",
+      "sourceBridgeVersion": "0.25.2",
+      "bridgeUpdateRequiredForNewFeatures": true,
+      "sha256": "60ac574f5393f5575e0a959ccd52647ed991d3d9a969823be59282219425df5c",
+      "bytes": 3492187,
+      "packagedAssetCount": 61,
+      "sourceLanguageKeys": 984,
+      "sourceLanguageCount": 10,
+      "debugModePackaged": true,
+      "queueEditorPackaged": true,
+      "unifiedAgentManagementPackaged": true,
+      "deviceInstallVerified": false,
+      "operatingBridgeRestarted": false,
+      "installedAgentsUpdated": false,
+      "existingTestersUnchanged": true
+    },
+    {
+      "versionName": "0.43.1",
+      "versionCode": 73,
+      "releaseName": "0.43.1 (73) - Check selected agent connection",
+      "consoleStatus": "active_available_to_existing_testers",
+      "publishedOn": "2026-11-18",
+      "publishedAtLocal": "2026-11-18 22:06 Asia/Seoul",
+      "consoleUrl": "https://play.google.com/console/u/0/developers/5778023895269243113/app/4975090737012022496/tracks/4701718894791581363/releases/43/details",
+      "includedVersionCodes": [
+        73
+      ],
+      "excludedPreviousVersionCodes": [
+        72
+      ],
+      "releaseNotesLocales": [
+        "en-US",
+        "ko-KR"
+      ],
+      "releaseNotesCharacters": {
+        "en-US": 327,
+        "ko-KR": 143
+      },
+      "errors": [],
+      "warnings": [
+        "no_deobfuscation_mapping_file"
+      ],
+      "supportedDeviceChanges": 0,
+      "supportedDeviceChangesScope": "observed seven Console device-type rows",
+      "supportedDevices": {
+        "phone": 11546,
+        "tablet": 6528,
+        "tv": 5,
+        "wear": 0,
+        "car": 30,
+        "chromebook": 77,
+        "androidXR": 2
+      },
+      "refreshedStatusVerified": true,
+      "productionSubmitted": false,
+      "productionReleased": false,
+      "sourceCommit": "377731b184e25bce6cd558e493820f405ec52ec9",
+      "releaseNotesFile": "release/google-play/release-notes/0.43.1.txt",
+      "evidence": "dist/play-0.43.1/published.json",
+      "sourceBridgeVersion": "0.25.2",
+      "bridgeUpdateRequiredForNewFeatures": false,
+      "sha256": "96fc5e8c062add75a4af9181ba835042d87ee75b333fa3ed08c433943e1f3b8a",
+      "bytes": 3494076,
+      "packagedAssetCount": 61,
+      "sourceLanguageKeys": 988,
+      "sourceLanguageCount": 10,
+      "debugModePackaged": true,
+      "queueEditorPackaged": true,
+      "unifiedAgentManagementPackaged": true,
+      "deviceInstallVerified": false,
+      "operatingBridgeRestarted": false,
+      "installedAgentsUpdated": false,
+      "existingTestersUnchanged": true,
+      "selectedAgentConnectionCheckPackaged": true,
+      "observedOn": "2026-11-21",
+      "note": "November18 local build/publication receipts and November21 remote Console observation were reconciled during repository sync."
     }
   ]
 }

@@ -4,9 +4,94 @@
 
 - 사용자 보고를 받아 현재 폰의 앱 versionCode74·운영 브리지0.25.2·Codex0.163.0을 확인했다. `/v1/health`의 Codex `installed:true`와 달리 실제 버전/계정 조회는 `error_agent_connection`으로 실패했다. 브리지에는 `LD_PRELOAD`가 없고 npm 진입점 `@mmmbuto/codex-cli-termux/bin/codex.js`가 `#!/usr/bin/env node`를 사용해 `Popen`에서 파일이 존재하는데도 `FileNotFoundError`가 발생했다. 같은 환경으로 시작한 별도 Python에서 재현했다. 단순 PATH/설치 부재나 로그아웃으로 단정하지 않는다.
 - 현재 설치본은 npm 진입점 첫 줄만 Termux의 실제 Node 경로 `#!/data/data/com.termux/files/usr/bin/node`로 원자적으로 보정했다. 원본 코드는 비공개 `~/.local/share/bibimer/repairs/codex-b175a5c550c4c4d7.js`에0700으로 백업했고 symlink·패키지 버전·나머지 본문을 유지했다. 운영 API에서 버전0.163.0·계정 `configured`를 확인했다. 브리지 인스턴스와 활성 세션1개를 유지했으며 브리지/사용자 세션을 재시작하거나 새 모델 요청·로그인을 실행하지 않았다. npm 재설치/업데이트는 이 로컬 shebang 보정을 덮어쓸 수 있다.
-- 재발 방지 소스는 `agent_command()`로 Codex의 실제 npm `.js`/`.mjs` 진입점을 Node로 직접 실행한다. 계정/기록/Chat app-server·버전·업데이트 검사·PTY·로그인 터미널에 적용하며 네이티브 바이너리와 확장자 없는 커스텀 래퍼는 기존 실행을 유지한다. Node가 없으면 설치 필요 오류를 반환한다. 운영 브리지 파일/프로세스에는 이 소스 변경을 아직 적용하지 않았다.
-- 새 회귀3개와 기존 계정/업데이트24개, Chat/옵션13개 총40개가 통과했다. 없는 shebang 경로를 가진 JS+symlink fixture로 실제 HTTP 계정/버전·업데이트 검사·PTY·로그인 터미널을 확인했다. 실제 원본 npm shebang의 임시 사본과 운영 브리지의 `LD_PRELOAD` 없는 환경에서도 수정한 소스의 버전/읽기 전용 계정 RPC가 통과했다. 인증 정보/원본 응답은 출력하거나 기록하지 않았다.
+- 병합 후 재발 방지 소스는 원격 브리지0.25.3의 `codex_command()`로 통합했다. 첫 줄이 `#!/usr/bin/env node`인 Codex npm 진입점을 확인해 Node로 직접 실행한다. 계정/기록/Chat app-server·버전·업데이트 검사·PTY·로그인 터미널에 적용하며 네이티브 바이너리와 확장자 없는 커스텀 래퍼는 기존 실행을 유지한다. Node가 없거나 다른 실행기이면 원래 실행 경로를 유지한다. 운영 브리지 파일/프로세스에는 이 소스 변경을 아직 적용하지 않았다.
+- 병합 전 로컬 구현의 새 회귀3개와 기존 계정/업데이트24개, Chat/옵션13개 총40개가 통과했다. 없는 shebang 경로를 가진 JS+symlink fixture로 실제 HTTP 계정/버전·업데이트 검사·PTY·로그인 터미널을 확인했다. 실제 원본 npm shebang의 임시 사본과 운영 브리지의 `LD_PRELOAD` 없는 환경에서도 수정한 소스의 버전/읽기 전용 계정 RPC가 통과했다. 인증 정보/원본 응답은 출력하거나 기록하지 않았다.
+- 사용자 레포싱크 요청으로 원격의 Codex 실행기/Android74/iOS16 변경과 로컬의 Android73 배포4커밋·실기기 복구를 병합했다. Codex 구현과 회귀는 원격0.25.3으로 통합하고, 최신 내부74/공개73 상태와 로컬의73 빌드·심사 제출 증빙·누락된71 이력을 함께 보존했다. 병합 후 실행기5·계정15·업데이트9·Chat8·옵션5 총42개 및 에이전트 목록/관리 Node2개가 통과했다. 아래의 Android74 원인 미확정/진단 대기는 위 실기기 재현·복구 결과로 정정한다.
 - APK/AAB 빌드·배포는 하지 않았다. 현재 설치본 복구는 즉시 적용됐지만 Android 화면의 재선택/새로고침과 실제 모델 응답은 후속 확인이다. 지속적인 브리지 수정은 다음 요청 빌드/업데이트에 포함한다. 운영 브리지 유지보수는 기존 세션 종료 대상 확인 절차를 따른다.
+
+## Android74에서도 Codex 실행 ENOENT 보고·npm 실행기 호환 수정 (2026-11-21, 미배포)
+
+- 사용자가74 업데이트 후에도 계정 조회의 `error_agent_connection` 안내와 별도 로그인 터미널의 `Bibimer: [Errno 2] No such file or directory: '/data/data/com.termux/files/usr/bin/codex'`를 보고했다. 앞서 Termux 셸에서는 같은 경로의 `codex-cli 0.163.0` 실행에 성공했다.74의 UI 갱신 수정으로 이 실행 오류가 해결됐다고 취급하지 않는다. 현재 연결된 Android는 없으며, 실행 파일 대상·첫 줄·Python 직접 실행 결과를 사용자에게 요청한 상태다. 아직 진단 응답은 없다.
+- 공식 npm `@openai/codex@0.163.0`의 체크섬 검증된 소스에서 `bin/codex.js`의 `#!/usr/bin/env node`를 확인했다. Termux [실행 환경](https://github.com/termux/termux-packages/wiki/Termux-execution-environment)과 [fix-shebang](https://github.com/termux/termux-fix-shebang) 문서상 비로그인/외부 실행의 실행기 누락으로 파일이 존재해도 ENOENT가 가능하다. 이는 유력한 가설이며 해당 휴대폰의 설치 형태/원인은 아직 미확정이다. 실제 파일이 존재하고 실행기가 없는 로컬 별도 fixture에서도 ENOENT가 발생하는 것을 확인했다.
+- 브리지0.25.3 소스에서 해당 첫 줄의 Codex npm 스크립트만 설치된 Node와 실제 JS 경로로 실행하도록 공통 명령 구성을 추가했다. 계정/Chat app-server·버전·업데이트 probe·일반 PTY·별도 로그인 PTY에 적용하고 native/다른 shebang/실행 파일 없음은 기존 직접 실행을 유지한다. 파일 첫256bytes만 읽으며 파일 수정·설치·로그인·모델 실행·사용자 프로세스 재시작을 하지 않는다.
+- 새 `test_codex_launcher.py`는 **Popen에 ENOENT를 주입한 모의 검사**에서 기존400 연결 오류를 먼저 재현한 뒤 수정 후 통과했다. 실제 Node의 가상 account RPC·버전·두 PTY와 인수/공백 경로·바이너리/다른 실행기/Node 없음 경계를 포함한5개, 기존 계정15개·업데이트9개·빌드11개가 통과했다. 별도 소스 검토는 차단 결함 없음/COMMENT이며 LSP 도구 부재와 실제 기기 미확인을 명시했다. 실제 Codex 계정/모델 검증을 대신하지 않는다.
+- 추가 전체 브리지 검사는281개 중35실패/4오류로 전체 통과하지 않았다. Mac의 `/var`→`/private/var` 경로 비교·셸/프로세스·워크트리 및 `play_sdk` import 실패를 관측했다. 대표4개(PTY resize·Codex skill 경로·워크트리 생성·setup import)를 수정 전 HEAD 부모 코드로 재실행해 같은 실패/오류를 확인했다(`.tools/codex-launcher-baseline-check.log`)。setup은 `PYTHONPATH=scripts`로 경로를 지정한 재검사4개가 통과했다. 나머지 실패 전부를 수정 전과 비교한 것은 아니므로 전체를 기존 문제로 확정하지 않는다. 변경 두 Python AST/py_compile·diff 검사는 통과했다.
+- **현재 내부74의 내장 브리지는 여전히0.25.2이며 이 수정은 소스에만 있다.** APK/AAB/IPA 빌드·배포, 운영 브리지/세션 재시작, 설치 파일/계정 변경은 수행하지 않았다. 다음은 사용자 진단 결과로 npm shebang 가설을 확인하고, 해당 설치본의 안전한 실행기 경로 보정 또는 새 앱/브리지 배포를 진행하는 것이다. 신규 미확정 APK 배포를 해결 완료로 표시하지 않는다.
+
+## Android 0.43.2(74) 내부 테스트 배포 완료 (2026-11-21 09:32 KST)
+
+- 기존 Play 내부 테스트 트랙에서 **0.43.2 (74) - Refresh installed Codex**를 저장·출시하고 게시 후 트랙의 **활성 / 최신74 / 내부 테스터에게 제공됨 / 게시일11월21일 오전9:32**를 실제 Chrome UI에서 확인했다. 출시 ID44, 한/영 노트310/185자·2/2,74만 포함·73제외, 오류0·기존 매핑 파일 미첨부 경고1건,7개 기기 유형 지원 변화0이다. 게시 상태를 관측했으며 별도의 페이지 새로고침은 수행하지 않았다. CUA completion_summary로 화면 제어를 종료했다.
+- 소스 `507d314488af1a6f439004d8fab5b7d316206cad`의 기존 업로드 키 서명 AAB `dist/play/bibimer-0.43.2-74-release.aab`, **3,491,411bytes**, SHA-256 `e9132c59cad1e68f9ab87de5f428da1858bf2fb01ca38b0869594673a6c8c328`이다. Java/D8·bundletool·서명/기존 업로드 인증서·61assets 원본·수정된 목록/버전 갱신·선택 전 계정 조회 없음·브리지0.25.2의6payload·언어 split 비활성·심사 digest/비밀 원문 미포함을 확인했다. 빌드11·SDK6·격리 설치1개, 새 UI 회귀2파일과988키×10언어 검사가 통과했다. 상세 기능·Android 브라우저 검사 결과는 아래 수정 기록을 따른다.
+- Console의 기존 내부73(11월18일22:06)·프로덕션73(100%)을 읽기만 해 문서의 오래된72/63/59 표기를 보완했다.73의 원본 빌드/소스 영수증은 로컬에 없어 출처를 추정하지 않았다. 이번 작업에서 프로덕션 제출/출시·테스터 변경·웹사이트·iOS/TestFlight·사용자 앱 설치·운영 브리지/세션 재시작·실제 에이전트 업데이트는 하지 않았다. 이번 수정 자체에는 추가 브리지 업데이트가 필요 없다. **Play 업데이트 수신/설치 및 해당 Android의 Codex0.163.0 감지는 후속 실기기 확인이 필요하다.**
+- 비공개 증빙은 `dist/play-0.43.2/{bundle-verification.json,review-ax.txt,published.json}`, 빌드/검증은 `.tools/aab-0.43.2-74-{build.log,verification.json}`에 있다. 기존 내부 테스트 링크 https://play.google.com/apps/internaltest/4701718894791581363 를 사용한다. 아래 준비/소스만 반영은 이 배포 이전 이력이다.
+
+## Android 0.43.2(74) 내부 테스트 배포 준비 (2026-11-21)
+
+- 사용자 내부 테스트 배포 요청으로 Codex 설치 목록/현재 버전 갱신 수정을 포함한 0.43.2(74)를 준비했다. Console은 로컬 배포 문서보다 최신인 내부0.43.1(73), 프로덕션0.43.1(73)·100%를 표시했다. 73번 내부 노트의 ‘에이전트 선택 후 해당 연결 조회’ 동작은 현재 소스/회귀 검사에 유지된다. 프로덕션 설정은 변경하지 않았다.
+- 기존 저장소 외부 업로드 키·심사 코드로 서명 빌드했다. Android 빌드11·SDK6·격리 브리지 설치1개, 에이전트 관리/목록 갱신과988키×10언어 검사가 통과했다. 브리지0.25.2는 유지하며 이번 UI 수정 자체에 추가 브리지 업데이트는 필요 없다. 한/영 노트는 `release/google-play/release-notes/0.43.2.txt`다. AAB 검증 뒤 기존 내부 트랙만 게시한다. 아직 업로드/게시 완료로 취급하지 않는다.
+
+## Android 외부 Codex 업데이트 감지 갱신 (2026-11-21, 소스만 반영)
+
+- 사용자 보고는 ‘업데이트된 Codex를 감지하지 못함’이다. 사용자가 Termux에서 확인한 결과는 실행 경로 `/data/data/com.termux/files/usr/bin/codex`, `codex-cli 0.163.0`, 전역 npm 경로 `/data/data/com.termux/files/usr/lib/node_modules`다. 현재 브리지의 실행 파일 탐색/버전 파서에는 이 버전을 거부하는 제한이 없다. 연결된 ADB 기기/Paseo Android 호스트가 없어 실제 앱의 오류·브리지 환경·기기 동작은 직접 확인하지 못했다. 아래 두 소스 결함을 재현했으며 해당 휴대폰의 원인으로 확정하지 않는다.
+- 공통 `app.js`의 5초 health 갱신이 `health.agents`를 무시해 외부 설치 후에도 미설치 목록이 남았다. 동일 브리지·유효 응답에서 목록이 바뀌면 선택 UI와 진단을 갱신한다. 동일 목록은 다시 그리지 않고 세션/에이전트를 전환하거나 프로세스를 재시작하지 않는다.
+- `agent-connections.js`는 과거 성공 업데이트의 버전을 매 status마다 현재 버전에 덮어썼다. 관리창 열기/에이전트 선택 후 계정 상태를 먼저 확인하고, 설치된 유휴 에이전트의 실제 버전을 한 번 읽는다. 캐시된 job/plan은 최신 버전을 덮지 않고 실제 진행 중 업데이트의 성공은 반영한다. 로그인/업데이트 중 조회·중복 조회·닫기/재열기·대상 변경·백그라운드·늦은 응답을 보호하며 2초 status poll마다 CLI를 실행하지 않는다. 설치 여부를 버전 문자열로 추측하지 않는다.
+- 검증: 두 결함의 회귀 실패를 수정 전 확인한 뒤 `test_agent_catalog_refresh.cjs`와 `test_agent_connections.cjs`가 통과했다. 세션 로딩·화면 탐색·프로젝트 위치/정렬·iOS 관리 회귀, 변경 JS 문법 및 diff 검사도 통과했다. 브리지 계정 Python15개 통과. 실제 headless Android 화면에서 10언어의 폼40개·키보드60개와 터미널 입력/Chat 초안 유지가 통과했다. 통합 `test_terminal_layout.cjs`의 iOS 부분은 기존 HTML fixture에 `ios-reconnect-status`가 없어 실패하며, HEAD 원본 두 JS로도 동일한 `iosRenderReconnect` 오류를 재현했다. 이 검사 전체를 통과했다고 취급하지 않는다.
+- 시작 시 원격 main과 `9785716`의 차이는 0/0이었다. 이번 변경은 **소스 수정만이며 APK/IPA 빌드·설치·스토어 배포·브리지 업데이트/재시작을 하지 않았다.** 현재 설치본에는 다음 앱 빌드 전까지 반영되지 않는다. 기존 health/version API를 사용하므로 이 수정 자체에 새 브리지 API는 필요 없다. 계정/인증 정보·모델 호출·기존 세션에는 작업하지 않았다. 심사 제출된 iOS 1.0.0(16) 바이너리는 유지되며 공통 JS 변경은 향후 새 iOS 빌드에만 포함된다.
+
+## App Store 심사 제출 완료 (2026-11-20 06:06 KST)
+
+- 사용자가 새 유료 앱 계약을 직접 검토·동의했다고 응답했다. Console에서 새 계약 업데이트 안내가 사라졌고 유료 계약이 사용자 정보 대기 중으로 바뀐 것을 확인했다. 무료 앱 계약은 활성이다. 은행/세금 양식은 수정하지 않았다.
+- Bibimer **1.0.0(16)**을 심사에 추가하고 **심사를 위해 제출**을 실행했다. Apple의 **‘1개의 항목 제출됨’** 완료 모달과 심사 상세 링크를 실제 UI로 확인했다. 심사 ID `62cb55af-5a41-4558-9544-02484489f678`, 빌드 UUID `0ea77d0f-567b-488d-b868-c9c748a10c04`, 빌드 소스 `0214d86`이다. 상세 링크: https://appstoreconnect.apple.com/apps/6826729307/distribution/reviewsubmissions/details/62cb55af-5a41-4558-9544-02484489f678
+- **심사 제출 완료이지 승인/출시 완료는 아니다.** 1.0.0·무료·영한 등록·CN/FR 제외173개 지역·승인 후 수동 공개를 유지했다. 기존 Bibimer Internal의16번 제공도 완료다. 실제 심사 코드는 비공개 Notes에만 있고 공개 원고는 placeholder를 유지한다. 심사 중 접근 코드를 임의로 바꾸거나 비활성화하지 않는다.
+- 비공개 영수증 `dist/ios-appstore/submission-nov20/app-review-submission-receipt.json`과 공개 `release/app-store/verification.json`에 결과를 기록했다. 제품 코드/바이너리를 다시 변경하거나 빌드/업로드하지 않았다. 이번 CUA는 제출 완료 모달을 관측한 직후 completion_summary를1회 호출해 종료했다.
+- 다음은 Apple 심사 결과 확인 및 필요 시 답변이다. 승인 뒤 자동 공개하지 않으며 사용자의 출시 지시에 따라 수동 공개한다. 아래 계약/Chrome 차단은 해소 전 이력이다.
+
+## TestFlight16 제공·심사 제출 계약 차단 (2026-11-20 후속)
+
+- 사용자가 Chrome 조작을 멈추고 계속 진행하도록 답했다. 기존 로그인된 ASC에서 빌드16의 Apple 처리 완료를 확인했다. UUID `0ea77d0f-567b-488d-b868-c9c748a10c04`, 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답을 저장했다. 영한 테스트 안내1,158자를 저장하고 기존 Bibimer Internal에 추가했으며 그룹의 **16개 빌드·내부 테스터1명·1.0.0(16) 테스트 중/90일 만료**를 확인했다.
+- App Store1.0.0의 선택 빌드를16으로 교체하고 로그인 필요를 해제했다. 최종 영문 심사 안내3,405자와 비공개 코드를 Notes에 저장했고 새로고침 후 전체 문구 정확 일치/16/로그인 불필요/수동 공개를 확인했다. 공개 원고는 `review-notes-16.en.txt`의 placeholder만 유지한다. 영한 iPhone/iPad 각각3장, 총12장도 재확인했다.
+- **심사에 추가를 실제 클릭했으나 Apple의 ‘계약 업데이트 — 유료 응용 프로그램 계약에 업데이트가 필요합니다’ 모달로 차단됐다. 심사에 추가/제출 완료가 아니다.** 무료 앱 계약과 DSA는 활성이다. 유료 앱 계약은 대기 중(새 계약 사용 가능)이며 비즈니스→약관 보기 및 동의하기를 열어 **Schedule2 검토 창**을 표시했다. 동의 checkbox는 꺼짐/최종 동의 버튼은 미클릭이다.
+- 새 법적 계약의 직접 검토/동의 완료를 사용자에게 비동기 요청했다. 화면 제어 도구의 계약 동의 규칙 때문에 시점별 사용자 확인이 필요하며, 과거 PLA 동의와 별개의 유료 앱 Schedule2다. 무료 가격은 바꾸지 않았다. 이후 사용자 완료 응답→계약 상태 확인→1.0.0 심사에 추가→최종 제출→대기 상태 검증. 같은 일반 심사 제출 승인은 다시 묻지 않는다. 은행/세금 양식은 수정하지 않았다.
+- 비공개 증빙 `dist/ios-appstore/submission-nov20/console-build16-preflight.json`. 현재 CUA의 `chrome`은 Google Chrome, 계약 검토 창에 있다. `fs`는node fs/promises, `privateCode`/`finalNotes`는 메모리 변수(원문 출력 금지), `redact`로 getAXState({emit:false}) 문자열만 정제해서 출력한다. 이번 재개 CUA는 아직 진행 중이며 사용자 계약 handoff가 끝난 뒤 최종 결과 관측 시 completion_summary를1회 호출한다. 아래 Chrome 충돌 기록은 해소 전 이력이다.
+
+## iOS 심사 모드 구현·최종 검증 (2026-11-20)
+
+- 사용자 지시에 따라 Android의 비공개 코드 기반 **가상 예제 재생**을 iOS에 이식했다. 실제 API/셸/파일 접근이 없는 비영속 별도 WKWebView이며 정상 작업 화면·설정·초안을 유지한다. Bibimer 자체 계정은 없고 외부 에이전트는 사용자 계정으로 인증한다. 개발자 API 키/유료 호출은 추가하지 않았다.
+- 양 SDK 컴파일, Python41개/Node23파일(브라우저3개 포함), 독립 소스 검토 APPROVE(HIGH/MEDIUM0), Clang 신규 네이티브4파일 진단0. 실제 전용 iPhone WKWebView/Linux34개는47.28초·JS오류0/fatal0/진단실패0, 기존 syscall경고4개다.
+- 실제 CUA에서 잘못된 코드 거절, 올바른 코드 진입, 한국어 배너/Chat/세션 목록/터미널 키 입력과 예제 출력/가상 파일/종료 후 정상 설정 복귀를 확인했다. visual verdict93/pass. Simulator 비동기 클립보드 전달로 첫 입력이 실패했으며 화면 키보드 직접 입력으로 해결했다. 제품 오류로 확정하지 않는다. 초기 준비 화면의 별도 진입은 소스/단위 검증만이며 실제 CUA는 아직이다. 물리 iPhone/iPad 검증은 아니다.
+- iOS 심사 모드 정책10언어를 운영 배포(88e80fe7.bibimer.pages.dev), 운영10URL HTTP200·원본 SHA 일치를 확인했다. 콘텐츠 권한YES 저장·무료 가격/173개 지역(CN/FR 제외)도 확인했다. 유료 계약 업데이트는 동의하지 않았고 최종 제출 시 실제 차단 여부를 확인한다.
+- 빌드16 소스 `0214d86`을 commit/push하고 새16 아카이브·배포 서명/export·소스/IPA 자산 일치를 검증했다. IPA9,070,975bytes, SHA-256 `bfdcf9fb8e41e73c33f5264a3d517157fad9900f50764f23b366d6830a7be85c`. 2026-11-20 01:39 KST Xcode `Upload succeeded`/`EXPORT SUCCEEDED` exit0으로 **업로드 성공·Apple 처리 중**을 확인했다. 기존 TestFlight/ASC 선택은15. 다음은 Apple 처리 확인→기존 내부그룹 제공→ASC16선택/로그인필수해제/비공개 코드 메모→심사 제출이다. 사용자 제출 승인은 이미 있으며 승인 후 수동 공개를 유지한다.
+- 후속 Console 제어는 Chrome의 AWS/Gmail 작업과 겹쳐 `The user changed Google Chrome` 차단과 CUA timeout이 반복됐다. 선택/저장/제출을 강행하지 않았다. 사용자에게 Chrome 조작을 잠시 멈출 수 있는지 비동기 질문을 보냈으며 아직 응답하지 않았다. 재개 시 현재 Chrome 창을 다시 읽고 App Store Connect 전용 창을 선택한다. CUA 세션은 timeout으로 reset되어 변수 재초기화가 필요하다. review mode CUA completion_summary는 이번 턴에1회 완료했다. iPad에 최신 simulator 앱을 설치·일반 시작해 초기 준비 영어 버튼 표시를 확인했으나 초기 버튼 유효 진입과 iPad 리뷰 화면은 미검증이다. 기존 storedemo는 유지됐다.
+- 비공개 증빙: `dist/ios-appstore/submission-nov20/`, `dist/ios-app/submission-1.0.0-16-nov20-review-smoke/`, `.tools/ios-review16-nov20-*`. 실제 코드는 외부 private file에만 있고 공개 문서는 placeholder를 유지한다. 아래 기록은 당시 상태다.
+
+## App Store 제출 승인·진행 중 (2026-11-19)
+
+- 최신 사용자 정정: **Bibimer 자체 계정/회원가입/로그인은 없다.** 사용자가 로컬 터미널에 코딩 에이전트를 설치하고 각자의 외부 제공자 계정으로 사용한다. 데모 계정/API 키를 반드시 개발자가 제공해야 한다는 이전 제출 gate는 철회했다. 사용자는 Play 코드 기반 심사 모드 통과를 보고했으며 Apple의 해당 방식 거절은 관측하지 않았다. 현재 iOS에 Android 예제 재생 진입 구현은 없으므로 심사 접근 경로 구현/검증은 여전히 남아 있다. 코드→제한API는 미구현 설계안이고 Codex 키는 선택적 보완, 비용 최소화 선호/Bibimer 비용제한 없음이다. 키·유료 호출·추가 숫자 예산 답변을 필수 준비 조건으로 삼지 않는다. 실제 키 사용이 필요한 작업이 확정되면 그 작업 범위의 승인만 확인한다.
+
+
+- 후속 사용자 응답: **iOS GPLv3 제공 승인 완료**. 승인 범위 라이선스/예외를 실제 소스·Legal 번들에 반영해 `6308683`으로 커밋·push했다. 양 SDK·앱Python36/Node20파일·실제WKWebView/Linux34개(45.40초, JS오류0/fatal0/진단실패0, 기존 syscall경고4)와 iPhone Legal의 실제 GPL허락 표시를 확인했다. 새 unsigned16 아카이브/소스→자산(Web74/Guest18/rootfs426/Native18/현지화20/네이티브소스17) 일치 검증 완료. 비공개 증빙 `dist/ios-appstore/submission-nov19/candidate16-gpl-local-receipt.json`, `own-gpl-grant-iphone.png`, `.tools/ios-submission16-gpl-*`. 아직 서명/export/업로드는 없다. 자체 서비스 계정이 아닌 API 키 제공 방식을 검토 중이며 제공자·사용자가 허용할 테스트 비용·비공개 키 전달은 아직 미확정이다. 키를 채팅/공개 저장소에 받지 않는다. Apple 비공개 App Review Notes 전달·현재 Codex/OpenCode API 연결과 비용 제한 확인 절차는 `release/app-store/reviewer-api-access.md`를 따른다. 실제 키/모델 호출/구매/충전은 아직 없다. 아래 라이선스 승인 대기는 이전 상태다.
+
+
+- 사용자가 남은 준비와 **심사 제출까지 진행**하도록 새로 명시했다. 이전 제출 보류는 이 지시로 해제됐으며 **승인 후 수동 공개** 설정은 유지한다. 제출 성공은 아직 확인하지 않았다.
+- 후보16 소스 `a12d75f`를 커밋·push했다. 자체 전송 동의/취소·철회, 통계 차단, GPL/Alpine 고지, 한국어 파일 도구 모음 수정이 포함된다. 양 SDK·Python앱34/브리지86·Node18파일·실제 WKWebView/Linux34개(45.75초, JS오류0/fatal0/진단실패0, 기존 syscall경고4) 통과. unsigned 아카이브/패키지 소스 일치까지 확인했고 서명·export·업로드는 아직 없다. ASC 선택/마지막 내부 제공은15다.
+- 기존12장 중 변경된 iPad 설정 영한2장을16으로 실제 재촬영·교체하고 새로고침 뒤 각3장과 순서를 확인했다. 나머지10장은15 출처를 보존했다. 실제 iPhone 한국어 파일 도구 모음·AI/터미널 고지/취소, iPad GPL/Alpine 고지도 화면 제어로 확인했다. visual verdict94/pass.
+- 라이선스 결정과 실제 Chat 심사 접근 답변이 필요하다. 결정 뒤 효력 있는 라이선스 패키징/검증→16 서명·업로드·초안 선택→콘텐츠 권한/최종메모→심사 제출 순서다. 새 draft는 `release/app-store/review-notes-16.draft.en.txt`, Console3426자 DRAFT는 유지했다. 사용자 심사 제출 승인은 이미 있으므로 같은 제출 승인을 다시 묻지 않는다.
+- 비공개 증빙: `dist/ios-appstore/submission-nov19/`, `dist/ios-app/submission-1.0.0-16-nov19-smoke/`, `.tools/ios-submission16-*`. 고지 원문에는 upstream 공백/CRLF·Markdown 밑줄이 보존되어 전체 git diff --check의 공백/충돌표식 오탐을 일으킨다. 자체 변경의 check는 통과했고 원문 해시는 provenance로 검증했다.
+- 실제 기능 설문으로 unrestricted web access를 예로 답해 연령16+를 저장했다. 무료 앱 계약·DSA 거래자 상태 활성화를 Console 비즈니스에서 확인했다. 유료 계약 업데이트에는 동의하지 않았다.
+- iOS 개인정보 정책10언어를 배포했다(`https://a65016d8.bibimer.pages.dev`). 운영10개 URL HTTP200·원본 SHA256 일치를 검증했고 Chrome 한국어 페이지도 확인했다. ASC 영한 정책 주소 저장과 App Privacy 4종(사진/비디오·오디오·기타 사용자 콘텐츠·사용자 ID)의 계정 연결/추적 없음 신고 게시를 확인했다.
+- 심사자가 실제 Chat에 접근할 전용 제공자 계정/접근 방법과, iSH GPLv3 의무에 맞춘 Bibimer 소유 iOS 대응 소스 라이선스 부여 선택을 사용자에게 질문했다. 원문 키/비밀번호를 대화에 보내지 않도록 안내했다. GPL 검토안은 `release/app-store/ios-license-proposal.md`; 승인 전 라이선스 효력은 없다.
+- 연결한 물리 iPhone/iPad가 없고 전용 시뮬레이터만 확인됐다. 실기기 검증으로 표시하지 않는다.
+
+
+## App Store 스크린샷12장 등록·TestFlight15 제공 완료 (2026-11-19)
+
+- 사용자 복구 안내 후 인증된 App Store Connect에 접근했다. **1.0.0(15)**의 표준 암호화(Apple OS 외/병행)·프랑스 미배포 응답을 저장하고 한영 테스트 안내1,836자를 저장했다. 기존 Bibimer Internal 그룹에서 **테스트 중·90일 후 만료·내부 테스터1명·빌드15개**를 직접 확인했다. 재업로드/외부 그룹/새 테스터/공개 링크는 없다.
+- 영어/한국어 × iPhone/iPad 각3장 **총12장 Console 등록 완료**다. 새로고침 후 각 묶음3장과 `01-terminal` → `02-explorer` → `03-settings` 순서를 확인했다. 한국어는 영어 자산 상속 대신 별도 한국어 사진을 등록했다. 로컬 파일은 변경하지 않았으며 출처/해시는 `release/app-store/screenshots/manifest.json`을 따른다.
+- 사용자 제공 심사 연락처와 Console 계정 영문 이름을 저장하고 새로고침 후 확인했다. 개인정보 원문은 공개 저장소에 넣지 않는다. 최신 심사 메모3,426자도 저장해 필수 연락처 누락 차단을 해소했다. DRAFT/미준비 안내는 유지한다.
+- **심사에 추가·제출·공개는 실행하지 않았고 버전1.0.0은 제출 준비 중·수동 공개다.** 새 명시적 지시 전 제출/공개를 하지 않는다. 중국 본토·프랑스 제외173개 지역 설정을 유지한다.
+- iOS 공개 개인정보 정책/App Privacy·명시적 AI 전송 동의·전체 심사 접근·연령/DSA·실기기15 회귀·런타임 정책/대응 소스 검토와 한국어 iPhone 파일 보기 도구 모음 글자 겹침은 남아 있다. 사진 교체는 제품 문제 수정이 아니며 submissionReady=false다.
+- 제품 코드/바이너리·Android APK/웹 정책 배포·운영 앱/브리지/사용자 세션은 변경하지 않았다. 현재 상태는 `release/app-store/verification.json`을 기준으로 하며 아래 장애/미반영 기록은 각 시점의 이력이다.
+
 
 ## Android 0.43.1(73) 정식 출시 검토 제출 (2026-11-19)
 

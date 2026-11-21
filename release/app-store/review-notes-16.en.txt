@@ -1,0 +1,18 @@
+Bibimer is an on-device Agent Development Environment for iPhone/iPad. It has no Bibimer accounts, registration, subscriptions or AI credits. Users install coding-agent CLIs and authenticate those tools with their own external provider accounts. Bibimer manages projects, Git worktrees, agent sessions, structured conversations and terminals.
+
+Review access
+Private review code: {{PRIVATE_REVIEW_CODE}}
+Open Review access on the initial preparation screen, or Settings > Review access. Enter the code. The review workspace is clearly labeled fictional sample replay, with isolated in-memory example data. It does not authenticate a provider, call AI, execute shell commands or read/change real project files. Typed sample input is not retained or used to generate responses. No account, payment or provider key is required for this interface demonstration.
+
+Explore sample projects/worktrees and Codex, Claude Code, OpenCode and Terminal sessions. Send text to advance examples, inspect tool activity, sample approvals/questions, queued messages and file/Git views, and try session management. Terminal interaction replays a sample rather than running the entered command. Exit demo returns to the preserved normal workspace/settings. We describe this scope explicitly and request assessment of this demonstration as a review resource; it is not proof of live AI inference or an assertion of prior Apple approval.
+
+Real local terminal, without a provider account
+Exit demo. Allow initial Linux-tool preparation to complete (internet required). Add ~/projects/review in the sidebar with Create folder selected. Choose Terminal (shell), start a session and review the disclosure. Run pwd and printf 'Bibimer review\n'. Browse files and Git controls. This executes a real shell in the app's Linux environment. Live provider-backed Chat uses the user's independently installed/authenticated agent. No developer credentials are embedded.
+
+Execution model
+The app bundles an ARM64 Linux interpreter and Alpine base filesystem. Preparation downloads executable development packages from Alpine HTTPS repositories, including Python, Bash, Git, Node.js/npm and supporting tools/dependencies. Agent installation is a separate user action downloading the CLI/dependencies. These are executable tools, not static data. The app requests no JIT entitlement; Node uses the supported jitless configuration. We request review of this actual model without claiming an educational exception or blanket authorization under 4.7. Settings > Licenses and source provides GPL/third-party notices, corresponding source and build links.
+
+Privacy and platform scope
+Normal Chat/terminal and optional external voice/TTS actions have explicit app-styled disclosures and Allow/Cancel controls before the relevant operation. Settings can revoke sharing permissions. Provider recipients/terms apply; local files do not make AI processing offline. The work browser uses WKWebView with explicit project/browser control authorization; authentication uses a separate SFSafariViewController/native secure input. iOS can suspend/stop the app. Saved files/conversations persist separately from live processes; unlimited background execution is not promised.
+
+Privacy: https://bibimer.app/privacy/ (Korean: https://bibimer.app/ko/privacy/). App Privacy declares linked user content, photos/videos, audio and user IDs, with no tracking.

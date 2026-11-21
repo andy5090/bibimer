@@ -1,0 +1,13 @@
+Bibimer 1.0.0 (16)
+
+English
+- Adds an isolated review workspace using fictional prerecorded examples. It does not run AI, execute the commands you type or access real project files. Review access requires the private code supplied separately for App Review.
+- Adds explicit Allow/Cancel disclosures before normal agent, terminal and optional external voice data sharing, with permission revocation in Settings.
+- Includes iOS GPL/third-party notices and corresponding-source links, and fixes the Korean file toolbar layout.
+- Check project/session navigation, local terminal input, file views, agent account management, app return and reconnect behavior. External agents use your own provider account; provider fees may apply. iOS may suspend or stop live processes.
+
+한국어
+- 가상의 미리 준비한 예제를 재생하는 격리 심사 작업 공간을 추가했습니다. AI·입력한 명령·실제 프로젝트 파일을 사용하지 않습니다. 심사용 접근에는 App Review에 별도로 제공한 비공개 코드가 필요합니다.
+- 일반 에이전트·터미널·선택적 외부 음성 전송 전 허용/취소 안내와 설정의 권한 철회를 추가했습니다.
+- iOS GPL/제3자 고지·대응 소스 링크를 포함하고 한국어 파일 도구 모음 배치를 수정했습니다.
+- 프로젝트/세션 탐색, 로컬 터미널 입력, 파일 보기, 외부 에이전트 계정 관리, 앱 복귀와 재연결을 확인해주세요. 외부 에이전트는 사용자 본인의 제공자 계정으로 이용하며 별도 비용이 발생할 수 있습니다. iOS는 실행 프로세스를 일시 정지하거나 종료할 수 있습니다.

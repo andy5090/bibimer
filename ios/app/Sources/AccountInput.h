@@ -4,6 +4,7 @@
 @interface BibimerAccountInput : UIViewController
 @property NSDictionary<NSString *, NSString *> *labels;
 @property NSUInteger limit;
+@property BOOL completionAfterDismissal;
 @property(copy) void (^completion)(NSString *key);
 - (void)cancel;
 @end

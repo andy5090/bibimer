@@ -1,0 +1,435 @@
+{
+  "verifiedOn": "2026-11-19",
+  "components": [
+    {
+      "name": "alpine-baselayout, alpine-baselayout-data",
+      "license": "GPL-2.0-only",
+      "source": "https://github.com/alpinelinux/aports/blob/82d6c06a6d6e8de20a4db05994da6046f0623af3/main/alpine-baselayout/APKBUILD",
+      "origin": "alpine-baselayout",
+      "version": "3.6.8-r0",
+      "packagedNames": [
+        "alpine-baselayout",
+        "alpine-baselayout-data"
+      ],
+      "aportsCommit": "82d6c06a6d6e8de20a4db05994da6046f0623af3",
+      "recipeSHA256": "9ba363b0db201593bfa76de07a2fb24bca048b66131408c28e7f865303333679",
+      "noticeFiles": [
+        {
+          "path": "alpine-baselayout/APKBUILD",
+          "source": "https://github.com/alpinelinux/aports/blob/82d6c06a6d6e8de20a4db05994da6046f0623af3/main/alpine-baselayout/APKBUILD",
+          "sha256": "9ba363b0db201593bfa76de07a2fb24bca048b66131408c28e7f865303333679",
+          "bytes": 8166,
+          "kind": "verbatim_file"
+        },
+        {
+          "path": "alpine-baselayout/protocols-6.4.header.txt",
+          "source": "https://salsa.debian.org/md/netbase/-/raw/v6.4/etc/protocols",
+          "downloadSource": "https://distfiles.alpinelinux.org/distfiles/v3.21/protocols-6.4",
+          "sha256": "4c47234fd6330494b48d128c8b601ebe6133a428965dda3fa6798077e6965e28",
+          "bytes": 302,
+          "kind": "verbatim_prefix",
+          "sourceFileSHA512": "3a00083bcdf5a9e884c9d07877d52311e3d99e79cbee656e236ba06e08ba0dddb7ba76494fdc9dd1a826c48e197a790a69e6bb458e9df64832d6b5e904e9fd15"
+        },
+        {
+          "path": "alpine-baselayout/services-6.4.header.txt",
+          "source": "https://salsa.debian.org/md/netbase/-/raw/v6.4/etc/services",
+          "downloadSource": "https://distfiles.alpinelinux.org/distfiles/v3.21/services-6.4",
+          "sha256": "362b0e34398693153841c9f6121f7365df32852c261058f4f19efbd859e63d01",
+          "bytes": 372,
+          "kind": "verbatim_prefix",
+          "sourceFileSHA512": "47b0f3ee73af2d259bd206a026204be0ea25531a895a0b035a904b38fe5407bc3dd2beab7f8fcb3d760587e6159702ebdb9cbc4f508942befdf7f10c10c87888"
+        }
+      ],
+      "limitations": [],
+      "licenseTextResourceNames": [
+        "GPL-2.0.txt"
+      ]
+    },
+    {
+      "name": "alpine-keys",
+      "license": "MIT",
+      "source": "https://github.com/alpinelinux/aports/blob/6d473fb38effb2389f567b29fb7eb27039b3a279/main/alpine-keys/APKBUILD",
+      "origin": "alpine-keys",
+      "version": "2.5-r0",
+      "packagedNames": [
+        "alpine-keys"
+      ],
+      "aportsCommit": "6d473fb38effb2389f567b29fb7eb27039b3a279",
+      "recipeSHA256": "8b51c80bff0f2477f9be7bc9ff98aa760f5759dfcd3a5026ca518c20a89347c6",
+      "noticeFiles": [
+        {
+          "path": "alpine-keys/APKBUILD",
+          "source": "https://github.com/alpinelinux/aports/blob/6d473fb38effb2389f567b29fb7eb27039b3a279/main/alpine-keys/APKBUILD",
+          "sha256": "8b51c80bff0f2477f9be7bc9ff98aa760f5759dfcd3a5026ca518c20a89347c6",
+          "bytes": 6036,
+          "kind": "verbatim_file"
+        }
+      ],
+      "limitations": [
+        "The exact aports directory declares MIT in APKBUILD but contains no separate MIT permission text or copyright-holder statement. The maintainer line is attribution, not asserted copyright ownership. No copyright holder or additional permission has been invented."
+      ]
+    },
+    {
+      "name": "alpine-release",
+      "license": "MIT",
+      "source": "https://github.com/alpinelinux/aports/blob/59962f87e4603deb5bb4d237927fd7eb84c7c9c9/main/alpine-base/APKBUILD",
+      "origin": "alpine-base",
+      "version": "3.21.0-r0",
+      "packagedNames": [
+        "alpine-release"
+      ],
+      "aportsCommit": "59962f87e4603deb5bb4d237927fd7eb84c7c9c9",
+      "recipeSHA256": "5b053a60a19c3d2903dfe1b1ab078c780a27d446cceb403318ae3176efc2799c",
+      "noticeFiles": [
+        {
+          "path": "alpine-base/APKBUILD",
+          "source": "https://github.com/alpinelinux/aports/blob/59962f87e4603deb5bb4d237927fd7eb84c7c9c9/main/alpine-base/APKBUILD",
+          "sha256": "5b053a60a19c3d2903dfe1b1ab078c780a27d446cceb403318ae3176efc2799c",
+          "bytes": 1563,
+          "kind": "verbatim_file"
+        }
+      ],
+      "limitations": [
+        "The exact aports directory declares MIT in APKBUILD but contains no separate MIT permission text or copyright-holder statement. The maintainer line is attribution, not asserted copyright ownership. No copyright holder or additional permission has been invented."
+      ]
+    },
+    {
+      "name": "apk-tools",
+      "license": "GPL-2.0-only",
+      "source": "https://github.com/alpinelinux/aports/blob/85fce5ac38cd9990b8910637d750591e3ef55a6c/main/apk-tools/APKBUILD",
+      "origin": "apk-tools",
+      "version": "2.14.6-r2",
+      "packagedNames": [
+        "apk-tools"
+      ],
+      "aportsCommit": "85fce5ac38cd9990b8910637d750591e3ef55a6c",
+      "recipeSHA256": "10b5ee89b6ac8d97ee6598ff76030aa50345608e85c1300ee7029029c48e90c9",
+      "noticeFiles": [
+        {
+          "path": "apk-tools/AUTHORS",
+          "source": "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/v2.14.6/apk-tools-v2.14.6.tar.gz#apk-tools-v2.14.6/AUTHORS",
+          "sha256": "c238557e70557a79ea0ac30ea6d05342144f02b07ae4e9988171f70de3d66f2e",
+          "bytes": 61,
+          "kind": "verbatim_file"
+        },
+        {
+          "path": "apk-tools/source-copyright-notices.txt",
+          "source": "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/v2.14.6/apk-tools-v2.14.6.tar.gz",
+          "sha256": "dae58baf9d89dbcef8f2d8a4a9e6bd4092b441b9d9133da476edb7c9f6e03455",
+          "bytes": 14373,
+          "kind": "verbatim_source_comment_blocks_with_file_labels"
+        }
+      ],
+      "limitations": [
+        "Source-comment notices are retained from the verified upstream release, including files for configurations or architectures that may not be enabled in this binary. This is not a claim that every source file is bundled or that source and notice obligations are exhausted.",
+        "Automatic attribution extraction inspected comment blocks in the first 16,000 characters of UTF-8 C/C++/assembly source files no larger than 250,000 bytes, plus the listed license/author documents. It is not an exhaustive legal audit of every build input."
+      ],
+      "upstreamArchive": {
+        "sourceURL": "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/v2.14.6/apk-tools-v2.14.6.tar.gz",
+        "file": "apk-tools-v2.14.6.tar.gz",
+        "sha256": "f2926026f2010130df929cb4a1c35b94879ba59aa9cb7465a6f686d4dfd8c7bf",
+        "sha512": "5be32716fda98939845c50daae5b9e226c1758f4d43a9b9eb50d7e54e700ff2d300b0b8af672a1dd8dd172e704594d04dcb9c7c487a13362359120600234c97c",
+        "verifiedAgainstRecipe": true
+      },
+      "licenseTextResourceNames": [
+        "GPL-2.0.txt"
+      ]
+    },
+    {
+      "name": "busybox, busybox-binsh, ssl_client",
+      "license": "GPL-2.0-only",
+      "source": "https://github.com/alpinelinux/aports/blob/79fddc2aa9c64c47fb3da6edeae9570b4e9caa7e/main/busybox/APKBUILD",
+      "origin": "busybox",
+      "version": "1.37.0-r8",
+      "packagedNames": [
+        "busybox",
+        "busybox-binsh",
+        "ssl_client"
+      ],
+      "aportsCommit": "79fddc2aa9c64c47fb3da6edeae9570b4e9caa7e",
+      "recipeSHA256": "ce0b9f3f603a2e2f74dab41e272fb6337d9566c50fd281a3c6bce61df176efbe",
+      "noticeFiles": [
+        {
+          "path": "busybox/AUTHORS",
+          "source": "https://busybox.net/downloads/busybox-1.37.0.tar.bz2#busybox-1.37.0/AUTHORS",
+          "sha256": "384fc3a9cfc7c435bdd9d169e5ec60a7d898d9ef9557ec859394d7f97b4b6f07",
+          "bytes": 5386,
+          "kind": "verbatim_file"
+        },
+        {
+          "path": "busybox/archival/libarchive/bz/LICENSE",
+          "source": "https://busybox.net/downloads/busybox-1.37.0.tar.bz2#busybox-1.37.0/archival/libarchive/bz/LICENSE",
+          "sha256": "b5a136ed67798e51fe2e0ca0b2a21cb01b904ff0c9f7d563a6292e276607e58f",
+          "bytes": 1999,
+          "kind": "verbatim_file"
+        },
+        {
+          "path": "busybox/LICENSE-version-note.txt",
+          "source": "https://busybox.net/downloads/busybox-1.37.0.tar.bz2#busybox-1.37.0/LICENSE",
+          "sha256": "df5f628bfe949efc0dd45be4e686657b71896a33e19383bdde2796d021dcb05d",
+          "bytes": 281,
+          "kind": "verbatim_prefix"
+        },
+        {
+          "path": "busybox/source-copyright-notices.txt",
+          "source": "https://busybox.net/downloads/busybox-1.37.0.tar.bz2",
+          "sha256": "0466fa12157014b17777940db6c1081792ae849783414c79f8e667e2f768cb73",
+          "bytes": 272897,
+          "kind": "verbatim_source_comment_blocks_with_file_labels"
+        }
+      ],
+      "limitations": [
+        "Source-comment notices are retained from the verified upstream release, including files for configurations or architectures that may not be enabled in this binary. This is not a claim that every source file is bundled or that source and notice obligations are exhausted.",
+        "Automatic attribution extraction inspected comment blocks in the first 16,000 characters of UTF-8 C/C++/assembly source files no larger than 250,000 bytes, plus the listed license/author documents. It is not an exhaustive legal audit of every build input."
+      ],
+      "upstreamArchive": {
+        "sourceURL": "https://busybox.net/downloads/busybox-1.37.0.tar.bz2",
+        "file": "busybox-1.37.0.tar.bz2",
+        "sha256": "3311dff32e746499f4df0d5df04d7eb396382d7e108bb9250e7b519b837043a4",
+        "sha512": "ad8fd06f082699774f990a53d7a73b189ed404fe0a2166aff13eae4d9d8ee5c9239493befe949c98801fe7897520dbff3ed0224faa7205854ce4fa975e18467e",
+        "verifiedAgainstRecipe": true
+      },
+      "licenseTextResourceNames": [
+        "GPL-2.0.txt"
+      ]
+    },
+    {
+      "name": "ca-certificates-bundle",
+      "license": "MPL-2.0 AND MIT",
+      "source": "https://github.com/alpinelinux/aports/blob/537f890454d2213fd05cde5e458dfa9c8ef1977f/main/ca-certificates/APKBUILD",
+      "origin": "ca-certificates",
+      "version": "20241010-r0",
+      "packagedNames": [
+        "ca-certificates-bundle"
+      ],
+      "aportsCommit": "537f890454d2213fd05cde5e458dfa9c8ef1977f",
+      "recipeSHA256": "a64af4f2aeddf1b0ef547bc377657dee297d9202a355f37df4ab02fb8b91e0d3",
+      "noticeFiles": [
+        {
+          "path": "ca-certificates/source-copyright-notices.txt",
+          "source": "https://gitlab.alpinelinux.org/alpine/ca-certificates/-/archive/20241010/ca-certificates-20241010.tar.bz2",
+          "sha256": "109b2525576a6a1e27cb99777c9fadf4b8bfbf26c2e99392141d8b17f2911c8b",
+          "bytes": 382,
+          "kind": "verbatim_source_comment_blocks_with_file_labels"
+        },
+        {
+          "path": "ca-certificates/certdata-license-header.txt",
+          "source": "https://gitlab.alpinelinux.org/alpine/ca-certificates/-/archive/20241010/ca-certificates-20241010.tar.bz2#ca-certificates-20241010/certdata.txt",
+          "sha256": "f63a93ed6525d62c9cb979f5dff7a9a7e71bab35cdc3ef3c435e00233e315d2c",
+          "bytes": 201,
+          "kind": "verbatim_prefix"
+        },
+        {
+          "path": "ca-certificates/MPL-2.0.txt",
+          "source": "https://www.mozilla.org/media/MPL/2.0/index.txt",
+          "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+          "bytes": 16726,
+          "kind": "verbatim_file"
+        }
+      ],
+      "limitations": [
+        "The bundled ca-certificates-bundle consists of the certificate bundle and symlinks; c_rehash.c MIT attribution is preserved from its common source origin and does not claim the helper itself is bundled.",
+        "Source-comment notices are retained from the verified upstream release, including files for configurations or architectures that may not be enabled in this binary. This is not a claim that every source file is bundled or that source and notice obligations are exhausted.",
+        "Automatic attribution extraction inspected comment blocks in the first 16,000 characters of UTF-8 C/C++/assembly source files no larger than 250,000 bytes, plus the listed license/author documents. It is not an exhaustive legal audit of every build input."
+      ],
+      "upstreamArchive": {
+        "sourceURL": "https://gitlab.alpinelinux.org/alpine/ca-certificates/-/archive/20241010/ca-certificates-20241010.tar.bz2",
+        "file": "ca-certificates-20241010.tar.bz2",
+        "sha256": "a3ad65619ad32b45619e4de0412cd181e56d98dfdebf229e0e0fef2d2dd8caa1",
+        "sha512": "b2fc56a0c3bf30894661b108e5106067dde7b2418e4c805c560d6ccfa7412692208c39ebf9772760a8aa30322c2553928a49692cf7a9e9da03f8697c49fa8fc4",
+        "verifiedAgainstRecipe": true
+      }
+    },
+    {
+      "name": "libcrypto3, libssl3",
+      "license": "Apache-2.0",
+      "source": "https://github.com/alpinelinux/aports/blob/e18f4d0c2080542ef5c4fd329a5be584064658aa/main/openssl/APKBUILD",
+      "origin": "openssl",
+      "version": "3.3.2-r4",
+      "packagedNames": [
+        "libcrypto3",
+        "libssl3"
+      ],
+      "aportsCommit": "e18f4d0c2080542ef5c4fd329a5be584064658aa",
+      "recipeSHA256": "e8c194d6c66a2910407105584a1877a1fc3e62ab1835d07fa473ee801d7a6514",
+      "noticeFiles": [
+        {
+          "path": "openssl/AUTHORS.md",
+          "source": "https://github.com/openssl/openssl/releases/download/openssl-3.3.2/openssl-3.3.2.tar.gz#openssl-3.3.2/AUTHORS.md",
+          "sha256": "5076ca441daef7fb35e904c2ac070880c7b3d58300a5a6aecac41e8f525f4412",
+          "bytes": 990,
+          "kind": "verbatim_file"
+        },
+        {
+          "path": "openssl/LICENSE.txt",
+          "source": "https://github.com/openssl/openssl/releases/download/openssl-3.3.2/openssl-3.3.2.tar.gz#openssl-3.3.2/LICENSE.txt",
+          "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
+          "bytes": 10175,
+          "kind": "verbatim_file"
+        },
+        {
+          "path": "openssl/source-copyright-notices.txt",
+          "source": "https://github.com/openssl/openssl/releases/download/openssl-3.3.2/openssl-3.3.2.tar.gz",
+          "sha256": "d5d86e7e1926b6f423089b0c0a863dfdeaa04779099de58fd4fb5ddcac178914",
+          "bytes": 210885,
+          "kind": "verbatim_source_comment_blocks_with_file_labels"
+        }
+      ],
+      "limitations": [
+        "Source-comment notices are retained from the verified upstream release, including files for configurations or architectures that may not be enabled in this binary. This is not a claim that every source file is bundled or that source and notice obligations are exhausted.",
+        "Automatic attribution extraction inspected comment blocks in the first 16,000 characters of UTF-8 C/C++/assembly source files no larger than 250,000 bytes, plus the listed license/author documents. It is not an exhaustive legal audit of every build input."
+      ],
+      "upstreamArchive": {
+        "sourceURL": "https://github.com/openssl/openssl/releases/download/openssl-3.3.2/openssl-3.3.2.tar.gz",
+        "file": "openssl-3.3.2.tar.gz",
+        "sha256": "2e8a40b01979afe8be0bbfb3de5dc1c6709fedb46d6c89c10da114ab5fc3d281",
+        "sha512": "5ae47bf1aed2740a33ba5df7dc7345a6738aa6bfa3c9c4de5e51742485e24b25192988d7a2c1b8201ef70056ad8abd0ca78b3d55abe24c0b0373d83b47ed9b74",
+        "verifiedAgainstRecipe": true
+      }
+    },
+    {
+      "name": "musl, musl-utils",
+      "license": "MIT / MIT AND BSD-2-Clause AND GPL-2.0-or-later",
+      "source": "https://github.com/alpinelinux/aports/blob/c1ab9dfcb36751c3e9097f0f67e01ad12b2e1f5f/main/musl/APKBUILD",
+      "origin": "musl",
+      "version": "1.2.5-r8",
+      "packagedNames": [
+        "musl",
+        "musl-utils"
+      ],
+      "aportsCommit": "c1ab9dfcb36751c3e9097f0f67e01ad12b2e1f5f",
+      "recipeSHA256": "e35b83af4ec3371ccbb0cb7be7f96dfeb1c8088970d9e80aad4965beb7c7e347",
+      "noticeFiles": [
+        {
+          "path": "musl/COPYRIGHT",
+          "source": "https://musl.libc.org/releases/musl-1.2.5.tar.gz#musl-1.2.5/COPYRIGHT",
+          "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af",
+          "bytes": 6204,
+          "kind": "verbatim_file"
+        },
+        {
+          "path": "musl/source-copyright-notices.txt",
+          "source": "https://musl.libc.org/releases/musl-1.2.5.tar.gz",
+          "sha256": "848a7d34049541c1655d489f1fcff7eaa7a63d49a94b3695d1ff02fae3b465ff",
+          "bytes": 35317,
+          "kind": "verbatim_source_comment_blocks_with_file_labels"
+        },
+        {
+          "path": "musl/getconf.c.notice.txt",
+          "source": "https://raw.githubusercontent.com/alpinelinux/aports/c1ab9dfcb36751c3e9097f0f67e01ad12b2e1f5f/main/musl/getconf.c",
+          "sha256": "5f5cfc490f4d0bdbb35e60ea86e5747bf53e59e4911669d0be4f3901bd0b3c37",
+          "bytes": 1585,
+          "kind": "verbatim_prefix"
+        },
+        {
+          "path": "musl/getent.c.notice.txt",
+          "source": "https://raw.githubusercontent.com/alpinelinux/aports/c1ab9dfcb36751c3e9097f0f67e01ad12b2e1f5f/main/musl/getent.c",
+          "sha256": "123c18205dcd38c978957278c255497d1397647189390c0306e09989572a2d5b",
+          "bytes": 1568,
+          "kind": "verbatim_prefix"
+        },
+        {
+          "path": "musl/iconv.c.notice.txt",
+          "source": "https://raw.githubusercontent.com/alpinelinux/aports/c1ab9dfcb36751c3e9097f0f67e01ad12b2e1f5f/main/musl/iconv.c",
+          "sha256": "002e9c0980ff4a91b719f1d094d73577578ff68e7b266e217690dfa1a3e48da8",
+          "bytes": 171,
+          "kind": "verbatim_prefix"
+        }
+      ],
+      "limitations": [
+        "Source-comment notices are retained from the verified upstream release, including files for configurations or architectures that may not be enabled in this binary. This is not a claim that every source file is bundled or that source and notice obligations are exhausted.",
+        "Automatic attribution extraction inspected comment blocks in the first 16,000 characters of UTF-8 C/C++/assembly source files no larger than 250,000 bytes, plus the listed license/author documents. It is not an exhaustive legal audit of every build input."
+      ],
+      "upstreamArchive": {
+        "sourceURL": "https://musl.libc.org/releases/musl-1.2.5.tar.gz",
+        "file": "musl-1.2.5.tar.gz",
+        "sha256": "a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4",
+        "sha512": "7bb7f7833923cd69c7a1a9b8a5f1784bfd5289663eb6061dcd43d583e45987df8a68a1be05d75cc1c88a3f5b610653d1a70f4a9cff4d8f7fd41ae73ee058c17c",
+        "verifiedAgainstRecipe": true
+      },
+      "licenseTextResourceNames": [
+        "GPL-2.0.txt",
+        "GPL-3.0.txt"
+      ]
+    },
+    {
+      "name": "scanelf",
+      "license": "GPL-2.0-only",
+      "source": "https://github.com/alpinelinux/aports/blob/398a5aee3025ec8a4d0d761e448dc86ac777fa09/main/pax-utils/APKBUILD",
+      "origin": "pax-utils",
+      "version": "1.3.8-r1",
+      "packagedNames": [
+        "scanelf"
+      ],
+      "aportsCommit": "398a5aee3025ec8a4d0d761e448dc86ac777fa09",
+      "recipeSHA256": "94093b0c82b24c09bd3a5c307273cbee8f6ceaee49b66f75e574a2441a409862",
+      "noticeFiles": [
+        {
+          "path": "pax-utils/source-copyright-notices.txt",
+          "source": "https://dev.gentoo.org/~sam/distfiles/app-misc/pax-utils/pax-utils-1.3.8.tar.xz",
+          "sha256": "9de9c7a8e346386365b6887d337df7454ceabcf406ccfe0179c6b4e0b224b13e",
+          "bytes": 5020,
+          "kind": "verbatim_source_comment_blocks_with_file_labels"
+        }
+      ],
+      "limitations": [
+        "Source-comment notices are retained from the verified upstream release, including files for configurations or architectures that may not be enabled in this binary. This is not a claim that every source file is bundled or that source and notice obligations are exhausted.",
+        "Automatic attribution extraction inspected comment blocks in the first 16,000 characters of UTF-8 C/C++/assembly source files no larger than 250,000 bytes, plus the listed license/author documents. It is not an exhaustive legal audit of every build input."
+      ],
+      "upstreamArchive": {
+        "sourceURL": "https://dev.gentoo.org/~sam/distfiles/app-misc/pax-utils/pax-utils-1.3.8.tar.xz",
+        "file": "pax-utils-1.3.8.tar.xz",
+        "sha256": "12a168d1aeae2626efdbde3979da88a60ca80bb38e1db565e95ee441ff1d5a0c",
+        "sha512": "0dde95f86802729d80b7b38af84dec636e973f6abc70600633edcb05d3d5f95c1b2861300ce478dd7f798c7a1e5eccb1011c06c53adba38e11a996b69d463656",
+        "verifiedAgainstRecipe": true
+      },
+      "licenseTextResourceNames": [
+        "GPL-2.0.txt"
+      ]
+    },
+    {
+      "name": "zlib",
+      "license": "Zlib",
+      "source": "https://github.com/alpinelinux/aports/blob/4c2722e7ecc1c5e3ba882429044a101497121223/main/zlib/APKBUILD",
+      "origin": "zlib",
+      "version": "1.3.1-r2",
+      "packagedNames": [
+        "zlib"
+      ],
+      "aportsCommit": "4c2722e7ecc1c5e3ba882429044a101497121223",
+      "recipeSHA256": "47ba2fb65734f65fbbfc980d261cf86ab99e8c5bad9d0977a59620cde18ffd53",
+      "noticeFiles": [
+        {
+          "path": "zlib/LICENSE",
+          "source": "https://zlib.net/fossils/zlib-1.3.1.tar.gz#zlib-1.3.1/LICENSE",
+          "sha256": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243",
+          "bytes": 1002,
+          "kind": "verbatim_file"
+        },
+        {
+          "path": "zlib/source-copyright-notices.txt",
+          "source": "https://zlib.net/fossils/zlib-1.3.1.tar.gz",
+          "sha256": "beb553e0e66efcb894c40b532d509a1e3078e013ddd8f4c9cd5d0593f012e0b4",
+          "bytes": 38314,
+          "kind": "verbatim_source_comment_blocks_with_file_labels"
+        }
+      ],
+      "limitations": [
+        "Source-comment notices are retained from the verified upstream release, including files for configurations or architectures that may not be enabled in this binary. This is not a claim that every source file is bundled or that source and notice obligations are exhausted.",
+        "Automatic attribution extraction inspected comment blocks in the first 16,000 characters of UTF-8 C/C++/assembly source files no larger than 250,000 bytes, plus the listed license/author documents. It is not an exhaustive legal audit of every build input."
+      ],
+      "upstreamArchive": {
+        "sourceURL": "https://zlib.net/fossils/zlib-1.3.1.tar.gz",
+        "file": "zlib-1.3.1.tar.gz",
+        "sha256": "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
+        "sha512": "580677aad97093829090d4b605ac81c50327e74a6c2de0b85dd2e8525553f3ddde17556ea46f8f007f89e435493c9a20bc997d1ef1c1c2c23274528e3c46b94f",
+        "verifiedAgainstRecipe": true
+      }
+    }
+  ],
+  "limitations": [
+    "These are exact-source notice materials for the 15 packages bundled in Alpine minirootfs 3.21.0, not a blanket license clearance or a license for user-installed packages.",
+    "Full GPL-2.0 and GPL-3.0 license documents are separately bundled in the application, rather than duplicated here.",
+    "alpine-keys and alpine-release exact recipes declare MIT but provide no separate copyright-holder or MIT permission text. See their component limitations."
+  ]
+}

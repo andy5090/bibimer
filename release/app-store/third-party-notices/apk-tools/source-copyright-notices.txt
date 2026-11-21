@@ -1,0 +1,508 @@
+Source file(s): apk-tools-v2.14.6/src/apk.c
+/* apk.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_applet.h
+/* apk_applet.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_archive.h
+/* apk_archive.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_atom.h
+/* apk_atom.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2020 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_blob.h
+/* apk_blob.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_database.h
+/* apk_database.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_defines.h
+/* apk_defines.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_hash.h
+/* apk_hash.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_io.h
+/* apk_io.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_openssl.h
+/* apk_openssl.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_package.h
+/* apk_package.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_print.h
+/* apk_print.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_provider_data.h
+/* apk_provider_data.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2012 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_solver.h
+/* apk_solver.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2013 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_solver_data.h
+/* apk_solver_data.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2012 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/apk_version.h
+/* apk_version.h - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_add.c
+/* app_add.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_audit.c
+/* app_audit.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_cache.c
+/* app_cache.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_del.c
+/* app_del.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_dot.c
+/* app_dot.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_fetch.c
+/* app_fetch.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_fix.c
+/* app_fix.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_index.c
+/* app_index.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_info.c
+/* app_info.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2009 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_list.c
+/* app_list.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2009 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * Copyright (C) 2018 William Pitcock <nenolod@dereferenced.org>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_manifest.c
+/* app_manifest.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2017 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2017 Timo Teräs <timo.teras@iki.fi>
+ * Copyright (C) 2017 William Pitcock <nenolod@dereferenced.org>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_policy.c
+/* app_policy.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2013 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_search.c
+/* app_search.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2009 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_stats.c
+/* app_stats.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2013 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_update.c
+/* app_update.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_upgrade.c
+/* app_upgrade.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_verify.c
+/* app_verify.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/app_version.c
+/* app_version.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/atom.c
+/* apk_atom.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2020 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/blob.c
+/* blob.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/commit.c
+/* commit.c - Alpine Package Keeper (APK)
+ * Apply solver calculated changes to database.
+ *
+ * Copyright (C) 2008-2013 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/common.c
+/* common.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/database.c
+/* database.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/hash.c
+/* hash.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/help.c
+/* help.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2020 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/io.c
+/* io.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/io_archive.c
+/* io_archive.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/io_gunzip.c
+/* io_gunzip.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/io_url.c
+/* io_url.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/lua-apk.c
+/* src/lua-apk.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/lua-apk.c
+/* implemented as luaL_typerror until lua 5.1, dropped in 5.2
+ * (C) 1994-2012 Lua.org, PUC-Rio. MIT license
+ */
+
+Source file(s): apk-tools-v2.14.6/src/package.c
+/* package.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/print.c
+/* print.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/solver.c
+/* solver.c - Alpine Package Keeper (APK)
+ * Up- and down-propagating, forwarding checking, deductive dependency solver.
+ *
+ * Copyright (C) 2008-2013 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/template.c
+/* template.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+
+Source file(s): apk-tools-v2.14.6/src/version.c
+/* version.c - Alpine Package Keeper (APK)
+ *
+ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
+ * Copyright (C) 2008-2011 Timo Teräs <timo.teras@iki.fi>
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */

@@ -26,17 +26,56 @@ def output(*args):
     return subprocess.check_output(list(map(str, args)), text=True).strip()
 
 
+def review_access_digest():
+    # Reuse Android's private external-file policy; never package the raw code.
+    sys.path.insert(0, str(REPO / 'scripts'))
+    try:
+        import build_apk
+        return build_apk.review_access_digest()
+    finally:
+        sys.path.pop(0)
+
+
+def review_labels(source):
+    keys=['review_access','review_access_code','review_access_enter','review_access_invalid','review_access_unavailable','cancel_project']
+    base=(source/'i18n.js').read_text()
+    pairs={key:json.loads(re.search(r'^\s*'+key+r': (\[.*\]),$',base,re.M).group(1)) for key in keys}
+    rows={locale:{key:pair[index] for key,pair in pairs.items()} for index,locale in enumerate(['en','ko'])}
+    for locale in ['pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']:
+        text=(source/('i18n-'+locale+'.js')).read_text()
+        rows[locale]={}
+        for key in keys:
+            match=re.search(r'^\s*"?'+key+r'"?\s*:\s*("(?:[^"\\]|\\.)*")',text,re.M)
+            rows[locale][key]=json.loads(match.group(1)) if match else rows['en'][key]
+    return rows
+
+
 def package_web(destination):
+    notices = json.loads((HERE / 'Resources/runtime-notices.json').read_text())
+    own_licenses = [('BIBIMER-LICENSE.md', HERE.parent / 'LICENSE.md'),
+                    ('BIBIMER-LICENSE.IOS', HERE.parent / 'LICENSE.IOS'),
+                    ('GPL-3.0', HERE.parent / 'COPYING')]
+    for key, path in own_licenses:
+        if notices.get(key) != path.read_text():
+            raise RuntimeError('Bundled Bibimer license differs from its source: ' + key)
+    if (HERE / 'Resources/GPL-3.0.txt').read_bytes() != (HERE.parent / 'COPYING').read_bytes():
+        raise RuntimeError('Bundled GPL version 3 differs from ios/COPYING.')
     source = REPO / 'android/app/src/main/assets'
     if destination.exists():
         shutil.rmtree(destination)
     shutil.copytree(source, destination)
-    for name in ['platform.js', 'terminal-tools.js', 'terminal-tools.css', 'speech-text.js', 'text-gestures.js']:
+    (destination/'review-labels.json').write_text(json.dumps(review_labels(source),ensure_ascii=False)+'\n')
+    for key, path in own_licenses:
+        shutil.copy2(path, destination / (key + '.txt' if key == 'GPL-3.0' else key))
+    for name in ['platform.js', 'terminal-tools.js', 'terminal-tools.css', 'speech-text.js', 'text-gestures.js', 'data-consent.js', 'review-workspace.js']:
         shutil.copy2(HERE / 'Resources' / name, destination / name)
+    (destination/'review-samples.js').write_text('window.BibimerReviewSamples='+json.dumps(json.loads((HERE/'Resources/review-samples.json').read_text()),ensure_ascii=False)+';\n')
     locales=json.loads((HERE / 'Resources/ios-locales.json').read_text())
     (destination / 'ios-locales.js').write_text('window.BibimerIOSLocales='+json.dumps(locales,ensure_ascii=False)+';\n')
+    for name, global_name in [('data-consent-locales.json', 'BibimerIOSDataLocales'), ('runtime-notices.json', 'BibimerRuntimeNotices'), ('alpine-notices.json', 'BibimerAlpineNotices')]:
+        (destination / name.replace('.json', '.js')).write_text('window.' + global_name + '=' + json.dumps(json.loads((HERE / 'Resources' / name).read_text()), ensure_ascii=False) + ';\n')
     index = (destination / 'index.html').read_text()
-    index = index.replace('<script src="app.js" defer>', '<script src="ios-locales.js" defer></script>\n  <script src="speech-text.js" defer></script>\n  <script src="text-gestures.js" defer></script>\n  <script src="platform.js" defer></script>\n  <script src="terminal-tools.js" defer></script>\n  <link rel="stylesheet" href="terminal-tools.css">\n  <script src="app.js" defer>')
+    index = index.replace('<script src="app.js" defer>', '<script src="ios-locales.js" defer></script>\n  <script src="speech-text.js" defer></script>\n  <script src="text-gestures.js" defer></script>\n  <script src="platform.js" defer></script>\n  <script src="terminal-tools.js" defer></script>\n  <script src="data-consent-locales.js" defer></script>\n  <script src="runtime-notices.js" defer></script>\n  <script src="alpine-notices.js" defer></script>\n  <script src="data-consent.js" defer></script>\n  <link rel="stylesheet" href="terminal-tools.css">\n  <script src="app.js" defer>')
     index = index.replace('width=device-width, initial-scale=1, viewport-fit=cover',
                           'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover')
     reconnect_row = re.search(r'<div class="button-row"><button id="reconnect-settings".*?</div>', index)
@@ -73,8 +112,17 @@ def package_web(destination):
     </section>
     <section id="connection-settings"''')
     # iOS zooms small text fields on focus. Keep the shared Android sizing intact.
+    index = index.replace('<section id="connection-settings"', '\n    <section class="card preference-card" id="ios-data-settings"><h2 data-ios-data="settings"></h2><p class="hint" data-ios-data="sessionOnly"></p><div class="button-row"><button id="ios-data-revoke" type="button" class="secondary" data-ios-data="revoke"></button><button id="ios-legal-open" type="button" class="secondary" data-ios-data="legal"></button></div><p id="ios-data-revoke-status" class="hint" role="status"></p></section>\n    <section id="connection-settings"')
+    index = index.replace('</body>', '''<dialog id="ios-data-consent" aria-labelledby="ios-data-title" aria-describedby="ios-data-description ios-data-purpose"><h2 id="ios-data-title" data-ios-data="title"></h2><p><strong data-ios-data="recipient"></strong>: <span id="ios-data-recipient"></span></p><p id="ios-data-description"></p><p id="ios-data-purpose"></p><div class="button-row"><button id="ios-data-cancel" type="button" class="secondary" data-ios-data="cancel"></button><button id="ios-data-allow" type="button" class="primary" data-ios-data="allow"></button></div></dialog>
+    <dialog id="ios-legal" aria-labelledby="ios-legal-title"><div class="dialog-header"><h2 id="ios-legal-title" data-ios-data="legal"></h2><button id="ios-legal-close" type="button" class="secondary" data-ios-data="close"></button></div><p>Bibimer · ARM64 Linux interpreter · Alpine Linux</p><ul><li><a href="https://github.com/andy5090/bibimer" target="_blank" rel="noopener">Bibimer source and build instructions</a></li><li><a href="https://github.com/andy5090/bibimer/blob/main/ios/LICENSE.md" target="_blank" rel="noopener">Bibimer iOS GPLv3 license and covered source</a></li><li><a href="https://github.com/andy5090/bibimer/blob/main/release/app-store/runtime-sources.md" target="_blank" rel="noopener">Runtime components, licenses and corresponding sources</a></li><li><a href="https://github.com/dnakov/litter-ish/tree/c8e9dcb954963b0d9f359b3ad9da871f19b28652" target="_blank" rel="noopener">Pinned litter-ish runtime source</a></li><li><a href="https://github.com/andy5090/bibimer/blob/main/ios/runtime-lab/patches/embedded-runtime.patch" target="_blank" rel="noopener">Runtime modifications</a></li><li><a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html" target="_blank" rel="noopener">GNU GPL version 2</a></li><li><a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">GNU GPL version 3</a></li></ul><details><summary>Bibimer iOS license · Copyright © 2026 Andineering</summary><pre id="ios-bibimer-license"></pre></details><details><summary>Bibimer iOS App Store additional permission</summary><pre id="ios-bibimer-exception"></pre></details><details><summary>Bundled runtime license</summary><pre id="ios-runtime-license"></pre></details><details><summary>iOS distribution exception</summary><pre id="ios-runtime-exception"></pre></details><details><summary>GNU General Public License version 3</summary><pre id="ios-runtime-gpl"></pre></details><details><summary>GNU General Public License version 2</summary><pre id="ios-runtime-gpl2"></pre></details><div id="ios-alpine-notices"></div></dialog></body>''')
     index = index.replace('</head>', '''<style>
 .ios-unavailable { display:none !important; }
+#file-viewer .file-toolbar { display:flex; flex-wrap:wrap; gap:8px; }
+#file-viewer .file-toolbar button { flex:1 1 125px; min-width:0; height:auto; min-height:36px; white-space:normal; overflow-wrap:anywhere; }
+#ios-data-consent, #ios-legal { width:min(560px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); overflow:auto; overflow-wrap:anywhere; }
+#ios-data-consent .button-row, #ios-data-settings .button-row { display:flex; flex-wrap:wrap; gap:8px; }
+#ios-data-consent button, #ios-data-settings button { flex:1 1 150px; min-width:0; white-space:normal; }
+#ios-legal pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
 .ios-recovery-progress { display:flex; align-items:center; gap:10px; margin:6px 12px; padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--raised); font-size:12px; }
 .ios-recovery-progress>div { min-width:0; overflow-wrap:anywhere; }
 .ios-recovery-progress p { margin:4px 0 0; font-size:11px; }
@@ -102,7 +150,29 @@ html, body { width:100%; max-width:100%; height:100%; overflow:hidden; touch-act
 </style>
 </head>''')
     (destination / 'index.html').write_text(index)
+    review_index=index.replace('<script src="app.js" defer>', '<script src="review-samples.js" defer></script><script src="review-workspace.js" defer></script><script src="app.js" defer>')
+    review_index=review_index.replace("frame-src 'self'", "frame-src 'none'")
+    (destination/'review.html').write_text(review_index)
     app = (destination / 'app.js').read_text()
+    entry='$("review-access-form").addEventListener("submit", event => {'
+    verify='accepted = native.enterReviewDemo?.($("review-access-code").value.trim()) === true;'
+    if app.count(entry)!=1 or app.count(verify)!=1:
+        raise RuntimeError('Shared review-entry contract changed; review asynchronous iOS access.')
+    app=app.replace(entry,entry.replace('event =>','async event =>'))
+    opening='$("review-access-open").addEventListener("click", () => {\n    if (demo || currentTab !== "settings") return;'
+    if app.count(opening)!=1:raise RuntimeError('Shared review dialog lifecycle changed.')
+    app=app.replace(opening,'let iosReviewEntryEpoch=0;\n  '+opening+'\n    ++iosReviewEntryEpoch;native.cancelReviewEntry?.();')
+    app=app.replace('let accepted = false;\n    try { '+verify, 'if($("review-access-submit").disabled)return;\n    $("review-access-submit").disabled=true;\n    const entryGeneration=generation,entryEpoch=iosReviewEntryEpoch;\n    let accepted = false;\n    try { accepted = await native.enterReviewDemo?.($("review-access-code").value.trim(),()=>entryEpoch===iosReviewEntryEpoch && entryGeneration===generation && currentTab==="settings" && $("review-access-dialog").open && !paused) === true;')
+    app=app.replace('=== true; } catch (_) { }\n    $("review-access-code")', '=== true; } catch (_) { } finally { $("review-access-submit").disabled=false; }\n    $("review-access-code")')
+    app=app.replace('$("review-access-code").value = "";\n    if (!accepted)', 'if(entryEpoch!==iosReviewEntryEpoch || entryGeneration!==generation || currentTab!=="settings" || !$("review-access-dialog").open) return;\n    $("review-access-code").value = "";\n    if (!accepted)')
+    failed='window.BibimerReviewEntryFailed = () => {\n    paused = false;'
+    if app.count(failed)!=1:raise RuntimeError('Shared review entry failure recovery changed.')
+    app=app.replace(failed,'window.BibimerReviewEntryFailed = () => {\n    if(document.hidden || environment().localRuntime?.foreground===false){paused=true;return;}\n    paused = false;')
+    # Sample input is discarded rather than retained as a normal optimistic row.
+    if app.count('if (chat) optimisticMessages.add(')!=1 or app.count('if (optimisticId && (!attempt')!=1:
+        raise RuntimeError('Shared optimistic input contract changed; review demo input isolation.')
+    app=app.replace('if (chat) optimisticMessages.add(', 'if (chat && !demo) optimisticMessages.add(')
+    app=app.replace('if (optimisticId && (!attempt', 'if (!demo && optimisticId && (!attempt')
     metadata_timeout = '}, path === "/native/open-file" ? 120000 : 35000);'
     if app.count(metadata_timeout) != 1:
         raise RuntimeError('Shared API timeout contract changed; review iOS metadata deadlines.')
@@ -110,7 +180,7 @@ html, body { width:100%; max-width:100%; height:100%; overflow:hidden; touch-act
     end = app.rfind('})();')
     if end < 0:
         raise RuntimeError('Shared application closure changed; review the iOS integration hooks.')
-    app = app[:end] + (HERE / 'Resources/ui-hooks.js').read_text() + '\n' + app[end:]
+    app = app[:end] + 'if (!demo) {\n' + (HERE / 'Resources/data-consent-hooks.js').read_text() + '\n' + (HERE / 'Resources/ui-hooks.js').read_text() + '\n}\n' + app[end:]
     (destination / 'app.js').write_text(app)
 
 
@@ -160,7 +230,7 @@ def main():
     clang = output('xcrun', '--find', 'clang')
     target = 'arm64-apple-ios16.0' + ('-simulator' if args.sdk == 'iphonesimulator' else '')
     flags = ['-target', target, '-isysroot', sdk, '-DBIBIMER_EMBEDDED=1', '-DGUEST_ARM64=1']
-    sources = [HERE / 'Sources/main.m', HERE / 'Sources/AccountInput.m', HERE / 'Sources/AccountBrowser.m', HERE / 'Sources/VoiceService.m', HERE / 'Sources/BrowserService.m', HERE / 'Sources/CompletionNotifications.m', HERE / 'Sources/BackgroundExecution.m', HERE / 'Sources/AppSupport.c',
+    sources = [HERE / 'Sources/ReviewAccess.c', HERE / 'Sources/ReviewController.m', HERE / 'Sources/main.m', HERE / 'Sources/AccountInput.m', HERE / 'Sources/AccountBrowser.m', HERE / 'Sources/VoiceService.m', HERE / 'Sources/BrowserService.m', HERE / 'Sources/CompletionNotifications.m', HERE / 'Sources/BackgroundExecution.m', HERE / 'Sources/AppSupport.c',
                REPO / 'ios/runtime-lab/Sources/RuntimeSupport.c', runtime / 'embed/ffi.c']
     objects = []
     for source in sources:
@@ -186,10 +256,13 @@ def main():
         native_strings={'Chat response completed.':strings[2],'Browser':strings[3],'Background work':strings[16]}
         for name,values in [('InfoPlist.strings',info_strings),('Localizable.strings',native_strings)]:
             (folder/name).write_text('\n'.join(json.dumps(k,ensure_ascii=False)+' = '+json.dumps(v,ensure_ascii=False)+';' for k,v in values.items())+'\n')
+    bundled_notices = json.loads((HERE / 'Resources/runtime-notices.json').read_text())
     for name in ['LICENSE.md', 'LICENSE.IOS']:
+        if bundled_notices.get(name) != (runtime / name).read_text():
+            raise RuntimeError('Bundled runtime notice differs from verified runtime: ' + name)
         shutil.copy2(runtime / name, app / ('Runtime-' + name))
     bridge_version=re.search(r'^VERSION = "([0-9.]+)"$',(REPO/'bridge/bibimer_bridge.py').read_text(),re.M).group(1)
-    info = dict(BibimerBridgeVersion=bridge_version,CFBundleIdentifier='app.bibimer.ios', CFBundleExecutable='Bibimer',
+    info = dict(BibimerReviewAccessDigest=review_access_digest(),BibimerBridgeVersion=bridge_version,CFBundleIdentifier='app.bibimer.ios', CFBundleExecutable='Bibimer',
                 CFBundleName='Bibimer', CFBundleDisplayName='BIBIMER', CFBundlePackageType='APPL',
                 CFBundleVersion='1', CFBundleShortVersionString='0.1.0', MinimumOSVersion='16.0',
                 UIDeviceFamily=[1, 2], UILaunchScreen={},

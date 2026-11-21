@@ -7,6 +7,8 @@
 #import "BrowserService.h"
 #import "BackgroundExecution.h"
 #import "SocketSupport.h"
+#import "ReviewAccess.h"
+#import "ReviewController.h"
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <resolv.h>
@@ -119,6 +121,8 @@ static BOOL usesDesktopInput(void) {
 
 @interface BibimerController : UIViewController <WKScriptMessageHandler, WKNavigationDelegate, NSURLSessionTaskDelegate, UIScrollViewDelegate>
 @property WKWebView *web;
+@property BibimerReviewController *reviewController;
+@property UILabel *reviewStatus;
 @property BibimerVoiceService *voice;
 @property BibimerAccountInput *accountInput;
 @property BibimerAccountBrowser *accountBrowser;
@@ -291,6 +295,44 @@ static void guestExit(int status) {
 }
 
 @implementation BibimerController
+- (NSDictionary *)reviewLabels {
+    NSURL *url=[[NSBundle.mainBundle URLForResource:@"Web" withExtension:nil] URLByAppendingPathComponent:@"review-labels.json"];
+    NSDictionary *catalog=[NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfURL:url] ?: [NSData data] options:0 error:nil];
+    NSString *preference=[NSUserDefaults.standardUserDefaults stringForKey:@"languagePreference"] ?: @"system";
+    NSString *language=[preference isEqual:@"system"]?systemLanguage():preference;
+    return catalog[language] ?: catalog[@"en"] ?: @{};
+}
+- (BOOL)canEnterReview {
+    return !self.reviewController && !self.presentedViewController && !self.accountOperation && !self.accountInput && !self.openingFile && UIApplication.sharedApplication.applicationState==UIApplicationStateActive;
+}
+- (BOOL)verifyReviewCode:(NSString *)code {
+    if(![code isKindOfClass:NSString.class])return NO;
+    NSData *bytes=[code dataUsingEncoding:NSUTF8StringEncoding];
+    return bibimer_review_verify([[NSBundle.mainBundle objectForInfoDictionaryKey:@"BibimerReviewAccessDigest"] UTF8String],bytes.bytes,bytes.length);
+}
+- (void)presentReview {
+    if(![self canEnterReview])return;
+    [self.voice pause]; [self.completionNotifications pause];
+    [self nativeEvent:@"BibimerPause" arguments:@[]];
+    for(NSURLSessionDataTask *task in self.polls)[task cancel];[self.polls removeAllObjects];
+    BibimerReviewController *review=[BibimerReviewController new];
+    review.language=[self environment][@"language"];review.systemLanguage=systemLanguage();review.modalPresentationStyle=UIModalPresentationFullScreen;
+    review.modalInPresentation=YES;self.reviewController=review;
+    __weak typeof(self) weak=self;
+    review.exited=^{weak.reviewController=nil;if(!weak.backgrounded && UIApplication.sharedApplication.applicationState==UIApplicationStateActive){if(weak.ready){[weak.completionNotifications resume];[weak startBrowserPolling];[weak nativeEvent:@"BibimerResume" arguments:@[]];}else [weak becameActive];}};
+    [self presentViewController:review animated:NO completion:nil];
+}
+- (void)openBootstrapReview {
+    if(![self canEnterReview])return;
+    NSDictionary *labels=[self reviewLabels];
+    if(!bibimer_review_configured([[NSBundle.mainBundle objectForInfoDictionaryKey:@"BibimerReviewAccessDigest"] UTF8String])){self.reviewStatus.text=labels[@"review_access_unavailable"];return;}
+    BibimerAccountInput *input=[BibimerAccountInput new];input.limit=128;input.completionAfterDismissal=YES;
+    input.labels=@{@"title":labels[@"review_access_code"] ?: @"Access code",@"cancel":labels[@"cancel_project"] ?: @"Cancel",@"save":labels[@"review_access_enter"] ?: @"Open review demo"};
+    input.modalPresentationStyle=UIModalPresentationOverFullScreen;input.modalInPresentation=YES;
+    __weak typeof(self) weak=self;
+    input.completion=^(NSString *code){if(!code)return;if(![weak verifyReviewCode:code]||![weak canEnterReview]){weak.reviewStatus.text=labels[@"review_access_invalid"];return;}weak.reviewStatus.text=@"";[weak presentReview];};
+    [self presentViewController:input animated:YES completion:nil];
+}
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor colorWithRed:14/255.0 green:18/255.0 blue:21/255.0 alpha:1];
@@ -300,7 +342,13 @@ static void guestExit(int status) {
     self.bootstrapOutput = [UITextView new]; self.bootstrapOutput.editable = NO;
     self.bootstrapOutput.backgroundColor = UIColor.clearColor; self.bootstrapOutput.textColor = UIColor.lightGrayColor;
     self.bootstrapOutput.font = [UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightRegular];
-    UIStackView *stack = [[UIStackView alloc] initWithArrangedSubviews:@[self.status,self.bootstrapOutput]];
+    UIButton *reviewAccess=[UIButton buttonWithType:UIButtonTypeSystem];
+    [reviewAccess setTitle:[self reviewLabels][@"review_access"] ?: @"Review access" forState:UIControlStateNormal];
+    reviewAccess.tintColor=[UIColor colorWithRed:0.843 green:0.91 blue:0.667 alpha:1];reviewAccess.layer.borderWidth=1;reviewAccess.layer.cornerRadius=8;reviewAccess.layer.borderColor=UIColor.grayColor.CGColor;
+    [reviewAccess.heightAnchor constraintGreaterThanOrEqualToConstant:44].active=YES;
+    [reviewAccess addTarget:self action:@selector(openBootstrapReview) forControlEvents:UIControlEventTouchUpInside];
+    self.reviewStatus=[UILabel new];self.reviewStatus.textColor=UIColor.lightGrayColor;self.reviewStatus.numberOfLines=0;
+    UIStackView *stack = [[UIStackView alloc] initWithArrangedSubviews:@[self.status,reviewAccess,self.reviewStatus,self.bootstrapOutput]];
     stack.axis = UILayoutConstraintAxisVertical; stack.spacing = 16; stack.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:stack];
     [NSLayoutConstraint activateConstraints:@[
@@ -347,7 +395,7 @@ static void guestExit(int status) {
     self.completionNotifications.changed=^{[weak nativeEvent:@"BibimerNotificationStatus" arguments:@[]];};
     self.completionNotifications.opened=^{[weak nativeEvent:@"BibimerOpenNotification" arguments:@[]];};
     self.completionNotifications.fetch=^NSURLSessionDataTask *(NSString *path,void (^done)(NSDictionary *)){
-        if(!weak.ready || weak.exited){dispatch_async(dispatch_get_main_queue(),^{done(nil);});return nil;}
+        if(!weak.ready || weak.exited || weak.reviewController){dispatch_async(dispatch_get_main_queue(),^{done(nil);});return nil;}
         NSURLSessionDataTask *task=[weak.http dataTaskWithRequest:[weak request:@"GET" path:path body:@"{}"] completionHandler:^(NSData *data,NSURLResponse *response,NSError *error){
             NSDictionary *json=!error && [(NSHTTPURLResponse *)response statusCode]==200 && data.length<4*1024*1024 ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
             dispatch_async(dispatch_get_main_queue(),^{done([json isKindOfClass:NSDictionary.class] ? json : nil);});
@@ -462,6 +510,7 @@ static void guestExit(int status) {
     self.browserPolling=YES;[self pollBrowser:self.browserEpoch];
 }
 - (void)nativeEvent:(NSString *)callback arguments:(NSArray *)arguments {
+    if(self.reviewController && [callback isEqual:@"BibimerResume"])return;
     if(!self.web || (self.exited && ![@[@"BibimerIOSRuntimeChanged",@"BibimerIOSDiagnosticsCopied"] containsObject:callback]))return;
     NSString *script=[NSString stringWithFormat:@"(()=>{Object.assign(window.__bibimerEnvironment ||= {},%@);const callback=window[%@];if(typeof callback!=='function')return false;callback(...%@);return true;})()",jsonString([self environment]),jsonString(callback),jsonString(arguments)];
     [self.web evaluateJavaScript:script completionHandler:^(id result,NSError *error) {
@@ -479,6 +528,7 @@ static void guestExit(int status) {
     [self.backgroundExecution setForeground:YES];
     [self nativeEvent:@"BibimerBackgroundChanged" arguments:@[]];
     [self applyScreenBehavior];
+    if(self.reviewController)return;
     // Preserve the failed operation and its visible retry action. Foregrounding
     // must not turn a bounded failure back into an indefinite connecting state.
     if (self.recoveryFailed) { [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]]; return; }
@@ -737,7 +787,7 @@ static void guestExit(int status) {
         [self recordConnection:@"probe_ok" code:response.statusCode];
         if (!self.web) [self loadWorkspace];
         else [self nativeEvent:@"BibimerResume" arguments:@[]];
-        [self.completionNotifications resume];
+        if(!self.reviewController)[self.completionNotifications resume];
         [self startBrowserPolling];
     }
     else {
@@ -849,6 +899,7 @@ static void guestExit(int status) {
     environment[@"termuxX11Installed"]=@YES;
     environment[@"notifications"]=[self.completionNotifications environment] ?: @{};
     environment[@"notificationTarget"]=[NSJSONSerialization JSONObjectWithData:[[self.completionNotifications pendingTarget] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil] ?: @{};
+    environment[@"reviewAccessConfigured"]=@(bibimer_review_configured([[NSBundle.mainBundle objectForInfoDictionaryKey:@"BibimerReviewAccessDigest"] UTF8String]));
     return environment;
 }
 
@@ -1234,6 +1285,16 @@ static void guestExit(int status) {
     if (rejected) { [self recordConnection:@"message_rejected" code:rejected]; return; }
     NSDictionary *body = message.body;
     NSString *action = body[@"action"];
+    if(self.reviewController)return;
+    if([action isEqual:@"reviewEnter"]) {
+        NSString *identifier=[body[@"id"] isKindOfClass:NSString.class]?body[@"id"]:nil;
+        if(!identifier || [identifier rangeOfString:@"^[a-f0-9]{32}:[0-9]+$" options:NSRegularExpressionSearch].location==NSNotFound)return;
+        BOOL accepted=[self canEnterReview] && [self verifyReviewCode:body[@"code"]];
+        WKWebView *owner=message.webView;NSUInteger generation=self.workspaceGeneration;
+        NSString *script=[NSString stringWithFormat:@"window.BibimerReviewReply?.(%@,%@)",jsonString(identifier),accepted?@"true":@"false"];
+        [owner evaluateJavaScript:script completionHandler:^(id result,NSError *error){if(accepted&&!error&&[result isKindOfClass:NSNumber.class]&&[result boolValue]&&owner==self.web&&generation==self.workspaceGeneration&&[self canEnterReview])[self presentReview];else if(accepted&&[result isKindOfClass:NSNumber.class]&&[result boolValue]&&owner==self.web&&generation==self.workspaceGeneration)[self nativeEvent:@"BibimerReviewEntryFailed" arguments:@[]];}];
+        return;
+    }
     if ([action isEqual:@"backgroundConfigure"]) {
         id value = body[@"enabled"];
         if (![value isKindOfClass:NSNumber.class] || CFGetTypeID((__bridge CFTypeRef)value) != CFBooleanGetTypeID()) return;

@@ -107,6 +107,7 @@
     self.completion = nil; self.field.text = @"";
     [self.field resignFirstResponder];
     if (done) {
+        if (self.completionAfterDismissal) { [self dismissViewControllerAnimated:YES completion:^{ done(key); }]; return; }
         [self dismissViewControllerAnimated:YES completion:nil];
         done(key);
     }

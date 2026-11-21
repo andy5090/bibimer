@@ -1,0 +1,31 @@
+"use strict";
+const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict"),crypto=require("node:crypto");
+const read=name=>fs.readFileSync("ios/app/Resources/"+name,"utf8");
+function scheduler(){let serial=0;const jobs=new Map();return {setTimeout:fn=>{jobs.set(++serial,fn);return serial;},clearTimeout:key=>jobs.delete(key),flush(){for(const [id,fn] of [...jobs]){jobs.delete(id);fn();}},jobs};}
+function normal(){const timer=scheduler(),posts=[],events=new Map(),window={__bibimerEnvironment:{reviewAccessConfigured:true,agentOptions:{}},webkit:{messageHandlers:{bibimer:{postMessage:message=>posts.push(message)}}},addEventListener:(name,fn)=>events.set(name,fn)};const box=vm.createContext({window,crypto:crypto.webcrypto,...timer});vm.runInContext(read("native.js"),box);return {timer,posts,events,window,native:window.Bibimer};}
+(async()=>{
+ const n=normal();let current=true;
+ let result=n.native.enterReviewDemo("synthetic-unit-code",()=>current);let request=n.posts.at(-1);assert.equal(request.action,"reviewEnter");assert.equal(n.window.BibimerReviewReply(request.id,false),false);assert.equal(await result,false);
+ result=n.native.enterReviewDemo("synthetic-unit-code",()=>current);request=n.posts.at(-1);assert.equal(n.window.BibimerReviewReply(request.id,true),true);assert.equal(await result,true);assert.equal(n.window.BibimerReviewReply(request.id,true),false,"Duplicate replies cannot commit a second entry");
+ result=n.native.enterReviewDemo("synthetic-unit-code",()=>current);request=n.posts.at(-1);current=false;assert.equal(n.window.BibimerReviewReply(request.id,true),false);assert.equal(await result,false,"Cancelled/dialog-reopened/navigation guard rejects late acceptance");current=true;
+ result=n.native.enterReviewDemo("synthetic-unit-code",()=>current);request=n.posts.at(-1);n.timer.flush();assert.equal(await result,false);assert.equal(n.window.BibimerReviewReply(request.id,true),false,"Timeout cannot commit later");
+ result=n.native.enterReviewDemo("synthetic-unit-code",()=>current);request=n.posts.at(-1);n.native.cancelReviewEntry();assert.equal(await result,false);assert.equal(n.window.BibimerReviewReply(request.id,true),false);
+ result=n.native.enterReviewDemo("synthetic-unit-code",()=>current);assert.equal(await n.native.enterReviewDemo("other-unit-code",()=>current),false);request=n.posts.at(-1);n.events.get("pagehide")();assert.equal(await result,false);assert.equal(n.window.BibimerReviewReply(request.id,true),false);
+ n.window.__bibimerEnvironment.reviewAccessConfigured=false;const count=n.posts.length;assert.equal(await n.native.enterReviewDemo("synthetic-unit-code"),false);assert.equal(n.posts.length,count,"Default builds cannot even dispatch review entry");
+ assert.ok(!JSON.stringify(n.window.__bibimerEnvironment).includes("synthetic-unit-code"));
+ const original={demo:false,paired:true,language:"ko",systemLanguage:"ko",languagePreference:"ko",enterBehavior:"newline",agentOptions:{codex:{model:"real"}},voiceInput:{provider:"openai"},normalSecret:"never copied"};
+ const env={demo:true,paired:true,language:"en",systemLanguage:"en",agentOptions:{},enterBehavior:"newline"},snapshot=JSON.stringify(original),timer=scheduler(),posts=[],events=new Map(),replies=[];
+ const window={__bibimerEnvironment:env,BibimerReviewSamples:JSON.parse(read("review-samples.json")),addEventListener:(name,fn)=>events.set(name,fn),webkit:{messageHandlers:{bibimerReview:{postMessage:m=>posts.push(m)}}},BibimerNativeReply:(...args)=>replies.push(args),BibimerVoiceResult:(...args)=>replies.push(args)};
+ const box=vm.createContext({window,document:{addEventListener(){},getElementById:()=>null},crypto:crypto.webcrypto,URLSearchParams,btoa:x=>Buffer.from(x,"binary").toString("base64"),...timer,fetch(){throw Error("Forbidden network");}});
+ for(const file of ["review-workspace.js","review-native.js"])vm.runInContext(read(file),box);
+ const demo=window.Bibimer;demo.request("health","GET","/v1/health","{}");timer.flush();const health=replies.at(-1)[1].data;assert.equal(health.demo,true);
+ demo.setEnterBehavior("send");demo.setLanguage("ko");demo.setAgentOptions("codex",'{"model":"demo-model"}');assert.equal(JSON.stringify(original),snapshot,"Normal preferences and credentials remain untouched");
+ for(const path of ["/native/open-file","/v1/ios/agents","/v1/browser","/v1/agent-connections"]){demo.request(path,"POST",path,"{}");timer.flush();assert.equal(replies.at(-1)[1].ok,false);}
+ for(const fn of ["openLink","openBrowserWindow","openTermux","voiceKeyAction","speechKeyAction","readSpeechOutput","readSpeechMessage","setResponseNotifications","setBackgroundWork","setScreenBehavior","startAgentAction"])assert.equal(demo[fn]("synthetic"),false,fn);
+ await assert.rejects(demo.openAccountLink("https://example.invalid","job"));await assert.rejects(demo.requestAccountSecret({}));demo.startVoiceInput("voice");assert.equal(replies.at(-1)[1],"cancelled");
+ assert.equal(posts.length,0,"No example request/action reaches a real native bridge");
+ demo.request("old-poll","GET",`/v1/sessions/${health.session.id}/events?cursor=0&wait=20`,"{}");demo.cancelPoll();assert.equal(replies.at(-1)[0],"old-poll");assert.equal(replies.at(-1)[1].ok,false,"Cancelled sample polls settle the current document await without stale session data");
+ const before=replies.length;demo.request("late","GET","/v1/health","{}");events.get("pagehide")();timer.flush();assert.equal(replies.length,before,"Disposed review document drops pending replies");
+ const fresh=scheduler(),exitPosts=[];const exitWindow={__bibimerEnvironment:{language:"en",agentOptions:{}},addEventListener(){},webkit:{messageHandlers:{bibimerReview:{postMessage:m=>exitPosts.push(m)}}}};vm.runInContext(read("review-native.js"),vm.createContext({window:exitWindow,document:{addEventListener(){}},...fresh}));exitWindow.Bibimer.setDemoMode(false);exitWindow.Bibimer.setDemoMode(false);assert.equal(JSON.stringify(exitPosts),JSON.stringify([{action:"exitReview"}]));
+ console.log("PASS review native boundaries: default deny, accepted/invalid/superseded/timeout/duplicate entry, isolated preferences and samples, no real file/browser/auth/voice/network bridge, stale-document disposal");
+})().catch(error=>{console.error(error);process.exitCode=1;});

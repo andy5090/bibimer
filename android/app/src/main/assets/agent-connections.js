@@ -34,7 +34,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
   current(state){const c=this.context();return !!state&&state===this.state&&c.instance===state.instance&&c.project===state.project&&(c.path||null)===state.path&&!c.demo;}
   available(){const c=this.context();return !!this.state?.agent&&c.online&&c.supported&&!c.demo&&!c.paused;}
   clearSecrets(){this.$("key").value="";this.$("code").value="";}
-  pause(preserveLogin=false){clearTimeout(this.timer);clearTimeout(this.updateTimer);this.timer=null;this.updateTimer=null;if(this.state){if(preserveLogin)this.state.browserRetryAvailable=true;if(!preserveLogin){this.state.autoBrowserJob=null;this.state.browserOpened=false;this.actions.cancelCodeWatch?.(this.state.job?.id);}if(this.state.browserOpening)this.actions.cancelBrowserOpening?.(this.state.browserOpening);}this.clearSecrets();if(this.operationDialog.open&&!this.operationBusy())this.operationDialog.close();}
+  pause(preserveLogin=false){this.viewRevision=(this.viewRevision||0)+1;clearTimeout(this.timer);clearTimeout(this.updateTimer);this.timer=null;this.updateTimer=null;if(this.state){this.state.refreshVersion=false;if(preserveLogin)this.state.browserRetryAvailable=true;if(!preserveLogin){this.state.autoBrowserJob=null;this.state.browserOpened=false;this.actions.cancelCodeWatch?.(this.state.job?.id);}if(this.state.browserOpening)this.actions.cancelBrowserOpening?.(this.state.browserOpening);}this.clearSecrets();if(this.operationDialog.open&&!this.operationBusy())this.operationDialog.close();}
   payload(extra={}){const s=this.state;return {agent:s.agent,...(s.project?{project_id:s.project,...(s.path?{worktree_path:s.path}:{})}:{}),...extra};}
   async open(agent=null, options={}) {
     this.pause();
@@ -44,6 +44,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     if(!this.current(previous)||previous.agent!==agent){
       this.state={agent,instance:c.instance,project:c.project,path:c.path||null,report:null,job:null,busy:false,error:null,version:""};
     }
+    const s=this.state,viewRevision=this.viewRevision;
     this.$("agent").value=agent||"";
     this.$("installation").open=options.installation===true;
     this.state.installationInitialized=options.installation===true;
@@ -52,8 +53,16 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.render();
     if(!agent)return;
     if(this.context().updates)await this.updates("status");
+    if(!this.current(s)||viewRevision!==this.viewRevision||!this.dialog.open||!this.available())return;
+    s.refreshVersion=true;
     if(this.updating())return;
     if(this.activeLogin())void this.poll();else{await this.load();if(this.activeLogin())void this.poll();}
+  }
+  refreshVersion(s){
+    if(!s.refreshVersion||!this.current(s)||!this.dialog.open||!this.available()||s.busy||s.updateBusy||s.confirming||this.updating(s)||this.activeLogin(s))return;
+    if(!s.report)return;
+    s.refreshVersion=false;
+    if(s.report.installed)return this.load("version");
   }
   updating(s=this.state){return ["waiting","stopping","installing","verifying","restoring"].includes(s?.updateJob?.status);}
   async beginOperation(kind){
@@ -131,17 +140,24 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     try{
       const result=await this.actions.updates(body);
       if(!this.current(s)||(status&&revision!==(s.updateRevision||0)))return;
+      const previousJob=s.updateJob;
       s.updateStatusError=null;
       if(result.plan){
         if(s.updatePlan?.id!==result.plan.id)s.updateRequest=null;
-        s.updatePlan=result.plan;s.updateJob=null;s.version=result.plan.current_version;
+        s.updatePlan=result.plan;s.updateJob=null;if(action==="check")s.version=result.plan.current_version;
         if(s.updateError==="error_agent_update_busy")s.updateError=null;
       }else if(status&&Object.prototype.hasOwnProperty.call(result,"plan")){
         s.updatePlan=null;
         if(result.expired){s.updateRequest=null;s.updateError="error_agent_update_expired";}
       }
       if(result.job)s.updateJob=result.job;
-      if(s.updateJob?.status==="succeeded"){s.version=s.updateJob.installed_version;s.updatePlan=null;}
+      if(s.updateJob?.status==="succeeded"){
+        // A cached successful job describes history, not the current executable.
+        if((previousJob?.id===s.updateJob.id&&this.updating({updateJob:previousJob}))||(action==="start"&&previousJob?.id!==s.updateJob.id)){
+          s.version=s.updateJob.installed_version;s.versionRevision=(s.versionRevision||0)+1;
+        }
+        s.updatePlan=null;
+      }
       if(s.updateJob?.status==="failed"){s.updatePlan=null;s.updateRequest=null;}
     }catch(e){if(this.current(s)&&(!status||revision===(s.updateRevision||0))){
       if(status)s.updateStatusError=e.key||"error_agent_update_failed";
@@ -150,7 +166,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     }}
     finally{if(this.current(s)){
       if(status)s.updateStatusBusy=false;else s.updateBusy=false;
-      this.render();this.scheduleUpdates(s);
+      this.render();this.scheduleUpdates(s);await this.refreshVersion(s);
     }}
   }
   async openTerminal(){
@@ -171,15 +187,22 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
   }
   async load(action="status") {
     const s=this.state;if(!this.current(s)||s.busy||!this.available())return;
+    if(action==="version"&&(!this.dialog.open||this.updating(s)||this.activeLogin(s)||s.updateBusy||s.confirming||s.report?.installed===false))return;
     if(s.job?.status==="pending")return this.poll();
+    const viewRevision=this.viewRevision,versionRevision=action==="version"?(s.versionRevision=(s.versionRevision||0)+1):null;
+    const versionCurrent=()=>this.current(s)&&viewRevision===this.viewRevision&&versionRevision===s.versionRevision&&this.dialog.open&&this.available()&&!this.updating(s)&&!this.activeLogin(s);
+    if(action==="version")s.version="";
     s.busy=true;s.loading=action;s.error=null;this.render();
     try{
       const result=await this.request(this.payload({action}));
       if(!this.current(s))return;
-      if(action==="version")s.version=result.version||"";
+      if(action==="version"){
+        if(!versionCurrent())return;
+        s.version=result.version||"";
+      }
       else{s.report=result;s.installationAwaitingStatus=false;this.providers();if(result.job)s.job=result.job;}
-    }catch(e){if(this.current(s))s.error=e.key||"error_agent_connection";}
-    finally{if(this.current(s)){s.busy=false;s.loading=null;this.render();}}
+    }catch(e){if(this.current(s)&&(action!=="version"||versionCurrent()))s.error=e.key||"error_agent_connection";}
+    finally{if(this.current(s)){s.busy=false;s.loading=null;this.render();await this.refreshVersion(s);}}
   }
   providers(){
     const s=this.state,select=this.$("provider"),value=select.value;

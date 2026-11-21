@@ -19,7 +19,7 @@
     "automaticFutureTerritories": false,
     "verifiedInConsole": true
   },
-  "territoryNote": "User confirmed all currently available territories except Mainland China and France. Console availability shows 173 regions; future-region automatic addition is disabled. Export response remains pending.",
+  "territoryNote": "User confirmed all currently available territories except Mainland China and France. Console availability shows 173 regions; future-region automatic addition is disabled. Build 15 export response saved with France not distributed.",
   "primaryCategorySuggestion": "DEVELOPER_TOOLS",
   "minimumOSVersion": "16.0",
   "deviceFamilies": [
@@ -28,8 +28,8 @@
   ],
   "copyright": "2026 Andineering",
   "appPrivacyStatus": "needs_provider_and_retention_review",
-  "ageRatingStatus": "questionnaire_pending",
-  "reviewContactStatus": "email_phone_received_not_saved_name_format_under_review",
+  "ageRatingStatus": "saved_16_plus",
+  "reviewContactStatus": "saved_verified_after_reload",
   "submitted": false,
   "published": false,
   "localizations": {
@@ -90,19 +90,22 @@
       "en-US",
       "ko"
     ],
-    "reviewNotes": "earlier_draft_saved_latest_header_update_blocked_by_required_contact",
-    "appPrivacy": "not_started",
+    "reviewNotes": "latest_draft_saved_verified_after_reload",
+    "appPrivacy": "4_data_types_published_2026_11_19",
     "privacyPolicyURL": "not_set",
-    "ageRating": "not_set",
+    "ageRating": "16_plus_saved",
     "territoryAvailability": "173_regions_selected_excluding_CN_FR",
-    "buildSelection": "1.0.0(15)_selected_export_response_pending",
+    "buildSelection": "1.0.0(15)_selected_export_response_completed",
     "chinaMainlandComplianceNotice": "security_assessment_and_aigc_filing_required_if_distributed",
     "buildID": "f8041489-d7cf-4a6a-9db5-bdc69e2fcadf",
-    "reviewNotesCharacters": 3396,
-    "reviewContact": "not_set",
-    "screenshots": "not_uploaded_app_store_connect_outage",
-    "testFlight15": "requested_internal_group_distribution_pending_outage"
+    "reviewNotesCharacters": 3426,
+    "reviewContact": "saved_verified_no_raw_contact_in_repository",
+    "screenshots": "12_saved_including_2_updated_ipad_settings_build16",
+    "testFlight15": "testing_existing_Bibimer_Internal_group",
+    "dsa": "trader_active_verified",
+    "privacyPolicy": "en_US_and_ko_urls_saved_2026_11_19"
   },
   "uploaded": true,
-  "submissionPolicy": "do_not_submit_without_new_explicit_user_instruction"
+  "submissionPolicy": "user_authorized_submit_after_readiness_gates_keep_manual_release",
+  "updatedOn": "2026-11-19"
 }

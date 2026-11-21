@@ -77,7 +77,17 @@
     $("mode").value = "terminal"; $("mode").dispatchEvent(new Event("change"));
     await wait(() => !$("launch").disabled,"terminal controls ready");
     $("launch").click();
+    await wait(() => $("ios-data-consent").open,"terminal sharing disclosure");
+    if (snapshot()?.session?.state === "running") throw new Error("Terminal launched before consent");
+    $("ios-data-cancel").click();
+    await wait(() => !snapshot().busy && !$("launch").disabled,"cancelled launch restored controls");
+    if (snapshot()?.session?.state === "running") throw new Error("Declining consent launched a process");
+    passed("data_consent_decline_sends_nothing");
+    $("launch").click();
+    await wait(() => $("ios-data-consent").open,"terminal permission retry");
+    $("ios-data-allow").click();
     await wait(() => snapshot()?.session?.state === "running","terminal launch");
+    passed("data_consent_explicit_terminal_grant");
     const sessionId = snapshot().session.id;
     passed("pty_session_launch",{sessionId});
     await wait(() => !$("input").disabled && !$("send").disabled,"terminal input ready");
@@ -263,6 +273,8 @@
     $("worktree-mode").value = "terminal";
     await wait(() => !$("worktree-create-submit").disabled,"worktree submit ready");
     $("worktree-create-form").requestSubmit();
+    await wait(() => $("ios-data-consent").open,"new worktree sharing disclosure");
+    $("ios-data-allow").click();
     await wait(() => snapshot()?.session?.state === "running" && snapshot().session.project.path !== path,"worktree session",60000);
     passed("worktree_create_and_session",{path:snapshot().session.project.path});
     $("session-more").click(); await wait(() => $("session-dialog").open,"stop actions");

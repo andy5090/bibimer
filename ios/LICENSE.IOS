@@ -1,0 +1,22 @@
+Bibimer iOS — additional App Store permission
+Copyright (c) 2026 Andineering.
+
+This additional permission applies only to the Andineering-owned material
+covered by ios/LICENSE.md. It is granted under section 7 of the GNU General
+Public License, version 3.
+
+Andineering is aware that the terms of service that apply to apps distributed
+via Apple's App Store services may conflict with rights granted under the
+GNU General Public License, version 3. Andineering does not wish that conflict
+to prevent otherwise-compliant distribution of Bibimer or derived apps via
+the App Store. Therefore, Andineering permits such distribution and will not
+pursue a license violation that results solely from the conflict between the
+GNU GPL version 3 and the Apple App Store terms of service. As long as you
+comply with the GPL in all other respects, including its requirements to
+provide users with corresponding source code and the text of the license,
+Andineering will not object to that App Store distribution.
+
+All other GPL requirements remain in effect. This permission does not waive
+source, copyright-notice, license-text or modification requirements. It does
+not grant additional permissions for any other copyright holder's material.
+Preserve the separate upstream and third-party license notices and exceptions.
