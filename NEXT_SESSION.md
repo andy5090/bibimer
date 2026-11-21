@@ -1,5 +1,12 @@
 # Bibimer 다음 세션 시작점
 
+## Android 0.43.3(75) 내부 테스트 배포 완료 (2026-11-21 11:28 KST)
+
+- 기존 Play 내부 트랙에 **0.43.3 (75) - Codex launcher compatibility**를 저장·출시하고 게시 후 **활성 / 최신75 / 내부 테스터에게 제공됨 / 게시일11월21일 오전11:28**을 실제 Chrome UI로 확인했다. 출시 ID45,75만 포함·74제외, 한/영 노트415/234자·2/2, 오류0·기존 매핑 파일 미첨부 경고1건,7개 기기 유형 지원 변화0이다. 별도 페이지 새로고침은 하지 않았으며 게시 상태의 전체 AX/스크린샷을 저장한 뒤 CUA completion_summary로 종료했다.
+- 소스 `a873828be8fdbc7571cecabe223df22e77b4b28c`의 기존 업로드 키 서명 AAB `dist/play/bibimer-0.43.3-75-release.aab`, **3,491,946bytes**, SHA-256 `a06916d1b67d3a703bce82008dcf887bfe2bcfc225c077d39409dc09bacb4d04`다. Java/D8·bundletool·기존 인증서/서명·61assets 원본·Codex Node 실행 helper·브리지0.25.3의6payload·DEX 내 브리지 버전·언어 split 비활성·심사 digest/비밀 원문 미포함을 확인했다. 실행기/계정/업데이트/Chat/옵션42개·빌드11·SDK6·격리 전송1개, Node 목록/관리2파일·988키×10언어 검사를 통과했다. 기존 전체 Mac 검사 실패를 전체 통과로 변경하지 않는다.
+- **앱 업데이트 후 설정에서 Termux 브리지0.25.3 업데이트가 필요하다.** 앱 게시만으로 운영 브리지나 세션을 재시작/교체하지 않았다. 기존 종료 대상 확인·명시적 유지보수 절차를 이용하며 중단된 응답/명령/승인/대기열을 재실행하지 않는다. 앞선 폰의 계정 `configured` 확인은 로컬 shebang 보정의 결과이며 새75 수신/설치·브리지0.25.3 적용·새 실제 모델 응답 검증을 대신하지 않는다.
+- 프로덕션73·테스터·사용자 계정/설치된 에이전트·운영 세션·웹사이트·iOS/TestFlight는 변경하지 않았다. 비공개 증빙 `dist/play-0.43.3/{bundle-verification.json,prepared.json,review-ax.txt,review.png,published-ax.txt,published.png,published.json}`, 빌드/검증 `.tools/aab-0.43.3-75-{build.log,verification.json}`. 아래 미배포/준비 기록은 이전 상태다. 기존 내부 테스트 링크 https://play.google.com/apps/internaltest/4701718894791581363 를 사용한다.
+
 ## Android 0.43.3(75) 내부 테스트 준비 (2026-11-21)
 
 - 사용자가 폰/원격 병합 싱크 뒤 내부 테스트 배포를 요청했다. Console의 활성 내부74를 확인하고75/0.43.3을 준비한다. 실기기에서 확인한 Codex npm 실행기 ENOENT의 재발 방지 브리지0.25.3을 포함한다. 기존 업로드 키와 심사 코드를 사용하며 한/영 노트는 `release/google-play/release-notes/0.43.3.txt`다.
