@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "createdOn": "2026-11-25",
+  "app": "Bibimer",
+  "purpose": "Optional App Store universal creative assets: header and search results",
+  "specification": "https://developer.apple.com/help/app-store-connect/reference/app-information/creative-assets-specifications",
+  "renderSource": [
+    "index.html",
+    "artwork.css",
+    "background.svg",
+    "render.cjs"
+  ],
+  "brandSource": "android/app/src/main/assets/brand.svg",
+  "brandSha256": "ed1d7becb2b3ec246bbc57306a619958022e07b60308c434ba2e34dbeafd4c6f",
+  "wordmarkFont": "android/app/src/main/assets/fonts/SpaceGrotesk-Bold.woff2",
+  "fontSha256": "06d705cebbab916f0c0fe82b6c6f4cae06aa07fd6f5ee078421206040326ef63",
+  "sourceScreenshots": "Existing App Store iPhone submission captures; no new app capture or build",
+  "assets": [
+    {
+      "locale": "en-US",
+      "file": "release/app-store/creative-assets/en-US-universal.png",
+      "width": 5244,
+      "height": 2950,
+      "bitDepth": 8,
+      "colorType": 2,
+      "bytes": 2422289,
+      "mode": "RGB",
+      "alpha": false,
+      "sha256": "8e02f2bb4693ba31295f1cce630b0db15a3afc10d3d984529c23713967b79aac",
+      "safeArea": {
+        "x": 1921,
+        "y": 660,
+        "width": 1402,
+        "height": 962
+      },
+      "coreBounds": [
+        {
+          "name": "identity",
+          "x": 1995,
+          "y": 755,
+          "width": 470.09375,
+          "height": 102
+        },
+        {
+          "name": "message",
+          "x": 1997,
+          "y": 971,
+          "width": 692,
+          "height": 460.328125
+        },
+        {
+          "name": "device",
+          "x": 2807,
+          "y": 716,
+          "width": 411,
+          "height": 881.8125
+        }
+      ],
+      "coreInsideSafeArea": true,
+      "sourceScreenshot": "release/app-store/screenshots/en-US/iphone/01-terminal.jpg",
+      "sourceScreenshotSha256": "f7d024fb34b4bddc10420eeb177513a5fc635bd1c9b830e06dea94bbf3b68edc",
+      "sourceScreenshotUnmodified": true,
+      "screenshotGeometry": {
+        "naturalWidth": 1206,
+        "naturalHeight": 2622,
+        "displayWidth": 401,
+        "displayHeight": 871.8125
+      },
+      "wordmarkFontLoaded": true,
+      "previews": {
+        "full": "release/app-store/creative-assets/previews/en-US-preview.png",
+        "safeCrop": "release/app-store/creative-assets/previews/en-US-safe-crop.png"
+      },
+      "jsErrors": []
+    },
+    {
+      "locale": "ko",
+      "file": "release/app-store/creative-assets/ko-universal.png",
+      "width": 5244,
+      "height": 2950,
+      "bitDepth": 8,
+      "colorType": 2,
+      "bytes": 2455684,
+      "mode": "RGB",
+      "alpha": false,
+      "sha256": "23aa9242df571118d2e040de7ee348ea66715650a6e6f60cf479b8f860d1053b",
+      "safeArea": {
+        "x": 1921,
+        "y": 660,
+        "width": 1402,
+        "height": 962
+      },
+      "coreBounds": [
+        {
+          "name": "identity",
+          "x": 1995,
+          "y": 755,
+          "width": 470.09375,
+          "height": 102
+        },
+        {
+          "name": "message",
+          "x": 1997,
+          "y": 971,
+          "width": 692,
+          "height": 495.1875
+        },
+        {
+          "name": "device",
+          "x": 2807,
+          "y": 716,
+          "width": 411,
+          "height": 881.8125
+        }
+      ],
+      "coreInsideSafeArea": true,
+      "sourceScreenshot": "release/app-store/screenshots/ko/iphone/01-terminal.jpg",
+      "sourceScreenshotSha256": "ab03a1723eaa1f4991eda27db52227f3f23503faf003d82c829e4f5fe3bb8dfd",
+      "sourceScreenshotUnmodified": true,
+      "screenshotGeometry": {
+        "naturalWidth": 1206,
+        "naturalHeight": 2622,
+        "displayWidth": 401,
+        "displayHeight": 871.8125
+      },
+      "wordmarkFontLoaded": true,
+      "previews": {
+        "full": "release/app-store/creative-assets/previews/ko-preview.png",
+        "safeCrop": "release/app-store/creative-assets/previews/ko-safe-crop.png"
+      },
+      "jsErrors": []
+    }
+  ]
+}

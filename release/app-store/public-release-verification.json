@@ -1,0 +1,59 @@
+{
+  "verifiedOn": "2026-11-25",
+  "appStoreId": "6826729307",
+  "version": "1.0.0",
+  "consoleStatus": "ready_for_distribution",
+  "releasedAt": "2026-11-24T16:35:22Z",
+  "releasedAtKST": "2026-11-25T01:35:22+09:00",
+  "selectedTerritories": 173,
+  "excludedTerritories": [
+    "CN",
+    "FR"
+  ],
+  "countries": [
+    {
+      "country": "KR",
+      "sourceURL": "https://itunes.apple.com/lookup?id=6826729307&country=kr",
+      "observedAt": "2026-11-24T16:45:41.646427+00:00",
+      "resultCount": 1,
+      "trackName": "Bibimer 비비머",
+      "version": "1.0.0",
+      "bundleId": "app.bibimer.ios",
+      "price": 0.0,
+      "currency": "KRW",
+      "releaseDate": "2026-11-24T16:35:22Z",
+      "currentVersionReleaseDate": "2026-11-24T16:35:22Z",
+      "publicURL": "https://apps.apple.com/kr/app/bibimer-%EB%B9%84%EB%B9%84%EB%A8%B8/id6826729307",
+      "iPhoneScreenshotCount": 3,
+      "iPadScreenshotCount": 3
+    },
+    {
+      "country": "US",
+      "sourceURL": "https://itunes.apple.com/lookup?id=6826729307&country=us",
+      "observedAt": "2026-11-24T16:45:41.664749+00:00",
+      "resultCount": 1,
+      "trackName": "Bibimer",
+      "version": "1.0.0",
+      "bundleId": "app.bibimer.ios",
+      "price": 0.0,
+      "currency": "USD",
+      "releaseDate": "2026-11-24T16:35:22Z",
+      "currentVersionReleaseDate": "2026-11-24T16:35:22Z",
+      "publicURL": "https://apps.apple.com/us/app/bibimer/id6826729307",
+      "iPhoneScreenshotCount": 3,
+      "iPadScreenshotCount": 3
+    },
+    {
+      "country": "CN",
+      "sourceURL": "https://itunes.apple.com/lookup?id=6826729307&country=cn",
+      "observedAt": "2026-11-24T16:45:41.684172+00:00",
+      "resultCount": 0
+    },
+    {
+      "country": "FR",
+      "sourceURL": "https://itunes.apple.com/lookup?id=6826729307&country=fr",
+      "observedAt": "2026-11-24T16:45:41.699143+00:00",
+      "resultCount": 0
+    }
+  ]
+}

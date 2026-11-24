@@ -1,0 +1,34 @@
+{
+  "status": "submitted_awaiting_Apple_review_result",
+  "optional": true,
+  "uploaded": true,
+  "submitted": true,
+  "approved": false,
+  "assignedToLiveHeaderAndSearch": false,
+  "submissionObservedOn": "2026-11-25",
+  "submissionConfirmation": "2개의 항목 제출됨",
+  "submissionID": "2b483c17-b41d-4689-a9cd-d089199d3da1",
+  "submissionURL": "https://appstoreconnect.apple.com/apps/6826729307/distribution/reviewsubmissions/details/2b483c17-b41d-4689-a9cd-d089199d3da1",
+  "manifest": "creative-assets/manifest.json",
+  "sourceAndFormatVerification": "creative-assets/verification.json",
+  "locales": [
+    "en-US",
+    "ko"
+  ],
+  "type": "Universal Creative Asset",
+  "intendedPlacements": [
+    "product_page_header",
+    "search_results"
+  ],
+  "assetIDs": {
+    "en-US": "d4000019-6e79-8f5b-8008-8a908950faa0",
+    "ko": "b5400019-6e79-8f5b-8004-4de6a493e7b5"
+  },
+  "parentVisualReview": {
+    "score": 93,
+    "verdict": "pass"
+  },
+  "appAlreadyReleased": true,
+  "newAppBuildRequired": false,
+  "nextAction": "After Apple approves, select each localized universal asset for the live product-page header and search results, save and verify placement."
+}

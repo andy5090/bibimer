@@ -1,0 +1,39 @@
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../../../android/app/src/main/assets/fonts/SpaceGrotesk-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 5244px; height: 2950px; overflow: hidden; background: #0c1115; }
+body { color: #e8eeed; font-family: 'Space Grotesk', 'Apple SD Gothic Neo', sans-serif; }
+.artwork {
+  position: relative; width: 5244px; height: 2950px; overflow: hidden;
+  background: linear-gradient(125deg, #10171b 0%, #11191d 37%, #0c1216 68%, #0a0e12 100%);
+}
+.ambient {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 1300px 920px at 2700px 1120px, #284d4138 0%, #1c36301a 53%, transparent 100%);
+}
+.background-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+.composition { position: absolute; inset: 0; }
+.identity { position: absolute; display: flex; align-items: center; gap: 25px; left: 1995px; top: 755px; }
+.brand-mark { display: block; width: 102px; height: 102px; }
+.wordmark { font-size: 91px; line-height: 1; font-weight: 700; letter-spacing: -2px; color: #dce9e4; }
+.message { position: absolute; left: 1997px; top: 971px; width: 692px; }
+.eyebrow { margin: 0 0 34px; font-size: 22px; line-height: 1.3; letter-spacing: 3.4px; color: #8ba89f; }
+h1 { margin: 0; font-size: 83px; line-height: 1.13; font-weight: 700; letter-spacing: -3.4px; }
+h1 span { color: #98d6bc; }
+.accent-rule { width: 66px; height: 4px; margin-top: 52px; background: #8bdbbd; }
+.capabilities { margin: 24px 0 0; font-size: 28px; line-height: 1.3; letter-spacing: -.3px; color: #a4b3b4; }
+.device { position: absolute; margin: 0; left: 2807px; top: 716px; width: 411px; }
+.device-rim {
+  width: 100%; padding: 5px; overflow: hidden; border-radius: 53px;
+  background: linear-gradient(135deg, #9caeaa 0%, #2b363b 14%, #182127 53%, #6b7e7b 100%);
+  box-shadow: 0 35px 80px #0008, 0 0 0 2px #10171a;
+}
+.device-rim img { display: block; width: 401px; height: auto; border-radius: 48px; }
+body[data-locale='ko'] .eyebrow { font-family: 'Apple SD Gothic Neo', sans-serif; font-size: 27px; letter-spacing: 2.2px; }
+body[data-locale='ko'] h1 { font-family: 'Apple SD Gothic Neo', sans-serif; font-size: 89px; line-height: 1.16; letter-spacing: -4px; }
+body[data-locale='ko'] .capabilities { font-family: 'Apple SD Gothic Neo', sans-serif; font-size: 28px; }

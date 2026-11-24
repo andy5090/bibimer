@@ -1,5 +1,18 @@
 # App Store 1.0.0 출시 준비
 
+## 정식 출시 확인 — 2026-11-25
+
+- **헤더·검색용 영한 universal 이미지2개 별도 심사 제출 완료.** Apple의 `2개의 항목 제출됨` 완료 모달과 심사 ID `2b483c17-b41d-4689-a9cd-d089199d3da1`을 확인했다. 두 파일은 5244×2950·8-bit RGB·무알파이며 기존 브랜드/실제 iOS 캡처를 사용했다. 형식·해시·안전영역·원본 보존 검사와 독립 시각 검토93/pass를 통과했다. `creative-assets/{manifest,verification,submission}.json`에 기록했다. **아직 자산 승인·실제 헤더/검색 배치 완료는 아니다.** 승인 후 라이브 영한 제품 페이지에서 해당 자산을 선택·저장하고 노출을 확인해야 한다. 이 대기는 이미 공개된 앱 다운로드를 막지 않는다.
+
+**Bibimer 1.0.0(16)은 App Store에 무료 공개되었다.** Console의 `1.0.0 배포 준비됨`과 공개 Apple Lookup의 한국·미국 등록 정보, 각 언어의 iPhone 3장·iPad 3장을 확인했다. 공개 시각은 Apple 응답 기준 **2026-11-25 01:35:22 KST**다. 이번 세션에서는 이미 공개된 결과를 확인했으며 앱의 최종 출시 버튼을 대신 누른 것으로 기록하지 않는다.
+
+- [한국 App Store](https://apps.apple.com/kr/app/bibimer-%EB%B9%84%EB%B9%84%EB%A8%B8/id6826729307) · [미국 App Store](https://apps.apple.com/us/app/bibimer/id6826729307). 공개 검증은 `public-release-verification.json`에 기록했다.
+- 중국 본토·프랑스 제외 **173개 지역**, 무료 가격을 유지한다. Console의 사용 불가 2개 지역과 CN/FR 공개 Lookup 결과 0개를 확인했다. 중국 본토의 보안 평가·AIGC `정보가 누락됨`은 남아 있으며 규정 답변을 임의 변경하지 않았다. [Apple 안내](https://developer.apple.com/help/app-store-connect/manage-compliance-information/view-china-mainland-compliance-information/)에 따라 다른 선택 지역의 공개를 차단하지 않는다.
+- 헤더·검색 결과용 크리에이티브는 필수 스크린샷과 별도인 선택 자산이다. 새 바이너리 없이 별도 자산 심사를 진행한다. 최신 상태는 `verification.json`의 `creativeAssets`를 따른다.
+- 출시 빌드 소스 `0214d866a52fbbc583b0d46d8f043d856135cdeb`, 기존 IPA와 심사 접근 설정은 유지한다. 이번 작업은 새 빌드·실기기/실제 모델 검증을 포함하지 않는다.
+
+아래 제출 대기·미공개 문구는 해당 날짜의 이전 기록이다.
+
 ## 심사 제출 완료 — 2026-11-20 06:06 KST
 
 **Bibimer1.0.0(16)의 App Review 제출을 완료했다.** 새 유료 앱 계약을 사용자가 직접 동의한 뒤 계약 차단이 해소됐다. 심사에 추가→최종 제출을 실행했고 Apple의 **‘1개의 항목 제출됨’** 완료 모달을 확인했다. 심사 ID는 `62cb55af-5a41-4558-9544-02484489f678`이다.

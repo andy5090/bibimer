@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bibimer · App Store universal artwork</title>
+<link rel="stylesheet" href="artwork.css">
+</head>
+<body>
+<main class="artwork" aria-label="Bibimer mobile agent development workspace">
+  <div class="ambient" aria-hidden="true"></div>
+  <img class="background-lines" src="background.svg" alt="">
+  <section class="composition">
+    <div class="identity" data-core="identity">
+      <img class="brand-mark" src="../../../android/app/src/main/assets/brand.svg" alt="">
+      <span class="wordmark">BIBIMER</span>
+    </div>
+    <div class="message" data-core="message">
+      <p class="eyebrow" id="eyebrow">AGENT DEVELOPMENT ENVIRONMENT</p>
+      <h1 id="headline">Your agent<br>workspace.<br><span>On your phone.</span></h1>
+      <div class="accent-rule" aria-hidden="true"></div>
+      <p class="capabilities" id="capabilities">Projects. Sessions. Terminal.</p>
+    </div>
+    <figure class="device" data-core="device">
+      <div class="device-rim"><img id="screen" src="../screenshots/en-US/iphone/01-terminal.jpg" alt="Actual Bibimer terminal screen"></div>
+    </figure>
+  </section>
+</main>
+<script>
+const locale=new URLSearchParams(location.search).get('locale')==='ko'?'ko':'en-US';
+document.documentElement.lang=locale==='ko'?'ko':'en';
+document.body.dataset.locale=locale;
+if(locale==='ko'){
+ document.getElementById('eyebrow').textContent='에이전트 개발 환경';
+ document.getElementById('headline').innerHTML='내 손안의<br>에이전트<br><span>개발 환경.</span>';
+ document.getElementById('capabilities').textContent='프로젝트. 세션. 터미널.';
+ document.getElementById('screen').src='../screenshots/ko/iphone/01-terminal.jpg';
+ document.getElementById('screen').alt='실제 Bibimer 터미널 화면';
+}
+window.artworkReady=Promise.all([document.fonts.ready,...[...document.images].map(img=>img.decode())]);
+</script>
+</body>
+</html>

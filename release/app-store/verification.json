@@ -50,7 +50,7 @@
     "localIPAHashIsExportArtifact": true,
     "uploadSource": "Xcode upload export from the same verified archive; uploaded package processing acknowledged",
     "submitted": true,
-    "published": false,
+    "published": true,
     "submissionReady": true,
     "internalTestFlightProvided": true,
     "exportComplianceCompleted": true,
@@ -77,7 +77,7 @@
   "appStoreDraftSaved": true,
   "uploaded": true,
   "submitted": true,
-  "published": false,
+  "published": true,
   "submissionReady": true,
   "remainingGates": [],
   "storeVersionVerified": "1.0.0",
@@ -117,7 +117,7 @@
     "consoleAccessRestoredVerifiedOn": "2026-11-19"
   },
   "knownVisualIssues": [],
-  "updatedOn": "2026-11-20",
+  "updatedOn": "2026-11-25",
   "screenshotsUploadedCount": 12,
   "screenshotSaveVerifiedAfterReload": true,
   "reviewContactSaved": true,
@@ -264,7 +264,7 @@
     "nativeChecks": 34,
     "signed": true,
     "exported": true,
-    "status": "submitted_to_App_Review",
+    "status": "published_on_App_Store",
     "nativeVerification": {
       "status": "PASS_WITH_WARNINGS",
       "checks": 34,
@@ -378,7 +378,7 @@
     "exportComplianceReason": "standard_algorithms_outside_or_alongside_apple_os_france_not_distributed_response_saved",
     "internalTestFlightProvided": true
   },
-  "appStoreConnectControl": "available; submission_completed",
+  "appStoreConnectControl": "available; public_release_verified",
   "reviewNotesDraftSavedBuild": null,
   "appStoreBuildSelectedVersion": "1.0.0(16)",
   "testFlight16InternalDistributionVerified": true,
@@ -405,9 +405,59 @@
   "submissionID": "62cb55af-5a41-4558-9544-02484489f678",
   "submissionURL": "https://appstoreconnect.apple.com/apps/6826729307/distribution/reviewsubmissions/details/62cb55af-5a41-4558-9544-02484489f678",
   "appReviewConfirmation": "1개의 항목 제출됨",
-  "appStoreVersionStatus": "submitted_confirmed_by_success_modal",
+  "appStoreVersionStatus": "ready_for_distribution",
   "nextActions": [
-    "await_Apple_App_Review_result",
-    "manual_release_only_after_approval_and_user_release_instruction"
-  ]
+    "await_Apple_creative_asset_review_result",
+    "after_asset_approval_assign_localized_live_header_and_search_assets"
+  ],
+  "publishedAt": "2026-11-24T16:35:22Z",
+  "publishedAtKST": "2026-11-25T01:35:22+09:00",
+  "publicReleaseVerification": "public-release-verification.json",
+  "publicStoreURLs": {
+    "KR": "https://apps.apple.com/kr/app/bibimer-%EB%B9%84%EB%B9%84%EB%A8%B8/id6826729307",
+    "US": "https://apps.apple.com/us/app/bibimer/id6826729307"
+  },
+  "appReviewAccepted": true,
+  "releaseActionPerformedByAssistantInThisSession": false,
+  "chinaMainlandCompliance": {
+    "securityAssessment": "information_missing",
+    "aigc": "information_missing",
+    "distributionExcluded": true,
+    "declarationsChanged": false,
+    "otherSelectedTerritoriesReleased": true
+  },
+  "creativeAssets": {
+    "status": "submitted_awaiting_Apple_review_result",
+    "optional": true,
+    "uploaded": true,
+    "submitted": true,
+    "approved": false,
+    "assignedToLiveHeaderAndSearch": false,
+    "submissionObservedOn": "2026-11-25",
+    "submissionConfirmation": "2개의 항목 제출됨",
+    "submissionID": "2b483c17-b41d-4689-a9cd-d089199d3da1",
+    "submissionURL": "https://appstoreconnect.apple.com/apps/6826729307/distribution/reviewsubmissions/details/2b483c17-b41d-4689-a9cd-d089199d3da1",
+    "manifest": "creative-assets/manifest.json",
+    "sourceAndFormatVerification": "creative-assets/verification.json",
+    "locales": [
+      "en-US",
+      "ko"
+    ],
+    "type": "Universal Creative Asset",
+    "intendedPlacements": [
+      "product_page_header",
+      "search_results"
+    ],
+    "assetIDs": {
+      "en-US": "d4000019-6e79-8f5b-8008-8a908950faa0",
+      "ko": "b5400019-6e79-8f5b-8004-4de6a493e7b5"
+    },
+    "parentVisualReview": {
+      "score": 93,
+      "verdict": "pass"
+    },
+    "appAlreadyReleased": true,
+    "newAppBuildRequired": false,
+    "nextAction": "After Apple approves, select each localized universal asset for the live product-page header and search results, save and verify placement."
+  }
 }

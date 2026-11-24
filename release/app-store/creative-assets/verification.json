@@ -1,0 +1,74 @@
+{
+  "passed": true,
+  "files": [
+    {
+      "file": "release/app-store/creative-assets/en-US-universal.png",
+      "sha256": "8e02f2bb4693ba31295f1cce630b0db15a3afc10d3d984529c23713967b79aac",
+      "bytes": 2422289,
+      "width": 5244,
+      "height": 2950,
+      "mode": "RGB",
+      "alpha": false,
+      "crcVerified": true,
+      "pixelPayloadVerified": true
+    },
+    {
+      "file": "release/app-store/creative-assets/previews/en-US-safe-crop.png",
+      "sha256": "0c2db5269403c8afe2225f0504de14c5a528ed44ac0ded57d0ca2dc23021acae",
+      "bytes": 646459,
+      "width": 1402,
+      "height": 962,
+      "mode": "RGB",
+      "alpha": false,
+      "crcVerified": true,
+      "pixelPayloadVerified": true
+    },
+    {
+      "file": "release/app-store/creative-assets/previews/en-US-preview.png",
+      "sha256": "4eff133db31eac6a6263d98356835854d8698f86007c6d337e2bee6b0f61ba88",
+      "bytes": 382465,
+      "width": 1600,
+      "height": 900,
+      "mode": "RGB",
+      "alpha": false,
+      "crcVerified": true,
+      "pixelPayloadVerified": true
+    },
+    {
+      "file": "release/app-store/creative-assets/ko-universal.png",
+      "sha256": "23aa9242df571118d2e040de7ee348ea66715650a6e6f60cf479b8f860d1053b",
+      "bytes": 2455684,
+      "width": 5244,
+      "height": 2950,
+      "mode": "RGB",
+      "alpha": false,
+      "crcVerified": true,
+      "pixelPayloadVerified": true
+    },
+    {
+      "file": "release/app-store/creative-assets/previews/ko-safe-crop.png",
+      "sha256": "9f5246a16da73120983726a32b05b9d547303bae2ec299617478eabef25092df",
+      "bytes": 631362,
+      "width": 1402,
+      "height": 962,
+      "mode": "RGB",
+      "alpha": false,
+      "crcVerified": true,
+      "pixelPayloadVerified": true
+    },
+    {
+      "file": "release/app-store/creative-assets/previews/ko-preview.png",
+      "sha256": "57d712bb02a8ff2d1bdc7b49524579cc7b339306e9824913b45d812a248b18b8",
+      "bytes": 380104,
+      "width": 1600,
+      "height": 900,
+      "mode": "RGB",
+      "alpha": false,
+      "crcVerified": true,
+      "pixelPayloadVerified": true
+    }
+  ],
+  "sourceCapturesUnmodified": true,
+  "coreArtInsideAppleSafeArea": true,
+  "spaceGroteskWordmarkLoaded": true
+}

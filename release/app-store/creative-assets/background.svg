@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="5244" height="2950" viewBox="0 0 5244 2950">
+<defs>
+  <linearGradient id="line" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b5d5c9" stop-opacity="0"/><stop offset=".48" stop-color="#b5d5c9" stop-opacity=".1"/><stop offset="1" stop-color="#b5d5c9" stop-opacity="0"/></linearGradient>
+  <radialGradient id="glow"><stop stop-color="#8bdbbd" stop-opacity=".075"/><stop offset="1" stop-color="#8bdbbd" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="2990" cy="1100" rx="1600" ry="1200" fill="url(#glow)"/>
+<g fill="none" stroke="url(#line)" stroke-width="1.5">
+ <path d="M1220 0v470q0 180 180 180h420q90 0 90 90v1150q0 160-160 160H0"/>
+ <path d="M1430 0v280q0 160 160 160h1870q150 0 150 150v850q0 180 180 180h1454"/>
+ <path d="M3524 0v1980q0 160 160 160h1560"/>
+ <path d="M0 2430h3700q200 0 200-200V0"/>
+</g>
+<g fill="#9abbb0" opacity=".12">
+ <circle cx="1430" cy="220" r="5"/><circle cx="3900" cy="2140" r="5"/>
+ <circle cx="1220" cy="340" r="4"/><circle cx="3524" cy="1870" r="4"/>
+</g>
+</svg>

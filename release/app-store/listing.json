@@ -1,11 +1,11 @@
 {
-  "status": "app_store_connect_draft_saved",
+  "status": "published",
   "preparedOn": "2026-11-18",
   "bundleIdentifier": "app.bibimer.ios",
   "appStoreId": "6826729307",
   "version": "1.0.0",
-  "build": "15",
-  "sourceCommit": "7741191",
+  "build": "16",
+  "sourceCommit": "0214d866a52fbbc583b0d46d8f043d856135cdeb",
   "pricing": "free",
   "releaseMethod": "manual_after_approval",
   "territories": {
@@ -19,7 +19,7 @@
     "automaticFutureTerritories": false,
     "verifiedInConsole": true
   },
-  "territoryNote": "User confirmed all currently available territories except Mainland China and France. Console availability shows 173 regions; future-region automatic addition is disabled. Build 15 export response saved with France not distributed.",
+  "territoryNote": "173 territories available, excluding Mainland China and France; verified in Console and public Apple lookup on 2026-11-25. Future-region automatic addition remains disabled.",
   "primaryCategorySuggestion": "DEVELOPER_TOOLS",
   "minimumOSVersion": "16.0",
   "deviceFamilies": [
@@ -27,11 +27,11 @@
     "iPad"
   ],
   "copyright": "2026 Andineering",
-  "appPrivacyStatus": "needs_provider_and_retention_review",
+  "appPrivacyStatus": "4_data_types_published_2026_11_19",
   "ageRatingStatus": "saved_16_plus",
   "reviewContactStatus": "saved_verified_after_reload",
-  "submitted": false,
-  "published": false,
+  "submitted": true,
+  "published": true,
   "localizations": {
     "en-US": {
       "name": "Bibimer",
@@ -90,22 +90,72 @@
       "en-US",
       "ko"
     ],
-    "reviewNotes": "latest_draft_saved_verified_after_reload",
+    "reviewNotes": "final_saved_build16",
     "appPrivacy": "4_data_types_published_2026_11_19",
-    "privacyPolicyURL": "not_set",
+    "privacyPolicyURL": "en_US_and_ko_urls_saved_2026_11_19",
     "ageRating": "16_plus_saved",
     "territoryAvailability": "173_regions_selected_excluding_CN_FR",
-    "buildSelection": "1.0.0(15)_selected_export_response_completed",
-    "chinaMainlandComplianceNotice": "security_assessment_and_aigc_filing_required_if_distributed",
-    "buildID": "f8041489-d7cf-4a6a-9db5-bdc69e2fcadf",
-    "reviewNotesCharacters": 3426,
+    "buildSelection": "1.0.0(16)_approved_released",
+    "chinaMainlandComplianceNotice": "security_assessment_and_aigc_information_missing; CN_excluded_from_distribution",
+    "buildID": "0ea77d0f-567b-488d-b868-c9c748a10c04",
+    "reviewNotesCharacters": 3405,
     "reviewContact": "saved_verified_no_raw_contact_in_repository",
     "screenshots": "12_saved_including_2_updated_ipad_settings_build16",
     "testFlight15": "testing_existing_Bibimer_Internal_group",
     "dsa": "trader_active_verified",
-    "privacyPolicy": "en_US_and_ko_urls_saved_2026_11_19"
+    "privacyPolicy": "en_US_and_ko_urls_saved_2026_11_19",
+    "versionStatus": "ready_for_distribution",
+    "testFlight16": "testing_existing_Bibimer_Internal_group"
   },
   "uploaded": true,
   "submissionPolicy": "user_authorized_submit_after_readiness_gates_keep_manual_release",
-  "updatedOn": "2026-11-19"
+  "updatedOn": "2026-11-25",
+  "publishedAt": "2026-11-24T16:35:22Z",
+  "publishedAtKST": "2026-11-25T01:35:22+09:00",
+  "publicReleaseVerification": "public-release-verification.json",
+  "publicStoreURLs": {
+    "KR": "https://apps.apple.com/kr/app/bibimer-%EB%B9%84%EB%B9%84%EB%A8%B8/id6826729307",
+    "US": "https://apps.apple.com/us/app/bibimer/id6826729307"
+  },
+  "chinaMainlandCompliance": {
+    "securityAssessment": "information_missing",
+    "aigc": "information_missing",
+    "distributionExcluded": true,
+    "declarationsChanged": false,
+    "otherSelectedTerritoriesReleased": true
+  },
+  "creativeAssets": {
+    "status": "submitted_awaiting_Apple_review_result",
+    "optional": true,
+    "uploaded": true,
+    "submitted": true,
+    "approved": false,
+    "assignedToLiveHeaderAndSearch": false,
+    "submissionObservedOn": "2026-11-25",
+    "submissionConfirmation": "2개의 항목 제출됨",
+    "submissionID": "2b483c17-b41d-4689-a9cd-d089199d3da1",
+    "submissionURL": "https://appstoreconnect.apple.com/apps/6826729307/distribution/reviewsubmissions/details/2b483c17-b41d-4689-a9cd-d089199d3da1",
+    "manifest": "creative-assets/manifest.json",
+    "sourceAndFormatVerification": "creative-assets/verification.json",
+    "locales": [
+      "en-US",
+      "ko"
+    ],
+    "type": "Universal Creative Asset",
+    "intendedPlacements": [
+      "product_page_header",
+      "search_results"
+    ],
+    "assetIDs": {
+      "en-US": "d4000019-6e79-8f5b-8008-8a908950faa0",
+      "ko": "b5400019-6e79-8f5b-8004-4de6a493e7b5"
+    },
+    "parentVisualReview": {
+      "score": 93,
+      "verdict": "pass"
+    },
+    "appAlreadyReleased": true,
+    "newAppBuildRequired": false,
+    "nextAction": "After Apple approves, select each localized universal asset for the live product-page header and search results, save and verify placement."
+  }
 }
