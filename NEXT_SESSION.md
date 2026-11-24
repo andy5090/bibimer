@@ -1,5 +1,10 @@
 # Bibimer 다음 세션 시작점
 
+## 웹사이트 공식 App Store 배지 게시 (2026-11-25)
+
+- 사용자의 지적에 따라 임시 휴대폰 다운로드 그림을 제거하고 [Apple 마케팅 도구](https://toolbox.marketingtools.apple.com/en-us/app-store/us/app/6826729307)가 제공하는 10개 언어의 공식 검정 배지를 원본 그대로 반영했다. 한국어 홈과 가이드는 한국 App Store의 Bibimer 제품 페이지로 연결한다. 배지의 대체 텍스트는 제품 페이지를 여는 동작을 설명한다.
+- Pages 배포 `https://299d4ee9.bibimer.pages.dev`, 게시 소스 `c2c358f`. 10개 언어의 모바일·데스크톱 렌더링과 운영 파일 22개의 원본 일치를 확인했다. 한국어 운영 페이지의 배지를 실제 브라우저에서 눌러 Bibimer 제품 페이지가 열리는 것을 검증했다.
+
 ## 웹사이트 App Store 설치 아이콘 게시 (2026-11-25)
 
 - 10개 언어 홈의 App Store 버튼에 기존 Google Play 버튼과 같은 24px 크기의 휴대폰 다운로드 아이콘을 추가했다. 320px·393px·1280px 브라우저 검증과 웹 구조·언어 전환 검사를 통과했다. 운영 홈 10개와 이미지·CSS 3개의 원본 일치 및 문의 GET 405를 확인했다. Pages 배포 `https://b320fc88.bibimer.pages.dev`, 게시 소스 `1c16b8d`.
