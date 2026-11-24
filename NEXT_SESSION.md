@@ -1,5 +1,10 @@
 # Bibimer 다음 세션 시작점
 
+## 웹사이트 App Store 출시 정보 게시 (2026-11-25)
+
+- `bibimer.app`의 10개 언어 홈과 Android 가이드에 iPhone·iPad App Store 설치, 최소 OS, 내장 Linux 초기 설정 및 배포 지역 안내를 반영했다. 한국어 홈 `https://bibimer.app/ko/`, 운영 배포 `https://0a8e0e9e.bibimer.pages.dev`, 게시 소스 `0130487`.
+- 운영 도메인의 HTML/CSS 43개 원본 일치, 20개 설치 링크, 문의 GET 405를 확인했다. 10개 언어의 320px·393px·1280px 홈 브라우저 검사와 웹 구조·언어·문의 API·보관 정리 검사 통과. 증빙 `dist/website-app-store/`.
+
 ## App Store 1.0.0 정식 출시 확인 (2026-11-25)
 
 - **헤더·검색용 영한 universal 이미지2개 별도 심사 제출 완료.** Apple의 `2개의 항목 제출됨` 완료 모달과 심사 ID `2b483c17-b41d-4689-a9cd-d089199d3da1`을 확인했다. 두 파일은 5244×2950·8-bit RGB·무알파이며 기존 브랜드/실제 iOS 캡처를 사용했다. 형식·해시·안전영역·원본 보존 검사와 독립 시각 검토93/pass를 통과했다. `creative-assets/{manifest,verification,submission}.json`에 기록했다. **아직 자산 승인·실제 헤더/검색 배치 완료는 아니다.** 승인 후 라이브 영한 제품 페이지에서 해당 자산을 선택·저장하고 노출을 확인해야 한다. 이 대기는 이미 공개된 앱 다운로드를 막지 않는다.
