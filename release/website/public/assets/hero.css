@@ -92,7 +92,7 @@
 
 /* Product navigation shares the existing site's buttons and color palette. */
 .contact { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; }
-.play-icon { flex: 0 0 24px; }
+.store-icon { flex: 0 0 24px; }
 .guide-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
 .header-actions nav:not(.language-nav) a { min-height: 44px; display: inline-flex; align-items: center; }
 @media (max-width: 480px) { .header-actions { width: 100%; justify-content: space-between; gap: 12px; } .links { gap: 12px 20px; } }
