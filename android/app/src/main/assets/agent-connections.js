@@ -58,9 +58,10 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     if(this.updating())return;
     if(this.activeLogin())void this.poll();else{await this.load();if(this.activeLogin())void this.poll();}
   }
-  refreshVersion(s){
-    if(!s.refreshVersion||!this.current(s)||!this.dialog.open||!this.available()||s.busy||s.updateBusy||s.confirming||this.updating(s)||this.activeLogin(s))return;
-    if(!s.report)return;
+  refreshConnection(s){
+    if(!this.current(s)||!this.dialog.open||!this.available()||s.busy||s.updateBusy||s.confirming||this.updating(s)||this.activeLogin(s))return;
+    if(s.refreshAfterUpdate){s.refreshAfterUpdate=false;return this.load();}
+    if(!s.refreshVersion||!s.report)return;
     s.refreshVersion=false;
     if(s.report.installed)return this.load("version");
   }
@@ -96,7 +97,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
         if(error){operation.error=error;this.renderOperation();}
         else{operation.started=true;s.confirming=false;if(this.operationDialog.open)this.operationDialog.close();}
       }
-    }finally{s.confirming=false;if(this.current(s))this.renderOperation();}
+    }finally{s.confirming=false;if(this.current(s)){this.renderOperation();await this.refreshConnection(s);}}
   }
   renderOperation(){
     const s=this.state,operation=s?.operation;if(!operation)return;
@@ -155,11 +156,17 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
         if(result.expired){s.updateRequest=null;s.updateError="error_agent_update_expired";}
       }
       if(result.job)s.updateJob=result.job;
-      if(s.updateJob?.status==="succeeded"){
+      if(["succeeded","failed"].includes(s.updateJob?.status)){
+        const justFinished=(previousJob?.id===s.updateJob.id&&this.updating({updateJob:previousJob}))||
+          (action==="start"&&previousJob?.id!==s.updateJob.id);
+        if(justFinished)s.refreshAfterUpdate=true;
         // A cached successful job describes history, not the current executable.
-        if((previousJob?.id===s.updateJob.id&&this.updating({updateJob:previousJob}))||(action==="start"&&previousJob?.id!==s.updateJob.id)){
+        if(justFinished&&s.updateJob.status==="succeeded"){
           s.version=s.updateJob.installed_version;s.versionRevision=(s.versionRevision||0)+1;
+          s.refreshVersion=false;
         }
+      }
+      if(s.updateJob?.status==="succeeded"){
         if(previousJob?.status!=="succeeded")this.actions.catalogChanged?.(s.agent);
         s.updatePlan=null;
       }
@@ -171,7 +178,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     }}
     finally{if(this.current(s)){
       if(status)s.updateStatusBusy=false;else s.updateBusy=false;
-      this.render();this.scheduleUpdates(s);await this.refreshVersion(s);
+      this.render();this.scheduleUpdates(s);await this.refreshConnection(s);
     }}
   }
   async openTerminal(){
@@ -207,7 +214,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
       }
       else{s.report=result;s.installationAwaitingStatus=false;this.providers();if(result.job)s.job=result.job;}
     }catch(e){if(this.current(s)&&(action!=="version"||versionCurrent()))s.error=e.key||"error_agent_connection";}
-    finally{if(this.current(s)){s.busy=false;s.loading=null;this.render();await this.refreshVersion(s);}}
+    finally{if(this.current(s)){s.busy=false;s.loading=null;this.render();await this.refreshConnection(s);}}
   }
   providers(){
     const s=this.state,select=this.$("provider"),value=select.value;
@@ -299,6 +306,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     if(this.available()&&(this.updating()||this.state.updatePlan?.available)&&!this.state.updateBusy&&!this.state.updateStatusBusy&&!this.updateTimer)this.scheduleUpdates();
     this.render();
     if(this.available()&&this.activeLogin()&&!this.state.busy&&!this.timer)void this.poll();
+    else if(this.state.refreshAfterUpdate)void this.refreshConnection(this.state);
   }
   renderInstallation(){
     const s=this.state;if(!s)return;
