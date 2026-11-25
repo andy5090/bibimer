@@ -10,7 +10,7 @@ root=/root/.local/share/bibimer/agents
 mkdir -p "$root/$agent" /root/.local/bin /root/.local/state/bibimer/agents
 # No credential files or host environment are copied into this guest.
 case "$agent" in
-    codex) package='@openai/codex@0.163.0'; executable=codex ;;
+    codex) package='@openai/codex@0.172.0'; executable=codex ;;
     claude) package='@anthropic-ai/claude-code@2.1.112'; executable=claude ;;
     opencode) package='opencode-linux-arm64-musl@1.19.3'; executable=opencode ;;
     gemini) package='@google/gemini-cli@0.64.0'; executable=gemini ;;

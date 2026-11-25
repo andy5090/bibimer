@@ -28,6 +28,10 @@ AGENTS = ("codex", "claude", "opencode", "gemini")
 SOURCE = HERE.parent / "bridge" / "bibimer_bridge.py"
 CLAUDE_VERSION = "2.1.112"
 CLAUDE_SDK_VERSION = "0.2.112"
+OPENCODE_VERSION = "1.19.3"
+UPDATE_PACKAGES = {"codex": "@openai/codex", "gemini": "@google/gemini-cli", "claude": "@anthropic-ai/claude-code",
+                   "opencode": "opencode-linux-arm64-musl"}
+COMPATIBLE_UPDATES = {UPDATE_PACKAGES["claude"]: CLAUDE_VERSION, UPDATE_PACKAGES["opencode"]: OPENCODE_VERSION}
 
 # Manual code delivery needs no localhost listener. Preserve the native flow's
 # ready/error contract while letting its existing manual resolver receive code.
@@ -89,7 +93,7 @@ def prepare_claude_ui_login(state, executable, home=None):
     installation = claude_installation(home)
     if str(executable) != installation["executable"]:
         raise RuntimeError("Unreviewed Claude executable")
-    source = Path(installation["executable"]).parent.parent / "share/bibimer/agents/claude/node_modules/@anthropic-ai/claude-code/cli.js"
+    source = Path(installation["launcher"]).resolve(strict=True)
     if source.stat().st_size > 32 * 1024 * 1024:
         raise RuntimeError("Unexpected Claude source size")
     adapted = claude_ui_login_source(source.read_text(), source.as_uri())
@@ -167,6 +171,55 @@ def private_provider(state, name, text):
     return target
 
 
+def agent_wrapper(agent, launcher):
+    if agent == "opencode":
+        return ('#!/bin/sh\nexport JSC_useJIT=0 OPENCODE_DISABLE_AUTOUPDATE=true '
+                'OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER=true\nexec "' + str(launcher) + '" "$@"\n')
+    if agent == "gemini":
+        return ('#!/bin/sh\nexport ISH_NODE_NO_ARG_INJECTION=1 GEMINI_CLI_NO_RELAUNCH=1\n'
+                'exec node --no-opt --no-sparkplug --single-threaded --no-wasm-tier-up --liftoff-only '
+                '--no-lazy --max-old-space-size=512 "' + str(launcher) + '" "$@"\n')
+    return '#!/bin/sh\nexec "' + str(launcher) + '" "$@"\n'
+
+
+def managed_update_paths(agent, executable, home):
+    """Recognize the app's exact launcher, including installations from 1.0.0."""
+    package = UPDATE_PACKAGES.get(agent)
+    wrapper = home / ".local/bin" / agent
+    if not package or Path(executable) != wrapper or wrapper.is_symlink() or wrapper.stat().st_size > 2048:
+        return None
+    text = wrapper.read_text()
+    match = re.search(r'^exec [^"\n]*"([^"\n]+)" "\$@"$', text, re.M)
+    if not match:
+        return None
+    launcher = Path(match[1])
+    if len(launcher.parents) < 3:
+        return None
+    native = agent == "opencode"
+    prefix = launcher.parent if native else launcher.parents[2]
+    root = home / ".local/share/bibimer/agents" / agent
+    if prefix != root and (prefix.parent != root or not re.fullmatch(r'release-[a-z0-9_]+', prefix.name)):
+        return None
+    expected = prefix / "opencode-ios" if native else prefix / "node_modules/.bin" / agent
+    if prefix.resolve() != prefix or launcher != expected:
+        return None
+    if text != agent_wrapper(agent, launcher):
+        return None
+    folder = prefix / "node_modules" / package
+    manifest = folder / "package.json"
+    target = launcher.resolve(strict=True)
+    matches_package = target == launcher if native else target.is_relative_to(folder)
+    if not matches_package or manifest.resolve() != manifest:
+        return None
+    return launcher, manifest
+
+
+def claude_sdk_package(home, launcher):
+    root = home / ".local/share/bibimer"
+    prefix = launcher.parents[2]
+    return (root / "claude" if prefix == root / "agents/claude" else prefix) / "node_modules/@anthropic-ai/claude-agent-sdk"
+
+
 def prepare_claude_provider(state, source=SOURCE.with_name("provider_claude.mjs")):
     """Keep iOS Steer disabled until its native acceptance has been verified."""
     text = source.read_text(encoding="utf-8")
@@ -208,19 +261,24 @@ def prepare_opencode_provider(state, source=SOURCE.with_name("provider_opencode.
     return private_provider(state, "provider_opencode_ios.py", opencode_provider_source(source.read_text(encoding="utf-8")))
 
 
-def claude_installation(home=None):
+def claude_installation(home=None, *, launcher=None, candidate=None):
     home = (home or Path.home()).resolve()
-    prefix = home / ".local/share/bibimer/agents/claude/node_modules"
-    sdk_prefix = home / ".local/share/bibimer/claude/node_modules/@anthropic-ai/claude-agent-sdk"
-    paths = {"wrapper": home / ".local/bin/claude", "cli": prefix / "@anthropic-ai/claude-code/cli.js",
+    executable = home / ".local/bin/claude"
+    if launcher is None:
+        paths = managed_update_paths("claude", executable, home)
+        if not paths:
+            raise RuntimeError("Claude wrapper does not match the managed executable")
+        launcher, _ = paths
+    prefix = launcher.parents[1]
+    sdk_prefix = claude_sdk_package(home, launcher)
+    paths = {"wrapper": candidate or executable, "cli": prefix / "@anthropic-ai/claude-code/cli.js",
              "cli_package": prefix / "@anthropic-ai/claude-code/package.json", "sdk": sdk_prefix / "sdk.mjs", "sdk_package": sdk_prefix / "package.json"}
-    launcher = prefix / ".bin/claude"
     if launcher.resolve(strict=True) != paths["cli"]:
         raise RuntimeError("Claude launcher does not match the managed Node CLI")
     for key, version in (("cli_package", CLAUDE_VERSION), ("sdk_package", CLAUDE_SDK_VERSION)):
         if json.loads(paths[key].read_text())["version"] != version:
             raise RuntimeError("Claude package version does not match the verified runtime")
-    expected = '#!/bin/sh\nexec "' + str(launcher) + '" "$@"\n'
+    expected = agent_wrapper("claude", launcher)
     if paths["wrapper"].read_text() != expected or not os.access(paths["wrapper"], os.X_OK):
         raise RuntimeError("Claude wrapper does not match the managed executable")
     files = {}
@@ -230,7 +288,7 @@ def claude_installation(home=None):
             raise RuntimeError("Claude installation contains an unexpected file type")
         files[key] = {"size": info.st_size, "mtime_ns": info.st_mtime_ns, "inode": info.st_ino, "device": info.st_dev}
     return {"format": 1, "agent": "claude", "version": CLAUDE_VERSION, "sdk_version": CLAUDE_SDK_VERSION,
-            "executable": str(paths["wrapper"]), "launcher": str(launcher), "files": files}
+            "executable": str(executable), "launcher": str(launcher), "files": files}
 
 
 def record_claude_installation(state, home=None):
@@ -254,7 +312,9 @@ def record_claude_installation(state, home=None):
 def claude_installation_ready(base, state, executable, home=None):
     try:
         installation = claude_installation(home)
-        return str(executable) == installation["executable"] and base.read_json(state / "agents/claude.json") == installation
+        prefix = Path(installation["launcher"]).parents[2]
+        receipt = prefix / ".bibimer-claude.json" if prefix.name.startswith("release-") else state / "agents/claude.json"
+        return str(executable) == installation["executable"] and base.read_json(receipt) == installation
     except (OSError, ValueError, KeyError, TypeError, RuntimeError):
         return False
 
@@ -357,6 +417,22 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
     base._ios_prepare_auth_terminal = prepare_auth_terminal
     base._ios_authentication_command = authentication_command
 
+    original_sdk_path = base.claude_sdk_path
+
+    def sdk_path():
+        executable = shutil.which("claude")
+        if executable:
+            home = Path.home().resolve()
+            try:
+                paths = managed_update_paths("claude", executable, home)
+                if paths:
+                    return claude_sdk_package(home, paths[0]) / "sdk.mjs"
+            except (OSError, ValueError):
+                pass
+        return original_sdk_path()
+
+    base.claude_sdk_path = sdk_path
+
     def provider_command(executable, agent):
         if agent == "gemini":
             return [sys.executable, str(HERE / "provider_gemini.py"), executable]
@@ -370,10 +446,10 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
     base.provider_command = provider_command
 
     class HistoryClient(base.HistoryClient):
-        def __init__(self, executable, cwd, agent="codex"):
+        def __init__(self, executable, cwd, agent="codex", env=None):
             self.agent = agent
             self.metadata_deadline = time.monotonic() + 125
-            super().__init__(executable, cwd, agent)
+            super().__init__(executable, cwd, agent, env=env)
 
         def call(self, method, params):
             if self.agent not in {"codex", "claude", "gemini", "opencode"}:
@@ -450,9 +526,9 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
 
     class AgentConnections(base.AgentConnections):
         @staticmethod
-        def command(argv, timeout=8):
+        def command(argv, timeout=8, env=None):
             # Guest CLI cold starts are slower than native Android processes.
-            return original_connections.command(argv, timeout=max(timeout, 125))
+            return original_connections.command(argv, timeout=max(timeout, 125), env=env)
 
         def client(self, executable, cwd):
             if opencode_provider is None:
@@ -511,8 +587,134 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
             super().__init__(executable, cwd, agent, method)
 
     class AgentUpdates(base.AgentUpdates):
+        packages = {agent: {package} for agent, package in UPDATE_PACKAGES.items()}
+
         def handle(self, data):
-            raise base.Problem(400, "error_agent_update_unavailable")
+            if data.get("agent") not in self.packages:
+                raise base.Problem(400, "error_agent_update_unavailable")
+            return super().handle(data)
+
+        @classmethod
+        def metadata(cls, package):
+            if package in COMPATIBLE_UPDATES:
+                return {"version": COMPATIBLE_UPDATES[package]}
+            report = super().metadata(package)
+            if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", report["version"]):
+                raise base.Problem(400, "error_agent_update_unavailable")
+            return report
+
+        def probe(self, executable, agent, env=None):
+            code, output = base.AgentConnections.command([executable, "--version"], env=env)
+            match = re.search(rb"(?m)^(?:codex-cli )?([0-9]+\.[0-9]+\.[0-9]+)(?: \(Claude Code\))?\s*$", output)
+            if code or not match:
+                raise base.Problem(400, "error_agent_update_failed")
+            return self.version(match[1].decode())
+
+        def installation(self, agent):
+            executable = self.bridge.agent_executable(agent)
+            if not executable:
+                raise base.Problem(400, "error_program_missing")
+            plan = dict(agent=agent, current="", kind="unsupported")
+            try:
+                paths = managed_update_paths(agent, executable, Path.home().resolve())
+            except (OSError, ValueError):
+                return plan
+            if not paths:
+                return plan
+            fingerprint = self.fingerprint(executable)
+            current = self.probe(executable, agent)
+            launcher, manifest = paths
+            package = UPDATE_PACKAGES[agent]
+            info = json.loads(manifest.read_text())
+            plan.update(current=current)
+            if info.get("name") == package and info.get("version") == current:
+                plan.update(kind="ios-npm", package=package, executable=executable, fingerprint=fingerprint,
+                            guard_path=str(manifest), guard_fingerprint=self.fingerprint(manifest),
+                            launcher=str(launcher), launcher_fingerprint=self.fingerprint(launcher))
+            return plan
+
+        def validate_plan(self, plan, key):
+            super().validate_plan(plan, key)
+            if plan["kind"] != "ios-npm" or self.fingerprint(plan["launcher"]) != plan["launcher_fingerprint"]:
+                raise base.Problem(409, "error_agent_update_expired")
+
+        def native_install(self, plan):
+            agent, version = plan["agent"], plan["latest"]
+            home = Path.home().resolve()
+            root = home / ".local/share/bibimer/agents" / agent
+            stage = Path(tempfile.mkdtemp(prefix="release-", dir=root))
+            probe_home = stage / "probe-home"
+            probe_home.mkdir(mode=0o700)
+            env = {"HOME": str(probe_home), "PATH": os.environ.get("PATH", os.defpath), "LANG": "C.UTF-8",
+                   "DISABLE_AUTOUPDATER": "1", "DISABLE_TELEMETRY": "1", "DISABLE_ERROR_REPORTING": "1"}
+            published = False
+            try:
+                if agent == "codex":
+                    codex_home = probe_home / ".codex"
+                    codex_home.mkdir(mode=0o700)
+                    env["CODEX_HOME"] = str(codex_home)
+                packages = [UPDATE_PACKAGES[agent] + "@" + version]
+                if agent == "claude":
+                    packages.append("@anthropic-ai/claude-agent-sdk@" + CLAUDE_SDK_VERSION)
+                self.run(["/usr/bin/env", "-i", *(f"{key}={value}" for key, value in env.items()),
+                          *self.npm(), "install", "--prefix", str(stage), "--ignore-scripts",
+                          f"--userconfig={probe_home / 'npm-user.conf'}", f"--globalconfig={probe_home / 'npm-global.conf'}",
+                          "--no-audit", "--no-fund",
+                          "--registry=https://registry.npmjs.org",
+                          *(["--omit=optional"] if agent in {"claude", "gemini"} else []), *packages])
+                folder = stage / "node_modules" / UPDATE_PACKAGES[agent]
+                manifest = json.loads((folder / "package.json").read_text())
+                if manifest.get("name") != UPDATE_PACKAGES[agent] or manifest.get("version") != version:
+                    raise ValueError("Unexpected staged agent package")
+                launcher = stage / "node_modules/.bin" / agent
+                if agent == "opencode":
+                    launcher = stage / "opencode-ios"
+                    self.run([sys.executable, str(HERE / "opencode_compat.py"), str(folder / "bin/opencode"),
+                              "--output", str(launcher)])
+                elif not launcher.resolve(strict=True).is_relative_to(folder):
+                    raise ValueError("Unexpected staged agent launcher")
+                candidate = private_provider(stage, agent, agent_wrapper(agent, launcher))
+                candidate.chmod(0o700)
+                if self.probe(str(candidate), agent, env=env) != version:
+                    raise ValueError("Unexpected staged agent version")
+                if agent == "claude":
+                    self.verify_claude_candidate(home, launcher, candidate, env)
+                else:
+                    with HistoryClient(str(candidate), str(probe_home), agent, env=env):
+                        pass
+                shutil.rmtree(probe_home)
+                with self.bridge.lock:
+                    if self.closed or self.bridge.closing:
+                        raise base.Problem(409, "error_bridge_stopping")
+                    # The user may have changed a launcher in another terminal while npm ran.
+                    if (self.bridge.agent_executable(agent) != plan["executable"] or
+                            self.fingerprint(plan["executable"]) != plan["fingerprint"] or
+                            self.fingerprint(plan["guard_path"]) != plan["guard_fingerprint"] or
+                            self.fingerprint(plan["launcher"]) != plan["launcher_fingerprint"]):
+                        raise base.Problem(409, "error_agent_update_expired")
+                    os.replace(candidate, plan["executable"])
+                    published = True
+                return version
+            finally:
+                if not published:
+                    shutil.rmtree(stage, ignore_errors=True)
+
+        def verify_claude_candidate(self, home, launcher, candidate, env):
+            installation = claude_installation(home, launcher=launcher, candidate=candidate)
+            cli = launcher.resolve(strict=True)
+            if cli.stat().st_size > 32 * 1024 * 1024:
+                raise ValueError("Unexpected Claude source size")
+            claude_ui_login_source(cli.read_text(), cli.as_uri())
+            sdk = claude_sdk_package(home, launcher) / "sdk.mjs"
+            node = shutil.which("node")
+            if not node:
+                raise ValueError("Missing guest Node.js")
+            code, _ = base.AgentConnections.command([node, "--input-type=module", "--eval",
+                'import {pathToFileURL} from "node:url"; const sdk = await import(pathToFileURL(process.argv[1])); '
+                'if (typeof sdk.query !== "function") process.exit(1);', str(sdk)], env=env)
+            if code:
+                raise ValueError("Claude SDK import failed")
+            base.save_json(candidate.parent / ".bibimer-claude.json", installation)
 
     base.HistoryClient, base.ChatSession = HistoryClient, ChatSession
     base.AccountClient, base.AgentConnections = AccountClient, AgentConnections
@@ -536,8 +738,10 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
             for row in rows:
                 if row["id"] != "shell":
                     row["setup_actions"] = ["install", "login", "version"]
+                    row["can_update"] = row["id"] in UPDATE_PACKAGES
             rows.append({"id": "gemini", "name": "Gemini CLI", "installed": bool(shutil.which("gemini")),
                          "modes": ["terminal", "chat"], "setup_actions": ["install", "login", "version"],
+                         "can_update": "gemini" in UPDATE_PACKAGES,
                          "capabilities": {"history": False, "steer": False, "native_acp": True}})
             return rows
 
@@ -546,9 +750,8 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
             result.update(platform="ios", runtime="embedded-arm64-linux")
             # OS notifications/file viewers are native capabilities, not a guest
             # guarantee. The app decides which native facilities are available.
-            # CLI updates use the fixed iOS installers, not Android's updater.
             result["features"] = [feature for feature in result["features"] if feature not in {
-                "claude_steer", "agent_updates", "session_title_suggestions"}]
+                "claude_steer", "session_title_suggestions"}]
             result["features"].append("ios_agent_setup")
             return result
 
@@ -596,6 +799,8 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
                     return {"session": existing}
                 if key in self.deleted_launches:
                     raise base.Problem(409, "error_launch_conflict")
+                if self.agent_updates.busy(agent) or self.agent_sessions.busy(agent):
+                    raise base.Problem(409, "error_agent_operation_busy")
                 # The fixed installer/login is a PTY session. It never appears as
                 # structured chat, and its terminal output is never translated.
                 session = base.Session(project, agent, argv, 80, 24, key, self.persist)

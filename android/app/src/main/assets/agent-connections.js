@@ -52,7 +52,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     if(!this.dialog.open)this.dialog.showModal();
     this.render();
     if(!agent)return;
-    if(this.context().updates)await this.updates("status");
+    if(this.supportsUpdates(agent))await this.updates("status");
     if(!this.current(s)||viewRevision!==this.viewRevision||!this.dialog.open||!this.available())return;
     s.refreshVersion=true;
     if(this.updating())return;
@@ -65,6 +65,10 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     if(s.report.installed)return this.load("version");
   }
   updating(s=this.state){return ["waiting","stopping","installing","verifying","restoring"].includes(s?.updateJob?.status);}
+  supportsUpdates(agent){
+    const c=this.context();
+    return c.updates&&(c.platform!=="ios"||c.agents?.some(row=>row.id===agent&&row.can_update===true));
+  }
   async beginOperation(kind){
     const s=this.state;if(!this.current(s)||!this.available()||s.busy||s.updateBusy||this.updating(s)||this.activeLogin(s))return;
     if(!this.context().maintenance){if(kind==="update")return this.updates("start");return this.start(true);}
@@ -129,7 +133,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
   }
   async updates(action="status"){
     const s=this.state,status=action==="status";
-    if(!this.current(s)||!this.available()||!this.context().updates||s.updateBusy||(status&&s.updateStatusBusy))return;
+    if(!this.current(s)||!this.available()||!this.supportsUpdates(s.agent)||s.updateBusy||(status&&s.updateStatusBusy))return;
     if(action==="check"&&(this.updating(s)||s.busy||s.job?.status==="pending"))return;
     if(action==="start"&&(!s.updatePlan?.available||(s.updatePlan.blocked&&!s.operation?.confirmation)||this.updating(s)||s.busy||s.job?.status==="pending"))return;
     const revision=status?(s.updateRevision||0):(s.updateRevision=(s.updateRevision||0)+1);
@@ -360,7 +364,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     if(s.agent!=="gemini")this.$("fallback-hint").textContent=this.t(!this.context().loginTerminal?"connection_update_bridge":"connection_terminal_in_app_hint");
     else this.$("fallback-hint").textContent=this.t(this.context().loginUI?"connection_native_unavailable":"connection_update_bridge");
     this.$("fallback-hint").hidden=m?.type!=="terminal"&&usable&&["codex","opencode","claude","gemini"].includes(s.agent)&&this.choices?.some(m=>m.supported);
-    this.$("updates").hidden=!s.agent||!this.context().updates||report?.installed===false;
+    this.$("updates").hidden=!s.agent||!this.supportsUpdates(s.agent)||report?.installed===false;
     const plan=s.updatePlan,job=s.updateJob;
     this.$("update-target").textContent=plan?.latest_version?this.t(plan.migration?"agent_codex_migration":"agent_update_target",{current:plan.current_version,latest:plan.latest_version}):"";
     this.$("update-check").disabled=!usable||s.busy||s.updateBusy||pending||updating;
@@ -372,7 +376,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
       updating?this.t("agent_update_"+job.status):job?.status==="failed"?this.t(job.error||"error_agent_update_failed"):
       job?.status==="succeeded"?this.t("agent_update_succeeded",{version:job.installed_version}):plan?
       this.t(!plan.supported?(plan.unsupported_reason==="major"?"agent_update_major":"agent_update_unsupported"):
-        (plan.blocked||pending||s.busy)?(this.context().maintenance&&reason==="sessions"?"agent_operation_update_hint":blockedKey):!plan.available?"agent_update_current":"agent_update_ready",{count:plan.active_session_count||0}):"";
+        (plan.blocked||pending||s.busy)?(this.context().maintenance&&reason==="sessions"?"agent_operation_update_hint":blockedKey):!plan.available?(plan.method==="ios-npm"?"agent_update_compatible_current":"agent_update_current"):"agent_update_ready",{count:plan.active_session_count||0}):"";
     this.renderOperation();this.renderRecovery(s.updateJob,"update-recovery-");this.renderRecovery(s.job,"recovery-");
     this.actions.sync();
   }

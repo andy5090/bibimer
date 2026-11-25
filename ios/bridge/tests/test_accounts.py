@@ -68,18 +68,124 @@ print('AUTH_DONE',flush=True)
         finally:
             connection.close()
 
-    def test_health_enables_accounts_but_keeps_android_updater_disabled(self):
+    def test_health_advertises_only_supported_ios_agent_updates(self):
         with patch.object(self.base.shutil, 'which', return_value=None):
-            features = self.bridge.health()['features']
+            health = self.bridge.health()
+        features = health['features']
         self.assertIn('agent_connections', features)
         self.assertIn('agent_login_terminal', features)
         self.assertIn('agent_login_ui', features)
-        self.assertNotIn('agent_updates', features)
+        self.assertIn('agent_updates', features)
+        self.assertEqual({'codex', 'gemini', 'claude', 'opencode'}, {row['id'] for row in health['agents'] if row.get('can_update')})
         self.assertNotIn('claude_steer', features)
         self.assertFalse(self.bridge.sessions)
         with self.assertRaises(self.base.Problem) as blocked:
-            self.bridge.agent_updates.handle({'agent':'claude','action':'start'})
+            self.bridge.agent_updates.handle({'agent':'shell','action':'start'})
         self.assertEqual('error_agent_update_unavailable', blocked.exception.code)
+
+    def test_update_check_uses_audited_targets_for_claude_and_opencode(self):
+        home = self.root.resolve()
+        updates = self.bridge.agent_updates
+        for agent, package, old, compatible in (
+            ('claude', '@anthropic-ai/claude-code', '2.1.110', '2.1.112'),
+            ('opencode', 'opencode-linux-arm64-musl', '1.19.2', '1.19.3'),
+        ):
+            with self.subTest(agent=agent):
+                prefix = home / '.local/share/bibimer/agents' / agent
+                folder = prefix / 'node_modules' / package
+                folder.mkdir(parents=True)
+                (folder / 'package.json').write_text(json.dumps({'name': package, 'version': old}))
+                if agent == 'claude':
+                    entry = folder / 'cli.js'
+                    entry.touch()
+                    launcher = prefix / 'node_modules/.bin/claude'
+                    launcher.parent.mkdir()
+                    launcher.symlink_to(entry)
+                else:
+                    launcher = prefix / 'opencode-ios'
+                    launcher.touch()
+                wrapper = home / '.local/bin' / agent
+                wrapper.parent.mkdir(parents=True, exist_ok=True)
+                wrapper.write_text(fixtures.entry.agent_wrapper(agent, launcher))
+                wrapper.chmod(0o700)
+                with patch.object(Path, 'home', return_value=home), \
+                        patch.object(self.bridge, 'agent_executable', return_value=str(wrapper)), \
+                        patch.object(updates, 'probe', return_value=old), \
+                        patch.object(self.base.urllib.request, 'urlopen', side_effect=AssertionError('unexpected registry lookup')):
+                    plan = updates.handle({'agent': agent, 'action': 'check'})['plan']
+                self.assertTrue(plan['supported'])
+                self.assertTrue(plan['available'])
+                self.assertEqual((plan['current_version'], plan['latest_version']), (old, compatible))
+
+    def managed_codex(self, prefix, version, handshake=True):
+        package = prefix / 'node_modules/@openai/codex'
+        package.mkdir(parents=True)
+        (package / 'package.json').write_text(json.dumps({'name': '@openai/codex', 'version': version}))
+        script = package / 'codex'
+        script.write_text(f'#!{sys.executable}\nimport json, os, pathlib, sys\n'
+                          f'if sys.argv[1:] == ["--version"]: print("codex-cli {version}"); sys.exit(0)\n'
+                          'assert sys.argv[1:] == ["app-server", "--listen", "stdio://"]\n'
+                          'assert os.environ["HOME"].endswith("/probe-home")\n'
+                          'assert pathlib.Path(os.environ["CODEX_HOME"]).is_dir()\n'
+                          'request = json.loads(input()); assert request["method"] == "initialize"\n'
+                          f'if not {handshake!r}: sys.exit(1)\n'
+                          'print(json.dumps({"id": request["id"], "result": {}}), flush=True)\n'
+                          'assert json.loads(input())["method"] == "initialized"\n')
+        script.chmod(0o700)
+        launcher = prefix / 'node_modules/.bin/codex'
+        launcher.parent.mkdir()
+        launcher.symlink_to(script)
+        return launcher
+
+    def test_codex_update_is_published_only_after_successful_app_server_probe(self):
+        home = self.root.resolve()
+        prefix = home / '.local/share/bibimer/agents/codex'
+        launcher = self.managed_codex(prefix, '0.163.0')
+        wrapper = home / '.local/bin/codex'
+        wrapper.parent.mkdir(parents=True)
+        old_wrapper = fixtures.entry.agent_wrapper('codex', launcher)
+        wrapper.write_text(old_wrapper)
+        wrapper.chmod(0o700)
+        user_config = home / '.codex/config.toml'
+        user_config.parent.mkdir()
+        user_config.write_text('model = "existing"\n')
+        updates = self.bridge.agent_updates
+
+        def request(action, **data):
+            return updates.handle({'agent': 'codex', 'action': action, **data})
+
+        for succeeds in (False, True):
+            with self.subTest(succeeds=succeeds), patch.object(Path, 'home', return_value=home), \
+                    patch.object(self.bridge, 'agent_executable', return_value=str(wrapper)), \
+                    patch.object(updates, 'metadata', return_value={'version': '0.172.0'}), \
+                    patch.object(updates, 'npm', return_value=['npm']):
+                def install(argv):
+                    self.assertEqual(wrapper.read_text(), old_wrapper)
+                    self.assertEqual(argv[-1], '@openai/codex@0.172.0')
+                    self.assertIn('--ignore-scripts', argv)
+                    config = [item.split('=', 1)[1] for item in argv if item.startswith(('--userconfig=', '--globalconfig='))]
+                    self.assertEqual(len(set(config)), 2, 'npm rejects reusing the same config path across config layers')
+                    self.managed_codex(Path(argv[argv.index('--prefix') + 1]), '0.172.0', succeeds)
+
+                with patch.object(updates, 'run', side_effect=install):
+                    plan = request('check')['plan']
+                    self.assertTrue(plan['available'])
+                    self.assertEqual((plan['current_version'], plan['latest_version']), ('0.163.0', '0.172.0'))
+                    confirmation = request('prepare', plan_id=plan['id'])['confirmation']
+                    job = request('start', plan_id=plan['id'], confirmation_id=confirmation['id'], request_id=str(uuid.uuid4()))['job']
+                    def completed():
+                        row = request('poll', id=job['id'])['job']
+                        return row if row['status'] in {'succeeded', 'failed'} else None
+                    result = fixtures.wait_for(completed)
+                self.assertEqual(result['status'], 'succeeded' if succeeds else 'failed')
+                self.assertEqual(user_config.read_text(), 'model = "existing"\n')
+                if succeeds:
+                    self.assertEqual(result['installed_version'], '0.172.0')
+                    self.assertEqual(request('check')['plan']['current_version'], '0.172.0')
+                    self.assertFalse(list(prefix.glob('release-*/probe-home')))
+                else:
+                    self.assertEqual(wrapper.read_text(), old_wrapper)
+                    self.assertFalse(list(prefix.glob('release-*')))
 
     def test_route_authentication_and_origin_are_still_required(self):
         self.assertEqual(401, self.api(token=False)[0])

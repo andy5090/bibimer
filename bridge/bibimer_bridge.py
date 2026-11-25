@@ -626,10 +626,10 @@ def provider_command(executable, agent):
 class HistoryClient:
     """Short-lived, read-only app-server RPC. Never starts or resumes a thread."""
     methods = {"initialize", "thread/list", "thread/read", "model/list", "skills/list", "commands/list"}
-    def __init__(self, executable, cwd, agent="codex"):
+    def __init__(self, executable, cwd, agent="codex", env=None):
         self.process = subprocess.Popen(provider_command(executable, agent),
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-            cwd=cwd, start_new_session=True, close_fds=True)
+            cwd=cwd, start_new_session=True, close_fds=True, env=env)
         self.buffer, self.serial = b"", 0
 
     def __enter__(self):
@@ -1609,14 +1609,16 @@ class AgentUpdates:
                     time.sleep(.05)
                 self.bridge.agent_sessions.stop(record)
                 with self.bridge.lock: job["status"] = "installing"
+                installed = None
                 if plan["kind"] == "npm":
                     self.run([*self.npm(), "install", "--global", plan["package"] + "@" + plan["latest"],
                               "--registry=https://registry.npmjs.org", "--no-audit", "--no-fund"])
-                else: self.native_install(plan)
+                else: installed = self.native_install(plan)
                 with self.bridge.lock:
                     job["status"] = "verifying"
                     self.bridge.program_checks.clear(); self.bridge.model_cache.clear(); self.bridge.command_cache.clear()
-                installed = self.probe(self.bridge.agent_executable(plan["agent"]), plan["agent"])
+                if installed is None:
+                    installed = self.probe(self.bridge.agent_executable(plan["agent"]), plan["agent"])
                 if installed.split("-")[0] != plan["latest"].split("-")[0]: raise ValueError()
                 if plan["kind"] == "npm" and json.loads(Path(plan["manifest"]).read_text()).get("version") != plan["latest"]:
                     raise ValueError()

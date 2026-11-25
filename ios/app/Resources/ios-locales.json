@@ -47,7 +47,8 @@
     "Connect to the built-in Linux environment first. Use Reconnect in Settings.",
     "iOS requires no separate bridge installation or update. Manage installation, accounts, providers and version updates in one place.",
     "Open a separate login terminal inside Bibimer and follow the CLI instructions. Then refresh account status here. Existing sessions keep running.",
-    "Starting sign-in opens the browser automatically. For Claude, copy the entire authorization code, including #state, to continue automatically. Allow pasting if iOS asks. Manual code entry is available if needed."
+    "Starting sign-in opens the browser automatically. For Claude, copy the entire authorization code, including #state, to continue automatically. Allow pasting if iOS asks. Manual code entry is available if needed.",
+    "No newer compatible version is available for this iOS app."
   ],
   "ko": [
     "마이크를 눌렀을 때 음성을 녹음해 입력 초안에 추가합니다.",
@@ -97,7 +98,8 @@
     "먼저 내장 Linux에 연결하세요. 설정의 다시 연결을 사용할 수 있습니다.",
     "iOS에서는 별도 브리지 설치나 업데이트가 필요하지 않습니다. 설치·계정 연결·프로바이더·버전 업데이트를 한곳에서 관리합니다.",
     "Bibimer 안에 별도 로그인 터미널을 열고 CLI 안내를 따르세요. 이후 여기서 계정 상태를 새로고침하세요. 기존 세션은 계속 실행됩니다.",
-    "로그인을 누르면 인증 주소가 준비되는 대로 브라우저가 자동으로 열립니다. Claude는 승인 후 #state를 포함한 전체 코드를 복사하면 자동으로 이어갑니다. iOS에서 붙여넣기를 요청하면 허용하세요. 필요하면 코드를 직접 입력할 수 있습니다."
+    "로그인을 누르면 인증 주소가 준비되는 대로 브라우저가 자동으로 열립니다. Claude는 승인 후 #state를 포함한 전체 코드를 복사하면 자동으로 이어갑니다. iOS에서 붙여넣기를 요청하면 허용하세요. 필요하면 코드를 직접 입력할 수 있습니다.",
+    "이 iOS 앱에서 사용할 수 있는 최신 호환 버전입니다."
   ],
   "pt-BR": [
     "Grava a fala ao tocar no microfone para adicionar texto ao rascunho.",
@@ -147,7 +149,8 @@
     "Conecte primeiro ao Linux integrado. Use Reconectar nos Ajustes.",
     "No iOS, não é necessário instalar nem atualizar uma ponte separada. Gerencie instalação, contas, provedores e atualizações em um só lugar.",
     "Abra um terminal de login separado no Bibimer e siga as instruções da CLI. Depois atualize o status da conta aqui. As sessões existentes continuam em execução.",
-    "Ao iniciar a entrada, o navegador abre automaticamente. No Claude, copie todo o código de autorização, incluindo #state, para continuar automaticamente. Permita colar se o iOS solicitar. A entrada manual está disponível."
+    "Ao iniciar a entrada, o navegador abre automaticamente. No Claude, copie todo o código de autorização, incluindo #state, para continuar automaticamente. Permita colar se o iOS solicitar. A entrada manual está disponível.",
+    "Não há uma versão compatível mais recente para este app iOS."
   ],
   "es": [
     "Graba voz al tocar el micrófono para añadir texto al borrador.",
@@ -197,7 +200,8 @@
     "Conecta primero al Linux integrado. Usa Reconectar en Ajustes.",
     "En iOS no es necesario instalar ni actualizar un puente por separado. Gestiona instalación, cuentas, proveedores y actualizaciones en un solo lugar.",
     "Abre un terminal de inicio de sesión separado en Bibimer y sigue las instrucciones de la CLI. Después actualiza aquí el estado de la cuenta. Las sesiones existentes siguen ejecutándose.",
-    "Al iniciar sesión, el navegador se abre automáticamente. En Claude, copia todo el código de autorización, incluido #state, para continuar automáticamente. Permite pegar si iOS lo solicita. Puedes introducir el código manualmente."
+    "Al iniciar sesión, el navegador se abre automáticamente. En Claude, copia todo el código de autorización, incluido #state, para continuar automáticamente. Permite pegar si iOS lo solicita. Puedes introducir el código manualmente.",
+    "No hay una versión compatible más reciente para esta app de iOS."
   ],
   "id": [
     "Merekam ucapan saat Anda mengetuk mikrofon untuk menambahkan teks ke draf.",
@@ -247,7 +251,8 @@
     "Hubungkan Linux bawaan terlebih dahulu. Gunakan Hubungkan kembali di Pengaturan.",
     "Di iOS, tidak perlu memasang atau memperbarui bridge terpisah. Kelola instalasi, akun, penyedia, dan pembaruan versi di satu tempat.",
     "Buka terminal login terpisah di Bibimer dan ikuti petunjuk CLI. Lalu segarkan status akun di sini. Sesi yang ada tetap berjalan.",
-    "Saat masuk dimulai, browser terbuka otomatis. Untuk Claude, salin seluruh kode otorisasi termasuk #state agar proses berlanjut otomatis. Izinkan tempel jika diminta iOS. Kode juga dapat dimasukkan secara manual."
+    "Saat masuk dimulai, browser terbuka otomatis. Untuk Claude, salin seluruh kode otorisasi termasuk #state agar proses berlanjut otomatis. Izinkan tempel jika diminta iOS. Kode juga dapat dimasukkan secara manual.",
+    "Tidak ada versi kompatibel yang lebih baru untuk aplikasi iOS ini."
   ],
   "zh-Hans": [
     "点按麦克风时录音，将文字添加到草稿。",
@@ -297,7 +302,8 @@
     "请先连接内置 Linux。可在设置中使用重新连接。",
     "iOS 不需要单独安装或更新桥接服务。 在一处管理安装、账户、提供商和版本更新。",
     "在 Bibimer 中打开独立登录终端并按照 CLI 提示操作。然后在此刷新账户状态。现有会话会继续运行。",
-    "开始登录后浏览器会自动打开。使用 Claude 时，复制包含 #state 的完整授权码即可自动继续。如果 iOS 请求粘贴权限，请允许。也可以手动输入授权码。"
+    "开始登录后浏览器会自动打开。使用 Claude 时，复制包含 #state 的完整授权码即可自动继续。如果 iOS 请求粘贴权限，请允许。也可以手动输入授权码。",
+    "此 iOS 应用没有可用的更新兼容版本。"
   ],
   "ja": [
     "マイクをタップしたときに録音し、下書きにテキストを追加します。",
@@ -347,7 +353,8 @@
     "まず内蔵 Linux に接続してください。設定の再接続を利用できます。",
     "iOS ではブリッジの個別インストールや更新は不要です。 インストール、アカウント、プロバイダー、バージョン更新を一か所で管理します。",
     "Bibimer 内の別のログインターミナルを開き、CLI の案内に従ってください。その後ここでアカウント状態を更新してください。既存のセッションは実行を続けます。",
-    "ログインを開始するとブラウザーが自動で開きます。Claude では #state を含む認証コード全体をコピーすると自動で続行します。iOS がペーストの許可を求めた場合は許可してください。手動入力も利用できます。"
+    "ログインを開始するとブラウザーが自動で開きます。Claude では #state を含む認証コード全体をコピーすると自動で続行します。iOS がペーストの許可を求めた場合は許可してください。手動入力も利用できます。",
+    "この iOS アプリで使用できる、より新しい互換バージョンはありません。"
   ],
   "zh-Hant": [
     "點按麥克風時錄音，將文字加入草稿。",
@@ -397,7 +404,8 @@
     "請先連線至內建 Linux。可在設定中使用重新連線。",
     "iOS 不需要單獨安裝或更新橋接服務。 在同一處管理安裝、帳戶、供應商和版本更新。",
     "在 Bibimer 中開啟獨立登入終端並依照 CLI 提示操作。然後在此重新整理帳戶狀態。現有工作階段會繼續執行。",
-    "開始登入後瀏覽器會自動開啟。使用 Claude 時，複製包含 #state 的完整授權碼即可自動繼續。如果 iOS 要求貼上權限，請允許。也可以手動輸入授權碼。"
+    "開始登入後瀏覽器會自動開啟。使用 Claude 時，複製包含 #state 的完整授權碼即可自動繼續。如果 iOS 要求貼上權限，請允許。也可以手動輸入授權碼。",
+    "此 iOS App 目前沒有可用的更新相容版本。"
   ],
   "fr": [
     "Enregistre la parole lorsque vous touchez le micro pour ajouter du texte au brouillon.",
@@ -447,7 +455,8 @@
     "Connectez d’abord le Linux intégré. Utilisez Reconnecter dans Réglages.",
     "Sur iOS, aucune installation ni mise à jour séparée du pont n’est nécessaire. Gérez installation, comptes, fournisseurs et mises à jour au même endroit.",
     "Ouvrez un terminal de connexion distinct dans Bibimer et suivez les instructions de la CLI. Actualisez ensuite le compte ici. Les sessions existantes continuent.",
-    "Le navigateur s’ouvre automatiquement au début de la connexion. Pour Claude, copiez tout le code d’autorisation, y compris #state, pour continuer automatiquement. Autorisez le collage si iOS le demande. La saisie manuelle reste disponible."
+    "Le navigateur s’ouvre automatiquement au début de la connexion. Pour Claude, copiez tout le code d’autorisation, y compris #state, pour continuer automatiquement. Autorisez le collage si iOS le demande. La saisie manuelle reste disponible.",
+    "Aucune version compatible plus récente n’est disponible pour cette app iOS."
   ],
   "de": [
     "Nimmt beim Tippen auf das Mikrofon Sprache auf und fügt Text zum Entwurf hinzu.",
@@ -497,6 +506,7 @@
     "Verbinde zuerst die integrierte Linux-Umgebung. Nutze Erneut verbinden in den Einstellungen.",
     "Unter iOS ist keine separate Installation oder Aktualisierung der Bridge nötig. Verwalte Installation, Konten, Anbieter und Versionsupdates an einem Ort.",
     "Öffne ein separates Anmeldeterminal in Bibimer und folge den CLI-Anweisungen. Aktualisiere danach hier den Kontostatus. Bestehende Sitzungen laufen weiter.",
-    "Beim Start der Anmeldung öffnet sich der Browser automatisch. Kopiere bei Claude den gesamten Autorisierungscode einschließlich #state, um automatisch fortzufahren. Erlaube das Einfügen, wenn iOS danach fragt. Die manuelle Eingabe bleibt verfügbar."
+    "Beim Start der Anmeldung öffnet sich der Browser automatisch. Kopiere bei Claude den gesamten Autorisierungscode einschließlich #state, um automatisch fortzufahren. Erlaube das Einfügen, wenn iOS danach fragt. Die manuelle Eingabe bleibt verfügbar.",
+    "Für diese iOS-App ist keine neuere kompatible Version verfügbar."
   ]
 }

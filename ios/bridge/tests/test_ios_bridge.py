@@ -419,6 +419,32 @@ class ClaudeReceiptTests(unittest.TestCase):
         self.sdk_package.write_text(json.dumps({"version": "0.3.283"}))
         self.assertFalse(entry.claude_installation_ready(self.base, self.state, self.wrapper, self.folder))
 
+    def test_claude_staged_update_keeps_cli_and_sdk_bound_to_new_wrapper(self):
+        prefix = self.folder / ".local/share/bibimer/agents/claude/release-fixture"
+        cli = prefix / "node_modules/@anthropic-ai/claude-code/cli.js"
+        cli.parent.mkdir(parents=True)
+        cli.write_bytes(self.cli.read_bytes())
+        (cli.parent / "package.json").write_text(json.dumps({"version": "2.1.112"}))
+        launcher = prefix / "node_modules/.bin/claude"
+        launcher.parent.mkdir()
+        launcher.symlink_to(cli)
+        sdk = entry.claude_sdk_package(self.folder, launcher)
+        sdk.mkdir()
+        (sdk / "sdk.mjs").write_text("// staged SDK fixture\n")
+        (sdk / "package.json").write_bytes(self.sdk_package.read_bytes())
+        candidate = prefix / "candidate"
+        candidate.write_text(entry.agent_wrapper("claude", launcher))
+        candidate.chmod(0o700)
+        receipt = entry.claude_installation(self.folder, launcher=launcher, candidate=candidate)
+        self.base.save_json(prefix / ".bibimer-claude.json", receipt)
+        candidate.replace(self.wrapper)
+        self.assertTrue(entry.claude_installation_ready(self.base, self.state, self.wrapper, self.folder))
+        base = entry.adapt(self.base)
+        with patch.object(entry.Path, "home", return_value=self.folder), patch.object(base.shutil, "which", return_value=str(self.wrapper)):
+            self.assertEqual(base.claude_sdk_path(), sdk / "sdk.mjs")
+        (sdk / "sdk.mjs").write_text("// changed SDK\n")
+        self.assertFalse(entry.claude_installation_ready(self.base, self.state, self.wrapper, self.folder))
+
     def test_managed_claude_health_uses_receipt_without_slow_subprocess(self):
         entry.record_claude_installation(self.state, self.folder)
         base = entry.adapt(self.base)
