@@ -20,6 +20,8 @@
     const failed = ["recovery-failed", "stopped", "restart-required"].includes(state) && !requested && !unconfirmed;
     const banner = $("ios-recovery-progress");
     banner.hidden = !busy && !failed && !unconfirmed;
+    const review = $("ios-failure-review-access");
+    review.hidden = !failed || !environment().reviewAccessConfigured;
     banner.setAttribute("aria-busy", String(busy));
     $("ios-recovery-spinner").hidden = !busy;
     const title = $("ios-recovery-title"), detail = $("ios-recovery-detail");
@@ -34,6 +36,11 @@
       button.disabled = busy; button.setAttribute("aria-busy", String(busy));
     }
   }
+  $("ios-failure-review-access").addEventListener("click", () => {
+    if ($("ios-failure-review-access").hidden) return;
+    tab("settings");
+    $("review-access-open").click();
+  });
   window.BibimerIOSReconnectRequested = () => {
     // Acknowledge the tap in this frame, before WebKit delivers it to native.
     if (iosReconnectAckTimer !== null) clearTimeout(iosReconnectAckTimer);

@@ -36,20 +36,6 @@ def review_access_digest():
         sys.path.pop(0)
 
 
-def review_labels(source):
-    keys=['review_access','review_access_code','review_access_enter','review_access_invalid','review_access_unavailable','cancel_project']
-    base=(source/'i18n.js').read_text()
-    pairs={key:json.loads(re.search(r'^\s*'+key+r': (\[.*\]),$',base,re.M).group(1)) for key in keys}
-    rows={locale:{key:pair[index] for key,pair in pairs.items()} for index,locale in enumerate(['en','ko'])}
-    for locale in ['pt-BR','es','id','zh-Hans','ja','zh-Hant','fr','de']:
-        text=(source/('i18n-'+locale+'.js')).read_text()
-        rows[locale]={}
-        for key in keys:
-            match=re.search(r'^\s*"?'+key+r'"?\s*:\s*("(?:[^"\\]|\\.)*")',text,re.M)
-            rows[locale][key]=json.loads(match.group(1)) if match else rows['en'][key]
-    return rows
-
-
 def package_web(destination):
     notices = json.loads((HERE / 'Resources/runtime-notices.json').read_text())
     own_licenses = [('BIBIMER-LICENSE.md', HERE.parent / 'LICENSE.md'),
@@ -64,7 +50,6 @@ def package_web(destination):
     if destination.exists():
         shutil.rmtree(destination)
     shutil.copytree(source, destination)
-    (destination/'review-labels.json').write_text(json.dumps(review_labels(source),ensure_ascii=False)+'\n')
     for key, path in own_licenses:
         shutil.copy2(path, destination / (key + '.txt' if key == 'GPL-3.0' else key))
     for name in ['platform.js', 'terminal-tools.js', 'terminal-tools.css', 'speech-text.js', 'text-gestures.js', 'data-consent.js', 'review-workspace.js']:
@@ -87,7 +72,8 @@ def package_web(destination):
     index = index.replace('<div id="announcements">', '''<div id="announcements">
     <aside id="ios-recovery-progress" class="ios-recovery-progress" role="status" aria-live="polite" aria-atomic="true" hidden>
       <span id="ios-recovery-spinner" class="ios-recovery-spinner" aria-hidden="true"></span>
-      <div><strong id="ios-recovery-title"></strong><p id="ios-recovery-detail"></p></div>
+      <div><strong id="ios-recovery-title"></strong><p id="ios-recovery-detail"></p>
+        <button id="ios-failure-review-access" class="quiet" type="button" data-i18n="review_access" aria-haspopup="dialog" aria-controls="review-access-dialog" hidden>Review access</button></div>
     </aside>''')
     if index.count('<section id="connection-settings"') != 1:
         raise RuntimeError('Shared Settings markup changed; review the iOS screen controls.')
@@ -126,6 +112,7 @@ def package_web(destination):
 .ios-recovery-progress { display:flex; align-items:center; gap:10px; margin:6px 12px; padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--raised); font-size:12px; }
 .ios-recovery-progress>div { min-width:0; overflow-wrap:anywhere; }
 .ios-recovery-progress p { margin:4px 0 0; font-size:11px; }
+#ios-failure-review-access { margin-top:4px; padding-inline:0 12px; min-height:44px; text-align:start; white-space:normal; }
 .ios-recovery-spinner { flex:none; width:16px; height:16px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:ios-recovery-spin 1s linear infinite; }
 @keyframes ios-recovery-spin { to { transform:rotate(360deg); } }
 @media (prefers-reduced-motion:reduce) { .ios-recovery-spinner { animation:none; } }
@@ -253,7 +240,8 @@ def main():
     for locale,strings in json.loads((HERE / 'Resources/ios-locales.json').read_text()).items():
         folder=app/(locale+'.lproj');folder.mkdir(exist_ok=True)
         info_strings={'NSMicrophoneUsageDescription':strings[0],'NSSpeechRecognitionUsageDescription':strings[1]}
-        native_strings={'Chat response completed.':strings[2],'Browser':strings[3],'Background work':strings[16]}
+        native_strings={'Chat response completed.':strings[2],'Browser':strings[3],'Background work':strings[16],
+                        'Preparing Linux':strings[49],'Development tools download on first launch.':strings[50]}
         for name,values in [('InfoPlist.strings',info_strings),('Localizable.strings',native_strings)]:
             (folder/name).write_text('\n'.join(json.dumps(k,ensure_ascii=False)+' = '+json.dumps(v,ensure_ascii=False)+';' for k,v in values.items())+'\n')
     bundled_notices = json.loads((HERE / 'Resources/runtime-notices.json').read_text())

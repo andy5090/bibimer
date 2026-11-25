@@ -122,7 +122,6 @@ static BOOL usesDesktopInput(void) {
 @interface BibimerController : UIViewController <WKScriptMessageHandler, WKNavigationDelegate, NSURLSessionTaskDelegate, UIScrollViewDelegate>
 @property WKWebView *web;
 @property BibimerReviewController *reviewController;
-@property UILabel *reviewStatus;
 @property BibimerVoiceService *voice;
 @property BibimerAccountInput *accountInput;
 @property BibimerAccountBrowser *accountBrowser;
@@ -134,8 +133,7 @@ static BOOL usesDesktopInput(void) {
 @property NSURLSessionDataTask *browserPoll;
 @property BibimerCompletionNotifications *completionNotifications;
 @property BibimerBackgroundExecution *backgroundExecution;
-@property UILabel *status;
-@property UITextView *bootstrapOutput;
+@property UIScrollView *startupView;
 @property NSString *token;
 @property NSInteger port;
 @property NSURLSession *http;
@@ -172,7 +170,6 @@ static BOOL usesDesktopInput(void) {
 @property NSURLSessionDataTask *testRecoveryWrite;
 @property BOOL testRecoveryWriteStarted;
 @property NSUInteger testRecoveryWriteStopCount;
-@property NSMutableData *utf8Pending;
 @property NSMutableArray<NSString *> *javascriptErrors;
 @property NSString *smokeScript;
 @property NSString *smokeResultName;
@@ -295,13 +292,6 @@ static void guestExit(int status) {
 }
 
 @implementation BibimerController
-- (NSDictionary *)reviewLabels {
-    NSURL *url=[[NSBundle.mainBundle URLForResource:@"Web" withExtension:nil] URLByAppendingPathComponent:@"review-labels.json"];
-    NSDictionary *catalog=[NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfURL:url] ?: [NSData data] options:0 error:nil];
-    NSString *preference=[NSUserDefaults.standardUserDefaults stringForKey:@"languagePreference"] ?: @"system";
-    NSString *language=[preference isEqual:@"system"]?systemLanguage():preference;
-    return catalog[language] ?: catalog[@"en"] ?: @{};
-}
 - (BOOL)canEnterReview {
     return !self.reviewController && !self.presentedViewController && !self.accountOperation && !self.accountInput && !self.openingFile && UIApplication.sharedApplication.applicationState==UIApplicationStateActive;
 }
@@ -322,47 +312,103 @@ static void guestExit(int status) {
     review.exited=^{weak.reviewController=nil;if(!weak.backgrounded && UIApplication.sharedApplication.applicationState==UIApplicationStateActive){if(weak.ready){[weak.completionNotifications resume];[weak startBrowserPolling];[weak nativeEvent:@"BibimerResume" arguments:@[]];}else [weak becameActive];}};
     [self presentViewController:review animated:NO completion:nil];
 }
-- (void)openBootstrapReview {
-    if(![self canEnterReview])return;
-    NSDictionary *labels=[self reviewLabels];
-    if(!bibimer_review_configured([[NSBundle.mainBundle objectForInfoDictionaryKey:@"BibimerReviewAccessDigest"] UTF8String])){self.reviewStatus.text=labels[@"review_access_unavailable"];return;}
-    BibimerAccountInput *input=[BibimerAccountInput new];input.limit=128;input.completionAfterDismissal=YES;
-    input.labels=@{@"title":labels[@"review_access_code"] ?: @"Access code",@"cancel":labels[@"cancel_project"] ?: @"Cancel",@"save":labels[@"review_access_enter"] ?: @"Open review demo"};
-    input.modalPresentationStyle=UIModalPresentationOverFullScreen;input.modalInPresentation=YES;
-    __weak typeof(self) weak=self;
-    input.completion=^(NSString *code){if(!code)return;if(![weak verifyReviewCode:code]||![weak canEnterReview]){weak.reviewStatus.text=labels[@"review_access_invalid"];return;}weak.reviewStatus.text=@"";[weak presentReview];};
-    [self presentViewController:input animated:YES completion:nil];
+- (void)showLinuxPreparation {
+    NSString *preference = [NSUserDefaults.standardUserDefaults stringForKey:@"languagePreference"];
+    NSString *language = preference.length && ![preference isEqual:@"system"] ? preference : systemLanguage();
+    NSURL *localeURL = [NSBundle.mainBundle URLForResource:language withExtension:@"lproj"];
+    NSBundle *locale = (localeURL ? [NSBundle bundleWithURL:localeURL] : nil) ?: NSBundle.mainBundle;
+    UIColor *accent = [UIColor colorWithRed:0.545 green:0.859 blue:0.741 alpha:1];
+    UIColor *text = [UIColor colorWithRed:0.878 green:0.918 blue:0.894 alpha:1];
+    UIColor *muted = [UIColor colorWithRed:0.642 green:0.708 blue:0.686 alpha:1];
+
+    UIImageView *terminal = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"terminal"
+        withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:27 weight:UIImageSymbolWeightMedium]]];
+    terminal.contentMode = UIViewContentModeCenter;
+    terminal.tintColor = accent;
+    terminal.backgroundColor = [UIColor colorWithRed:0.115 green:0.169 blue:0.160 alpha:1];
+    terminal.layer.cornerRadius = 20;
+    terminal.layer.borderWidth = 1;
+    terminal.layer.borderColor = [accent colorWithAlphaComponent:0.25].CGColor;
+    terminal.isAccessibilityElement = NO;
+
+    UILabel *title = [UILabel new];
+    title.text = [locale localizedStringForKey:@"Preparing Linux" value:@"Preparing Linux" table:nil];
+    UIFontDescriptor *heading = [[UIFont preferredFontForTextStyle:UIFontTextStyleTitle2].fontDescriptor
+        fontDescriptorWithSymbolicTraits:UIFontDescriptorTraitBold];
+    title.font = heading ? [UIFont fontWithDescriptor:heading size:0] : [UIFont preferredFontForTextStyle:UIFontTextStyleTitle2];
+    title.adjustsFontForContentSizeCategory = YES;
+    title.textColor = text;
+    title.textAlignment = NSTextAlignmentCenter;
+    title.numberOfLines = 0;
+    title.accessibilityTraits |= UIAccessibilityTraitHeader;
+
+    UILabel *detail = [UILabel new];
+    detail.text = [locale localizedStringForKey:@"Development tools download on first launch."
+        value:@"Development tools download on first launch." table:nil];
+    detail.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
+    detail.adjustsFontForContentSizeCategory = YES;
+    detail.textColor = muted;
+    detail.textAlignment = NSTextAlignmentCenter;
+    detail.numberOfLines = 0;
+
+    UIActivityIndicatorView *indicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleMedium];
+    indicator.color = accent;
+    indicator.isAccessibilityElement = NO;
+    [indicator startAnimating];
+
+    UIStackView *stack = [[UIStackView alloc] initWithArrangedSubviews:@[terminal,title,detail,indicator]];
+    stack.axis = UILayoutConstraintAxisVertical;
+    stack.alignment = UIStackViewAlignmentCenter;
+    stack.spacing = 8;
+    [stack setCustomSpacing:22 afterView:terminal];
+    [stack setCustomSpacing:24 afterView:detail];
+    stack.translatesAutoresizingMaskIntoConstraints = NO;
+
+    self.startupView = [UIScrollView new];
+    self.startupView.accessibilityIdentifier = @"bibimerLinuxPreparation";
+    self.startupView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+    self.startupView.translatesAutoresizingMaskIntoConstraints = NO;
+    UIView *content = [UIView new];
+    content.translatesAutoresizingMaskIntoConstraints = NO;
+    [content addSubview:stack];
+    [self.startupView addSubview:content];
+    [self.view addSubview:self.startupView];
+    UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
+    UILayoutGuide *scroll = self.startupView.contentLayoutGuide;
+    NSLayoutConstraint *width = [stack.widthAnchor constraintEqualToAnchor:content.widthAnchor constant:-48];
+    width.priority = UILayoutPriorityDefaultHigh;
+    NSLayoutConstraint *height = [content.heightAnchor constraintEqualToAnchor:self.startupView.frameLayoutGuide.heightAnchor];
+    height.priority = UILayoutPriorityDefaultLow;
+    [NSLayoutConstraint activateConstraints:@[
+        [self.startupView.topAnchor constraintEqualToAnchor:safe.topAnchor],
+        [self.startupView.bottomAnchor constraintEqualToAnchor:safe.bottomAnchor],
+        [self.startupView.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor],
+        [self.startupView.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor],
+        [content.topAnchor constraintEqualToAnchor:scroll.topAnchor],
+        [content.bottomAnchor constraintEqualToAnchor:scroll.bottomAnchor],
+        [content.leadingAnchor constraintEqualToAnchor:scroll.leadingAnchor],
+        [content.trailingAnchor constraintEqualToAnchor:scroll.trailingAnchor],
+        [content.widthAnchor constraintEqualToAnchor:self.startupView.frameLayoutGuide.widthAnchor],
+        [content.heightAnchor constraintGreaterThanOrEqualToAnchor:self.startupView.frameLayoutGuide.heightAnchor],
+        [stack.centerXAnchor constraintEqualToAnchor:content.centerXAnchor],
+        [stack.centerYAnchor constraintEqualToAnchor:content.centerYAnchor],
+        [stack.topAnchor constraintGreaterThanOrEqualToAnchor:content.topAnchor constant:24],
+        [stack.widthAnchor constraintLessThanOrEqualToConstant:420],
+        [stack.widthAnchor constraintLessThanOrEqualToAnchor:content.widthAnchor constant:-48],
+        [terminal.widthAnchor constraintEqualToConstant:68],
+        [terminal.heightAnchor constraintEqualToAnchor:terminal.widthAnchor],
+        width, height
+    ]];
 }
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor colorWithRed:14/255.0 green:18/255.0 blue:21/255.0 alpha:1];
-    self.status = [UILabel new]; self.status.numberOfLines = 0;
-    self.status.textColor = UIColor.whiteColor;
-    self.status.text = [systemLanguage() isEqual:@"ko"] ? @"BIBIMER · 내장 Linux 환경 준비 중…\n처음 실행할 때는 개발 도구를 내려받습니다." : @"BIBIMER · Preparing local Linux…\nDevelopment tools download on first launch.";
-    self.bootstrapOutput = [UITextView new]; self.bootstrapOutput.editable = NO;
-    self.bootstrapOutput.backgroundColor = UIColor.clearColor; self.bootstrapOutput.textColor = UIColor.lightGrayColor;
-    self.bootstrapOutput.font = [UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightRegular];
-    UIButton *reviewAccess=[UIButton buttonWithType:UIButtonTypeSystem];
-    [reviewAccess setTitle:[self reviewLabels][@"review_access"] ?: @"Review access" forState:UIControlStateNormal];
-    reviewAccess.tintColor=[UIColor colorWithRed:0.843 green:0.91 blue:0.667 alpha:1];reviewAccess.layer.borderWidth=1;reviewAccess.layer.cornerRadius=8;reviewAccess.layer.borderColor=UIColor.grayColor.CGColor;
-    [reviewAccess.heightAnchor constraintGreaterThanOrEqualToConstant:44].active=YES;
-    [reviewAccess addTarget:self action:@selector(openBootstrapReview) forControlEvents:UIControlEventTouchUpInside];
-    self.reviewStatus=[UILabel new];self.reviewStatus.textColor=UIColor.lightGrayColor;self.reviewStatus.numberOfLines=0;
-    UIStackView *stack = [[UIStackView alloc] initWithArrangedSubviews:@[self.status,reviewAccess,self.reviewStatus,self.bootstrapOutput]];
-    stack.axis = UILayoutConstraintAxisVertical; stack.spacing = 16; stack.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.view addSubview:stack];
-    [NSLayoutConstraint activateConstraints:@[
-        [stack.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:24],
-        [stack.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-16],
-        [stack.leadingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.leadingAnchor constant:20],
-        [stack.trailingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.trailingAnchor constant:-20]
-    ]];
+    [self showLinuxPreparation];
     self.documents = [NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
     [self loadConnectionLog];
     NSURL *staleExports = [[NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES] URLByAppendingPathComponent:@"bibimer-exports" isDirectory:YES];
     [NSFileManager.defaultManager removeItemAtURL:staleExports error:nil];
     self.polls = [NSMutableSet new]; self.retiredHTTP = [NSMutableSet new]; self.javascriptErrors = [NSMutableArray new];
-    self.utf8Pending = [NSMutableData new];
     self.runtimeQueue = dispatch_queue_create("app.bibimer.ios.runtime",DISPATCH_QUEUE_SERIAL);
     self.runtimeControlFD = -1;
     self.port = availablePort();
@@ -582,16 +628,15 @@ static void guestExit(int status) {
     dispatch_async(dispatch_get_main_queue(), ^{
         [self cancelAccountOperation:nil error:@"error_connection_failed"];
         self.ready = NO;
-        if (!self.runtimeStarted) self.startupFailed = YES;
+        if (!self.hasConnected) self.startupFailed = YES;
         [self.healthTask cancel]; self.healthTask = nil;
         self.connectionEpoch++;
         [self.backgroundExecution runtimeStopped];
         [self.voice pause];[self.completionNotifications pause];[self.browser revokeAll];self.browserEpoch++;self.browserPolling=NO;[self.browserPoll cancel];self.browserPoll=nil;
-        self.status.text = message;
         // Keep navigation, Settings and drafts accessible after a runtime failure.
         if (!self.web) [self loadWorkspace];
         self.web.hidden = NO;
-        self.bootstrapOutput.hidden = YES; self.status.hidden = YES;
+        self.startupView.hidden = YES;
         [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
         if (self.smokeScript) [self writeSmoke:@{@"ok":@NO,@"error":message,@"checks":@[]}];
     });
@@ -660,18 +705,6 @@ static void guestExit(int status) {
             while ((count = read(outputFD,bytes,sizeof(bytes))) != 0) {
                 if (count < 0) { if (errno == EINTR) continue; break; }
                 NSData *data = [NSData dataWithBytes:bytes length:(NSUInteger)count];
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    if (self.ready) return;
-                    [self.utf8Pending appendData:data];
-                    NSString *text = [[NSString alloc] initWithData:self.utf8Pending encoding:NSUTF8StringEncoding];
-                    if (!text && self.utf8Pending.length < 16384) return;
-                    if (!text) text = [[NSString alloc] initWithData:self.utf8Pending encoding:NSISOLatin1StringEncoding];
-                    [self.utf8Pending setLength:0];
-                    NSString *combined = [self.bootstrapOutput.text stringByAppendingString:text ?: @""];
-                    if (combined.length > 24000) combined = [combined substringFromIndex:combined.length - 24000];
-                    self.bootstrapOutput.text = combined;
-                    [self.bootstrapOutput scrollRangeToVisible:NSMakeRange(combined.length,0)];
-                });
             }
             close(outputFD);
         });
@@ -801,12 +834,11 @@ static void guestExit(int status) {
             [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
         }
         else if (self.healthAttempts < 600) {
-            if (self.healthAttempts > 5) self.status.text = [NSString stringWithFormat:@"BIBIMER · Waiting for local Linux…\n%@ (HTTP %ld)",error.localizedDescription ?: @"Starting bridge",(long)response.statusCode];
             NSUInteger epoch = self.connectionEpoch;
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW,NSEC_PER_SEC),dispatch_get_main_queue(), ^{
                 if (epoch == self.connectionEpoch) [self checkHealth];
             });
-        } else [self fail:@"Local setup did not finish. Check the installation output, then reopen Bibimer to retry. Existing files are kept."];
+        } else [self fail:@"Local Linux preparation timed out. Reopen Bibimer to retry."];
     }
 }
 
@@ -970,7 +1002,7 @@ static void guestExit(int status) {
 }
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
-    self.status.hidden = YES; self.bootstrapOutput.hidden = YES;
+    self.startupView.hidden = YES;
     webView.hidden = NO;
     [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
     if (self.exited) return;
@@ -1498,15 +1530,15 @@ static void guestExit(int status) {
             return;
         }
         if (self.smokeScript && [method isEqual:@"GET"] && [path isEqual:@"/native/test-late-health"]) {
-            BOOL exited = self.exited, ready = self.ready, statusHidden = self.status.hidden, outputHidden = self.bootstrapOutput.hidden, webHidden = self.web.hidden;
+            BOOL exited = self.exited, ready = self.ready, startupHidden = self.startupView.hidden, webHidden = self.web.hidden;
             WKWebView *workspace = self.web;
-            self.exited = YES; self.ready = NO; self.status.hidden = NO; self.bootstrapOutput.hidden = NO;
+            self.exited = YES; self.ready = NO; self.startupView.hidden = NO;
             NSHTTPURLResponse *late = [[NSHTTPURLResponse alloc] initWithURL:[NSURL URLWithString:@"http://127.0.0.1/"] statusCode:200 HTTPVersion:@"HTTP/1.1" headerFields:nil];
             [self handleHealthJSON:@{@"protocol":@1} response:late error:nil];
             BOOL ignored = !self.ready && self.web == workspace;
             [self webView:workspace didFinishNavigation:nil];
             BOOL failureVisible = self.exited && !self.ready && !self.web.hidden && self.web == workspace;
-            self.exited = exited; self.ready = ready; self.status.hidden = statusHidden; self.bootstrapOutput.hidden = outputHidden; self.web.hidden = webHidden;
+            self.exited = exited; self.ready = ready; self.startupView.hidden = startupHidden; self.web.hidden = webHidden;
             [self nativeEvent:@"BibimerIOSRuntimeChanged" arguments:@[]];
             if (ready && !exited) [self nativeEvent:@"BibimerResume" arguments:@[]];
             [self reply:identifier status:200 data:@{@"ignoredLateHealth":@(ignored),@"preservedFailure":@(failureVisible)}]; return;

@@ -56,10 +56,8 @@ class ReviewAccessTests(unittest.TestCase):
             self.assertIn('entryEpoch===iosReviewEntryEpoch',app)
             self.assertIn('finally { $("review-access-submit").disabled=false; }',app)
             self.assertIn('if (!demo) {\n  // Explicit consent',app)
-            labels=json.loads((dest/'review-labels.json').read_text())
-            self.assertEqual(len(labels),10)
-            for locale in labels.values():self.assertTrue(all(locale.values()));self.assertEqual(set(locale),set(labels['en']))
-            self.assertNotEqual(labels['ja']['review_access'],labels['en']['review_access'])
+            self.assertRegex((dest/'index.html').read_text(),r'id="ios-failure-review-access"[^>]+hidden')
+            self.assertIn('review.hidden = !failed || !environment().reviewAccessConfigured',app)
             subprocess.run(['node','--check',str(dest/'app.js')],check=True,capture_output=True)
 
     @unittest.skipUnless(shutil.which('javac') and shutil.which('java'),'Android sample provenance check needs Java')
