@@ -1,5 +1,10 @@
 # iOS TestFlight 배포
 
+## 2026-11-26 02:02 KST — 1.0.1(18) 내부 테스트용 업로드 완료
+
+- 소스 `385d43a2288a1de1125b5aa802ea2a0bce544bac`의 Codex 업데이트 후 연결 조회 수정과 Linux 준비 화면을 패키징했다. Xcode 업로드 성공과 Apple 처리 시작을 확인했다. 서명 검증과 iOS 앱 테스트 41개, 실제 시뮬레이터 앱 검사 34개, 화면 진입 테스트가 통과했다.
+- App Store Connect 화면 제어 호스트 오류로 이번 빌드의 수출 규정 저장, 내부 그룹 제공 및 [한영 테스트 안내](../../release/app-store/testflight-notes-18.en-ko.txt) 등록은 확인 대기다. 증빙은 `dist/ios-testflight/1.0.1-18-nov26/`에 있다.
+
 ## 2026-11-26 00:38 KST — 1.0.1(17) 내부 테스트용 업로드 완료
 
 - 소스 `79778dd2a64197c26aa2f85c8809ded50a52ab1b`의 iOS 에이전트 업데이트와 모델별 Codex 속도 선택을 내장 브리지 `0.25.5`와 함께 패키징했다. Xcode에서 **Upload succeeded / EXPORT SUCCEEDED**와 Apple 처리 시작을 확인했다. 이 빌드는 내부 TestFlight용으로 지정했다.

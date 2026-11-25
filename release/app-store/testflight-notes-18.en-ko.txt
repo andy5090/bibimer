@@ -1,0 +1,11 @@
+Bibimer 1.0.1 (18)
+
+English
+Open the agent manager during a Codex CLI update. Leave the manager and reopen it before the update finishes. When it completes, the app should show the installed version and refresh the connection status. Verify that your existing sign-in still works.
+
+On iOS, relaunch and observe the redesigned Linux preparation screen. It shows progress and first-launch guidance. Review access is available in Settings and on the Linux preparation failure screen.
+
+한국어
+Codex 업데이트가 진행 중일 때 에이전트 관리 화면을 닫았다가 다시 열어 주세요. 업데이트가 완료되면 새 버전이 표시되고 연결 상태를 다시 조회합니다. 기존 로그인으로 계속 사용할 수 있는지 확인해 주세요.
+
+iOS 앱을 다시 열어 Linux 준비 화면을 확인해 주세요. 준비 중에는 진행 표시와 첫 실행 안내가 보입니다. 심사자용 접근은 설정과 Linux 준비 실패 화면에 있습니다.
