@@ -29,7 +29,7 @@
   let canQueueEdit = false;
   let canQueue = false, canBatchQueue = false, canSteer = false, canClaudeSteer = false, canQueueSteer = false, queued = [], queueRevision = -1, queueSignature = "";
   let canCommands = false, canHandoff = false, handoff = null;
-  let canModels = false, canSwitchAgents = false, selectedAgent = "shell";
+  let canModels = false, canServiceTiers = false, canSwitchAgents = false, selectedAgent = "shell";
   let canLibrary = false, canWorktrees = false, activeViewKey = null, draftPath = null, importPath = null;
   let canInitialMessage = false;
   const launchAttempts = new Map();
@@ -138,6 +138,10 @@
      secret:native.requestAccountSecret ? body=>native.requestAccountSecret(body,{title:t("connection_key"),save:t("connection_connect"),cancel:t("cancel_project")}) : null,
      codeSecret:native.requestAccountSecret ? body=>native.requestAccountSecret(body,{title:t("connection_code"),save:t("connection_submit_code"),cancel:t("cancel_project"),paste:t("connection_paste_code")}) : null,
      updates:data => api("POST", "/v1/agent-updates", data),
+     catalogChanged:agent => {
+       for (const [key, state] of modelCatalogs) if (state.agent === agent) modelCatalogs.delete(key);
+       renderSession();
+     },
      session:async value => {
        const sourceInstance=instance, sourceProject=projectKey(), sourcePath=fileContext().path;
        rememberView(); cacheSession(value); await refreshSidebar();
@@ -222,8 +226,10 @@
   }
   function savedOptions(agent) {
     const value = lastOptions[agent] || {};
+    const speed = canServiceTiers && typeof value.service_tier === "string" ? {service_tier:value.service_tier} :
+      {fast:value.fast === true || ["fast","priority"].includes(value.service_tier)};
     return {permission:permissionModes[agent]?.includes(value.permission) ? value.permission : "inherit",
-      ...(agent === "codex" ? {fast:value.fast === true} : {}),
+      ...(agent === "codex" ? speed : {}),
       ...(canModels && permissionModes[agent] ? {model:typeof value.model === "string" ? value.model : "", effort:typeof value.effort === "string" ? value.effort : ""} : {})};
   }
   function modelContext(prefix = "") {
@@ -233,11 +239,25 @@
     const key = (prefix ? importProject : projectKey()) + "/" + agent + (canWorktrees ? "/" + path : "");
     return {agent, key, path, live, chat:live && isChat(), mode:prefix ? "chat" : live ? session.mode : $("mode").value, project:prefix ? importProject : projectKey()};
   }
+  function speedChoices(ctx, options, rows = modelCatalogs.get(ctx.key)?.models || []) {
+    const modelId = options.model || (ctx.chat && session.default_model);
+    const model = modelId ? rows.find(row => row.id === modelId) : rows.find(row => row.is_default);
+    return [{id:"default", name:t("speed_standard")}, ...(model?.service_tiers || []).map(row => ({...row, name:speedName(row.id, row.name)}))];
+  }
+  function speedValue(options, choices = []) {
+    return options.service_tier || (options.fast === true ? choices.some(row => row.id === "priority") ? "priority" : "fast" : "default");
+  }
+  function speedName(id, nativeName = id) {
+    if (id === "default") return t("speed_standard");
+    if (id === "fast" || id === "priority") return "Fast";
+    if (id === "ultrafast") return "Ultrafast";
+    return nativeName;
+  }
   async function loadModels(prefix = "", refresh = false) {
     const ctx = modelContext(prefix);
     if (!canModels || !online || !ctx.project || !permissionModes[ctx.agent]) return;
     if (modelCatalogs.get(ctx.key)?.loading) return;
-    const state = {loading:true, models:modelCatalogs.get(ctx.key)?.models || [], error:null};
+    const state = {agent:ctx.agent, loading:true, models:modelCatalogs.get(ctx.key)?.models || [], error:null};
     modelCatalogs.set(ctx.key, state);
     const sourceInstance = instance;
     try {
@@ -255,9 +275,9 @@
     const rows = state?.models || [], model = rows.find(row => row.id === options.model);
     const disabled = !canModels || !online || busy || switchingProject || settingsBusy || !state?.ready || state.loading ||
       (ctx.chat && (!session.ready || session.state !== "running"));
-    function choices(id, entries, selected, empty) {
-      const select = $(id), list = [{id:"", name:t(empty)}, ...entries];
-      if (selected && !list.some(row => row.id === selected)) list.push({id:selected, name:selected, disabled:true});
+    function choices(id, entries, selected, empty = null) {
+      const select = $(id), list = empty ? [{id:"", name:t(empty)}, ...entries] : [...entries];
+      if (selected && !list.some(row => row.id === selected)) list.push({id:selected, name:empty ? selected : speedName(selected), disabled:true});
       const signature = JSON.stringify(list);
       if (select.dataset.choices !== signature) {
         select.replaceChildren(...list.map(row => {
@@ -274,6 +294,14 @@
     $(source + "effort").disabled = disabled || !model?.efforts?.length;
     if (ctx.agent === "opencode" && ctx.mode === "terminal") {
       $(source + "effort").disabled = true; $(source + "effort").value = "";
+    }
+    const speeds = speedChoices(ctx, options, rows), selectedSpeed = speedValue(options, speeds);
+    const showSpeed = ctx.agent === "codex" && canServiceTiers;
+    $(prefix + "speed-label").hidden = !showSpeed;
+    for (const id of prefix ? ["import-speed"] : ["speed", "quick-speed"]) {
+      choices(id, speeds, selectedSpeed);
+      $(id).hidden = !showSpeed;
+      $(id).disabled = disabled || !canOptions || (ctx.chat && !canLiveOptions) || (speeds.length === 1 && selectedSpeed === "default");
     }
     const supported = !!permissionModes[ctx.agent];
     $(source + "model").hidden = !supported;
@@ -307,17 +335,13 @@
       select.value = options.permission; select.disabled = disabled;
       for (const option of select.options) option.disabled = !!(chat && agent === "opencode" && option.value === "inherit" && options.permission !== "inherit");
     }
-    for (const name of prefix ? [prefix] : ["", "quick-"]) {
-      $(name + "fast-label").hidden = agent !== "codex";
-      $(name + "fast").checked = options.fast === true;
-      $(name + "fast").disabled = disabled;
-    }
-    $(prefix + "settings-summary").textContent = updateNeeded ? t("settings_update_short") : t("permission_" + options.permission) + (agent === "codex" ? " · " + t(options.fast ? "fast_on" : "fast_off") : "");
+    const speed = agent === "codex" ? speedName(speedValue(options)) : "";
+    $(prefix + "settings-summary").textContent = updateNeeded ? t("settings_update_short") : [t("permission_" + options.permission), speed].filter(Boolean).join(" · ");
     $(prefix + "permission-hint").textContent = t("permission_hint_" + options.permission);
     $(prefix + "settings-hint").textContent = updateNeeded ? t("settings_update") :
       t(chat ? "settings_live_chat" : live ? "settings_live_terminal" : "settings_saved") +
       (chat && agent === "opencode" && options.permission !== "inherit" ? " " + t("error_permission_default") : "") +
-      (agent === "codex" ? " " + t("fast_hint") : "");
+      (agent === "codex" && canServiceTiers ? " " + t("speed_hint") : "");
     if (!prefix) {
       const hint = settingsBusy ? "settings_saving" : updateNeeded ? "settings_update_short" : null;
       $("quick-hint").textContent = hint ? t(hint) : "";
@@ -332,10 +356,15 @@
     const agent = prefix ? $("import-agent").value : live ? session.agent : $("agent").value;
     const source = quick ? "quick-" : prefix;
     const base = chat ? session.options || {} : savedOptions(agent);
-    const value = {...base, permission:$(source + "permission").value,
-      ...(agent === "codex" ? {fast:$(source + "fast").checked} : {})};
+    const value = {...base, permission:$(source + "permission").value};
     if (changed === "model") { value.model = $(source + "model").value; value.effort = ""; }
     if (changed === "effort") value.effort = $(source + "effort").value;
+    if (agent === "codex" && canServiceTiers && (changed === "speed" || changed === "model")) {
+      const speeds = speedChoices(modelContext(prefix), value);
+      const tier = changed === "speed" ? $(source + "speed").value : speedValue(base, speeds);
+      value.service_tier = speeds.some(row => row.id === tier) ? tier : "default";
+      delete value.fast;
+    }
     const id = chat ? session.id : null;
     pendingOptions = {prefix, agent, id, value};
     settingsBusy = true; renderSession();
@@ -356,10 +385,10 @@
     $(prefix + "settings-toggle").addEventListener("click", () => { renderSettings(prefix); $(prefix + "settings-dialog").showModal(); });
     $(prefix + "settings-done").addEventListener("click", () => $(prefix + "settings-dialog").close());
     $(prefix + "permission").addEventListener("change", () => saveOptions(prefix));
-    $(prefix + "fast").addEventListener("change", () => saveOptions(prefix));
+    $(prefix + "speed").addEventListener("change", () => saveOptions(prefix, false, "speed"));
   }
   $("quick-permission").addEventListener("change", () => saveOptions("", true));
-  $("quick-fast").addEventListener("change", () => saveOptions("", true));
+  $("quick-speed").addEventListener("change", () => saveOptions("", true, "speed"));
   for (const prefix of ["", "import-"]) {
     for (const field of ["model", "effort"]) $( (prefix || "quick-") + field).addEventListener("change", () => saveOptions(prefix, !prefix, field));
     $(prefix + "models-refresh").addEventListener("click", () => { void loadModels(prefix, true); renderSession(); });
@@ -1488,6 +1517,7 @@
       canQueueSteer = health.features?.includes("queue_steer") === true;
       canQueueEdit = health.features?.includes("queue_edit") === true;
       canModels = health.features?.includes("model_options") === true;
+      canServiceTiers = health.features?.includes("model_service_tiers") === true;
       canSwitchAgents = health.features?.includes("agent_sessions") === true;
       canLibrary = health.features?.includes("session_library") === true;
       canInitialMessage = health.features?.includes("initial_chat_message") === true;
@@ -1879,7 +1909,7 @@
     $("handoff-path").textContent = state.source.project.path;
     const options = state.options;
     $("handoff-options").textContent = t("handoff_settings") + " " + [t("permission_" + options.permission),
-      options.model || t("model_default"), options.effort, state.target === "codex" ? t(options.fast ? "fast_on" : "fast_off") : ""].filter(Boolean).join(" · ");
+      options.model || t("model_default"), options.effort, state.target === "codex" ? speedName(speedValue(options)) : ""].filter(Boolean).join(" · ");
     $("handoff-summary").textContent = state.loading ? t("handoff_loading") : state.preview ?
       t(state.preview.truncated ? "handoff_partial" : "handoff_count", {count:state.preview.message_count}) : "";
     $("handoff-error").textContent = state.error ? t(state.error) : ""; $("handoff-error").hidden = !state.error;

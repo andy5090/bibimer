@@ -88,8 +88,11 @@ for line in sys.stdin:
             "secondary":{"usedPercent":12,"windowDurationMins":10080,"resetsAt":int(time.time())+172800}}}})
     elif method == "model/list":
         rows = [{"id":"test-codex", "model":"test-codex", "displayName":"Test Codex", "defaultReasoningEffort":"medium", "isDefault":True,
+                 "serviceTiers":[{"id":"priority","name":"Fast","description":"Higher usage"},{"id":"ultrafast","name":"Ultrafast"}],
+                 "additionalSpeedTiers":["fast"],
                  "supportedReasoningEfforts":[{"reasoningEffort":level,"description":"Controlled "+level} for level in ["low","medium","high","xhigh"]]},
                 {"id":"test-small", "model":"test-small", "displayName":"Test Small", "defaultReasoningEffort":"low",
+                 "additionalSpeedTiers":["fast"],
                  "supportedReasoningEfforts":[{"reasoningEffort":"low"}]},
                 {"id":"hidden-model", "hidden":True}]
         emit({"id":message["id"],"result":{"data":rows,"nextCursor":None}})

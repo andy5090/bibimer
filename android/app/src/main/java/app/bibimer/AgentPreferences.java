@@ -27,9 +27,16 @@ final class AgentPreferences {
         JSONObject result = new JSONObject().put("permission", mode);
         int expected = agent.equals("codex") ? 2 : 1;
         if (agent.equals("codex")) {
-            Object fast = value.get("fast");
-            if (!(fast instanceof Boolean)) throw new IllegalArgumentException();
-            result.put("fast", fast);
+            if (value.has("service_tier")) {
+                Object tier = value.get("service_tier");
+                if (!(tier instanceof String) || !((String) tier).matches("[a-z0-9][a-z0-9_-]{0,63}"))
+                    throw new IllegalArgumentException();
+                result.put("service_tier", tier);
+            } else {
+                Object fast = value.get("fast");
+                if (!(fast instanceof Boolean)) throw new IllegalArgumentException();
+                result.put("fast", fast);
+            }
         }
         for (String key : new String[]{"model", "effort"}) {
             if (!value.has(key)) continue;

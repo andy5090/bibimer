@@ -62,6 +62,23 @@ class ModelTests(ChatFixture):
             self.assertEqual(400,status,options)
         self.assertFalse(self.bridge.sessions)
 
+    def test_codex_model_service_tiers_are_validated_and_applied_on_the_next_turn(self):
+        models = self.catalog('codex')
+        self.assertEqual(['priority', 'ultrafast'], [tier['id'] for tier in models[0]['service_tiers']])
+        self.assertEqual(['fast'], [tier['id'] for tier in models[1]['service_tiers']])
+        self.assertEqual([], [row for row in self.catalog('opencode') if 'service_tiers' in row])
+        self.begin(model='test-codex')
+        self.assertEqual(200, self.configure(fast=True)[0])
+        self.assertEqual(200, self.configure(service_tier='ultrafast')[0])
+        self.assertEqual(400, self.configure(model='test-small', effort='low')[0])
+        self.message('faster'); self.until(lambda event: event['session']['turn_state'] == 'ready')
+        self.assertEqual(200, self.configure(model='test-small', effort='low', service_tier='default')[0])
+        self.message('standard'); self.until(lambda event: event['session']['turn_state'] == 'ready')
+        captures = [json.loads(line) for line in (self.root / 'project/codex-options.jsonl').read_text().splitlines()]
+        turns = [row for row in captures if row['method'] == 'turn/start']
+        self.assertEqual([('test-codex', 'ultrafast'), ('test-small', 'default')],
+                         [(row['model'], row['serviceTier']) for row in turns])
+
     def test_launch_shares_concurrent_catalog_without_blocking_health(self):
         entered, release = threading.Event(), threading.Event()
         original = module.HistoryClient.call

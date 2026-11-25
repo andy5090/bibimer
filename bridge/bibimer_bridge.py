@@ -42,7 +42,7 @@ _recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_rec
 maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
 _recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.25.4"
+VERSION = "0.25.5"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -122,6 +122,7 @@ ERROR_MESSAGES = {
     "error_command": "Choose an available skill or command from the slash list.",
     "error_models": "Could not load models. Check the agent in Termux and try again.",
     "error_model_selection": "This model or reasoning level is unavailable. Refresh the model list and choose again.",
+    "error_speed_selection": "This speed is unavailable for the selected model.",
     "error_model_default": "Restore the OpenCode agent default model in a new session. You can switch to any listed model here.",
     "error_effort_terminal": "Select OpenCode reasoning levels in Chat. In Terminal, use OpenCode's own controls.",
     "error_permission_default": "OpenCode can switch between Ask and Bypass during a chat. Restore Agent default in a new session.",
@@ -331,16 +332,20 @@ PERMISSION_MODES = {
     "claude": {"inherit", "default", "acceptEdits", "plan", "bypassPermissions"},
     "opencode": {"inherit", "ask", "allow"},
 }
+SERVICE_TIER_ID = re.compile(r"[a-z0-9][a-z0-9_-]{0,63}")
 
 
 def agent_options(agent, value=None):
     value = {} if value is None else value
-    if not isinstance(value, dict) or set(value) - {"permission", "fast", "model", "effort"}:
+    if not isinstance(value, dict) or set(value) - {"permission", "fast", "service_tier", "model", "effort"}:
         raise Problem(400, "error_agent_options")
     mode = value.get("permission", "inherit")
     if not isinstance(mode, str) or mode not in PERMISSION_MODES[agent]:
         raise Problem(400, "error_agent_options")
     if "fast" in value and (agent != "codex" or type(value["fast"]) is not bool):
+        raise Problem(400, "error_agent_options")
+    if "service_tier" in value and (agent != "codex" or "fast" in value or
+            not isinstance(value["service_tier"], str) or not SERVICE_TIER_ID.fullmatch(value["service_tier"])):
         raise Problem(400, "error_agent_options")
     for name in ("model", "effort"):
         if name in value and (agent == "shell" or not isinstance(value[name], str) or
@@ -348,15 +353,37 @@ def agent_options(agent, value=None):
             raise Problem(400, "error_agent_options")
     if value.get("effort") and not value.get("model"):
         raise Problem(400, "error_model_selection")
-    return {"permission": mode, **{key: value[key] for key in ("fast", "model", "effort") if key in value}}
+    return {"permission": mode, **{key: value[key] for key in ("fast", "service_tier", "model", "effort") if key in value}}
 
 
-def validate_model_selection(options, catalog):
-    if not options.get("model"):
-        return
-    model = next((row for row in catalog if row["id"] == options["model"]), None)
-    if not model or (options.get("effort") and options["effort"] not in {row["id"] for row in model["efforts"]}):
+def merge_agent_options(current, change):
+    options = {**current, **change}
+    if "fast" in change and "service_tier" not in change:
+        options.pop("service_tier", None)
+    if "service_tier" in change and "fast" not in change:
+        options.pop("fast", None)
+    return options
+
+
+def codex_service_tier(options):
+    if "service_tier" in options:
+        return options["service_tier"]
+    if "fast" in options:
+        return "fast" if options["fast"] else "default"
+    return None
+
+
+def validate_model_selection(options, catalog, default_model=None):
+    identity = options.get("model")
+    model = next((row for row in catalog if row["id"] == (identity or default_model)), None)
+    if identity and (not model or (options.get("effort") and options["effort"] not in {row["id"] for row in model["efforts"]})):
         raise Problem(400, "error_model_selection")
+    tier = options.get("service_tier")
+    if tier and tier != "default":
+        if not identity and not default_model:
+            model = next((row for row in catalog if row.get("is_default")), None)
+        if not model or tier not in {row["id"] for row in model.get("service_tiers", [])}:
+            raise Problem(400, "error_speed_selection")
 
 
 def codex_options(options):
@@ -366,8 +393,8 @@ def codex_options(options):
         result.update(sandbox="danger-full-access" if mode == "yolo" else mode,
                       approvalPolicy="never" if mode == "yolo" else "on-request",
                       approvalsReviewer="user")
-    if "fast" in options:
-        result.update(serviceTier="fast" if options["fast"] else "default", config={"features.fast_mode": True})
+    if tier := codex_service_tier(options):
+        result.update(serviceTier=tier, config={"features.fast_mode": True})
     return result
 
 
@@ -405,8 +432,8 @@ def terminal_command(argv, agent, options):
             result += ["--sandbox", mode, "--ask-for-approval", "on-request"]
         if mode != "inherit":
             result += ["-c", 'approvals_reviewer="user"']
-        if "fast" in options:
-            result += ["-c", 'service_tier="fast"' if options["fast"] else 'service_tier="default"', "-c", "features.fast_mode=true"]
+        if tier := codex_service_tier(options):
+            result += ["-c", "service_tier=" + json.dumps(tier), "-c", "features.fast_mode=true"]
     elif agent == "claude" and mode != "inherit":
         result += ["--permission-mode", mode]
         if mode == "bypassPermissions":
@@ -2936,11 +2963,11 @@ class ChatSession(Session):
         if not isinstance(change, dict) or not change:
             raise Problem(400, "error_agent_options")
         with self.condition:
-            options = agent_options(self.agent, {**self.options, **change})
+            options = agent_options(self.agent, merge_agent_options(self.options, change))
             digest, duplicate = self._duplicate(key, {"action": "options", "options": change})
             if duplicate:
                 return
-            validate_model_selection(options, catalog if catalog is not None else self.model_catalog)
+            validate_model_selection(options, catalog if catalog is not None else self.model_catalog, self.default_model)
             if self.state != "running" or not self.thread_id or self.history_pending:
                 raise Problem(409, "error_session_not_running")
             if self.agent == "opencode" and options["permission"] == "inherit" and self.options["permission"] != "inherit":
@@ -2964,8 +2991,8 @@ class ChatSession(Session):
         else:
             policy = {"approvalPolicy": "never" if mode == "yolo" else "on-request", "approvalsReviewer": "user",
                       "sandboxPolicy": {"type": {"yolo": "dangerFullAccess", "read-only": "readOnly", "workspace-write": "workspaceWrite"}[mode]}}
-        if "fast" in chosen:
-            policy["serviceTier"] = "fast" if chosen["fast"] else "default"
+        if tier := codex_service_tier(chosen):
+            policy["serviceTier"] = tier
         if "model" in chosen:
             model = chosen["model"] or self.default_model
             if model:
@@ -2994,9 +3021,9 @@ class ChatSession(Session):
             self._remember(key, digest, False)
             self.turn_state = "sending"
             self._bump()
-            chosen = {**self.options, **speed}
+            chosen = merge_agent_options(self.options, speed)
             self._rpc("turn/start", {"threadId": self.thread_id, **(invocation or {"input": [{"type": "text", "text": text}]}), **self.turn_options(chosen)}, "turn")
-            self.options.update(speed)
+            self.options = chosen
             self._remember(key, digest, True)
 
     def _drain_queue(self):
@@ -4909,7 +4936,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "queue_edit", "model_options", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "browser_consent_notify", "maintenance_recovery", "maintenance_archive", "session_title_suggestions", "agent_connections", "agent_login_terminal", "agent_login_ui", "agent_updates", "agent_session_maintenance"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "queue_edit", "model_options", "model_service_tiers", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "browser_consent_notify", "maintenance_recovery", "maintenance_archive", "session_title_suggestions", "agent_connections", "agent_login_terminal", "agent_login_ui", "agent_updates", "agent_session_maintenance"], "active_sessions": self.active_count(),
                     "agents": self.agents(), "maintenance_recovery": self.recovery.snapshot(),
                     "session": self.snapshot_for(self.active_project_id)}
 
@@ -5089,9 +5116,25 @@ class Bridge:
                         efforts.append({"id": level, "description": clean(choice.get("description"), 600)})
                         levels.add(level)
                 default = row.get("defaultReasoningEffort")
-                catalog.append({"id": identity, "name": clean(row.get("displayName")) or identity,
+                model = {"id": identity, "name": clean(row.get("displayName")) or identity,
                     "description": clean(row.get("description"), 600), "efforts": efforts,
-                    "default_effort": default if default in levels else "", "is_default": row.get("isDefault") is True})
+                    "default_effort": default if default in levels else "", "is_default": row.get("isDefault") is True}
+                if agent == "codex":
+                    choices = row.get("serviceTiers")
+                    if not isinstance(choices, list):
+                        legacy = row.get("additionalSpeedTiers")
+                        choices = [{"id": tier} for tier in legacy[:64]] if isinstance(legacy, list) else []
+                    tiers, seen_tiers = [], {"default"}
+                    for choice in choices[:64]:
+                        if not isinstance(choice, dict):
+                            continue
+                        tier = clean(choice.get("id"), 64)
+                        if SERVICE_TIER_ID.fullmatch(tier) and tier not in seen_tiers:
+                            tiers.append({"id": tier, "name": clean(choice.get("name")) or tier,
+                                          "description": clean(choice.get("description"), 600)})
+                            seen_tiers.add(tier)
+                    model["service_tiers"] = tiers
+                catalog.append(model)
             self.model_cache[cache_key] = time.monotonic(), catalog
             return {"project_id": key, "agent": agent, "models": catalog}
         except (Problem, OSError, ValueError, KeyError, TypeError, AttributeError):
@@ -5180,10 +5223,11 @@ class Bridge:
     def configure_session(self, session, data):
         # Native catalog reads run outside all session/bridge locks.
         with session.condition:
-            options = agent_options(session.agent, {**session.options, **data.get("options", {})}) if isinstance(data.get("options"), dict) else None
+            change = data.get("options")
+            options = agent_options(session.agent, merge_agent_options(session.options, change)) if isinstance(change, dict) else None
         if options is None:
             raise Problem(400, "error_agent_options")
-        catalog = self.models({"project_id": session.project["id"], "worktree_path": session.project["path"], "agent": session.agent})["models"] if options.get("model") else None
+        catalog = self.models({"project_id": session.project["id"], "worktree_path": session.project["path"], "agent": session.agent})["models"] if options.get("model") or options.get("service_tier") not in (None, "default") else None
         session.configure(data, catalog)
 
     def _handoff_source(self, session_id, revision=None):
@@ -5347,7 +5391,7 @@ class Bridge:
             # the source. A later UI project switch cannot redirect this launch.
             data = dict(data, project_id=project_id)
             project = dict(project)
-        catalog = self.models({"project_id": project_id, "worktree_path": project["path"], "agent": agent})["models"] if options.get("model") else []
+        catalog = self.models({"project_id": project_id, "worktree_path": project["path"], "agent": agent})["models"] if options.get("model") or options.get("service_tier") not in (None, "default") else []
         validate_model_selection(options, catalog)
         initial_invocation = self.command_input(SimpleNamespace(project=working, agent=agent), initial) if initial is not None else None
         if imported:
