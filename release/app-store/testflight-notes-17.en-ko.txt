@@ -1,0 +1,11 @@
+Bibimer 1.0.1 (17)
+
+English
+Check for agent updates in Settings > Manage agents. On a previous installation, test Codex 0.163.0 to 0.172.0 and Gemini CLI 0.64.0 to 0.71.1. Verify that saved projects, conversations, and local sign-in are still available after an update. Claude Code and OpenCode offer only iOS-compatible releases.
+
+In a Codex chat, open Speed and choose a tier available for your model. Change to a model with different tiers and verify that the menu refreshes. An unsupported selection returns to Standard. Additional speeds depend on your Codex configuration and account.
+
+한국어
+설정 → 에이전트 관리 → 에이전트 선택에서 업데이트 확인을 눌러 주세요. 이전 설치본에서 Codex 0.163.0 → 0.172.0과 Gemini CLI 0.64.0 → 0.71.1 업데이트를 확인하고 저장된 프로젝트, 대화, 로그인 상태가 유지되는지 확인해 주세요. Claude Code와 OpenCode에는 검증된 iOS 호환 버전이 표시됩니다.
+
+Codex 대화에서 속도 메뉴를 열고 모델이 제공하는 속도를 선택해 주세요. 지원 속도가 다른 모델로 바꾸면 목록이 갱신되고, 이전 속도를 지원하지 않으면 표준으로 바뀝니다. 추가 속도 제공 여부는 Codex 설정과 계정에 따라 달라집니다.

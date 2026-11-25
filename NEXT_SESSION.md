@@ -1,3 +1,8 @@
+## iOS TestFlight 1.0.1(17) 업로드 (2026-11-26)
+
+- iOS 에이전트 업데이트와 Android·iOS 공통 Codex 속도 선택의 소스를 GitHub `main`에 동기화했다. iOS 빌드 소스는 `79778dd`다.
+- 서명한 **1.0.1(17)**을 내부 TestFlight용으로 업로드해 00:38 KST에 Xcode 업로드 성공과 Apple 처리 시작을 확인했다. 기존 `Bibimer Internal` 그룹의 설치 가능 여부와 테스트 안내 저장은 Console 확인 대기다. [배포 기록](ios/app/TESTFLIGHT.md).
+
 ## 모델별 Codex 속도 선택 (2026-11-25)
 
 - 공동 Chat 입력창과 세션 설정의 Fast 스위치를 Bibimer 속도 선택창으로 바꿨다. 표준과 설치된 Codex의 `model/list`가 선택 모델에 제공하는 속도만 선택할 수 있다. 예전 `additionalSpeedTiers` 응답과 저장된 Fast 설정도 읽는다.
