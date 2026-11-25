@@ -1,14 +1,15 @@
 # iOS TestFlight 배포
 
-## 2026-11-26 02:02 KST — 1.0.1(18) 내부 테스트용 업로드 완료
+## 2026-11-26 02:13 KST — 1.0.1(18) 내부 테스트 제공 확인
 
-- 소스 `385d43a2288a1de1125b5aa802ea2a0bce544bac`의 Codex 업데이트 후 연결 조회 수정과 Linux 준비 화면을 패키징했다. Xcode 업로드 성공과 Apple 처리 시작을 확인했다. 서명 검증과 iOS 앱 테스트 41개, 실제 시뮬레이터 앱 검사 34개, 화면 진입 테스트가 통과했다.
-- App Store Connect 화면 제어 호스트 오류로 이번 빌드의 수출 규정 저장, 내부 그룹 제공 및 [한영 테스트 안내](../../release/app-store/testflight-notes-18.en-ko.txt) 등록은 확인 대기다. 증빙은 `dist/ios-testflight/1.0.1-18-nov26/`에 있다.
+- 소스 `385d43a2288a1de1125b5aa802ea2a0bce544bac`의 Codex 업데이트 후 연결 조회 수정과 Linux 준비 화면을 패키징했다. 02:02:53 KST에 Xcode 업로드 성공을 확인했다. 서명 검증과 iOS 앱 테스트 41개, 실제 시뮬레이터 앱 검사 34개, 화면 진입 테스트가 통과했다.
+- 화면 제어 복원과 Apple 처리 완료 후 Apple 운영 체제 외·병행 표준 암호화 및 프랑스 미배포 응답을 저장했다. [한영 테스트 안내](../../release/app-store/testflight-notes-18.en-ko.txt)는 영어(미국) 입력란 하나에 함께 저장했다. 새로고침 뒤 안내 683자와 기존 `Bibimer Internal` 그룹의 내부 테스터 1명, 빌드 18의 ‘테스트 중’ 및 90일 후 만료를 확인했다.
+- App Store Connect 빌드 ID는 `0836169a-7454-4b64-a67b-63d30ed2b4a3`이다. 증빙은 `dist/ios-testflight/1.0.1-18-nov26/`에 있다. iPhone 실기기의 빌드 18 설치 및 기존 로그인 복귀는 내부 테스트 항목이다.
 
 ## 2026-11-26 00:38 KST — 1.0.1(17) 내부 테스트용 업로드 완료
 
 - 소스 `79778dd2a64197c26aa2f85c8809ded50a52ab1b`의 iOS 에이전트 업데이트와 모델별 Codex 속도 선택을 내장 브리지 `0.25.5`와 함께 패키징했다. Xcode에서 **Upload succeeded / EXPORT SUCCEEDED**와 Apple 처리 시작을 확인했다. 이 빌드는 내부 TestFlight용으로 지정했다.
-- 서명 IPA와 원본 소스, 브리지 버전, 기존 심사 접근 설정을 확인했다. iOS 앱 테스트 41개, iOS 브리지 테스트 90개와 현지화·에이전트 관리 UI 검사를 통과했다. 내부 그룹의 설치 가능 여부는 App Store Connect 화면 연결 실패로 확인 대기다.
+- 서명 IPA와 원본 소스, 브리지 버전, 기존 심사 접근 설정을 확인했다. iOS 앱 테스트 41개, iOS 브리지 테스트 90개와 현지화·에이전트 관리 UI 검사를 통과했다. 화면 제어 복원 뒤 기존 `Bibimer Internal`에서 ‘테스트 중’과 내부 테스터 1명의 설치를 확인했다.
 - 영문·국문 테스트 안내는 [빌드 17 안내](../../release/app-store/testflight-notes-17.en-ko.txt)에 준비했다. 검증과 업로드 증빙은 `dist/ios-testflight/1.0.1-17-nov26/`에 있다.
 
 ## 2026-11-20 06:06 KST — App Store 심사 제출 완료
