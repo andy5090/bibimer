@@ -114,7 +114,7 @@ def load_bridge(source=SOURCE):
             "if agent not in {'shell','codex','claude','opencode','gemini'} or mode not in {'terminal','chat'} or (agent == 'shell' and mode != 'terminal'):",
         'codex_options({**self.options, "permission": "inherit"})':
             '_ios_codex_initial_options(self.options)',
-        'argv = [executable, *({"codex": ["login"], "claude": ["auth", "login"],\n'
+        'argv = [*(codex_command(executable) if authentication_agent == "codex" else [executable]), *({"codex": ["login"], "claude": ["auth", "login"],\n'
         '                                      "opencode": ["auth", "login"]}[authentication_agent])]':
             'argv = _ios_authentication_command(executable, authentication_agent)',
         '            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))\n':
@@ -547,7 +547,8 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
             # OS notifications/file viewers are native capabilities, not a guest
             # guarantee. The app decides which native facilities are available.
             # CLI updates use the fixed iOS installers, not Android's updater.
-            result["features"] = [feature for feature in result["features"] if feature not in {"claude_steer", "agent_updates"}]
+            result["features"] = [feature for feature in result["features"] if feature not in {
+                "claude_steer", "agent_updates", "session_title_suggestions"}]
             result["features"].append("ios_agent_setup")
             return result
 
@@ -610,6 +611,9 @@ def adapt(base, claude_provider=None, opencode_provider=None, claude_login=None)
     class Handler(base.Handler):
         def _route(self, method):
             parsed = urllib.parse.urlsplit(self.path)
+            # Naming needs a matching native route and provider-consent gate.
+            if parsed.path.endswith('/title-suggestion'):
+                raise base.Problem(404, 'error_route')
             native_commands = parsed.path in {"/v1/ios/browser/commands", "/v1/ios/browser/results"}
             if parsed.path != "/v1/ios/agents" and not native_commands:
                 return super()._route(method)

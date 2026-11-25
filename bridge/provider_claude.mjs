@@ -267,6 +267,27 @@ async function runTurn(prompt, identity) {
 }
 async function call(method,params) {
   if (method==='initialize') return {userAgent:'bibimer-claude',capabilities:{steer:true}};
+  if (method==='bibimer/title') {
+    if (thread || typeof params.prompt!=='string' || params.prompt.length>16000) throw Error('error_chat_request');
+    let title='';
+    const naming=sdk.query({prompt:params.prompt,options:{cwd,pathToClaudeCodeExecutable:executable,
+      settingSources:[],persistSession:false,tools:[],mcpServers:{},plugins:[],maxTurns:1,
+      permissionMode:'default',canUseTool:async()=>({behavior:'deny',message:'Title generation only'}),
+      ...(params.options?.model?{model:params.options.model}:{}),
+      ...(params.options?.effort?{effort:params.options.effort}:{}),stderr:()=>{}}});
+    active=naming;
+    try {
+      for await (const message of naming) {
+        if(message.type==='assistant' && message.message?.content?.some(part=>part.type==='tool_use')) throw Error('error_agent_transport');
+        if(message.type==='result') {
+          if(message.is_error || message.subtype!=='success') throw Error('error_agent_transport');
+          title=message.result || '';
+        }
+      }
+      if(!title) throw Error('error_agent_transport');
+      return {title};
+    } finally {naming.close();active=null;}
+  }
   if (method==='model/list' || method==='commands/list') {
     // Initialize the CLI control protocol without yielding any user prompt.
     let release;

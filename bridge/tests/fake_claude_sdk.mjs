@@ -16,6 +16,16 @@ export async function getSessionMessages(id,options) {
 }
 export function query({prompt,options}) {
   assert.equal(options.cwd,process.cwd());
+  if(typeof prompt==='string') {
+    assert.deepEqual(options.settingSources,[]);assert.deepEqual(options.tools,[]);
+    assert.equal(options.persistSession,false);assert.equal(options.maxTurns,1);
+    assert.deepEqual(options.mcpServers,{});assert.deepEqual(options.plugins,[]);
+    assert.ok(!options.resume);assert.ok(!options.sessionId);
+    return {async *[Symbol.asyncIterator](){
+      assert.equal((await options.canUseTool()).behavior,'deny');
+      yield {type:'result',subtype:'success',result:'Suggested workspace title'};
+    },close(){}};
+  }
   assert.deepEqual(options.settingSources,['user','project','local']);
   if (options.persistSession===false) return {
     supportedCommands:async()=>[{name:'review',description:'Project review',argumentHint:'[files]'},

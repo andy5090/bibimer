@@ -389,10 +389,10 @@
       <div id="agent-diagnostics" aria-live="polite"></div>
       <details class="agent-install" id="codex-install">
         <summary>Codex · Termux</summary>
-        <p data-i18n="agent_codex_termux">Use the community Termux package, not the standard Linux binary. This version requires Android 10+ and arm64. If Node.js and npm already work, skip the first command. Check the version, then sign in.</p>
+        <p data-i18n="agent_codex_termux">Use Codex from the Termux package repository. The old community npm package is no longer maintained. Existing users can switch using the update controls above; saved Codex accounts and conversations are kept.</p>
         <p id="agent-action-status-codex" class="hint" role="status" hidden></p>
-        <div class="command"><code id="codex-dependencies-command">pkg install nodejs-lts npm</code><button data-agent-copy="codex-dependencies-command" data-i18n="copy">Copy</button></div>
-        <div class="command"><code id="codex-install-command">npm install -g @mmmbuto/codex-cli-termux@0.160.0-termux.3</code><button data-agent-copy="codex-install-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="codex-dependencies-command">pkg update</code><button data-agent-copy="codex-dependencies-command" data-i18n="copy">Copy</button></div>
+        <div class="command"><code id="codex-install-command">pkg install codex</code><button data-agent-copy="codex-install-command" data-i18n="copy">Copy</button></div>
         <div class="command"><code id="codex-check-command">codex --version</code><button data-agent-copy="codex-check-command" data-i18n="copy">Copy</button></div>
         <div class="command"><code id="codex-login-command">codex login</code><button data-agent-copy="codex-login-command" data-i18n="copy">Copy</button></div>
         <div class="button-row"><button data-guide="codex-termux" class="quiet" data-i18n="agent_termux_steps">Termux installation details ↗</button><button data-guide="codex" class="quiet" data-i18n="codex_guide">Codex guide ↗</button></div>
@@ -544,6 +544,8 @@
     <div class="sidebar-heading"><h2 id="session-actions-title" data-i18n="session_actions">Session actions</h2><button id="session-actions-close" class="icon-button" type="button" data-i18n-aria-label="sidebar_close" aria-label="Close">×</button></div>
     <p id="session-action-name"></p><p id="session-action-status" class="hint"></p><p id="session-action-error" class="hint danger-text" role="status" hidden></p>
     <form id="session-rename-form"><label for="session-name" data-i18n="session_name">Session name</label><div class="folder-input"><input id="session-name" maxlength="120" autocomplete="off"><button id="session-rename" class="secondary" type="submit" data-i18n="session_rename">Rename</button></div></form>
+    <button id="session-title-generate" class="secondary" type="button" data-i18n="session_title_generate" hidden>Suggest a name with the agent</button>
+    <p id="session-title-hint" class="hint" role="status" hidden></p>
     <button id="session-continue" class="primary" type="button" data-i18n="session_continue">Continue session</button>
     <button id="session-handoff" class="secondary" type="button" data-i18n="handoff_action">Continue with another agent</button>
     <button id="session-archive" class="secondary" type="button" data-i18n="session_archive">Archive</button>

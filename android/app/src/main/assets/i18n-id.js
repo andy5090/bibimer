@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.id = {
+  "session_title_generate": "Sarankan nama dengan agen",
+  "session_title_generate_hint": "Menggunakan agen dan model sesi ini untuk merangkum percakapan. Kuota penyedia dapat terpakai. Tinjau sebelum menyimpan.",
+  "session_title_generating": "Membuat nama…",
+  "session_title_suggested": "Saran siap. Edit bila perlu, lalu ketuk Ganti nama.",
   "agent_management_accounts": "Akun dan penyedia",
   "agent_management_advanced": "Instalasi, perbaikan, dan pemecahan masalah",
   "agent_management_install_hint": "Gunakan langkah ini untuk instalasi atau perbaikan. Ubah versi yang sudah terpasang melalui kontrol pembaruan di atas.",
@@ -180,7 +184,7 @@ window.BibimerTranslations.id = {
 
   "browser_consent_title": "Permintaan kontrol browser",
   "browser_consent_body": "Selesaikan login di Termux:X11, lalu izinkan kontrol di sini. Agen yang terhubung ke proyek ini dapat melihat dan mengoperasikan jendela Firefox yang terbuka.",
-  "browser_login_guide": "Setelah login di Termux:X11, kembali ke layar kerja Bibimer dan ketuk “Login selesai · izinkan kontrol agen” pada kartu “Permintaan kontrol browser”. Jika kartu tidak muncul, buka tab bawah Pengaturan → Firefox · Termux:X11 → Login dan kontrol agen, lalu ketuk tombol yang sama.",
+  "browser_login_guide": "Setelah login di Termux:X11, kembali ke layar kerja Bibimer dan ketuk “Login selesai · izinkan kontrol agen” pada kartu “Permintaan kontrol browser”. Jika kartu tidak muncul, buka Pengaturan melalui tombol pengaturan di bagian atas → Firefox · Termux:X11 → Login dan kontrol agen, lalu ketuk tombol yang sama.",
 
   "response_delivery_save_failed": "Pengaturan pengiriman saat respons berlangsung tidak dapat disimpan.",
   "response_delivery_hint": "Pilih tindakan bawaan tombol dan pintasan kirim saat respons berlangsung. Jika Steer tidak tersedia, pesan masuk antrean. Perintah garis miring bawaan menggunakan antrean.",
@@ -237,7 +241,7 @@ window.BibimerTranslations.id = {
   "error_maintenance_recovery": "Sesi tidak dapat dibuka kembali. Periksa pemulihan di Pengaturan.",
   "error_browser_permission": "Mode izin sesi ini tidak mengizinkan input browser.",
   "error_browser_control": "Browser tidak dapat dikontrol. Buka Termux:X11 dan coba lagi.",
-  "error_browser_manual": "Setelah login di Termux:X11, kembali ke layar kerja Bibimer dan ketuk “Login selesai · izinkan kontrol agen” pada kartu “Permintaan kontrol browser”. Jika kartu tidak muncul, buka tab bawah Pengaturan → Firefox · Termux:X11 → Login dan kontrol agen, lalu ketuk tombol yang sama.",
+  "error_browser_manual": "Setelah login di Termux:X11, kembali ke layar kerja Bibimer dan ketuk “Login selesai · izinkan kontrol agen” pada kartu “Permintaan kontrol browser”. Jika kartu tidak muncul, buka Pengaturan melalui tombol pengaturan di bagian atas → Firefox · Termux:X11 → Login dan kontrol agen, lalu ketuk tombol yang sama.",
   "browser_install_sent": "Persiapan dibuka di Termux. Setelah selesai, kembali dan segarkan.",
   "browser_default_hint": "Firefox dibuka saat diperlukan dan menggunakan kembali profil proyek di seluruh worktree. Sesi agen baru terhubung secara default. Menonaktifkan juga memblokir akses alat yang sudah ada.",
   "browser_control_status": "Kontrol agen diizinkan. Pilih login manual sebelum memasukkan kredensial.",
@@ -896,7 +900,8 @@ window.BibimerTranslations.id = {
   agent_setup: "Siapkan agen",
   agent_body: "Mulai dengan Terminal untuk memeriksa masukan dan keluaran. Pasang Codex, Claude Code, atau OpenCode di Termux, lalu selesaikan autentikasi akun, koneksi penyedia, dan pengaturan model sesuai kebutuhan.",
   "agent_termux_basis": "Konfigurasi diperiksa pada ponsel Android 16 arm64. Versi hanya acuan, tanpa pembaruan otomatis. Instalasi dari awal pada ponsel lain masih perlu diverifikasi.",
-  "agent_codex_termux": "Gunakan paket komunitas Termux ini pada Android 10+ arm64. Jika Node.js dan npm sudah berfungsi, lewati perintah pertama. Periksa versi, lalu masuk.",
+  "agent_codex_termux": "Gunakan Codex dari repositori paket Termux. Paket npm komunitas lama tidak lagi dipelihara. Beralih melalui kontrol pembaruan di atas; akun dan percakapan tersimpan tetap ada.",
+  "agent_codex_migration": "Beralih dari Codex {current} ke paket Termux {latest}. Akun dan chat tetap ada. Berkas npm lama dipertahankan; jangan hapus paket npm setelahnya karena dapat menghapus peluncur baru.",
   "agent_claude_termux": "Claude 2.1.283 memakai runtime terpisah milik Bibimer. Memerlukan Termux arm64 dengan glibc dan ripgrep. Salin perintah perbaikan di bawah dan jalankan di Termux; SDK Chat juga disertakan. Tidak perlu menyimpan berkas. Jika CLI sudah berfungsi, cukup siapkan adaptor.",
   "agent_opencode_termux": "OpenCode 1.17.13 diperiksa dengan OpenClaw Android komunitas: glibc, proot, dan pembungkus biner Bun. Paket npm biasa saja tidak menghasilkan lingkungan yang sama. Lihat prasyarat dan instalasi pada detail Termux, periksa versi, lalu atur koneksi penyedia.",
   "agent_claude_auth_hint": "Pilih metode masuk di sini, lalu buka browser untuk mengizinkan akun. Jika kode muncul, masukkan di kolom tersamarkan Bibimer. Pemeriksaan versi saja tidak memastikan login.",

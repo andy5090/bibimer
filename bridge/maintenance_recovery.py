@@ -14,7 +14,7 @@ NAME = 'maintenance-recovery.json'
 LIMIT = 128
 FIELDS = ('id', 'launch_id', 'project', 'agent', 'mode', 'kind', 'options', 'started_at',
           'cols', 'rows', 'external_thread_id', 'history_persisted', 'source_thread_id', 'import_mode',
-          'launch_options', 'handoff', 'browser_digest', 'exit_code')
+          'launch_options', 'handoff', 'browser_digest', 'exit_code', 'archived')
 
 
 def identity(value):
@@ -124,6 +124,25 @@ class Recovery:
         except (OSError, ValueError, KeyError, TypeError):
             self.plan = None
 
+    def archive_stopped(self):
+        # Also handle the first upgrade from a bridge without stop receipts.
+        plan, bridge = self.plan, self.bridge
+        if (not plan or plan.get('archive_initialized') or plan['source_instance'] == bridge.instance):
+            return
+        with bridge.lock:
+            for row in plan['rows']:
+                source = row['source']
+                current = bridge.snapshot_by_id(row['id'])
+                if (not current or current['state'] != 'exited' or current.get('launch_id') != source.get('launch_id') or
+                        current['project'] != source['project']):
+                    continue
+                labels = bridge.session_labels.setdefault(row['id'], {})
+                labels.setdefault('maintenance_archive', {'source_launch_id':source['launch_id'],
+                    'launch_id':source['launch_id'], 'archived':bool(source.get('archived',current.get('archived')))})
+            bridge.persist()
+            plan['archive_initialized'] = True
+            save(bridge.state, plan)
+
     def snapshot(self):
         with self.lock:
             if not self.plan:
@@ -211,6 +230,11 @@ class Recovery:
                     raise ValueError('Saved conversation could not resume')
         elif session.process.poll() is not None:
             raise ValueError('Session exited during reopen')
+        with bridge.lock:
+            if bridge.sessions.get(session.id) is not session or session.launch_id != row['launch_id']:
+                raise ValueError('Reopened session changed')
+            bridge.maintenance_reopened((source['id'], source.get('launch_id')), session, complete=True)
+            bridge.persist()
 
     def _failed(self, row):
         # Terminate only a process launched by this exact recovery receipt. Keep

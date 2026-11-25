@@ -48,6 +48,21 @@ def finish(status="completed"):
 for line in sys.stdin:
     message = json.loads(line)
     method, params = message.get("method"), message.get("params", {})
+    if method == 'config/read':
+        emit({'id':message['id'],'result':{'config':{'mcp_servers':{'fixture_external':{'private':'NEVER_COPY_THIS'}}}}})
+        continue
+    if method == 'thread/start' and params.get('ephemeral') is True:
+        assert params['sandbox'] == 'read-only' and params['approvalPolicy'] == 'never'
+        assert params['config']['features']['shell_tool'] is False
+        assert params['config']['mcp_servers'] == {'fixture_external':{'enabled':False}}
+        emit({'id':message['id'],'result':{'thread':{'id':'title-thread'}}})
+        continue
+    if method == 'turn/start' and params.get('threadId') == 'title-thread':
+        assert params['outputSchema']['required'] == ['title']
+        notify('item/completed',{'item':{'type':'agentMessage','text':json.dumps({'title':'Suggested workspace title'})}})
+        notify('turn/completed',{'turn':{'id':'title-turn','status':'completed'}})
+        emit({'id':message['id'],'result':{'turn':{'id':'title-turn'}}})
+        continue
     if method in {"thread/start", "thread/resume", "thread/fork"} and os.environ.get("BIBIMER_BROWSER_INSTRUCTIONS"):
         assert params.get("developerInstructions") == os.environ["BIBIMER_BROWSER_INSTRUCTIONS"]
     if method in {"thread/start", "thread/resume", "thread/fork", "turn/start"}:

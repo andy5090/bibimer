@@ -3,12 +3,14 @@
   const {make, markdown, codeBlock, copyButton, diffBlock, diffBadge} = window.BibimerRichText;
   class PendingMessages {
     constructor() { this.rows = new Map(); this.matched = new Set(); }
-    add(context, id, text, revision = 0) {
-      if (!this.rows.has(id)) this.rows.set(id, {context,id,text,revision:Number(revision) || 0,state:"sending",follow:true});
+    add(context, id, text, revision = 0, deferred = false) {
+      if (!this.rows.has(id)) this.rows.set(id, {context,id,text,revision:Number(revision) || 0,state:"sending",follow:true,deferred});
       else Object.assign(this.rows.get(id), {state:"sending",follow:true});
       while (this.rows.size > 128) this.rows.delete(this.rows.keys().next().value);
     }
     list(context) { return [...this.rows.values()].filter(row => row.context === context); }
+    visible(context) { return this.list(context).filter(row => !row.deferred && row.state !== "queued"); }
+    defer(id) { const row = this.rows.get(id); if (!row || row.deferred) return false; row.deferred = true; return true; }
     settle(id, state) { if (this.rows.has(id)) this.rows.get(id).state = state; }
     editQueued(id, text) {
       const row = this.rows.get(id);
@@ -82,6 +84,7 @@
       if (!keepRequests) { this.requests.clear(); this.prompts.replaceChildren(); }
     }
     setOptimistic(rows) {
+      rows = rows.filter(row => !row.deferred && row.state !== "queued");
       const force = rows.some(row => row.follow);
       const follow = force || this.root.scrollHeight - this.root.scrollTop - this.root.clientHeight < 80;
       const keys = new Set(rows.map(row => "optimistic-" + row.id));

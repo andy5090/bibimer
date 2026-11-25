@@ -10,7 +10,7 @@ Bibimer와 **같은 휴대폰의 Termux**에서 진행한다. 별도 PC나 원�
 
 | 에이전트 | 확인한 실행 구성 | 확인 결과 |
 | --- | --- | --- |
-| Codex | `@mmmbuto/codex-cli-termux@0.160.0-termux.3` | `codex --version` → `codex-cli 0.160.0` |
+| Codex | Termux 저장소 `codex` 후보0.172.0 (격리 검증) | `codex-cli 0.172.0` · 운영 설치는 기존0.163.0 유지 |
 | Claude Code | Bibimer 전용 런타임 2.1.283 + Agent SDK 0.3.283 | 전용 런처와 현재 폰의 일반 `claude` 명령 모두 `--version` 성공. 원래 npm2.1.263 진입점은 백업 |
 | OpenCode | 1.17.13, OpenClaw Android의 glibc·proot·Bun 바이너리 래퍼 | `opencode --version` → `1.17.13` |
 | Gemini CLI | 공식 npm `@google/gemini-cli@0.58.0`, Node.js로 진입 파일 직접 실행 | `--version` → `0.58.0`. Bibimer 에이전트 목록·Chat 연동은 미구현 |
@@ -21,7 +21,7 @@ Bibimer 앱의 최소 Android 버전과 각 에이전트의 요구사항은 다�
 
 내부 테스트 앱 **0.41.0(70)**과 브리지 **0.25.0**부터 제공하는 **설정 → 연결 관리 → 에이전트 업데이트**에서 현재/대상 버전을 확인한 뒤 업데이트를 실행한다. 확인 자체로 설치하지 않는다. 설치 방식과 패키지 이름을 유지하고 확인한 특정 버전으로 고정해 실행하며, 설치 후 CLI 버전과 npm 패키지 버전을 다시 확인한다. 다른 메이저 버전으로 자동 전환하거나 이전 버전으로 내리지 않는다.
 
-- Codex: 확인된 전역 npm 설치의 기존 `@mmmbuto/codex-cli-termux` 또는 `@openai/codex` 패키지를 유지한다. Termux 커뮤니티 패키지를 일반 Linux 바이너리로 교체하지 않는다.
+- Codex: Termux 공식 `codex` 패키지를 업데이트하고, 확인된 기존 `@mmmbuto/codex-cli-termux` npm 설치는 명시적인 전환 확인 후 해당 패키지로 전환한다. 일반 Linux 바이너리나 임의 커스텀 실행기로 교체하지 않는다.
 - Claude: 확인된 전역 npm 설치 또는 Bibimer 전용 glibc 런타임을 지원한다. 전용 런타임은 공식 arm64 패키지 SHA-512와 실행 버전을 확인한 뒤 런처를 원자적으로 전환한다. 기존 Chat SDK를 임의 교체하지 않는다.
 - OpenCode: 확인된 전역 `opencode-ai` npm 설치 또는 기존 OpenClaw Android proot 래퍼를 지원한다. 래퍼 설치에서는 공식 `opencode-linux-arm64` 패키지 무결성을 검사하고 glibc 로더 결합/실행 확인을 거쳐 경로만 원자적으로 전환한다. 기존 Bun 캐시·rootfs·인증·설정은 삭제하지 않는다.
 - Gemini: 확인된 전역 npm `@google/gemini-cli` 설치를 같은 패키지로 업데이트한다. 설치된 JS 진입점은 필요한 경우 Node로 버전을 조회한다.
@@ -80,23 +80,22 @@ API 키·인증 코드는 전용 마스킹 입력란에서만 받는다. 앱 설
 
 ## Codex
 
-현재 폰은 OpenAI의 일반 Linux 바이너리가 아닌 **커뮤니티 Termux 전용 배포본**을 사용한다. 확인한 패키지는 **Android 10 이상·arm64**가 필요하다. [배포본 소스와 요구사항](https://github.com/DioNanos/codex-termux)을 확인한다. OpenAI 공식 Termux 배포본으로 표현하지 않는다.
+2026-11-25 기준 기존 `@mmmbuto/codex-cli-termux`는 0.163.0-termux.3을 마지막으로 유지보수를 종료했다. 제작자가 안내한 대안은 **Termux 공식 패키지 저장소의 `codex`**다. OpenAI의 Android 공식 배포를 뜻하지 않으며, Termux가 upstream Codex에 Android 호환 패치를 적용해 패키징한다. [제작자 전환 안내](https://github.com/DioNanos/codex-termux/releases/tag/v0.163.0-termux.3) · [Termux 빌드 소스](https://github.com/termux/termux-packages/blob/master/packages/codex/build.sh).
 
-Termux에서 Node.js와 npm이 아직 없을 때만 준비한다. 기존 `node --version`과 `npm --version`이 정상이라면 건너뛴다.
-
-```sh
-pkg install nodejs-lts npm
-```
-
-확인한 패키지 버전을 설치하고 실행을 확인한다. `@latest`로 버전을 자동 변경하지 않는다.
+새 설치는 Termux에서 다음 명령을 실행한다. 현재 저장소 후보 0.172.0의 패키지를 격리 추출해 같은 폰에서 `--version`과 `app-server initialize`를 확인했다. 운영 설치·실제 모델 요청은 하지 않았으며 다른 기기의 모든 동작을 검증한 것은 아니다.
 
 ```sh
-npm install -g @mmmbuto/codex-cli-termux@0.160.0-termux.3
+pkg update
+pkg install codex
 codex --version
 codex login
 ```
 
-Termux에 안내된 주소를 같은 폰의 브라우저에서 열어 로그인을 완료한다. 브라우저 반환이 안 되면 `codex login --device-auth`를 사용할 수 있다. 이 방식은 계정/워크스페이스에서 기기 코드 로그인이 허용되어야 한다. API 키는 내부0.30.0의 연결 관리 창이나 Termux CLI에서 설정한다. 대화 입력창에는 입력하지 않는다. [OpenAI 공식 인증 안내](https://learn.chatgpt.com/docs/auth).
+기존 npm 사용자는 새 Bibimer/브리지0.25.4에서 **설정 → 에이전트 관리 → Codex → 업데이트 확인**으로 전환 대상 버전을 확인한다. 종료 대상 확인 후에만 해당 Codex 세션을 종료하고 저장소의 정확한 버전을 설치한다. 계정·설정·저장 대화의 `~/.codex`는 수정하지 않으며 기존 npm 패키지 파일도 제거하지 않는다. 전환 뒤 기존 npm 패키지를 `npm uninstall`하면 새 `codex` 실행기가 지워질 수 있으므로 제거하지 않는다. 새 설치 이후의 버전 확인/업데이트는 Termux 패키지를 사용한다. 오래된 저장소 목록으로 확인이 실패하면 Termux에서 `pkg update` 후 다시 확인한다. 알 수 없는 커스텀 실행기는 임의로 교체하지 않는다.
+
+앱 밖에서 수동으로 완전히 정리하려면 **먼저 관련 Codex 세션을 종료**한 뒤 제작자 안내의 `npm uninstall -g @mmmbuto/codex-cli-termux` → `pkg install --reinstall codex` → `hash -r` → `codex --version` 순서를 따른다. npm 제거 후 재설치 실패 시 실행기가 없을 수 있으므로 앱은 이 제거를 자동으로 수행하지 않는다.
+
+출력된 로그인 URL은 같은 폰의 브라우저에서 직접 처리한다. 콜백이 실패하고 계정/워크스페이스가 지원하면 `codex login --device-auth`를 사용할 수 있다. API 키는 연결 관리 또는 네이티브 CLI에서 설정하며 대화 입력창에 넣지 않는다. [OpenAI 인증 문서](https://learn.chatgpt.com/docs/codex/auth).
 
 ## Claude Code
 

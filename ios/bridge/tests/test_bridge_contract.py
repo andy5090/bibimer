@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -21,6 +22,16 @@ class BridgeContractTests(unittest.TestCase):
             "source_thread_id": "native-gemini-thread", "import_mode": "resume"})
         self.assertEqual(imported, {"source_thread_id": "native-gemini-thread", "import_mode": "resume"})
         self.assertEqual(self.base.PERMISSION_MODES["gemini"], {"inherit"})
+
+    def test_title_suggestions_wait_for_native_route_and_consent_support(self):
+        base = entry.adapt(self.base)
+        with tempfile.TemporaryDirectory() as folder:
+            bridge = base.Bridge(Path(folder))
+            with patch.object(bridge, 'agents', return_value=[]):
+                self.assertNotIn('session_title_suggestions', bridge.health()['features'])
+        with self.assertRaises(base.Problem) as failure:
+            base.Handler._route(SimpleNamespace(path='/v1/sessions/session/title-suggestion'), 'POST')
+        self.assertEqual(404, failure.exception.status)
 
     def test_gemini_is_not_added_to_native_authentication_allowlists(self):
         with self.assertRaises(self.base.Problem) as failure:

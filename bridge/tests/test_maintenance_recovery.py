@@ -13,8 +13,26 @@ recovery = module.maintenance_recovery
 
 
 class RecoveryTests(ProviderFixture):
+    def test_upgrade_from_old_bridge_archives_known_stopped_targets_once_and_preserves_manual_choice(self):
+        key=self.launch()
+        session=self.bridge.get_session(key)
+        session.stop();session.process.wait(timeout=5)
+        deadline=time.monotonic()+3
+        while session.state!='exited' and time.monotonic()<deadline:time.sleep(.01)
+        request=self.arm([key])
+        self.assertFalse(self.bridge.snapshot_by_id(key).get('archived',False))
+        self.reload()
+        self.assertTrue(self.bridge.snapshot_by_id(key)['archived'])
+        self.bridge.manage_session(key,{'action':'restore'})
+        self.reload()
+        self.assertFalse(self.bridge.snapshot_by_id(key)['archived'])
+        self.bridge.recovery.begin(request['id'],automatic=True)
+        self.assertEqual(1,self.done()['restored'])
+        self.assertFalse(self.bridge.snapshot_by_id(key)['archived'])
+
     def stop(self, key):
-        self.bridge.get_session(key).stop()
+        self.bridge.stop_session(key, {'maintenance': {'instance': self.bridge.instance,
+            'launch_id': self.bridge.get_session(key).launch_id}})
         self.bridge.get_session(key).process.wait(timeout=5)
         self.bridge.get_session(key).reader.join(timeout=2)
         deadline=time.monotonic()+3
@@ -74,6 +92,8 @@ class RecoveryTests(ProviderFixture):
             self.assertTrue(any(item.get('text')=='SAVED_PRIVATE_CHAT' for item in resumed.events(0,0)['items']))
             snapshots = {row['id']:row for row in self.bridge.snapshots()}
             self.assertEqual('Saved chat',snapshots[first.id]['title'])
+            self.assertFalse(snapshots[first.id].get('archived', False))
+            self.assertNotIn('maintenance_archive', self.bridge.session_labels[first.id])
             self.assertTrue(snapshots[terminal['id']]['archived'])
             self.assertEqual('1',(self.root/'project/turn-count').read_text())
             self.assertEqual('once\n',(self.root/'project/ran-command').read_text())
@@ -117,6 +137,7 @@ class RecoveryTests(ProviderFixture):
         self.assertEqual(first.id,source['id'])
         self.assertEqual('import-failure',source['external_thread_id'])
         self.assertEqual('exited',source['state'])
+        self.assertTrue(source['archived'])
 
     def test_ephemeral_chat_is_skipped_and_ordinary_startup_does_not_reopen(self):
         first = self.chat()
@@ -129,6 +150,7 @@ class RecoveryTests(ProviderFixture):
         self.bridge.recovery.begin(request['id'], automatic=True)
         summary = self.done()
         self.assertEqual(1,summary['skipped'])
+        self.assertTrue(self.bridge.snapshots()[0]['archived'])
         self.assertEqual(0,summary['retryable'])
         self.assertEqual(0,self.bridge.active_count())
 
@@ -144,11 +166,13 @@ class RecoveryTests(ProviderFixture):
         self.assertEqual(1,summary['failed'],summary)
         self.assertEqual(1,summary['retryable'])
         self.assertEqual('exited',self.bridge.snapshots()[0]['state'])
+        self.assertTrue(self.bridge.snapshots()[0]['archived'])
         (self.root/'moved').rename(folder)
         self.assertEqual(401,self.api('POST','/v1/maintenance/recovery',{'id':request['id']},auth=False)[0])
         self.assertEqual(200,self.api('POST','/v1/maintenance/recovery',{'id':request['id']})[0])
         self.assertEqual(1,self.done()['restored'])
         self.assertEqual([key],list(self.bridge.sessions))
+        self.assertFalse(self.bridge.snapshot_by_id(key)['archived'])
 
     def test_unconfirmed_launch_receipt_never_replayed_after_crash(self):
         key = self.launch(); self.stop(key)

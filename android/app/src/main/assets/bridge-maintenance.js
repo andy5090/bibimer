@@ -32,6 +32,7 @@ window.BibimerMaintenance = class BibimerMaintenance {
     const health=await this.request("GET","/v1/health");
     this.ensure(state);
     if(health.instance!==state.instance)throw {key:"bridge_restarted"};
+    state.archiveStopped=health.features?.includes("maintenance_archive")===true;
     return this.rows(health);
   }
   changed() { this.render();this.actions.changed(); }
@@ -54,7 +55,7 @@ window.BibimerMaintenance = class BibimerMaintenance {
     } catch(error) {if(this.state===state)state.error=error.key==="bridge_restarted"?error.key:"bridge_maintenance_stop_failed";}
     finally {if(this.state===state){state.loading=false;this.changed();}}
   }
-  same(a,b) { return a.length===b.length && a.every(row=>b.some(other=>row.id===other.id)); }
+  same(a,b) { return a.length===b.length && a.every(row=>b.some(other=>row.id===other.id && row.launch_id===other.launch_id)); }
   start(state) {
     this.ensure(state);
     const action=state.action;this.state=null;this.dialog.close();this.actions.start(action, state.reopen && state.rows?.length ?
@@ -70,7 +71,8 @@ window.BibimerMaintenance = class BibimerMaintenance {
       for(const row of targets) {
         this.ensure(state);
         if(!/^[a-f0-9-]{36}$/.test(row.id))throw {key:"bridge_maintenance_stop_failed"};
-        await this.request("POST","/v1/sessions/"+row.id+"/stop",{});
+        await this.request("POST","/v1/sessions/"+row.id+"/stop",state.archiveStopped?
+          {maintenance:{instance:state.instance,launch_id:row.launch_id}}:{});
         ++state.stopped;this.changed();
       }
       const deadline=Date.now()+20000;

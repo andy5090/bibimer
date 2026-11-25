@@ -73,6 +73,7 @@ class AgentMaintenanceTests(ProviderFixture):
    status,result=self.call('start',plan_id=plan['id'],confirmation_id=confirmation['id'],reopen=True,request_id=str(uuid.uuid4()));self.assertEqual(200,status,result)
    done=self.wait_update(result['job']);self.assertEqual('failed',done['status'])
   self.assertEqual('exited',self.bridge.get_session(session.id).state);self.assertEqual(0,done['recovery']['restored'])
+  self.assertTrue(self.bridge.snapshot_by_id(session.id)['archived'])
  def test_update_queue_keeps_next_targets_running_until_its_install_slot(self):
   first=self.saved_claude();p1=self.plan();c1=self.prepare(p1)
   started=threading.Event();release=threading.Event()
@@ -88,6 +89,7 @@ class AgentMaintenanceTests(ProviderFixture):
    self.assertEqual('waiting',result['job']['status']);self.assertEqual('running',second.state)
    release.set();self.assertEqual('succeeded',self.wait_update(j1)['status']);self.assertEqual('succeeded',self.wait_update(result['job'],'codex')['status'])
   self.assertEqual(['claude','codex'],self.installs)
+  self.assertTrue(self.bridge.snapshot_by_id(second.id)['archived'])
  def native_auth(self):
   self.fake.write_text('#!'+module.sys.executable+'\nimport sys,json,pathlib\np=pathlib.Path('+repr(str(self.root/'auth-ok'))+')\nif sys.argv[1:]==["--version"]:print("2.1.283");sys.exit()\nif sys.argv[1:]==["auth","status"]:print(json.dumps({"loggedIn":p.exists()}));sys.exit()\nif sys.argv[1:]==["auth","login","--help"]:print("--console");sys.exit()\nassert sys.argv[1:]==["auth","login"]\nprint("https://claude.com/cai/oauth/authorize?state=fictional",flush=True)\nprint("Paste code here if prompted > ",flush=True)\nassert input()=="fixture-code"\np.write_text("ok")\n')
  def auth(self,action,**body):return self.api('POST','/v1/agent-connections',dict(agent='claude',action=action,method='claudeai',project_id=self.bridge.project['id'],**body))
@@ -130,6 +132,7 @@ class AgentMaintenanceTests(ProviderFixture):
   status,result=self.call('retry_restore',id=done['id']);self.assertEqual(200,status,result)
   done=self.wait_update(result['job']);self.assertEqual(1,done['recovery']['restored']);self.assertFalse(done['recovery']['retryable'])
   self.assertEqual(native,self.bridge.get_session(session.id).thread_id);self.assertEqual(['claude'],self.installs)
+  self.assertFalse(self.bridge.snapshot_by_id(session.id)['archived'])
   self.assertEqual('1',(self.root/'project/claude-turn-count').read_text())
   self.assertEqual(409,self.call('retry_restore',id=done['id'])[0]);self.assertEqual(['claude'],self.installs)
  def test_login_cancel_leaves_reviewed_sessions_stopped_and_other_work_live(self):
@@ -143,6 +146,7 @@ class AgentMaintenanceTests(ProviderFixture):
    time.sleep(.02)
   self.assertTrue(result['job'].get('code_required'),result)
   status,result=self.auth('cancel',id=job['id']);self.assertEqual(200,status,result);self.assertEqual('cancelled',result['job']['status'])
+  self.assertTrue(self.bridge.snapshot_by_id(session.id)['archived'])
   self.assertEqual('exited',self.bridge.get_session(session.id).state);self.assertEqual(0,result['job']['recovery']['restored']);self.assertIsNone(other.process.poll())
   self.assertFalse(self.bridge.agent_sessions.busy('claude'));self.assertFalse((self.root/'auth-ok').exists());self.assertEqual('1',(self.root/'project/claude-turn-count').read_text())
  def test_unsaved_chat_is_skipped_instead_of_starting_a_new_conversation(self):

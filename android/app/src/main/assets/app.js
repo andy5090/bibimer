@@ -48,6 +48,7 @@
   const modelCatalogs = new Map();
   const sessionTitles = new Map(), titleChecks = new Map();
   let canSessionTitles = false, titleLoading = false;
+  let canTitleSuggestions = false, titleSuggestion = null;
   const lastOptions = environment().agentOptions || {};
   const demo = environment().demo === true;
   let projectLocation = {parent:demo ? "" : absoluteFolder(environment().lastProjectParent),
@@ -733,10 +734,12 @@
     await selectSession(projectId, null, path);
   }
   function openSessionActions(id) {
+    cancelTitleSuggestion();
     const target = findSession(id);
     if (!target) return;
     notice(""); actionTarget = id; $("session-name").value = target.title || "";
     $("session-name").placeholder = sessionTitle(target);
+    $("session-title-hint").textContent = t("session_title_generate_hint");
     renderSessionActions(); $("session-dialog").showModal();
   }
   function openProjectSettings(id) {
@@ -837,6 +840,10 @@
     $("session-action-status").classList.toggle("response-progress", isResponding(target));
     $("session-rename-form").hidden = !canLibrary;
     for (const id of ["session-name", "session-rename", "session-archive", "session-delete", "session-continue"]) $(id).disabled = disabled;
+    const naming = canTitleSuggestions && target?.mode === "chat";
+    $("session-title-generate").hidden = $("session-title-hint").hidden = !naming;
+    $("session-title-generate").disabled = disabled || !!titleSuggestion || isResponding(target) || !!target?.queued_count;
+    if(titleSuggestion)$("session-name").disabled = $("session-rename").disabled = true;
     $("session-archive").hidden = $("session-archive-hint").hidden = $("session-delete").hidden = $("session-delete-hint").hidden = !canLibrary;
     $("session-archive").textContent = t(target?.archived ? "session_restore" : "session_archive");
     $("session-delete").disabled = disabled || live;
@@ -871,6 +878,31 @@
   $("session-more").addEventListener("click", () => openSessionActions(session?.id));
   $("session-actions-close").addEventListener("click", () => $("session-dialog").close());
   $("session-rename-form").addEventListener("submit", event => { event.preventDefault(); manageSession(actionTarget, "rename", $("session-name").value); });
+  function cancelTitleSuggestion() {
+    const pending=titleSuggestion;titleSuggestion=null;
+    if(pending && online && instance===pending.instance)void api("POST",`/v1/sessions/${pending.id}/title-suggestion`,{action:"cancel",id:pending.request}).catch(()=>{});
+  }
+  $("session-dialog").addEventListener("close", cancelTitleSuggestion);
+  $("session-title-generate").addEventListener("click", async()=>{
+    const target=findSession(actionTarget);
+    if(!canTitleSuggestions || !online || libraryBusy || titleSuggestion || target?.mode!=="chat")return;
+    const job=titleSuggestion={id:target.id,instance,request:uuid()};
+    const current=()=>titleSuggestion===job && instance===job.instance && actionTarget===job.id && $("session-dialog").open;
+    $("session-title-hint").textContent=t("session_title_generating");renderSessionActions();
+    try {
+      let result=await api("POST",`/v1/sessions/${job.id}/title-suggestion`,{action:"start",request_id:job.request,language:i18n.language()});
+      while(current() && result.job.status==="running"){
+        await new Promise(resolve=>setTimeout(resolve,600));
+        if(!current())return;
+        result=await api("POST",`/v1/sessions/${job.id}/title-suggestion`,{action:"poll",id:job.request});
+      }
+      if(!current())return;
+      if(result.job.status!=="succeeded")throw {key:result.job.error || "error_agent_connection"};
+      $("session-name").value=result.job.title;
+      $("session-title-hint").textContent=t("session_title_suggested");
+    } catch(error){if(current())$("session-title-hint").textContent=t(error.key || "error_request_failed");}
+    finally {if(titleSuggestion===job){titleSuggestion=null;renderSessionActions();}}
+  });
   $("session-archive").addEventListener("click", () => manageSession(actionTarget, findSession(actionTarget)?.archived ? "restore" : "archive"));
   $("session-delete").addEventListener("click", () => {
     deleteTarget = actionTarget; $("delete-name").textContent = sessionTitle(findSession(deleteTarget)); $("delete-dialog").showModal();
@@ -1348,7 +1380,7 @@
     $("chat-state").hidden = !isChat();
     const optimisticContext = optimisticScope();
     conversation.reconcileOptimistic(optimisticMessages.reconcile(optimisticContext, conversation.items.values()));
-    const optimisticRows = optimisticMessages.list(optimisticContext);
+    const optimisticRows = optimisticMessages.visible(optimisticContext);
     for (const row of optimisticRows) {
       if ((session && !["running", "stopping"].includes(session.state) && ["sending", "accepted", "queued"].includes(row.state)) ||
           (session?.turn_state === "failed" && row.state === "accepted")) optimisticMessages.settle(row.id, "uncertain");
@@ -1460,6 +1492,7 @@
       canLibrary = health.features?.includes("session_library") === true;
       canInitialMessage = health.features?.includes("initial_chat_message") === true;
       canSessionTitles = health.features?.includes("session_titles") === true;
+      canTitleSuggestions = health.features?.includes("session_title_suggestions") === true;
       canWorktrees = health.features?.includes("git_worktrees") === true;
       canCreateWorktrees = health.features?.includes("worktree_creation") === true;
       canManageProjects = health.features?.includes("project_management") === true;
@@ -1624,6 +1657,7 @@
     if (event.session?.id !== session?.id || !Array.isArray(event.queue) || event.session.output_end < queueRevision) return;
     queued = event.queue;
     let edited = false;
+    for (const row of queued) edited = optimisticMessages.defer(row.id) || edited;
     for (const row of queued) if (row.edit_revision > 0) {
       edited = (row.command ? optimisticMessages.remove(row.id) : optimisticMessages.editQueued(row.id, row.text)) || edited;
     }
@@ -1739,7 +1773,10 @@
     const turn = session.active_turn_id;
     rememberView();
     const chat = isChat(), requestId = uuid(), context = optimisticScope(key);
-    if (chat) optimisticMessages.add(context, requestId, text, Math.max(session.output_end || 0, ...[...conversation.items.values()].map(item => item.revision || 0)));
+    // Queue admission and Steer dispatch are not native submission receipts.
+    // Wait for the native user item, so a queued message has no old position.
+    const deferred = steer || canQueue;
+    if (chat) optimisticMessages.add(context, requestId, text, Math.max(session.output_end || 0, ...[...conversation.items.values()].map(item => item.revision || 0)), deferred);
     sending.add(id); renderSession();
     let ok = false, dispatched = false;
     try {
@@ -1750,7 +1787,10 @@
         const result = await api("POST", `/v1/sessions/${id}/${action}`, {text, ...invocation, request_id:requestId,
           ...(steer ? {turn_id:turn} : canQueue ? {action:"add"} : {})});
         if (invocation.command_id) optimisticMessages.remove(requestId);
-        else optimisticMessages.settle(requestId, result.queue?.some(row => row.id === requestId && row.state === "queued") ? "queued" : "accepted");
+        else {
+          if (result.queue?.some(row => row.id === requestId)) optimisticMessages.defer(requestId);
+          optimisticMessages.settle(requestId, result.queue?.some(row => row.id === requestId && row.state === "queued") ? "queued" : "accepted");
+        }
         if (session?.id === id) { setSession(result.session); updateQueue(result); }
         ok = true;
       } else if (session?.id === id) ok = await sendRaw((invocation.terminalText || text).replace(/\r?\n/g, "\r") + "\r");

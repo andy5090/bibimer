@@ -8,7 +8,7 @@ These are configurations checked on an **Android 16 arm64 phone on 2026-10-19**.
 
 | Agent | Checked configuration | Result |
 | --- | --- | --- |
-| Codex | `@mmmbuto/codex-cli-termux@0.160.0-termux.3` | `codex-cli 0.160.0` |
+| Codex | Termux repository `codex` candidate0.172.0 (isolated check) | `codex-cli 0.172.0`; installed CLI remains0.163.0 |
 | Claude Code | Bibimer runtime 2.1.283; Agent SDK 0.3.283 | Dedicated launcher and the phone's normal `claude` command pass version checks; original npm2.1.263 entry backed up |
 | OpenCode | 1.17.13; community OpenClaw Android glibc/proot/Bun wrapper | `opencode --version` succeeds |
 | Gemini CLI | Official npm `@google/gemini-cli@0.58.0`; entry file run directly with Node.js | `--version` prints `0.58.0`; Bibimer agent selection and Chat are not integrated |
@@ -36,23 +36,24 @@ Validation uses fictional native agents and UI controller tests. New real-accoun
 
 ## Codex
 
-Use the [community Termux distribution](https://github.com/DioNanos/codex-termux), which requires **Android 10+ arm64** for this version. This is not an official OpenAI Termux distribution or the standard Linux binary.
+As checked on November 25, 2026, `@mmmbuto/codex-cli-termux` has ended maintenance with release 0.163.0-termux.3. Its maintainer recommends **`codex` from the official Termux package repository**. This is a Termux-maintained build with Android patches, not an official OpenAI Android distribution. [Maintainer migration notice](https://github.com/DioNanos/codex-termux/releases/tag/v0.163.0-termux.3) · [Termux package source](https://github.com/termux/termux-packages/blob/master/packages/codex/build.sh).
 
-Only if Node.js and npm are missing:
-
-```sh
-pkg install nodejs-lts npm
-```
-
-Install the checked package version, verify it, then sign in:
+For a new installation:
 
 ```sh
-npm install -g @mmmbuto/codex-cli-termux@0.160.0-termux.3
+pkg update
+pkg install codex
 codex --version
 codex login
 ```
 
-Open the printed URL in the same phone's browser. If the browser callback fails, `codex login --device-auth` is an alternative when device code login is allowed for your account/workspace. Configure API keys in the connection manager in internal 0.30.0 or in the Termux CLI. Do not enter them in the conversation composer. See [OpenAI authentication](https://learn.chatgpt.com/docs/auth).
+The current repository candidate 0.172.0 was downloaded, extracted separately and checked with `--version` and `app-server initialize` on this phone. The installed CLI was not changed; no login or model request was used.
+
+Existing npm users can select **Settings → Agent management → Codex → Check for updates** in the new app with bridge0.25.4. Review the migration and affected Codex sessions before starting. The updater pins the exact repository version and preserves `~/.codex` accounts/config/saved chats and the old npm payload. Do not uninstall that npm package afterward: npm can remove the new launcher. Future updates use the Termux package. If cached repository metadata is stale, run `pkg update` in Termux and check again. Unknown custom launchers are not replaced automatically.
+
+For full manual cleanup outside the app, stop the relevant Codex sessions first and follow the maintainer’s sequence: `npm uninstall -g @mmmbuto/codex-cli-termux`, `pkg install --reinstall codex`, `hash -r`, then `codex --version`. A failed reinstall after npm removal can leave no launcher; Bibimer does not automatically uninstall the old package.
+
+Complete the printed login URL yourself in the same phone’s browser. If callback login fails and your account/workspace permits it, use `codex login --device-auth`. Enter API keys in the connection manager or native CLI, never the conversation composer. See [OpenAI authentication](https://learn.chatgpt.com/docs/codex/auth).
 
 ## Claude Code
 

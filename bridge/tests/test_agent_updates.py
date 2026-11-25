@@ -13,7 +13,7 @@ from test_bridge import BridgeTestCase, module
 
 class UpdateTests(BridgeTestCase):
  def setUp(self):
-  super().setUp()
+  BridgeTestCase.setUp(self)
   self.bin=self.root/'updates-bin';self.bin.mkdir()
   self.global_root=self.root/'global/node_modules';self.global_root.mkdir(parents=True)
   self.package=self.global_root/'@mmmbuto/codex-cli-termux';self.package.mkdir(parents=True)
@@ -125,3 +125,63 @@ class UpdateTests(BridgeTestCase):
    self.up.native_install(plan)
   self.assertNotIn('old-loader',wrapper.read_text());self.assertNotIn('old-binary',wrapper.read_text())
   concat=next((home/'.local/share/bibimer/opencode-runtime').glob('*.ld'));self.assertEqual(b'LOADERFAKE_OPENCODE',concat.read_bytes())
+
+
+class TermuxUpdateTests(BridgeTestCase):
+ def setUp(self):
+  UpdateTests.setUp(self)
+  self.owned=self.root/'dpkg-owned'
+  self.installs=self.root/'apt-installs'
+  self.candidate=self.root/'apt-candidate';self.candidate.write_text('0.172.0')
+  script = r"""import sys,pathlib,json,os
+root=pathlib.Path(ROOT)
+name=pathlib.Path(sys.argv[0]).name
+candidate=(root/'apt-candidate').read_text().strip()
+args=sys.argv[1:]
+if name=='apt-cache':
+ if args==['policy','codex']:print('codex:\n  Candidate: '+candidate)
+ elif args==['show','codex='+candidate]:print('Package: codex\nVersion: '+candidate+'\nArchitecture: aarch64\nSHA256: '+'a'*64)
+ else:sys.exit(3)
+elif name=='dpkg-query':
+ if args==['-S',EXE] and (root/'dpkg-owned').exists():print('codex: '+EXE)
+ elif args==['-W','-f=${Version}','codex'] and (root/'dpkg-owned').exists():print((root/'dpkg-owned').read_text())
+ else:sys.exit(1)
+elif name=='dpkg':
+ assert args[0]=='--compare-versions' and args[2]=='gt'
+ def parts(v):return tuple(int(x) for x in v.replace('-','.').split('.'))
+ sys.exit(0 if parts(args[1])>parts(args[3]) else 1)
+elif name=='apt-get':
+ assert args==['--assume-yes','--no-remove','install','--reinstall','codex='+candidate]
+ if (root/'apt-fail').exists():sys.exit(5)
+ p=pathlib.Path(EXE);p.unlink();p.write_text('#!'+sys.executable+'\nprint('+repr('codex-cli '+candidate.split('-')[0])+')\n');p.chmod(0o700)
+ (root/'dpkg-owned').write_text(candidate);(root/'apt-installs').write_text('1')
+""".replace('ROOT',repr(str(self.root))).replace('EXE',repr(str(self.executable)))
+  self.tools={}
+  for name in ('apt-cache','apt-get','dpkg-query','dpkg'):
+   path=self.bin/name;path.write_text('#!'+sys.executable+'\n'+script);path.chmod(0o700);self.tools[name]=str(path)
+  self.termux_patch=patch.object(self.up,'termux_tools',return_value=self.tools);self.termux_patch.start();self.addCleanup(self.termux_patch.stop)
+ call=UpdateTests.call
+ check=UpdateTests.check
+ wait=UpdateTests.wait
+ def test_migration_uses_pinned_apt_and_keeps_old_payload_and_credentials(self):
+  auth=self.root/'account';auth.write_text('PRIVATE_FIXTURE')
+  with patch.object(self.up,'metadata',side_effect=AssertionError('Never update EOL npm package')):
+   plan=self.check();self.assertEqual('termux-pkg',plan['method']);self.assertTrue(plan['migration']);self.assertTrue(plan['available']);self.assertFalse(self.installs.exists())
+   status,result=self.call('start',plan_id=plan['id'],request_id=str(uuid.uuid4()));self.assertEqual(200,status,result)
+   done=self.wait(result['job']);self.assertEqual('succeeded',done['status']);self.assertEqual('0.172.0',done['installed_version'])
+   self.assertTrue(self.manifest.exists());self.assertTrue(self.entry.exists());self.assertEqual('PRIVATE_FIXTURE',auth.read_text())
+   self.assertFalse((self.global_root/'count').exists())
+   again=self.check();self.assertFalse(again['migration']);self.assertFalse(again['available'])
+ def test_failed_apt_keeps_original_executable_and_does_not_restore_sessions(self):
+  (self.root/'apt-fail').touch();plan=self.check()
+  status,result=self.call('start',plan_id=plan['id'],request_id=str(uuid.uuid4()));self.assertEqual(200,status,result)
+  self.assertEqual('failed',self.wait(result['job'])['status']);self.assertTrue(self.executable.is_symlink());self.assertFalse(self.owned.exists())
+ def test_major_downgrade_and_invalid_candidate_are_not_offered(self):
+  self.candidate.write_text('0.159.0');self.assertFalse(self.check()['available'])
+  self.candidate.write_text('1.0.0');plan=self.check();self.assertFalse(plan['supported']);self.assertEqual('major',plan['unsupported_reason'])
+  self.candidate.write_text('not-a-version');self.assertEqual(400,self.call('check')[0])
+ def test_native_revision_upgrade_and_stale_launcher_are_checked(self):
+  plan=self.check();status,result=self.call('start',plan_id=plan['id'],request_id=str(uuid.uuid4()));self.assertEqual('succeeded',self.wait(result['job'])['status'])
+  self.candidate.write_text('0.172.0-1');plan=self.check();self.assertTrue(plan['available'])
+  self.executable.write_text(self.executable.read_text()+'\n# changed')
+  self.assertEqual(409,self.call('start',plan_id=plan['id'],request_id=str(uuid.uuid4()))[0])

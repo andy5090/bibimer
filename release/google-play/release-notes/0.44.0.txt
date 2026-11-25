@@ -1,0 +1,14 @@
+<ko-KR>
+대기열 프롬프트는 실제 제출 전까지 사용자 버블에 표시하지 않습니다. 대기 항목을 방향 수정으로 제출하면 제출된 시점의 대화 위치에 표시합니다.
+유지보수가 종료된 Codex npm 패키지에서 Termux 저장소의 codex 패키지로 전환하고 이후 해당 패키지를 업데이트할 수 있습니다. 계정과 저장 대화는 유지합니다.
+업데이트 후 다시 열리지 않은 종료 세션을 보관하고, 에이전트의 세션 이름 제안 기능을 추가했습니다.
+브라우저의 상단 설정 안내와 종료된 X11 잔여 파일로 인한 시작 실패를 수정했습니다.
+앱 설치 후 설정에서 Termux 브리지 0.25.4를 업데이트하세요. 종료 대상을 확인한 뒤 진행합니다.
+</ko-KR>
+<en-US>
+Queued prompts appear as user bubbles only after submission. Steer from the queue places the message at submission time.
+Switch discontinued Codex npm installs to the Termux codex package and update it there, keeping accounts and chats.
+Archive update-stopped sessions that are not reopened. Ask agents for session name suggestions.
+Fix browser Settings directions and startup blocked by stale X11 files.
+After installing, update bridge 0.25.4 in Settings and review affected sessions.
+</en-US>

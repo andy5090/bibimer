@@ -3,6 +3,11 @@
   // English is the fallback; Korean stays inline and added locales live in separate catalogs.
   // User input, agent content and terminal output are never translated.
   const strings = {
+    session_title_generate: ["Suggest a name with the agent", "에이전트로 이름 만들기"],
+    session_title_generate_hint: ["Uses this session’s agent and model to summarize the conversation. Provider usage may apply. Review the suggestion before saving.", "이 세션의 에이전트와 모델로 대화를 요약합니다. 제공자 사용량이 발생할 수 있습니다. 제안을 확인한 뒤 저장하세요."],
+    session_title_generating: ["Generating a name…", "이름을 만드는 중…"],
+    session_title_suggested: ["Suggestion ready. Edit it if needed, then tap Rename.", "이름을 제안했습니다. 필요하면 수정한 뒤 이름 변경을 누르세요."],
+
     agent_management_accounts: ["Account and provider", "계정·프로바이더"],
     agent_management_advanced: ["Installation, repair and troubleshooting", "설치·복구 및 문제 해결"],
     agent_management_install_hint: ["Use these steps when installation or repair is needed. Use the update controls above to change an existing version.", "설치나 복구가 필요할 때 사용하는 상세 안내입니다. 기존 버전 변경은 위의 업데이트 기능에서 진행하세요."],
@@ -191,7 +196,7 @@
 
     error_browser_permission: ["This session permission mode does not allow browser input.", "이 세션의 권한 모드에서는 브라우저 입력을 허용하지 않습니다."],
     error_browser_control: ["Could not control this browser. Open Termux:X11 and try again.", "브라우저를 조작하지 못했습니다. Termux:X11을 열고 다시 시도하세요."],
-    error_browser_manual: ["After signing in in Termux:X11, return to Bibimer Work and tap “Login complete · allow agent control” on the “Browser control request” card. If no card is shown, open the bottom Settings tab → Firefox · Termux:X11 → Login and agent control, then tap the same button.", "Termux:X11에서 로그인한 뒤 Bibimer 작업 화면으로 돌아와 ‘브라우저 제어 요청’ 카드의 ‘로그인 완료 · 에이전트 제어 허용’을 누르세요. 카드가 없으면 하단 설정 → Firefox · Termux:X11 → 로그인 및 에이전트 제어에서 같은 버튼을 누르세요."],
+    error_browser_manual: ["After signing in in Termux:X11, return to Bibimer Work and tap “Login complete · allow agent control” on the “Browser control request” card. If no card is shown, open Settings using the top settings button → Firefox · Termux:X11 → Login and agent control, then tap the same button.", "Termux:X11에서 로그인한 뒤 Bibimer 작업 화면으로 돌아와 ‘브라우저 제어 요청’ 카드의 ‘로그인 완료 · 에이전트 제어 허용’을 누르세요. 카드가 없으면 상단 설정 버튼 → Firefox · Termux:X11 → 로그인 및 에이전트 제어에서 같은 버튼을 누르세요."],
     browser_install_sent: ["Preparation opened in Termux. After it finishes, return here and refresh.", "Termux에서 준비를 시작했습니다. 완료 후 돌아와 새로고침하세요."],
     browser_default_hint: ["Firefox opens when needed and reuses the project’s profile across worktrees. Connection is enabled by default for new agent sessions. Turning it off blocks existing tool access.", "필요할 때 Firefox를 열고 프로젝트의 워크트리에서 같은 프로필을 사용합니다. 새 에이전트 세션은 기본으로 연결됩니다. 사용 안 함을 선택하면 기존 도구 접근도 차단됩니다."],
     browser_control_status: ["Agent control is allowed. Choose manual login before entering credentials.", "에이전트 제어가 허용되어 있습니다. 인증 정보를 입력하기 전에 직접 로그인을 선택하세요."],
@@ -206,7 +211,7 @@
     browser_title: ["Firefox · Termux:X11", "Firefox · Termux:X11"],
     browser_consent_title: ["Browser control request", "브라우저 제어 요청"],
     browser_consent_body: ["Finish signing in in Termux:X11, then allow control here. Connected agents in this project can then view and operate the open Firefox window.", "Termux:X11에서 로그인을 마친 뒤 여기서 제어를 허용하세요. 이 프로젝트에 연결된 에이전트가 열린 Firefox 창을 보고 조작할 수 있게 됩니다."],
-    browser_login_guide: ["After signing in in Termux:X11, return to Bibimer Work and tap “Login complete · allow agent control” on the “Browser control request” card. If no card is shown, open the bottom Settings tab → Firefox · Termux:X11 → Login and agent control, then tap the same button.", "Termux:X11에서 로그인한 뒤 Bibimer 작업 화면으로 돌아와 ‘브라우저 제어 요청’ 카드의 ‘로그인 완료 · 에이전트 제어 허용’을 누르세요. 카드가 없으면 하단 설정 → Firefox · Termux:X11 → 로그인 및 에이전트 제어에서 같은 버튼을 누르세요."],
+    browser_login_guide: ["After signing in in Termux:X11, return to Bibimer Work and tap “Login complete · allow agent control” on the “Browser control request” card. If no card is shown, open Settings using the top settings button → Firefox · Termux:X11 → Login and agent control, then tap the same button.", "Termux:X11에서 로그인한 뒤 Bibimer 작업 화면으로 돌아와 ‘브라우저 제어 요청’ 카드의 ‘로그인 완료 · 에이전트 제어 허용’을 누르세요. 카드가 없으면 상단 설정 버튼 → Firefox · Termux:X11 → 로그인 및 에이전트 제어에서 같은 버튼을 누르세요."],
     browser_intro: ["Open Firefox in Termux:X11 and sign in yourself. No VNC or ADB is needed.", "Termux:X11에서 Firefox를 열고 직접 로그인합니다. VNC나 ADB는 필요하지 않습니다."],
     browser_address: ["Website address (optional)", "웹사이트 주소 (선택)"],
     browser_start: ["Start browser", "브라우저 시작"],
@@ -861,7 +866,8 @@
     agent_setup: ["Prepare an agent", "에이전트 준비"],
     agent_body: ["Start with Terminal to check input and output. Install Codex, Claude Code or OpenCode in Termux, then complete account authentication, provider connections and model setup as needed.", "먼저 터미널로 실행과 입력을 확인하세요. Termux에서 Codex·Claude Code·OpenCode를 설치한 뒤 필요한 계정 인증·제공자 연결·모델 설정을 마치세요."],
     agent_termux_basis: ["Configurations checked on an Android 16 arm64 phone. Versions are references, not automatic updates. Installation from scratch on another phone still needs verification.", "Android 16·arm64 휴대폰에서 확인한 구성입니다. 표시한 버전은 확인 기준이며 자동 업데이트하지 않습니다. 다른 폰의 새 환경에서 처음부터 설치하는 흐름은 추가 검증이 필요합니다."],
-    agent_codex_termux: ["Use this community Termux package on Android 10+ arm64. If Node.js and npm already work, skip the first command. Check the version, then sign in.", "Android 10 이상·arm64에서 커뮤니티 Termux 전용 패키지를 사용합니다. Node.js와 npm이 이미 동작하면 첫 명령은 건너뛰세요. 버전을 확인한 뒤 로그인합니다."],
+    agent_codex_termux: ["Use Codex from the Termux package repository. The old community npm package is no longer maintained. Existing users can switch using the update controls above; saved Codex accounts and conversations are kept.", "Termux 패키지 저장소의 Codex를 사용합니다. 기존 커뮤니티 npm 패키지는 유지보수가 종료됐습니다. 기존 사용자는 위 업데이트 기능으로 전환할 수 있으며 Codex 계정과 저장된 대화는 유지됩니다."],
+    agent_codex_migration: ["Switch Codex {current} to Termux package {latest}. Accounts and saved chats are kept. The old npm files remain; do not uninstall the npm package afterward, as it can remove the new launcher.", "Codex {current} → Termux 패키지 {latest}로 전환합니다. 계정과 저장된 대화를 유지합니다. 기존 npm 파일은 남겨 두며, 전환 후 npm 패키지를 제거하면 새 실행기가 지워질 수 있으므로 제거하지 마세요."],
     agent_claude_termux: ["Claude 2.1.283 uses a separate Bibimer runtime. It requires arm64 Termux with glibc and ripgrep. Copy the repair command below and run it in Termux; it includes the Chat SDK. No setup file needs to be saved. If your CLI already works, prepare only the adapter.", "Claude 2.1.283은 Bibimer 전용 런타임을 사용합니다. arm64 Termux에 glibc와 ripgrep이 필요합니다. 아래 복구 명령을 복사해 Termux에서 실행하면 Chat SDK도 함께 준비됩니다. 설정 파일은 저장하지 않아도 됩니다. 정상 CLI가 이미 있으면 어댑터만 준비하세요."],
     agent_opencode_termux: ["OpenCode 1.17.13 was checked with the community OpenClaw Android setup: glibc, proot and a Bun binary wrapper. The ordinary npm package alone does not reproduce it. Follow the Termux details for prerequisites and installation, then check the version and configure your provider connection.", "OpenCode 1.17.13은 커뮤니티 OpenClaw Android의 glibc·proot·Bun 바이너리 래퍼 구성에서 확인했습니다. 일반 npm 패키지만 설치하면 같은 환경이 되지 않습니다. Termux 상세 안내에서 선행 조건과 설치 절차를 확인한 뒤 버전 확인과 제공자 연결을 설정하세요."],
     agent_claude_auth_hint: ["Choose a sign-in method here, then open the browser to authorize your account. If a code is shown, enter it in the masked field in Bibimer. A version check alone does not confirm sign-in.", "여기서 로그인 방식을 선택한 뒤 브라우저를 열어 계정을 인증하세요. 코드가 표시되면 Bibimer의 마스킹된 입력란에 입력하세요. 버전 확인만으로 로그인 완료를 판단하지 않습니다."],

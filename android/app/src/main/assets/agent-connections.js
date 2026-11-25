@@ -362,7 +362,7 @@ window.BibimerAgentConnections = class BibimerAgentConnections {
     this.$("fallback-hint").hidden=m?.type!=="terminal"&&usable&&["codex","opencode","claude","gemini"].includes(s.agent)&&this.choices?.some(m=>m.supported);
     this.$("updates").hidden=!s.agent||!this.context().updates||report?.installed===false;
     const plan=s.updatePlan,job=s.updateJob;
-    this.$("update-target").textContent=plan?.latest_version?this.t("agent_update_target",{current:plan.current_version,latest:plan.latest_version}):"";
+    this.$("update-target").textContent=plan?.latest_version?this.t(plan.migration?"agent_codex_migration":"agent_update_target",{current:plan.current_version,latest:plan.latest_version}):"";
     this.$("update-check").disabled=!usable||s.busy||s.updateBusy||pending||updating;
     this.$("update-start").textContent=this.t(this.context().maintenance&&plan?.blocked_reason==="sessions"?"agent_operation_update":"agent_update_start");
     this.$("update-start").disabled=!usable||s.busy||s.updateBusy||pending||updating||!plan?.available||(plan.blocked&&!(this.context().maintenance&&["sessions","account","update"].includes(plan.blocked_reason)));

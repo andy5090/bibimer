@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.de = {
+  "session_title_generate": "Namen mit dem Agenten vorschlagen",
+  "session_title_generate_hint": "Fasst das Gespräch mit dem Agenten und Modell dieser Sitzung zusammen. Dabei kann Anbieterkontingent verbraucht werden. Vor dem Speichern prüfen.",
+  "session_title_generating": "Name wird erstellt…",
+  "session_title_suggested": "Vorschlag fertig. Bei Bedarf bearbeiten und auf Umbenennen tippen.",
   "agent_management_accounts": "Konto und Anbieter",
   "agent_management_advanced": "Installation, Reparatur und Fehlerbehebung",
   "agent_management_install_hint": "Nutze diese Schritte für Installation oder Reparatur. Ändere bestehende Versionen über die Updatefunktion oben.",
@@ -180,7 +184,7 @@ window.BibimerTranslations.de = {
 
   "browser_consent_title": "Anfrage zur Browsersteuerung",
   "browser_consent_body": "Melde dich in Termux:X11 an und erlaube dann hier die Steuerung. Mit diesem Projekt verbundene Agenten können anschließend das offene Firefox-Fenster sehen und bedienen.",
-  "browser_login_guide": "Kehre nach der Anmeldung in Termux:X11 zum Arbeitsbildschirm von Bibimer zurück und tippe auf „Angemeldet · Agent-Steuerung erlauben“ in der Karte „Anfrage zur Browsersteuerung“. Wird die Karte nicht angezeigt, öffne unten Einstellungen → Firefox · Termux:X11 → Anmeldung und Agentensteuerung und tippe auf dieselbe Schaltfläche.",
+  "browser_login_guide": "Kehre nach der Anmeldung in Termux:X11 zum Arbeitsbildschirm von Bibimer zurück und tippe auf „Angemeldet · Agent-Steuerung erlauben“ in der Karte „Anfrage zur Browsersteuerung“. Wird die Karte nicht angezeigt, öffne über die obere Einstellungsschaltfläche Einstellungen → Firefox · Termux:X11 → Anmeldung und Agentensteuerung und tippe auf dieselbe Schaltfläche.",
 
   "response_delivery_save_failed": "Die Sendeeinstellung während einer Antwort konnte nicht gespeichert werden.",
   "response_delivery_hint": "Wähle die Standardaktion der Sendetaste und des Sendekürzels während einer Antwort. Ist Steer nicht verfügbar, wird die Nachricht eingereiht. Native Slash-Befehle verwenden die Warteschlange.",
@@ -237,7 +241,7 @@ window.BibimerTranslations.de = {
   "error_maintenance_recovery": "Sitzungen konnten nicht geöffnet werden. Prüfe die Wiederherstellung in den Einstellungen.",
   "error_browser_permission": "Der Berechtigungsmodus dieser Sitzung erlaubt keine Browser-Eingaben.",
   "error_browser_control": "Browser konnte nicht gesteuert werden. Termux:X11 öffnen und erneut versuchen.",
-  "error_browser_manual": "Kehre nach der Anmeldung in Termux:X11 zum Arbeitsbildschirm von Bibimer zurück und tippe auf „Angemeldet · Agent-Steuerung erlauben“ in der Karte „Anfrage zur Browsersteuerung“. Wird die Karte nicht angezeigt, öffne unten Einstellungen → Firefox · Termux:X11 → Anmeldung und Agentensteuerung und tippe auf dieselbe Schaltfläche.",
+  "error_browser_manual": "Kehre nach der Anmeldung in Termux:X11 zum Arbeitsbildschirm von Bibimer zurück und tippe auf „Angemeldet · Agent-Steuerung erlauben“ in der Karte „Anfrage zur Browsersteuerung“. Wird die Karte nicht angezeigt, öffne über die obere Einstellungsschaltfläche Einstellungen → Firefox · Termux:X11 → Anmeldung und Agentensteuerung und tippe auf dieselbe Schaltfläche.",
   "browser_install_sent": "Vorbereitung in Termux geöffnet. Danach zurückkehren und aktualisieren.",
   "browser_default_hint": "Firefox öffnet sich bei Bedarf und nutzt das Projektprofil in allen Worktrees. Neue Agent-Sitzungen werden standardmäßig verbunden. Ausschalten sperrt auch bestehende Tool-Zugriffe.",
   "browser_control_status": "Agent-Steuerung erlaubt. Vor der Eingabe von Zugangsdaten die manuelle Anmeldung wählen.",
@@ -896,7 +900,8 @@ window.BibimerTranslations.de = {
   "agent_setup": "Agent einrichten",
   "agent_body": "Prüfe zuerst im Terminal die Ein- und Ausgabe. Installiere Codex, Claude Code oder OpenCode in Termux und richte bei Bedarf Kontoauthentifizierung, Anbieterverbindungen und Modelle ein.",
   "agent_termux_basis": "Konfigurationen auf einem Android-16-Smartphone mit arm64 geprüft. Referenzversionen ohne automatische Updates. Eine Neuinstallation auf einem anderen Smartphone muss noch geprüft werden.",
-  "agent_codex_termux": "Verwenden Sie dieses Community-Paket für Termux auf Android 10+ arm64. Wenn Node.js und npm bereits funktionieren, überspringen Sie den ersten Befehl. Prüfen Sie die Version und melden Sie sich an.",
+  "agent_codex_termux": "Verwenden Sie Codex aus dem Termux-Paketrepository. Das bisherige Community-npm-Paket wird nicht mehr gepflegt. Über die Aktualisierung oben können Sie wechseln; Konten und gespeicherte Gespräche bleiben erhalten.",
+  "agent_codex_migration": "Codex {current} zum Termux-Paket {latest} wechseln. Konten und Chats bleiben erhalten. Die alten npm-Dateien bleiben bestehen. Deinstallieren Sie das npm-Paket danach nicht, da dies den neuen Starter entfernen kann.",
   "agent_claude_termux": "Claude 2.1.283 nutzt Bibimers separate Laufzeit. Sie benötigt arm64-Termux mit glibc und ripgrep. Kopieren Sie unten den Reparaturbefehl und führen Sie ihn in Termux aus; das Chat-SDK ist enthalten. Keine Setup-Datei speichern. Wenn die CLI bereits funktioniert, richten Sie nur den Adapter ein.",
   "agent_opencode_termux": "OpenCode 1.17.13 wurde mit der Community-Konfiguration von OpenClaw Android geprüft: glibc, proot und ein Wrapper für die Bun-Binärdatei. Das übliche npm-Paket allein stellt diese Umgebung nicht her. Folgen Sie den Voraussetzungen und Installationsschritten in den Termux-Details, prüfen Sie die Version und richten Sie die Anbieterverbindung ein.",
   "agent_claude_auth_hint": "Wähle hier eine Anmeldemethode und öffne den Browser, um dein Konto zu autorisieren. Gib einen angezeigten Code im verdeckten Feld in Bibimer ein. Die Versionsprüfung allein bestätigt keine Anmeldung.",

@@ -5,6 +5,9 @@ import json
 import os
 from pathlib import Path
 import signal
+import socket
+import tempfile
+import unittest
 import subprocess
 import sys
 import time
@@ -254,7 +257,7 @@ class BrowserTests(BridgeTestCase):
         result=self.tool(agent,'open')
         self.assertTrue(result['manual_login'])
         self.assertIn('Work screen',result['instructions'])
-        self.assertIn('Settings tab',result['instructions'])
+        self.assertIn('top settings button',result['instructions'])
         self.assertIn('Login and agent control',result['instructions'])
         browser=next(row for row in self.bridge.sessions.values() if isinstance(row,module.BrowserSession))
         self.assertIn('browser_control_consent',self.bridge.health()['features'])
@@ -326,3 +329,38 @@ class BrowserTests(BridgeTestCase):
         self.assertLessEqual(len(str(session.browser_authority).encode()),128)
         self.assertEqual(0o700,session.browser_authority.parent.stat().st_mode & 0o777)
         self.assertIn(b'MIT-MAGIC-COOKIE-1',session.browser_authority.read_bytes())
+
+
+class BrowserDisplayTests(unittest.TestCase):
+    def test_dead_owner_refused_socket_is_reclaimed(self):
+        with tempfile.TemporaryDirectory() as root:
+            tmp = Path(root)
+            (tmp/'.X11-unix').mkdir()
+            endpoint = tmp/'.X11-unix/X70'
+            with socket.socket(socket.AF_UNIX) as connection:
+                connection.bind(str(endpoint))
+            lock = tmp/'.X70-lock'
+            lock.write_text('123456')
+            with patch.object(module.os, 'kill', side_effect=ProcessLookupError):
+                self.assertTrue(module.browser_display_available(tmp, 70))
+            self.assertFalse(endpoint.exists())
+            self.assertFalse(lock.exists())
+
+    def test_live_unknown_and_listening_owners_are_preserved(self):
+        with tempfile.TemporaryDirectory() as root:
+            tmp = Path(root)
+            (tmp/'.X11-unix').mkdir()
+            endpoint = tmp/'.X11-unix/X70'
+            lock = tmp/'.X70-lock'
+            lock.write_text(str(os.getpid()))
+            self.assertFalse(module.browser_display_available(tmp, 70))
+            lock.write_text('invalid')
+            self.assertFalse(module.browser_display_available(tmp, 70))
+            lock.write_text('123456')
+            with socket.socket(socket.AF_UNIX) as connection:
+                connection.bind(str(endpoint))
+                connection.listen()
+                with patch.object(module.os, 'kill', side_effect=ProcessLookupError):
+                    self.assertFalse(module.browser_display_available(tmp, 70))
+            self.assertTrue(endpoint.exists())
+            self.assertTrue(lock.exists())

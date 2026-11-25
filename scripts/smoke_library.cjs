@@ -79,11 +79,11 @@ async function main(){
   await page.locator('[data-session='+JSON.stringify(second)+'] .sidebar-session-open').click();
   await page.waitForFunction(()=>document.querySelector('#input').value==='Second draft');
   await openPage(page,'settings');
-  assert.equal(await page.locator('#sidebar').isVisible(),true);
+  assert.equal(await page.locator('#sidebar').isVisible(),false);
   await page.locator('#language-trigger').click();
   assert.equal(await page.evaluate(()=>window.BibimerBack()),true);
   assert.equal(await page.locator('#select-dialog').isVisible(),false);
-  assert.equal(await page.locator('#sidebar').isVisible(),true);
+  assert.equal(await page.locator('#sidebar').isVisible(),false);
   await openPage(page,'work');
   await page.locator('#sidebar-close').click();
   assert.equal(await page.locator('#sidebar').isVisible(),false);
@@ -99,6 +99,22 @@ async function main(){
   assert.equal(agentMutations.length,beforeResponsive);
   await page.setViewportSize({width:393,height:780});
   console.log('PASS: docked session switching preserves drafts and pending approval, Back closes sheets only, portrait drawer returns, no agent mutations');
+  await call('POST','/v1/sessions/'+second+'/message',{text:'Session naming test',request_id:require('node:crypto').randomUUID()});
+  for(let i=0;i<100;i++){
+    const event=(await call('GET','/v1/sessions/'+second+'/events?cursor=0&wait=0')).data;
+    if(event.session.turn_state==='ready' && event.items.some(row=>row.kind==='assistant'&&row.status==='completed'))break;
+    await delay(30);
+  }
+  await actions();await page.locator('#session-title-generate').click();
+  await page.waitForFunction(()=>document.querySelector('#session-name').value==='Suggested workspace title');
+  assert.ok(!(await call('GET','/v1/health')).data.projects.flatMap(row=>row.sessions).find(row=>row.id===second).title,'generation must not automatically rename');
+  await page.setViewportSize({width:320,height:460});
+  const titleButton=await page.locator('#session-title-generate').boundingBox();
+  assert.ok(titleButton.x>=0 && titleButton.x+titleButton.width<=320);
+  fs.mkdirSync(path.join(root,'dist/screenshots'),{recursive:true});
+  await page.screenshot({path:path.join(root,'dist/screenshots/title-suggestion-320.png')});
+  await page.locator('#session-actions-close').click();await page.setViewportSize({width:393,height:780});
+  console.log('PASS: real isolated bridge and naming fixture propose a title without renaming; 320px dialog fits');
   await actions();await page.locator('#session-name').fill('<Design & build>');await page.locator('#session-rename').click();await page.locator('#session-dialog').waitFor({state:'hidden'});
   assert.equal(await page.locator('#session-title').innerText(),'<Design & build>');assert.equal(await page.locator('#session-title design').count(),0);
   await sidebar();assert.equal(await page.locator('[data-session='+JSON.stringify(second)+'] strong').innerText(),'<Design & build>');await closeSidebar();

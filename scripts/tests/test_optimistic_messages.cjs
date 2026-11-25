@@ -79,3 +79,25 @@ editedPreview.editQueued("q-edit","revised text");
 assert.equal(editedPreview.list("edit-session")[0].text,"revised text");
 assert.equal(editedPreview.reconcile("edit-session",[native("native-edited","revised text",7)]).length,1);
 assert.equal(editedPreview.list("edit-session").length,0,"the revised queued preview matches the accepted native message once");
+
+// Deferred queue entries have no historical anchor. A later Steer/native echo
+// belongs after the assistant/tool events that preceded actual submission.
+const deferredRoot=make(), deferredView=new renderer.window.BibimerConversation(deferredRoot,make(),key=>key,()=>{}), deferredPending=new Pending();
+deferredPending.add("deferred","queued-first","later steer",10,true);
+for (const state of ["sending","queued","accepted","uncertain","failed"]) {
+ deferredPending.settle("queued-first",state);
+ deferredView.setOptimistic(deferredPending.list("deferred"));
+ assert.equal(deferredRoot.children.length,0,"Queued/Steer inputs never show a premature bubble: "+state);
+ assert.equal(deferredPending.visible("deferred").length,0);
+}
+deferredPending.settle("queued-first","queued");
+deferredView.update({items:[{id:"intervening-answer",kind:"assistant",text:"work before steer",revision:11}]});
+deferredView.update({items:[native("accepted-steer","later steer",12)]});
+deferredView.reconcileOptimistic(deferredPending.reconcile("deferred",deferredView.items.values()));
+deferredView.setOptimistic(deferredPending.list("deferred"));
+assert.equal(deferredRoot.children.length,2);
+assert.equal(deferredRoot.children[0],deferredView.cards.get("intervening-answer"));
+assert.equal(deferredRoot.children[1],deferredView.cards.get("accepted-steer"),"Steer stays at submission time, never its old queue position");
+const race=new Pending();race.add("race","id","text",0);race.defer("id");race.settle("id","accepted");
+assert.equal(race.visible("race").length,0,"Server queue observation permanently removes an optimistic anchor, even after edit/retry");
+console.log("PASS deferred queue bubbles: no enqueue/steering/failure preview; accepted native message stays at submission position");

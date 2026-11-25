@@ -269,6 +269,24 @@ class Adapter:
             self.notify('serverRequest/resolved', {'requestId': identity})
 
     def call(self, method, params):
+        if method == 'bibimer/title':
+            if self.thread or not isinstance(params.get('prompt'), str) or len(params['prompt']) > 16000:
+                raise RuntimeError('error_chat_request')
+            session = self.http('POST', '/session', {'title':'Bibimer title suggestion',
+                'permission':[{'permission':'*','pattern':'*','action':'deny'}]})['id']
+            try:
+                options = params.get('options') or {}
+                body = {'parts':[{'type':'text','text':params['prompt']}], 'tools':{'*':False}}
+                if options.get('model'):
+                    provider, model = options['model'].split('/', 1)
+                    body['model'] = {'providerID':provider,'modelID':model}
+                if options.get('effort'): body['variant'] = options['effort']
+                result = self.http('POST', '/session/'+session+'/message', body, timeout=80)
+                if result.get('info',{}).get('error') or any(part.get('type')=='tool' for part in result.get('parts',[])):
+                    raise RuntimeError('error_agent_transport')
+                return {'title':'\n'.join(part.get('text','') for part in result.get('parts',[]) if part.get('type')=='text')}
+            finally:
+                self.http('DELETE', '/session/'+session)
         if method == 'initialize':
             return {'userAgent': 'bibimer-opencode'}
         if method == 'commands/list':

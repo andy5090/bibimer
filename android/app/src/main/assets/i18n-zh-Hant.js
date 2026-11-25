@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hant"] = {
+  "session_title_generate": "使用代理程式產生名稱",
+  "session_title_generate_hint": "使用此工作階段的代理程式與模型概括對話，可能消耗服務供應商額度。請確認建議後再儲存。",
+  "session_title_generating": "正在產生名稱…",
+  "session_title_suggested": "名稱建議已產生。可修改後點選重新命名。",
   "agent_management_accounts": "帳戶與供應商",
   "agent_management_advanced": "安裝、修復與疑難排解",
   "agent_management_install_hint": "需要安裝或修復時使用這些步驟。變更現有版本請使用上方的更新功能。",
@@ -180,7 +184,7 @@ window.BibimerTranslations["zh-Hant"] = {
 
   "browser_consent_title": "瀏覽器控制請求",
   "browser_consent_body": "在 Termux:X11 完成登入後，在此允許控制。連接至此專案的代理程式便可查看並操作已開啟的 Firefox 視窗。",
-  "browser_login_guide": "在 Termux:X11 登入後，返回 Bibimer 工作畫面，在「瀏覽器控制請求」卡片點選「登入完成 · 允許代理程式控制」。若未顯示卡片，請開啟底部的設定 → Firefox · Termux:X11 → 登入與代理控制，再點選相同按鈕。",
+  "browser_login_guide": "在 Termux:X11 登入後，返回 Bibimer 工作畫面，在「瀏覽器控制請求」卡片點選「登入完成 · 允許代理程式控制」。若未顯示卡片，請開啟頂部的設定按鈕 → Firefox · Termux:X11 → 登入與代理控制，再點選相同按鈕。",
 
   "response_delivery_save_failed": "無法儲存回覆期間的傳送設定。",
   "response_delivery_hint": "選擇回覆期間傳送按鈕與傳送快捷鍵的預設動作。無法使用方向調整時加入佇列。原生斜線指令使用佇列。",
@@ -237,7 +241,7 @@ window.BibimerTranslations["zh-Hant"] = {
   "error_maintenance_recovery": "無法重新開啟工作階段。請在設定中查看復原狀態。",
   "error_browser_permission": "此工作階段的權限模式不允許瀏覽器輸入。",
   "error_browser_control": "無法控制瀏覽器。請開啟 Termux:X11 後重試。",
-  "error_browser_manual": "在 Termux:X11 登入後，返回 Bibimer 工作畫面，在「瀏覽器控制請求」卡片點選「登入完成 · 允許代理程式控制」。若未顯示卡片，請開啟底部的設定 → Firefox · Termux:X11 → 登入與代理控制，再點選相同按鈕。",
+  "error_browser_manual": "在 Termux:X11 登入後，返回 Bibimer 工作畫面，在「瀏覽器控制請求」卡片點選「登入完成 · 允許代理程式控制」。若未顯示卡片，請開啟頂部的設定按鈕 → Firefox · Termux:X11 → 登入與代理控制，再點選相同按鈕。",
   "browser_install_sent": "已在 Termux 中開始準備。完成後返回並重新整理。",
   "browser_default_hint": "需要時開啟 Firefox，並在專案的各個工作樹共用同一設定檔。新代理程式工作階段預設連線。關閉後也會封鎖現有工具存取。",
   "browser_control_status": "已允許代理程式控制。輸入憑證前請選擇手動登入。",
@@ -896,7 +900,8 @@ window.BibimerTranslations["zh-Hant"] = {
   agent_setup: "設定 AI 代理",
   agent_body: "先使用終端機確認輸入和輸出。在 Termux 中安裝 Codex、Claude Code 或 OpenCode，再依需要完成帳號驗證、提供者連線和模型設定。",
   "agent_termux_basis": "設定已在 Android 16 arm64 手機上檢查。所列版本僅供參考，不會自動更新。在其他手機上從零安裝的流程仍需驗證。",
-  "agent_codex_termux": "請在 Android 10 以上的 arm64 裝置上使用此社群 Termux 專用套件。如果 Node.js 和 npm 已可用，請跳過第一個指令。確認版本後登入。",
+  "agent_codex_termux": "使用 Termux 套件儲存庫的 Codex。舊社群 npm 套件已停止維護。現有使用者可透過上方更新功能遷移，Codex 帳號與儲存的對話會保留。",
+  "agent_codex_migration": "將 Codex {current} 遷移至 Termux 套件 {latest}。保留帳號與對話。舊 npm 檔案會保留；遷移後請勿解除安裝該 npm 套件，否則可能刪除新的啟動程式。",
   "agent_claude_termux": "Claude 2.1.283 使用 Bibimer 獨立執行環境，需要 arm64 Termux、glibc 與 ripgrep。複製下方修復指令並在 Termux 中執行，其中已包含 Chat SDK。不必儲存設定檔。如果 CLI 已可用，只需安裝介接器。",
   "agent_opencode_termux": "OpenCode 1.17.13 已在社群 OpenClaw Android 的 glibc、proot 與 Bun 二進位包裝程式設定下檢查。僅安裝一般 npm 套件無法得到相同環境。請查看 Termux 詳情中的先決條件與安裝步驟，再檢查版本並設定提供者連線。",
   "agent_claude_auth_hint": "在此選擇登入方式，然後開啟瀏覽器授權帳戶。如顯示驗證碼，請在 Bibimer 的遮罩輸入欄位中輸入。僅檢查版本並不代表已登入。",

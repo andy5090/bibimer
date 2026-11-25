@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations["zh-Hans"] = {
+  "session_title_generate": "使用智能体生成名称",
+  "session_title_generate_hint": "使用此会话的智能体和模型概括对话，可能消耗服务商额度。请确认建议后再保存。",
+  "session_title_generating": "正在生成名称…",
+  "session_title_suggested": "名称建议已生成。可修改后点击重命名。",
   "agent_management_accounts": "账户与提供商",
   "agent_management_advanced": "安装、修复和故障排查",
   "agent_management_install_hint": "需要安装或修复时使用这些步骤。更改现有版本请使用上方的更新功能。",
@@ -180,7 +184,7 @@ window.BibimerTranslations["zh-Hans"] = {
 
   "browser_consent_title": "浏览器控制请求",
   "browser_consent_body": "在 Termux:X11 中完成登录后，在此允许控制。连接到此项目的代理随后可查看并操作已打开的 Firefox 窗口。",
-  "browser_login_guide": "在 Termux:X11 中登录后，返回 Bibimer 工作界面，在“浏览器控制请求”卡片上点击“登录完成 · 允许智能体控制”。如未显示卡片，请打开底部的设置 → Firefox · Termux:X11 → 登录与智能体控制，再点击同一按钮。",
+  "browser_login_guide": "在 Termux:X11 中登录后，返回 Bibimer 工作界面，在“浏览器控制请求”卡片上点击“登录完成 · 允许智能体控制”。如未显示卡片，请打开顶部的设置按钮 → Firefox · Termux:X11 → 登录与智能体控制，再点击同一按钮。",
 
   "response_delivery_save_failed": "无法保存回复期间的发送设置。",
   "response_delivery_hint": "选择回复期间发送按钮和发送快捷键的默认操作。无法使用方向调整时加入队列。原生斜杠命令使用队列。",
@@ -237,7 +241,7 @@ window.BibimerTranslations["zh-Hans"] = {
   "error_maintenance_recovery": "无法重新打开会话。请在设置中查看恢复状态。",
   "error_browser_permission": "此会话的权限模式不允许浏览器输入。",
   "error_browser_control": "无法控制浏览器。请打开 Termux:X11 后重试。",
-  "error_browser_manual": "在 Termux:X11 中登录后，返回 Bibimer 工作界面，在“浏览器控制请求”卡片上点击“登录完成 · 允许智能体控制”。如未显示卡片，请打开底部的设置 → Firefox · Termux:X11 → 登录与智能体控制，再点击同一按钮。",
+  "error_browser_manual": "在 Termux:X11 中登录后，返回 Bibimer 工作界面，在“浏览器控制请求”卡片上点击“登录完成 · 允许智能体控制”。如未显示卡片，请打开顶部的设置按钮 → Firefox · Termux:X11 → 登录与智能体控制，再点击同一按钮。",
   "browser_install_sent": "已在 Termux 中开始准备。完成后返回并刷新。",
   "browser_default_hint": "需要时打开 Firefox，并在项目的各个工作树中复用同一配置。新智能体会话默认连接。关闭后也会阻止现有工具访问。",
   "browser_control_status": "已允许智能体控制。输入凭据前请选择手动登录。",
@@ -896,7 +900,8 @@ window.BibimerTranslations["zh-Hans"] = {
   agent_setup: "配置智能体",
   agent_body: "先使用终端检查输入和输出。在 Termux 中安装 Codex、Claude Code 或 OpenCode，然后按需完成账号认证、提供商连接和模型配置。",
   "agent_termux_basis": "配置已在 Android 16 arm64 手机上检查。所列版本仅供参考，不会自动更新。在其他手机上从零安装的流程仍需验证。",
-  "agent_codex_termux": "请在 Android 10 及以上的 arm64 设备上使用此社区 Termux 专用包。如果 Node.js 和 npm 已可用，请跳过第一条命令。确认版本后登录。",
+  "agent_codex_termux": "使用 Termux 软件包仓库中的 Codex。旧社区 npm 包已停止维护。现有用户可通过上方的更新功能迁移，Codex 账户和已保存的对话会保留。",
+  "agent_codex_migration": "将 Codex {current} 迁移到 Termux 软件包 {latest}。保留账户和对话。旧 npm 文件会保留；迁移后请勿卸载该 npm 包，否则可能删除新的启动程序。",
   "agent_claude_termux": "Claude 2.1.283 使用 Bibimer 独立运行环境，需要 arm64 Termux、glibc 和 ripgrep。复制下方修复命令并在 Termux 中运行，其中已包含 Chat SDK。无需保存设置文件。如果 CLI 已可用，只需安装适配器。",
   "agent_opencode_termux": "OpenCode 1.17.13 已在社区 OpenClaw Android 的 glibc、proot 和 Bun 二进制包装程序配置下检查。仅安装普通 npm 包无法得到相同环境。请查看 Termux 详情中的前提条件和安装步骤，再检查版本并配置提供商连接。",
   "agent_claude_auth_hint": "在这里选择登录方式，然后打开浏览器授权账户。如显示验证码，请在 Bibimer 的掩码输入框中输入。仅检查版本并不代表已登录。",

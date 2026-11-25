@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.ja = {
+  "session_title_generate": "エージェントで名前を提案",
+  "session_title_generate_hint": "このセッションのエージェントとモデルで会話を要約します。サービスの利用枠を消費する場合があります。提案を確認して保存してください。",
+  "session_title_generating": "名前を生成中…",
+  "session_title_suggested": "名前を提案しました。必要に応じて編集し、名前の変更を押してください。",
   "agent_management_accounts": "アカウントとプロバイダー",
   "agent_management_advanced": "インストール・修復と問題解決",
   "agent_management_install_hint": "インストールや修復が必要な場合の手順です。既存のバージョン変更は上の更新機能を使ってください。",
@@ -180,7 +184,7 @@ window.BibimerTranslations.ja = {
 
   "browser_consent_title": "ブラウザーの操作許可",
   "browser_consent_body": "Termux:X11でログインを済ませてから、ここで操作を許可してください。このプロジェクトに接続したエージェントが、開いているFirefoxウィンドウを表示・操作できるようになります。",
-  "browser_login_guide": "Termux:X11でログインした後、Bibimerの作業画面に戻り、「ブラウザーの操作許可」カードの「ログイン完了 · エージェント操作を許可」を押してください。カードがない場合は、下部の設定 → Firefox · Termux:X11 → ログインとエージェント制御から同じボタンを押してください。",
+  "browser_login_guide": "Termux:X11でログインした後、Bibimerの作業画面に戻り、「ブラウザーの操作許可」カードの「ログイン完了 · エージェント操作を許可」を押してください。カードがない場合は、上部の設定ボタン → Firefox · Termux:X11 → ログインとエージェント制御から同じボタンを押してください。",
 
   "response_delivery_save_failed": "応答中の送信設定を保存できませんでした。",
   "response_delivery_hint": "応答中の送信ボタンと送信ショートカットの既定の動作を選びます。方向修正が利用できない場合はキューに追加します。ネイティブのスラッシュコマンドはキューで処理します。",
@@ -237,7 +241,7 @@ window.BibimerTranslations.ja = {
   "error_maintenance_recovery": "セッションを開き直せませんでした。設定で復旧状態を確認してください。",
   "error_browser_permission": "このセッションの権限ではブラウザー入力を許可していません。",
   "error_browser_control": "ブラウザーを操作できませんでした。Termux:X11を開いて再試行してください。",
-  "error_browser_manual": "Termux:X11でログインした後、Bibimerの作業画面に戻り、「ブラウザーの操作許可」カードの「ログイン完了 · エージェント操作を許可」を押してください。カードがない場合は、下部の設定 → Firefox · Termux:X11 → ログインとエージェント制御から同じボタンを押してください。",
+  "error_browser_manual": "Termux:X11でログインした後、Bibimerの作業画面に戻り、「ブラウザーの操作許可」カードの「ログイン完了 · エージェント操作を許可」を押してください。カードがない場合は、上部の設定ボタン → Firefox · Termux:X11 → ログインとエージェント制御から同じボタンを押してください。",
   "browser_install_sent": "Termuxで準備を開始しました。完了後に戻って更新してください。",
   "browser_default_hint": "必要なときにFirefoxを開き、プロジェクトのワークツリー間でプロファイルを共有します。新しいエージェントセッションは既定で接続します。オフにすると既存のツールアクセスも停止します。",
   "browser_control_status": "エージェント操作を許可しています。認証情報の入力前に手動ログインを選んでください。",
@@ -896,7 +900,8 @@ window.BibimerTranslations.ja = {
   agent_setup: "エージェントを準備",
   agent_body: "まずターミナルで入出力を確認してください。Termux に Codex、Claude Code、OpenCode のいずれかをインストールし、必要なアカウント認証・プロバイダー接続・モデル設定を完了します。",
   "agent_termux_basis": "Android 16・arm64の端末で確認した構成です。表示バージョンは確認の基準で、自動更新は行いません。別端末への新規インストールは追加検証が必要です。",
-  "agent_codex_termux": "Android 10以降・arm64で、このコミュニティ提供のTermux専用パッケージを使用します。Node.jsとnpmが動作していれば最初のコマンドは省略し、バージョン確認後にログインしてください。",
+  "agent_codex_termux": "TermuxパッケージリポジトリのCodexを使用します。従来のコミュニティnpmパッケージは保守を終了しました。上の更新機能で移行でき、アカウントと保存済みの会話は維持されます。",
+  "agent_codex_migration": "Codex {current}からTermuxパッケージ{latest}へ移行します。アカウントと会話は維持されます。古いnpmファイルは残ります。移行後にnpmパッケージを削除すると新しいランチャーが消える恐れがあるため、削除しないでください。",
   "agent_claude_termux": "Claude 2.1.283はBibimer専用ランタイムを使用します。arm64 Termuxにglibcとripgrepが必要です。以下の修復コマンドをコピーしてTermuxで実行すると、Chat SDKも準備されます。設定ファイルの保存は不要です。CLIが動作している場合はアダプターのみ準備してください。",
   "agent_opencode_termux": "OpenCode 1.17.13はコミュニティのOpenClaw Androidによるglibc・proot・Bunバイナリのラッパー構成で確認しました。通常のnpmパッケージだけでは同じ環境になりません。Termuxの詳細案内で前提条件と手順を確認し、バージョン確認とプロバイダー接続を設定してください。",
   "agent_claude_auth_hint": "ここでログイン方法を選択し、ブラウザーを開いてアカウントを認証してください。コードが表示された場合は Bibimer のマスク付き入力欄に入力してください。バージョン確認だけではログイン成功と判断しません。",

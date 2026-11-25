@@ -1,6 +1,10 @@
 "use strict";
 window.BibimerTranslations = window.BibimerTranslations || {};
 window.BibimerTranslations.es = {
+  "session_title_generate": "Sugerir nombre con el agente",
+  "session_title_generate_hint": "Usa el agente y el modelo de esta sesión para resumir la conversación. Puede consumir uso del proveedor. Revisa antes de guardar.",
+  "session_title_generating": "Generando nombre…",
+  "session_title_suggested": "Sugerencia lista. Edítala si hace falta y pulsa Renombrar.",
   "agent_management_accounts": "Cuenta y proveedor",
   "agent_management_advanced": "Instalación, reparación y solución de problemas",
   "agent_management_install_hint": "Usa estos pasos para instalar o reparar. Para cambiar una versión existente, usa los controles de actualización de arriba.",
@@ -180,7 +184,7 @@ window.BibimerTranslations.es = {
 
   "browser_consent_title": "Solicitud de control del navegador",
   "browser_consent_body": "Termina de iniciar sesión en Termux:X11 y permite el control aquí. Los agentes conectados a este proyecto podrán ver y manejar la ventana abierta de Firefox.",
-  "browser_login_guide": "Tras iniciar sesión en Termux:X11, vuelve a la pantalla de trabajo de Bibimer y pulsa “Sesión iniciada · permitir control del agente” en la tarjeta “Solicitud de control del navegador”. Si no aparece, abre la pestaña inferior Ajustes → Firefox · Termux:X11 → Inicio de sesión y control del agente y pulsa el mismo botón.",
+  "browser_login_guide": "Tras iniciar sesión en Termux:X11, vuelve a la pantalla de trabajo de Bibimer y pulsa “Sesión iniciada · permitir control del agente” en la tarjeta “Solicitud de control del navegador”. Si no aparece, abre Ajustes desde el botón de ajustes superior → Firefox · Termux:X11 → Inicio de sesión y control del agente y pulsa el mismo botón.",
 
   "response_delivery_save_failed": "No se pudo guardar la acción de envío durante la respuesta.",
   "response_delivery_hint": "Elige la acción predeterminada del botón y del atajo de envío durante una respuesta. Si Steer no está disponible, se usa la cola. Los comandos nativos con barra usan la cola.",
@@ -237,7 +241,7 @@ window.BibimerTranslations.es = {
   "error_maintenance_recovery": "No se pudieron reabrir las sesiones. Revisa la recuperación en Ajustes.",
   "error_browser_permission": "Los permisos de esta sesión no permiten entradas en el navegador.",
   "error_browser_control": "No se pudo controlar el navegador. Abre Termux:X11 y vuelve a intentarlo.",
-  "error_browser_manual": "Tras iniciar sesión en Termux:X11, vuelve a la pantalla de trabajo de Bibimer y pulsa “Sesión iniciada · permitir control del agente” en la tarjeta “Solicitud de control del navegador”. Si no aparece, abre la pestaña inferior Ajustes → Firefox · Termux:X11 → Inicio de sesión y control del agente y pulsa el mismo botón.",
+  "error_browser_manual": "Tras iniciar sesión en Termux:X11, vuelve a la pantalla de trabajo de Bibimer y pulsa “Sesión iniciada · permitir control del agente” en la tarjeta “Solicitud de control del navegador”. Si no aparece, abre Ajustes desde el botón de ajustes superior → Firefox · Termux:X11 → Inicio de sesión y control del agente y pulsa el mismo botón.",
   "browser_install_sent": "Preparación abierta en Termux. Cuando termine, vuelve y actualiza.",
   "browser_default_hint": "Firefox se abre cuando hace falta y reutiliza el perfil del proyecto entre worktrees. Las sesiones nuevas se conectan por defecto. Desactivarlo también bloquea el acceso existente.",
   "browser_control_status": "Control del agente permitido. Elige el inicio manual antes de introducir credenciales.",
@@ -896,7 +900,8 @@ window.BibimerTranslations.es = {
   agent_setup: "Preparar un agente",
   agent_body: "Empieza con Terminal para comprobar la entrada y la salida. Instala Codex, Claude Code u OpenCode en Termux y completa la autenticación de cuenta, la conexión con proveedores y la configuración del modelo según corresponda.",
   "agent_termux_basis": "Configuraciones comprobadas en un teléfono Android 16 arm64. Versiones de referencia, sin actualización automática. La instalación desde cero en otro teléfono requiere más comprobaciones.",
-  "agent_codex_termux": "Usa este paquete comunitario para Termux en Android 10+ arm64. Si Node.js y npm ya funcionan, omite el primer comando. Comprueba la versión e inicia sesión.",
+  "agent_codex_termux": "Usa Codex del repositorio de paquetes de Termux. El antiguo paquete npm comunitario ya no se mantiene. Puedes cambiar con los controles de actualización; se conservan las cuentas y conversaciones guardadas.",
+  "agent_codex_migration": "Cambiar Codex {current} al paquete Termux {latest}. Se conservan cuentas y chats. Los archivos npm antiguos permanecen; no desinstales ese paquete después, pues podría eliminar el nuevo ejecutable.",
   "agent_claude_termux": "Claude 2.1.283 usa un entorno separado de Bibimer. Requiere Termux arm64 con glibc y ripgrep. Copia el comando de reparación abajo y ejecútalo en Termux; incluye el SDK de Chat. No necesitas guardar un archivo. Si la CLI ya funciona, prepara solo el adaptador.",
   "agent_opencode_termux": "OpenCode 1.17.13 se comprobó con OpenClaw Android comunitario: glibc, proot y un lanzador para el binario Bun. Solo el paquete npm habitual no reproduce este entorno. Consulta los requisitos y la instalación en los detalles de Termux, comprueba la versión y configura la conexión con tu proveedor.",
   "agent_claude_auth_hint": "Elige aquí cómo iniciar sesión y abre el navegador para autorizar tu cuenta. Si aparece un código, introdúcelo en el campo oculto de Bibimer. Comprobar la versión no confirma el acceso.",
