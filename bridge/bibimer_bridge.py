@@ -42,7 +42,7 @@ _recovery_spec = importlib.util.spec_from_file_location("bibimer_maintenance_rec
 maintenance_recovery = importlib.util.module_from_spec(_recovery_spec)
 _recovery_spec.loader.exec_module(maintenance_recovery)
 
-VERSION = "0.25.5"
+VERSION = "0.25.6"
 PORT = 8765
 BUFFER_LIMIT = 1024 * 1024
 ACTIVE = {"running", "stopping"}
@@ -1409,7 +1409,7 @@ class AgentUpdates:
 
     def handle(self, data):
         agent, action = data.get("agent"), data.get("action")
-        if agent not in self.packages or action not in {"check", "prepare", "start", "poll", "status", "retry_restore"}:
+        if agent not in self.packages or action not in {"check", "availability", "prepare", "start", "poll", "status", "retry_restore"}:
             raise Problem(400, "error_invalid_json")
         try:
             if action == "retry_restore":
@@ -1433,8 +1433,8 @@ class AgentUpdates:
                     return {"job": self.snapshot(job) if job else None}
             with self.bridge.lock:
                 if self.closed or self.bridge.closing: raise Problem(409, "error_bridge_stopping")
-                if action == "check" and self.busy(agent): raise Problem(409, "error_agent_update_busy")
-            if action == "check":
+                if action in {"check", "availability"} and self.busy(agent): raise Problem(409, "error_agent_update_busy")
+            if action in {"check", "availability"}:
                 plan = self.installation(agent)
                 plan.update(id=str(uuid.uuid4()), expires=time.monotonic() + 600)
                 if plan["kind"] != "unsupported":
@@ -1456,6 +1456,9 @@ class AgentUpdates:
                         if code not in {0, 1}: raise ValueError()
                         plan["available"] = code == 0
                 with self.bridge.lock:
+                    if action == "availability":
+                        return {"available": bool(plan.get("available")), "current_version": plan["current"],
+                                "latest_version": plan.get("latest")}
                     self.plans[agent] = plan
                     return {"plan": self.public_plan(plan)}
             if action == "prepare":
@@ -4936,7 +4939,7 @@ class Bridge:
                     "home": str(Path.home()), "project": self.project, "browser_enabled": self.browser_enabled,
                     "projects": [dict(project, agent=self.selected_agents.get(key, "shell"), session=self.snapshot_for(key),
                                       sessions=self.snapshots(key)) for key, project in self.projects.items()],
-                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "queue_edit", "model_options", "model_service_tiers", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "browser_consent_notify", "maintenance_recovery", "maintenance_archive", "session_title_suggestions", "agent_connections", "agent_login_terminal", "agent_login_ui", "agent_updates", "agent_session_maintenance"], "active_sessions": self.active_count(),
+                    "features": ["multiple_projects", "browse_folders", "import_codex_session", "import_agent_session", "persistent_codex_sessions", "agent_options", "live_agent_options", "chat_queue", "queue_batch", "codex_steer", "claude_steer", "queue_steer", "queue_edit", "model_options", "model_service_tiers", "agent_sessions", "session_library", "initial_chat_message", "session_titles", "slash_commands", "agent_handoff", "git_worktrees", "worktree_creation", "project_management", "project_ordering", "project_drag_ordering", "response_notifications", "workspace_inspector", "git_actions", "github_import", "file_links", "browser_x11", "browser_tools_x11", "browser_control_consent", "browser_consent_notify", "maintenance_recovery", "maintenance_archive", "session_title_suggestions", "agent_connections", "agent_login_terminal", "agent_login_ui", "agent_updates", "agent_update_availability", "agent_session_maintenance"], "active_sessions": self.active_count(),
                     "agents": self.agents(), "maintenance_recovery": self.recovery.snapshot(),
                     "session": self.snapshot_for(self.active_project_id)}
 

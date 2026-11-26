@@ -34,6 +34,15 @@ class UpdateTests(BridgeTestCase):
    if result['job']['status'] in {'succeeded','failed'}:return result['job']
    time.sleep(.02)
   self.fail('fake update did not finish')
+ def test_background_availability_preserves_an_explicit_update_plan(self):
+  plan=self.check()
+  status,result=self.call('availability')
+  self.assertEqual(200,status,result)
+  self.assertEqual({'available':True,'current_version':'0.160.0-termux.1',
+                    'latest_version':'0.161.0-termux.2'},result)
+  self.assertEqual(plan['id'],self.call('status')[1]['plan']['id'])
+  self.assertFalse((self.global_root/'count').exists())
+
  def test_check_is_read_only_and_update_pins_same_package_and_verifies_version(self):
   sentinel=self.root/'fake-auth.json';sentinel.write_text('PRIVATE_CREDENTIAL_FIXTURE')
   plan=self.check();self.assertTrue(plan['supported']);self.assertTrue(plan['available']);self.assertEqual('npm',plan['method']);self.assertFalse((self.global_root/'count').exists())

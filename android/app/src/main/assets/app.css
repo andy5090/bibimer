@@ -705,3 +705,15 @@ body.debug-mode input[type="password"]{-webkit-text-security:disc}
 #agent-connection-installation{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
 #agent-connection-installation>summary{font-size:12px;color:var(--muted)}
 #agent-connection-installation .agent-install{margin-top:12px}
+
+#app-settings-open { position: relative; }
+#settings-update-dot {
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-end: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+#agent-update-links { display: flex; flex-wrap: wrap; gap: 6px; }

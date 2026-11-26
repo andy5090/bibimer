@@ -40,6 +40,7 @@
   let canConnections = false;
   let canLoginTerminal = false;
   let canLoginUI = false;
+  let canProbeAgentUpdates = false;
   let canAgentUpdates = false, canAgentMaintenance = false;
   let canBrowser = false, canBrowserConsent = false, canBrowserNotify = false, browserState = null, browserEnabled = true;
   const worktrees = {};
@@ -139,6 +140,8 @@
      codeSecret:native.requestAccountSecret ? body=>native.requestAccountSecret(body,{title:t("connection_code"),save:t("connection_submit_code"),cancel:t("cancel_project"),paste:t("connection_paste_code")}) : null,
      updates:data => api("POST", "/v1/agent-updates", data),
      catalogChanged:agent => {
+       agentUpdateResults.delete(agent);
+       void probeAgentUpdates();
        for (const [key, state] of modelCatalogs) if (state.agent === agent) modelCatalogs.delete(key);
        renderSession();
      },
@@ -1533,6 +1536,7 @@
       canConnections = health.features?.includes("agent_connections") === true;
       canLoginTerminal = health.features?.includes("agent_login_terminal") === true;
       canLoginUI = health.features?.includes("agent_login_ui") === true;
+      canProbeAgentUpdates = health.features?.includes("agent_update_availability") === true;
       canAgentUpdates = health.features?.includes("agent_updates") === true;
       canAgentMaintenance = health.features?.includes("agent_session_maintenance") === true;
       agentConnections.update();
@@ -1566,6 +1570,7 @@
       setSession(entry ? entry.session : health.session);
       renderProjects();
       connected(true);
+      void probeAgentUpdates();
       if (sidebar.dialog.open && canWorktrees && !worktreeLoading && knownProjects.some(row => !worktrees[row.id])) void refreshSidebar();
       native.notificationsConnected?.(canResponseNotifications);
       renderNotificationSettings();
@@ -2540,6 +2545,61 @@
   });
   $("notification-permission").addEventListener("click", () => native.openNotificationSettings?.());
   window.BibimerNotificationStatus = renderNotificationSettings;
+  const agentUpdateResults = new Map();
+  let updateProbeRunning = false;
+  function renderUpdateIndicators() {
+    const banner = $("agent-update-banner"), links = $("agent-update-links"), dot = $("settings-update-dot");
+    if (!banner || !links || !dot) return;
+    const rows = !demo && online && canProbeAgentUpdates
+      ? knownAgents.flatMap(agent => {
+          const result = agentUpdateResults.get(agent.id);
+          return agent.installed && result?.instance === instance && result.expires > Date.now() && result.available
+            ? [{agent, result}] : [];
+        }) : [];
+    const appAvailable = !demo && environment().appUpdate?.state === "available";
+    dot.hidden = !appAvailable && !rows.length;
+    $("app-settings-open").setAttribute("aria-label",
+      [t("tab_settings"), ...(appAvailable ? [t("app_update_available")] : []),
+        ...rows.map(({agent}) => agent.name)].join(" · "));
+    banner.hidden = !rows.length;
+    const buttons = rows.map(({agent, result}) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "secondary";
+      button.textContent = agent.name + " · " + t("agent_update_target", {
+        current:result.current_version, latest:result.latest_version
+      });
+      button.addEventListener("click", () => void agentConnections.open(agent.id).then(() => agentConnections.updates("check")));
+      return button;
+    });
+    if (buttons.map(button => button.textContent).join("\n") !== [...links.children].map(button => button.textContent).join("\n")) {
+      links.replaceChildren(...buttons);
+    }
+  }
+  async function probeAgentUpdates() {
+    renderUpdateIndicators();
+    if (demo || paused || !online || !canProbeAgentUpdates || updateProbeRunning) return;
+    const source = instance;
+    updateProbeRunning = true;
+    try {
+      for (const agent of knownAgents) {
+        if (paused || !online || instance !== source) break;
+        if (!agent.installed || !["codex","claude","opencode","gemini"].includes(agent.id)) continue;
+        const cached = agentUpdateResults.get(agent.id);
+        if (cached?.instance === source && cached.expires > Date.now()) continue;
+        try {
+          const result = await api("POST", "/v1/agent-updates", {agent:agent.id, action:"availability"});
+          if (instance === source) agentUpdateResults.set(agent.id, {...result, instance:source, expires:Date.now() + 6 * 3600000});
+        } catch {
+          if (instance === source) agentUpdateResults.set(agent.id, {instance:source, expires:Date.now() + 15 * 60000});
+        }
+      }
+    } finally {
+      updateProbeRunning = false;
+      renderUpdateIndicators();
+    }
+  }
+  setInterval(() => { if (!paused) void probeAgentUpdates(); }, 60000);
   function renderAppUpdates() {
     const env = environment(), status = env.appUpdate || {}, supported = !demo && !!native.checkAppUpdate;
     $("app-update-card").hidden = !supported;
@@ -2549,6 +2609,7 @@
       failed:"app_update_failed", store_failed:"app_update_store_failed", unavailable:"app_update_unavailable"}[status.state];
     $("app-update-status").textContent = key ? t(key) : "";
     $("app-update-check").disabled = !supported || status.state === "checking";
+    renderUpdateIndicators();
   }
   function compareBridgeVersions(current, bundled) {
     const parse = value => typeof value === "string" && /^\d{1,6}\.\d{1,6}\.\d{1,6}$/.test(value) ? value.split(".").map(Number) : null;
